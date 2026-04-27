@@ -1,0 +1,86 @@
+"""Runtime configuration loaded from .env / environment variables."""
+from __future__ import annotations
+
+import os
+from dataclasses import dataclass
+from pathlib import Path
+
+try:
+    from dotenv import load_dotenv
+    load_dotenv()
+except ImportError:  # dotenv is optional at runtime
+    pass
+
+
+ROOT_DIR = Path(__file__).resolve().parent.parent
+DATA_DIR = ROOT_DIR / "data"
+SAMPLE_DART_DIR = DATA_DIR / "sample_dart"
+KESG_DIR = DATA_DIR / "kesg"
+INDUSTRY_DIR = DATA_DIR / "industry"
+BEST_REPORTS_DIR = DATA_DIR / "best_reports"
+
+
+@dataclass
+class Settings:
+    openai_api_key: str | None
+    dart_api_key: str | None
+    openai_model: str
+    embed_model: str
+
+    @property
+    def use_mock_llm(self) -> bool:
+        return not self.openai_api_key
+
+    @property
+    def use_mock_dart(self) -> bool:
+        return not self.dart_api_key
+
+
+def load_settings() -> Settings:
+    return Settings(
+        openai_api_key=os.getenv("OPENAI_API_KEY") or None,
+        dart_api_key=os.getenv("DART_API_KEY") or None,
+        openai_model=os.getenv("OPENAI_MODEL", "gpt-4o-mini"),
+        embed_model=os.getenv("EMBED_MODEL", "paraphrase-multilingual-MiniLM-L12-v2"),
+    )
+
+
+SETTINGS = load_settings()
+
+
+# ---- v10: 5축 위험 탐지 임계치 & 가중치 --------------------------------------
+# 환경변수로 오버라이드 가능: D1_THRESHOLD=0.10 python -m esgenie.pipeline ...
+
+# D1: 수치 주장 vs L0 노드값 상대 오차 임계치 (비율, 0~1)
+D1_THRESHOLD: float = float(os.getenv("D1_THRESHOLD", "0.15"))
+
+# D2: 문장 내 모호어/최상급 밀도 임계치 (개수/문장, 정규화 기준)
+D2_THRESHOLD: float = float(os.getenv("D2_THRESHOLD", "0.25"))
+
+# D3: SBERT 코사인 유사도 하한 (이하이면 의미 괴리 위험)
+D3_THRESHOLD: float = float(os.getenv("D3_THRESHOLD", "0.35"))
+
+# D4: 업종 분포 z-score 절댓값 상한 (초과 시 이상치 위험)
+D4_THRESHOLD: float = float(os.getenv("D4_THRESHOLD", "2.0"))
+
+# D5: 시계열 YoY 모순 판정 비율 임계치 (0~1)
+D5_THRESHOLD: float = float(os.getenv("D5_THRESHOLD", "0.20"))
+
+# 축별 가중평균 가중치 (합계 = 1.0)
+D_WEIGHTS: dict[str, float] = {
+    "D1_numeric":    0.35,
+    "D2_modifier":   0.20,
+    "D3_semantic":   0.20,
+    "D4_industry":   0.15,
+    "D5_timeseries": 0.10,
+}
+
+# aggregate 위험 레벨 경계 (0~1 정규화 점수 기준)
+RISK_LEVEL_THRESHOLDS: dict[str, float] = {
+    "low":    0.25,   # score < 0.25
+    "medium": 0.50,   # 0.25 <= score < 0.50
+    "high":   1.00,   # score >= 0.50
+}
+
+# L4 재생성 최대 반복 횟수
+MAX_REFINEMENT_ITER: int = int(os.getenv("MAX_REFINEMENT_ITER", "3"))
