@@ -1,0 +1,34 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.egg-info/
+dist/
+build/
+.venv/
+venv/
+
+# Env
+.env
+.env.local
+
+# IDE / OS
+.DS_Store
+*.code-workspace
+.idea/
+.vscode/
+*.tmp
+*.lock
+
+# Outputs (generated files)
+outputs/
+
+# Lock files from LibreOffice / other editors
+".~lock.*"
+
+# Large doc files (proposals, PDFs in root — kept in project folder, not repo)
+ESGenie_도전제안서_*.docx
+ESGenie_도전제안서_*.pdf
+
+# pytest cache
+.pytest_cache/

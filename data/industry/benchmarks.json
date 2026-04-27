@@ -1,0 +1,53 @@
+{
+  "source": "산업별 평균치 샘플 (2023 공개 데이터 기반)",
+  "benchmarks": [
+    {
+      "industry": "반도체·전자기기",
+      "notes": "삼성전자, SK하이닉스, LG전자 등 대형 전자 업계 평균.",
+      "metrics": {
+        "renewable_ratio_pct": 28.5,
+        "waste_recycle_pct": 94.2,
+        "scope12_tco2eq_per_krw_bn": 72.0,
+        "female_ratio_pct": 22.4,
+        "outside_director_pct": 62.0
+      },
+      "key_issues": [
+        "RE100 가입과 해외 생산기지 재생에너지 전환",
+        "Scope3 공급망 배출 (원재료) 관리",
+        "반도체 세정·식각 공정 폐수 관리"
+      ]
+    },
+    {
+      "industry": "자동차",
+      "notes": "현대차·기아·쌍용·GM코리아 등 완성차 평균.",
+      "metrics": {
+        "renewable_ratio_pct": 11.0,
+        "waste_recycle_pct": 92.8,
+        "scope12_tco2eq_per_krw_bn": 11.5,
+        "female_ratio_pct": 7.2,
+        "outside_director_pct": 65.0
+      },
+      "key_issues": [
+        "내연기관 → 전기차 전환에 따른 Scope3 사용단계 배출",
+        "전기차 배터리 순환경제",
+        "판매단 협력사 ESG 실사"
+      ]
+    },
+    {
+      "industry": "철강·소재",
+      "notes": "포스코·현대제철·동국제강 등 철강 업계 평균.",
+      "metrics": {
+        "renewable_ratio_pct": 3.8,
+        "waste_recycle_pct": 97.4,
+        "scope12_tco2eq_per_krw_bn": 940.0,
+        "female_ratio_pct": 5.1,
+        "outside_director_pct": 57.5
+      },
+      "key_issues": [
+        "수소환원제철(H2-DRI) 전환",
+        "저품위 광석 처리 및 부산물(슬래그) 자원화",
+        "EU CBAM 대응"
+      ]
+    }
+  ]
+}

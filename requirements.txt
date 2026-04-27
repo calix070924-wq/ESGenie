@@ -1,0 +1,22 @@
+# ESGenie MVP dependencies
+streamlit>=1.32.0
+python-dotenv>=1.0.0
+requests>=2.31.0
+pandas>=2.1.0
+numpy>=1.26.0
+
+# LLM
+openai>=1.30.0
+
+# Vector search / embeddings
+faiss-cpu>=1.7.4
+sentence-transformers>=2.6.0
+
+# Korean NLP utilities
+regex>=2024.4.16
+
+# Visualization
+plotly>=5.20.0
+
+# Testing
+pytest>=9.0.0
