@@ -15,7 +15,7 @@ from typing import Any
 import numpy as np
 
 from .config import (
-    D1_THRESHOLD, D2_THRESHOLD, D3_THRESHOLD, D4_THRESHOLD, D5_THRESHOLD,
+    D1_THRESHOLD, D2_THRESHOLD, D3_THRESHOLD, D5_THRESHOLD,
     D_WEIGHTS, RISK_LEVEL_THRESHOLDS,
 )
 from .dart_client import CompanyReport
@@ -48,15 +48,6 @@ _KEYWORD_MAP = {
 }
 
 # 업종별 벤치마크 메트릭 키 → K-ESG 코드 대응
-_BENCH_METRIC_MAP: dict[str, str] = {
-    "renewable_ratio_pct":         "E-4-2",
-    "waste_recycle_pct":           "E-6-2",
-    "female_ratio_pct":            "S-3-1",
-    "outside_director_pct":        "G-1-2",
-    "scope12_tco2eq_per_krw_bn":   "E-3-1",
-}
-
-
 # ---- 데이터클래스 -----------------------------------------------------------
 
 @dataclass
@@ -298,25 +289,24 @@ def detect_risk_vector(
     industry_stats: dict[str, Any] | None = None,
     _d3_index: Any | None = None,        # 외부에서 미리 빌드된 VectorIndex (재사용용)
 ) -> RiskVector:
-    """단일 문장에 대한 5축 위험 분해.
+    """단일 문장에 대한 4축 위험 분해 (D1·D2·D3·D5).
 
     Args:
         claim_sentence: 분석 대상 문장
         evidence_graph: L0 EvidenceGraph (없으면 D1·D5 스킵)
         retrieved_chunks: L2 RAG 청크 목록 [{"id":..., "text":...}]
-        industry_stats:  업종 벤치마크 dict (benchmarks.json 항목)
+        industry_stats:  사용 안 함 (하위 호환용 파라미터 유지)
         _d3_index: 미리 빌드된 VectorIndex — 제공 시 D3에서 재빌드 생략
 
     Returns:
-        RiskVector (D1~D5 + aggregate)
+        RiskVector (D1·D2·D3·D5 + aggregate)
     """
     d1 = _score_d1_numeric(claim_sentence, evidence_graph)
     d2 = _score_d2_modifier(claim_sentence)
     d3 = _score_d3_semantic(claim_sentence, retrieved_chunks, prebuilt_index=_d3_index)
-    d4 = _score_d4_industry(claim_sentence, industry_stats)
     d5 = _score_d5_timeseries(claim_sentence, evidence_graph)
 
-    return _build_risk_vector(d1, d2, d3, d4, d5)
+    return _build_risk_vector(d1, d2, d3, d5)
 
 
 # ---- D1: 수치 오차 ----------------------------------------------------------
@@ -412,46 +402,6 @@ def _score_d3_semantic(
     )
 
 
-# ---- D4: 업종 z-score -------------------------------------------------------
-
-def _score_d4_industry(
-    sentence: str,
-    industry_stats: dict[str, Any] | None,
-) -> AxisScore:
-    """업종 평균 대비 z-score 이상치 탐지."""
-    if not industry_stats:
-        return AxisScore(score=0.0, evidence=[], detail="업종 벤치마크 없음 — 스킵")
-
-    metrics: dict[str, Any] = industry_stats.get("metrics", {})
-    worst_z = 0.0
-    hit_benchmark: str = ""
-    details: list[str] = []
-
-    for bench_key, kesg_code in _BENCH_METRIC_MAP.items():
-        bench_val = metrics.get(bench_key)
-        if bench_val is None:
-            continue
-        # 문장에서 해당 코드에 매칭되는 수치 추출
-        claim_val = _extract_claim_value_for_code(sentence, kesg_code)
-        if claim_val is None:
-            continue
-
-        # 단순 z-score: |claim - mean| / (mean * 0.2) — 20% std 가정
-        std_est = abs(bench_val) * 0.2 or 1.0
-        z = abs(claim_val - bench_val) / std_est
-        if z > worst_z:
-            worst_z = z
-            hit_benchmark = bench_key
-        details.append(f"{kesg_code}: claim={claim_val} mean={bench_val} z={z:.2f}")
-
-    score = min(1.0, worst_z / max(D4_THRESHOLD, 1e-9))
-    return AxisScore(
-        score=round(score, 4),
-        evidence=[hit_benchmark] if hit_benchmark else [],
-        detail="; ".join(details) if details else "업종 비교 항목 없음",
-    )
-
-
 def _extract_claim_value_for_code(sentence: str, code: str) -> float | None:
     """문장에서 특정 K-ESG 코드에 대응하는 수치 추출."""
     for m in _NUMBER_PATTERN.finditer(sentence):
@@ -515,13 +465,12 @@ def _score_d5_timeseries(
 
 def _build_risk_vector(
     d1: AxisScore, d2: AxisScore, d3: AxisScore,
-    d4: AxisScore, d5: AxisScore,
+    d5: AxisScore,
 ) -> RiskVector:
     axes = {
         "D1_numeric":    d1,
         "D2_modifier":   d2,
         "D3_semantic":   d3,
-        "D4_industry":   d4,
         "D5_timeseries": d5,
     }
     weighted = sum(D_WEIGHTS[k] * ax.score for k, ax in axes.items())
@@ -538,7 +487,7 @@ def _build_risk_vector(
 
     return RiskVector(
         D1_numeric=d1, D2_modifier=d2, D3_semantic=d3,
-        D4_industry=d4, D5_timeseries=d5,
+        D5_timeseries=d5,
         aggregate={
             "risk_score": risk_score,
             "level":      level,

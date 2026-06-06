@@ -34,10 +34,6 @@ _AXIS_CONSTRAINTS: dict[str, str] = {
         "근거 충실성: 생성 문장은 검색된 DART 원문 및 K-ESG 가이드라인의 "
         "의미 범위 내에서 서술하라. 원문에 없는 내용을 추가하지 말 것."
     ),
-    "D4_industry": (
-        "업종 적합성: 동종 업계 평균 대비 ±1σ 범위 내에서 표현하라. "
-        "업종 평균을 현저히 벗어난 수치나 주장은 명시적 근거와 함께 제시하라."
-    ),
     "D5_timeseries": (
         "시계열 일관성: 전년 대비 추세(증가/감소)가 실제 DART 데이터와 일치해야 한다. "
         "방향이 다른 주장은 즉시 수정하라."
@@ -279,7 +275,7 @@ def _compute_text_risk_vector(
         zero = AxisScore(score=0.0)
         best_rv = RiskVector(
             D1_numeric=zero, D2_modifier=zero, D3_semantic=zero,
-            D4_industry=zero, D5_timeseries=zero,
+            D5_timeseries=zero,
             aggregate={"risk_score": 0.0, "level": "low", "top_axis": ""},
         )
     return best_rv

@@ -737,13 +737,12 @@ def render_detection(det: Any, key_prefix: str = "det") -> None:
 
 
 def _render_radar(rv: Any, key: str) -> None:
-    """5축 D1~D5 레이더 차트."""
-    axes   = ["D1 수치오차", "D2 모호어", "D3 의미괴리", "D4 업종편차", "D5 시계열모순"]
+    """4축 D1·D2·D3·D5 레이더 차트."""
+    axes   = ["D1 수치오차", "D2 모호어", "D3 의미괴리", "D5 시계열모순"]
     scores = [
         rv.D1_numeric.score * 100,
         rv.D2_modifier.score * 100,
         rv.D3_semantic.score * 100,
-        rv.D4_industry.score * 100,
         rv.D5_timeseries.score * 100,
     ]
     fig = go.Figure()
@@ -751,7 +750,7 @@ def _render_radar(rv: Any, key: str) -> None:
         r=scores + scores[:1],
         theta=axes + axes[:1],
         fill="toself",
-        name="5축 위험도",
+        name="4축 위험도",
         line_color="#FF6B6B",
         fillcolor="rgba(255,107,107,0.2)",
     ))
@@ -912,14 +911,13 @@ with tab_audit:
                     st.write(sent.sentence_text)
 
                     if rv is not None:
-                        st.markdown("**5축 위험 분해**")
+                        st.markdown("**4축 위험 분해**")
                         axis_df = pd.DataFrame([
                             {"축": ax, "점수": f"{sc:.3f}", "설명": detail}
                             for ax, sc, detail in [
                                 ("D1 수치오차",    rv.D1_numeric.score,    rv.D1_numeric.detail),
                                 ("D2 모호어",      rv.D2_modifier.score,   rv.D2_modifier.detail),
                                 ("D3 의미괴리",    rv.D3_semantic.score,   rv.D3_semantic.detail),
-                                ("D4 업종편차",    rv.D4_industry.score,   rv.D4_industry.detail),
                                 ("D5 시계열모순",  rv.D5_timeseries.score, rv.D5_timeseries.detail),
                             ]
                         ])

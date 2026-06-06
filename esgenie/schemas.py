@@ -25,7 +25,7 @@ class AxisScore:
 
 @dataclass
 class RiskVector:
-    """5축 위험 분해 결과 (D1~D5).
+    """4축 위험 분해 결과 (D1·D2·D3·D5).
 
     각 축은 AxisScore(score, evidence, detail)를 갖는다.
     aggregate는 가중평균 종합 위험도와 레벨을 담는다.
@@ -33,7 +33,6 @@ class RiskVector:
     D1_numeric: AxisScore      # 수치 주장 vs L0 노드값 오차
     D2_modifier: AxisScore     # 모호어/최상급 밀도
     D3_semantic: AxisScore     # SBERT 코사인 유사도 역수
-    D4_industry: AxisScore     # 업종 분포 z-score
     D5_timeseries: AxisScore   # 시계열 엣지 YoY·CAGR 모순
 
     aggregate: dict[str, Any] = field(default_factory=dict)
@@ -45,7 +44,6 @@ class RiskVector:
             "D1_numeric":    self.D1_numeric.to_dict(),
             "D2_modifier":   self.D2_modifier.to_dict(),
             "D3_semantic":   self.D3_semantic.to_dict(),
-            "D4_industry":   self.D4_industry.to_dict(),
             "D5_timeseries": self.D5_timeseries.to_dict(),
             "aggregate":     self.aggregate,
         }
@@ -68,7 +66,6 @@ class RiskVector:
             "D1_numeric":    self.D1_numeric,
             "D2_modifier":   self.D2_modifier,
             "D3_semantic":   self.D3_semantic,
-            "D4_industry":   self.D4_industry,
             "D5_timeseries": self.D5_timeseries,
         }
         from .config import RISK_LEVEL_THRESHOLDS

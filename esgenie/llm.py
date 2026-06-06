@@ -419,7 +419,7 @@ def _mock_rewrite(user_prompt: str) -> str:
 
     axes = {
         axis: f"[{axis}]" in block
-        for axis in ("D1_numeric", "D2_modifier", "D3_semantic", "D4_industry", "D5_timeseries")
+        for axis in ("D1_numeric", "D2_modifier", "D3_semantic", "D5_timeseries")
     }
 
     # 어떤 축도 명시 안 됐는데 "추가 지시:"만 있는 경우 → legacy 피드백 모드.
@@ -441,7 +441,7 @@ def _mock_rewrite(user_prompt: str) -> str:
     if axes["D2_modifier"]:
         text = _strip_vague_modifiers(text)
 
-    # D3/D4/D5 (+ 활성 축 전반)에 대한 검증 근거 섹션 추가
+    # D3/D5 (+ 활성 축 전반)에 대한 검증 근거 섹션 추가
     appendix: list[str] = []
     if axes["D1_numeric"]:
         appendix.append(
@@ -457,11 +457,6 @@ def _mock_rewrite(user_prompt: str) -> str:
         appendix.append(
             "- **[D3 근거 충실성]** 본 보고서는 DART 공시 원문 및 K-ESG 가이드라인의 "
             "의미 범위 내에서만 보수적으로 서술되었습니다."
-        )
-    if axes["D4_industry"]:
-        appendix.append(
-            "- **[D4 업종 적합성]** 핵심 지표는 동종 업계 평균(±1σ) 범위와의 "
-            "정합성을 검증한 후 기재하였습니다."
         )
     if axes["D5_timeseries"]:
         appendix.append(

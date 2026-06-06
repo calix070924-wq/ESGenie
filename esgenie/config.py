@@ -60,18 +60,14 @@ D2_THRESHOLD: float = float(os.getenv("D2_THRESHOLD", "0.25"))
 # D3: SBERT 코사인 유사도 하한 (이하이면 의미 괴리 위험)
 D3_THRESHOLD: float = float(os.getenv("D3_THRESHOLD", "0.35"))
 
-# D4: 업종 분포 z-score 절댓값 상한 (초과 시 이상치 위험)
-D4_THRESHOLD: float = float(os.getenv("D4_THRESHOLD", "2.0"))
-
 # D5: 시계열 YoY 모순 판정 비율 임계치 (0~1)
 D5_THRESHOLD: float = float(os.getenv("D5_THRESHOLD", "0.20"))
 
-# 축별 가중평균 가중치 (합계 = 1.0)
+# 축별 가중평균 가중치 (합계 = 1.0) — D4 업종 z-score 제거, 4축 운영
 D_WEIGHTS: dict[str, float] = {
-    "D1_numeric":    0.35,
-    "D2_modifier":   0.20,
-    "D3_semantic":   0.20,
-    "D4_industry":   0.15,
+    "D1_numeric":    0.40,
+    "D2_modifier":   0.25,
+    "D3_semantic":   0.25,
     "D5_timeseries": 0.10,
 }
 

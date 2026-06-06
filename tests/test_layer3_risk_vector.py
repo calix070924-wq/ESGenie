@@ -72,7 +72,7 @@ def test_detect_risk_vector_returns_risk_vector() -> None:
 def test_detect_risk_vector_axis_score_range() -> None:
     """모든 축 score가 0~1 범위여야 한다."""
     rv = detect_risk_vector(SAMPLE_SENTENCE_CLEAN)
-    for axis in (rv.D1_numeric, rv.D2_modifier, rv.D3_semantic, rv.D4_industry, rv.D5_timeseries):
+    for axis in (rv.D1_numeric, rv.D2_modifier, rv.D3_semantic, rv.D5_timeseries):
         assert 0.0 <= axis.score <= 1.0, f"score 범위 초과: {axis}"
 
 
@@ -121,36 +121,14 @@ def test_d5_without_evidence_graph_is_zero() -> None:
     assert rv.D5_timeseries.score == 0.0
 
 
-# ---- industry_stats 연동 ----------------------------------------------------
-
-def test_d4_with_industry_stats() -> None:
-    industry_stats = {
-        "industry": "반도체·전자기기",
-        "metrics": {
-            "renewable_ratio_pct": 28.5,
-            "waste_recycle_pct":   94.2,
-            "female_ratio_pct":    22.4,
-        },
-    }
-    sentence = "재생에너지 비율은 85%를 기록하여 업계 최고 수준을 달성하였다."
-    rv = detect_risk_vector(sentence, industry_stats=industry_stats)
-    # 85%는 벤치마크 28.5% 대비 크게 벗어남 → D4 score > 0
-    assert rv.D4_industry.score > 0.0
-
-
-def test_d4_without_industry_stats_is_zero() -> None:
-    rv = detect_risk_vector(SAMPLE_SENTENCE_CLEAN, industry_stats=None)
-    assert rv.D4_industry.score == 0.0
-
-
 # ---- to_dict 직렬화 ---------------------------------------------------------
 
 def test_risk_vector_to_dict() -> None:
     rv = detect_risk_vector(SAMPLE_SENTENCE_CLEAN)
     d = rv.to_dict()
-    for key in ("D1_numeric", "D2_modifier", "D3_semantic", "D4_industry", "D5_timeseries", "aggregate"):
+    for key in ("D1_numeric", "D2_modifier", "D3_semantic", "D5_timeseries", "aggregate"):
         assert key in d, f"{key} 누락"
-    for axis_key in ("D1_numeric", "D2_modifier", "D3_semantic", "D4_industry", "D5_timeseries"):
+    for axis_key in ("D1_numeric", "D2_modifier", "D3_semantic", "D5_timeseries"):
         assert "score" in d[axis_key]
         assert "evidence" in d[axis_key]
         assert "detail" in d[axis_key]
