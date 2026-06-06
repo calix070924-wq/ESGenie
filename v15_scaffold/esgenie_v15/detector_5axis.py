@@ -193,6 +193,65 @@ def draft_missing_policy(
 
 
 # ====================================================================
+# D2 · D3 · D5 — v10 재사용 래퍼
+# ====================================================================
+
+def detect_d2_modifier(sentence: str) -> AxisScore:
+    """D2: 모호어/최상급 수식어 밀도 — v10 로직 재사용."""
+    from esgenie.layer3_detect import _score_d2_modifier
+    v10 = _score_d2_modifier(sentence)
+    return AxisScore(score=v10.score, evidence=v10.evidence, detail=v10.detail)
+
+
+def detect_d3_semantic(
+    sentence: str,
+    retrieved_chunks: list[dict[str, Any]] | None = None,
+) -> AxisScore:
+    """D3: RAG 청크와 코사인 유사도 역수 — v10 로직 재사용."""
+    from esgenie.layer3_detect import _score_d3_semantic
+    v10 = _score_d3_semantic(sentence, retrieved_chunks or [])
+    return AxisScore(score=v10.score, evidence=v10.evidence, detail=v10.detail)
+
+
+def detect_d5_timeseries(sentence: str, graph: EvidenceGraph) -> AxisScore:
+    """D5: 시계열 엣지 방향과 문장 주장 비교 — v10 로직 재사용.
+
+    v15 EvidenceGraph는 v10과 엣지 스키마가 호환되므로 직접 전달 가능.
+    """
+    from esgenie.layer3_detect import _score_d5_timeseries
+    v10 = _score_d5_timeseries(sentence, graph)
+    return AxisScore(score=v10.score, evidence=v10.evidence, detail=v10.detail)
+
+
+def detect_risk_axes(
+    sentence: str,
+    kesg_code: str | None,
+    graph: EvidenceGraph,
+    retrieved_chunks: list[dict[str, Any]] | None = None,
+) -> dict[str, AxisScore]:
+    """4축(D1·D2·D3·D5) 종합 위험 점수 계산 (v15 통합 진입점).
+
+    Returns: {"D1": AxisScore, "D2": AxisScore, "D3": AxisScore, "D5": AxisScore,
+              "aggregate": AxisScore}
+    """
+    d1 = detect_d1_numeric(sentence, kesg_code, graph)
+    d2 = detect_d2_modifier(sentence)
+    d3 = detect_d3_semantic(sentence, retrieved_chunks)
+    d5 = detect_d5_timeseries(sentence, graph)
+
+    # 가중평균 (D4 제거 후 재배분: D1=40%, D2=25%, D3=25%, D5=10%)
+    weighted = d1.score * 0.40 + d2.score * 0.25 + d3.score * 0.25 + d5.score * 0.10
+    top = max({"D1": d1, "D2": d2, "D3": d3, "D5": d5}.items(), key=lambda kv: kv[1].score)
+
+    aggregate = AxisScore(
+        score=round(weighted, 4),
+        evidence=d1.evidence + d3.evidence,
+        detail=f"종합 위험도={weighted:.3f} | 최고위험={top[0]}({top[1].score:.3f})",
+    )
+    return {"D1": d1, "D2": d2, "D3": d3, "D5": d5, "aggregate": aggregate}
+
+
+# ====================================================================
 # 내부 헬퍼
 # ====================================================================
 

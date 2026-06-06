@@ -122,6 +122,31 @@ class EvidenceGraph:
     def text_nodes_by_code(self, code: str) -> list[TextNode]:
         return [t for t in self._text_nodes.values() if t.kesg_code == code]
 
+    def search_nodes(
+        self,
+        keywords: list[str],
+        period: int | None = None,
+    ) -> list[EvidenceNode]:
+        """K-ESG 코드/키워드로 노드 검색 (v10 layer1 호환 API).
+
+        매칭 우선순위:
+          1) node.metric이 keywords 중 하나와 정확히 일치 (K-ESG 코드 직접 매칭)
+          2) node.metric에 keyword가 부분 포함
+        period가 주어지면 해당 연도 노드만 반환.
+        """
+        result: list[EvidenceNode] = []
+        for node in self._nodes.values():
+            matched = any(
+                kw == node.metric or kw.lower() in node.metric.lower()
+                for kw in keywords
+            )
+            if not matched:
+                continue
+            if period is not None and node.period != period:
+                continue
+            result.append(node)
+        return sorted(result, key=lambda n: n.period)
+
     def to_dict(self) -> dict[str, Any]:
         return {
             "corp_code": self.corp_code,
@@ -142,13 +167,49 @@ class EvidenceGraph:
 # ====================================================================
 
 def build_from_dart(report: Any) -> EvidenceGraph:
-    """DART CompanyReport → EvidenceGraph.
+    """DART CompanyReport → EvidenceGraph (v15 SSOT).
 
-    기존 esgenie/layer0_evidence_graph.build_evidence_graph 로직을 그대로 사용하되,
-    생성되는 노드에 origin="dart", confidence=1.0 을 부여한다.
-    (실제 구현은 기존 모듈 재사용 — 여기서는 시그니처 고정.)
+    v10의 build_evidence_graph()를 호출한 뒤, 생성된 노드/엣지를
+    v15 스키마(origin='dart', confidence=1.0)로 변환해 반환한다.
     """
-    raise NotImplementedError("기존 build_evidence_graph 로직을 origin='dart'로 래핑")
+    from esgenie.layer0_evidence_graph import (
+        build_evidence_graph as _v10_build,
+    )
+
+    v10_graph = _v10_build(report)
+    graph = EvidenceGraph(corp_code=v10_graph.corp_code, corp_name=v10_graph.corp_name)
+
+    # v10 EvidenceNode → v15 EvidenceNode (origin/confidence 필드 추가)
+    for v10_node in v10_graph.nodes.values():
+        node = EvidenceNode(
+            id=v10_node.id,
+            metric=v10_node.metric,
+            value=v10_node.value,
+            unit=v10_node.unit,
+            period=v10_node.period,
+            source=v10_node.source,
+            raw_text=v10_node.raw_text,
+            origin="dart",
+            source_file=None,   # DART는 파일 증빙 없음
+            bbox=None,
+            confidence=1.0,     # DART 공식 공시 = 신뢰도 최대
+        )
+        graph.add_node(node)
+
+    # v10 EvidenceEdge → v15 EvidenceEdge (detail 필드 추가)
+    for v10_edge in v10_graph.edges:
+        edge = EvidenceEdge(
+            source_id=v10_edge.source_id,
+            target_id=v10_edge.target_id,
+            edge_type=v10_edge.edge_type,
+            yoy=v10_edge.yoy,
+            cagr=v10_edge.cagr,
+            years_gap=v10_edge.years_gap,
+            detail=f"dart timeseries yoy={v10_edge.yoy}%",
+        )
+        graph.add_edge(edge)
+
+    return graph
 
 
 # ====================================================================

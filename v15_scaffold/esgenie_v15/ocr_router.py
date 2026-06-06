@@ -183,28 +183,265 @@ def extract_document(file_path: str, decision: RouteDecision | None = None) -> O
 # ====================================================================
 
 def extract_structured(file_path: str, *, doc_type: str) -> OcrExtraction:
-    """정형 문서 채널.
+    """정형 문서 채널 — CLOVA OCR + 템플릿 매칭 + LLM 후처리.
 
-    구현 단계(파이프라인):
-      1) 전통 OCR — Naver CLOVA OCR(권장, 한글 표 인식 우수) 또는 PaddleOCR/Tesseract.
-         → 셀 좌표(bbox) 포함 토큰 리스트 확보.
-      2) 양식 템플릿 매칭 — doc_type별 키-값 좌표 템플릿(_load_template)으로 1차 추출.
-         (한전 고지서의 '사용전력량' 셀 위치는 거의 고정)
-      3) LLM 후처리 — 추출 토큰을 prompts.STRUCTURED_NORMALIZE_PROMPT에 넣어
-         · 단위 정규화(kWh→MJ 환산 등)
-         · K-ESG 코드 추정(E-4-1 에너지 사용량 …)
-         · 비정상치 플래그
-         결과를 ExtractedMetric[]로 환원.
-
-    Returns: OcrExtraction(channel=STRUCTURED, metrics=[...])
+    파이프라인:
+      1) CLOVA OCR API → 토큰(텍스트 + bbox) 리스트 확보
+      2) doc_type별 템플릿(_load_template)으로 라벨↔값 쌍 1차 추출
+      3) LLM(STRUCTURED_NORMALIZE_PROMPT)으로 단위 정규화 + K-ESG 코드 추정
+      API 키 없으면 Mock 폴백(데모 모드).
     """
-    raise NotImplementedError(
-        "정형 채널 구현 TODO:\n"
-        "  - clova_ocr_client.recognize(file_path) -> tokens\n"
-        "  - template = _load_template(doc_type)\n"
-        "  - kv = template.apply(tokens)\n"
-        "  - metrics = llm_postprocess(kv, prompt=STRUCTURED_NORMALIZE_PROMPT)\n"
-        "  - return OcrExtraction(source_file, STRUCTURED, doc_type, metrics=metrics, raw_text=...)"
+    source_file = Path(file_path).name
+
+    clova_key, clova_url = _get_clova_keys()
+    openai_key = _get_openai_key()
+
+    if not clova_key:
+        return _mock_structured(file_path, doc_type)
+
+    # 1) CLOVA OCR → 토큰 리스트
+    tokens = _call_clova_ocr(file_path, api_url=clova_url, secret_key=clova_key)
+    raw_text = " ".join(t["text"] for t in tokens)
+
+    # 2) 템플릿 매칭 → 라벨:값 딕셔너리
+    try:
+        template = _load_template(doc_type)
+        kv_pairs = _apply_template(tokens, template)
+    except NotImplementedError:
+        # 템플릿 미정의 doc_type → 키워드 기반 폴백
+        kv_pairs = _keyword_extract(tokens, doc_type)
+
+    # 3) LLM 후처리 → ExtractedMetric[]
+    if openai_key and kv_pairs:
+        metrics = _llm_normalize(kv_pairs, doc_type=doc_type, api_key=openai_key)
+    else:
+        metrics = _rule_normalize(kv_pairs, doc_type=doc_type)
+
+    return OcrExtraction(
+        source_file=source_file,
+        channel=DocChannel.STRUCTURED,
+        doc_type=doc_type,
+        metrics=metrics,
+        raw_text=raw_text,
+    )
+
+
+# ---- 정형 채널 내부 헬퍼 ------------------------------------------------------
+
+def _get_clova_keys() -> tuple[str | None, str]:
+    """CLOVA OCR API 키와 URL 조회."""
+    import os
+    secret = os.getenv("CLOVA_OCR_SECRET", "")
+    url = os.getenv("CLOVA_OCR_URL", "")
+    return (secret or None), url
+
+
+def _call_clova_ocr(file_path: str, *, api_url: str, secret_key: str) -> list[dict[str, Any]]:
+    """CLOVA OCR API 호출 → 토큰 리스트 [{text, bbox:[x,y,w,h]}].
+
+    응답 형태: https://api.ncloud-docs.com/docs/ai-application-service-ocr-general
+    """
+    import requests, base64, json as _json
+
+    p = Path(file_path)
+    ext = p.suffix.lower().lstrip(".")
+    img_b64 = base64.b64encode(p.read_bytes()).decode()
+
+    payload = {
+        "version": "V2",
+        "requestId": p.stem,
+        "timestamp": 0,
+        "images": [{"format": ext, "name": p.stem, "data": img_b64}],
+    }
+    headers = {"X-OCR-SECRET": secret_key, "Content-Type": "application/json"}
+    resp = requests.post(api_url, headers=headers, data=_json.dumps(payload), timeout=30)
+    resp.raise_for_status()
+    data = resp.json()
+
+    tokens: list[dict[str, Any]] = []
+    for img in data.get("images", []):
+        for field in img.get("fields", []):
+            vertices = field.get("boundingPoly", {}).get("vertices", [])
+            bbox = (
+                [vertices[0]["x"], vertices[0]["y"],
+                 vertices[2]["x"], vertices[2]["y"]]
+                if len(vertices) >= 3 else None
+            )
+            tokens.append({"text": field.get("inferText", ""), "bbox": bbox})
+    return tokens
+
+
+def _apply_template(tokens: list[dict[str, Any]], template: dict[str, Any]) -> dict[str, Any]:
+    """템플릿의 라벨 키워드와 토큰 텍스트를 매칭해 {라벨: {value, unit, bbox}} 추출.
+
+    전략: 라벨 키워드와 인접한(오른쪽 또는 아래) 숫자 토큰을 값으로 채택.
+    """
+    import re
+    number_re = re.compile(r"[\d,]+\.?\d*")
+    result: dict[str, Any] = {}
+
+    for label_key, label_info in template.items():
+        keywords: list[str] = label_info.get("keywords", [])
+        unit: str = label_info.get("unit", "")
+        kesg: str | None = label_info.get("kesg_code")
+
+        for i, tok in enumerate(tokens):
+            if any(kw in tok["text"] for kw in keywords):
+                # 인접 토큰(최대 5개 앞뒤)에서 숫자 탐색
+                for j in range(i + 1, min(i + 6, len(tokens))):
+                    m = number_re.search(tokens[j]["text"].replace(",", ""))
+                    if m:
+                        result[label_key] = {
+                            "value": float(m.group()),
+                            "unit": unit,
+                            "kesg_code": kesg,
+                            "bbox": tokens[j].get("bbox"),
+                            "raw_label": tok["text"],
+                        }
+                        break
+                if label_key in result:
+                    break
+    return result
+
+
+def _keyword_extract(tokens: list[dict[str, Any]], doc_type: str) -> dict[str, Any]:
+    """템플릿 미정의 시 — 알려진 ESG 키워드 근방 숫자 추출 폴백."""
+    import re
+    _KW_MAP = {
+        "사용전력량": {"unit": "kWh", "kesg_code": "E-4-1"},
+        "전력사용량": {"unit": "kWh", "kesg_code": "E-4-1"},
+        "가스사용량": {"unit": "MJ",  "kesg_code": "E-4-1"},
+        "폐기물":    {"unit": "ton", "kesg_code": "E-6-1"},
+        "용수":      {"unit": "ton", "kesg_code": "E-5-1"},
+        "배출량":    {"unit": "tCO2eq", "kesg_code": "E-3-1"},
+    }
+    number_re = re.compile(r"[\d,]+\.?\d*")
+    result: dict[str, Any] = {}
+
+    for i, tok in enumerate(tokens):
+        for kw, info in _KW_MAP.items():
+            if kw in tok["text"] and kw not in result:
+                for j in range(i + 1, min(i + 6, len(tokens))):
+                    m = number_re.search(tokens[j]["text"].replace(",", ""))
+                    if m:
+                        result[kw] = {
+                            "value": float(m.group()),
+                            **info,
+                            "bbox": tokens[j].get("bbox"),
+                            "raw_label": tok["text"],
+                        }
+                        break
+    return result
+
+
+def _llm_normalize(
+    kv_pairs: dict[str, Any],
+    *,
+    doc_type: str,
+    api_key: str,
+) -> list[ExtractedMetric]:
+    """LLM(GPT-4o)으로 추출 KV 쌍을 ExtractedMetric[]으로 정규화."""
+    import openai, json as _json
+    from .prompts import STRUCTURED_NORMALIZE_SYSTEM, STRUCTURED_NORMALIZE_PROMPT
+
+    tokens_str = _json.dumps(kv_pairs, ensure_ascii=False, indent=2)
+    prompt = STRUCTURED_NORMALIZE_PROMPT.format(doc_type=doc_type, ocr_tokens=tokens_str)
+
+    client = openai.OpenAI(api_key=api_key)
+    resp = client.chat.completions.create(
+        model="gpt-4o",
+        response_format={"type": "json_object"},
+        messages=[
+            {"role": "system", "content": STRUCTURED_NORMALIZE_SYSTEM},
+            {"role": "user",   "content": prompt},
+        ],
+        max_tokens=1000,
+    )
+    data = _json.loads(resp.choices[0].message.content or "{}")
+    return _parse_normalize_response(data)
+
+
+def _rule_normalize(kv_pairs: dict[str, Any], *, doc_type: str) -> list[ExtractedMetric]:
+    """LLM 없이 규칙 기반으로 KV → ExtractedMetric[] 변환."""
+    metrics = []
+    for label, info in kv_pairs.items():
+        metrics.append(ExtractedMetric(
+            metric_hint=label,
+            value=float(info.get("value", 0)),
+            unit=str(info.get("unit", "")),
+            period="",
+            kesg_code_guess=info.get("kesg_code"),
+            bbox=info.get("bbox"),
+            confidence=0.80,
+        ))
+    return metrics
+
+
+def _parse_normalize_response(data: dict[str, Any]) -> list[ExtractedMetric]:
+    """LLM normalize 응답 JSON → ExtractedMetric[]."""
+    metrics = []
+    for m in data.get("metrics", []):
+        try:
+            metrics.append(ExtractedMetric(
+                metric_hint=str(m.get("metric_hint", "")),
+                value=float(m.get("value", 0)),
+                unit=str(m.get("unit", "")),
+                period=str(m.get("period", "")),
+                kesg_code_guess=m.get("kesg_code") or None,
+                bbox=m.get("bbox"),
+                confidence=float(m.get("confidence", 0.85)),
+            ))
+        except (TypeError, ValueError):
+            continue
+    return metrics
+
+
+def _mock_structured(file_path: str, doc_type: str) -> OcrExtraction:
+    """CLOVA OCR 키 없을 때 데모용 Mock 반환."""
+    source_file = Path(file_path).name
+
+    _MOCK_METRICS: dict[str, list[ExtractedMetric]] = {
+        "kepco_bill": [
+            ExtractedMetric(
+                metric_hint="사용전력량", value=128400.0, unit="kWh",
+                period="2025-12", kesg_code_guess="E-4-1",
+                bbox=[120, 340, 280, 360], confidence=0.97,
+            ),
+            ExtractedMetric(
+                metric_hint="청구금액", value=18540000.0, unit="원",
+                period="2025-12", kesg_code_guess=None,
+                confidence=0.95,
+            ),
+        ],
+        "gas_bill": [
+            ExtractedMetric(
+                metric_hint="가스사용량", value=4820.0, unit="MJ",
+                period="2025-12", kesg_code_guess="E-4-1",
+                confidence=0.93,
+            ),
+        ],
+        "waste_ledger": [
+            ExtractedMetric(
+                metric_hint="폐기물처리량", value=12.5, unit="ton",
+                period="2025-12", kesg_code_guess="E-6-1",
+                confidence=0.90,
+            ),
+        ],
+    }
+
+    metrics = _MOCK_METRICS.get(doc_type, [
+        ExtractedMetric(
+            metric_hint=f"[MOCK] {doc_type} 수치", value=0.0, unit="",
+            period="", confidence=0.5,
+        )
+    ])
+    return OcrExtraction(
+        source_file=source_file,
+        channel=DocChannel.STRUCTURED,
+        doc_type=doc_type,
+        metrics=metrics,
+        raw_text=f"[MOCK] {doc_type} 데모 데이터",
+        router_meta={"mock": True},
     )
 
 
@@ -213,24 +450,214 @@ def extract_structured(file_path: str, *, doc_type: str) -> OcrExtraction:
 # ====================================================================
 
 def extract_unstructured(file_path: str, *, doc_type: str) -> OcrExtraction:
-    """비정형 문서 채널.
+    """비정형 문서 채널 — VLM(GPT-4o Vision) 기반 정량·정성 동시 추출.
 
-    구현 단계:
-      1) 페이지 이미지화 — pdf2image / PyMuPDF로 페이지를 PNG로 렌더.
-      2) VLM 호출 — 각 페이지를 base64로 GPT-4o Vision 등에 전달,
-         prompts.VLM_EXTRACT_PROMPT로 (a)정량 수치 (b)정성 조항을 JSON으로 동시 추출.
-      3) 스키마 매핑 — 반환 JSON → ExtractedMetric[] + ExtractedClause[].
-         회의록·매뉴얼은 대부분 clauses 중심, 표가 섞여 있으면 metrics도 채움.
-
-    Returns: OcrExtraction(channel=UNSTRUCTURED, metrics=[...], clauses=[...])
+    파이프라인:
+      1) PDF → 페이지 이미지(PNG) — pymupdf 우선, 없으면 pdf2image 폴백
+      2) 각 페이지를 base64 인코딩 후 GPT-4o Vision에 전달
+      3) VLM_EXTRACT_PROMPT로 metrics(정량) + clauses(정성) JSON 동시 추출
+      4) 스키마 매핑 → ExtractedMetric[] + ExtractedClause[]
+      API 키 없으면 Mock 폴백(데모 모드).
     """
-    raise NotImplementedError(
-        "비정형 채널 구현 TODO:\n"
-        "  - images = render_pages(file_path)  # PNG per page\n"
-        "  - resp = llm.complete(system=VLM_SYSTEM, user=VLM_EXTRACT_PROMPT, images=images, json_mode=True)\n"
-        "  - data = json.loads(resp.content)\n"
-        "  - metrics, clauses = _map_vlm_json(data)\n"
-        "  - return OcrExtraction(source_file, UNSTRUCTURED, doc_type, metrics, clauses, raw_text=...)"
+    source_file = Path(file_path).name
+    images_b64 = _render_pages_b64(file_path, max_pages=10)
+    raw_texts: list[str] = []
+    all_metrics: list[ExtractedMetric] = []
+    all_clauses: list[ExtractedClause] = []
+
+    api_key = _get_openai_key()
+    if not api_key:
+        # API 키 없음 → Mock 폴백
+        return _mock_unstructured(file_path, doc_type)
+
+    from .prompts import VLM_EXTRACT_SYSTEM, VLM_EXTRACT_PROMPT
+    import openai, json as _json
+
+    client = openai.OpenAI(api_key=api_key)
+    prompt_text = VLM_EXTRACT_PROMPT.format(doc_type=doc_type)
+
+    for page_no, img_b64 in enumerate(images_b64, start=1):
+        try:
+            resp = client.chat.completions.create(
+                model="gpt-4o",
+                response_format={"type": "json_object"},
+                messages=[
+                    {"role": "system", "content": VLM_EXTRACT_SYSTEM},
+                    {
+                        "role": "user",
+                        "content": [
+                            {
+                                "type": "image_url",
+                                "image_url": {"url": f"data:image/png;base64,{img_b64}"},
+                            },
+                            {"type": "text", "text": prompt_text},
+                        ],
+                    },
+                ],
+                max_tokens=2000,
+            )
+            data = _json.loads(resp.choices[0].message.content or "{}")
+        except Exception as e:
+            data = {}
+            raw_texts.append(f"[page {page_no} error: {e}]")
+
+        metrics, clauses = _map_vlm_json(data, page_no=page_no)
+        all_metrics.extend(metrics)
+        all_clauses.extend(clauses)
+
+    return OcrExtraction(
+        source_file=source_file,
+        channel=DocChannel.UNSTRUCTURED,
+        doc_type=doc_type,
+        metrics=all_metrics,
+        clauses=all_clauses,
+        raw_text="\n".join(raw_texts),
+    )
+
+
+# ---- VLM 내부 헬퍼 -----------------------------------------------------------
+
+def _render_pages_b64(file_path: str, max_pages: int = 10) -> list[str]:
+    """PDF/이미지 파일 → base64 인코딩 PNG 리스트.
+
+    pymupdf(fitz) 우선, 없으면 pdf2image 폴백, 둘 다 없으면 빈 리스트.
+    """
+    import base64, io
+    p = Path(file_path)
+    if not p.exists():
+        return []
+
+    # 이미지 파일 직접 처리
+    if p.suffix.lower() in (".png", ".jpg", ".jpeg", ".webp"):
+        raw = p.read_bytes()
+        return [base64.b64encode(raw).decode()]
+
+    # PDF → 페이지 이미지
+    try:
+        import fitz  # pymupdf
+        doc = fitz.open(str(p))
+        results = []
+        for i, page in enumerate(doc):
+            if i >= max_pages:
+                break
+            mat = fitz.Matrix(1.5, 1.5)   # 1.5× 해상도 (VLM 인식 품질 ↑)
+            pix = page.get_pixmap(matrix=mat)
+            img_bytes = pix.tobytes("png")
+            results.append(base64.b64encode(img_bytes).decode())
+        return results
+    except ImportError:
+        pass
+
+    try:
+        from pdf2image import convert_from_path
+        import io
+        pages = convert_from_path(str(p), dpi=150, first_page=1, last_page=max_pages)
+        results = []
+        for img in pages:
+            buf = io.BytesIO()
+            img.save(buf, format="PNG")
+            results.append(base64.b64encode(buf.getvalue()).decode())
+        return results
+    except ImportError:
+        return []
+
+
+def _map_vlm_json(data: dict[str, Any], *, page_no: int = 1) -> tuple[list[ExtractedMetric], list[ExtractedClause]]:
+    """VLM 응답 JSON → ExtractedMetric[] + ExtractedClause[]."""
+    metrics: list[ExtractedMetric] = []
+    clauses: list[ExtractedClause] = []
+
+    for m in data.get("metrics", []):
+        try:
+            metrics.append(ExtractedMetric(
+                metric_hint=str(m.get("metric_hint", "")),
+                value=float(m.get("value", 0)),
+                unit=str(m.get("unit", "")),
+                period=str(m.get("period", "")),
+                kesg_code_guess=m.get("kesg_code") or None,
+                confidence=0.75,   # VLM 추출 기본 신뢰도
+            ))
+        except (TypeError, ValueError):
+            continue
+
+    for c in data.get("clauses", []):
+        try:
+            clauses.append(ExtractedClause(
+                section=str(c.get("section", "")),
+                text=str(c.get("text", "")),
+                kesg_code_guess=c.get("kesg_code") or None,
+                page=int(c.get("page", page_no)),
+            ))
+        except (TypeError, ValueError):
+            continue
+
+    return metrics, clauses
+
+
+def _mock_unstructured(file_path: str, doc_type: str) -> OcrExtraction:
+    """API 키 없을 때 데모용 Mock 반환."""
+    source_file = Path(file_path).name
+
+    _MOCK_BY_TYPE: dict[str, OcrExtraction] = {
+        "safety_minutes": OcrExtraction(
+            source_file=source_file,
+            channel=DocChannel.UNSTRUCTURED,
+            doc_type=doc_type,
+            metrics=[],
+            clauses=[
+                ExtractedClause(
+                    section="산업안전보건위원회 운영",
+                    text="제1조 본 위원회는 분기 1회 정기 개최한다. "
+                         "단, 중대 재해 발생 시 즉시 소집한다.",
+                    kesg_code_guess="S-3-1",
+                    page=1,
+                ),
+                ExtractedClause(
+                    section="위험성 평가",
+                    text="제2조 연 1회 이상 전 공정 위험성 평가를 실시한다.",
+                    kesg_code_guess="S-3-1",
+                    page=2,
+                ),
+            ],
+            raw_text="[MOCK] 안전보건위원회 회의록 데모 데이터",
+            router_meta={"mock": True},
+        ),
+        "policy_manual": OcrExtraction(
+            source_file=source_file,
+            channel=DocChannel.UNSTRUCTURED,
+            doc_type=doc_type,
+            metrics=[],
+            clauses=[
+                ExtractedClause(
+                    section="환경경영 방침",
+                    text="당사는 온실가스 배출 감축을 위해 [○○]% 절감 목표를 설정하고 "
+                         "매년 달성 현황을 공개한다.",
+                    kesg_code_guess="E-1-1",
+                    page=1,
+                ),
+            ],
+            raw_text="[MOCK] 사내 규정집 데모 데이터",
+            router_meta={"mock": True},
+        ),
+    }
+
+    return _MOCK_BY_TYPE.get(
+        doc_type,
+        OcrExtraction(
+            source_file=source_file,
+            channel=DocChannel.UNSTRUCTURED,
+            doc_type=doc_type,
+            clauses=[
+                ExtractedClause(
+                    section="[MOCK] 일반 조항",
+                    text=f"{doc_type} 문서의 데모 조항입니다.",
+                    kesg_code_guess=None,
+                    page=1,
+                )
+            ],
+            raw_text=f"[MOCK] {doc_type} 데모",
+            router_meta={"mock": True},
+        ),
     )
 
 
@@ -241,13 +668,25 @@ def extract_unstructured(file_path: str, *, doc_type: str) -> OcrExtraction:
 def _quick_preview(file_path: str, max_chars: int = 1500) -> str:
     """1페이지만 싸게 텍스트화 (라우팅 판단용).
 
-    구현: PDF면 PyMuPDF page[0].get_text(); 이미지면 경량 OCR(Tesseract --psm 6).
-    임베디드 텍스트가 있으면 OCR 없이 그대로 반환(스캔본만 OCR).
+    PDF: pymupdf page[0].get_text() — 임베디드 텍스트 우선(스캔본은 빈 문자열).
+    이미지: 파일명 힌트만 사용(OCR 비용 절약).
+    둘 다 실패 시 파일명 stem으로 폴백.
     """
     p = Path(file_path)
     if not p.exists():
         return ""
-    # TODO: 실제 프리뷰. 현재는 파일명만 신호로 사용.
+
+    if p.suffix.lower() == ".pdf":
+        try:
+            import fitz  # pymupdf
+            doc = fitz.open(str(p))
+            text = doc[0].get_text() if len(doc) > 0 else ""
+            if text.strip():
+                return text[:max_chars]
+        except ImportError:
+            pass
+
+    # 이미지 or pymupdf 미설치 → 파일명만 신호로 사용
     return p.stem
 
 
@@ -262,6 +701,88 @@ def _score_signatures(text: str, fname: str, table: dict[str, list[str]]) -> dic
     return out
 
 
-def _load_template(doc_type: str) -> Any:
-    """doc_type별 키-값 좌표 템플릿 로더 (정형 채널용). TODO."""
-    raise NotImplementedError(f"template for {doc_type}")
+def _get_openai_key() -> str | None:
+    """환경 변수 또는 v10 config에서 OpenAI API 키 조회."""
+    import os
+    key = os.getenv("OPENAI_API_KEY", "")
+    if key:
+        return key
+    try:
+        from esgenie.config import OPENAI_API_KEY  # type: ignore
+        return OPENAI_API_KEY or None
+    except Exception:
+        return None
+
+
+def _load_template(doc_type: str) -> dict[str, Any]:
+    """doc_type별 키-값 추출 템플릿 반환.
+
+    각 항목: {label_key: {keywords, unit, kesg_code}}
+    keywords — OCR 토큰에서 이 키워드가 발견되면 인접 숫자를 값으로 채택.
+    """
+    _TEMPLATES: dict[str, dict[str, Any]] = {
+        "kepco_bill": {
+            "사용전력량": {
+                "keywords": ["사용전력량", "사용량(kWh)", "당월사용량"],
+                "unit": "kWh",
+                "kesg_code": "E-4-1",
+            },
+            "최대수요전력": {
+                "keywords": ["최대수요전력", "최대전력"],
+                "unit": "kW",
+                "kesg_code": None,
+            },
+            "청구금액": {
+                "keywords": ["청구금액", "납부금액", "요금합계"],
+                "unit": "원",
+                "kesg_code": None,
+            },
+        },
+        "gas_bill": {
+            "가스사용량": {
+                "keywords": ["사용량", "가스사용량", "당월사용"],
+                "unit": "MJ",
+                "kesg_code": "E-4-1",
+            },
+            "열량": {
+                "keywords": ["열량", "발열량"],
+                "unit": "MJ",
+                "kesg_code": "E-4-1",
+            },
+        },
+        "water_bill": {
+            "사용량": {
+                "keywords": ["사용량", "급수량", "당월사용"],
+                "unit": "ton",
+                "kesg_code": "E-5-1",
+            },
+        },
+        "waste_ledger": {
+            "폐기물처리량": {
+                "keywords": ["처리량", "배출량", "폐기물량", "인계량"],
+                "unit": "ton",
+                "kesg_code": "E-6-1",
+            },
+            "지정폐기물": {
+                "keywords": ["지정폐기물"],
+                "unit": "ton",
+                "kesg_code": "E-6-1",
+            },
+            "재활용량": {
+                "keywords": ["재활용", "재생이용"],
+                "unit": "ton",
+                "kesg_code": "E-6-2",
+            },
+        },
+        "fuel_receipt": {
+            "주유량": {
+                "keywords": ["주유량", "급유량", "리터", "충전량"],
+                "unit": "L",
+                "kesg_code": "E-4-1",
+            },
+        },
+    }
+
+    if doc_type not in _TEMPLATES:
+        raise NotImplementedError(f"템플릿 미정의 doc_type: {doc_type}")
+    return _TEMPLATES[doc_type]
