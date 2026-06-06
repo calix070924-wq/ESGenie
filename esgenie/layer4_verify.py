@@ -252,6 +252,15 @@ def _compute_text_risk_vector(
         for i, (doc, _) in enumerate(gen.context.kesg_hits + gen.context.corp_hits)
     ]
 
+    # D3 VectorIndex를 한 번만 빌드하고 모든 문장에서 재사용
+    d3_index = None
+    if chunks:
+        from esgenie.embeddings import IndexedDoc, VectorIndex
+        d3_index = VectorIndex()
+        d3_index.build([
+            IndexedDoc(text=c["text"], meta={"id": c["id"]}) for c in chunks
+        ])
+
     best_rv: RiskVector | None = None
     for sent in sents:
         rv = detect_risk_vector(
@@ -259,6 +268,7 @@ def _compute_text_risk_vector(
             evidence_graph=evidence_graph,
             retrieved_chunks=chunks or None,
             industry_stats=industry_stats,
+            _d3_index=d3_index,
         )
         if best_rv is None or rv.risk_score > best_rv.risk_score:
             best_rv = rv

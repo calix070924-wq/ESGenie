@@ -296,6 +296,7 @@ def detect_risk_vector(
     evidence_graph: Any | None = None,   # EvidenceGraph | None
     retrieved_chunks: list[dict[str, Any]] | None = None,
     industry_stats: dict[str, Any] | None = None,
+    _d3_index: Any | None = None,        # 외부에서 미리 빌드된 VectorIndex (재사용용)
 ) -> RiskVector:
     """단일 문장에 대한 5축 위험 분해.
 
@@ -304,13 +305,14 @@ def detect_risk_vector(
         evidence_graph: L0 EvidenceGraph (없으면 D1·D5 스킵)
         retrieved_chunks: L2 RAG 청크 목록 [{"id":..., "text":...}]
         industry_stats:  업종 벤치마크 dict (benchmarks.json 항목)
+        _d3_index: 미리 빌드된 VectorIndex — 제공 시 D3에서 재빌드 생략
 
     Returns:
         RiskVector (D1~D5 + aggregate)
     """
     d1 = _score_d1_numeric(claim_sentence, evidence_graph)
     d2 = _score_d2_modifier(claim_sentence)
-    d3 = _score_d3_semantic(claim_sentence, retrieved_chunks)
+    d3 = _score_d3_semantic(claim_sentence, retrieved_chunks, prebuilt_index=_d3_index)
     d4 = _score_d4_industry(claim_sentence, industry_stats)
     d5 = _score_d5_timeseries(claim_sentence, evidence_graph)
 
@@ -380,15 +382,20 @@ def _score_d2_modifier(sentence: str) -> AxisScore:
 def _score_d3_semantic(
     sentence: str,
     retrieved_chunks: list[dict[str, Any]] | None,
+    prebuilt_index: Any | None = None,
 ) -> AxisScore:
     """SBERT cos-sim(claim, evidence chunk) 역수."""
-    if not retrieved_chunks:
+    if not retrieved_chunks and prebuilt_index is None:
         return AxisScore(score=0.5, evidence=[], detail="retrieved_chunks 없음 — 중립값")
 
     from .embeddings import IndexedDoc, VectorIndex
-    idx = VectorIndex()
-    docs = [IndexedDoc(text=c.get("text", ""), meta={"id": c.get("id", "")}) for c in retrieved_chunks]
-    idx.build(docs)
+    if prebuilt_index is not None:
+        idx = prebuilt_index
+        docs = idx._docs
+    else:
+        idx = VectorIndex()
+        docs = [IndexedDoc(text=c.get("text", ""), meta={"id": c.get("id", "")}) for c in retrieved_chunks]
+        idx.build(docs)
     hits = idx.search(sentence, k=min(3, len(docs)))
     if not hits:
         return AxisScore(score=1.0, evidence=[], detail="유사 청크 없음")

@@ -1,0 +1,10 @@
+# ESGenie v15 scaffold
+streamlit>=1.30
+openpyxl>=3.1
+# --- OCR / VLM (실제 연동 시) ---
+# pymupdf>=1.23            # PDF 텍스트/이미지 렌더 (_quick_preview, render_pages)
+# pdf2image>=1.17          # 페이지 이미지화 (VLM 입력)
+# openai>=1.30             # GPT-4o Vision (VLM 채널), LLM 후처리
+# (정형 OCR) Naver CLOVA OCR API 또는 paddleocr>=2.7 / pytesseract>=0.3
+# --- 기존 v10 의존 (상위 esgenie 패키지) ---
+# faiss-cpu, sentence-transformers, scikit-learn

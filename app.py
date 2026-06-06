@@ -8,6 +8,7 @@ Demo 모드 토글로 샘플 3사를 즉시 시연할 수 있습니다.
 """
 from __future__ import annotations
 
+import html
 import json
 from pathlib import Path
 from typing import Any
@@ -29,6 +30,325 @@ from esgenie.pipeline import _load_industry_stats
 
 st.set_page_config(page_title="ESGenie v10 — K-ESG 공시 AI", layout="wide", page_icon="🌱")
 
+# ---- 글로벌 스타일 ----------------------------------------------------------
+
+st.markdown(
+    """
+    <style>
+    @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700;900&display=swap');
+    html, body,
+    [data-testid="stAppViewContainer"],
+    [data-testid="stSidebar"] {
+        font-family: 'Noto Sans KR', 'Helvetica Neue', sans-serif;
+    }
+    [data-testid="stAppViewContainer"] [class*="material-"],
+    [data-testid="stSidebar"] [class*="material-"],
+    [data-testid="stAppViewContainer"] [class*="Material"],
+    [data-testid="stSidebar"] [class*="Material"] {
+        font-family: 'Material Symbols Rounded', 'Material Icons', sans-serif !important;
+    }
+    section[data-testid="stSidebar"] {
+        background-color: #f0f7f0;
+    }
+    section[data-testid="stSidebar"],
+    section[data-testid="stSidebar"] p,
+    section[data-testid="stSidebar"] span,
+    section[data-testid="stSidebar"] label,
+    section[data-testid="stSidebar"] h1,
+    section[data-testid="stSidebar"] h2,
+    section[data-testid="stSidebar"] h3,
+    section[data-testid="stSidebar"] h4,
+    section[data-testid="stSidebar"] li,
+    section[data-testid="stSidebar"] small,
+    section[data-testid="stSidebar"] [data-testid="stMarkdownContainer"],
+    section[data-testid="stSidebar"] [data-testid="stMarkdownContainer"] *,
+    section[data-testid="stSidebar"] [data-testid="stCaptionContainer"],
+    section[data-testid="stSidebar"] [data-testid="stWidgetLabel"],
+    section[data-testid="stSidebar"] [data-testid="stWidgetLabel"] *,
+    section[data-testid="stSidebar"] details summary,
+    section[data-testid="stSidebar"] details summary * {
+        color: #1b3a1f !important;
+    }
+    section[data-testid="stSidebar"] [data-baseweb="select"] > div,
+    section[data-testid="stSidebar"] [data-baseweb="input"] > div,
+    section[data-testid="stSidebar"] input,
+    section[data-testid="stSidebar"] textarea {
+        background-color: #ffffff !important;
+        border: 1px solid rgba(46, 125, 50, 0.30) !important;
+        border-radius: 8px !important;
+    }
+    section[data-testid="stSidebar"] [data-baseweb="select"] > div:focus-within,
+    section[data-testid="stSidebar"] [data-baseweb="input"] > div:focus-within {
+        border-color: #4caf50 !important;
+        box-shadow: 0 0 0 2px rgba(76, 175, 80, 0.18) !important;
+    }
+    section[data-testid="stSidebar"] [data-baseweb="select"] *,
+    section[data-testid="stSidebar"] input,
+    section[data-testid="stSidebar"] textarea,
+    section[data-testid="stSidebar"] [role="combobox"] {
+        color: #1b3a1f !important;
+    }
+    [data-baseweb="popover"] [data-baseweb="menu"] {
+        background-color: #ffffff !important;
+        border: 1px solid rgba(46, 125, 50, 0.20) !important;
+    }
+    [data-baseweb="popover"] [data-baseweb="menu"] li,
+    [data-baseweb="popover"] [data-baseweb="menu"] li * {
+        color: #1b3a1f !important;
+    }
+    [data-baseweb="popover"] [data-baseweb="menu"] li[aria-selected="true"],
+    [data-baseweb="popover"] [data-baseweb="menu"] li:hover {
+        background-color: #f0f7f0 !important;
+    }
+    section[data-testid="stSidebar"] hr {
+        border-color: rgba(46, 125, 50, 0.25) !important;
+    }
+    section[data-testid="stSidebar"] button[kind="primary"],
+    section[data-testid="stSidebar"] button[kind="primary"] * {
+        color: #ffffff !important;
+    }
+    section[data-testid="stSidebar"] button[kind="primary"] {
+        padding: 14px 24px !important;
+        font-size: 18px !important;
+        font-weight: 700 !important;
+        height: auto !important;
+        letter-spacing: 0.5px;
+        background-color: #4caf50 !important;
+        border-color: #2e7d32 !important;
+        box-shadow: 0 2px 6px rgba(46, 125, 50, 0.35);
+    }
+    section[data-testid="stSidebar"] button[kind="primary"]:hover {
+        background-color: #2e7d32 !important;
+        border-color: #1b5e20 !important;
+    }
+    [data-testid="stVerticalBlockBorderWrapper"] {
+        border-radius: 12px !important;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+        transition: box-shadow 0.2s ease;
+    }
+    [data-testid="stVerticalBlockBorderWrapper"]:hover {
+        box-shadow: 0 4px 14px rgba(0, 0, 0, 0.12);
+    }
+    .esg-info-card {
+        background: #f9f9f9;
+        border-radius: 12px;
+        padding: 24px 20px;
+        border: 1px solid #e8e8e8;
+        box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
+        transition: all 0.25s ease;
+        min-height: 170px;
+        margin-bottom: 12px;
+    }
+    .esg-info-card:hover {
+        background: #f0f7f0;
+        border-color: #4caf50;
+        transform: translateY(-3px);
+        box-shadow: 0 6px 18px rgba(76, 175, 80, 0.18);
+    }
+    .esg-info-icon {
+        font-size: 44px;
+        line-height: 1;
+        margin-bottom: 10px;
+    }
+    .esg-info-title {
+        font-size: 17px;
+        font-weight: 700;
+        color: #1b3a1f;
+        margin-bottom: 8px;
+    }
+    .esg-info-desc {
+        font-size: 14px;
+        color: #555;
+        line-height: 1.55;
+    }
+    .esg-metric-card {
+        background: #ffffff;
+        border: 2px solid #4caf50;
+        border-radius: 12px;
+        padding: 18px 16px;
+        height: 100%;
+        box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
+        transition: box-shadow 0.2s ease;
+    }
+    .esg-metric-card:hover {
+        box-shadow: 0 4px 14px rgba(76, 175, 80, 0.18);
+    }
+    .esg-metric-label {
+        font-size: 13px;
+        color: #888;
+        font-weight: 500;
+        margin-bottom: 6px;
+        letter-spacing: 0.2px;
+    }
+    .esg-metric-value {
+        font-size: 30px;
+        font-weight: 700;
+        color: #1b3a1f;
+        line-height: 1.1;
+    }
+    .esg-metric-delta {
+        font-size: 13px;
+        margin-top: 8px;
+        font-weight: 600;
+    }
+    .esg-final-quote {
+        background: #f7fbf7;
+        border-left: 4px solid #4caf50;
+        padding: 18px 22px;
+        border-radius: 4px;
+        margin-top: 8px;
+        color: #1b3a1f;
+        line-height: 1.7;
+        font-style: italic;
+        white-space: pre-wrap;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+    }
+    .esg-final-quote::before {
+        content: "\\201C";
+        display: block;
+        font-size: 32px;
+        color: #4caf50;
+        line-height: 0.6;
+        font-style: normal;
+        margin-bottom: 6px;
+    }
+    .esg-report-card {
+        background: #ffffff;
+        border: 1px solid #e5e7eb;
+        border-radius: 12px;
+        padding: 26px 28px;
+        font-size: 15px;
+        line-height: 1.8;
+        color: #1f2937;
+        word-break: keep-all;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+    }
+    .esg-report-card.final {
+        border-left: 3px solid #4caf50;
+    }
+    .esg-report-card p,
+    .esg-report-card li,
+    .esg-report-card td,
+    .esg-report-card span:not(.esg-report-tag),
+    .esg-report-card div:not(.esg-report-tag),
+    .esg-report-card strong,
+    .esg-report-card em,
+    .esg-report-card blockquote {
+        color: #1f2937 !important;
+        font-style: normal !important;
+    }
+    .esg-report-card h1,
+    .esg-report-card h2,
+    .esg-report-card h3,
+    .esg-report-card h4,
+    .esg-report-card h5,
+    .esg-report-card h6 {
+        color: #1b3a1f !important;
+        font-style: normal !important;
+        font-weight: 700 !important;
+        margin-top: 18px !important;
+        margin-bottom: 10px !important;
+        padding-bottom: 6px !important;
+        border-bottom: 1px solid #e8f5e9 !important;
+    }
+    .esg-report-card h1 { font-size: 22px !important; }
+    .esg-report-card h2 { font-size: 19px !important; }
+    .esg-report-card h3 { font-size: 17px !important; }
+    .esg-report-card h4 { font-size: 15px !important; }
+    .esg-report-card h1:first-child,
+    .esg-report-card h2:first-child,
+    .esg-report-card h3:first-child,
+    .esg-report-card h4:first-child,
+    .esg-report-card > *:first-child + h1,
+    .esg-report-card > *:first-child + h2,
+    .esg-report-card > *:first-child + h3,
+    .esg-report-card > *:first-child + h4 {
+        margin-top: 4px !important;
+    }
+    .esg-report-card p {
+        line-height: 1.8 !important;
+        margin: 10px 0 !important;
+    }
+    .esg-report-card ul,
+    .esg-report-card ol {
+        margin: 10px 0 !important;
+        padding-left: 24px !important;
+    }
+    .esg-report-card li {
+        line-height: 1.7 !important;
+        margin: 4px 0 !important;
+    }
+    .esg-report-card strong {
+        color: #1b3a1f !important;
+        font-weight: 700 !important;
+    }
+    .esg-report-card code {
+        background: #f3f4f6 !important;
+        color: #1b3a1f !important;
+        padding: 2px 6px;
+        border-radius: 4px;
+        font-size: 13px;
+    }
+    .esg-report-tag {
+        display: inline-block;
+        font-size: 11px;
+        font-weight: 700;
+        letter-spacing: 0.6px;
+        padding: 3px 10px;
+        border-radius: 999px;
+        margin-bottom: 14px;
+        text-transform: uppercase;
+    }
+    .esg-report-tag.draft {
+        color: #6b7280 !important;
+        background: #f3f4f6 !important;
+    }
+    .esg-report-tag.final {
+        color: #2e7d32 !important;
+        background: #e8f5e9 !important;
+    }
+    </style>
+    """,
+    unsafe_allow_html=True,
+)
+
+GRADIENT_BANNER = (
+    '<div style="height: 6px; '
+    'background: linear-gradient(90deg, #2e7d32, #4caf50, #a5d6a7); '
+    'border-radius: 3px; margin: 6px 0 20px 0;"></div>'
+)
+
+
+def _info_card(icon: str, title: str, desc: str) -> str:
+    return (
+        '<div class="esg-info-card">'
+        f'<div class="esg-info-icon">{icon}</div>'
+        f'<div class="esg-info-title">{html.escape(title)}</div>'
+        f'<div class="esg-info-desc">{html.escape(desc)}</div>'
+        '</div>'
+    )
+
+
+def _metric_card(label: str, value: str, delta: str, delta_color: str = "#666") -> str:
+    return (
+        '<div class="esg-metric-card">'
+        f'<div class="esg-metric-label">{html.escape(label)}</div>'
+        f'<div class="esg-metric-value">{html.escape(value)}</div>'
+        f'<div class="esg-metric-delta" style="color: {delta_color};">{html.escape(delta)}</div>'
+        '</div>'
+    )
+
+
+def _report_card(text: str, kind: str = "draft", tag_label: str | None = None) -> str:
+    cls = "esg-report-card final" if kind == "final" else "esg-report-card"
+    tag_html = ""
+    if tag_label:
+        tag_cls = "esg-report-tag final" if kind == "final" else "esg-report-tag draft"
+        tag_html = f'<span class="{tag_cls}">{html.escape(tag_label)}</span>'
+    # 본문은 escape 하지 않음 → Streamlit이 마크다운(### 제목, **굵게**, - 리스트)을 정상 렌더.
+    # HTML 블록과 마크다운 본문이 분리되도록 빈 줄로 감싼다.
+    return f'<div class="{cls}">{tag_html}\n\n{text}\n\n</div>'
+
 
 # ---- 캐시 리소스 ------------------------------------------------------------
 
@@ -40,8 +360,23 @@ def get_rag() -> HybridRAG:
 # ---- 사이드바 ----------------------------------------------------------------
 
 with st.sidebar:
-    st.title("🌱 ESGenie v10")
-    st.caption("6-Layer K-ESG 공시 보고서 AI")
+    st.markdown(
+        """
+        <div style="background: linear-gradient(135deg, #2e7d32, #4caf50);
+                    padding: 22px 16px; border-radius: 12px;
+                    text-align: center; margin-bottom: 18px;
+                    box-shadow: 0 2px 10px rgba(46, 125, 50, 0.25);">
+            <div style="font-size: 34px; line-height: 1; color: #ffffff !important;">🌱</div>
+            <div style="color: #ffffff !important; font-size: 22px; font-weight: 700; margin-top: 6px;">
+                ESGenie v10
+            </div>
+            <div style="color: rgba(255, 255, 255, 0.95) !important; font-size: 12px; margin-top: 4px;">
+                6-Layer K-ESG 공시 보고서 AI
+            </div>
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
 
     st.divider()
 
@@ -68,8 +403,8 @@ with st.sidebar:
         max_iter  = st.slider("최대 재생성 반복", 1, 5, 3)
         demo_greenwash = st.checkbox(
             "그린워싱 시연 모드",
-            value=False,
-            help="초안을 의도적으로 과장 생성해 탐지 효과를 보여줍니다.",
+            value=True,
+            help="초안에서 의도적 과장을 생성 → L3/L4가 탐지·수정하는 과정을 시연합니다",
         )
 
     st.divider()
@@ -138,29 +473,41 @@ tab_home, tab_step1, tab_step2, tab_step3, tab_audit = st.tabs([
 with tab_home:
     st.markdown("## 🌱 ESGenie v10")
     st.markdown("##### 6-Layer K-ESG 보고서 자동 작성 · 그린워싱 탐지 · 감사 추적")
-    st.divider()
+    st.markdown(GRADIENT_BANNER, unsafe_allow_html=True)
 
     cols = st.columns(3)
-    with cols[0]:
-        st.markdown("### L0 · Evidence Graph")
-        st.markdown("DART 수치를 사실 노드로 구조화하고 시계열 엣지로 연결합니다.")
-    with cols[1]:
-        st.markdown("### L1–L2 · 추출 & RAG")
-        st.markdown("K-ESG 61항목 추출 + Hybrid RAG 보고서 초안 생성.")
-    with cols[2]:
-        st.markdown("### L3–L4 · 5축 탐지 & 검증")
-        st.markdown("D1~D5 위험 분해 + 5축 제약 주입 반복 정제.")
+    cols[0].markdown(
+        _info_card("🔗", "L0 · Evidence Graph",
+                   "DART 수치를 사실 노드로 구조화하고 시계열 엣지로 연결합니다."),
+        unsafe_allow_html=True,
+    )
+    cols[1].markdown(
+        _info_card("🔍", "L1–L2 · 추출 & RAG",
+                   "K-ESG 61항목 추출 + Hybrid RAG 보고서 초안 생성."),
+        unsafe_allow_html=True,
+    )
+    cols[2].markdown(
+        _info_card("🛡️", "L3–L4 · 5축 탐지 & 검증",
+                   "D1~D5 위험 분해 + 5축 제약 주입 반복 정제."),
+        unsafe_allow_html=True,
+    )
 
     cols2 = st.columns(3)
-    with cols2[0]:
-        st.markdown("### L5 · Audit Trace")
-        st.markdown("문장별 증거·위험·재생성 이력을 audit_trace.json으로 출력.")
-    with cols2[1]:
-        st.markdown("### HITL 패널")
-        st.markdown("위험 문장에 [승인/수정/무시] 인터랙션 지원.")
-    with cols2[2]:
-        st.markdown("### Demo 모드")
-        st.markdown("API 키 없이 샘플 3사로 즉시 시연 가능.")
+    cols2[0].markdown(
+        _info_card("📋", "L5 · Audit Trace",
+                   "문장별 증거·위험·재생성 이력을 audit_trace.json으로 출력."),
+        unsafe_allow_html=True,
+    )
+    cols2[1].markdown(
+        _info_card("👤", "HITL 패널",
+                   "위험 문장에 [승인/수정/무시] 인터랙션 지원."),
+        unsafe_allow_html=True,
+    )
+    cols2[2].markdown(
+        _info_card("🎭", "Demo 모드",
+                   "API 키 없이 샘플 3사로 즉시 시연 가능."),
+        unsafe_allow_html=True,
+    )
 
     st.divider()
 
@@ -175,25 +522,48 @@ with tab_home:
         area_label = {"E": "🌿 환경", "S": "🤝 사회", "G": "🏛 지배구조"}[result["area"]]
 
         st.markdown(f"### {rp.corp_name} · {area_label} 분석 결과")
+
+        band_color_map = {
+            "LOW": "#4caf50", "MEDIUM": "#fbc02d",
+            "HIGH": "#f57c00", "CRITICAL": "#d32f2f",
+        }
+        risk_color = band_color_map.get(v.final_band, "#666")
+        if v.converged:
+            iter_text, iter_color = "수렴 ✅", "#4caf50"
+        elif v.hitl_required:
+            iter_text, iter_color = "HITL ⚠️", "#f57c00"
+        else:
+            iter_text, iter_color = "미수렴", "#d32f2f"
+
         m1, m2, m3, m4 = st.columns(4)
-        m1.metric("K-ESG 커버리지", f"{ex.coverage_pct:.1f}%", f"{len(ex.mapped)}/{len(ALL_ITEMS)} 항목")
-        m2.metric("Evidence 노드", f"{len(eg.nodes)}개", f"엣지 {len(eg.edges)}개")
-        m3.metric(
-            "그린워싱 위험도", f"{v.final_score:.1f}",
-            v.final_band, delta_color="inverse",
-        )
-        m4.metric(
-            "검증 반복", f"{v.iterations_used}회",
-            "수렴 ✅" if v.converged else ("HITL ⚠️" if v.hitl_required else "미수렴"),
-        )
-        st.success(v.final_text[:300] + ("..." if len(v.final_text) > 300 else ""))
+        with m1:
+            st.metric("K-ESG 커버리지", f"{ex.coverage_pct:.1f}%",
+                      f"{len(ex.mapped)}/{len(ALL_ITEMS)} 항목", delta_color="off")
+        with m2:
+            st.metric("Evidence 노드", f"{len(eg.nodes)}개",
+                      f"엣지 {len(eg.edges)}개", delta_color="off")
+        with m3:
+            band_emoji = {"LOW": "🟢", "MEDIUM": "🟡", "HIGH": "🟠", "CRITICAL": "🔴"}.get(v.final_band, "")
+            st.metric("그린워싱 위험도", f"{v.final_score:.1f}",
+                      f"{band_emoji} {v.final_band}", delta_color="off")
+        with m4:
+            st.metric("검증 반복", f"{v.iterations_used}회",
+                      iter_text, delta_color="off")
+
+        import re as _re
+        _preview_plain = _re.sub(r"^#{1,6}\s*", "", v.final_text[:300], flags=_re.MULTILINE).strip()
+        if len(v.final_text) > 300:
+            _preview_plain += "..."
+        with st.container(border=True):
+            st.caption("📄 보고서 미리보기")
+            st.write(_preview_plain)
 
 
 # ========== Step 1 · 공시 진단 ===============================================
 
 with tab_step1:
     st.markdown("## 📊 Step 1 · 공시 진단")
-    st.divider()
+    st.markdown(GRADIENT_BANNER, unsafe_allow_html=True)
 
     if result is None:
         st.info("사이드바에서 분석을 시작하세요.")
@@ -259,12 +629,14 @@ with tab_step1:
             ])
             st.dataframe(miss_df, hide_index=True, use_container_width=True)
 
+        st.caption("→ Step 2에서 이 데이터로 보고서 초안을 생성합니다")
+
 
 # ========== Step 2 · 보고서 초안 ============================================
 
 with tab_step2:
     st.markdown("## 📝 Step 2 · 보고서 초안 생성")
-    st.divider()
+    st.markdown(GRADIENT_BANNER, unsafe_allow_html=True)
 
     if result is None:
         st.info("사이드바에서 분석을 시작하세요.")
@@ -273,10 +645,50 @@ with tab_step2:
         first = v.steps[0]
         area_label = {"E": "🌿 환경", "S": "🤝 사회", "G": "🏛 지배구조"}[result["area"]]
 
+        st.info(
+            "💡 L0 Evidence Graph에서 추출한 수치 팩트를 기반으로 L2 RAG가 초안을 생성합니다. "
+            "그린워싱 시연 모드에서는 의도적으로 과장된 초안이 생성되어 L3/L4 탐지 효과를 확인할 수 있습니다."
+        )
         st.markdown(f"#### {area_label} 영역 초안")
-        st.info(first.generation.text)
+        st.markdown(
+            _report_card(first.generation.text, kind="draft", tag_label="DRAFT"),
+            unsafe_allow_html=True,
+        )
         if first.generation.used_mock_llm:
-            st.warning("현재 Mock LLM으로 생성되었습니다.")
+            st.caption("⚠️ 현재 Mock LLM으로 생성되었습니다.")
+
+        with st.expander("📌 이 초안 생성에 사용된 레이어 입력값"):
+            eg = result["evidence_graph"]
+            ex = result["extraction"]
+            ctx = first.generation.context
+            area = result["area"]
+
+            lc1, lc2, lc3 = st.columns(3)
+
+            with lc1:
+                st.markdown("**L0 Evidence 노드 (상위 3개)**")
+                area_nodes = [
+                    n for n in eg.nodes.values()
+                    if n.metric.startswith(area + "-")
+                ][:3]
+                if area_nodes:
+                    for n in area_nodes:
+                        st.caption(f"`{n.metric}` {n.value} {n.unit or ''}")
+                else:
+                    st.caption("없음")
+
+            with lc2:
+                st.markdown("**L1 K-ESG 매핑 항목 수**")
+                area_stats = ex.by_area.get(area, {})
+                present = area_stats.get("present", 0)
+                total   = area_stats.get("total", 0)
+                st.caption(f"{present} / {total} 항목 공시")
+
+            with lc3:
+                st.markdown("**L2 RAG 검색 채널**")
+                st.caption(f"K-ESG 가이드라인: {len(ctx.kesg_hits)}건")
+                st.caption(f"업종 벤치마크: {len(ctx.industry_hits)}건")
+                st.caption(f"자사 DART 원문: {len(ctx.corp_hits)}건")
 
         with st.expander("📚 참조 근거 보기"):
             ctx = first.generation.context
@@ -372,7 +784,7 @@ def _render_legacy_radar(components: dict, key: str) -> None:
 
 with tab_step3:
     st.markdown("## ✅ Step 3 · 검증 & 최종본")
-    st.divider()
+    st.markdown(GRADIENT_BANNER, unsafe_allow_html=True)
 
     if result is None:
         st.info("사이드바에서 분석을 시작하세요.")
@@ -380,8 +792,22 @@ with tab_step3:
         v = result["verify"]
         band_color = {"LOW": "🟢", "MEDIUM": "🟡", "HIGH": "🟠", "CRITICAL": "🔴"}
 
+        # 초안 → 최종본 위험도 delta 박스
+        if len(v.steps) > 1:
+            before = v.steps[0].detection.risk_score
+            after  = v.final.detection.risk_score
+            if after < before:
+                st.success(f"✅ L4 재생성으로 위험도 {before:.1f} → {after:.1f} 감소")
+            else:
+                st.info("ℹ️ 초안이 이미 기준치 이하 (그린워싱 시연 모드를 켜면 개선 과정을 확인할 수 있습니다)")
+        else:
+            st.info("ℹ️ 초안이 이미 기준치 이하 (그린워싱 시연 모드를 켜면 개선 과정을 확인할 수 있습니다)")
+
         st.markdown("### 최종 보고서")
-        st.success(v.final_text)
+        st.markdown(
+            _report_card(v.final_text, kind="final", tag_label="FINAL"),
+            unsafe_allow_html=True,
+        )
         st.caption(
             f"{band_color[v.final_band]} 최종 위험도 **{v.final_score:.1f}** ({v.final_band}) · "
             f"검증 {v.iterations_used}회 · "
@@ -434,7 +860,7 @@ with tab_step3:
 with tab_audit:
     st.markdown("## 🔍 Step 4 · Audit Trace")
     st.markdown("문장별 증거 노드 · 5축 위험도 · 재생성 이력을 확인하고 HITL 판정을 내립니다.")
-    st.divider()
+    st.markdown(GRADIENT_BANNER, unsafe_allow_html=True)
 
     if result is None:
         st.info("사이드바에서 분석을 시작하세요.")

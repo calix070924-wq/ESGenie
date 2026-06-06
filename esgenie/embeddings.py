@@ -16,30 +16,44 @@ class IndexedDoc:
     meta: dict[str, Any]
 
 
+# 모듈 수준 캐시 — SentenceTransformer·FAISS는 한 번만 로드
+_ST_MODEL_CACHE: dict[str, Any] = {}
+_FAISS_MODULE: Any = None
+_FAISS_LOADED: bool = False
+
+
+def _get_st_model(model_name: str) -> Any:
+    if model_name not in _ST_MODEL_CACHE:
+        try:
+            from sentence_transformers import SentenceTransformer  # type: ignore
+            _ST_MODEL_CACHE[model_name] = SentenceTransformer(model_name)
+        except Exception:
+            _ST_MODEL_CACHE[model_name] = None
+    return _ST_MODEL_CACHE[model_name]
+
+
+def _get_faiss() -> Any:
+    global _FAISS_MODULE, _FAISS_LOADED
+    if not _FAISS_LOADED:
+        try:
+            import faiss  # type: ignore
+            _FAISS_MODULE = faiss
+        except Exception:
+            _FAISS_MODULE = None
+        _FAISS_LOADED = True
+    return _FAISS_MODULE
+
+
 class VectorIndex:
     """FAISS 기반 벡터 인덱스 (모델 로딩 실패 시 해시 기반 폴백)."""
 
     def __init__(self, model_name: str | None = None) -> None:
         self.model_name = model_name or SETTINGS.embed_model
-        self._st_model = None
-        self._faiss = None
+        self._st_model = _get_st_model(self.model_name)
+        self._faiss = _get_faiss()
         self._index = None
         self._docs: list[IndexedDoc] = []
         self._vectors: np.ndarray | None = None
-        self._load_backend()
-
-    # ---- backend ------------------------------------------------------
-    def _load_backend(self) -> None:
-        try:
-            from sentence_transformers import SentenceTransformer  # type: ignore
-            self._st_model = SentenceTransformer(self.model_name)
-        except Exception:
-            self._st_model = None
-        try:
-            import faiss  # type: ignore
-            self._faiss = faiss
-        except Exception:
-            self._faiss = None
 
     def _embed(self, texts: list[str]) -> np.ndarray:
         if self._st_model is not None:

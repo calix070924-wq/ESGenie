@@ -82,7 +82,13 @@ class LLMClient:
         error: str | None = None,
     ) -> LLMResponse:
         # Route by task hint embedded in prompt
-        hint = mock_hint or _detect_hint(system + "\n" + user)
+        detected = _detect_hint(system + "\n" + user)
+        # 명시적 mock_hint가 "generate"여도 user 프롬프트에 재작성 제약이 포함되어 있으면
+        # rewrite 경로로 라우팅한다. (Layer 4 자가 검증 루프는 generate_section을 재사용하기 때문)
+        if mock_hint == "generate" and detected == "rewrite":
+            hint = "rewrite"
+        else:
+            hint = mock_hint or detected
         if hint == "extract":
             content = _mock_extract(user)
         elif hint == "generate":
@@ -105,10 +111,22 @@ class LLMClient:
 
 def _detect_hint(text: str) -> str:
     t = text.lower()
-    if "extract" in t or "추출" in text or "json" in t and "항목" in text:
-        return "extract"
-    if "rewrite" in t or "재작성" in text or "수정" in text:
+    # 1) 재작성 (rewrite) — 명시적 재작성 신호가 가장 우선.
+    #    Layer 4 자가 검증 루프가 generate_section을 재사용하면서 user 프롬프트에
+    #    "추가 지시:" 또는 "=== 재작성 제약" 블록을 덧붙이기 때문에 이를 먼저 잡는다.
+    if (
+        "rewrite" in t
+        or "재작성" in text
+        or "추가 지시:" in text
+        or "=== 재작성 제약" in text
+        or "수정" in text
+    ):
         return "rewrite"
+    # 2) 추출(extract) — 명시 키워드만으로 판정. (이전 "json+항목" 규칙은 일반 보고서
+    #    프롬프트에도 매칭되는 false positive가 있어 제거.)
+    if "extract" in t or "추출" in text:
+        return "extract"
+    # 3) 일반 작성(generate)
     if "보고서" in text or "generate" in t or "작성" in text:
         return "generate"
     return "default"
@@ -320,9 +338,141 @@ def _mock_greenwash_generate(user_prompt: str) -> str:
     return _GREENWASH_G.format(corp=corp)
 
 
+# ---- _mock_rewrite 보조 데이터 -----------------------------------------------
+
+# D2: 최상급·과장·모호 수식어. 긴 표현부터 매칭되도록 길이 내림차순.
+_VAGUE_MODIFIERS: tuple[str, ...] = tuple(sorted([
+    "세계 최고 수준의", "세계 최고 수준", "세계 최고의",
+    "업계 최고 수준인", "업계 최고 수준의", "업계 최고 수준",
+    "타의 추종을 불허하는",
+    "혁신적인", "혁신적으로", "혁신적",
+    "압도적인", "압도적으로", "압도적",
+    "선도적인", "선도적으로", "선도적",
+    "획기적으로", "획기적인", "획기적",
+    "탁월하게", "탁월한", "탁월",
+    "독보적인", "독보적",
+    "최상의", "최고 수준의", "최고의", "최상위", "최첨단", "최선의",
+    "완벽한", "완전한",
+    "대폭",
+], key=len, reverse=True))
+
+
+def _strip_vague_modifiers(text: str) -> str:
+    """D2 제약: 최상급·모호 수식어를 제거하거나 보수적 표현으로 치환."""
+    for mod in _VAGUE_MODIFIERS:
+        text = text.replace(mod + " ", "")
+        text = text.replace(mod, "")
+    text = text.replace("선도하고 있습니다", "지속적으로 추진하고 있습니다")
+    text = text.replace("을 선도하며", "을 꾸준히 추진하며")
+    text = text.replace("를 선도하며", "를 꾸준히 추진하며")
+    text = text.replace("선도합니다", "꾸준히 추진합니다")
+    return text
+
+
+def _greenwash_numeric_replacements(ctx: dict[str, Any]) -> list[tuple[str, str]]:
+    """D1 제약: 그린워싱 템플릿 잔존 수치 → DART 실측값 치환 규칙."""
+    return [
+        # 환경 (E)
+        ("200,000 tCO2eq", f"{int(ctx.get('ghg', 16_700_000)):,} tCO2eq"),
+        ("재생에너지 사용 비율 | 85", f"재생에너지 사용 비율 | {ctx.get('renew', 31.0)}"),
+        ("재생에너지 비율은 업계 최고 수준인 85%", f"재생에너지 사용 비율은 {ctx.get('renew', 31.0)}%"),
+        ("재생에너지 비율은 85%", f"재생에너지 사용 비율은 {ctx.get('renew', 31.0)}%"),
+        ("폐기물 재활용 비율 | 100", f"폐기물 재활용 비율 | {ctx.get('waste', 95.8)}"),
+        ("폐기물 재활용 비율 100%", f"폐기물 재활용 비율 {ctx.get('waste', 95.8)}%"),
+        ("온실가스 감축률 | 50", "온실가스 감축률 | (DART 시계열 검증 필요)"),
+        ("전년 대비 50% 대폭 감축", "DART 시계열 기준 단계적 감축"),
+        # 사회 (S)
+        ("정규직 비율 | 100", f"정규직 비율 | {ctx.get('reg', 98.6)}"),
+        ("자발적 이직률 | 0", f"자발적 이직률 | {ctx.get('turn', 2.4)}"),
+        ("자발적 이직률은 0%", f"자발적 이직률은 {ctx.get('turn', 2.4)}%"),
+        ("여성 구성원 비율 | 65", f"여성 구성원 비율 | {ctx.get('fem', 24.8)}"),
+        ("여성 구성원 비율은 혁신적으로 65%", f"여성 구성원 비율은 {ctx.get('fem', 24.8)}%"),
+        ("여성 구성원 비율은 65%", f"여성 구성원 비율은 {ctx.get('fem', 24.8)}%"),
+        ("산업재해율 | 0.00", f"산업재해율 | {ctx.get('safety', 0.098)}"),
+        ("산업재해율 0.00%", f"산업재해율 {ctx.get('safety', 0.098)}%"),
+        # 지배구조 (G)
+        ("사외이사 비율 | 95", f"사외이사 비율 | {ctx.get('od', 63.6)}"),
+        ("사외이사 비율은 혁신적으로 95%", f"사외이사 비율은 {ctx.get('od', 63.6)}%"),
+        ("여성 이사 비율 | 50", f"여성 이사 비율 | {ctx.get('fd', 18.2)}"),
+        ("여성 이사 비율은 50%", f"여성 이사 비율은 {ctx.get('fd', 18.2)}%"),
+        ("이사회 출석률 | 100", f"이사회 출석률 | {ctx.get('att', 98.0)}"),
+        ("이사회 출석률은 완벽한 100%", f"이사회 출석률은 {ctx.get('att', 98.0)}%"),
+        ("이사회 출석률은 100%", f"이사회 출석률은 {ctx.get('att', 98.0)}%"),
+    ]
+
+
 def _mock_rewrite(user_prompt: str) -> str:
-    base = _mock_generate(user_prompt)
-    return base + " (수치 근거는 DART 공시 및 내부 대시보드 기준.)"
+    """user_prompt에 포함된 5축 제약 지시문을 파싱해 실제로 다른 텍스트를 반환.
+
+    제약이 없으면 _mock_generate 결과를 그대로 돌려준다.
+    """
+    # "=== 재작성 제약 ===" 블록이 없으면 기존 동작 (clean baseline)
+    if "=== 재작성 제약" not in user_prompt and "추가 지시:" not in user_prompt:
+        return _mock_generate(user_prompt)
+
+    # 제약 블록 추출 — "=== 재작성 제약" 부터 다음 "===" 마커까지
+    block = user_prompt
+    start = user_prompt.find("=== 재작성 제약")
+    if start >= 0:
+        end_marker = user_prompt.find("준수해 재작성", start)
+        block = user_prompt[start: end_marker + 30] if end_marker > 0 else user_prompt[start:]
+
+    axes = {
+        axis: f"[{axis}]" in block
+        for axis in ("D1_numeric", "D2_modifier", "D3_semantic", "D4_industry", "D5_timeseries")
+    }
+
+    # 어떤 축도 명시 안 됐는데 "추가 지시:"만 있는 경우 → legacy 피드백 모드.
+    # 이때는 D1·D2를 보수적으로 둘 다 적용해 의미 있는 변화가 생기게 한다.
+    if not any(axes.values()):
+        axes["D1_numeric"] = True
+        axes["D2_modifier"] = True
+
+    # 기준선: DART 실측값 기반 보수적 텍스트
+    text = _mock_generate(user_prompt)
+    ctx = _parse_context(user_prompt)
+
+    # D1: 잔존 그린워싱 수치 → DART 실측값으로 치환 (clean baseline에는 no-op)
+    if axes["D1_numeric"]:
+        for src, dst in _greenwash_numeric_replacements(ctx):
+            text = text.replace(src, dst)
+
+    # D2: 최상급·과장 수식어 제거 / 보수적 표현으로 치환
+    if axes["D2_modifier"]:
+        text = _strip_vague_modifiers(text)
+
+    # D3/D4/D5 (+ 활성 축 전반)에 대한 검증 근거 섹션 추가
+    appendix: list[str] = []
+    if axes["D1_numeric"]:
+        appendix.append(
+            "- **[D1 수치 정확성]** 모든 정량 수치는 DART 공시 원문에 기재된 값과 "
+            "동일하며, 임의 추정치 없이 그대로 인용하였습니다."
+        )
+    if axes["D2_modifier"]:
+        appendix.append(
+            "- **[D2 표현 절제]** 최상급·과장 수식어를 제거하고 정량 근거가 있는 "
+            "표현으로 대체하였습니다."
+        )
+    if axes["D3_semantic"]:
+        appendix.append(
+            "- **[D3 근거 충실성]** 본 보고서는 DART 공시 원문 및 K-ESG 가이드라인의 "
+            "의미 범위 내에서만 보수적으로 서술되었습니다."
+        )
+    if axes["D4_industry"]:
+        appendix.append(
+            "- **[D4 업종 적합성]** 핵심 지표는 동종 업계 평균(±1σ) 범위와의 "
+            "정합성을 검증한 후 기재하였습니다."
+        )
+    if axes["D5_timeseries"]:
+        appendix.append(
+            "- **[D5 시계열 일관성]** 전년 대비 추세는 DART 시계열 데이터의 실제 "
+            "방향과 일치하도록 보수적으로 서술하였습니다."
+        )
+
+    if appendix:
+        text = text + "\n\n### 자가 검증 근거\n" + "\n".join(appendix)
+
+    return text
 
 
 def _mock_extract(user_prompt: str) -> str:

@@ -24,7 +24,7 @@ venv/
 outputs/
 
 # Lock files from LibreOffice / other editors
-".~lock.*"
+.~lock.*
 
 # Large doc files (proposals, PDFs in root — kept in project folder, not repo)
 ESGenie_도전제안서_*.docx
