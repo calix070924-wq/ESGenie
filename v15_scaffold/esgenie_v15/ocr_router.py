@@ -197,7 +197,8 @@ def extract_structured(file_path: str, *, doc_type: str) -> OcrExtraction:
     openai_key = _get_openai_key()
 
     if not clova_key:
-        return _mock_structured(file_path, doc_type)
+        # CLOVA 없음 → pymupdf + 정규식(API 키 불필요), 스캔본이면 VLM 에스컬레이션
+        return _extract_structured_no_llm(file_path, doc_type=doc_type)
 
     # 1) CLOVA OCR → 토큰 리스트
     tokens = _call_clova_ocr(file_path, api_url=clova_url, secret_key=clova_key)
@@ -287,7 +288,18 @@ def _apply_template(tokens: list[dict[str, Any]], template: dict[str, Any]) -> d
 
         for i, tok in enumerate(tokens):
             if any(kw in tok["text"] for kw in keywords):
-                # 인접 토큰(최대 5개 앞뒤)에서 숫자 탐색
+                # 현재 토큰에 숫자가 있으면 우선 사용 (예: "사용전력량(kWh): 128,400")
+                m = number_re.search(tok["text"].replace(",", ""))
+                if m:
+                    result[label_key] = {
+                        "value": float(m.group()),
+                        "unit": unit,
+                        "kesg_code": kesg,
+                        "bbox": tok.get("bbox"),
+                        "raw_label": tok["text"],
+                    }
+                    break
+                # 현재 토큰에 숫자 없으면 인접 토큰(최대 5개) 탐색
                 for j in range(i + 1, min(i + 6, len(tokens))):
                     m = number_re.search(tokens[j]["text"].replace(",", ""))
                     if m:
@@ -340,24 +352,25 @@ def _llm_normalize(
     doc_type: str,
     api_key: str,
 ) -> list[ExtractedMetric]:
-    """LLM(GPT-4o)으로 추출 KV 쌍을 ExtractedMetric[]으로 정규화."""
-    import openai, json as _json
+    """Claude Haiku로 추출 KV 쌍을 ExtractedMetric[]으로 정규화."""
+    import anthropic, json as _json
     from .prompts import STRUCTURED_NORMALIZE_SYSTEM, STRUCTURED_NORMALIZE_PROMPT
 
     tokens_str = _json.dumps(kv_pairs, ensure_ascii=False, indent=2)
     prompt = STRUCTURED_NORMALIZE_PROMPT.format(doc_type=doc_type, ocr_tokens=tokens_str)
 
-    client = openai.OpenAI(api_key=api_key)
-    resp = client.chat.completions.create(
-        model="gpt-4o",
-        response_format={"type": "json_object"},
-        messages=[
-            {"role": "system", "content": STRUCTURED_NORMALIZE_SYSTEM},
-            {"role": "user",   "content": prompt},
-        ],
+    client = anthropic.Anthropic(api_key=api_key)
+    resp = client.messages.create(
+        model="claude-haiku-4-5-20251001",
         max_tokens=1000,
+        system=STRUCTURED_NORMALIZE_SYSTEM + "\n반드시 JSON 형식으로만 응답하라.",
+        messages=[{"role": "user", "content": prompt}],
     )
-    data = _json.loads(resp.choices[0].message.content or "{}")
+    text = resp.content[0].text if resp.content else "{}"
+    # JSON 블록 추출
+    import re
+    m = re.search(r'\{.*\}', text, re.DOTALL)
+    data = _json.loads(m.group() if m else "{}")
     return _parse_normalize_response(data)
 
 
@@ -394,6 +407,57 @@ def _parse_normalize_response(data: dict[str, Any]) -> list[ExtractedMetric]:
         except (TypeError, ValueError):
             continue
     return metrics
+
+
+def _extract_structured_gpt_fallback(file_path: str, *, doc_type: str, api_key: str) -> OcrExtraction:
+    """CLOVA 없을 때 pymupdf 텍스트 추출 + GPT-4o 정규화 폴백."""
+    return _extract_structured_no_llm(file_path, doc_type=doc_type)
+
+
+def _extract_structured_no_llm(file_path: str, *, doc_type: str) -> OcrExtraction:
+    """CLOVA/LLM 없이 pymupdf + 정규식으로 디지털 PDF 처리.
+
+    한전 전기요금·올바로 폐기물 대장 같은 텍스트 임베딩 PDF는 이 경로로 충분.
+    스캔 이미지 PDF는 텍스트가 비어 → VLM 채널로 에스컬레이션.
+    """
+    raw_text = _extract_text_pymupdf(file_path, max_pages=5)
+    if not raw_text.strip():
+        return extract_unstructured(file_path, doc_type=doc_type)
+
+    # 텍스트를 줄 단위 토큰으로 변환 → 기존 _keyword_extract 재사용
+    tokens = [{"text": line.strip(), "bbox": None} for line in raw_text.splitlines() if line.strip()]
+
+    try:
+        template = _load_template(doc_type)
+        kv_pairs = _apply_template(tokens, template)
+    except NotImplementedError:
+        kv_pairs = _keyword_extract(tokens, doc_type)
+
+    metrics = _rule_normalize(kv_pairs, doc_type=doc_type)
+
+    return OcrExtraction(
+        source_file=Path(file_path).name,
+        channel=DocChannel.STRUCTURED,
+        doc_type=doc_type,
+        metrics=metrics,
+        raw_text=raw_text,
+        router_meta={"fallback": "pymupdf+regex", "clova": False},
+    )
+
+
+def _extract_text_pymupdf(file_path: str, max_pages: int = 5) -> str:
+    """pymupdf로 PDF 임베딩 텍스트 추출. 없으면 빈 문자열."""
+    try:
+        import fitz
+        doc = fitz.open(file_path)
+        pages_text = []
+        for i, page in enumerate(doc):
+            if i >= max_pages:
+                break
+            pages_text.append(page.get_text())
+        return "\n".join(pages_text)
+    except Exception:
+        return ""
 
 
 def _mock_structured(file_path: str, doc_type: str) -> OcrExtraction:
@@ -450,53 +514,57 @@ def _mock_structured(file_path: str, doc_type: str) -> OcrExtraction:
 # ====================================================================
 
 def extract_unstructured(file_path: str, *, doc_type: str) -> OcrExtraction:
-    """비정형 문서 채널 — VLM(GPT-4o Vision) 기반 정량·정성 동시 추출.
+    """비정형 문서 채널 — Claude Sonnet Vision 기반 정량·정성 동시 추출.
 
     파이프라인:
       1) PDF → 페이지 이미지(PNG) — pymupdf 우선, 없으면 pdf2image 폴백
-      2) 각 페이지를 base64 인코딩 후 GPT-4o Vision에 전달
+      2) 각 페이지를 base64 인코딩 후 Claude Sonnet Vision에 전달
       3) VLM_EXTRACT_PROMPT로 metrics(정량) + clauses(정성) JSON 동시 추출
       4) 스키마 매핑 → ExtractedMetric[] + ExtractedClause[]
-      API 키 없으면 Mock 폴백(데모 모드).
+      API 키 없으면 Mock 폴백.
     """
     source_file = Path(file_path).name
-    images_b64 = _render_pages_b64(file_path, max_pages=10)
-    raw_texts: list[str] = []
-    all_metrics: list[ExtractedMetric] = []
-    all_clauses: list[ExtractedClause] = []
 
-    api_key = _get_openai_key()
+    api_key = _get_anthropic_key()
     if not api_key:
-        # API 키 없음 → Mock 폴백
+        return _mock_unstructured(file_path, doc_type)
+
+    # 디지털 PDF는 텍스트 추출이 더 정확하고 저렴 → 먼저 시도
+    raw_text = _extract_text_pymupdf(file_path, max_pages=10)
+    if raw_text.strip():
+        return _extract_unstructured_text(file_path, doc_type=doc_type, raw_text=raw_text, api_key=api_key)
+
+    # 스캔본 → Vision
+    images_b64 = _render_pages_b64(file_path, max_pages=10)
+    if not images_b64:
         return _mock_unstructured(file_path, doc_type)
 
     from .prompts import VLM_EXTRACT_SYSTEM, VLM_EXTRACT_PROMPT
-    import openai, json as _json
+    import anthropic, json as _json, re
 
-    client = openai.OpenAI(api_key=api_key)
+    client = anthropic.Anthropic(api_key=api_key)
     prompt_text = VLM_EXTRACT_PROMPT.format(doc_type=doc_type)
+    all_metrics: list[ExtractedMetric] = []
+    all_clauses: list[ExtractedClause] = []
+    raw_texts: list[str] = []
 
     for page_no, img_b64 in enumerate(images_b64, start=1):
         try:
-            resp = client.chat.completions.create(
-                model="gpt-4o",
-                response_format={"type": "json_object"},
-                messages=[
-                    {"role": "system", "content": VLM_EXTRACT_SYSTEM},
-                    {
-                        "role": "user",
-                        "content": [
-                            {
-                                "type": "image_url",
-                                "image_url": {"url": f"data:image/png;base64,{img_b64}"},
-                            },
-                            {"type": "text", "text": prompt_text},
-                        ],
-                    },
-                ],
+            resp = client.messages.create(
+                model="claude-sonnet-4-6",
                 max_tokens=2000,
+                system=VLM_EXTRACT_SYSTEM + "\n반드시 JSON 형식으로만 응답하라.",
+                messages=[{
+                    "role": "user",
+                    "content": [
+                        {"type": "image", "source": {"type": "base64", "media_type": "image/png", "data": img_b64}},
+                        {"type": "text", "text": prompt_text},
+                    ],
+                }],
             )
-            data = _json.loads(resp.choices[0].message.content or "{}")
+            text = resp.content[0].text if resp.content else "{}"
+            m = re.search(r'\{.*\}', text, re.DOTALL)
+            data = _json.loads(m.group() if m else "{}")
         except Exception as e:
             data = {}
             raw_texts.append(f"[page {page_no} error: {e}]")
@@ -512,6 +580,37 @@ def extract_unstructured(file_path: str, *, doc_type: str) -> OcrExtraction:
         metrics=all_metrics,
         clauses=all_clauses,
         raw_text="\n".join(raw_texts),
+    )
+
+
+def _extract_unstructured_text(
+    file_path: str, *, doc_type: str, raw_text: str, api_key: str
+) -> OcrExtraction:
+    """디지털 텍스트 비정형 문서 → Claude Haiku로 정성 조항 추출."""
+    import anthropic, json as _json, re
+    from .prompts import VLM_EXTRACT_SYSTEM, VLM_EXTRACT_PROMPT
+
+    prompt = VLM_EXTRACT_PROMPT.format(doc_type=doc_type) + f"\n\n문서 텍스트:\n{raw_text[:4000]}"
+    client = anthropic.Anthropic(api_key=api_key)
+    resp = client.messages.create(
+        model="claude-haiku-4-5-20251001",
+        max_tokens=2000,
+        system=VLM_EXTRACT_SYSTEM + "\n반드시 JSON 형식으로만 응답하라.",
+        messages=[{"role": "user", "content": prompt}],
+    )
+    text = resp.content[0].text if resp.content else "{}"
+    m = re.search(r'\{.*\}', text, re.DOTALL)
+    data = _json.loads(m.group() if m else "{}")
+    metrics, clauses = _map_vlm_json(data)
+
+    return OcrExtraction(
+        source_file=Path(file_path).name,
+        channel=DocChannel.UNSTRUCTURED,
+        doc_type=doc_type,
+        metrics=metrics,
+        clauses=clauses,
+        raw_text=raw_text,
+        router_meta={"fallback": "claude-haiku-text", "vision": False},
     )
 
 
@@ -712,6 +811,14 @@ def _get_openai_key() -> str | None:
         return OPENAI_API_KEY or None
     except Exception:
         return None
+
+
+def _get_anthropic_key() -> str | None:
+    """환경 변수에서 Anthropic API 키 조회."""
+    import os
+    from dotenv import load_dotenv
+    load_dotenv()
+    return os.getenv("ANTHROPIC_API_KEY") or None
 
 
 def _load_template(doc_type: str) -> dict[str, Any]:

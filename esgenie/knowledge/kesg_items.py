@@ -127,6 +127,38 @@ ALL_ITEMS: list[KESGItem] = P_ITEMS + E_ITEMS + S_ITEMS + G_ITEMS
 
 assert len(ALL_ITEMS) == 61, f"K-ESG 항목 개수 오류: {len(ALL_ITEMS)}"
 
+# K-ESG 기본형 28개 — 중소기업 대상 핵심 항목 (공급망 ESG 대응 기준)
+BASIC_28_CODES: list[str] = [
+    # 정보공시 (1)
+    "P-1-1",
+    # 환경 (10)
+    "E-1-1", "E-1-2",
+    "E-2-1",
+    "E-3-1", "E-3-3",
+    "E-4-1", "E-4-2",
+    "E-5-1",
+    "E-6-1", "E-6-2",
+    # 사회 (10)
+    "S-1-1",
+    "S-2-1", "S-2-6",
+    "S-3-1",
+    "S-4-1", "S-4-2",
+    "S-5-1",
+    "S-6-1",
+    "S-7-1",
+    "S-8-1",
+    # 지배구조 (7)
+    "G-1-1", "G-1-2",
+    "G-2-1",
+    "G-3-1", "G-3-4",
+    "G-4-1",
+    "G-5-1",
+]
+
+BASIC_28_ITEMS: list[KESGItem] = [it for it in ALL_ITEMS if it.code in BASIC_28_CODES]
+
+assert len(BASIC_28_ITEMS) == 28, f"K-ESG 기본형 항목 개수 오류: {len(BASIC_28_ITEMS)}"
+
 
 def by_area(area: Area) -> list[KESGItem]:
     return [it for it in ALL_ITEMS if it.area == area]

@@ -17,7 +17,7 @@ import streamlit as st
 # ── 코어 파이프라인 ──────────────────────────────────────────────────────────
 from esgenie.config import SETTINGS
 from esgenie.dart_client import load_report, search_companies
-from esgenie.knowledge.kesg_items import ALL_ITEMS
+from esgenie.knowledge.kesg_items import ALL_ITEMS, BASIC_28_CODES, BASIC_28_ITEMS
 from esgenie.layer0_evidence_graph import build_evidence_graph as _v10_build_graph
 from esgenie.layer1_extract import extract
 from esgenie.layer2_rag import HybridRAG
@@ -35,9 +35,14 @@ from esgenie_v15 import ocr_router, evidence_graph as eg_v15, detector_5axis, au
 from esgenie_v15.ssot_pipeline import extract_with_ssot, build_rag_with_ssot, ssot_summary
 
 OUT_ROOT     = Path("outputs")
-TARGET_CODES = ["E-3-1", "E-4-1", "E-4-2", "E-5-1", "E-6-1", "E-6-2"]
-POLICY_CODES = ["E-1-1", "E-1-2", "E-3-1", "S-1-1", "S-2-1",
-                "S-3-1", "S-4-1", "G-1-1", "G-3-1", "P-1-1"]
+# K-ESG 기본형 28개 기준으로 통일
+TARGET_CODES = BASIC_28_CODES  # 정량 + 정성 전체 28개 추적
+POLICY_CODES = [                # P축 규정 검증 대상 (정성 항목 위주)
+    "P-1-1",
+    "E-1-1", "E-1-2", "E-3-3",
+    "S-1-1", "S-2-6", "S-4-1", "S-5-1", "S-6-1", "S-7-1", "S-8-1",
+    "G-1-1", "G-3-1", "G-4-1", "G-5-1",
+]
 
 
 # ====================================================================
@@ -202,19 +207,85 @@ st.markdown("#### 📎 내부 증빙 파일 업로드 (선택)")
 st.caption("한전 전기요금 고지서 · 도시가스 영수증 · 폐기물 대장 · 안전보건 회의록 · 사내 규정집 (PDF/이미지)")
 uploads = st.file_uploader("증빙 파일", type=["pdf","png","jpg","jpeg"], accept_multiple_files=True, label_visibility="collapsed")
 
-upload_paths: dict[str, str] = {}
+if "upload_paths" not in st.session_state:
+    st.session_state.upload_paths = {}
+
 if uploads:
     tmp = OUT_ROOT / "_uploads"
     tmp.mkdir(parents=True, exist_ok=True)
     rows = []
+    st.session_state.upload_paths = {}   # 새 업로드로 교체
     for uf in uploads:
         p = tmp / uf.name
         p.write_bytes(uf.getbuffer())
-        upload_paths[uf.name] = str(p)
+        st.session_state.upload_paths[uf.name] = str(p)
         dec = ocr_router.route_document(str(p))
         rows.append({"파일명": uf.name, "채널": dec.channel.value,
                      "문서 유형": dec.doc_type, "신뢰도": f"{dec.confidence:.0%}"})
     st.dataframe(rows, use_container_width=True, hide_index=True)
+elif not uploads and st.session_state.upload_paths:
+    # 파일 제거 시 초기화
+    st.session_state.upload_paths = {}
+
+upload_paths = st.session_state.upload_paths
+
+# ====================================================================
+# ③ 설문 입력 — 정성 항목 (OCR/DART로 못 채우는 항목)
+# ====================================================================
+
+_SURVEY_ITEMS = [
+    ("P-1-1", "ESG 정보를 공시하는 방식이 있습니까?",          "예: 홈페이지, DART, 자체 보고서 등"),
+    ("E-1-1", "중장기 환경경영 목표를 수립하였습니까?",          "예: 2030년 탄소 20% 감축 목표 등"),
+    ("E-1-2", "환경경영 전담 조직·인력이 있습니까?",            "예: 환경안전팀, ESG 담당자 등"),
+    ("E-3-3", "온실가스 배출량에 대한 제3자 검증을 받았습니까?", "예: 검증기관명"),
+    ("S-1-1", "사회적 책임 목표를 수립·공시하고 있습니까?",      "예: 산업재해율 목표 등"),
+    ("S-2-6", "노동조합 또는 결사의 자유를 보장하고 있습니까?",  "예: 노조 가입률, 노사협의회 등"),
+    ("S-4-1", "안전보건 전담 조직·정책이 있습니까?",            "예: 안전보건위원회 운영 등"),
+    ("S-5-1", "인권정책을 수립·시행하고 있습니까?",             "예: 인권경영 선언, 고충처리 절차 등"),
+    ("S-6-1", "협력사 ESG 관리 기준·프로그램이 있습니까?",      "예: 협력사 행동강령, 평가 절차 등"),
+    ("S-7-1", "전략적 사회공헌(CSR) 활동을 하고 있습니까?",     "예: 지역사회 프로그램, 기부 등"),
+    ("S-8-1", "정보보호 체계(ISMS 등)를 구축하였습니까?",       "예: ISMS 인증, 정보보호 정책 등"),
+    ("G-1-1", "이사회에서 ESG 안건을 정기적으로 상정합니까?",    "예: 연 2회 이상 ESG 보고 등"),
+    ("G-3-1", "주주총회 소집 공고를 법정 기간 내에 하고 있습니까?", "예: 2주 전 공고 등"),
+    ("G-4-1", "윤리규범 위반사항 공시 체계가 있습니까?",         "예: 윤리헌장, 내부신고 채널 등"),
+    ("G-5-1", "내부감사 부서 또는 기구가 설치되어 있습니까?",    "예: 감사위원회, 내부감사팀 등"),
+]
+
+st.markdown("#### 📝 정성 항목 설문")
+st.caption("DART·OCR로 확인 어려운 정책·체계 항목입니다. 해당 항목만 입력하면 됩니다.")
+
+if "survey_answers" not in st.session_state:
+    st.session_state.survey_answers = {}
+
+with st.expander("설문 입력 펼치기", expanded=False):
+    for code, question, hint in _SURVEY_ITEMS:
+        prev = st.session_state.survey_answers.get(code, {"yn": "미입력", "text": ""})
+        col1, col2 = st.columns([1, 2])
+        with col1:
+            yn = st.radio(
+                f"`{code}` {question}",
+                ["미입력", "예", "아니오"],
+                index=["미입력", "예", "아니오"].index(prev["yn"]),
+                key=f"survey_yn_{code}",
+                horizontal=True,
+            )
+        with col2:
+            txt = st.text_input(
+                f"상세 내용 ({hint})",
+                value=prev["text"],
+                key=f"survey_txt_{code}",
+                label_visibility="collapsed",
+                placeholder=hint,
+            )
+        if yn != "미입력" or txt:
+            st.session_state.survey_answers[code] = {"yn": yn, "text": txt}
+        elif code in st.session_state.survey_answers:
+            del st.session_state.survey_answers[code]
+
+survey_answers = st.session_state.survey_answers
+_answered = sum(1 for v in survey_answers.values() if v["yn"] != "미입력")
+if _answered:
+    st.caption(f"✅ {_answered}개 항목 입력됨")
 
 
 # ====================================================================
@@ -224,11 +295,40 @@ if uploads:
 def _run_pipeline() -> dict:
     # L0-A: OCR 추출
     extractions = []
-    for fname, path in upload_paths.items():
-        dec = ocr_router.route_document(path)
-        ext = ocr_router.extract_document(path, dec)
-        ext.source_file = fname
-        extractions.append(ext)
+    _up = st.session_state.get("upload_paths", {})
+    for fname, path in _up.items():
+        try:
+            dec = ocr_router.route_document(path)
+            ext = ocr_router.extract_document(path, dec)
+            ext.source_file = fname
+            extractions.append(ext)
+        except Exception as e:
+            st.warning(f"OCR 처리 실패 [{fname}]: {e}")
+
+    # L0-B: 설문 응답 → OcrExtraction (정성 조항으로 변환)
+    _survey = st.session_state.get("survey_answers", {})
+    if _survey:
+        from esgenie_v15.ocr_router import OcrExtraction, ExtractedClause, DocChannel
+        clauses = []
+        for code, ans in _survey.items():
+            if ans["yn"] == "미입력":
+                continue
+            text = f"[설문] {ans['yn']}" + (f": {ans['text']}" if ans['text'] else "")
+            clauses.append(ExtractedClause(
+                section=code,
+                text=text,
+                kesg_code_guess=code,
+                page=1,
+            ))
+        if clauses:
+            survey_ext = OcrExtraction(
+                source_file="survey_form",
+                channel=DocChannel.UNSTRUCTURED,
+                doc_type="survey",
+                clauses=clauses,
+                router_meta={"source": "survey"},
+            )
+            extractions.append(survey_ext)
 
     # DART 로드
     dart_report = None
@@ -252,6 +352,26 @@ def _run_pipeline() -> dict:
     if dart_report is not None:
         l1_result = extract_with_ssot(dart_report, ssot_graph)
         build_rag_with_ssot(rag, dart_report, ssot_graph)
+
+    # L0-C: 설문 응답 → l1_result.mapped 직접 추가
+    _survey = st.session_state.get("survey_answers", {})
+    if _survey and l1_result is not None:
+        from esgenie.knowledge.kesg_items import by_code as _by_code
+        for code, ans in _survey.items():
+            if ans["yn"] == "미입력" or code in l1_result.mapped:
+                continue
+            item = _by_code(code)
+            if not item:
+                continue
+            l1_result.mapped[code] = {
+                "code": code, "name": item.name, "area": item.area,
+                "category": item.category, "data_type": item.data_type,
+                "value": ans["yn"], "unit": "",
+                "note": ans["text"] or None,
+                "evidence_node_ids": [f"survey_{code}"],
+            }
+            if code in l1_result.missing:
+                l1_result.missing.remove(code)
 
     # L4: 보고서 생성 + 그린워싱 검증 (DART 있을 때)
     verify    = None
@@ -469,21 +589,27 @@ with tab_diag:
         ])
         st.dataframe(node_df, hide_index=True, use_container_width=True)
 
+        _missing_28 = [c for c in ex.missing if c in set(BASIC_28_CODES)]
+        _present_28 = [c for c in ex.mapped if c in set(BASIC_28_CODES)]
         t_present, t_missing = st.tabs([
-            f"✅ 공시 항목 ({len(ex.mapped)}개)",
-            f"⚠️ 누락 항목 ({len(ex.missing)}개)",
+            f"✅ 공시 항목 ({len(_present_28)}개 / 28개)",
+            f"⚠️ 누락 항목 ({len(_missing_28)}개 / 28개)",
         ])
         with t_present:
+            def _source_tag(v):
+                ids = v.get("evidence_node_ids", [])
+                if any(i.startswith("survey_") for i in ids): return "📝 설문"
+                if any("ocr" in i for i in ids): return "📄 OCR"
+                return "🏛 DART"
             st.dataframe(pd.DataFrame([
                 {"코드": v["code"], "영역": v["area"], "항목명": v["name"],
-                 "값": v["value"], "단위": v.get("unit","-"),
-                 "OCR 보강": "✅" if any("ocr" in i for i in v.get("evidence_node_ids",[]))  else "—"}
-                for v in ex.mapped.values()
+                 "값": v["value"], "단위": v.get("unit") or "-", "출처": _source_tag(v)}
+                for v in ex.mapped.values() if v["code"] in set(BASIC_28_CODES)
             ]), hide_index=True, use_container_width=True)
         with t_missing:
             st.dataframe(pd.DataFrame([
                 {"코드": it.code, "영역": it.area, "항목명": it.name, "유형": it.data_type}
-                for it in ALL_ITEMS if it.code in ex.missing
+                for it in BASIC_28_ITEMS if it.code in ex.missing
             ]), hide_index=True, use_container_width=True)
 
 

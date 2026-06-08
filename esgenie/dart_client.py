@@ -67,6 +67,8 @@ class CompanyReport:
 def search_companies(query: str, limit: int = 10) -> list[dict[str, str]]:
     """회사명으로 DART 기업 검색.
 
+    정렬 우선순위: 정확 일치 → 시작 일치 → 부분 포함, 같은 그룹 내에서는 상장사 우선.
+
     Returns: [{"corp_code": ..., "corp_name": ..., "stock_code": ..., "industry": ...}, ...]
     """
     query = query.strip()
@@ -76,29 +78,48 @@ def search_companies(query: str, limit: int = 10) -> list[dict[str, str]]:
     all_corps = _load_corp_list()
     q = query.lower()
     matches = [c for c in all_corps if q in c["corp_name"].lower()]
+
+    def _sort_key(c: dict) -> tuple:
+        name = c["corp_name"].lower()
+        exact = 0 if name == q else 1
+        starts = 0 if name.startswith(q) else 1
+        listed = 0 if c.get("stock_code") else 1
+        return (exact, starts, listed, name)
+
+    matches.sort(key=_sort_key)
     return matches[:limit]
 
 
 def _load_corp_list() -> list[dict[str, str]]:
-    """DART 기업 코드 목록 — 캐시 우선, 없으면 다운로드."""
+    """DART 기업 코드 목록 — 캐시 우선, 없으면 다운로드.
+
+    샘플 기업(data/sample_dart/*.json)은 항상 목록 앞에 포함.
+    """
+    samples = _sample_corp_list()
+    sample_codes = {s["corp_code"] for s in samples}
+
     if CORP_CACHE.exists():
         import time
         age_days = (time.time() - CORP_CACHE.stat().st_mtime) / 86400
         if age_days < CACHE_DAYS:
             with open(CORP_CACHE, encoding="utf-8") as f:
-                return json.load(f)
+                cached = json.load(f)
+            # 샘플 기업을 앞에 붙이되 중복 제거
+            extra = [s for s in samples if s["corp_code"] not in {c["corp_code"] for c in cached}]
+            return extra + cached
 
     if SETTINGS.use_mock_dart:
-        return _sample_corp_list()
+        return samples
 
     corps = _download_corp_list()
     if corps:
         CORP_CACHE.parent.mkdir(parents=True, exist_ok=True)
         with open(CORP_CACHE, "w", encoding="utf-8") as f:
             json.dump(corps, f, ensure_ascii=False)
-        return corps
+        extra = [s for s in samples if s["corp_code"] not in {c["corp_code"] for c in corps}]
+        return extra + corps
 
-    return _sample_corp_list()
+    return samples
 
 
 def _download_corp_list() -> list[dict[str, str]]:
@@ -188,12 +209,14 @@ def load_report(corp_code: str, report_year: int | None = None) -> CompanyReport
 def _fetch_from_dart(corp_code: str, report_year: int | None) -> CompanyReport:
     year = report_year or 2025
 
-    # 1) 기업 개황
-    info = _dart_get("/company.json", corp_code=corp_code) or {}
+    # 1) 기업 개황 — API 응답 없으면 샘플 폴백을 위해 예외 발생
+    info = _dart_get("/company.json", corp_code=corp_code)
+    if info is None:
+        raise RuntimeError(f"DART 기업 개황 조회 실패: {corp_code}")
     corp_name = info.get("corp_name", corp_code)
     industry  = info.get("induty_code", "")
 
-    # 2) 재무제표 (11011=사업보고서)
+    # 2) 재무제표 (11011=사업보고서) — rcept_no도 함께 추출
     fin = _dart_get(
         "/fnlttSinglAcnt.json",
         corp_code=corp_code,
@@ -203,8 +226,12 @@ def _fetch_from_dart(corp_code: str, report_year: int | None) -> CompanyReport:
     ) or {}
     financials, raw_snippets = _parse_financials(fin)
 
-    # 3) ESG 수치 — DART 사업보고서 기타 공시 섹션에서 파싱
-    kesg_data = _extract_kesg_from_dart(corp_code, year)
+    # 재무제표 응답에서 사업보고서 rcept_no 추출 (원문 다운로드에 재사용)
+    fin_list = fin.get("list") or []
+    ann_rcept_no = fin_list[0].get("rcept_no", "") if fin_list else ""
+
+    # 3) ESG 수치 — DART 사업보고서 원문 ZIP에서 파싱
+    kesg_data = _extract_kesg_from_dart(corp_code, year, ann_rcept_no)
 
     return CompanyReport(
         corp_code=corp_code,
@@ -247,81 +274,169 @@ def _parse_financials(fin_data: dict) -> tuple[dict, list[str]]:
     return financials, snippets
 
 
-def _extract_kesg_from_dart(corp_code: str, year: int) -> dict[str, dict]:
-    """DART 공시(지속가능경영보고서·사업보고서 ESG 섹션)에서 K-ESG 수치 추출.
+def _extract_kesg_from_dart(corp_code: str, year: int, ann_rcept_no: str = "") -> dict[str, dict]:
+    """DART 공시에서 K-ESG 수치 최대한 추출.
 
-    현재는 에너지·온실가스·용수·폐기물 4개 항목을 DART 공시 텍스트에서 정규식으로 추출.
-    공시가 없거나 파싱 실패 시 빈 dict 반환 → OCR 채널로 보완.
+    우선순위:
+      1) 재무제표에서 이미 얻은 rcept_no로 사업보고서 원문 직접 다운로드
+      2) 지속가능경영보고서 (pblntf_ty=F) 검색 — 있는 기업은 여기서 상세 ESG 데이터
+      3) 공시 목록 검색으로 사업보고서 rcept_no 확보 후 다운로드
     """
     kesg: dict[str, dict] = {}
 
-    # 환경 공시 보고서 목록 조회 (지속가능경영보고서: pblntf_ty=F)
-    rpt = _dart_get(
-        "/list.json",
-        corp_code=corp_code,
-        bgn_de=f"{year}0101",
-        end_de=f"{year}1231",
-        pblntf_ty="F",          # 기타공시 (지속가능경영보고서 포함)
-        page_count="5",
-    )
-    if not rpt:
-        return kesg
+    # 1) 재무제표와 동일한 사업보고서 원문 직접 다운로드 (가장 신뢰성 높음)
+    if ann_rcept_no:
+        text = _fetch_report_zip_text(ann_rcept_no)
+        if text:
+            kesg.update(_regex_extract_kesg(text))
+        if kesg:
+            return kesg
 
-    # 보고서 원문 텍스트 파싱 (간략 버전 — 실제는 rcp_no로 원문 조회)
-    for rpt_item in (rpt.get("list") or [])[:2]:
-        rcp_no = rpt_item.get("rcept_no", "")
-        text   = _fetch_report_text(rcp_no)
-        if not text:
-            continue
-        kesg.update(_regex_extract_kesg(text))
+    # 2) 지속가능경영보고서 우선 시도 (접수일 기준: year+1년 상반기)
+    for try_year in [year + 1, year]:
+        rpt = _dart_get(
+            "/list.json",
+            corp_code=corp_code,
+            bgn_de=f"{try_year}0101",
+            end_de=f"{try_year}0630",
+            pblntf_ty="F",
+            page_count="5",
+        )
+        for rpt_item in (rpt.get("list") or [])[:2] if rpt else []:
+            text = _fetch_report_zip_text(rpt_item.get("rcept_no", ""))
+            if text:
+                kesg.update(_regex_extract_kesg(text))
+        if kesg:
+            return kesg
+
+    # 3) 공시 목록에서 사업보고서 찾아 다운로드 (접수일 기준으로 검색)
+    for try_year in [year + 1, year]:
+        ann = _dart_get(
+            "/list.json",
+            corp_code=corp_code,
+            bgn_de=f"{try_year}0101",
+            end_de=f"{try_year}0630",
+            pblntf_ty="A",
+            page_count="10",
+        )
+        for rpt_item in (ann.get("list") or [] if ann else []):
+            if "사업보고서" in rpt_item.get("report_nm", ""):
+                text = _fetch_report_zip_text(rpt_item.get("rcept_no", ""))
+                if text:
+                    kesg.update(_regex_extract_kesg(text))
+                if kesg:
+                    return kesg
 
     return kesg
 
 
-def _fetch_report_text(rcept_no: str) -> str:
-    """DART 보고서 원문(HTML) 텍스트 다운로드 (간략)."""
+_ESG_ZIP_KEYWORDS = ["온실가스", "tCO2", "에너지 사용", "폐기물", "용수", "재해율",
+                     "Scope", "GHG", "재생에너지", "에너지소비"]
+
+def _fetch_report_zip_text(rcept_no: str, max_chars: int = 800000) -> str:
+    """DART 공시 원문 ZIP 다운로드 (/document.xml) → XML/HTML 텍스트 추출.
+
+    /document.json 엔드포인트는 존재하지 않음(status 101).
+    올바른 엔드포인트는 /document.xml (ZIP 반환).
+    ESG 키워드가 포함된 문서를 우선 처리하고, 없으면 전체 문서를 순서대로 처리.
+    """
+    if not rcept_no:
+        return ""
     try:
-        # 보고서 문서 목록
-        doc_list = _dart_get("/document.json", rcept_no=rcept_no)
-        if not doc_list:
-            return ""
-        # 첫 번째 문서 텍스트
-        docs = doc_list.get("list") or []
-        if not docs:
-            return ""
-        dcm_no = docs[0].get("dcm_no", "")
         r = requests.get(
-            f"https://dart.fss.or.kr/report/viewer.do",
-            params={"rcpNo": rcept_no, "dcmNo": dcm_no, "eleId": "0", "offset": "0",
-                    "length": "0", "dtd": "dart3.xsd"},
-            timeout=10,
+            DART_BASE + "/document.xml",
+            params={"crtfc_key": SETTINGS.dart_api_key, "rcept_no": rcept_no},
+            timeout=30,
         )
-        # HTML 태그 제거
-        return re.sub(r"<[^>]+>", " ", r.text)
+        r.raise_for_status()
+        with zipfile.ZipFile(io.BytesIO(r.content)) as z:
+            docs: list[tuple[str, str]] = []  # (name, text)
+            for name in sorted(z.namelist()):
+                if not name.lower().endswith((".xml", ".htm", ".html")):
+                    continue
+                raw = z.read(name).decode("utf-8", errors="ignore")
+                text = re.sub(r"<[^>]+>", " ", raw)
+                text = re.sub(r"\s+", " ", text).strip()
+                if text:
+                    docs.append((name, text))
+
+            # ESG 키워드 포함 문서 우선 → 나머지 순으로 합산
+            priority = [t for _, t in docs if any(k in t for k in _ESG_ZIP_KEYWORDS)]
+            rest     = [t for _, t in docs if not any(k in t for k in _ESG_ZIP_KEYWORDS)]
+            combined = "\n".join(priority + rest)
+            return combined[:max_chars]
     except Exception:
         return ""
 
 
-# K-ESG 핵심 수치 정규식 패턴
-_KESG_PATTERNS: list[tuple[str, str, str]] = [
-    # (kesg_code, unit, regex)
-    ("E-3-1", "tCO2eq", r"(온실가스|Scope\s*1\+2|GHG)[^\d]{0,30}([\d,\.]+)\s*(?:천\s*)?tCO2"),
-    ("E-4-1", "kWh",    r"(에너지\s*사용|전력\s*사용)[^\d]{0,30}([\d,\.]+)\s*(?:천\s*)?kWh"),
-    ("E-5-1", "m³",     r"(용수\s*사용|취수)[^\d]{0,30}([\d,\.]+)\s*(?:천\s*)?m³"),
-    ("E-6-1", "ton",    r"(폐기물\s*발생|총\s*폐기물)[^\d]{0,30}([\d,\.]+)\s*(?:천\s*)?(?:톤|ton)"),
+# K-ESG 핵심 수치 정규식 패턴 (사업보고서 + 지속가능경영보고서 다양한 표현 커버)
+# tuple: (kesg_code, unit, regex, scale)  scale: 실제 단위로 환산 배수 (예: 만톤→tCO2eq = 10000)
+_KESG_PATTERNS: list[tuple[str, str, str, float]] = [
+    # ── E-3-1 온실가스 ──────────────────────────────────────────────────
+    # 사업보고서 배출권 공시 형식: 배출량 추정치(단위: 만톤(tCO2-eq)) 1,827
+    # 배출량 추정치(실제 배출량)를 우선 매칭 — 할당량보다 신뢰도 높음
+    ("E-3-1", "tCO2eq", r"배출량\s*추정치\s*\([^\)]+\(tCO2[^\)]+\)\s*\)\s*([\d,\.]+)", 10000.0),
+    # 지속가능경영보고서 형식
+    ("E-3-1", "tCO2eq", r"(?:온실가스|GHG|Scope\s*1\s*[\+&]\s*2|탄소배출)[^\d]{0,60}([\d,\.]+)\s*(?:천\s*)?tCO2", 1.0),
+    ("E-3-1", "tCO2eq", r"([\d,\.]+)\s*(?:천\s*)?tCO2eq", 1.0),
+    ("E-3-1", "tCO2eq", r"([\d,\.]+)\s*만톤\s*(?:CO2|tCO2|\(tCO2)", 10000.0),
+    # ── E-4-1 에너지 ────────────────────────────────────────────────────
+    ("E-4-1", "kWh",    r"(?:에너지\s*사용|전력\s*사용|전력소비|에너지소비)[^\d]{0,40}([\d,\.]+)\s*(?:천\s*)?(?:kWh|KWh)", 1.0),
+    ("E-4-1", "TJ",     r"(?:에너지\s*사용|총\s*에너지)[^\d]{0,40}([\d,\.]+)\s*TJ", 1.0),
+    ("E-4-1", "kWh",    r"([\d,\.]+)\s*(?:천\s*)?kWh", 1.0),
+    # ── E-5-1 용수 ──────────────────────────────────────────────────────
+    ("E-5-1", "m³",     r"(?:용수\s*사용|취수량|물\s*사용)[^\d]{0,40}([\d,\.]+)\s*(?:천\s*)?m[³3]", 1.0),
+    ("E-5-1", "ton",    r"(?:용수\s*사용|취수량)[^\d]{0,40}([\d,\.]+)\s*(?:천\s*)?(?:톤|ton)", 1.0),
+    # ── E-6-1 폐기물 ────────────────────────────────────────────────────
+    ("E-6-1", "ton",    r"(?:폐기물\s*발생|총\s*폐기물|폐기물\s*배출)[^\d]{0,40}([\d,\.]+)\s*(?:천\s*)?(?:톤|ton)", 1.0),
+    ("E-6-1", "ton",    r"(?:매립|소각|재활용)[^\d]{0,40}([\d,\.]+)\s*(?:천\s*)?(?:톤|ton)", 1.0),
+    # ── E-4-2 재생에너지 ─────────────────────────────────────────────────
+    ("E-4-2", "%",      r"(?:재생\s*에너지|재생에너지\s*비율|신재생)[^\d]{0,40}([\d,\.]+)\s*%", 1.0),
+    # ── S-3-1 안전 (재해율) ───────────────────────────────────────────────
+    ("S-3-1", "%",      r"(?:산재율|재해율|사고율)[^\d]{0,30}([\d,\.]+)\s*%", 1.0),
+    ("S-3-1", "건",     r"(?:산재|재해|사고\s*건수)[^\d]{0,30}([\d,\.]+)\s*건", 1.0),
+    # ── G-3-4 배당성향 (사업보고서에서 추출 가능) ───────────────────────────
+    ("G-3-4", "%",      r"(?:연결)?현금배당성향\s*\(?\s*%?\s*\)?\s*([\d\.]+)", 1.0),
+    # ── G-1-2 사외이사 비율 ─────────────────────────────────────────────────
+    # "사내이사 N인...사외이사 M인...총 T인" 형식에서 비율 계산
+    ("G-1-2", "%",      r"사외이사\s*(\d+)\s*인", 1.0),   # count만 추출, 비율은 후처리
+    # ── G-1-4 여성 이사 수 ──────────────────────────────────────────────────
+    ("G-1-4", "명",     r"여성\s*(?:이사|임원)[^\d]{0,50}(\d+)\s*(?:인|명|개)", 1.0),
+    # ── G-2-1 이사 출석률 ────────────────────────────────────────────────────
+    ("G-2-1", "%",      r"출석률\s*:?\s*([\d\.]+)\s*%", 1.0),
 ]
+
+_BOARD_RATIO_PATTERN = re.compile(
+    r"사외이사\s*(\d+)\s*인.*?총\s*(\d+)\s*인", re.DOTALL
+)
 
 def _regex_extract_kesg(text: str) -> dict[str, dict]:
     result: dict[str, dict] = {}
-    for code, unit, pattern in _KESG_PATTERNS:
+    for code, unit, pattern, scale in _KESG_PATTERNS:
+        if code in result:
+            continue
         m = re.search(pattern, text, re.IGNORECASE)
         if m:
-            raw = m.group(2).replace(",", "")
+            raw = m.group(1).replace(",", "")
             try:
-                value = float(raw)
-                result[code] = {"value": value, "unit": unit, "note": f"DART 원문 정규식 추출"}
+                value = float(raw) * scale
+                result[code] = {"value": value, "unit": unit, "note": "DART 원문 정규식 추출"}
             except ValueError:
                 pass
+
+    # G-1-2 후처리: 사외이사 수 / 전체 이사 수 → 비율(%)
+    if "G-1-2" in result:
+        bm = _BOARD_RATIO_PATTERN.search(text)
+        if bm:
+            outside = float(bm.group(1))
+            total   = float(bm.group(2))
+            if total > 0:
+                result["G-1-2"] = {
+                    "value": round(outside / total * 100, 1),
+                    "unit": "%",
+                    "note": f"DART 사외이사 {int(outside)}/{int(total)}인 — 정규식 추출",
+                }
+
     return result
 
 
