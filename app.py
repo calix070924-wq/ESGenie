@@ -17,7 +17,7 @@ import streamlit as st
 # ── 코어 파이프라인 ──────────────────────────────────────────────────────────
 from esgenie.config import SETTINGS
 from esgenie.dart_client import load_report, search_companies
-from esgenie.knowledge.kesg_items import ALL_ITEMS, BASIC_28_CODES, BASIC_28_ITEMS
+from esgenie.knowledge.kesg_items import BASIC_28_CODES
 from esgenie.layer0_evidence_graph import build_evidence_graph as _v10_build_graph
 from esgenie.layer1_extract import extract
 from esgenie.layer2_rag import HybridRAG
@@ -132,13 +132,15 @@ with st.sidebar:
     </div>""", unsafe_allow_html=True)
 
     # API 키 상태
-    dart_ok   = bool(os.getenv("DART_API_KEY"))
-    openai_ok = bool(os.getenv("OPENAI_API_KEY"))
-    clova_ok  = bool(os.getenv("CLOVA_OCR_SECRET"))
+    dart_ok      = bool(os.getenv("DART_API_KEY"))
+    openai_ok    = bool(os.getenv("OPENAI_API_KEY"))
+    anthropic_ok = bool(os.getenv("ANTHROPIC_API_KEY"))
+    clova_ok     = bool(os.getenv("CLOVA_OCR_SECRET"))
     st.markdown(
         f"{'🟢' if dart_ok else '🔴'} DART  "
         f"{'🟢' if openai_ok else '🔴'} OpenAI  "
-        f"{'🟢' if clova_ok else '🔴'} CLOVA OCR"
+        f"{'🟢' if anthropic_ok else '🔴'} Anthropic  "
+        f"{'🟢' if clova_ok else '🔴'} CLOVA"
     )
     st.divider()
 
@@ -185,6 +187,17 @@ with st.sidebar:
             "그린워싱 시연 모드",
             value=True,
             help="의도적 과장 생성 → L3/L4 탐지·수정 과정 시연",
+        )
+        _prof_sel = st.selectbox(
+            "K-ESG 프로파일",
+            ["자동 판별", "중소기업 기본형 (28)", "전체 (61)"],
+            help="자동: 상장코드(6자리 숫자) → 61항목, 그 외 → 기본형 28항목",
+        )
+        profile_choice = {"자동 판별": None, "중소기업 기본형 (28)": "sme", "전체 (61)": "full"}[_prof_sel]
+        llm_judge_opt = st.checkbox(
+            "LLM 2차 판정 (하이브리드)",
+            value=False,
+            help="룰 1차 스크리닝 + LLM 맥락 판정. 키 없으면 mock 판정으로 시연",
         )
 
     st.divider()
@@ -347,7 +360,7 @@ def _run_pipeline() -> dict:
     l1_result = None
     rag = get_base_rag()
     if dart_report is not None:
-        l1_result = extract_with_ssot(dart_report, ssot_graph)
+        l1_result = extract_with_ssot(dart_report, ssot_graph, profile=profile_choice)
         build_rag_with_ssot(rag, dart_report, ssot_graph)
 
     # L0-C: 설문 응답 → l1_result.mapped 직접 추가
@@ -382,13 +395,16 @@ def _run_pipeline() -> dict:
             demo_greenwash=bool(demo_greenwash),
             evidence_graph=ssot_graph,
             industry_stats=industry_stats,
+            llm_judge=bool(llm_judge_opt),
         )
-        extraction_for_trace = l1_result or extract(dart_report, evidence_graph=ssot_graph)
+        extraction_for_trace = l1_result or extract(
+            dart_report, evidence_graph=ssot_graph, profile=profile_choice)
         v10_trace = build_audit_trace(
             report=dart_report, area=area, verification=verify,
             extraction=extraction_for_trace,
             evidence_graph=ssot_graph,
             industry_stats=industry_stats,
+            llm_judge=bool(llm_judge_opt),
         )
         save_audit_trace(v10_trace)
 
@@ -469,8 +485,9 @@ tabs = st.tabs([
     "✅ 검증 & 최종본",
     "📋 규정 검증",
     "🔍 감사 추적 & HITL",
+    "🧪 벤치마크",
 ])
-tab_home, tab_ssot, tab_diag, tab_draft, tab_verify, tab_policy, tab_audit = tabs
+tab_home, tab_ssot, tab_diag, tab_draft, tab_verify, tab_policy, tab_audit, tab_bench = tabs
 
 
 # ── 홈 ──────────────────────────────────────────────────────────────────────
@@ -554,6 +571,15 @@ with tab_diag:
         ex = result["l1_result"]
         ssot = result["ssot_graph"]
 
+        # 프로파일 배지
+        _badge = "🏢" if ex.profile == "full" else "🏭"
+        _extra = f" · 프로파일 외 추가 공시 {len(ex.beyond_profile)}개" if ex.beyond_profile else ""
+        st.markdown(
+            f"{_badge} **프로파일: {ex.profile_label}** · "
+            f"커버리지 **{ex.coverage_pct:.1f}%**{_extra}"
+        )
+        st.caption("커버리지 분모는 프로파일 기준 — 해당 기업 규모에 적용 가능한 항목만 평가")
+
         area_labels = {"P": "정보공시", "E": "환경", "S": "사회", "G": "지배구조"}
         cov_data = [
             {"영역": f"{k} · {area_labels[k]}",
@@ -586,11 +612,17 @@ with tab_diag:
         ])
         st.dataframe(node_df, hide_index=True, use_container_width=True)
 
-        _missing_28 = [c for c in ex.missing if c in set(BASIC_28_CODES)]
-        _present_28 = [c for c in ex.mapped if c in set(BASIC_28_CODES)]
+        # 프로파일 기준 공시/누락 (분모 = 프로파일 항목 수)
+        from esgenie.knowledge.kesg_items import items_for_profile
+        _prof_items = items_for_profile(ex.profile)
+        _prof_codes = {it.code for it in _prof_items}
+        _n_prof     = len(_prof_items)
+        _missing_p  = [c for c in ex.missing if c in _prof_codes]
+        _present_p  = [c for c in ex.mapped
+                       if c in _prof_codes and not ex.mapped[c].get("beyond_profile")]
         t_present, t_missing = st.tabs([
-            f"✅ 공시 항목 ({len(_present_28)}개 / 28개)",
-            f"⚠️ 누락 항목 ({len(_missing_28)}개 / 28개)",
+            f"✅ 공시 항목 ({len(_present_p)}개 / {_n_prof}개)",
+            f"⚠️ 누락 항목 ({len(_missing_p)}개 / {_n_prof}개)",
         ])
         with t_present:
             def _source_tag(v):
@@ -601,13 +633,21 @@ with tab_diag:
             st.dataframe(pd.DataFrame([
                 {"코드": v["code"], "영역": v["area"], "항목명": v["name"],
                  "값": v["value"], "단위": v.get("unit") or "-", "출처": _source_tag(v)}
-                for v in ex.mapped.values() if v["code"] in set(BASIC_28_CODES)
+                for v in ex.mapped.values()
+                if v["code"] in _prof_codes and not v.get("beyond_profile")
             ]), hide_index=True, use_container_width=True)
         with t_missing:
             st.dataframe(pd.DataFrame([
                 {"코드": it.code, "영역": it.area, "항목명": it.name, "유형": it.data_type}
-                for it in BASIC_28_ITEMS if it.code in ex.missing
+                for it in _prof_items if it.code in ex.missing
             ]), hide_index=True, use_container_width=True)
+        if ex.beyond_profile:
+            with st.expander(f"➕ 프로파일 외 추가 공시 ({len(ex.beyond_profile)}개) — 커버리지 미반영"):
+                st.dataframe(pd.DataFrame([
+                    {"코드": v["code"], "영역": v["area"], "항목명": v["name"],
+                     "값": v["value"], "단위": v.get("unit") or "-"}
+                    for c, v in ex.mapped.items() if v.get("beyond_profile")
+                ]), hide_index=True, use_container_width=True)
 
 
 # ── 보고서 생성 ──────────────────────────────────────────────────────────────
@@ -860,3 +900,103 @@ with tab_audit:
                 st.dataframe(pd.DataFrame([{"문장 ID": sid, "판정": d}
                              for sid, d in decisions.items()]),
                              hide_index=True, use_container_width=True)
+
+
+# ── 벤치마크 ─────────────────────────────────────────────────────────────────
+with tab_bench:
+    st.markdown("## 🧪 그린워싱 검출 벤치마크")
+    st.markdown(GRADIENT, unsafe_allow_html=True)
+
+    from esgenie.benchmark import format_report as _bench_format
+    from esgenie.benchmark import load_benchmark as _bench_load
+    from esgenie.benchmark import run_benchmark as _bench_run
+
+    _DET_LABELS = {"rule": "룰 단독", "hybrid": "하이브리드 (룰+LLM)", "llm_only": "LLM 단독"}
+
+    try:
+        _bench_data = _bench_load()
+        _cases = _bench_data["cases"]
+    except Exception as e:
+        st.error(f"벤치마크 데이터셋 로드 실패: {e}")
+        _cases = []
+
+    if _cases:
+        from collections import Counter as _Counter
+        _cats = _Counter(c["category"] for c in _cases)
+        _gw   = sum(1 for c in _cases if c["label"] == "greenwash")
+        b1, b2, b3 = st.columns(3)
+        b1.metric("라벨링 문장", len(_cases))
+        b2.metric("그린워싱 / 정상", f"{_gw} / {len(_cases) - _gw}")
+        b3.metric("카테고리", len(_cats))
+        st.caption(" · ".join(f"{k} {v}" for k, v in sorted(_cats.items())))
+
+        if SETTINGS.use_mock_llm:
+            st.warning("⚠ LLM 키 미설정 — mock 판정으로 실행됩니다. "
+                       "결과는 아키텍처 데모용이며 성능 주장에는 실키 결과를 사용하세요.")
+
+        if st.button("▶ 벤치마크 실행 (룰 vs 하이브리드 vs LLM 단독)", type="primary"):
+            with st.spinner("50문장 × 3검출기 평가 중…"):
+                st.session_state.bench_reports = _bench_run(["rule", "hybrid", "llm_only"])
+
+        _reports = st.session_state.get("bench_reports")
+        if _reports:
+            # 종합 지표
+            st.markdown("#### 종합 지표")
+            _mrows = []
+            for name, rep in _reports.items():
+                m = rep.metrics()
+                _mrows.append({
+                    "검출기": _DET_LABELS.get(name, name),
+                    "Precision": m["precision"], "Recall": m["recall"],
+                    "F1": m["f1"], "Accuracy": m["accuracy"],
+                    "LLM 호출": m["llm_calls"],
+                })
+            st.dataframe(pd.DataFrame(_mrows), hide_index=True, use_container_width=True)
+
+            # F1 비교 차트
+            fig = go.Figure()
+            for metric_name in ("precision", "recall", "f1"):
+                fig.add_bar(
+                    name=metric_name.capitalize(),
+                    x=[_DET_LABELS.get(n, n) for n in _reports],
+                    y=[rep.metrics()[metric_name] for rep in _reports.values()],
+                )
+            fig.update_layout(barmode="group", height=320,
+                              yaxis=dict(range=[0, 1.05], title="점수"),
+                              margin=dict(t=30, b=20),
+                              title="검출기별 Precision / Recall / F1")
+            st.plotly_chart(fig, use_container_width=True)
+
+            # 카테고리별 정답률
+            st.markdown("#### 카테고리별 정답률")
+            _cat_names = sorted({c.category for rep in _reports.values() for c in rep.cases})
+            _crows = []
+            for cat in _cat_names:
+                row = {"카테고리": cat}
+                for name, rep in _reports.items():
+                    bc = rep.by_category().get(cat, {})
+                    row[_DET_LABELS.get(name, name)] = f"{bc.get('correct', 0)}/{bc.get('total', 0)}"
+                _crows.append(row)
+            st.dataframe(pd.DataFrame(_crows), hide_index=True, use_container_width=True)
+            st.caption("backed_modifier(근거 수반 수식어)·future_plan(미래 계획)이 "
+                       "룰 단독의 구조적 오탐 영역 — 하이브리드가 LLM 맥락 판정으로 해소")
+
+            # 오답 상세
+            st.markdown("#### 오답 상세")
+            for name, rep in _reports.items():
+                wrong = [c for c in rep.cases if not c.correct]
+                with st.expander(f"{_DET_LABELS.get(name, name)} — 오답 {len(wrong)}건"):
+                    if wrong:
+                        st.dataframe(pd.DataFrame([
+                            {"ID": c.case_id, "카테고리": c.category,
+                             "유형": "오탐(FP)" if c.label == "clean" else "미탐(FN)",
+                             "점수": round(c.risk_score, 3), "비고": c.detail[:60]}
+                            for c in wrong
+                        ]), hide_index=True, use_container_width=True)
+                    else:
+                        st.success("오답 없음")
+
+            # 리포트 다운로드
+            _md = _bench_format(_reports, n_cases=len(_cases))
+            st.download_button("📥 벤치마크 리포트 (.md)", _md.encode(),
+                               file_name="benchmark_report.md", mime="text/markdown")
