@@ -54,6 +54,7 @@ def run(
     *,
     demo_greenwash: bool = False,
     save_traces: bool = True,
+    llm_judge: bool = False,
 ) -> PipelineOutput:
     """L0 → L1 → L2 → L3 → L4(루프) → L5 전체 실행.
 
@@ -62,6 +63,8 @@ def run(
         areas:          분석 영역 목록 (기본: ["E", "S", "G"])
         demo_greenwash: True면 초안을 의도적 과장 생성
         save_traces:    True면 outputs/ 에 audit_trace JSON 저장
+        llm_judge:      True면 룰 1차 + LLM 2차 판정 하이브리드 검출
+                        (키 없으면 mock 판정 — 데모 가능)
     """
     areas = areas or ["E", "S", "G"]
 
@@ -100,6 +103,7 @@ def run(
             demo_greenwash=demo_greenwash,
             evidence_graph=evidence_graph,
             industry_stats=industry_stats,
+            llm_judge=llm_judge,
         )
         sections[area] = verify
         logger.info(
@@ -116,6 +120,7 @@ def run(
             extraction=extraction,
             evidence_graph=evidence_graph,
             industry_stats=industry_stats,
+            llm_judge=llm_judge,
         )
         audit_traces[area] = trace
 
@@ -144,6 +149,8 @@ def _cli() -> None:
         choices=["E", "S", "G"], help="분석 영역 (기본: E S G)",
     )
     parser.add_argument("--demo-greenwash", action="store_true", help="그린워싱 시연 모드")
+    parser.add_argument("--llm-judge", action="store_true",
+                        help="룰+LLM 하이브리드 검출 (2차 LLM 판정, 키 없으면 mock)")
     parser.add_argument("--no-save", action="store_true", help="audit_trace 파일 미저장")
     args = parser.parse_args()
 
@@ -157,6 +164,7 @@ def _cli() -> None:
         areas=args.areas,
         demo_greenwash=args.demo_greenwash,
         save_traces=not args.no_save,
+        llm_judge=args.llm_judge,
     )
 
     print(f"\n{'='*60}")

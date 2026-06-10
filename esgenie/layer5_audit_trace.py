@@ -31,6 +31,7 @@ def build_audit_trace(
     extraction: ExtractionResult,
     evidence_graph: Any | None = None,   # EvidenceGraph | None
     industry_stats: dict[str, Any] | None = None,
+    llm_judge: bool = False,             # 하이브리드: LLM 2차 판정 활성화
 ) -> AuditTrace:
     """파이프라인 산출물 → AuditTrace 조립.
 
@@ -72,10 +73,14 @@ def build_audit_trace(
         # kesg_item_id
         kesg_item_id = kesg_map.get(sent_text)
 
-        # risk_vector (문장 단위)
+        # risk_vector (문장 단위) — llm_judge=True면 룰+LLM 하이브리드
         rv: RiskVector | None = None
         if evidence_graph is not None or chunks:
-            rv = detect_risk_vector(
+            if llm_judge:
+                from .layer3_judge import detect_risk_vector_hybrid as _detect
+            else:
+                _detect = detect_risk_vector
+            rv = _detect(
                 sent_text,
                 evidence_graph=evidence_graph,
                 retrieved_chunks=chunks or None,

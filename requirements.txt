@@ -5,8 +5,9 @@ requests>=2.31.0
 pandas>=2.1.0
 numpy>=1.26.0
 
-# LLM
+# LLM (둘 중 하나만 있어도 동작 — OpenAI 우선, 없으면 Anthropic, 둘 다 없으면 mock)
 openai>=1.30.0
+anthropic>=0.40.0
 
 # Vector search / embeddings
 faiss-cpu>=1.7.4

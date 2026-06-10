@@ -76,6 +76,38 @@ OCR 증빙  ──┘    (DART + 내부 증빙 통합)
 
 ---
 
+## 하이브리드 검출 (룰 1차 + LLM 2차 판정)
+
+`--llm-judge` 활성화 시 2단 검증 아키텍처로 동작한다.
+
+```
+전 문장 ──► [1차: 룰 스크리닝]  재현 가능 · 비용 0 · recall 담당
+                │
+                ├─ 전 축 < JUDGE_TRIGGER(0.25) → LLM 호출 생략 (비용 절감)
+                ▼
+          [2차: LLM 맥락 판정]  precision 담당
+                │  verdict: false_positive | uncertain | confirmed
+                ▼
+          최종점수 = 0.4 × 룰 + 0.6 × LLM   (근거 인용 포함 → audit_trace 기록)
+```
+
+룰 단독의 한계를 LLM이 보정한다:
+
+| 사례 | 룰 단독 | 하이브리드 |
+|------|---------|-----------|
+| "업계 최고 수준 인증 취득 (1,200 tCO2eq)" | D2=1.00 (과장 오탐) | D2=0.43 — 정량 근거 수반 → false_positive |
+| "압도적이고 선도적인 친환경 기업" | D2=1.00 | D2=1.00 — confirmed (위험 유지) |
+| "감소 목표를 수립" (미래 계획) | D5 모순 오탐 가능 | 시제 구분 → false_positive |
+
+```bash
+python -m esgenie.pipeline --ticker 005930 --areas E --demo-greenwash --llm-judge
+```
+
+- LLM: OpenAI 우선 → Anthropic(`ANTHROPIC_API_KEY`) → mock (키 없이도 전체 경로 시연 가능)
+- 판정 결과(verdict·근거·모델)는 `audit_trace`의 `aggregate.judge`에 기록 → 감사 추적 유지
+
+---
+
 ## OCR 듀얼 채널
 
 | 채널 | 대상 문서 | 처리 방식 |

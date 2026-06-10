@@ -156,6 +156,7 @@ def verify_and_refine(
     demo_greenwash: bool = False,
     evidence_graph: Any | None = None,   # v10: EvidenceGraph | None
     industry_stats: dict[str, Any] | None = None,  # v10: 업종 벤치마크
+    llm_judge: bool = False,             # 하이브리드: LLM 2차 판정 활성화
 ) -> VerificationResult:
     """반복 검증 루프.
 
@@ -175,7 +176,8 @@ def verify_and_refine(
     # 5축 벡터 계산 (evidence_graph 있을 때만)
     rv: RiskVector | None = None
     if evidence_graph is not None:
-        rv = _compute_text_risk_vector(gen.text, evidence_graph, gen, industry_stats)
+        rv = _compute_text_risk_vector(gen.text, evidence_graph, gen, industry_stats,
+                                       llm_judge=llm_judge)
         det.risk_vector = rv
 
     steps.append(VerificationStep(iteration=0, generation=gen, detection=det, instruction=""))
@@ -195,7 +197,8 @@ def verify_and_refine(
         det = detect(gen.text, report)
 
         if evidence_graph is not None:
-            rv = _compute_text_risk_vector(gen.text, evidence_graph, gen, industry_stats)
+            rv = _compute_text_risk_vector(gen.text, evidence_graph, gen, industry_stats,
+                                           llm_judge=llm_judge)
             det.risk_vector = rv
 
         refinement_attempts.append(_make_refinement_attempt(
@@ -234,6 +237,8 @@ def _compute_text_risk_vector(
     evidence_graph: Any,
     gen: GenerationResult,
     industry_stats: dict[str, Any] | None,
+    *,
+    llm_judge: bool = False,
 ) -> RiskVector:
     """전체 텍스트를 문장 단위로 분해해 가장 높은 RiskVector를 반환.
 
@@ -257,9 +262,14 @@ def _compute_text_risk_vector(
             IndexedDoc(text=c["text"], meta={"id": c["id"]}) for c in chunks
         ])
 
+    if llm_judge:
+        from .layer3_judge import detect_risk_vector_hybrid as _detect
+    else:
+        _detect = detect_risk_vector
+
     best_rv: RiskVector | None = None
     for sent in sents:
-        rv = detect_risk_vector(
+        rv = _detect(
             sent,
             evidence_graph=evidence_graph,
             retrieved_chunks=chunks or None,

@@ -26,12 +26,20 @@ class LLMResponse:
 class LLMClient:
     def __init__(self) -> None:
         self._openai_client = None
+        self._anthropic_client = None
         if not SETTINGS.use_mock_llm:
-            try:
-                from openai import OpenAI  # type: ignore
-                self._openai_client = OpenAI(api_key=SETTINGS.openai_api_key)
-            except Exception:
-                self._openai_client = None
+            if SETTINGS.openai_api_key:
+                try:
+                    from openai import OpenAI  # type: ignore
+                    self._openai_client = OpenAI(api_key=SETTINGS.openai_api_key)
+                except Exception:
+                    self._openai_client = None
+            if self._openai_client is None and SETTINGS.anthropic_api_key:
+                try:
+                    import anthropic  # type: ignore
+                    self._anthropic_client = anthropic.Anthropic(api_key=SETTINGS.anthropic_api_key)
+                except Exception:
+                    self._anthropic_client = None
 
     # ---- public API ---------------------------------------------------
     def complete(
@@ -50,25 +58,48 @@ class LLMClient:
             "clean"       — 보수적·수치 기반 초안 (기본)
             "greenwash"   — 시연용 과장 초안 (Layer 3/4 시연에 사용)
         """
-        if self._openai_client is None:
-            return self._mock_complete(system, user, mock_hint, json_mode, variant=mock_variant)
-        try:
-            kwargs: dict[str, Any] = {
-                "model": SETTINGS.openai_model,
-                "temperature": temperature,
-                "messages": [
-                    {"role": "system", "content": system},
-                    {"role": "user", "content": user},
-                ],
-            }
-            if json_mode:
-                kwargs["response_format"] = {"type": "json_object"}
-            resp = self._openai_client.chat.completions.create(**kwargs)
-            text = resp.choices[0].message.content or ""
-            return LLMResponse(content=text, used_mock=False, meta={"model": SETTINGS.openai_model})
-        except Exception as exc:
-            return self._mock_complete(system, user, mock_hint, json_mode,
-                                       variant=mock_variant, error=str(exc))
+        if self._openai_client is not None:
+            try:
+                kwargs: dict[str, Any] = {
+                    "model": SETTINGS.openai_model,
+                    "temperature": temperature,
+                    "messages": [
+                        {"role": "system", "content": system},
+                        {"role": "user", "content": user},
+                    ],
+                }
+                if json_mode:
+                    kwargs["response_format"] = {"type": "json_object"}
+                resp = self._openai_client.chat.completions.create(**kwargs)
+                text = resp.choices[0].message.content or ""
+                return LLMResponse(content=text, used_mock=False,
+                                   meta={"model": SETTINGS.openai_model, "provider": "openai"})
+            except Exception as exc:
+                return self._mock_complete(system, user, mock_hint, json_mode,
+                                           variant=mock_variant, error=str(exc))
+
+        if self._anthropic_client is not None:
+            try:
+                sys_prompt = system
+                if json_mode:
+                    sys_prompt += "\n\n응답은 반드시 유효한 JSON 객체 하나로만 출력하라. 코드블록·설명 금지."
+                resp = self._anthropic_client.messages.create(
+                    model=SETTINGS.anthropic_model,
+                    max_tokens=2048,
+                    temperature=temperature,
+                    system=sys_prompt,
+                    messages=[{"role": "user", "content": user}],
+                )
+                text = "".join(
+                    block.text for block in resp.content if getattr(block, "type", "") == "text"
+                )
+                return LLMResponse(content=text, used_mock=False,
+                                   meta={"model": SETTINGS.anthropic_model, "provider": "anthropic"})
+            except Exception as exc:
+                return self._mock_complete(system, user, mock_hint, json_mode,
+                                           variant=mock_variant, error=str(exc))
+
+        return self._mock_complete(system, user, mock_hint, json_mode, variant=mock_variant)
 
     # ---- mock ---------------------------------------------------------
     def _mock_complete(
@@ -89,7 +120,9 @@ class LLMClient:
             hint = "rewrite"
         else:
             hint = mock_hint or detected
-        if hint == "extract":
+        if hint == "judge":
+            content = _mock_judge(user)
+        elif hint == "extract":
             content = _mock_extract(user)
         elif hint == "generate":
             if variant == "greenwash":
@@ -111,6 +144,9 @@ class LLMClient:
 
 def _detect_hint(text: str) -> str:
     t = text.lower()
+    # 0) 2차 판정 (judge) — layer3_judge가 프롬프트에 마커를 심는다.
+    if "[[JUDGE_TASK]]" in text:
+        return "judge"
     # 1) 재작성 (rewrite) — 명시적 재작성 신호가 가장 우선.
     #    Layer 4 자가 검증 루프가 generate_section을 재사용하면서 user 프롬프트에
     #    "추가 지시:" 또는 "=== 재작성 제약" 블록을 덧붙이기 때문에 이를 먼저 잡는다.
@@ -529,6 +565,44 @@ def _parse_context(text: str) -> dict[str, Any]:
     elif "지배구조" in text and "G=지배구조" not in text:
         ctx["area"] = "G"
     return ctx
+
+
+def _mock_judge(user_prompt: str) -> str:
+    """LLM 2차 판정 mock — layer3_judge 프롬프트 형식에 맞춰 결정적 판정을 돌려준다.
+
+    실제 키 없이도 하이브리드 파이프라인(룰 1차 → LLM 2차)이 end-to-end로
+    동작하도록, 룰 detail에서 읽을 수 있는 신호로 간단한 판정을 모사한다:
+      - D2: 문장에 정량 수치가 함께 있으면 false_positive (수식어가 근거를 수반)
+      - D1: 룰 detail이 '수치 매칭 없음'이면 uncertain (매칭 실패 ≠ 허위)
+      - 그 외: confirmed (룰 점수 유지)
+    """
+    # 문장 추출
+    m = re.search(r"\[문장\]\s*(.+?)\s*\[축별 룰 판정\]", user_prompt, re.S)
+    sentence = m.group(1).strip() if m else ""
+    has_number = bool(re.search(r"\d", sentence))
+
+    axes_out: dict[str, Any] = {}
+    for am in re.finditer(
+        r"- (?P<axis>D[1235]_\w+) \| rule_score=(?P<score>[0-9.]+) \| detail=(?P<detail>.*)",
+        user_prompt,
+    ):
+        axis, rule_score, detail = am.group("axis"), float(am.group("score")), am.group("detail")
+        if axis == "D2_modifier" and has_number:
+            verdict, llm_score = "false_positive", 0.05
+            rationale = "[MOCK] 수식어가 문장 내 정량 수치로 뒷받침됨 — 과장으로 보기 어려움"
+        elif axis == "D1_numeric" and "수치 매칭 없음" in detail:
+            verdict, llm_score = "uncertain", round(rule_score * 0.5, 4)
+            rationale = "[MOCK] 증빙 노드 매칭 실패는 허위 단정 근거가 아님 — 추가 증빙 필요"
+        else:
+            verdict, llm_score = "confirmed", rule_score
+            rationale = "[MOCK] 룰 판정과 일치 — 위험 유지"
+        axes_out[axis] = {
+            "verdict": verdict,
+            "llm_score": llm_score,
+            "rationale": rationale,
+            "quote": sentence[:80],
+        }
+    return json.dumps({"axes": axes_out}, ensure_ascii=False)
 
 
 # Singleton

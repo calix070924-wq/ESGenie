@@ -23,13 +23,18 @@ BEST_REPORTS_DIR = DATA_DIR / "best_reports"
 @dataclass
 class Settings:
     openai_api_key: str | None
+    anthropic_api_key: str | None
     dart_api_key: str | None
     openai_model: str
+    anthropic_model: str
     embed_model: str
+    force_mock: bool = False   # ESGENIE_FORCE_MOCK=1 → 키가 있어도 mock 강제 (테스트 결정성)
 
     @property
     def use_mock_llm(self) -> bool:
-        return not self.openai_api_key
+        if self.force_mock:
+            return True
+        return not (self.openai_api_key or self.anthropic_api_key)
 
     @property
     def use_mock_dart(self) -> bool:
@@ -39,9 +44,12 @@ class Settings:
 def load_settings() -> Settings:
     return Settings(
         openai_api_key=os.getenv("OPENAI_API_KEY") or None,
+        anthropic_api_key=os.getenv("ANTHROPIC_API_KEY") or None,
         dart_api_key=os.getenv("DART_API_KEY") or None,
         openai_model=os.getenv("OPENAI_MODEL", "gpt-4o-mini"),
+        anthropic_model=os.getenv("ANTHROPIC_MODEL", "claude-haiku-4-5-20251001"),
         embed_model=os.getenv("EMBED_MODEL", "paraphrase-multilingual-MiniLM-L12-v2"),
+        force_mock=os.getenv("ESGENIE_FORCE_MOCK", "0") == "1",
     )
 
 
@@ -80,3 +88,11 @@ RISK_LEVEL_THRESHOLDS: dict[str, float] = {
 
 # L4 재생성 최대 반복 횟수
 MAX_REFINEMENT_ITER: int = int(os.getenv("MAX_REFINEMENT_ITER", "3"))
+
+
+# ---- 하이브리드 검출 (룰 1차 + LLM 2차 판정) ---------------------------------
+# 룰 점수가 이 값 이상인 축만 LLM 판정으로 보낸다 (비용 절감 — 전수 LLM 호출 방지)
+JUDGE_TRIGGER: float = float(os.getenv("JUDGE_TRIGGER", "0.25"))
+
+# 최종 점수 = JUDGE_RULE_WEIGHT * 룰점수 + (1 - JUDGE_RULE_WEIGHT) * LLM점수
+JUDGE_RULE_WEIGHT: float = float(os.getenv("JUDGE_RULE_WEIGHT", "0.4"))
