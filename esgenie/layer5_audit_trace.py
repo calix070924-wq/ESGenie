@@ -107,10 +107,7 @@ def build_audit_trace(
             refinement_attempts=ref_attempts,
             hitl_status=hitl_status,
             timestamps={"created": now_iso, "finalized": now_iso},
-            model_versions={
-                "llm":   SETTINGS.openai_model,
-                "embed": SETTINGS.embed_model,
-            },
+            model_versions=_model_versions(),
         ))
 
     # 요약 통계
@@ -157,6 +154,22 @@ def save_audit_trace(trace: AuditTrace) -> Path:
 
 
 # ---- 내부 헬퍼 --------------------------------------------------------------
+
+def _model_versions() -> dict[str, str]:
+    """감사 추적용 모델/백엔드 버전 — 폴백 여부까지 기록 (환경 재현성)."""
+    from .embeddings import embedding_backend
+    if SETTINGS.use_mock_llm:
+        llm = "mock"
+    elif SETTINGS.openai_api_key:
+        llm = SETTINGS.openai_model
+    else:
+        llm = SETTINGS.anthropic_model
+    return {
+        "llm":           llm,
+        "embed":         SETTINGS.embed_model,
+        "embed_backend": embedding_backend(),
+    }
+
 
 def _split_sentences(text: str) -> list[str]:
     parts = re.split(r"(?<=[.!?。\n])\s+", text.strip())

@@ -220,12 +220,18 @@ streamlit run app.py
 - 4축 레이더 차트 + P축 규정 누락 조항 인라인 표시
 - evidence_pack Excel 다운로드 (감사 증빙 서류철)
 
-### 3. 벤치마크 / 테스트
+### 3. 벤치마크 / 테스트 / 환경 점검
 
 ```bash
 python -m esgenie.benchmark       # 그린워싱 검출 3검출기 비교
-python -m pytest tests/ -q        # 142개 테스트
+python -m pytest tests/ -q        # 테스트 전체
+python -m esgenie.doctor --smoke  # 데모 전 환경 사전점검 (패키지·키·임베딩 백엔드·E2E)
 ```
+
+> **시연 전 필수:** `doctor`는 조용한 폴백(임베딩 해시 폴백, mock LLM 등)을 노출한다.
+> 폴백은 "키 없이도 도는 데모"를 보장하는 설계지만, 시연 머신마다 품질이 달라지는
+> 원인이므로 발표 전 반드시 종합 판정 🟢 확인. 임베딩 백엔드는 사이드바·로그·
+> audit_trace(`model_versions.embed_backend`)에도 기록된다.
 
 ---
 

@@ -85,7 +85,12 @@ def run(
                 extraction.coverage_pct, extraction.profile_label)
 
     # L2 — Hybrid RAG 인덱스 빌드
-    logger.info("[L2] Hybrid RAG 인덱스 빌드 중...")
+    from .embeddings import embedding_backend
+    _backend = embedding_backend()
+    if _backend != "sbert":
+        logger.warning("[L2] ⚠ 임베딩 폴백 모드(%s) — D3 의미검증 품질 저하. "
+                       "sentence-transformers 설치 권장", _backend)
+    logger.info("[L2] Hybrid RAG 인덱스 빌드 중... (backend=%s)", _backend)
     rag = HybridRAG()
     rag.build_corp_index(report)
 

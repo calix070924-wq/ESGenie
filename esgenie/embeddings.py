@@ -101,3 +101,31 @@ def _tokenize(text: str) -> list[str]:
     words = [w for w in text.split() if w]
     bigrams = [text[i:i + 2] for i in range(len(text) - 1) if not text[i:i + 2].isspace()]
     return words + bigrams
+
+
+# ---- 백엔드 가시화 -----------------------------------------------------------
+# 폴백은 좋은 설계지만 '조용한 폴백'은 환경별 품질 변동의 원인.
+# 어느 백엔드로 도는지 항상 조회 가능하게 노출한다 (로그/UI/audit_trace용).
+
+def embedding_backend() -> str:
+    """현재 임베딩 백엔드: 'sbert' | 'hash-fallback'."""
+    return "sbert" if _get_st_model(SETTINGS.embed_model) is not None else "hash-fallback"
+
+
+def faiss_available() -> bool:
+    return _get_faiss() is not None
+
+
+def backend_summary() -> dict[str, Any]:
+    """환경 진단용 백엔드 요약."""
+    backend = embedding_backend()
+    return {
+        "embedding_backend": backend,
+        "embed_model": SETTINGS.embed_model if backend == "sbert" else "(미설치 — 해시 n-gram 폴백)",
+        "faiss": faiss_available(),
+        "quality_note": (
+            "정상 (SBERT 의미 임베딩)" if backend == "sbert"
+            else "주의: sentence-transformers 미설치 — D3 의미검증 품질 저하. "
+                 "pip install sentence-transformers faiss-cpu 권장"
+        ),
+    }

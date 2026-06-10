@@ -142,6 +142,15 @@ with st.sidebar:
         f"{'🟢' if anthropic_ok else '🔴'} Anthropic  "
         f"{'🟢' if clova_ok else '🔴'} CLOVA"
     )
+
+    # 임베딩 백엔드 — 조용한 폴백을 보이게 (환경별 D3 품질 변동 방지)
+    from esgenie.embeddings import embedding_backend as _emb_backend
+    _eb = _emb_backend()
+    if _eb == "sbert":
+        st.caption("🟢 임베딩: SBERT (정상)")
+    else:
+        st.caption("🟡 임베딩: 해시 폴백 — D3 품질 저하. "
+                   "`pip install sentence-transformers faiss-cpu` 권장")
     st.divider()
 
     # 회사 검색
