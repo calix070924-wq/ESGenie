@@ -55,6 +55,7 @@ def run(
     demo_greenwash: bool = False,
     save_traces: bool = True,
     llm_judge: bool = False,
+    profile: str | None = None,   # "sme" | "full" | None(자동: 상장코드→full, 그 외→sme)
 ) -> PipelineOutput:
     """L0 → L1 → L2 → L3 → L4(루프) → L5 전체 실행.
 
@@ -77,10 +78,11 @@ def run(
         len(evidence_graph.nodes), len(evidence_graph.edges),
     )
 
-    # L1 — K-ESG 61항목 추출 (evidence_node_ids 부착)
+    # L1 — K-ESG 항목 추출 (프로파일 기반, evidence_node_ids 부착)
     logger.info("[L1] K-ESG 항목 추출 중...")
-    extraction = extract(report, evidence_graph=evidence_graph)
-    logger.info("[L1] 완료: %.1f%% 커버리지", extraction.coverage_pct)
+    extraction = extract(report, evidence_graph=evidence_graph, profile=profile)
+    logger.info("[L1] 완료: %.1f%% 커버리지 (%s)",
+                extraction.coverage_pct, extraction.profile_label)
 
     # L2 — Hybrid RAG 인덱스 빌드
     logger.info("[L2] Hybrid RAG 인덱스 빌드 중...")
@@ -151,6 +153,8 @@ def _cli() -> None:
     parser.add_argument("--demo-greenwash", action="store_true", help="그린워싱 시연 모드")
     parser.add_argument("--llm-judge", action="store_true",
                         help="룰+LLM 하이브리드 검출 (2차 LLM 판정, 키 없으면 mock)")
+    parser.add_argument("--profile", choices=["sme", "full"], default=None,
+                        help="K-ESG 프로파일 (기본: 자동 — 상장코드→full, 그 외→sme)")
     parser.add_argument("--no-save", action="store_true", help="audit_trace 파일 미저장")
     args = parser.parse_args()
 
@@ -165,12 +169,13 @@ def _cli() -> None:
         demo_greenwash=args.demo_greenwash,
         save_traces=not args.no_save,
         llm_judge=args.llm_judge,
+        profile=args.profile,
     )
 
     print(f"\n{'='*60}")
     print(f"기업: {output.report.corp_name} ({args.ticker})")
     print(f"분석 영역: {args.areas}")
-    print(f"K-ESG 커버리지: {output.extraction.coverage_pct:.1f}%")
+    print(f"K-ESG 커버리지: {output.extraction.coverage_pct:.1f}% — {output.extraction.profile_label}")
     print(f"Evidence Graph: {len(output.evidence_graph.nodes)}노드 / {len(output.evidence_graph.edges)}엣지")
     for area, verify in output.sections.items():
         hitl = " [HITL_REQUIRED]" if verify.hitl_required else ""

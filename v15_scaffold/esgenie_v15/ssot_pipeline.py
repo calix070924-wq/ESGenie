@@ -41,13 +41,16 @@ from .evidence_graph import EvidenceGraph, EvidenceNode
 def extract_with_ssot(
     report: Any,           # esgenie.dart_client.CompanyReport
     graph: EvidenceGraph,
+    profile: str | None = None,   # "sme" | "full" | None(자동 판별)
 ):
-    """K-ESG 61개 항목 추출 + v15 SSOT 증거 부착.
+    """K-ESG 항목 추출(프로파일 기반) + v15 SSOT 증거 부착.
 
     Parameters
     ----------
     report : CompanyReport   (v10 DART 보고서 객체)
     graph  : EvidenceGraph   (v15 SSOT — DART + OCR 통합)
+    profile: K-ESG 프로파일 — None이면 corp_code로 자동 판별
+             (중소기업 → 기본형 28항목, 상장사 → 61항목 전체)
 
     Returns
     -------
@@ -57,7 +60,7 @@ def extract_with_ssot(
 
     # v10 extract()는 evidence_graph.search_nodes(keywords, period) 인터페이스만 사용.
     # v15 EvidenceGraph에 search_nodes()가 추가됐으므로 직접 전달 가능.
-    result = _v10_extract(report, evidence_graph=graph)
+    result = _v10_extract(report, evidence_graph=graph, profile=profile)
 
     # ── OCR 노드 증거 병합 ────────────────────────────────────────────
     # v10 extract()는 DART 노드만 탐색하므로, OCR 출처(ocr_structured / ocr_unstructured)

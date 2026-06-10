@@ -27,9 +27,9 @@ OCR 증빙  ──┘    (DART + 내부 증빙 통합)
   │
   ▼
 ┌─────────────────────────────────────────────────────────────────────────┐
-│ L1  K-ESG 추출                                                           │
-│     61개 항목 매핑 + DART·OCR 복합 evidence_node_ids 부착                │
-│     OCR 증빙으로 no_evidence 플래그 자동 해소                             │
+│ L1  K-ESG 추출 (프로파일 기반)                                            │
+│     중소기업 기본형 28항목 | 상장사 61항목 전체 — 자동 판별               │
+│     DART·OCR 복합 evidence_node_ids 부착, no_evidence 플래그 자동 해소    │
 └─────────────────────────────────────────────────────────────────────────┘
   │
   ▼
@@ -59,6 +59,28 @@ OCR 증빙  ──┘    (DART + 내부 증빙 통합)
 │     문장 단위 근거 추적 → audit_trace.json                                │
 │     누락 조항 초안 자동 생성 → Excel evidence_pack                        │
 └─────────────────────────────────────────────────────────────────────────┘
+```
+
+---
+
+## K-ESG 프로파일 (sme 28 / full 61)
+
+K-ESG 61항목 체계 위에서 기업 규모에 맞는 추적 범위를 적용한다.
+
+| 프로파일 | 항목 수 | 대상 | 커버리지 분모 |
+|---|---|---|---|
+| `sme` | 기본형 28 | 중소기업 (공급망 실사 대응 핵심) | 28 |
+| `full` | 전체 61 | 상장·중견기업 | 61 |
+
+- 종목코드로 **자동 판별** (6자리 상장코드 → full, 그 외 → sme), `--profile`로 강제 가능
+- 중소기업을 61항목 분모로 평가하면 커버리지가 구조적으로 낮게 나와 의미가 없음 —
+  분모는 "해당 기업에 적용 가능한 항목" 기준
+- 프로파일 밖 추가 공시는 `beyond_profile`로 함께 추출하되 분모에 미포함
+- 사업 확장 경로: 중소기업은 28항목으로 시작 → 성장 시 같은 시스템에서 61항목으로 확장
+
+```bash
+python -m esgenie.pipeline --ticker SME001 --areas E              # 자동: sme 프로파일
+python -m esgenie.pipeline --ticker 005930 --areas E --profile sme  # 강제 지정
 ```
 
 ---
@@ -242,14 +264,14 @@ ESGenie/
 │   ├── dart_client.py                  # DART OpenAPI 래퍼
 │   ├── embeddings.py                   # FAISS + TF-IDF 폴백
 │   ├── layer0_evidence_graph.py        # L0: EvidenceGraph (DART 전용)
-│   ├── layer1_extract.py               # L1: K-ESG 61항목 추출
+│   ├── layer1_extract.py               # L1: K-ESG 추출 (프로파일 기반 28/61)
 │   ├── layer2_rag.py                   # L2: Hybrid RAG (3채널)
 │   ├── layer3_detect.py                # L3: 4축 리스크 분해
 │   ├── layer4_verify.py                # L4: 제약 재생성 루프
 │   ├── layer5_audit_trace.py           # L5: Audit Trace 생성
 │   ├── pipeline.py                     # 6-Layer 오케스트레이터
 │   └── knowledge/
-│       ├── kesg_items.py               # K-ESG 61항목 정의
+│       ├── kesg_items.py               # K-ESG 61항목 정의 + 프로파일(sme/full)
 │       └── greenwash_lexicon.py        # 과장 수식어 사전
 ├── v15_scaffold/                       # v15 확장 (OCR + SSOT + 엔터프라이즈)
 │   ├── app.py                          # v15 Streamlit UI

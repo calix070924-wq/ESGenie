@@ -160,6 +160,42 @@ BASIC_28_ITEMS: list[KESGItem] = [it for it in ALL_ITEMS if it.code in BASIC_28_
 assert len(BASIC_28_ITEMS) == 28, f"K-ESG 기본형 항목 개수 오류: {len(BASIC_28_ITEMS)}"
 
 
+# ---- 프로파일 ---------------------------------------------------------------
+# K-ESG 61항목 체계 위에서 기업 규모에 맞는 추적 범위를 선택한다.
+#   sme  — 중소기업 기본형 28항목 (공급망 ESG 실사 대응 핵심)
+#   full — 61항목 전체 (대기업·중견 확장)
+# 커버리지 분모는 프로파일 기준 — 중소기업을 61항목으로 평가하면
+# 커버리지가 구조적으로 낮게 나와 의미가 없기 때문.
+
+Profile = Literal["sme", "full"]
+
+PROFILES: dict[str, list[KESGItem]] = {
+    "sme": BASIC_28_ITEMS,
+    "full": ALL_ITEMS,
+}
+
+PROFILE_LABELS: dict[str, str] = {
+    "sme": "중소기업 기본형 (28항목)",
+    "full": "전체 (61항목)",
+}
+
+
+def items_for_profile(profile: Profile) -> list[KESGItem]:
+    try:
+        return PROFILES[profile]
+    except KeyError:
+        raise ValueError(f"알 수 없는 프로파일: {profile!r} (sme | full)") from None
+
+
+def detect_profile(corp_code: str) -> Profile:
+    """종목코드 기반 프로파일 자동 판별.
+
+    상장사 종목코드는 6자리 숫자(예: 005930) — full.
+    비상장 중소기업은 내부 식별자(예: SME001) — sme.
+    """
+    return "full" if corp_code.strip().isdigit() else "sme"
+
+
 def by_area(area: Area) -> list[KESGItem]:
     return [it for it in ALL_ITEMS if it.area == area]
 
