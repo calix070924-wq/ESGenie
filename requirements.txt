@@ -13,6 +13,12 @@ anthropic>=0.40.0
 faiss-cpu>=1.7.4
 sentence-transformers>=2.6.0
 
+# SSOT / OCR (구 v15 — esgenie.ssot)
+openpyxl>=3.1          # evidence_pack 엑셀 내보내기
+pymupdf>=1.23.0        # PDF → 텍스트/이미지 (_quick_preview, _render_pages_b64)
+pdf2image>=1.17.0      # pymupdf 폴백
+pillow>=10.0.0         # pdf2image 의존
+
 # Korean NLP utilities
 regex>=2024.4.16
 

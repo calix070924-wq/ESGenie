@@ -19,7 +19,7 @@ v10의 Layer1(K-ESG 추출)과 Layer2(Hybrid RAG)를 v15 EvidenceGraph(SSOT)와 
 
 사용 예시 (app.py)
 ------------------
-    from esgenie_v15.ssot_pipeline import extract_with_ssot, build_rag_with_ssot
+    from esgenie.ssot.ssot_pipeline import extract_with_ssot, build_rag_with_ssot
 
     graph  = build_unified_graph(dart_report, ocr_extractions, ...)
     l1     = extract_with_ssot(dart_report, graph)

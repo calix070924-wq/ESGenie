@@ -422,7 +422,11 @@ def _extract_structured_no_llm(file_path: str, *, doc_type: str) -> OcrExtractio
     """
     raw_text = _extract_text_pymupdf(file_path, max_pages=5)
     if not raw_text.strip():
-        return extract_unstructured(file_path, doc_type=doc_type)
+        # 스캔본(임베딩 텍스트 없음) → VLM 키가 있으면 비정형 채널로 에스컬레이션.
+        # VLM 키도 없으면 정형 mock 반환 (doc_type별 샘플 수치 — 데모 보장).
+        if _get_openai_key() or _get_anthropic_key():
+            return extract_unstructured(file_path, doc_type=doc_type)
+        return _mock_structured(file_path, doc_type)
 
     # 텍스트를 줄 단위 토큰으로 변환 → 기존 _keyword_extract 재사용
     tokens = [{"text": line.strip(), "bbox": None} for line in raw_text.splitlines() if line.strip()]
@@ -801,24 +805,19 @@ def _score_signatures(text: str, fname: str, table: dict[str, list[str]]) -> dic
 
 
 def _get_openai_key() -> str | None:
-    """환경 변수 또는 v10 config에서 OpenAI API 키 조회."""
-    import os
-    key = os.getenv("OPENAI_API_KEY", "")
-    if key:
-        return key
-    try:
-        from esgenie.config import OPENAI_API_KEY  # type: ignore
-        return OPENAI_API_KEY or None
-    except Exception:
+    """공유 설정(SETTINGS)에서 OpenAI API 키 조회 (force_mock 시 None)."""
+    from ..config import SETTINGS
+    if SETTINGS.force_mock:
         return None
+    return SETTINGS.openai_api_key
 
 
 def _get_anthropic_key() -> str | None:
-    """환경 변수에서 Anthropic API 키 조회."""
-    import os
-    from dotenv import load_dotenv
-    load_dotenv()
-    return os.getenv("ANTHROPIC_API_KEY") or None
+    """공유 설정(SETTINGS)에서 Anthropic API 키 조회 (force_mock 시 None)."""
+    from ..config import SETTINGS
+    if SETTINGS.force_mock:
+        return None
+    return SETTINGS.anthropic_api_key
 
 
 def _load_template(doc_type: str) -> dict[str, Any]:

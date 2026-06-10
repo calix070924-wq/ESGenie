@@ -27,12 +27,9 @@ from esgenie.layer5_audit_trace import build_audit_trace, save_audit_trace
 from esgenie.pipeline import _load_industry_stats
 from esgenie.llm import CLIENT as LLM_CLIENT
 
-# ── SSOT / OCR 확장 ─────────────────────────────────────────────────────────
-import sys
-sys.path.insert(0, str(Path(__file__).parent / "v15_scaffold"))
-
-from esgenie_v15 import ocr_router, evidence_graph as eg_v15, detector_5axis, audit_trace as at_v15, excel_exporter
-from esgenie_v15.ssot_pipeline import extract_with_ssot, build_rag_with_ssot, ssot_summary
+# ── SSOT / OCR 확장 (esgenie.ssot — 구 v15, 메인 패키지로 통합됨) ────────────
+from esgenie.ssot import ocr_router, evidence_graph as eg_v15, detector_5axis, audit_trace as at_v15, excel_exporter
+from esgenie.ssot.ssot_pipeline import extract_with_ssot, build_rag_with_ssot, ssot_summary
 
 OUT_ROOT     = Path("outputs")
 # K-ESG 기본형 28개 기준으로 통일
@@ -308,7 +305,7 @@ def _run_pipeline() -> dict:
     # L0-B: 설문 응답 → OcrExtraction (정성 조항으로 변환)
     _survey = st.session_state.get("survey_answers", {})
     if _survey:
-        from esgenie_v15.ocr_router import OcrExtraction, ExtractedClause, DocChannel
+        from esgenie.ssot.ocr_router import OcrExtraction, ExtractedClause, DocChannel
         clauses = []
         for code, ans in _survey.items():
             if ans["yn"] == "미입력":

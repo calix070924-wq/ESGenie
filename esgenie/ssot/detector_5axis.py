@@ -18,20 +18,14 @@ import re
 from dataclasses import dataclass, field
 from typing import Any
 
+from ..schemas import AxisScore   # 공유 스키마 (v15 통합 시 중복 정의 제거)
 from .evidence_graph import EvidenceGraph, EvidenceNode, TextNode
 from . import prompts
 
 
 # ====================================================================
-# 공통 결과 스키마 (기존 AxisScore와 호환)
+# 결과 스키마 — AxisScore는 esgenie.schemas와 공유
 # ====================================================================
-
-@dataclass
-class AxisScore:
-    score: float                       # 0.0(안전) ~ 1.0(위험)
-    evidence: list[str] = field(default_factory=list)
-    detail: str = ""
-
 
 @dataclass
 class PolicyFinding:
@@ -197,30 +191,27 @@ def draft_missing_policy(
 # ====================================================================
 
 def detect_d2_modifier(sentence: str) -> AxisScore:
-    """D2: 모호어/최상급 수식어 밀도 — v10 로직 재사용."""
-    from esgenie.layer3_detect import _score_d2_modifier
-    v10 = _score_d2_modifier(sentence)
-    return AxisScore(score=v10.score, evidence=v10.evidence, detail=v10.detail)
+    """D2: 모호어/최상급 수식어 밀도 — 코어 로직 재사용 (공유 스키마라 그대로 반환)."""
+    from ..layer3_detect import score_d2_modifier
+    return score_d2_modifier(sentence)
 
 
 def detect_d3_semantic(
     sentence: str,
     retrieved_chunks: list[dict[str, Any]] | None = None,
 ) -> AxisScore:
-    """D3: RAG 청크와 코사인 유사도 역수 — v10 로직 재사용."""
-    from esgenie.layer3_detect import _score_d3_semantic
-    v10 = _score_d3_semantic(sentence, retrieved_chunks or [])
-    return AxisScore(score=v10.score, evidence=v10.evidence, detail=v10.detail)
+    """D3: RAG 청크와 코사인 유사도 역수 — 코어 로직 재사용."""
+    from ..layer3_detect import score_d3_semantic
+    return score_d3_semantic(sentence, retrieved_chunks or [])
 
 
 def detect_d5_timeseries(sentence: str, graph: EvidenceGraph) -> AxisScore:
-    """D5: 시계열 엣지 방향과 문장 주장 비교 — v10 로직 재사용.
+    """D5: 시계열 엣지 방향과 문장 주장 비교 — 코어 로직 재사용.
 
-    v15 EvidenceGraph는 v10과 엣지 스키마가 호환되므로 직접 전달 가능.
+    SSOT EvidenceGraph는 코어와 엣지 스키마가 호환되므로 직접 전달 가능.
     """
-    from esgenie.layer3_detect import _score_d5_timeseries
-    v10 = _score_d5_timeseries(sentence, graph)
-    return AxisScore(score=v10.score, evidence=v10.evidence, detail=v10.detail)
+    from ..layer3_detect import score_d5_timeseries
+    return score_d5_timeseries(sentence, graph)
 
 
 def detect_risk_axes(

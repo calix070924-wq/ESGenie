@@ -175,19 +175,20 @@ mock 모드 실행 예시 (아키텍처 데모용 — 성능 주장에는 실키
 ## 설치
 
 ```bash
-pip install -r requirements.txt          # v10 공통 의존성
-pip install -r v15_scaffold/requirements.txt   # v15 추가 의존성 (OCR 등)
+pip install -r requirements.txt   # 전체 의존성 (코어 + SSOT/OCR)
 cp .env.example .env   # 키가 있다면 채우기 (없어도 동작)
 ```
 
 `.env` 설정 항목:
 
 ```env
-OPENAI_API_KEY=          # GPT-4o Vision + LLM 후처리 (없으면 mock)
+OPENAI_API_KEY=          # LLM 1순위 (없으면 Anthropic → mock)
+ANTHROPIC_API_KEY=       # LLM 2순위 + 하이브리드 2차 판정
 DART_API_KEY=            # 실시간 DART 조회 (없으면 샘플 데이터)
 CLOVA_OCR_SECRET=        # Naver CLOVA OCR (없으면 mock)
 CLOVA_OCR_URL=           # CLOVA OCR 엔드포인트
 OPENAI_MODEL=gpt-4o-mini
+ANTHROPIC_MODEL=claude-haiku-4-5-20251001
 EMBED_MODEL=paraphrase-multilingual-MiniLM-L12-v2
 ```
 
@@ -195,23 +196,22 @@ EMBED_MODEL=paraphrase-multilingual-MiniLM-L12-v2
 
 ## 실행 방법
 
-### 1. v10 CLI
+### 1. CLI 파이프라인
 
 ```bash
 # 삼성전자 E 영역 분석
 python -m esgenie.pipeline --ticker 005930 --areas E
 
-# 3사 전체 E/S/G
-python -m esgenie.pipeline --ticker 005930 005380 005490 --areas E S G
+# 중소기업 (sme 프로파일 자동 적용)
+python -m esgenie.pipeline --ticker SME001 --areas E
 
-# 그린워싱 시연 모드 (의도적 과장 생성 → 자동 검증)
-python -m esgenie.pipeline --ticker 005930 --areas E --demo-greenwash
+# 그린워싱 시연 + 하이브리드 검출
+python -m esgenie.pipeline --ticker 005930 --areas E --demo-greenwash --llm-judge
 ```
 
-### 2. v15 Streamlit UI
+### 2. Streamlit UI (통합)
 
 ```bash
-cd v15_scaffold
 streamlit run app.py
 ```
 
@@ -220,16 +220,11 @@ streamlit run app.py
 - 4축 레이더 차트 + P축 규정 누락 조항 인라인 표시
 - evidence_pack Excel 다운로드 (감사 증빙 서류철)
 
-### 3. v10 Streamlit UI
+### 3. 벤치마크 / 테스트
 
 ```bash
-streamlit run app.py
-```
-
-### 4. 테스트
-
-```bash
-python -m pytest tests/ -q        # v10 77개 테스트
+python -m esgenie.benchmark       # 그린워싱 검출 3검출기 비교
+python -m pytest tests/ -q        # 142개 테스트
 ```
 
 ---
@@ -257,43 +252,42 @@ python -m esgenie.pipeline --ticker 005930 --areas E
 ESGenie/
 ├── app.py                              # v10 Streamlit UI
 ├── requirements.txt                    # v10 의존성
-├── esgenie/                            # v10 핵심 패키지
-│   ├── config.py                       # 환경 변수 + 임계값 (4축)
-│   ├── schemas.py                      # 공유 데이터클래스 (RiskVector 등)
-│   ├── llm.py                          # OpenAI + Mock LLM
+├── app.py                              # Streamlit UI (통합 — 코어 + SSOT 탭)
+├── esgenie/                            # 단일 패키지 (구 v10 + v15 통합)
+│   ├── config.py                       # 환경 변수 + 임계값 (4축, 판정기)
+│   ├── schemas.py                      # 공유 데이터클래스 (RiskVector, AxisScore)
+│   ├── llm.py                          # OpenAI/Anthropic + Mock LLM
 │   ├── dart_client.py                  # DART OpenAPI 래퍼
 │   ├── embeddings.py                   # FAISS + TF-IDF 폴백
 │   ├── layer0_evidence_graph.py        # L0: EvidenceGraph (DART 전용)
 │   ├── layer1_extract.py               # L1: K-ESG 추출 (프로파일 기반 28/61)
 │   ├── layer2_rag.py                   # L2: Hybrid RAG (3채널)
-│   ├── layer3_detect.py                # L3: 4축 리스크 분해
+│   ├── layer3_detect.py                # L3: 4축 리스크 분해 (룰 1차)
+│   ├── layer3_judge.py                 # L3.5: LLM 2차 판정 (하이브리드)
 │   ├── layer4_verify.py                # L4: 제약 재생성 루프
 │   ├── layer5_audit_trace.py           # L5: Audit Trace 생성
 │   ├── pipeline.py                     # 6-Layer 오케스트레이터
+│   ├── benchmark.py                    # 그린워싱 검출 벤치마크 하네스
+│   ├── ssot/                           # SSOT/OCR 확장 (구 v15_scaffold/esgenie_v15)
+│   │   ├── evidence_graph.py           # L0: SSOT 통합 그래프 (DART + OCR)
+│   │   ├── ocr_router.py               # OCR 듀얼 채널 (VLM + CLOVA, mock 폴백)
+│   │   ├── ssot_pipeline.py            # L1/L2 SSOT 브리지
+│   │   ├── detector_5axis.py           # L3: D1 증빙 강화 + P축 규정 검증
+│   │   ├── prompts.py                  # LLM 프롬프트 전략
+│   │   ├── audit_trace.py              # L5: 엔터프라이즈 Audit Trace (v15 스키마)
+│   │   └── excel_exporter.py           # evidence_pack Excel 내보내기
 │   └── knowledge/
 │       ├── kesg_items.py               # K-ESG 61항목 정의 + 프로파일(sme/full)
 │       └── greenwash_lexicon.py        # 과장 수식어 사전
-├── v15_scaffold/                       # v15 확장 (OCR + SSOT + 엔터프라이즈)
-│   ├── app.py                          # v15 Streamlit UI
-│   ├── requirements.txt                # v15 추가 의존성
-│   └── esgenie_v15/
-│       ├── evidence_graph.py           # L0: SSOT 통합 그래프 (DART + OCR)
-│       ├── ocr_router.py               # OCR 듀얼 채널 (VLM + CLOVA)
-│       ├── ssot_pipeline.py            # L1/L2 SSOT 브리지
-│       ├── detector_5axis.py           # L3: 4축 + P축 검증
-│       ├── prompts.py                  # LLM 프롬프트 전략
-│       ├── audit_trace.py              # L5: 엔터프라이즈 Audit Trace
-│       └── excel_exporter.py           # evidence_pack Excel 내보내기
 ├── data/
-│   ├── sample_dart/                    # 샘플 DART (005930/005380/005490)
+│   ├── sample_dart/                    # 샘플 DART (대기업 3사 + SME 2사)
+│   ├── benchmark/                      # 그린워싱 벤치마크 (50케이스)
 │   ├── kesg/                           # K-ESG 가이드라인
 │   ├── industry/                       # 업종 벤치마크
 │   └── best_reports/                   # 우수 보고서 발췌
-├── outputs/                            # audit_trace JSON 저장
-└── tests/
-    ├── test_layer0_evidence_graph.py   # L0 40개
-    ├── test_layer3_risk_vector.py      # L3 24개
-    └── test_pipeline_e2e.py            # E2E 15개 (3사 × 5종)
+├── docs/                               # 스키마/설계 문서
+├── outputs/                            # audit_trace JSON + 벤치마크 결과
+└── tests/                              # 142개 테스트 (L0/L3/L3.5/프로파일/SSOT/벤치/E2E)
 ```
 
 ---

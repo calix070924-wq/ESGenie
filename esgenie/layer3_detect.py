@@ -496,3 +496,10 @@ def _build_risk_vector(
             "top_axis":   top_axis,
         },
     )
+
+
+# ---- 공개 별칭 (esgenie.ssot 등 외부 모듈 재사용용) ---------------------------
+score_d1_numeric = _score_d1_numeric
+score_d2_modifier = _score_d2_modifier
+score_d3_semantic = _score_d3_semantic
+score_d5_timeseries = _score_d5_timeseries
