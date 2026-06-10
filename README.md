@@ -108,6 +108,35 @@ python -m esgenie.pipeline --ticker 005930 --areas E --demo-greenwash --llm-judg
 
 ---
 
+## 벤치마크 (룰 단독 vs 하이브리드 vs LLM 단독)
+
+라벨링된 50문장 벤치마크(`data/benchmark/greenwash_bench.json`)로 3개 검출기를 비교한다.
+7개 카테고리: 순수 과장 / 근거 수반 수식어(룰 오탐 함정) / 수치 불일치 / 수치 일치 /
+시계열 모순 / 미래 계획(룰 오탐 함정) / 사실 서술.
+
+```bash
+python -m esgenie.benchmark                  # 결과: outputs/benchmark/*.md, *.json
+python -m esgenie.benchmark --detectors rule hybrid
+```
+
+mock 모드 실행 예시 (아키텍처 데모용 — 성능 주장에는 실키 재실행 결과를 사용할 것):
+
+| 검출기 | Precision | Recall | F1 | LLM 호출 |
+|---|---|---|---|---|
+| 룰 단독 (1차) | 0.639 | 1.000 | 0.780 | 0 |
+| 하이브리드 (룰+LLM) | 1.000 | 1.000 | 1.000 | 37 |
+| LLM 단독 | 0.500 | 0.348 | 0.410 | 50 |
+
+읽는 법:
+- **룰 단독**: recall은 높지만 근거 수반 수식어(0/8)·미래 계획(1/6)에서 구조적 오탐 → precision 하락
+- **LLM 단독**(mock=나이브 휴리스틱): 수치 불일치(0/10)·시계열 모순(0/5) 전멸 — 증빙 대조 능력 부재
+- **하이브리드**: 룰의 recall + LLM의 맥락 판정 결합, 호출 수는 전수 대비 26% 절감(트리거 게이트)
+
+> ⚠ mock 판정은 결정적 휴리스틱이라 위 수치는 파이프라인 데모일 뿐이다.
+> 발표·논문용 수치는 `ANTHROPIC_API_KEY` 설정 후 재실행해 실모델 결과로 교체할 것.
+
+---
+
 ## OCR 듀얼 채널
 
 | 채널 | 대상 문서 | 처리 방식 |

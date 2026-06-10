@@ -15,8 +15,10 @@
 LLM 호출 자체를 생략한다. 전수 LLM 호출 대비 호출량을 대폭 줄이는 것이
 이 아키텍처의 핵심 주장(벤치마크로 입증 예정).
 
-점수 결합: final = JUDGE_RULE_WEIGHT * rule + (1 - JUDGE_RULE_WEIGHT) * llm
-(기본 0.4 : 0.6 — 환경변수로 조정 가능)
+점수 결합:
+  - verdict=false_positive → final = llm_score (룰 오탐 확정 — 룰 점수 잔존 금지)
+  - 그 외(confirmed/uncertain) → final = JUDGE_RULE_WEIGHT*rule + (1-w)*llm
+    (기본 0.4 : 0.6 — 환경변수로 조정 가능)
 """
 from __future__ import annotations
 
@@ -93,7 +95,13 @@ def judge_risk_vector(
         "D3_semantic":   rv.D3_semantic,
         "D5_timeseries": rv.D5_timeseries,
     }
-    triggered = {name: ax for name, ax in axes.items() if ax.score >= trigger}
+    # 중립값·스킵 축은 판정할 신호가 없으므로 트리거에서 제외 (불필요 호출 방지)
+    triggered = {
+        name: ax for name, ax in axes.items()
+        if ax.score >= trigger
+        and "중립값" not in ax.detail
+        and "스킵" not in ax.detail
+    }
 
     if not triggered:
         rv.aggregate["judge"] = {
@@ -132,7 +140,11 @@ def judge_risk_vector(
             continue
         judged_axes.append(name)
         llm_score = _llm_score(v, ax.score)
-        blended = round(rule_weight * ax.score + (1.0 - rule_weight) * llm_score, 4)
+        if v.get("verdict") == "false_positive":
+            # 룰 오탐 확정 — 룰 점수를 섞으면 오탐이 잔존하므로 LLM 점수만 사용
+            blended = round(llm_score, 4)
+        else:
+            blended = round(rule_weight * ax.score + (1.0 - rule_weight) * llm_score, 4)
         new_axes[name] = AxisScore(
             score=blended,
             evidence=ax.evidence,

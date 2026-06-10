@@ -122,6 +122,8 @@ class LLMClient:
             hint = mock_hint or detected
         if hint == "judge":
             content = _mock_judge(user)
+        elif hint == "classify":
+            content = _mock_classify(user)
         elif hint == "extract":
             content = _mock_extract(user)
         elif hint == "generate":
@@ -147,6 +149,9 @@ def _detect_hint(text: str) -> str:
     # 0) 2차 판정 (judge) — layer3_judge가 프롬프트에 마커를 심는다.
     if "[[JUDGE_TASK]]" in text:
         return "judge"
+    # 0-b) 단독 분류 (benchmark의 LLM-only 베이스라인)
+    if "[[GW_CLASSIFY]]" in text:
+        return "classify"
     # 1) 재작성 (rewrite) — 명시적 재작성 신호가 가장 우선.
     #    Layer 4 자가 검증 루프가 generate_section을 재사용하면서 user 프롬프트에
     #    "추가 지시:" 또는 "=== 재작성 제약" 블록을 덧붙이기 때문에 이를 먼저 잡는다.
@@ -573,6 +578,7 @@ def _mock_judge(user_prompt: str) -> str:
     실제 키 없이도 하이브리드 파이프라인(룰 1차 → LLM 2차)이 end-to-end로
     동작하도록, 룰 detail에서 읽을 수 있는 신호로 간단한 판정을 모사한다:
       - D2: 문장에 정량 수치가 함께 있으면 false_positive (수식어가 근거를 수반)
+      - D1/D5: 목표·계획·예정 문장이면 false_positive (미래 계획 ≠ 실적 주장)
       - D1: 룰 detail이 '수치 매칭 없음'이면 uncertain (매칭 실패 ≠ 허위)
       - 그 외: confirmed (룰 점수 유지)
     """
@@ -580,6 +586,7 @@ def _mock_judge(user_prompt: str) -> str:
     m = re.search(r"\[문장\]\s*(.+?)\s*\[축별 룰 판정\]", user_prompt, re.S)
     sentence = m.group(1).strip() if m else ""
     has_number = bool(re.search(r"\d", sentence))
+    is_future_plan = any(w in sentence for w in ("목표", "계획", "예정", "로드맵"))
 
     axes_out: dict[str, Any] = {}
     for am in re.finditer(
@@ -587,7 +594,10 @@ def _mock_judge(user_prompt: str) -> str:
         user_prompt,
     ):
         axis, rule_score, detail = am.group("axis"), float(am.group("score")), am.group("detail")
-        if axis == "D2_modifier" and has_number:
+        if axis in ("D1_numeric", "D5_timeseries") and is_future_plan:
+            verdict, llm_score = "false_positive", 0.05
+            rationale = "[MOCK] 미래 목표·계획 선언 — 실적 주장이 아니므로 증빙 대조 부적절"
+        elif axis == "D2_modifier" and has_number:
             verdict, llm_score = "false_positive", 0.05
             rationale = "[MOCK] 수식어가 문장 내 정량 수치로 뒷받침됨 — 과장으로 보기 어려움"
         elif axis == "D1_numeric" and "수치 매칭 없음" in detail:
@@ -603,6 +613,23 @@ def _mock_judge(user_prompt: str) -> str:
             "quote": sentence[:80],
         }
     return json.dumps({"axes": axes_out}, ensure_ascii=False)
+
+
+def _mock_classify(user_prompt: str) -> str:
+    """LLM-only 그린워싱 분류 mock — '프롬프트만 쓴 범용 LLM' 베이스라인을 모사.
+
+    단순 휴리스틱(모호어 존재 = 그린워싱)으로, 수치 검증·시계열 대조 능력이
+    없는 단독 LLM의 전형적 한계를 표현한다. 실제 비교는 실키로 수행할 것.
+    """
+    m = re.search(r"\[문장\]\s*(.+?)\s*(\[|$)", user_prompt, re.S)
+    sentence = m.group(1).strip() if m else user_prompt
+    from .knowledge.greenwash_lexicon import vague_matches
+    hits = vague_matches(sentence)
+    return json.dumps({
+        "greenwash": bool(hits),
+        "confidence": 0.7 if hits else 0.6,
+        "rationale": f"[MOCK] 모호어 {len(hits)}개 검출" if hits else "[MOCK] 과장 표현 없음",
+    }, ensure_ascii=False)
 
 
 # Singleton

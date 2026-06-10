@@ -54,12 +54,15 @@ class TestTrigger:
 
 class TestMockJudgeBehavior:
     def test_d2_false_positive_with_numeric_backing(self):
-        """수식어 + 정량 근거 동반 문장 → mock 판정이 D2를 false_positive로 강등."""
+        """수식어 + 정량 근거 동반 문장 → mock 판정이 D2를 false_positive로 강등.
+
+        false_positive는 룰 오탐 확정이므로 룰 점수를 섞지 않고 LLM 점수만 사용.
+        """
         rv = _rv(d2=0.8, d2_detail="모호어 2개: ['최고 수준']")
         sent = "업계 최고 수준의 인증을 취득하였으며 배출량은 1,200 tCO2eq입니다."
         out = judge_risk_vector(sent, rv, trigger=0.25, rule_weight=0.4)
-        # blended = 0.4*0.8 + 0.6*0.05 = 0.35
-        assert out.D2_modifier.score == pytest.approx(0.35, abs=0.01)
+        # false_positive → blended = llm_score = 0.05
+        assert out.D2_modifier.score == pytest.approx(0.05, abs=0.01)
         assert "false_positive" in out.D2_modifier.detail
 
     def test_d2_confirmed_without_numbers(self):
@@ -94,8 +97,8 @@ class TestBlending:
         rv = _rv(d2=0.8, d2_detail="모호어 2개")
         sent = "최고 수준 인증 취득, 1,200 tCO2eq."
         out = judge_risk_vector(sent, rv, trigger=0.25, rule_weight=0.4)
-        # D2 0.8→0.35로 내려가면 aggregate도 재계산되어야 함
-        assert out.aggregate["risk_score"] == pytest.approx(0.25 * 0.35, abs=0.01)
+        # D2 0.8→0.05(false_positive)로 내려가면 aggregate도 재계산되어야 함
+        assert out.aggregate["risk_score"] == pytest.approx(0.25 * 0.05, abs=0.01)
         assert out.aggregate["level"] == "low"
 
     def test_llm_score_fallback_by_verdict(self):
