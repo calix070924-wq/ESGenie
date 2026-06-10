@@ -138,6 +138,32 @@ def _norm_unit(u: str | None) -> str:
     return (u or "").replace(" ", "").lower()
 
 
+# ---- 단위 호환성 ------------------------------------------------------------
+# D1이 단위를 무시하고 값만 비교하면 "95.8 톤"이 "95.8 %" 노드와 일치 판정되거나,
+# "% 목표치"가 절대량(tCO2eq) 노드와 비교되는 오류가 생긴다.
+
+_UNIT_ALIASES: dict[str, str] = {
+    "톤": "ton", "t": "ton",
+    "tco2": "tco2eq", "tco₂eq": "tco2eq",
+    "퍼센트": "%", "percent": "%",
+    "킬로와트시": "kwh",
+}
+
+
+def canon_unit(u: str | None) -> str:
+    """단위 정규화: 공백 제거·소문자·별칭 통일. 빈 문자열 = 단위 미상."""
+    s = _norm_unit(u)
+    return _UNIT_ALIASES.get(s, s)
+
+
+def units_compatible(a: str | None, b: str | None) -> bool:
+    """두 단위가 비교 가능한가. 어느 한쪽이 미상이면 허용(보수적), 둘 다 있으면 동일해야 함."""
+    ca, cb = canon_unit(a), canon_unit(b)
+    if not ca or not cb:
+        return True
+    return ca == cb
+
+
 # ---- 기존(legacy) 탐지 로직 -------------------------------------------------
 
 def extract_numeric_claims(text: str) -> list[NumericClaim]:
@@ -327,7 +353,7 @@ def _score_d1_numeric(
 
     for m in _NUMBER_PATTERN.finditer(sentence):
         num_str, unit = m.group("num"), m.group("unit")
-        claim_val, _ = _normalize_number(num_str, unit)
+        claim_val, claim_unit = _normalize_number(num_str, unit)
         _, code = _match_topic_near(sentence, m.start(), m.end())
         if not code:
             continue
@@ -336,8 +362,14 @@ def _score_d1_numeric(
         if not nodes:
             continue
 
+        # 단위 호환 노드만 비교 대상 ("31 %" 주장을 tCO2eq 노드와 비교하지 않음)
+        compat = [n for n in nodes if units_compatible(claim_unit, getattr(n, "unit", None))]
+        if not compat:
+            details.append(f"{code}: claim={claim_val}{claim_unit} — 단위 불일치(노드 단위와 비교 불가, 스킵)")
+            continue
+
         # 가장 최신 노드와 비교
-        node = max(nodes, key=lambda n: n.period)
+        node = max(compat, key=lambda n: n.period)
         if node.value == 0:
             continue
         delta = abs(claim_val - node.value) / abs(node.value)

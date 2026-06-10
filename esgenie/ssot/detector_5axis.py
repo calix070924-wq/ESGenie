@@ -84,10 +84,10 @@ def detect_d1_numeric(
 
     matched_evidence: list[str] = []
     unmatched: list[float] = []
-    for claim in claims:
-        hit = _find_matching_node(claim, candidates, tolerance_pct)
+    for claim_val, claim_unit in claims:
+        hit = _find_matching_node(claim_val, claim_unit, candidates, tolerance_pct)
         if hit is None:
-            unmatched.append(claim)
+            unmatched.append(claim_val)
         else:
             tag = hit.source_file or hit.id   # 증빙 파일명 우선(감사 추적)
             matched_evidence.append(tag)
@@ -249,23 +249,43 @@ def detect_risk_axes(
 _SCALE = {"만": 1e4, "억": 1e8, "천": 1e3}
 
 
-def _extract_numbers(sentence: str) -> list[float]:
-    out: list[float] = []
+def _extract_numbers(sentence: str) -> list[tuple[float, str | None]]:
+    """문장에서 (수치, 단위) 클레임 추출.
+
+    오탐 필터:
+      - 연도(1900~2100, 단위·스케일 없음) 제외 — "2025년"은 수치 주장이 아님
+      - 단위·스케일·쉼표·소수점이 전혀 없는 맨 정수 제외 — 페이지·항목 번호 오탐 방지
+    """
+    out: list[tuple[float, str | None]] = []
     for m in _NUM_RE.finditer(sentence):
-        raw, scale, _unit = m.group(1), m.group(2), m.group(3)
+        raw, scale, unit = m.group(1), m.group(2), m.group(3)
         try:
             val = float(raw.replace(",", ""))
         except ValueError:
             continue
+        if unit is None and scale is None:
+            if 1900 <= val <= 2100 and "." not in raw:
+                continue   # 연도
+            if "," not in raw and "." not in raw:
+                continue   # 맨 정수 (번호류)
         if scale:
             val *= _SCALE.get(scale, 1)
-        out.append(val)
+        out.append((val, unit))
     return out
 
 
-def _find_matching_node(claim: float, nodes: list[EvidenceNode], tol: float) -> EvidenceNode | None:
+def _find_matching_node(
+    claim: float,
+    claim_unit: str | None,
+    nodes: list[EvidenceNode],
+    tol: float,
+) -> EvidenceNode | None:
+    """±tol% 이내 + 단위 호환 노드 탐색 (128,400원 ≠ 128,400 kWh)."""
+    from ..layer3_detect import units_compatible
     for n in nodes:
         if n.value == 0:
+            continue
+        if not units_compatible(claim_unit, n.unit):
             continue
         if abs(claim - n.value) / abs(n.value) * 100 <= tol:
             return n
