@@ -16,6 +16,7 @@ from .config import INDUSTRY_DIR
 from .dart_client import CompanyReport, load_report
 from .layer0_evidence_graph import EvidenceGraph, build_evidence_graph
 from .layer1_extract import ExtractionResult, extract
+from .layer3_disclosure import DisclosureReport, detect_selective_disclosure
 from .layer2_rag import HybridRAG
 from .layer4_verify import VerificationResult, verify_and_refine
 from .layer5_audit_trace import AuditTrace, build_audit_trace, save_audit_trace
@@ -32,6 +33,7 @@ class PipelineOutput:
     sections: dict[str, VerificationResult]   # area → result
     audit_traces: dict[str, AuditTrace]        # area → trace
     trace_paths: dict[str, str]                # area → 파일 경로
+    disclosure: DisclosureReport | None = None  # D6 문서단위 선택적 공시 리포트
 
 
 def _load_industry_stats(industry: str) -> dict[str, Any] | None:
@@ -83,6 +85,10 @@ def run(
     extraction = extract(report, evidence_graph=evidence_graph, profile=profile)
     logger.info("[L1] 완료: %.1f%% 커버리지 (%s)",
                 extraction.coverage_pct, extraction.profile_label)
+
+    # D6 — 문서 단위 선택적 공시(cherry-picking) 탐지
+    disclosure = detect_selective_disclosure(extraction)
+    logger.info("[D6] 선택적 공시 의심도=%.2f (%s)", disclosure.score, disclosure.level)
 
     # L2 — Hybrid RAG 인덱스 빌드
     from .embeddings import embedding_backend
@@ -143,6 +149,7 @@ def run(
         sections=sections,
         audit_traces=audit_traces,
         trace_paths=trace_paths,
+        disclosure=disclosure,
     )
 
 
@@ -182,6 +189,11 @@ def _cli() -> None:
     print(f"분석 영역: {args.areas}")
     print(f"K-ESG 커버리지: {output.extraction.coverage_pct:.1f}% — {output.extraction.profile_label}")
     print(f"Evidence Graph: {len(output.evidence_graph.nodes)}노드 / {len(output.evidence_graph.edges)}엣지")
+    if output.disclosure is not None:
+        d6 = output.disclosure
+        print(f"D6 선택적 공시: 의심도 {d6.score:.2f} ({d6.level}) — {d6.rationale}")
+        for o in d6.orphan_ratios:
+            print(f"   · 고아비율: {o.detail}")
     for area, verify in output.sections.items():
         hitl = " [HITL_REQUIRED]" if verify.hitl_required else ""
         print(f"  [{area}] 위험도={verify.final_score:.1f} | {verify.final_band}{hitl}")
