@@ -82,6 +82,7 @@ class DetectorReport:
     name: str
     cases: list[CaseResult] = field(default_factory=list)
     llm_calls: int = 0
+    mock_calls: int = 0   # 이 검출기에서 실제로 mock fallback으로 처리된 LLM 호출 수
 
     # ---- 지표 ----------------------------------------------------------
     def _counts(self) -> tuple[int, int, int, int]:
@@ -128,10 +129,18 @@ class CountingLLM:
             inner = LLMClient()
         self._inner = inner
         self.calls = 0
+        self.mock_calls = 0          # used_mock=True로 돌아온 호출 수
+        self.errors: list[str] = []  # mock fallback을 유발한 API 에러 메시지
 
     def complete(self, *args: Any, **kwargs: Any) -> Any:
         self.calls += 1
-        return self._inner.complete(*args, **kwargs)
+        resp = self._inner.complete(*args, **kwargs)
+        if getattr(resp, "used_mock", False):
+            self.mock_calls += 1
+            err = (getattr(resp, "meta", None) or {}).get("error")
+            if err:
+                self.errors.append(err)
+        return resp
 
 
 # ====================================================================
@@ -226,8 +235,10 @@ def run_benchmark(
 
     if "hybrid" in reports:
         reports["hybrid"].llm_calls = hybrid_llm.calls
+        reports["hybrid"].mock_calls = hybrid_llm.mock_calls
     if "llm_only" in reports:
         reports["llm_only"].llm_calls = only_llm.calls
+        reports["llm_only"].mock_calls = only_llm.mock_calls
     return reports
 
 
@@ -255,23 +266,70 @@ _DETECTOR_LABELS = {
 }
 
 
+def assess_run_mode(reports: dict[str, DetectorReport]) -> dict[str, Any]:
+    """설정값이 아니라 *실제 실행 결과*를 보고 LLM 모드를 판정한다.
+
+    핵심: SETTINGS.use_mock_llm(설정)만 믿으면, 키가 있어도 API가 조용히
+    실패해 mock으로 빠진 경우를 놓친다. 케이스별 used_mock 집계로 이를 잡는다.
+
+    반환:
+      mode          - "mock" | "real" | "all_mock_fallback" | "partial_mock"
+      perf_valid    - 성능 수치를 신뢰해도 되는가
+      total_calls   - LLM 호출 총합
+      mock_calls    - 그중 mock으로 처리된 수
+      label         - 리포트 헤더용 한 줄 설명
+    """
+    total_calls = sum(r.llm_calls for r in reports.values())
+    mock_calls = sum(r.mock_calls for r in reports.values())
+    model = SETTINGS.openai_model if SETTINGS.openai_api_key else SETTINGS.anthropic_model
+
+    if SETTINGS.use_mock_llm:
+        return {
+            "mode": "mock", "perf_valid": False,
+            "total_calls": total_calls, "mock_calls": mock_calls,
+            "label": "⚠ MOCK (키 없음 — 데모용, 성능 주장 사용 금지, 실키로 재실행 필요)",
+        }
+    if total_calls == 0 or mock_calls == 0:
+        return {
+            "mode": "real", "perf_valid": True,
+            "total_calls": total_calls, "mock_calls": mock_calls,
+            "label": f"실모델 검증됨 ({model}, mock fallback 0건)",
+        }
+    if mock_calls >= total_calls:
+        return {
+            "mode": "all_mock_fallback", "perf_valid": False,
+            "total_calls": total_calls, "mock_calls": mock_calls,
+            "label": (f"⚠ 전부 MOCK fallback ({mock_calls}/{total_calls}건 API 실패) "
+                      "— 키/네트워크 확인 후 재실행 필요. 성능 무효."),
+        }
+    return {
+        "mode": "partial_mock", "perf_valid": False,
+        "total_calls": total_calls, "mock_calls": mock_calls,
+        "label": (f"⚠ 부분 MOCK ({mock_calls}/{total_calls}건 API 실패 → mock fallback) "
+                  "— 수치 일관성 깨짐. 성능 무효, 재실행 필요."),
+    }
+
+
 def format_report(reports: dict[str, DetectorReport], *, n_cases: int) -> str:
     lines: list[str] = []
-    mock = SETTINGS.use_mock_llm
+    run = assess_run_mode(reports)
     lines.append("# 그린워싱 검출 벤치마크 결과")
     lines.append("")
     lines.append(f"- 케이스: {n_cases}개 | 실행: {datetime.datetime.now().isoformat(timespec='seconds')}")
-    lines.append(f"- LLM 모드: {'⚠ MOCK (데모용 — 성능 주장 사용 금지, 실키로 재실행 필요)' if mock else f'실모델 ({SETTINGS.openai_model if SETTINGS.openai_api_key else SETTINGS.anthropic_model})'}")
+    lines.append(f"- LLM 모드: {run['label']}")
+    if not run["perf_valid"]:
+        lines.append("- ❌ **이 표의 성능 수치는 신뢰할 수 없습니다 (성능 주장·제출 자료 사용 금지).**")
     lines.append("")
     lines.append("## 종합 지표")
     lines.append("")
-    lines.append("| 검출기 | Precision | Recall | F1 | Accuracy | LLM 호출 |")
-    lines.append("|---|---|---|---|---|---|")
+    lines.append("| 검출기 | Precision | Recall | F1 | Accuracy | LLM 호출 | mock fallback |")
+    lines.append("|---|---|---|---|---|---|---|")
     for name, rep in reports.items():
         m = rep.metrics()
+        mock_cell = "-" if rep.llm_calls == 0 else f"{rep.mock_calls}/{rep.llm_calls}"
         lines.append(
             f"| {_DETECTOR_LABELS.get(name, name)} | {m['precision']:.3f} | {m['recall']:.3f} "
-            f"| {m['f1']:.3f} | {m['accuracy']:.3f} | {m['llm_calls']} |"
+            f"| {m['f1']:.3f} | {m['accuracy']:.3f} | {m['llm_calls']} | {mock_cell} |"
         )
     lines.append("")
     lines.append("## 카테고리별 정확도")
@@ -311,12 +369,18 @@ def save_report(
     json_path = out_dir / f"benchmark_{ts}.json"
 
     md_path.write_text(format_report(reports, n_cases=n_cases), encoding="utf-8")
+    run = assess_run_mode(reports)
     payload = {
         "generated_at": datetime.datetime.now().isoformat(),
-        "mock_mode": SETTINGS.use_mock_llm,
+        "mock_mode_config": SETTINGS.use_mock_llm,   # 설정상 mock 여부
+        "run_mode": run["mode"],                      # 실제 실행 결과 기반 판정
+        "performance_valid": run["perf_valid"],       # 성능 수치 신뢰 가능 여부
+        "llm_calls_total": run["total_calls"],
+        "llm_mock_calls": run["mock_calls"],
         "detectors": {
             name: {
                 "metrics": rep.metrics(),
+                "mock_calls": rep.mock_calls,
                 "by_category": rep.by_category(),
                 "cases": [vars(c) for c in rep.cases],
             }

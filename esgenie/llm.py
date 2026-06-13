@@ -16,6 +16,14 @@ from typing import Any
 from .config import SETTINGS
 
 
+class LLMUnavailableError(RuntimeError):
+    """strict 모드에서 실모델 호출이 불가능하거나 실패했을 때 raise.
+
+    평가/운영 모드(ESGENIE_STRICT=1)에서는 조용한 mock fallback을 금지하고
+    이 예외로 실패를 명시적으로 노출한다.
+    """
+
+
 @dataclass
 class LLMResponse:
     content: str
@@ -30,8 +38,24 @@ class LLMClient:
         if not SETTINGS.use_mock_llm:
             if SETTINGS.openai_api_key:
                 try:
-                    from openai import OpenAI  # type: ignore
-                    self._openai_client = OpenAI(api_key=SETTINGS.openai_api_key)
+                    if SETTINGS.azure_openai_endpoint:
+                        from openai import AzureOpenAI, OpenAI  # type: ignore
+                        ep = SETTINGS.azure_openai_endpoint.rstrip("/")
+                        if "services.ai.azure.com" in ep:
+                            # Azure AI Foundry Model Inference API — uses /models/ path
+                            self._openai_client = OpenAI(
+                                api_key=SETTINGS.openai_api_key,
+                                base_url=f"{ep}/models/",
+                            )
+                        else:
+                            self._openai_client = AzureOpenAI(
+                                api_key=SETTINGS.openai_api_key,
+                                api_version="2025-01-01-preview",
+                                azure_endpoint=SETTINGS.azure_openai_endpoint,
+                            )
+                    else:
+                        from openai import OpenAI  # type: ignore
+                        self._openai_client = OpenAI(api_key=SETTINGS.openai_api_key)
                 except Exception:
                     self._openai_client = None
             if self._openai_client is None and SETTINGS.anthropic_api_key:
@@ -75,6 +99,8 @@ class LLMClient:
                 return LLMResponse(content=text, used_mock=False,
                                    meta={"model": SETTINGS.openai_model, "provider": "openai"})
             except Exception as exc:
+                if SETTINGS.strict_llm:
+                    raise LLMUnavailableError(f"OpenAI 호출 실패 (strict): {exc}") from exc
                 return self._mock_complete(system, user, mock_hint, json_mode,
                                            variant=mock_variant, error=str(exc))
 
@@ -96,9 +122,16 @@ class LLMClient:
                 return LLMResponse(content=text, used_mock=False,
                                    meta={"model": SETTINGS.anthropic_model, "provider": "anthropic"})
             except Exception as exc:
+                if SETTINGS.strict_llm:
+                    raise LLMUnavailableError(f"Anthropic 호출 실패 (strict): {exc}") from exc
                 return self._mock_complete(system, user, mock_hint, json_mode,
                                            variant=mock_variant, error=str(exc))
 
+        if SETTINGS.strict_llm:
+            raise LLMUnavailableError(
+                "strict 모드인데 사용 가능한 LLM 클라이언트가 없습니다 "
+                "(OPENAI_API_KEY 또는 ANTHROPIC_API_KEY 필요)."
+            )
         return self._mock_complete(system, user, mock_hint, json_mode, variant=mock_variant)
 
     # ---- mock ---------------------------------------------------------

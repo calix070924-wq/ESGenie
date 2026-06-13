@@ -28,7 +28,9 @@ class Settings:
     openai_model: str
     anthropic_model: str
     embed_model: str
+    azure_openai_endpoint: str | None = None  # AZURE_OPENAI_ENDPOINT 설정 시 AzureOpenAI 클라이언트 사용
     force_mock: bool = False   # ESGENIE_FORCE_MOCK=1 → 키가 있어도 mock 강제 (테스트 결정성)
+    strict_llm: bool = False   # ESGENIE_STRICT=1 → API 실패 시 mock fallback 금지, 예외 raise (평가/운영 모드)
 
     @property
     def use_mock_llm(self) -> bool:
@@ -49,7 +51,9 @@ def load_settings() -> Settings:
         openai_model=os.getenv("OPENAI_MODEL", "gpt-4o-mini"),
         anthropic_model=os.getenv("ANTHROPIC_MODEL", "claude-haiku-4-5-20251001"),
         embed_model=os.getenv("EMBED_MODEL", "paraphrase-multilingual-MiniLM-L12-v2"),
+        azure_openai_endpoint=os.getenv("AZURE_OPENAI_ENDPOINT") or None,
         force_mock=os.getenv("ESGENIE_FORCE_MOCK", "0") == "1",
+        strict_llm=os.getenv("ESGENIE_STRICT", "0") == "1",
     )
 
 
