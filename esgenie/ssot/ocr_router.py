@@ -170,11 +170,12 @@ def extract_document(file_path: str, decision: RouteDecision | None = None) -> O
         ext = extract_structured(file_path, doc_type=decision.doc_type)
     else:
         ext = extract_unstructured(file_path, doc_type=decision.doc_type)
-    ext.router_meta = {
-        "confidence": decision.confidence,
+    # 채널 추출기가 기록한 router_meta(engine/azure_error 등)를 보존하고 라우팅 정보만 병합
+    ext.router_meta.update({
+        "route_confidence": decision.confidence,
         "matched_keywords": decision.matched_keywords,
         "rationale": decision.rationale,
-    }
+    })
     return ext
 
 
@@ -183,51 +184,125 @@ def extract_document(file_path: str, decision: RouteDecision | None = None) -> O
 # ====================================================================
 
 def extract_structured(file_path: str, *, doc_type: str) -> OcrExtraction:
-    """정형 문서 채널 — CLOVA OCR + 템플릿 매칭 + LLM 후처리.
+    """정형 문서 채널 — OCR 엔진(우선순위) + 템플릿 매칭 + LLM 후처리.
 
-    파이프라인:
-      1) CLOVA OCR API → 토큰(텍스트 + bbox) 리스트 확보
-      2) doc_type별 템플릿(_load_template)으로 라벨↔값 쌍 1차 추출
-      3) LLM(STRUCTURED_NORMALIZE_PROMPT)으로 단위 정규화 + K-ESG 코드 추정
-      API 키 없으면 Mock 폴백(데모 모드).
+    엔진 우선순위:
+      1) Azure AI Document Intelligence (AZURE_DOC_INTEL_*) — 한국어·표·좌표
+      2) CLOVA OCR (CLOVA_OCR_*) — 레거시 경로
+      3) pymupdf + 정규식 (키 불필요) — 디지털 PDF
+      4) mock (데모)
+    공통 후처리:
+      · doc_type 템플릿/키워드로 라벨↔값 1차 추출
+      · LLM(gpt-4.1-mini via Azure) 단위 정규화 + K-ESG 코드 추정
     """
-    source_file = Path(file_path).name
-
+    az_key, az_ep = _get_azure_docintel_keys()
     clova_key, clova_url = _get_clova_keys()
+
+    if az_key and az_ep:
+        try:
+            tokens = _call_azure_docintel(file_path)
+            return _tokens_to_extraction(
+                tokens, doc_type=doc_type, file_path=file_path, engine="azure_docintel"
+            )
+        except Exception as exc:
+            # Azure 실패 → 디지털 PDF 폴백 (데모 안정성)
+            ext = _extract_structured_no_llm(file_path, doc_type=doc_type)
+            ext.router_meta["azure_error"] = str(exc)
+            return ext
+
+    if clova_key:
+        tokens = _call_clova_ocr(file_path, api_url=clova_url, secret_key=clova_key)
+        return _tokens_to_extraction(
+            tokens, doc_type=doc_type, file_path=file_path, engine="clova"
+        )
+
+    # OCR 키 없음 → pymupdf + 정규식, 스캔본이면 VLM 에스컬레이션
+    return _extract_structured_no_llm(file_path, doc_type=doc_type)
+
+
+def _tokens_to_extraction(
+    tokens: list[dict[str, Any]], *, doc_type: str, file_path: str, engine: str
+) -> OcrExtraction:
+    """OCR 토큰[{text,bbox}] → 템플릿/키워드 추출 → LLM/규칙 정규화 → OcrExtraction."""
+    raw_text = " ".join(t["text"] for t in tokens)
     openai_key = _get_openai_key()
 
-    if not clova_key:
-        # CLOVA 없음 → pymupdf + 정규식(API 키 불필요), 스캔본이면 VLM 에스컬레이션
-        return _extract_structured_no_llm(file_path, doc_type=doc_type)
-
-    # 1) CLOVA OCR → 토큰 리스트
-    tokens = _call_clova_ocr(file_path, api_url=clova_url, secret_key=clova_key)
-    raw_text = " ".join(t["text"] for t in tokens)
-
-    # 2) 템플릿 매칭 → 라벨:값 딕셔너리
     try:
         template = _load_template(doc_type)
         kv_pairs = _apply_template(tokens, template)
     except NotImplementedError:
-        # 템플릿 미정의 doc_type → 키워드 기반 폴백
         kv_pairs = _keyword_extract(tokens, doc_type)
 
-    # 3) LLM 후처리 → ExtractedMetric[]
     if openai_key and kv_pairs:
         metrics = _llm_normalize(kv_pairs, doc_type=doc_type, api_key=openai_key)
     else:
         metrics = _rule_normalize(kv_pairs, doc_type=doc_type)
 
     return OcrExtraction(
-        source_file=source_file,
+        source_file=Path(file_path).name,
         channel=DocChannel.STRUCTURED,
         doc_type=doc_type,
         metrics=metrics,
         raw_text=raw_text,
+        router_meta={"engine": engine},
     )
 
 
 # ---- 정형 채널 내부 헬퍼 ------------------------------------------------------
+
+def _get_azure_docintel_keys() -> tuple[str | None, str]:
+    """Azure Document Intelligence 키와 엔드포인트 조회."""
+    import os
+    key = os.getenv("AZURE_DOC_INTEL_KEY", "")
+    endpoint = os.getenv("AZURE_DOC_INTEL_ENDPOINT", "").rstrip("/")
+    return (key or None), endpoint
+
+
+def _call_azure_docintel(file_path: str, *, model: str = "prebuilt-read") -> list[dict[str, Any]]:
+    """Azure AI Document Intelligence REST 호출 → 줄 단위 토큰 [{text, bbox}].
+
+    v4.0(2024-11-30) Analyze API: POST로 분석 시작 → Operation-Location 폴링 →
+    analyzeResult.pages[].lines[]에서 content + polygon 추출.
+    polygon = [x1,y1,x2,y2,x3,y3,x4,y4] → bbox = [x1,y1,x3,y3].
+    """
+    import requests, time
+    key, endpoint = _get_azure_docintel_keys()
+    if not key or not endpoint:
+        raise RuntimeError("AZURE_DOC_INTEL_ENDPOINT/KEY 미설정")
+
+    api_version = "2024-11-30"
+    url = f"{endpoint}/documentintelligence/documentModels/{model}:analyze?api-version={api_version}"
+    headers = {"Ocp-Apim-Subscription-Key": key, "Content-Type": "application/octet-stream"}
+    data = Path(file_path).read_bytes()
+
+    resp = requests.post(url, headers=headers, data=data, timeout=60)
+    resp.raise_for_status()
+    op_loc = resp.headers.get("Operation-Location") or resp.headers.get("operation-location")
+    if not op_loc:
+        raise RuntimeError("Operation-Location 헤더 없음")
+
+    body: dict[str, Any] = {}
+    for _ in range(30):
+        time.sleep(2)
+        r = requests.get(op_loc, headers={"Ocp-Apim-Subscription-Key": key}, timeout=30)
+        r.raise_for_status()
+        body = r.json()
+        status = body.get("status")
+        if status == "succeeded":
+            break
+        if status == "failed":
+            raise RuntimeError(f"Azure DocIntel 분석 실패: {body.get('error')}")
+    else:
+        raise RuntimeError("Azure DocIntel 폴링 타임아웃")
+
+    tokens: list[dict[str, Any]] = []
+    for page in body.get("analyzeResult", {}).get("pages", []):
+        for line in page.get("lines", []):
+            poly = line.get("polygon") or []
+            bbox = [poly[0], poly[1], poly[4], poly[5]] if len(poly) >= 6 else None
+            tokens.append({"text": line.get("content", ""), "bbox": bbox})
+    return tokens
+
 
 def _get_clova_keys() -> tuple[str | None, str]:
     """CLOVA OCR API 키와 URL 조회."""
@@ -272,13 +347,25 @@ def _call_clova_ocr(file_path: str, *, api_url: str, secret_key: str) -> list[di
     return tokens
 
 
+_DIGIT_SEP_RE = __import__("re").compile(r"(?<=\d)[,\s]+(?=\d)")
+_NUMBER_RE = __import__("re").compile(r"\d+\.?\d*")
+
+
+def _find_number(text: str):
+    """텍스트에서 첫 숫자를 추출. 천 단위 콤마·공백 구분자 정규화.
+
+    Azure OCR이 '128, 400'처럼 콤마 뒤 공백을 넣어도 128400으로 합친다.
+    """
+    cleaned = _DIGIT_SEP_RE.sub("", text)
+    return _NUMBER_RE.search(cleaned)
+
+
 def _apply_template(tokens: list[dict[str, Any]], template: dict[str, Any]) -> dict[str, Any]:
     """템플릿의 라벨 키워드와 토큰 텍스트를 매칭해 {라벨: {value, unit, bbox}} 추출.
 
     전략: 라벨 키워드와 인접한(오른쪽 또는 아래) 숫자 토큰을 값으로 채택.
     """
-    import re
-    number_re = re.compile(r"[\d,]+\.?\d*")
+    number_re = None  # _find_number 사용
     result: dict[str, Any] = {}
 
     for label_key, label_info in template.items():
@@ -289,7 +376,7 @@ def _apply_template(tokens: list[dict[str, Any]], template: dict[str, Any]) -> d
         for i, tok in enumerate(tokens):
             if any(kw in tok["text"] for kw in keywords):
                 # 현재 토큰에 숫자가 있으면 우선 사용 (예: "사용전력량(kWh): 128,400")
-                m = number_re.search(tok["text"].replace(",", ""))
+                m = _find_number(tok["text"])
                 if m:
                     result[label_key] = {
                         "value": float(m.group()),
@@ -301,7 +388,7 @@ def _apply_template(tokens: list[dict[str, Any]], template: dict[str, Any]) -> d
                     break
                 # 현재 토큰에 숫자 없으면 인접 토큰(최대 5개) 탐색
                 for j in range(i + 1, min(i + 6, len(tokens))):
-                    m = number_re.search(tokens[j]["text"].replace(",", ""))
+                    m = _find_number(tokens[j]["text"])
                     if m:
                         result[label_key] = {
                             "value": float(m.group()),
@@ -334,7 +421,7 @@ def _keyword_extract(tokens: list[dict[str, Any]], doc_type: str) -> dict[str, A
         for kw, info in _KW_MAP.items():
             if kw in tok["text"] and kw not in result:
                 for j in range(i + 1, min(i + 6, len(tokens))):
-                    m = number_re.search(tokens[j]["text"].replace(",", ""))
+                    m = _find_number(tokens[j]["text"])
                     if m:
                         result[kw] = {
                             "value": float(m.group()),
@@ -352,24 +439,22 @@ def _llm_normalize(
     doc_type: str,
     api_key: str,
 ) -> list[ExtractedMetric]:
-    """Claude Haiku로 추출 KV 쌍을 ExtractedMetric[]으로 정규화."""
-    import anthropic, json as _json
+    """LLM(gpt-4.1-mini via Azure)으로 추출 KV 쌍을 ExtractedMetric[]으로 정규화."""
+    import json as _json, re
+    from ..llm import LLMClient
     from .prompts import STRUCTURED_NORMALIZE_SYSTEM, STRUCTURED_NORMALIZE_PROMPT
 
     tokens_str = _json.dumps(kv_pairs, ensure_ascii=False, indent=2)
     prompt = STRUCTURED_NORMALIZE_PROMPT.format(doc_type=doc_type, ocr_tokens=tokens_str)
 
-    client = anthropic.Anthropic(api_key=api_key)
-    resp = client.messages.create(
-        model="claude-haiku-4-5-20251001",
-        max_tokens=1000,
-        system=STRUCTURED_NORMALIZE_SYSTEM + "\n반드시 JSON 형식으로만 응답하라.",
-        messages=[{"role": "user", "content": prompt}],
+    resp = LLMClient().complete(
+        system=STRUCTURED_NORMALIZE_SYSTEM,
+        user=prompt,
+        json_mode=True,
+        temperature=0.0,
+        mock_hint="ocr_normalize",
     )
-    text = resp.content[0].text if resp.content else "{}"
-    # JSON 블록 추출
-    import re
-    m = re.search(r'\{.*\}', text, re.DOTALL)
+    m = re.search(r'\{.*\}', resp.content, re.DOTALL)
     data = _json.loads(m.group() if m else "{}")
     return _parse_normalize_response(data)
 
@@ -518,92 +603,54 @@ def _mock_structured(file_path: str, doc_type: str) -> OcrExtraction:
 # ====================================================================
 
 def extract_unstructured(file_path: str, *, doc_type: str) -> OcrExtraction:
-    """비정형 문서 채널 — Claude Sonnet Vision 기반 정량·정성 동시 추출.
+    """비정형 문서 채널 — 텍스트 추출 후 LLM(gpt-4.1-mini)로 정량·정성 동시 추출.
 
     파이프라인:
-      1) PDF → 페이지 이미지(PNG) — pymupdf 우선, 없으면 pdf2image 폴백
-      2) 각 페이지를 base64 인코딩 후 Claude Sonnet Vision에 전달
-      3) VLM_EXTRACT_PROMPT로 metrics(정량) + clauses(정성) JSON 동시 추출
-      4) 스키마 매핑 → ExtractedMetric[] + ExtractedClause[]
-      API 키 없으면 Mock 폴백.
+      1) 디지털 PDF → pymupdf 텍스트 추출 (정확·저렴)
+      2) 스캔본(임베딩 텍스트 없음) → Azure Document Intelligence로 OCR 텍스트화
+      3) 텍스트 → LLM(VLM_EXTRACT_PROMPT)로 metrics + clauses JSON 추출
+      텍스트도 키도 없으면 Mock 폴백.
     """
-    source_file = Path(file_path).name
-
-    api_key = _get_anthropic_key()
-    if not api_key:
+    openai_key = _get_openai_key()
+    if not openai_key:
         return _mock_unstructured(file_path, doc_type)
 
-    # 디지털 PDF는 텍스트 추출이 더 정확하고 저렴 → 먼저 시도
+    # 1) 디지털 PDF 텍스트
     raw_text = _extract_text_pymupdf(file_path, max_pages=10)
-    if raw_text.strip():
-        return _extract_unstructured_text(file_path, doc_type=doc_type, raw_text=raw_text, api_key=api_key)
 
-    # 스캔본 → Vision
-    images_b64 = _render_pages_b64(file_path, max_pages=10)
-    if not images_b64:
+    # 2) 스캔본 → Azure Document Intelligence OCR로 텍스트화
+    if not raw_text.strip():
+        az_key, az_ep = _get_azure_docintel_keys()
+        if az_key and az_ep:
+            try:
+                tokens = _call_azure_docintel(file_path)
+                raw_text = "\n".join(t["text"] for t in tokens)
+            except Exception:
+                raw_text = ""
+
+    if not raw_text.strip():
         return _mock_unstructured(file_path, doc_type)
 
-    from .prompts import VLM_EXTRACT_SYSTEM, VLM_EXTRACT_PROMPT
-    import anthropic, json as _json, re
-
-    client = anthropic.Anthropic(api_key=api_key)
-    prompt_text = VLM_EXTRACT_PROMPT.format(doc_type=doc_type)
-    all_metrics: list[ExtractedMetric] = []
-    all_clauses: list[ExtractedClause] = []
-    raw_texts: list[str] = []
-
-    for page_no, img_b64 in enumerate(images_b64, start=1):
-        try:
-            resp = client.messages.create(
-                model="claude-sonnet-4-6",
-                max_tokens=2000,
-                system=VLM_EXTRACT_SYSTEM + "\n반드시 JSON 형식으로만 응답하라.",
-                messages=[{
-                    "role": "user",
-                    "content": [
-                        {"type": "image", "source": {"type": "base64", "media_type": "image/png", "data": img_b64}},
-                        {"type": "text", "text": prompt_text},
-                    ],
-                }],
-            )
-            text = resp.content[0].text if resp.content else "{}"
-            m = re.search(r'\{.*\}', text, re.DOTALL)
-            data = _json.loads(m.group() if m else "{}")
-        except Exception as e:
-            data = {}
-            raw_texts.append(f"[page {page_no} error: {e}]")
-
-        metrics, clauses = _map_vlm_json(data, page_no=page_no)
-        all_metrics.extend(metrics)
-        all_clauses.extend(clauses)
-
-    return OcrExtraction(
-        source_file=source_file,
-        channel=DocChannel.UNSTRUCTURED,
-        doc_type=doc_type,
-        metrics=all_metrics,
-        clauses=all_clauses,
-        raw_text="\n".join(raw_texts),
-    )
+    return _extract_unstructured_text(file_path, doc_type=doc_type, raw_text=raw_text)
 
 
 def _extract_unstructured_text(
-    file_path: str, *, doc_type: str, raw_text: str, api_key: str
+    file_path: str, *, doc_type: str, raw_text: str
 ) -> OcrExtraction:
-    """디지털 텍스트 비정형 문서 → Claude Haiku로 정성 조항 추출."""
-    import anthropic, json as _json, re
+    """텍스트 비정형 문서 → LLM(gpt-4.1-mini via Azure)으로 정량·정성 추출."""
+    import json as _json, re
+    from ..llm import LLMClient
     from .prompts import VLM_EXTRACT_SYSTEM, VLM_EXTRACT_PROMPT
 
     prompt = VLM_EXTRACT_PROMPT.format(doc_type=doc_type) + f"\n\n문서 텍스트:\n{raw_text[:4000]}"
-    client = anthropic.Anthropic(api_key=api_key)
-    resp = client.messages.create(
-        model="claude-haiku-4-5-20251001",
-        max_tokens=2000,
-        system=VLM_EXTRACT_SYSTEM + "\n반드시 JSON 형식으로만 응답하라.",
-        messages=[{"role": "user", "content": prompt}],
+    resp = LLMClient().complete(
+        system=VLM_EXTRACT_SYSTEM,
+        user=prompt,
+        json_mode=True,
+        temperature=0.0,
+        mock_hint="ocr_unstructured",
     )
-    text = resp.content[0].text if resp.content else "{}"
-    m = re.search(r'\{.*\}', text, re.DOTALL)
+    m = re.search(r'\{.*\}', resp.content, re.DOTALL)
     data = _json.loads(m.group() if m else "{}")
     metrics, clauses = _map_vlm_json(data)
 
@@ -614,7 +661,7 @@ def _extract_unstructured_text(
         metrics=metrics,
         clauses=clauses,
         raw_text=raw_text,
-        router_meta={"fallback": "claude-haiku-text", "vision": False},
+        router_meta={"engine": "gpt-4.1-mini-text", "vision": False},
     )
 
 
