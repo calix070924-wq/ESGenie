@@ -39,7 +39,8 @@ class EvidenceNode:
     raw_text: str = ""
     origin: Origin = "dart"          # ★ 신규: 출처 구분
     source_file: str | None = None   # ★ 신규: 원본 증빙 파일명 (감사 하드링크)
-    bbox: list[float] | None = None  # ★ 신규: 원문 내 위치
+    bbox: list[float] | None = None  # ★ 신규: 원문 내 위치(0~1 정규화)
+    page: int | None = None          # ★ 신규: 0-기준 페이지 인덱스
     confidence: float = 1.0          # ★ 신규: OCR/추출 신뢰도 (DART=1.0)
 
     def to_dict(self) -> dict[str, Any]:
@@ -245,6 +246,7 @@ def merge_ocr_extraction(
     extraction: OcrExtraction,
     *,
     report_year: int,
+    industry_module=None,
 ) -> EvidenceGraph:
     """OCR 추출 결과를 기존 그래프에 편입(SSOT 통합).
 
@@ -271,11 +273,12 @@ def merge_ocr_extraction(
             origin=origin,
             source_file=extraction.source_file,
             bbox=m.bbox,
+            page=m.page,
             confidence=m.confidence,
         )
         graph.add_node(node)
         _link_cross_check(graph, node)
-        _emit_derived_emission(graph, node)
+        _emit_derived_emission(graph, node, industry_module=industry_module)
 
     for c in extraction.clauses:
         tnode = TextNode(
@@ -299,6 +302,7 @@ def build_unified_graph(
     corp_code: str,
     corp_name: str,
     report_year: int,
+    industry_module=None,
 ) -> EvidenceGraph:
     """최상위 진입점 — DART + 모든 OCR 증빙을 하나의 SSOT로 통합.
 
@@ -310,7 +314,8 @@ def build_unified_graph(
         graph = EvidenceGraph(corp_code, corp_name)
 
     for ext in extractions:
-        merge_ocr_extraction(graph, ext, report_year=report_year)
+        merge_ocr_extraction(
+            graph, ext, report_year=report_year, industry_module=industry_module)
     return graph
 
 
@@ -351,13 +356,22 @@ def _link_cross_check(graph: EvidenceGraph, node: EvidenceNode) -> None:
             ))
 
 
-def _emit_derived_emission(graph: EvidenceGraph, node: EvidenceNode) -> None:
-    """전력/가스 사용량 노드 → 탄소 배출량(E-3-1) 파생 노드 자동 생성."""
+def _emit_derived_emission(
+    graph: EvidenceGraph, node: EvidenceNode, industry_module=None
+) -> None:
+    """전력/가스 사용량 노드 → 탄소 배출량(E-3-1) 파생 노드 자동 생성.
+
+    industry_module이 업종 배출계수를 제공하면 전역값 위에 덮어쓴다(부분 키만
+    줘도 나머지는 전역 폴백). None이면 전역 _EMISSION_FACTORS 그대로.
+    """
+    from ..industry.base import resolve_map
+    factors = resolve_map(industry_module, "emission_factors", _EMISSION_FACTORS)
+
     tco2: float | None = None
     if node.unit.lower() == "kwh" and node.metric == "E-4-1":
-        tco2 = node.value * _EMISSION_FACTORS["kWh_to_tco2"]
+        tco2 = node.value * factors["kWh_to_tco2"]
     elif node.unit.lower() == "mj" and node.metric == "E-4-1":
-        tco2 = node.value * _EMISSION_FACTORS["MJ_gas_to_tco2"]
+        tco2 = node.value * factors["MJ_gas_to_tco2"]
     if tco2 is None:
         return
     derived = EvidenceNode(

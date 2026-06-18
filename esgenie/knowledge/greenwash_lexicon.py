@@ -47,9 +47,18 @@ ALL_VAGUE = (
 )
 
 
-def vague_matches(sentence: str) -> list[str]:
-    """Return vague phrases found in the sentence (case-sensitive Korean)."""
-    return [phrase for phrase in ALL_VAGUE if phrase in sentence]
+def vague_matches(sentence: str, industry_module=None) -> list[str]:
+    """Return vague phrases found in the sentence (case-sensitive Korean).
+
+    industry_module이 주어지면 전역 ALL_VAGUE에 업종 추가 패턴(lexicon_extra)을
+    합친 목록으로 매칭한다. None이면 전역 동작 그대로(회귀 없음).
+    """
+    if industry_module is None:
+        terms = ALL_VAGUE
+    else:
+        from ..industry.base import resolve_terms
+        terms = resolve_terms(industry_module, "lexicon_extra", ALL_VAGUE)
+    return [phrase for phrase in terms if phrase in sentence]
 
 
 def match_categories(sentence: str) -> dict[str, list[str]]:

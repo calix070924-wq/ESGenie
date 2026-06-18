@@ -2,8 +2,9 @@
 
 v10 구조:
 - 기존 detect(text, report) → DetectionResult 는 _legacy 로직을 래핑해 하위 호환 유지
-- 신규 detect_risk_vector(claim_sentence, evidence_graph, retrieved_chunks, industry_stats)
-  → RiskVector (D1~D5 분해 점수)
+- 신규 detect_risk_vector(
+      claim_sentence, evidence_graph, retrieved_chunks, industry_stats, industry_module
+  ) → RiskVector (D1~D5 분해 점수)
 - DetectionResult에 risk_vector 필드 추가 (기본값 None)
 """
 from __future__ import annotations
@@ -315,6 +316,7 @@ def detect_risk_vector(
     evidence_graph: Any | None = None,   # EvidenceGraph | None
     retrieved_chunks: list[dict[str, Any]] | None = None,
     industry_stats: dict[str, Any] | None = None,
+    industry_module=None,
     _d3_index: Any | None = None,        # 외부에서 미리 빌드된 VectorIndex (재사용용)
 ) -> RiskVector:
     """단일 문장에 대한 4축 위험 분해 (D1·D2·D3·D5).
@@ -324,13 +326,14 @@ def detect_risk_vector(
         evidence_graph: L0 EvidenceGraph (없으면 D1·D5 스킵)
         retrieved_chunks: L2 RAG 청크 목록 [{"id":..., "text":...}]
         industry_stats:  사용 안 함 (하위 호환용 파라미터 유지)
+        industry_module: 업종 모듈. D2 lexicon 확장에 사용, 없으면 전역 동작.
         _d3_index: 미리 빌드된 VectorIndex — 제공 시 D3에서 재빌드 생략
 
     Returns:
         RiskVector (D1·D2·D3·D5 + aggregate)
     """
     d1 = _score_d1_numeric(claim_sentence, evidence_graph)
-    d2 = _score_d2_modifier(claim_sentence)
+    d2 = _score_d2_modifier(claim_sentence, industry_module)
     d3 = _score_d3_semantic(claim_sentence, retrieved_chunks, prebuilt_index=_d3_index)
     d5 = _score_d5_timeseries(claim_sentence, evidence_graph)
 
@@ -388,9 +391,9 @@ def _score_d1_numeric(
 
 # ---- D2: 모호어 밀도 --------------------------------------------------------
 
-def _score_d2_modifier(sentence: str) -> AxisScore:
-    """greenwash_lexicon 모호어/최상급 밀도."""
-    hits = vague_matches(sentence)
+def _score_d2_modifier(sentence: str, industry_module=None) -> AxisScore:
+    """greenwash_lexicon 모호어/최상급 밀도. industry_module이 있으면 업종 패턴 포함."""
+    hits = vague_matches(sentence, industry_module)
     # 문장당 밀도: 히트 수 / threshold 정규화
     density = len(hits) / max(D2_THRESHOLD * 4, 1)   # 4개 = 만점 기준
     score = min(1.0, density)

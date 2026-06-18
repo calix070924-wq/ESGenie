@@ -156,6 +156,7 @@ def verify_and_refine(
     demo_greenwash: bool = False,
     evidence_graph: Any | None = None,   # v10: EvidenceGraph | None
     industry_stats: dict[str, Any] | None = None,  # v10: 업종 벤치마크
+    industry_module=None,                # 업종 모듈. pipeline에서 1회 resolve된 동일 객체 전달
     llm_judge: bool = False,             # 하이브리드: LLM 2차 판정 활성화
 ) -> VerificationResult:
     """반복 검증 루프.
@@ -177,6 +178,7 @@ def verify_and_refine(
     rv: RiskVector | None = None
     if evidence_graph is not None:
         rv = _compute_text_risk_vector(gen.text, evidence_graph, gen, industry_stats,
+                                       industry_module=industry_module,
                                        llm_judge=llm_judge)
         det.risk_vector = rv
 
@@ -198,6 +200,7 @@ def verify_and_refine(
 
         if evidence_graph is not None:
             rv = _compute_text_risk_vector(gen.text, evidence_graph, gen, industry_stats,
+                                           industry_module=industry_module,
                                            llm_judge=llm_judge)
             det.risk_vector = rv
 
@@ -238,6 +241,7 @@ def _compute_text_risk_vector(
     gen: GenerationResult,
     industry_stats: dict[str, Any] | None,
     *,
+    industry_module=None,
     llm_judge: bool = False,
 ) -> RiskVector:
     """전체 텍스트를 문장 단위로 분해해 가장 높은 RiskVector를 반환.
@@ -274,6 +278,7 @@ def _compute_text_risk_vector(
             evidence_graph=evidence_graph,
             retrieved_chunks=chunks or None,
             industry_stats=industry_stats,
+            industry_module=industry_module,
             _d3_index=d3_index,
         )
         if best_rv is None or rv.risk_score > best_rv.risk_score:

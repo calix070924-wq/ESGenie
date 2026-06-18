@@ -253,6 +253,15 @@ class TestSsotPipeline:
         if e41 is not None:
             assert any("ocr" in nid for nid in e41["evidence_node_ids"])
 
+    def test_extract_with_ssot_promotes_text_node_into_presence_item(self, setup):
+        report, graph = setup
+        res = extract_with_ssot(report, graph)
+        s41 = res.mapped.get("S-4-1")
+        assert s41 is not None
+        assert s41["value"] == "문서 조항 확인"
+        assert any(nid.startswith(f"{report.corp_code}_TXT_") for nid in s41["evidence_node_ids"])
+        assert "S-4-1" not in res.missing
+
     def test_build_rag_with_ssot_extends_index(self, setup):
         report, graph = setup
         from esgenie.layer2_rag import HybridRAG

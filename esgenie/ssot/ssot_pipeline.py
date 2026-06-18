@@ -70,16 +70,69 @@ def extract_with_ssot(
         if node.origin in ("ocr_structured", "ocr_unstructured"):
             ocr_by_metric.setdefault(node.metric, []).append(node.id)
 
+    # 정성 조항(TextNode)도 존재형 문항의 증빙 근거다. 규정집/회의록에서 매핑된
+    # K-ESG 코드가 있으면 해당 항목의 evidence_node_ids에 편입한다.
+    text_by_code: dict[str, list[str]] = {}
+    for tnode in graph.text_nodes.values():
+        if tnode.kesg_code:
+            text_by_code.setdefault(tnode.kesg_code, []).append(tnode.id)
+
     for code, entry in result.mapped.items():
         ocr_ids = ocr_by_metric.get(code, [])
-        if ocr_ids:
+        text_ids = text_by_code.get(code, [])
+        if ocr_ids or text_ids:
             existing = entry.get("evidence_node_ids") or []
-            entry["evidence_node_ids"] = list(dict.fromkeys(existing + ocr_ids))
+            entry["evidence_node_ids"] = list(dict.fromkeys(existing + ocr_ids + text_ids))
+        if ocr_ids:
             # OCR 증거가 생겼으면 'no_evidence' 플래그 제거
             flags = result.confidence_flags.get(code, [])
             if "no_evidence" in flags:
                 result.confidence_flags[code] = [f for f in flags if f != "no_evidence"]
                 result.notes.append(f"[OCR resolved] {code}: OCR 증빙 노드로 근거 확보")
+
+    # DART에 없더라도 규정집/회의록 TextNode가 있으면 존재형 문항은 채울 수 있다.
+    # 예: 환경방침, 안전보건 체계, 인권정책.
+    if text_by_code:
+        from esgenie.knowledge.kesg_items import by_code, items_for_profile
+
+        profile_codes = {item.code for item in items_for_profile(result.profile)}
+        synthetic_added = 0
+        for code, text_ids in text_by_code.items():
+            if code in result.mapped:
+                continue
+            item = by_code(code)
+            if item is None:
+                continue
+            in_profile = code in profile_codes
+            result.mapped[code] = {
+                "code": item.code,
+                "name": item.name,
+                "area": item.area,
+                "category": item.category,
+                "data_type": item.data_type,
+                "value": "문서 조항 확인",
+                "unit": "",
+                "note": "OCR 정성 증빙으로 자동 인식",
+                "evidence_node_ids": list(dict.fromkeys(text_ids)),
+                "beyond_profile": not in_profile,
+            }
+            if in_profile:
+                if code in result.missing:
+                    result.missing.remove(code)
+                result.by_area[item.area]["present"] += 1
+            elif code not in result.beyond_profile:
+                result.beyond_profile.append(code)
+            synthetic_added += 1
+
+        if synthetic_added:
+            profile_items = items_for_profile(result.profile)
+            in_profile_mapped = sum(
+                1 for entry in result.mapped.values() if not entry.get("beyond_profile")
+            )
+            result.coverage_pct = 100 * in_profile_mapped / len(profile_items)
+            result.notes.append(
+                f"TextNode 증빙 병합: {synthetic_added}개 항목을 규정/회의록 근거로 자동 채움"
+            )
 
     # ── 커버리지 메모 추가 ─────────────────────────────────────────────
     ocr_resolved = sum(

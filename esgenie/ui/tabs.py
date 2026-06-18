@@ -14,8 +14,17 @@ import streamlit as st
 from esgenie.benchmark import format_report as bench_format
 from esgenie.benchmark import load_benchmark, run_benchmark
 from esgenie.config import SETTINGS
+from esgenie.issb_gap import (
+    EVIDENCE_LABELS,
+    SCOPE_LABELS,
+    STATUS_LABELS,
+    remediation_text_for,
+    rows_for_anchor,
+)
 from esgenie.knowledge.issb_mapping import PILLAR_LABELS, mappings_for
 from esgenie.ssot.ssot_pipeline import ssot_summary
+from esgenie.supplychain import all_framework_keys, get_framework, respond_from_pipeline
+from esgenie.supplychain.exporters import export_response_sheet
 
 _DET_LABELS = {"rule": "룰 단독", "hybrid": "하이브리드 (룰+LLM)", "llm_only": "LLM 단독"}
 
@@ -35,6 +44,44 @@ def _issb_badge_text(code: str) -> str:
 def _item_name_with_issb(name: str, code: str) -> str:
     badge = _issb_badge_text(code)
     return name if not badge else f"{name} [{badge}]"
+
+
+def _issb_gap_table_rows(gap_report, anchor: str | None = None) -> list[dict[str, str | int]]:
+    rows = gap_report.rows if anchor is None else rows_for_anchor(gap_report, anchor)
+    return [
+        {
+            "K-ESG": row.kesg_code,
+            "항목명": row.name,
+            "ISSB": " / ".join(f"ISSB {standard}" for standard in row.standards),
+            "기둥": " / ".join(row.pillar_labels),
+            "상태": STATUS_LABELS[row.status],
+            "증빙": EVIDENCE_LABELS[row.evidence_status],
+            "범위": SCOPE_LABELS[row.scope],
+            "근거": " / ".join(row.requirements),
+            "증빙수": row.evidence_count,
+        }
+        for row in rows
+    ]
+
+
+def _supplychain_issb_alert_rows(gap_report) -> list[dict[str, str]]:
+    if gap_report is None:
+        return []
+    rows = []
+    for row in gap_report.rows:
+        if row.scope != "in_profile" or row.status != "missing":
+            continue
+        if not any(anchor in ("climate", "greenwash_defense") for anchor in row.anchors):
+            continue
+        rows.append({
+            "K-ESG": row.kesg_code,
+            "항목명": row.name,
+            "ISSB": " / ".join(f"ISSB {standard}" for standard in row.standards),
+            "기둥": " / ".join(row.pillar_labels),
+            "보완 필요": " / ".join(row.requirements),
+            "권장 증빙": remediation_text_for(row.kesg_code) or "관련 산정표·원천 증빙",
+        })
+    return rows
 
 
 def _report_card(text: str, kind: str = "draft", tag_label: str | None = None) -> str:
@@ -141,6 +188,7 @@ def render_diag_tab(result, gradient: str) -> None:
     st.caption("커버리지 분모는 프로파일 기준 — 해당 기업 규모에 적용 가능한 항목만 평가")
 
     _render_disclosure_panel(result.disclosure)
+    _render_issb_gap_panel(result.issb_gap)
     _render_coverage_panel(extraction)
 
     st.markdown("#### Evidence 노드")
@@ -416,6 +464,136 @@ def render_audit_tab(result, active_area: str, gradient: str) -> None:
         _render_hitl_panel(sentence_trace)
 
 
+# ====================================================================
+# 공급망 실사 응답서
+# ====================================================================
+
+def _fmt_answer_value(value) -> str:
+    if value is None:
+        return "—"
+    if isinstance(value, bool):
+        return "예" if value else "아니오"
+    if isinstance(value, list):
+        return ", ".join(str(v) for v in value) if value else "—"
+    return str(value)
+
+
+def _fmt_answer_evidence(answer) -> str:
+    parts: list[str] = []
+    for e in answer.evidence_links:
+        loc = f" p.{e.page + 1}" if e.page is not None else ""
+        if e.bbox:
+            loc += " 📍"
+        parts.append(f"{e.file_name}{loc}".strip())
+    return " / ".join(parts) or "—"
+
+
+def _extract_upload_recommendations(answer) -> list[str]:
+    recs: list[str] = []
+    for flag in getattr(answer, "flags", []) or []:
+        if flag.startswith("보완 증빙: "):
+            payload = flag.removeprefix("보완 증빙: ").strip()
+            recs.extend(part.strip() for part in payload.split(" / ") if part.strip())
+    seen: set[str] = set()
+    out: list[str] = []
+    for rec in recs:
+        if rec not in seen:
+            seen.add(rec)
+            out.append(rec)
+    return out
+
+
+def _supplychain_upload_cta_rows(sheet, uploaded_names: list[str] | None = None) -> list[dict[str, str | int]]:
+    uploaded_names = list(uploaded_names or [])
+    rows: list[dict[str, str | int]] = []
+    for answer in getattr(sheet, "answers", []) or []:
+        recs = _extract_upload_recommendations(answer)
+        if answer.status != "flagged" or not recs:
+            continue
+        rows.append({
+            "문항": answer.question_text,
+            "권장 증빙": " / ".join(recs),
+            "현재 업로드": len(uploaded_names),
+            "다음 행동": "상단 '내부 증빙 파일 업로드'에 관련 PDF/이미지 추가 후 다시 분석",
+        })
+    return rows
+
+
+def render_supplychain_tab(result, gradient: str) -> None:
+    st.markdown("## 📤 공급망 실사 응답서")
+    st.markdown(gradient, unsafe_allow_html=True)
+    st.caption("증빙·공시·그린워싱 검증 결과를 대기업(OEM) ESG 자가진단 양식으로 자동 응답합니다. "
+               "각 답변에 원본 증빙과 신뢰 배지가 함께 실립니다.")
+
+    if result is None or getattr(result, "v15_trace", None) is None:
+        st.info("분석을 시작하면 협력사 실사 응답서가 자동 생성됩니다.")
+        return
+
+    keys = all_framework_keys()
+    sel = st.selectbox(
+        "제출 양식 선택",
+        keys,
+        format_func=lambda k: get_framework(k).label,
+        help="OEM/산업별 양식. 같은 증빙으로 여러 양식에 동시 대응됩니다.",
+    )
+
+    sheet = respond_from_pipeline(result, sel)
+
+    c1, c2, c3 = st.columns(3)
+    c1.metric("자동응답 커버리지", f"{sheet.coverage_pct:.0f}%")
+    c2.metric("검토 필요 (🚩)", f"{sheet.flagged_count}건")
+    c3.metric("문항 수", f"{len(sheet.answers)}개")
+
+    issb_alert_rows = _supplychain_issb_alert_rows(getattr(result, "issb_gap", None))
+    if issb_alert_rows:
+        with st.expander(f"🛡 ISSB 방어 관점 보완 항목 ({len(issb_alert_rows)}건)", expanded=bool(sheet.flagged_count)):
+            st.caption("실사 응답서 제출 전 보완이 필요한 ISSB 기후/그린워싱 방어 항목입니다.")
+            st.dataframe(pd.DataFrame(issb_alert_rows), hide_index=True, use_container_width=True)
+
+    upload_cta_rows = _supplychain_upload_cta_rows(
+        sheet,
+        uploaded_names=sorted(st.session_state.get("upload_paths", {}).keys()),
+    )
+    if upload_cta_rows:
+        with st.expander(f"📎 문항별 업로드 가이드 ({len(upload_cta_rows)}건)", expanded=bool(sheet.flagged_count)):
+            st.caption("아래 증빙을 상단 업로드 섹션에 추가한 뒤 다시 분석하면 응답서 신뢰도를 끌어올릴 수 있습니다.")
+            st.dataframe(pd.DataFrame(upload_cta_rows), hide_index=True, use_container_width=True)
+
+    st.markdown("#### 자동 응답")
+    rows = [
+        {
+            "신뢰": a.badge,
+            "섹션": a.section,
+            "문항": a.question_text,
+            "답변": _fmt_answer_value(a.value),
+            "근거": _fmt_answer_evidence(a),
+        }
+        for a in sheet.answers
+    ]
+    st.dataframe(pd.DataFrame(rows), hide_index=True, use_container_width=True)
+
+    flagged = [a for a in sheet.answers if a.status == "flagged"]
+    if flagged:
+        st.markdown("#### 🚩 제출 전 검토 필요")
+        for a in flagged:
+            st.error(f"**{a.question_text}** — " + "; ".join(a.flags))
+
+    if sheet.gaps:
+        with st.expander(f"📋 보완·검토 항목 ({len(sheet.gaps)}건)", expanded=bool(flagged)):
+            for g in sheet.gaps:
+                st.markdown(f"- {g}")
+
+    out_dir = os.path.join("outputs", "_supplychain", sheet.framework_key)
+    xlsx_path = export_response_sheet(sheet, out_dir)
+    with open(xlsx_path, "rb") as fh:
+        st.download_button(
+            "📥 실사 응답서 (.xlsx)",
+            fh.read(),
+            file_name=os.path.basename(xlsx_path),
+            mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        )
+
+
 def render_benchmark_tab(gradient: str) -> None:
     st.markdown("## 🧪 그린워싱 검출 벤치마크")
     st.markdown(gradient, unsafe_allow_html=True)
@@ -565,6 +743,40 @@ def _render_disclosure_panel(disclosure) -> None:
                 hide_index=True,
                 use_container_width=True,
             )
+    st.divider()
+
+
+def _render_issb_gap_panel(gap_report) -> None:
+    if gap_report is None:
+        return
+
+    st.markdown("#### 📎 ISSB/KSSB 얇은 갭 리포트")
+    st.caption("K-ESG 뼈대는 유지하고, ISSB/KSSB 권위는 기후·그린워싱 방어 지점에만 얇게 덧댄 참고 레이어")
+
+    c1, c2, c3, c4 = st.columns(4)
+    c1.metric("프로파일 내 ISSB 공시", f"{gap_report.in_profile_disclosed}/{gap_report.in_profile_total}")
+    c2.metric("프로파일 내 누락", gap_report.in_profile_missing)
+    c3.metric("증빙 연결", gap_report.verified_count)
+    c4.metric("프로파일 외 참고", gap_report.beyond_profile_disclosed)
+    st.markdown(f"**요약:** {html.escape(gap_report.rationale)}")
+
+    climate_rows = _issb_gap_table_rows(gap_report, "climate")
+    defense_rows = _issb_gap_table_rows(gap_report, "greenwash_defense")
+    general_rows = _issb_gap_table_rows(gap_report, "general")
+
+    climate_tab, defense_tab, general_tab = st.tabs([
+        f"🌿 기후/탄소 ({len(climate_rows)}개)",
+        f"🛡 그린워싱 방어 ({len(defense_rows)}개)",
+        f"📚 일반 ISSB ({len(general_rows)}개)",
+    ])
+
+    with climate_tab:
+        st.dataframe(pd.DataFrame(climate_rows), hide_index=True, use_container_width=True)
+    with defense_tab:
+        st.dataframe(pd.DataFrame(defense_rows), hide_index=True, use_container_width=True)
+    with general_tab:
+        st.dataframe(pd.DataFrame(general_rows), hide_index=True, use_container_width=True)
+
     st.divider()
 
 

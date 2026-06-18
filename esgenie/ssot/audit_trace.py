@@ -31,7 +31,8 @@ class EvidenceLink:
     file_name: str                 # "한전고지서_2025_12.pdf"
     relative_path: str             # "evidence_pack/한전고지서_2025_12.pdf"
     origin: str                    # dart | ocr_structured | ocr_unstructured
-    bbox: list[float] | None = None
+    bbox: list[float] | None = None    # 0~1 정규화 위치
+    page: int | None = None            # 0-기준 페이지 인덱스
     node_id: str = ""
 
     def to_dict(self) -> dict[str, Any]:
@@ -172,6 +173,7 @@ def _to_link(n: EvidenceNode) -> EvidenceLink:
         relative_path=f"evidence_pack/{fname}",
         origin=n.origin,
         bbox=n.bbox,
+        page=n.page,
         node_id=n.id,
     )
 

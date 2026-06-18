@@ -2,7 +2,7 @@
  {
   "id": "V2-062",
   "sentence": "무림페이퍼와 무림P&P는 글로벌 펄프·제지·신소재 기업으로서 2024년도 탄소중립을 선언하였으며, 중장기 감축 로드맵을 수립하고 전략적인 이행 과제 추진을 통해 기후변화 대응을 추진하고 있습니다",
-  "label": "greenwash",
+  "label": "clean",
   "sector": "제지",
   "source": "sustainability_report_2024_2025",
   "split": "dev"

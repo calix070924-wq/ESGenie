@@ -1,0 +1,456 @@
+{
+  "ticker": "005930",
+  "n_cases": 56,
+  "n_pos": 10,
+  "n_neg": 46,
+  "cases": [
+    {
+      "id": "GOLD-01",
+      "sentence": "탄소중립 여행으로 탄소배출 걱정 없는 비행을 즐기세요.",
+      "label": "greenwash",
+      "category": "absolute_unsubstantiated",
+      "split": "test",
+      "domain": "regulatory_ad"
+    },
+    {
+      "id": "GOLD-02",
+      "sentence": "친환경 항공권으로 친환경 여행에 동참하세요.",
+      "label": "greenwash",
+      "category": "vague_label",
+      "split": "test",
+      "domain": "regulatory_ad"
+    },
+    {
+      "id": "GOLD-03",
+      "sentence": "본 세제는 100% 생분해되어 자연으로 돌아갑니다.",
+      "label": "greenwash",
+      "category": "absolute_unsubstantiated",
+      "split": "test",
+      "domain": "regulatory_ad"
+    },
+    {
+      "id": "GOLD-04",
+      "sentence": "무해한 친환경 세제, 안심하고 사용하세요.",
+      "label": "greenwash",
+      "category": "absolute_unsubstantiated",
+      "split": "test",
+      "domain": "regulatory_ad"
+    },
+    {
+      "id": "GOLD-05",
+      "sentence": "자연에서 쉽게 분해되는 생분해 물티슈입니다.",
+      "label": "greenwash",
+      "category": "condition_omitted",
+      "split": "test",
+      "domain": "regulatory_ad"
+    },
+    {
+      "id": "GOLD-07",
+      "sentence": "생분해 비닐로 만든 친환경 포장재입니다.",
+      "label": "greenwash",
+      "category": "condition_omitted",
+      "split": "test",
+      "domain": "regulatory_ad"
+    },
+    {
+      "id": "GOLD-09",
+      "sentence": "지구를 위한 비건·친환경 패키지 제품입니다.",
+      "label": "greenwash",
+      "category": "vague_abstract",
+      "split": "test",
+      "domain": "regulatory_ad"
+    },
+    {
+      "id": "GOLD-10",
+      "sentence": "ESG 친환경 투자 펀드로 지속가능한 미래에 투자하세요.",
+      "label": "greenwash",
+      "category": "vague_label",
+      "split": "test",
+      "domain": "regulatory_ad"
+    },
+    {
+      "id": "GOLD-11",
+      "sentence": "그리닛은 포스코의 탄소중립 마스터 브랜드입니다.",
+      "label": "greenwash",
+      "category": "absolute_unsubstantiated",
+      "split": "test",
+      "domain": "regulatory_ad"
+    },
+    {
+      "id": "GOLD-13",
+      "sentence": "에코 레더로 만든, 환경을 생각하는 가죽 제품입니다.",
+      "label": "greenwash",
+      "category": "vague_abstract",
+      "split": "test",
+      "domain": "regulatory_ad"
+    },
+    {
+      "id": "V2-062",
+      "sentence": "무림페이퍼와 무림P&P는 글로벌 펄프·제지·신소재 기업으로서 2024년도 탄소중립을 선언하였으며, 중장기 감축 로드맵을 수립하고 전략적인 이행 과제 추진을 통해 기후변화 대응을 추진하고 있습니다",
+      "label": "clean",
+      "category": "report_sentence",
+      "split": "test",
+      "domain": "esg_report"
+    },
+    {
+      "id": "V2-002",
+      "sentence": "보건 추진체계를 구축하여 '재해 없는 안전한 일터'를 만들기 위해 최선을 다하고 있습니다",
+      "label": "clean",
+      "category": "report_sentence",
+      "split": "test",
+      "domain": "esg_report"
+    },
+    {
+      "id": "V2-003",
+      "sentence": "목표로 하고 종업원의 건강증진에 노력한다",
+      "label": "clean",
+      "category": "report_sentence",
+      "split": "test",
+      "domain": "esg_report"
+    },
+    {
+      "id": "V2-006",
+      "sentence": "또한, 세아홀딩스는 '사회를 위한 성장'에도 앞장서고 있습니다",
+      "label": "clean",
+      "category": "report_sentence",
+      "split": "test",
+      "domain": "esg_report"
+    },
+    {
+      "id": "V2-009",
+      "sentence": "“선한 영향력이 경쟁력이 되는 시대, 세아가 앞장서겠습니다",
+      "label": "clean",
+      "category": "report_sentence",
+      "split": "test",
+      "domain": "esg_report"
+    },
+    {
+      "id": "V2-015",
+      "sentence": "관계자들의 안전을 최우선으로 생각하고 안전의식 제고에 최선을 다하고 있습니다",
+      "label": "clean",
+      "category": "report_sentence",
+      "split": "test",
+      "domain": "esg_report"
+    },
+    {
+      "id": "V2-023",
+      "sentence": "가능한 성장을 위해, 최근 회사는 ‘2035년까지 BAU대비 50% 탄소배출저감’ 이라는 더욱 도전적인 목표를 수립하였습니다",
+      "label": "clean",
+      "category": "report_sentence",
+      "split": "test",
+      "domain": "esg_report"
+    },
+    {
+      "id": "V2-025",
+      "sentence": "미래를 만들어 가기 위해 최선을 다하겠습니다",
+      "label": "clean",
+      "category": "report_sentence",
+      "split": "test",
+      "domain": "esg_report"
+    },
+    {
+      "id": "V2-037",
+      "sentence": "공시 표준에서 요구하는 정보를 투명하게 제공할 계획입니다",
+      "label": "clean",
+      "category": "report_sentence",
+      "split": "test",
+      "domain": "esg_report"
+    },
+    {
+      "id": "V2-046",
+      "sentence": "또한, 2026년까지 공급망 환경이슈에 대한 구매본부 담당 인원의 100% 교육을 완료하고 주요",
+      "label": "clean",
+      "category": "report_sentence",
+      "split": "test",
+      "domain": "esg_report"
+    },
+    {
+      "id": "V2-047",
+      "sentence": "ESG 위원회를 중심으로 ESG 거버넌스 체제를 구축하여 체계적인 ESG 경영을 도모할 계획입니다",
+      "label": "clean",
+      "category": "report_sentence",
+      "split": "test",
+      "domain": "esg_report"
+    },
+    {
+      "id": "V2-048",
+      "sentence": "품질·환경·안전보건 경영 시스템을 적극 도입하여 지속 가능한 경영 실현에 앞장서고 있습니다",
+      "label": "clean",
+      "category": "report_sentence",
+      "split": "test",
+      "domain": "esg_report"
+    },
+    {
+      "id": "V2-052",
+      "sentence": "수행하여 기후변화로 인한 리스크와 기회를 식별하고, 이에 대한 회복탄력성을 강화해 나갈 계획입니다",
+      "label": "clean",
+      "category": "report_sentence",
+      "split": "test",
+      "domain": "esg_report"
+    },
+    {
+      "id": "V2-053",
+      "sentence": "긍정적인 영향을 미치는 기업으로 발전하고자 노력하고 있으며 지속가능한 미래를 만들어가는 기업이 되기 위한 끊임없는 변화와 혁신을 변함없이 이어 나가겠습니다",
+      "label": "clean",
+      "category": "report_sentence",
+      "split": "test",
+      "domain": "esg_report"
+    },
+    {
+      "id": "V2-063",
+      "sentence": "무림은 ‘건강한 내일을 만드는, 지속가능경영’이라는 비전을 체계적으로 실현하고자 이해관계자 요구 대응을 위한 다양한 활동을 추진하였습니다",
+      "label": "clean",
+      "category": "report_sentence",
+      "split": "test",
+      "domain": "esg_report"
+    },
+    {
+      "id": "V2-066",
+      "sentence": "둘째, 우리 모두의 더 나은 환경을 만들기 위해 앞장서겠습니다",
+      "label": "clean",
+      "category": "report_sentence",
+      "split": "test",
+      "domain": "esg_report"
+    },
+    {
+      "id": "V2-073",
+      "sentence": "더 밝은 미래, 더 나은 내일을 만들기 위해 노력하겠습니다",
+      "label": "clean",
+      "category": "report_sentence",
+      "split": "test",
+      "domain": "esg_report"
+    },
+    {
+      "id": "V2-096",
+      "sentence": "지속적인 환경 개선을 통하여 환경보전에 앞장선다",
+      "label": "clean",
+      "category": "report_sentence",
+      "split": "test",
+      "domain": "esg_report"
+    },
+    {
+      "id": "V2-100",
+      "sentence": "친환경 문화 확산에 앞장설 것”이라고 강조했습니다",
+      "label": "clean",
+      "category": "report_sentence",
+      "split": "test",
+      "domain": "esg_report"
+    },
+    {
+      "id": "V2-115",
+      "sentence": "공공조달 수출상담회 주관기관으로 참여, 역대 최대 규모 수출계약 체결 성과를 달성하는 등 산업 전반의 지속가능성을 높이는데 앞장서고 있습니다",
+      "label": "clean",
+      "category": "report_sentence",
+      "split": "test",
+      "domain": "esg_report"
+    },
+    {
+      "id": "V2-117",
+      "sentence": "ESG 평가등급 ‘최우수’ 달성을 목표로 설정하였습니다",
+      "label": "clean",
+      "category": "report_sentence",
+      "split": "test",
+      "domain": "esg_report"
+    },
+    {
+      "id": "V2-125",
+      "sentence": "셋째, 합리적 지배구조 운영을 통해 이해관계자 권익 제고를 위해 노력하겠습니다",
+      "label": "clean",
+      "category": "report_sentence",
+      "split": "test",
+      "domain": "esg_report"
+    },
+    {
+      "id": "V2-133",
+      "sentence": "기대하는 지속가능 가치를 실현하기 위해 최선을 다하겠습니다",
+      "label": "clean",
+      "category": "report_sentence",
+      "split": "test",
+      "domain": "esg_report"
+    },
+    {
+      "id": "V2-143",
+      "sentence": "삼성바이오로직스는 고품질의 바이오 의약품으로 인류의 더 나은 삶을 실현한다는 비전 아래, 글로벌 기업으로서 사회적·환경적 책임을 인식하고, 모든 비즈니스 의사 결정에서 지속가능성을 고려하며 친환경 행보에 앞장서고자 합니다",
+      "label": "clean",
+      "category": "report_sentence",
+      "split": "test",
+      "domain": "esg_report"
+    },
+    {
+      "id": "V2-144",
+      "sentence": "부서별로 3건 선정하여 추가 경감/훈련 계획을 수립해 이행하고 있습니다",
+      "label": "clean",
+      "category": "report_sentence",
+      "split": "test",
+      "domain": "esg_report"
+    },
+    {
+      "id": "V2-022",
+      "sentence": "이를 달성하기 위해 기술 성숙도와 경제성을 고려한 탈탄소 로드맵을 수립하였습니다",
+      "label": "clean",
+      "category": "future_plan",
+      "split": "test",
+      "domain": "esg_report"
+    },
+    {
+      "id": "V2-027",
+      "sentence": "기회를 발굴하여 효과적으로 로드맵을 추진하는 것에 초점을 맞추고 있습니다",
+      "label": "clean",
+      "category": "future_plan",
+      "split": "test",
+      "domain": "esg_report"
+    },
+    {
+      "id": "V2-030",
+      "sentence": "너지 화학 기업이 될 수 있도록 노력하겠습니다",
+      "label": "clean",
+      "category": "pure_exaggeration",
+      "split": "test",
+      "domain": "esg_report"
+    },
+    {
+      "id": "V2-032",
+      "sentence": "을 위한 투자 타당성 평가를 시행할 계획입니다",
+      "label": "clean",
+      "category": "future_plan",
+      "split": "test",
+      "domain": "esg_report"
+    },
+    {
+      "id": "V2-035",
+      "sentence": "준비하고, 고객과 함께 지속 가능한 미래를 만들어 가겠습니다",
+      "label": "clean",
+      "category": "pure_exaggeration",
+      "split": "test",
+      "domain": "esg_report"
+    },
+    {
+      "id": "V2-056",
+      "sentence": "우를 바탕으로 지속가능한 제품 혁신에 앞장서고 있습니다",
+      "label": "clean",
+      "category": "pure_exaggeration",
+      "split": "test",
+      "domain": "esg_report"
+    },
+    {
+      "id": "V2-058",
+      "sentence": "영 고도화를 위한 이행 과제를 체계적으로 실행해 나갈 계획입니다",
+      "label": "clean",
+      "category": "future_plan",
+      "split": "test",
+      "domain": "esg_report"
+    },
+    {
+      "id": "V2-061",
+      "sentence": "경제 기반의 지속가능한 비즈니스 모델을 강화해 나아가겠습니다",
+      "label": "clean",
+      "category": "pure_exaggeration",
+      "split": "test",
+      "domain": "esg_report"
+    },
+    {
+      "id": "V2-068",
+      "sentence": "행하였으며, 향후에는 평가 대상 및 범위를 조정하여 공급망 관리 범위를 확대할 계획입니다",
+      "label": "clean",
+      "category": "future_plan",
+      "split": "test",
+      "domain": "esg_report"
+    },
+    {
+      "id": "V2-075",
+      "sentence": "예방을 목표로 다각도의 노력을 도모하고 있습니다",
+      "label": "clean",
+      "category": "future_plan",
+      "split": "test",
+      "domain": "esg_report"
+    },
+    {
+      "id": "V2-083",
+      "sentence": "변화관리를 통해 안전경영에 최선을 다하고 있습니다",
+      "label": "clean",
+      "category": "pure_exaggeration",
+      "split": "test",
+      "domain": "esg_report"
+    },
+    {
+      "id": "V2-094",
+      "sentence": "자 펀드를 판매하고 있으며, 향후 지속해서 관련 상품을 확대해 나갈 계획입니다",
+      "label": "clean",
+      "category": "future_plan",
+      "split": "test",
+      "domain": "esg_report"
+    },
+    {
+      "id": "V2-097",
+      "sentence": "너지 사용을 감소시키기 위해 노력하고 있습니다",
+      "label": "clean",
+      "category": "timeseries",
+      "split": "test",
+      "domain": "esg_report"
+    },
+    {
+      "id": "V2-098",
+      "sentence": "통해 함께 성장할 수 있도록 생태계를 구축할 계획입니다",
+      "label": "clean",
+      "category": "future_plan",
+      "split": "test",
+      "domain": "esg_report"
+    },
+    {
+      "id": "V2-104",
+      "sentence": "도 ESG 경영 실천을 통해 지속 가능한 성장과 친환경 사회 구현에 기여하겠습니다",
+      "label": "clean",
+      "category": "pure_exaggeration",
+      "split": "test",
+      "domain": "esg_report"
+    },
+    {
+      "id": "V2-106",
+      "sentence": "를 유지하고, 금융당국 및 고객이 요구하는 수준 이상의 정보보안 신뢰도 확보를 목표로 하고 있습니다",
+      "label": "clean",
+      "category": "future_plan",
+      "split": "test",
+      "domain": "esg_report"
+    },
+    {
+      "id": "V2-112",
+      "sentence": "동시에 추구하며, 에너지 산업 전반에 걸친 솔루션 제공자로서의 역할 강화를 목표로 합니다",
+      "label": "clean",
+      "category": "future_plan",
+      "split": "test",
+      "domain": "esg_report"
+    },
+    {
+      "id": "V2-122",
+      "sentence": "와의 소통을 통해 관련정책을 고도화해 나갈 계획입니다",
+      "label": "clean",
+      "category": "future_plan",
+      "split": "test",
+      "domain": "esg_report"
+    },
+    {
+      "id": "V2-127",
+      "sentence": "영향력을 확대해 나가는 삼성바이오로직스의 아이덴티티와 비전을 담고 있습니다",
+      "label": "clean",
+      "category": "future_plan",
+      "split": "test",
+      "domain": "esg_report"
+    },
+    {
+      "id": "V2-132",
+      "sentence": "사용을 목표로 하는 글로벌 이니셔티브입니다",
+      "label": "clean",
+      "category": "future_plan",
+      "split": "test",
+      "domain": "esg_report"
+    },
+    {
+      "id": "V2-142",
+      "sentence": "신속하게 대응할 수 있는 체계를 마련할 계획입니다",
+      "label": "clean",
+      "category": "future_plan",
+      "split": "test",
+      "domain": "esg_report"
+    }
+  ]
+}

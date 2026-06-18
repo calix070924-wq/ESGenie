@@ -190,10 +190,10 @@ def draft_missing_policy(
 # D2 · D3 · D5 — v10 재사용 래퍼
 # ====================================================================
 
-def detect_d2_modifier(sentence: str) -> AxisScore:
+def detect_d2_modifier(sentence: str, industry_module=None) -> AxisScore:
     """D2: 모호어/최상급 수식어 밀도 — 코어 로직 재사용 (공유 스키마라 그대로 반환)."""
     from ..layer3_detect import score_d2_modifier
-    return score_d2_modifier(sentence)
+    return score_d2_modifier(sentence, industry_module)
 
 
 def detect_d3_semantic(
@@ -219,6 +219,7 @@ def detect_risk_axes(
     kesg_code: str | None,
     graph: EvidenceGraph,
     retrieved_chunks: list[dict[str, Any]] | None = None,
+    industry_module=None,
 ) -> dict[str, AxisScore]:
     """4축(D1·D2·D3·D5) 종합 위험 점수 계산 (v15 통합 진입점).
 
@@ -226,7 +227,7 @@ def detect_risk_axes(
               "aggregate": AxisScore}
     """
     d1 = detect_d1_numeric(sentence, kesg_code, graph)
-    d2 = detect_d2_modifier(sentence)
+    d2 = detect_d2_modifier(sentence, industry_module)
     d3 = detect_d3_semantic(sentence, retrieved_chunks)
     d5 = detect_d5_timeseries(sentence, graph)
 

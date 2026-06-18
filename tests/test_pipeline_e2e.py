@@ -13,6 +13,8 @@ from pathlib import Path
 
 import pytest
 
+from esgenie.config import DATA_DIR
+from esgenie.industry import IndustryModule, register
 from esgenie.pipeline import PipelineOutput, run
 
 CORP_CODES = ["005930", "005380", "005490"]
@@ -37,6 +39,8 @@ def test_pipeline_output_schema(corp_code: str) -> None:
     # L1
     assert output.extraction.coverage_pct > 0
     assert len(output.extraction.mapped) > 0
+    assert output.issb_gap is not None
+    assert len(output.issb_gap.rows) > 0
     # evidence_node_ids 필드 존재 확인
     for entry in output.extraction.mapped.values():
         assert "evidence_node_ids" in entry
@@ -111,3 +115,66 @@ def test_all_areas_three_companies(corp_code: str) -> None:
     for area in ("E", "S", "G"):
         assert area in output.audit_traces
         assert len(output.audit_traces[area].sentences) > 0
+
+
+def test_pipeline_merges_uploaded_evidence_into_ssot() -> None:
+    evidence = {
+        "kepco_bill_2025_12.pdf": str(DATA_DIR / "test_docs" / "kepco_bill_2025_12.pdf"),
+    }
+    output = run(
+        "SME001",
+        areas=["E"],
+        save_traces=False,
+        evidence_files=evidence,
+        export_outputs=False,
+    )
+    assert any(n.origin == "ocr_structured" for n in output.evidence_graph.nodes.values())
+    assert output.v15_trace is not None
+    assert output.ocr_extractions
+
+
+def test_pipeline_supports_local_ssot_without_dart() -> None:
+    evidence = {
+        "waste_ledger_2025.pdf": str(DATA_DIR / "test_docs" / "waste_ledger_2025.pdf"),
+    }
+    output = run(
+        "",
+        areas=["E"],
+        corp_name="로컬기업",
+        industry="금속가공",
+        report_year=2025,
+        use_dart=False,
+        save_traces=False,
+        evidence_files=evidence,
+        export_outputs=False,
+    )
+    assert output.report is None
+    assert output.sections == {}
+    assert output.v15_trace is not None
+    assert len(output.evidence_graph.nodes) > 0
+
+
+def test_pipeline_passes_resolved_industry_module_to_verify(monkeypatch) -> None:
+    key = "test_pipeline_industry"
+    register(IndustryModule(key=key, lexicon_extra={"env": ("친환경 성과",)}))
+
+    seen: dict[str, str | None] = {}
+
+    def fake_verify_and_refine(report, area, rag, **kwargs):
+        module = kwargs.get("industry_module")
+        seen[area] = module.key if module is not None else None
+        from types import SimpleNamespace
+        return SimpleNamespace(final_score=0.0, converged=True, hitl_required=False)
+
+    monkeypatch.setattr("esgenie.pipeline.verify_and_refine", fake_verify_and_refine)
+    monkeypatch.setattr("esgenie.pipeline.build_audit_trace", lambda **kwargs: None)
+
+    output = run(
+        "005930",
+        areas=["E"],
+        save_traces=False,
+        active_industry=key,
+    )
+
+    assert output.industry_module_key == key
+    assert seen["E"] == key

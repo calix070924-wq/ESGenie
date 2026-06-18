@@ -39,7 +39,8 @@ class ExtractedMetric:
     unit: str              # "kWh", "MJ", "ton", "원" …
     period: str            # "2025-12" 또는 "2025" (정규화 전 raw)
     kesg_code_guess: str | None = None   # LLM 후처리가 제안한 K-ESG 코드 (예: "E-4-1")
-    bbox: list[float] | None = None      # [x0,y0,x1,y1] 원문 위치 (감사 추적용)
+    bbox: list[float] | None = None      # [x0,y0,x1,y1] 정규화 위치(0~1, 감사 추적용)
+    page: int | None = None              # 0-기준 페이지 인덱스 (원본 렌더용)
     confidence: float = 0.0
 
 
@@ -235,6 +236,7 @@ def _tokens_to_extraction(
 
     if openai_key and kv_pairs:
         metrics = _llm_normalize(kv_pairs, doc_type=doc_type, api_key=openai_key)
+        _attach_geometry(metrics, kv_pairs)   # LLM이 떨군 bbox/page 재결합
     else:
         metrics = _rule_normalize(kv_pairs, doc_type=doc_type)
 
@@ -246,6 +248,35 @@ def _tokens_to_extraction(
         raw_text=raw_text,
         router_meta={"engine": engine},
     )
+
+
+def _attach_geometry(metrics: list["ExtractedMetric"], kv_pairs: dict[str, Any]) -> None:
+    """LLM 정규화가 응답에 싣지 않은 bbox/page를 원본 kv_pairs에서 다시 붙인다.
+
+    매칭: ① metric_hint == kv 라벨키 ② 실패 시 value 일치(미사용 항목 중).
+    LLM은 위치 정보를 보존하지 못하므로 추출 단계의 좌표를 결정적으로 복원.
+    """
+    items = list(kv_pairs.items())
+    used = [False] * len(items)
+    for m in metrics:
+        if getattr(m, "bbox", None) is not None:
+            continue
+        info = kv_pairs.get(m.metric_hint)
+        if info is None:
+            for idx, (_k, v) in enumerate(items):
+                if used[idx]:
+                    continue
+                try:
+                    if abs(float(v.get("value")) - float(m.value)) < 1e-6:
+                        info, used[idx] = v, True
+                        break
+                except (TypeError, ValueError):
+                    continue
+        if info:
+            if m.bbox is None:
+                m.bbox = info.get("bbox")
+            if getattr(m, "page", None) is None:
+                m.page = info.get("page")
 
 
 # ---- 정형 채널 내부 헬퍼 ------------------------------------------------------
@@ -297,10 +328,17 @@ def _call_azure_docintel(file_path: str, *, model: str = "prebuilt-read") -> lis
 
     tokens: list[dict[str, Any]] = []
     for page in body.get("analyzeResult", {}).get("pages", []):
+        pw = float(page.get("width") or 0) or None
+        ph = float(page.get("height") or 0) or None
+        pno = int(page.get("pageNumber", 1)) - 1   # 0-기준 인덱스
         for line in page.get("lines", []):
             poly = line.get("polygon") or []
-            bbox = [poly[0], poly[1], poly[4], poly[5]] if len(poly) >= 6 else None
-            tokens.append({"text": line.get("content", ""), "bbox": bbox})
+            # polygon 좌표를 페이지 크기로 나눠 [0,1] 정규화 (단위 무관: inch/pixel 동일 처리)
+            if len(poly) >= 6 and pw and ph:
+                bbox = [poly[0] / pw, poly[1] / ph, poly[4] / pw, poly[5] / ph]
+            else:
+                bbox = None
+            tokens.append({"text": line.get("content", ""), "bbox": bbox, "page": pno})
     return tokens
 
 
@@ -383,6 +421,7 @@ def _apply_template(tokens: list[dict[str, Any]], template: dict[str, Any]) -> d
                         "unit": unit,
                         "kesg_code": kesg,
                         "bbox": tok.get("bbox"),
+                        "page": tok.get("page"),
                         "raw_label": tok["text"],
                     }
                     break
@@ -395,6 +434,7 @@ def _apply_template(tokens: list[dict[str, Any]], template: dict[str, Any]) -> d
                             "unit": unit,
                             "kesg_code": kesg,
                             "bbox": tokens[j].get("bbox"),
+                            "page": tokens[j].get("page"),
                             "raw_label": tok["text"],
                         }
                         break
@@ -427,6 +467,7 @@ def _keyword_extract(tokens: list[dict[str, Any]], doc_type: str) -> dict[str, A
                             "value": float(m.group()),
                             **info,
                             "bbox": tokens[j].get("bbox"),
+                            "page": tokens[j].get("page"),
                             "raw_label": tok["text"],
                         }
                         break
@@ -470,6 +511,7 @@ def _rule_normalize(kv_pairs: dict[str, Any], *, doc_type: str) -> list[Extracte
             period="",
             kesg_code_guess=info.get("kesg_code"),
             bbox=info.get("bbox"),
+            page=info.get("page"),
             confidence=0.80,
         ))
     return metrics
@@ -487,6 +529,7 @@ def _parse_normalize_response(data: dict[str, Any]) -> list[ExtractedMetric]:
                 period=str(m.get("period", "")),
                 kesg_code_guess=m.get("kesg_code") or None,
                 bbox=m.get("bbox"),
+                page=m.get("page"),
                 confidence=float(m.get("confidence", 0.85)),
             ))
         except (TypeError, ValueError):
@@ -513,8 +556,11 @@ def _extract_structured_no_llm(file_path: str, *, doc_type: str) -> OcrExtractio
             return extract_unstructured(file_path, doc_type=doc_type)
         return _mock_structured(file_path, doc_type)
 
-    # 텍스트를 줄 단위 토큰으로 변환 → 기존 _keyword_extract 재사용
-    tokens = [{"text": line.strip(), "bbox": None} for line in raw_text.splitlines() if line.strip()]
+    # 줄 단위 토큰(+좌표) — 디지털 PDF면 pymupdf가 줄 bbox를 제공(정규화).
+    tokens = _pymupdf_line_tokens(file_path, max_pages=5) or [
+        {"text": line.strip(), "bbox": None, "page": None}
+        for line in raw_text.splitlines() if line.strip()
+    ]
 
     try:
         template = _load_template(doc_type)
@@ -532,6 +578,36 @@ def _extract_structured_no_llm(file_path: str, *, doc_type: str) -> OcrExtractio
         raw_text=raw_text,
         router_meta={"fallback": "pymupdf+regex", "clova": False},
     )
+
+
+def _pymupdf_line_tokens(file_path: str, max_pages: int = 5) -> list[dict[str, Any]]:
+    """pymupdf로 줄 단위 토큰 추출 [{text, bbox(0~1 정규화), page}].
+
+    디지털(텍스트 임베딩) PDF면 Azure 없이도 위치 좌표를 제공 → provenance 박스 가능.
+    스캔본/실패 시 빈 리스트.
+    """
+    out: list[dict[str, Any]] = []
+    try:
+        import fitz
+        with fitz.open(file_path) as doc:
+            for i, page in enumerate(doc):
+                if i >= max_pages:
+                    break
+                pw, ph = page.rect.width, page.rect.height
+                if not pw or not ph:
+                    continue
+                data = page.get_text("dict")
+                for blk in data.get("blocks", []):
+                    for line in blk.get("lines", []):
+                        text = "".join(s.get("text", "") for s in line.get("spans", []))
+                        if not text.strip():
+                            continue
+                        x0, y0, x1, y1 = line.get("bbox", (0, 0, 0, 0))
+                        bbox = [x0 / pw, y0 / ph, x1 / pw, y1 / ph]
+                        out.append({"text": text.strip(), "bbox": bbox, "page": i})
+    except Exception:
+        return []
+    return out
 
 
 def _extract_text_pymupdf(file_path: str, max_pages: int = 5) -> str:

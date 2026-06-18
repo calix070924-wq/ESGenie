@@ -11,6 +11,7 @@ from __future__ import annotations
 import pytest
 
 from esgenie.dart_client import load_sample_report
+from esgenie.industry import IndustryModule
 from esgenie.layer0_evidence_graph import build_evidence_graph
 from esgenie.layer3_detect import (
     detect,
@@ -89,6 +90,13 @@ def test_detect_risk_vector_greenwash_higher_d2() -> None:
     rv_clean = detect_risk_vector(SAMPLE_SENTENCE_CLEAN)
     rv_greenwash = detect_risk_vector(SAMPLE_SENTENCE_GREENWASH)
     assert rv_greenwash.D2_modifier.score >= rv_clean.D2_modifier.score
+
+
+def test_detect_risk_vector_industry_module_affects_d2() -> None:
+    mod = IndustryModule(key="test_risk_vector", lexicon_extra={"env": ("친환경 성과",)})
+    base = detect_risk_vector("친환경 성과를 달성하였다.")
+    over = detect_risk_vector("친환경 성과를 달성하였다.", industry_module=mod)
+    assert over.D2_modifier.score > base.D2_modifier.score
 
 
 # ---- evidence_graph 연동 ---------------------------------------------------

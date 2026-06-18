@@ -1,0 +1,256 @@
+"""Drive Sustainability SAQ 5.0 프레임워크.
+
+`SAQ5_ENV`는 환경 섹션 시연용 부분집합을 유지하고,
+`SAQ5`는 실제 제출 흐름에서 다른 섹션이 비어 보이지 않도록 핵심 문항을
+여러 섹션으로 확장한 전체본이다. 문구는 SAQ 5.0 원문을 한국어로 요약 참조한다.
+"""
+from __future__ import annotations
+
+from ..schema import Framework, Question
+
+# SAQ 5.0 Q10a "방침 적용 영역" 보기 → K-ESG 코드 매핑
+_Q10A_OPTIONS = (
+    ("GHG 배출 보고",      ("E-3-1",)),
+    ("에너지 효율",        ("E-4-1",)),
+    ("재생에너지",         ("E-4-2",)),
+    ("폐기물 감축",        ("E-6-1",)),
+    ("재사용·재활용",      ("E-6-2",)),
+    ("수질·용수 관리",     ("E-5-1",)),
+    ("대기질",            ("E-7-1",)),
+)
+
+
+_ENV_QUESTIONS = (
+    Question(
+        qid="SAQ-E-10",
+        section="Environment",
+        text="Q10. 귀사는 법규 준수·지속적 측정·환경성과 개선을 포함한 "
+             "공식 환경방침을 보유하고 있습니까?",
+        qtype="yes_no_evidence",
+        evidence_required=True,
+        kesg_codes=("E-1-1", "E-1-2"),
+    ),
+    Question(
+        qid="SAQ-E-10a",
+        section="Environment",
+        text="Q10a. 환경방침이 적용되는 영역을 모두 선택하십시오.",
+        qtype="multi_select",
+        evidence_required=True,
+        option_map=_Q10A_OPTIONS,
+    ),
+    Question(
+        qid="SAQ-E-10b",
+        section="Environment",
+        text="Q10b. 임직원 대상 환경방침 교육을 실시합니까?",
+        qtype="yes_no_evidence",
+        evidence_required=True,
+        kesg_codes=("E-1-2",),
+    ),
+    Question(
+        qid="SAQ-E-11",
+        section="Environment",
+        text="Q11. 사업장에 환경경영시스템(ISO 14001 등)이 운영되고 있습니까?",
+        qtype="yes_no_evidence",
+        evidence_required=True,
+        kesg_codes=("E-1-1",),
+    ),
+    Question(
+        qid="SAQ-E-12",
+        section="Environment",
+        text="Q12. Scope 1+2 온실가스 배출량을 산정·공시하고 제3자 검증 또는 이에 준하는 확인 체계를 운영합니까?",
+        qtype="yes_no_evidence",
+        evidence_required=True,
+        kesg_codes=("E-3-1", "E-3-3"),
+    ),
+    Question(
+        qid="SAQ-E-NUM-GHG",
+        section="Environment",
+        text="(수치) 연간 Scope 1 + Scope 2 온실가스 배출량",
+        qtype="numeric",
+        evidence_required=True,
+        kesg_codes=("E-3-1",),
+        unit_hint="tCO2eq",
+    ),
+    Question(
+        qid="SAQ-E-NUM-ENERGY",
+        section="Environment",
+        text="(수치) 연간 에너지 사용량",
+        qtype="numeric",
+        evidence_required=True,
+        kesg_codes=("E-4-1",),
+        unit_hint="TJ / kWh",
+    ),
+    Question(
+        qid="SAQ-E-NUM-WATER",
+        section="Environment",
+        text="(수치) 연간 용수 사용량",
+        qtype="numeric",
+        evidence_required=True,
+        kesg_codes=("E-5-1",),
+        unit_hint="ton / m3",
+    ),
+    Question(
+        qid="SAQ-E-NUM-WASTE",
+        section="Environment",
+        text="(수치) 폐기물 재활용률",
+        qtype="numeric",
+        evidence_required=True,
+        kesg_codes=("E-6-2",),
+        unit_hint="%",
+    ),
+    Question(
+        qid="SAQ-E-NUM-AIR",
+        section="Environment",
+        text="(수치) 대기오염물질 배출량",
+        qtype="numeric",
+        evidence_required=True,
+        kesg_codes=("E-7-1",),
+        unit_hint="kg",
+    ),
+    Question(
+        qid="SAQ-E-NUM-LAW",
+        section="Environment",
+        text="(수치) 환경 법규 위반 건수",
+        qtype="numeric",
+        evidence_required=True,
+        kesg_codes=("E-8-1",),
+        unit_hint="건",
+    ),
+)
+
+SAQ5_ENV = Framework(
+    key="saq5_env",
+    label="Drive Sustainability SAQ 5.0 — 환경 섹션",
+    questions=_ENV_QUESTIONS,
+)
+
+SAQ5 = Framework(
+    key="saq5",
+    label="Drive Sustainability SAQ 5.0 — 핵심 전체본",
+    questions=(
+        Question(
+            qid="SAQ-M-1",
+            section="Management Systems",
+            text="회사는 ESG/지속가능경영 정보를 정기적으로 공시합니까?",
+            qtype="yes_no_evidence",
+            evidence_required=True,
+            kesg_codes=("P-1-1", "P-1-2"),
+        ),
+        Question(
+            qid="SAQ-M-2",
+            section="Management Systems",
+            text="공시된 ESG 데이터에 대해 제3자 검증 또는 이에 준하는 외부 확인을 받습니까?",
+            qtype="yes_no_evidence",
+            evidence_required=True,
+            kesg_codes=("P-3-1", "E-3-3"),
+        ),
+        Question(
+            qid="SAQ-M-3",
+            section="Management Systems",
+            text="경영진 또는 이사회 차원에서 ESG/지속가능경영 이슈를 검토합니까?",
+            qtype="yes_no_evidence",
+            evidence_required=True,
+            kesg_codes=("G-1-1", "G-5-1"),
+        ),
+        *_ENV_QUESTIONS,
+        Question(
+            qid="SAQ-L-1",
+            section="Labor & Human Rights",
+            text="회사는 사회적 책임 목표 또는 인력 관련 목표를 수립·공시합니까?",
+            qtype="yes_no_evidence",
+            evidence_required=True,
+            kesg_codes=("S-1-1",),
+        ),
+        Question(
+            qid="SAQ-L-2",
+            section="Labor & Human Rights",
+            text="근로자의 결사의 자유와 단체교섭권을 보장합니까?",
+            qtype="yes_no_evidence",
+            evidence_required=True,
+            kesg_codes=("S-2-6",),
+        ),
+        Question(
+            qid="SAQ-L-3",
+            section="Labor & Human Rights",
+            text="인권 정책 또는 인권 실사 체계를 운영합니까?",
+            qtype="yes_no_evidence",
+            evidence_required=True,
+            kesg_codes=("S-5-1",),
+        ),
+        Question(
+            qid="SAQ-H-1",
+            section="Health & Safety",
+            text="안전보건 관리체계(정책/조직/시스템)를 운영합니까?",
+            qtype="yes_no_evidence",
+            evidence_required=True,
+            kesg_codes=("S-4-1",),
+        ),
+        Question(
+            qid="SAQ-H-NUM-IR",
+            section="Health & Safety",
+            text="(수치) 산업재해율",
+            qtype="numeric",
+            evidence_required=True,
+            kesg_codes=("S-4-2",),
+            unit_hint="%",
+        ),
+        Question(
+            qid="SAQ-B-1",
+            section="Business Ethics",
+            text="윤리규범/준법경영 체계를 운영하고 위반사항을 관리·공시합니까?",
+            qtype="yes_no_evidence",
+            evidence_required=True,
+            kesg_codes=("G-4-1",),
+        ),
+        Question(
+            qid="SAQ-B-2",
+            section="Business Ethics",
+            text="정보보호 관리체계를 운영합니까?",
+            qtype="yes_no_evidence",
+            evidence_required=True,
+            kesg_codes=("S-8-1",),
+        ),
+        Question(
+            qid="SAQ-SC-1",
+            section="Responsible Supply Chain",
+            text="협력사 대상 ESG 평가 또는 실사 체계를 운영합니까?",
+            qtype="yes_no_evidence",
+            evidence_required=True,
+            kesg_codes=("S-6-1",),
+        ),
+        Question(
+            qid="SAQ-SC-2",
+            section="Responsible Supply Chain",
+            text="협력사 대상 ESG/상생 지원 프로그램을 운영합니까?",
+            qtype="yes_no_evidence",
+            evidence_required=True,
+            kesg_codes=("S-6-2", "S-6-3"),
+        ),
+        Question(
+            qid="SAQ-G-NUM-BOARD-IND",
+            section="Governance",
+            text="(수치) 사외이사 비율",
+            qtype="numeric",
+            evidence_required=True,
+            kesg_codes=("G-1-2",),
+            unit_hint="%",
+        ),
+        Question(
+            qid="SAQ-G-NUM-BOARD-ATTEND",
+            section="Governance",
+            text="(수치) 이사회 출석률",
+            qtype="numeric",
+            evidence_required=True,
+            kesg_codes=("G-2-1",),
+            unit_hint="%",
+        ),
+        Question(
+            qid="SAQ-G-1",
+            section="Governance",
+            text="주주총회 소집 및 주주권 보장 절차를 운영합니까?",
+            qtype="yes_no_evidence",
+            evidence_required=True,
+            kesg_codes=("G-3-1",),
+        ),
+    ),
+)
