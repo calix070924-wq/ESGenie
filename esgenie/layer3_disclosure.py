@@ -29,6 +29,8 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from typing import Any
 
+from .knowledge.issb_mapping import mappings_for
+
 
 # ====================================================================
 # 메타데이터 — 민감 항목 가중치 & 고아 비율 페어
@@ -68,6 +70,7 @@ RATIO_CONTEXT_PAIRS: dict[str, list[str]] = {
 ORPHAN_RATIO_WEIGHT = 1.0   # 고아 비율 1건의 기여(민감도 환산)
 
 _LEVELS = (("low", 0.25), ("medium", 0.50))  # 그 이상은 high
+_ISSB_REQUIRED_DISCLOSURE_CODES = {"E-3-1", "E-3-2"}
 
 
 # ====================================================================
@@ -121,12 +124,20 @@ def _level(score: float) -> str:
     return "high"
 
 
-def detect_selective_disclosure(extraction: Any) -> DisclosureReport:
+def detect_selective_disclosure(extraction: Any, industry_module=None) -> DisclosureReport:
     """ExtractionResult → 문서 단위 D6 선택적 공시 리포트.
 
     extraction: layer1_extract.ExtractionResult (mapped/missing/profile 보유)
+    industry_module: 주어지면 민감항목 가중치/고아비율 페어를 업종값으로 덮어씀
+                     (전역 키 보존 + 업종 키만 오버라이드). None이면 전역 그대로.
     """
     from .knowledge.kesg_items import ALL_ITEMS
+    from .industry.base import resolve_map
+
+    omission_sensitivity = resolve_map(
+        industry_module, "d6_omission_sensitivity", OMISSION_SENSITIVITY)
+    ratio_context_pairs = resolve_map(
+        industry_module, "d6_ratio_context_pairs", RATIO_CONTEXT_PAIRS)
 
     item_by_code = {it.code: it for it in ALL_ITEMS}
     mapped: dict[str, Any] = getattr(extraction, "mapped", {}) or {}
@@ -141,7 +152,7 @@ def detect_selective_disclosure(extraction: Any) -> DisclosureReport:
     omitted: list[OmittedItem] = []
     sens_omitted_weight = 0.0
     sens_total_weight = 0.0
-    for code, w in OMISSION_SENSITIVITY.items():
+    for code, w in omission_sensitivity.items():
         if code not in profile_codes:
             continue  # 이 회사 프로파일 대상이 아니면 누락으로 보지 않음
         sens_total_weight += w
@@ -159,7 +170,7 @@ def detect_selective_disclosure(extraction: Any) -> DisclosureReport:
     # ── 신호 B: 고아 비율 ───────────────────────────────────────────
     orphans: list[OrphanRatio] = []
     orphan_weight = 0.0
-    for ratio_code, ctx_codes in RATIO_CONTEXT_PAIRS.items():
+    for ratio_code, ctx_codes in ratio_context_pairs.items():
         if ratio_code not in disclosed_set:
             continue  # 유리 비율 자체를 공시하지 않았으면 cherry-picking 아님
         missing_ctx = [c for c in ctx_codes if c in missing_set]
@@ -177,10 +188,10 @@ def detect_selective_disclosure(extraction: Any) -> DisclosureReport:
             orphan_weight += ORPHAN_RATIO_WEIGHT
 
     # 고아 비율은 가능한 페어 수로 정규화(없으면 0)
-    signal_b = min(1.0, orphan_weight / max(len(RATIO_CONTEXT_PAIRS), 1) * 2.0)
+    signal_b = min(1.0, orphan_weight / max(len(ratio_context_pairs), 1) * 2.0)
 
     # ── 비대칭(참고 지표) ───────────────────────────────────────────
-    favorable_disclosed = sum(1 for c in RATIO_CONTEXT_PAIRS if c in disclosed_set)
+    favorable_disclosed = sum(1 for c in ratio_context_pairs if c in disclosed_set)
     asymmetry = {
         "favorable_ratios_disclosed": favorable_disclosed,
         "sensitive_items_omitted": len(omitted),
@@ -197,6 +208,9 @@ def detect_selective_disclosure(extraction: Any) -> DisclosureReport:
     if omitted:
         top = sorted(omitted, key=lambda o: o.sensitivity, reverse=True)[:3]
         parts.append("민감 항목 누락: " + ", ".join(f"{o.name}" for o in top))
+    issb_note = _issb_required_omission_note(missing)
+    if issb_note:
+        parts.append(issb_note)
     rationale = (
         "선택적 공시 의심 신호 없음" if not parts
         else f"[{level.upper()}] " + " | ".join(parts)
@@ -207,3 +221,13 @@ def detect_selective_disclosure(extraction: Any) -> DisclosureReport:
         omitted_sensitive=omitted, orphan_ratios=orphans,
         asymmetry=asymmetry, rationale=rationale,
     )
+
+
+def _issb_required_omission_note(missing_codes: list[str]) -> str:
+    """ISSB 기후 의무 공시 항목 누락 시 보강 근거를 반환한다."""
+    for code in missing_codes:
+        if code not in _ISSB_REQUIRED_DISCLOSURE_CODES:
+            continue
+        if any(mapping.standard == "S2" for mapping in mappings_for(code)):
+            return "IFRS S2는 Scope1·2·3 공시를 요구 — 누락은 선택적 공시 신호"
+    return ""

@@ -81,6 +81,30 @@ class TestMockJudgeBehavior:
         assert out.D1_numeric.score < 0.6
         assert "uncertain" in out.D1_numeric.detail
 
+    def test_confirmed_climate_claim_appends_issb_note(self):
+        rv = _rv(d2=0.8, d2_detail="모호어 2개: ['압도적', '선도적']")
+        out = judge_risk_vector(
+            "당사는 압도적이고 선도적인 친환경 기업입니다.",
+            rv,
+            trigger=0.25,
+            kesg_codes=["E-3-2"],
+        )
+        assert "ISSB S2" in out.D2_modifier.detail
+        assert out.aggregate["judge"]["issb_notes"]
+
+    def test_empty_mapping_keeps_existing_detail_shape(self, monkeypatch):
+        rv = _rv(d2=0.8, d2_detail="모호어 2개: ['압도적', '선도적']")
+        monkeypatch.setattr("esgenie.layer3_judge.mappings_for", lambda code: [])
+        out = judge_risk_vector(
+            "당사는 압도적이고 선도적인 친환경 기업입니다.",
+            rv,
+            trigger=0.25,
+            kesg_codes=["E-3-2"],
+        )
+        assert "confirmed" in out.D2_modifier.detail
+        assert "ISSB" not in out.D2_modifier.detail
+        assert "issb_notes" not in out.aggregate["judge"]
+
 
 # ---- 점수 결합 -----------------------------------------------------------------
 

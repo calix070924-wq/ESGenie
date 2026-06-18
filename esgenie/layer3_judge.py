@@ -27,6 +27,7 @@ import re
 from typing import Any
 
 from .config import D_WEIGHTS, JUDGE_RULE_WEIGHT, JUDGE_TRIGGER, RISK_LEVEL_THRESHOLDS
+from .knowledge.issb_mapping import mappings_for
 from .schemas import AxisScore, RiskVector
 
 # ---- 프롬프트 ---------------------------------------------------------------
@@ -49,18 +50,33 @@ JUDGE_SYSTEM = """\
 핵심 경계 (자주 틀리는 지점):
 - 수식어·주장이 **같은 문장 안의 구체적 정량 실적**(증빙과 일치하는 수치·비율)으로
   뒷받침되면 → false_positive. 수치가 증빙값과 맞으면 D1은 confirmed가 아니다.
-- 반대로 **측정 가능한 근거가 전혀 없는 공허한 비전·다짐**("최선을 다하겠다",
-  "미래지향적", "앞장서겠다")은 정량 실적이 0이므로 → D2는 confirmed(위험)다.
-  공허할수록 해제가 아니라 확정이다.
+- **측정 가능한 성과 주장이 없는 순수 노력·다짐·포부**("최선을 다하고 있습니다",
+  "노력하고 있습니다", "앞장서고 있습니다", "발전해 나가겠습니다", "지속가능한 미래를
+  만들어가겠습니다")는 **거짓 성과 주장이 아니라 의례적 표현**이다 → false_positive(해제).
+  단순히 정량 근거가 없다는 이유만으로 다짐을 확정하지 마라(과검출 주의).
+- 다만 다음 둘 중 하나면 다짐이라도 → confirmed(위험):
+  ① **최상급·절대 과장 수식어**(압도적·세계 최고·독보적·타의 추종 불허·최첨단·획기적·
+     업계 최고·차세대·선도적)로 환경 우수성을 단정 — 검증 불가한 우월성 주장.
+  ② **검증 안 된 구체적 환경 속성·효과를 현재 성취·사실로 단정**(친환경·무해·100% 생분해·
+     탄소중립·청정·무공해 "제품/여행/기업이다") — 모호한 친환경 라벨(sin of vagueness).
+- 단, ②의 환경 키워드라도 **미래 목표·진행형 노력**으로 서술하면("탄소중립 달성을 위해
+  노력", "친환경 경영을 추진", "~을 목표로 한다")은 성취 단정이 아니므로 → false_positive(해제).
+  "탄소중립이다/탄소중립 여행"(성취·속성 단정)과 "탄소중립을 위해 노력"(미래 목표)을 구분하라.
 
 [판정 예시]
 예시1 (정상 → 해제): "선도적인 공정 혁신으로 단위당 온실가스 배출을 전년 대비 18% 줄였습니다."
   · 증빙: 배출 원단위 전년比 -18% 일치
   · D2_modifier=false_positive (수식어 '선도적인'이 동일 문장의 정량 실적 -18%로 뒷받침)
   · D5_timeseries=false_positive (감소 주장이 실측 추세와 일치)
-예시2 (위험 → 확정): "지속가능한 미래를 향해 친환경 경영에 앞장서겠습니다."
+예시2 (의례적 다짐 → 해제): "지속가능한 미래를 만들어가기 위해 최선을 다하고 있습니다."
+  · 거짓 성과 주장 없음 — 노력·포부의 의례적 표현
+  · D2_modifier=false_positive (정량 근거 부재만으로 위험 단정 금지)
+예시3 (과장 우월성 → 확정): "세계 최고의 청정 기술로 녹색 경영에 앞장서고 있습니다."
   · 증빙: 해당 수치·실적 없음
-  · D2_modifier=confirmed (측정 가능한 정량 근거가 전무한 공허한 다짐 — 과장 위험)"""
+  · D2_modifier=confirmed (최상급 '세계 최고'로 검증 불가한 환경 우월성 단정)
+예시4 (모호한 친환경 라벨 → 확정): "본 제품은 100% 생분해되어 자연으로 돌아갑니다."
+  · 증빙: 전체 생분해 검증 없음(일부 성분·특정 조건만)
+  · D2_modifier=confirmed (검증 안 된 구체적 환경 효과 주장 — 모호성의 죄)"""
 
 JUDGE_PROMPT_TEMPLATE = """\
 [[JUDGE_TASK]]
@@ -89,6 +105,8 @@ _VERDICT_FALLBACK_SCORE = {
     "confirmed": 1.0,
 }
 
+_KESG_CODE_PATTERN = re.compile(r"[PESG]-\d-\d")
+
 
 # ---- 공개 API ---------------------------------------------------------------
 
@@ -99,6 +117,7 @@ def judge_risk_vector(
     *,
     trigger: float = JUDGE_TRIGGER,
     rule_weight: float = JUDGE_RULE_WEIGHT,
+    kesg_codes: list[str] | None = None,
 ) -> RiskVector:
     """룰 1차 RiskVector에 LLM 2차 판정을 적용해 보정된 RiskVector를 반환.
 
@@ -145,10 +164,12 @@ def judge_risk_vector(
         temperature=0.0,
     )
     verdicts = _parse_judge_response(resp.content)
+    issb_notes = _issb_notes_for_codes(_related_kesg_codes(sentence, rv, kesg_codes))
 
     # ── 축별 점수 결합 ────────────────────────────────────────────────
     new_axes: dict[str, AxisScore] = {}
     judged_axes: list[str] = []
+    confirmed_with_issb = False
     for name, ax in axes.items():
         v = verdicts.get(name)
         if name not in triggered or v is None:
@@ -161,12 +182,17 @@ def judge_risk_vector(
             blended = round(llm_score, 4)
         else:
             blended = round(rule_weight * ax.score + (1.0 - rule_weight) * llm_score, 4)
+        extra_note = ""
+        if v.get("verdict") == "confirmed" and issb_notes:
+            confirmed_with_issb = True
+            extra_note = " | " + " / ".join(issb_notes)
         new_axes[name] = AxisScore(
             score=blended,
             evidence=ax.evidence,
             detail=(
                 f"{ax.detail} | LLM판정[{v.get('verdict', '?')}] "
                 f"rule={ax.score:.2f}→final={blended:.2f}: {v.get('rationale', '')}"
+                f"{extra_note}"
             ),
         )
 
@@ -179,6 +205,8 @@ def judge_risk_vector(
         "verdicts": {k: verdicts[k].get("verdict") for k in judged_axes if k in verdicts},
         "rule_weight": rule_weight,
     }
+    if confirmed_with_issb:
+        out.aggregate["judge"]["issb_notes"] = issb_notes
     return out
 
 
@@ -187,8 +215,10 @@ def detect_risk_vector_hybrid(
     evidence_graph: Any | None = None,
     retrieved_chunks: list[dict[str, Any]] | None = None,
     industry_stats: dict[str, Any] | None = None,
+    industry_module=None,
     _d3_index: Any | None = None,
     llm: Any | None = None,
+    kesg_codes: list[str] | None = None,
 ) -> RiskVector:
     """룰 1차(detect_risk_vector) + LLM 2차(judge_risk_vector) 통합 진입점.
 
@@ -201,9 +231,10 @@ def detect_risk_vector_hybrid(
         evidence_graph=evidence_graph,
         retrieved_chunks=retrieved_chunks,
         industry_stats=industry_stats,
+        industry_module=industry_module,
         _d3_index=_d3_index,
     )
-    return judge_risk_vector(claim_sentence, rv, llm=llm)
+    return judge_risk_vector(claim_sentence, rv, llm=llm, kesg_codes=kesg_codes)
 
 
 # ---- 내부 헬퍼 --------------------------------------------------------------
@@ -233,6 +264,47 @@ def _parse_judge_response(text: str) -> dict[str, dict[str, Any]]:
             return {}
     axes = data.get("axes", data)
     return axes if isinstance(axes, dict) else {}
+
+
+def _related_kesg_codes(
+    sentence: str,
+    rv: RiskVector,
+    extra_codes: list[str] | None = None,
+) -> list[str]:
+    """문장/축 detail/evidence에 드러난 관련 K-ESG 코드를 수집한다."""
+    found: list[str] = []
+    seen: set[str] = set()
+
+    def _add(codes: list[str]) -> None:
+        for code in codes:
+            if code not in seen:
+                seen.add(code)
+                found.append(code)
+
+    _add(list(extra_codes or []))
+    _add(_KESG_CODE_PATTERN.findall(sentence))
+
+    axes = (rv.D1_numeric, rv.D2_modifier, rv.D3_semantic, rv.D5_timeseries)
+    for axis in axes:
+        _add(_KESG_CODE_PATTERN.findall(axis.detail))
+        for evidence_id in axis.evidence:
+            _add(_KESG_CODE_PATTERN.findall(str(evidence_id)))
+    return found
+
+
+def _issb_notes_for_codes(codes: list[str]) -> list[str]:
+    """기후/그린워싱 방어 매핑이 있는 코드의 ISSB 보강 근거를 생성한다."""
+    notes: list[str] = []
+    seen: set[str] = set()
+    for code in codes:
+        for mapping in mappings_for(code):
+            if mapping.anchor not in ("climate", "greenwash_defense"):
+                continue
+            note = f"ISSB {mapping.standard} {mapping.requirement} 미충족 소지"
+            if note not in seen:
+                seen.add(note)
+                notes.append(note)
+    return notes
 
 
 def _llm_score(verdict: dict[str, Any], rule_score: float) -> float:

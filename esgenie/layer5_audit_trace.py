@@ -76,16 +76,23 @@ def build_audit_trace(
         # risk_vector (문장 단위) — llm_judge=True면 룰+LLM 하이브리드
         rv: RiskVector | None = None
         if evidence_graph is not None or chunks:
+            related_codes = list(dict.fromkeys(([kesg_item_id] if kesg_item_id else []) + _guess_kesg_codes(sent_text, extraction)))
             if llm_judge:
                 from .layer3_judge import detect_risk_vector_hybrid as _detect
+                rv = _detect(
+                    sent_text,
+                    evidence_graph=evidence_graph,
+                    retrieved_chunks=chunks or None,
+                    industry_stats=industry_stats,
+                    kesg_codes=related_codes or None,
+                )
             else:
-                _detect = detect_risk_vector
-            rv = _detect(
-                sent_text,
-                evidence_graph=evidence_graph,
-                retrieved_chunks=chunks or None,
-                industry_stats=industry_stats,
-            )
+                rv = detect_risk_vector(
+                    sent_text,
+                    evidence_graph=evidence_graph,
+                    retrieved_chunks=chunks or None,
+                    industry_stats=industry_stats,
+                )
 
         # refinement_attempts (해당 문장에 영향을 준 시도 목록)
         ref_attempts = _filter_attempts(verification.refinement_attempts, sent_text)

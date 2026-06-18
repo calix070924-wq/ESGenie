@@ -79,3 +79,30 @@ def test_score_bounded():
     )
     d6 = detect_selective_disclosure(ext)
     assert 0.0 <= d6.score <= 1.0
+
+
+def test_issb_required_omission_note_added():
+    ext = _extraction(disclosed=[], missing=["E-3-2"])
+    d6 = detect_selective_disclosure(ext)
+    assert "IFRS S2는 Scope1·2·3 공시를 요구" in d6.rationale
+
+
+def test_empty_mapping_keeps_disclosure_rationale_unchanged(monkeypatch):
+    ext = _extraction(disclosed=[], missing=["E-3-2"])
+    monkeypatch.setattr("esgenie.layer3_disclosure.mappings_for", lambda code: [])
+    d6 = detect_selective_disclosure(ext)
+    assert d6.rationale == "[MEDIUM] 민감 항목 누락: 온실가스 배출량 (Scope3)"
+
+
+# ── D6 문서단위 벤치 하네스 스모크 ──────────────────────────────────
+def test_disclosure_bench_runs():
+    """벤치 하네스가 돌고, 결정적 룰이라 핵심 케이스가 기대대로 분류된다."""
+    from esgenie.benchmark_disclosure import run
+    out = run()
+    assert out["n"] >= 10
+    by_id = {r["id"]: r for r in out["rows"]}
+    assert by_id["D6-01"]["pred"] == "low"      # 정상 공시
+    assert by_id["D6-07"]["pred"] == "high"     # 고아비율 2건
+    assert by_id["D6-05"]["pred"] == "medium"   # 고아비율 1건
+    # 룰 결정적 → 레벨 정확도는 회귀 가드(현재 0.75)
+    assert out["level_acc"] >= 0.75
