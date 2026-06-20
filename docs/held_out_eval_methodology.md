@@ -65,11 +65,37 @@ held-out test에는 동일도메인(ESG 보고서) **양성이 사실상 없다*
 - 라벨 정의: "성취 단정 없는 미래지향 노력·다짐·선언"은 clean, "최상급 과장 우월성
   단정" 및 "검증 안 된 현재형 환경 속성 주장(친환경/100% 생분해/탄소중립이다)"은 greenwash.
 
+## 6. 증빙-그라운딩 트랙 (evidence-grounding recall) — §4·§5의 후속
+
+§4에서 미뤄둔 "증빙 기반 트랙"을 별도 측정 스크립트로 정식 편입했다
+(`scripts/evidence_recall_eval.py`, 골드 `data/benchmark_v2/evidence_recall_gold.json`).
+본 텍스트분류 CI 가 측정하지 못하는 축 — **K-ESG 코드 → 올바른 증빙 노드 검색 재현율** — 을 잰다.
+
+- **데이터**: 한울정밀공업 시연 증빙 PDF(전기·가스·폐기물·사내규정). 실 양식·가상 수치.
+- **실측 경로**: `ocr_router`(정형→Azure Document Intelligence / 비정형→gpt-4.1-mini)
+  → SSOT `EvidenceGraph` → `layer1._match_evidence_nodes` 와 **동일한 키워드·검색 호출**.
+- **before/after**: before = 코드만(`[code]`), after = 코드 + `KESGItem.search_terms`
+  (ESGReveal `<SearchTerm>`). 코드단위 recall 을 부트스트랩 95% CI 로 산출.
+- **추출 vs 검색 분리**: OCR 가 증빙을 노드로 뽑았는지(추출)와 그 노드를 코드로
+  검색해냈는지(검색)를 분리 집계 → SearchTerm 의 순수 검색 기여만 격리.
+
+**왜 '실측'인가**: Azure 키가 연결된 환경에서만 OCR 이 실엔진으로 돌고, 키가 없으면
+mock 으로 떨어져 리포트에 "실측 아님" 경고가 박힌다(held_out_eval 과 동일 규약).
+즉 프록시·합성이 아니라 실제 OCR 출력 위에서 잰 수치라, 심사·데모 근거로 바로 쓸 수 있다.
+SearchTerm 기여가 0 으로 나와도(= LLM/화이트리스트가 코드를 모두 해소) 그 자체가 정직한 결과다.
+
+결과 리포트: `outputs/benchmark/evidence_recall.md`.
+
 ## 재현
 
 ```bash
-# 실키(로컬, Azure 도달 가능)
+# 텍스트분류 CI — 실키(로컬, Azure 도달 가능)
 ESGENIE_STRICT=1 PYTHONPATH=. python3 scripts/held_out_eval.py
 # 라벨만 바뀐 경우(예측 불변) — API 무호출 재계산
 PYTHONPATH=. python3 scripts/recompute_ci.py
+
+# 증빙-그라운딩 트랙 — 실키(Azure OCR 도달 가능) 에서 실측
+ESGENIE_STRICT=1 PYTHONPATH=. python3 scripts/evidence_recall_eval.py
+# 배선 검증용 목(수치 무의미)
+ESGENIE_FORCE_MOCK=1 PYTHONPATH=. python3 scripts/evidence_recall_eval.py
 ```

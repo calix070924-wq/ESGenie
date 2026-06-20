@@ -24,7 +24,8 @@ from esgenie.ssot.ocr_router import (
     extract_unstructured,
     route_document,
 )
-from esgenie.ssot.ssot_pipeline import build_rag_with_ssot, extract_with_ssot, ssot_summary
+from esgenie.ssot import ocr_router as ocr_router_mod
+from esgenie.ssot.ssot_pipeline import build_rag_with_ssot, extract_local_with_ssot, extract_with_ssot, ssot_summary
 
 
 # ---- 헬퍼 ----------------------------------------------------------------------
@@ -136,6 +137,30 @@ class TestSsotGraph:
         assert g.corp_code == "LOCAL"
         assert any(n.origin == "ocr_structured" for n in g.nodes.values())
 
+    def test_same_metric_from_multiple_files_keeps_distinct_nodes(self):
+        g = EvidenceGraph("LOCAL", "로컬")
+        merge_ocr_extraction(g, OcrExtraction(
+            source_file="전기1.pdf",
+            channel=DocChannel.STRUCTURED,
+            doc_type="kepco_bill",
+            metrics=[ExtractedMetric(
+                metric_hint="사용전력량", value=100.0, unit="kWh",
+                period="2025-01", kesg_code_guess="E-4-1", confidence=0.9,
+            )],
+        ), report_year=2025)
+        merge_ocr_extraction(g, OcrExtraction(
+            source_file="전기2.pdf",
+            channel=DocChannel.STRUCTURED,
+            doc_type="kepco_bill",
+            metrics=[ExtractedMetric(
+                metric_hint="사용전력량", value=200.0, unit="kWh",
+                period="2025-01", kesg_code_guess="E-4-1", confidence=0.9,
+            )],
+        ), report_year=2025)
+        e41_nodes = [n for n in g.nodes.values() if n.metric == "E-4-1"]
+        assert len(e41_nodes) == 2
+        assert len({n.id for n in e41_nodes}) == 2
+
     def test_search_nodes_v10_compat(self, sme_report):
         """layer1이 쓰는 search_nodes(keywords, period) 인터페이스 호환."""
         g = build_from_dart(sme_report)
@@ -171,6 +196,26 @@ class TestOcrRouter:
     def test_unstructured_mock_without_keys(self):
         ext = extract_unstructured("회의록.pdf", doc_type="safety_minutes")
         assert ext.clauses or ext.metrics
+
+    def test_unstructured_text_fallback_promotes_policy_clauses(self, monkeypatch):
+        class _EmptyLLM:
+            def complete(self, **kwargs):
+                from esgenie.llm import LLMResponse
+                return LLMResponse(content="{}", used_mock=False, meta={"model": "stub"})
+
+        monkeypatch.setattr(ocr_router_mod, "LLMClient", lambda: _EmptyLLM(), raising=False)
+        ext = ocr_router_mod._extract_unstructured_text(
+            "policy.pdf",
+            doc_type="policy_manual",
+            raw_text=(
+                "환경·ESG 경영방침 규정\n"
+                "주관 부서 ESG경영팀 / 환경안전팀\n"
+                "회사는 환경법규 준수와 환경영향 최소화를 기본방침으로 한다.\n"
+                "안전보건 체계를 운영하고 위험성평가를 연 1회 이상 실시한다.\n"
+            ),
+        )
+        codes = {clause.kesg_code_guess for clause in ext.clauses}
+        assert {"E-1-1", "E-1-2", "S-4-1"} <= codes
 
 
 # ---- D1 / P축 검출기 ---------------------------------------------------------------
@@ -276,6 +321,55 @@ class TestSsotPipeline:
         s = ssot_summary(graph)
         assert s["total_nodes"] == len(graph.nodes)
         assert "ocr_structured" in s["by_origin"]
+
+    def test_extract_local_with_ssot_maps_presence_items_without_dart(self):
+        graph = build_unified_graph(
+            None,
+            [
+                _kepco_extraction(),
+                OcrExtraction(
+                    source_file="환경방침서.pdf",
+                    channel=DocChannel.UNSTRUCTURED,
+                    doc_type="policy_manual",
+                    clauses=[
+                        ExtractedClause(
+                            section="환경경영 방침",
+                            text="회사는 환경법규 준수와 지속적 개선 목표를 수립한다.",
+                            kesg_code_guess="E-1-1",
+                            page=1,
+                        ),
+                        ExtractedClause(
+                            section="환경경영 추진체계",
+                            text="주관 부서 ESG경영팀 / 환경안전팀이 체계를 운영한다.",
+                            kesg_code_guess="E-1-2",
+                            page=1,
+                        ),
+                        ExtractedClause(
+                            section="안전보건 체계",
+                            text="안전보건 체계를 운영하고 위험성평가를 정례화한다.",
+                            kesg_code_guess="S-4-1",
+                            page=2,
+                        ),
+                    ],
+                ),
+            ],
+            corp_code="LOCAL",
+            corp_name="로컬기업",
+            report_year=2025,
+        )
+        res = extract_local_with_ssot(
+            graph,
+            corp_code="LOCAL",
+            corp_name="로컬기업",
+            report_year=2025,
+            industry="자동차부품",
+            profile="sme",
+        )
+        for code in ("E-1-1", "E-1-2", "S-4-1"):
+            assert code in res.mapped
+            assert res.mapped[code]["value"] == "문서 조항 확인"
+            assert any(nid.startswith("LOCAL_TXT_") for nid in res.mapped[code]["evidence_node_ids"])
+            assert code not in res.missing
 
 
 # ---- 실사 산출물 (audit_trace_v15) ---------------------------------------------------

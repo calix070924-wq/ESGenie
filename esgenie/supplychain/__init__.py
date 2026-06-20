@@ -10,6 +10,13 @@ ESGenie의 검출 산출물(L1 추출 / D6 선택적 공시 / v15 증빙 data_po
 """
 from __future__ import annotations
 
+from .claims import (
+    SupplierClaim,
+    is_saq_upload,
+    manual_claims,
+    merge_claims,
+    parse_saq_claims,
+)
 from .frameworks import all_framework_keys, get_framework
 from .responder import build_response_sheet, respond_from_pipeline
 from .schema import Answer, Framework, Question, ResponseSheet
@@ -23,4 +30,9 @@ __all__ = [
     "Question",
     "Answer",
     "ResponseSheet",
+    "SupplierClaim",
+    "is_saq_upload",
+    "parse_saq_claims",
+    "manual_claims",
+    "merge_claims",
 ]

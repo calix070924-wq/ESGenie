@@ -237,8 +237,12 @@ def _tokens_to_extraction(
     if openai_key and kv_pairs:
         metrics = _llm_normalize(kv_pairs, doc_type=doc_type, api_key=openai_key)
         _attach_geometry(metrics, kv_pairs)   # LLM이 떨군 bbox/page 재결합
+        metrics = _enforce_pinned_rates(metrics, kv_pairs)  # 비율(%) 코드는 템플릿값 고정
     else:
         metrics = _rule_normalize(kv_pairs, doc_type=doc_type)
+
+    # 비율(%) 항목은 표 토큰 인접매칭이 깨지기 쉬워, raw 텍스트 정규식으로 결정적 고정
+    metrics = _pin_rates_from_raw(metrics, tokens)
 
     return OcrExtraction(
         source_file=Path(file_path).name,
@@ -277,6 +281,94 @@ def _attach_geometry(metrics: list["ExtractedMetric"], kv_pairs: dict[str, Any])
                 m.bbox = info.get("bbox")
             if getattr(m, "page", None) is None:
                 m.page = info.get("page")
+
+
+def _enforce_pinned_rates(
+    metrics: list["ExtractedMetric"], kv_pairs: dict[str, Any]
+) -> list["ExtractedMetric"]:
+    """템플릿이 단위 '%'로 못박은 비율 코드는 LLM이 톤/kg로 덮어쓰지 못하게 고정한다.
+
+    LLM 정규화가 '재활용 비율(%)'을 '재활용량(톤)'으로 오치환하는 사례를 결정적으로 교정.
+    템플릿 KV에 unit=='%' & kesg_code 가 있으면, 해당 코드는 그 비율값으로 확정하고
+    같은 코드를 비-% 단위로 단 LLM 산출물은 제거한다. (비율 외 항목은 손대지 않음)
+    """
+    pinned: dict[str, dict[str, Any]] = {
+        info["kesg_code"]: {**info, "label": label}
+        for label, info in kv_pairs.items()
+        if str(info.get("unit", "")) == "%" and info.get("kesg_code")
+    }
+    if not pinned:
+        return metrics
+
+    out: list[ExtractedMetric] = []
+    for m in metrics:
+        code = m.kesg_code_guess
+        if code in pinned and str(m.unit) != "%":
+            continue  # 같은 코드를 비-% 단위로 단 LLM 결과는 폐기
+        out.append(m)
+
+    for code, info in pinned.items():
+        if any(mm.kesg_code_guess == code and str(mm.unit) == "%" for mm in out):
+            continue  # 이미 비율값이 살아있으면 유지
+        out.append(ExtractedMetric(
+            metric_hint=info.get("label", code),
+            value=float(info.get("value", 0)),
+            unit="%",
+            period="",
+            kesg_code_guess=code,
+            bbox=info.get("bbox"),
+            page=info.get("page"),
+            confidence=0.85,
+        ))
+    return out
+
+
+# 비율(%) 항목 raw-텍스트 규칙. (키워드 정규식, K-ESG 코드, 라벨, 키워드-값 허용거리)
+_RATE_RAW_PATTERNS: list[tuple[str, str, str, int]] = [
+    (r"재활용\s*비율|순환\s*이용\s*률|재활용\s*률|순환이용률", "E-6-2", "재활용 비율", 60),
+]
+
+
+def _pin_rates_from_raw(
+    metrics: list["ExtractedMetric"], tokens: list[dict[str, Any]]
+) -> list["ExtractedMetric"]:
+    """OCR raw 텍스트에서 비율(%) 항목을 직접 잡아 해당 코드를 %값으로 결정적 고정.
+
+    표 셀이 여러 토큰으로 쪼개지거나(인접매칭 실패) 키워드와 값 사이에 다른 숫자가
+    끼어도, 'NN%' 출현마다 앞쪽 윈도우에 비율 키워드가 있는지 보고 채택한다.
+    같은 코드를 비-% 단위로 단 LLM 산출물은 제거.
+    """
+    import re
+    raw = " ".join(str(t.get("text", "")) for t in tokens)
+    for kw_pat, code, label, window in _RATE_RAW_PATTERNS:
+        kw_re = re.compile(kw_pat)
+        val = None
+        for nm in re.finditer(r"(\d{1,3}(?:\.\d+)?)\s*%", raw):
+            head = raw[max(0, nm.start() - window):nm.start()]
+            if kw_re.search(head):
+                val = float(nm.group(1))
+                numstr = nm.group(1)
+                break
+        if val is None:
+            continue
+        # geometry 최선복원: 매칭 숫자(+%)를 품은 토큰의 bbox/page
+        bbox = page = None
+        for t in tokens:
+            txt = str(t.get("text", ""))
+            if numstr in txt and "%" in txt:
+                bbox, page = t.get("bbox"), t.get("page"); break
+        if bbox is None:
+            for t in tokens:
+                if numstr in str(t.get("text", "")):
+                    bbox, page = t.get("bbox"), t.get("page"); break
+        # raw 스캔이 비율 코드에 대해 '권위' — 같은 코드 기존 산출물(값/단위 무관)을 전부 폐기하고
+        # 텍스트에서 직접 잡은 비율값으로 확정. (템플릿 인접매칭이 엉뚱한 숫자를 박는 사례 차단)
+        metrics = [mm for mm in metrics if mm.kesg_code_guess != code]
+        metrics.append(ExtractedMetric(
+            metric_hint=label, value=val, unit="%", period="",
+            kesg_code_guess=code, bbox=bbox, page=page, confidence=0.9,
+        ))
+    return metrics
 
 
 # ---- 정형 채널 내부 헬퍼 ------------------------------------------------------
@@ -569,6 +661,7 @@ def _extract_structured_no_llm(file_path: str, *, doc_type: str) -> OcrExtractio
         kv_pairs = _keyword_extract(tokens, doc_type)
 
     metrics = _rule_normalize(kv_pairs, doc_type=doc_type)
+    metrics = _pin_rates_from_raw(metrics, tokens)  # 비율(%) 결정적 고정 (Azure 경로와 동일)
 
     return OcrExtraction(
         source_file=Path(file_path).name,
@@ -729,6 +822,11 @@ def _extract_unstructured_text(
     m = re.search(r'\{.*\}', resp.content, re.DOTALL)
     data = _json.loads(m.group() if m else "{}")
     metrics, clauses = _map_vlm_json(data)
+    clauses = _augment_unstructured_clauses(
+        clauses,
+        raw_text=raw_text,
+        doc_type=doc_type,
+    )
 
     return OcrExtraction(
         source_file=Path(file_path).name,
@@ -818,6 +916,49 @@ def _map_vlm_json(data: dict[str, Any], *, page_no: int = 1) -> tuple[list[Extra
             continue
 
     return metrics, clauses
+
+
+def _augment_unstructured_clauses(
+    clauses: list[ExtractedClause],
+    *,
+    raw_text: str,
+    doc_type: str,
+) -> list[ExtractedClause]:
+    """LLM이 놓친 존재형 조항을 원문 키워드로 보강한다."""
+    lines = [line.strip() for line in raw_text.splitlines() if line.strip()]
+    if not lines:
+        return clauses
+
+    existing_codes = {clause.kesg_code_guess for clause in clauses if clause.kesg_code_guess}
+    heuristics: dict[str, tuple[tuple[str, ...], str]] = {}
+    if doc_type == "policy_manual":
+        heuristics = {
+            "E-1-1": (("환경경영", "환경법규 준수", "환경영향", "기본방침", "목표"), "환경경영 방침"),
+            "E-1-2": (("ESG경영팀", "환경안전팀", "주관 부서", "추진체계", "전담"), "환경경영 추진체계"),
+            "S-4-1": (("안전보건", "산업안전보건", "위험성평가", "중대재해", "안전교육"), "안전보건 체계"),
+            "S-5-1": (("인권", "아동노동", "강제노동"), "인권 정책"),
+            "S-6-1": (("협력업체", "협력사", "공급망", "ESG 기준"), "협력사 ESG 관리"),
+            "G-4-1": (("윤리", "행동강령", "공정·윤리"), "윤리경영"),
+        }
+    elif doc_type == "safety_minutes":
+        heuristics = {
+            "S-4-1": (("산업안전보건위원회", "안전보건", "위험성평가", "근로자 대표"), "안전보건 운영"),
+        }
+
+    augmented = list(clauses)
+    for code, (keywords, section) in heuristics.items():
+        if code in existing_codes:
+            continue
+        matched = [line for line in lines if any(keyword in line for keyword in keywords)]
+        if not matched:
+            continue
+        augmented.append(ExtractedClause(
+            section=section,
+            text=" ".join(matched[:2]),
+            kesg_code_guess=code,
+            page=1,
+        ))
+    return augmented
 
 
 def _mock_unstructured(file_path: str, doc_type: str) -> OcrExtraction:
@@ -987,8 +1128,14 @@ def _load_template(doc_type: str) -> dict[str, Any]:
             },
         },
         "waste_ledger": {
+            # 재활용 '비율(%)' = E-6-2 (K-ESG 정의). 배출량(톤)과 구분, 비율 라벨을 먼저 둔다.
+            "재활용비율": {
+                "keywords": ["재활용 비율", "순환이용률", "재활용률"],
+                "unit": "%",
+                "kesg_code": "E-6-2",
+            },
             "폐기물처리량": {
-                "keywords": ["처리량", "배출량", "폐기물량", "인계량"],
+                "keywords": ["총배출량", "처리량", "배출량", "폐기물량", "인계량"],
                 "unit": "ton",
                 "kesg_code": "E-6-1",
             },
@@ -997,10 +1144,11 @@ def _load_template(doc_type: str) -> dict[str, Any]:
                 "unit": "ton",
                 "kesg_code": "E-6-1",
             },
+            # 재활용 '량(톤)'은 비율과 별개 보조수치 — 표의 'R-1' 등에 오매칭되지 않게 키워드 한정
             "재활용량": {
-                "keywords": ["재활용", "재생이용"],
+                "keywords": ["재활용량", "재생이용량"],
                 "unit": "ton",
-                "kesg_code": "E-6-2",
+                "kesg_code": None,
             },
         },
         "fuel_receipt": {

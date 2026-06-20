@@ -1,0 +1,43 @@
+{
+  "track": "evidence_grounding_recall",
+  "desc": "한울정밀공업 시연 증빙(정량) → K-ESG 코드 그라운딩 골드셋. held_out_eval(텍스트분류 CI)와 분리된 '증빙-대조' 트랙. 각 gold 코드에 대해 evidence graph가 '올바른 파일에서 나온' 노드를 1건 이상 검색해내면 hit. before(코드만) vs after(코드+SearchTerm) 재현율을 동일 매칭경로(layer1._match_evidence_nodes)로 실측한다.",
+  "corp_code": "HANUL-SME",
+  "corp_name": "한울정밀공업㈜",
+  "profile": "sme",
+  "report_year": 2026,
+  "evidence_globs": ["01_*.pdf", "02_*.pdf", "03_*.pdf", "04_*.pdf"],
+  "gold": [
+    {
+      "code": "E-4-1",
+      "name": "에너지 사용량 (전력+가스)",
+      "data_type": "정량",
+      "evidence_files": ["전기요금", "도시가스"],
+      "relevant_terms": ["사용전력량", "가스사용량"],
+      "rationale": "01 한전 청구서 142,560kWh + 02 도시가스 8,420㎥ → 에너지 사용량 노드. OCR가 코드 미해소 시 metric_hint(사용전력량/도시가스 등)로 남고, SearchTerm(전력량/에너지사용/kWh)이 보강."
+    },
+    {
+      "code": "E-3-1",
+      "name": "온실가스 배출량 (전력·가스 환산)",
+      "data_type": "정량",
+      "evidence_files": ["전기요금", "도시가스"],
+      "relevant_terms": ["배출계수 환산"],
+      "rationale": "전력/가스 사용량 → 배출계수 환산 파생 노드(E-3-1). 파생 노드는 metric=E-3-1로 생성되므로 코드 매칭은 되지만, 원천 노드가 미해소면 파생이 안 생겨 누락될 수 있음."
+    },
+    {
+      "code": "E-6-1",
+      "name": "폐기물 배출량",
+      "data_type": "정량",
+      "evidence_files": ["폐기물"],
+      "relevant_terms": ["폐기물처리량", "폐기물 총배출량"],
+      "rationale": "03 위탁처리 명세서 총배출 18,400kg. SearchTerm(사업장폐기물/지정폐기물/위탁처리/슬래그)이 코드 미해소 hint를 보강."
+    },
+    {
+      "code": "E-6-2",
+      "name": "폐기물 재활용률 (D6 핵심)",
+      "data_type": "정량",
+      "evidence_files": ["폐기물"],
+      "relevant_terms": ["재활용 비율", "재활용률", "순환이용률"],
+      "rationale": "03 명세서 실 재활용률 29.3%(5,400/18,400). SAQ 자가주장 92%와 충돌하는 D6 검출의 증빙측 노드. metric_hint가 '재활용률'로 남으면 코드(E-6-2)만으론 미검색, SearchTerm(재활용률/폐기물 재활용/자원순환)으로 회수."
+    }
+  ]
+}

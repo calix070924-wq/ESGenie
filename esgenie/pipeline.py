@@ -33,7 +33,7 @@ from .ssot import (
     excel_exporter,
     ocr_router,
 )
-from .ssot.ssot_pipeline import build_rag_with_ssot, extract_with_ssot
+from .ssot.ssot_pipeline import build_rag_with_ssot, extract_local_with_ssot, extract_with_ssot
 
 logger = logging.getLogger(__name__)
 
@@ -63,6 +63,8 @@ class PipelineOutput:
     ocr_extractions: list[ocr_router.OcrExtraction] = field(default_factory=list)
     requested_areas: list[str] = field(default_factory=list)
     industry_module_key: str | None = None   # 적용된 업종 모듈 키(없으면 전역). 점수 변동 설명용.
+    supplier_claims: dict[str, Any] = field(default_factory=dict)
+    supplier_claim_files: list[str] = field(default_factory=list)
 
 
 def _load_industry_stats(industry: str) -> dict[str, Any] | None:
@@ -306,6 +308,13 @@ def run(
     corp_name_final = corp_name or (report.corp_name if report is not None else corp_code_final)
     report_year_final = report_year or (report.report_year if report is not None else 2025)
 
+    # 시연 익명화: 회사명만 별칭으로 치환(데이터는 corp_code로 실제 사용). report.corp_name까지
+    # 덮어 audit_trace·실사응답서 엑셀 등 산출물에서도 실명이 새지 않게 한다.
+    from .demo_aliases import display_name as _demo_display_name
+    corp_name_final = _demo_display_name(corp_name_final)
+    if report is not None:
+        report.corp_name = _demo_display_name(report.corp_name)
+
     # 업종 모듈을 진입점에서 한 번만 결정해 하위로 동일 객체 전달(레이어별 재해석 방지).
     # 우선순위: 인자 active_industry > 환경설정 SETTINGS.active_industry > DART 업종명 추론 > None(전역).
     report_industry = (report.industry if report is not None else None) or industry
@@ -409,6 +418,32 @@ def run(
                 path = save_audit_trace(trace)
                 trace_paths[area] = str(path)
                 logger.info("[L5] 저장 완료: %s", path)
+    elif evidence_graph.nodes or evidence_graph.text_nodes:
+        logger.info("[L1] K-ESG 항목 추출 중... (비상장/SSOT 로컬)")
+        extraction = extract_local_with_ssot(
+            evidence_graph,
+            corp_code=corp_code_final,
+            corp_name=corp_name_final,
+            report_year=report_year_final,
+            industry=((industry or "").strip()),
+            profile=profile,
+        )
+        _apply_survey_answers(extraction, survey_answers)
+        logger.info(
+            "[L1] 완료: %.1f%% 커버리지 (%s)",
+            extraction.coverage_pct,
+            extraction.profile_label,
+        )
+
+        disclosure = detect_selective_disclosure(extraction, industry_module)
+        logger.info("[D6] 선택적 공시 의심도=%.2f (%s)", disclosure.score, disclosure.level)
+        issb_gap = build_issb_gap_report(extraction)
+        logger.info(
+            "[ISSB] 프로파일 내 %d/%d 공시, 누락 %d",
+            issb_gap.in_profile_disclosed,
+            issb_gap.in_profile_total,
+            issb_gap.in_profile_missing,
+        )
 
     effective_industry = ((report.industry if report is not None else "") or industry or "")
     v15_trace, export_paths, risk_rows, policy_results, policy_drafts = _export_v15_artifacts(

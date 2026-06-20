@@ -6,6 +6,7 @@ import json
 import os
 import re
 from collections import Counter
+from typing import Any
 
 import pandas as pd
 import plotly.graph_objects as go
@@ -519,6 +520,138 @@ def _supplychain_upload_cta_rows(sheet, uploaded_names: list[str] | None = None)
     return rows
 
 
+def _answer_option_label(answer) -> str:
+    return f"{answer.badge} · {answer.question_text}"
+
+
+def _answer_primary_code(question_map: dict[str, Any], answer) -> str:
+    question = question_map.get(answer.qid)
+    return question.primary_code if question is not None else ""
+
+
+def _data_point_by_code(result) -> dict[str, Any]:
+    v15 = getattr(result, "v15_trace", None)
+    if v15 is None:
+        return {}
+    return {dp.kesg_code: dp for dp in getattr(v15, "data_points", []) or []}
+
+
+def _text_evidence_rows(result, answer) -> list[dict[str, Any]]:
+    text_nodes = getattr(getattr(result, "evidence_graph", None), "text_nodes", {}) or {}
+    rows: list[dict[str, Any]] = []
+    seen: set[str] = set()
+    for evidence in getattr(answer, "evidence_links", []) or []:
+        node_id = getattr(evidence, "node_id", "") or ""
+        if node_id in seen:
+            continue
+        seen.add(node_id)
+        node = text_nodes.get(node_id)
+        if node is None:
+            continue
+        rows.append({
+            "섹션": node.section or "—",
+            "파일": node.source_file or getattr(evidence, "file_name", "—"),
+            "페이지": (node.page + 1) if node.page is not None else "—",
+            "내용": node.text,
+        })
+    return rows
+
+
+def _render_supplychain_evidence_preview(evidence, *, evidence_dir: str = "") -> None:
+    from esgenie.provenance import bbox_to_pct
+
+    if evidence is None:
+        st.info("연결된 원본 증빙이 없습니다.")
+        return
+
+    file_name = getattr(evidence, "file_name", "") or "—"
+    page = (getattr(evidence, "page", 0) or 0)
+    bbox = getattr(evidence, "bbox", None)
+    st.caption(f"원본 증빙: {file_name}" + (f" · p.{page + 1}" if getattr(evidence, "page", None) is not None else ""))
+
+    pdf_path = os.path.join(evidence_dir, file_name) if evidence_dir and file_name else ""
+    rendered = False
+    if bbox and file_name.lower().endswith(".pdf") and pdf_path and os.path.exists(pdf_path):
+        try:
+            from esgenie.pdf_render import render_page_with_box
+
+            png = render_page_with_box(pdf_path, bbox, page=page, dpi=120)
+            st.image(png, caption=f"{file_name} · p.{page + 1}", use_container_width=True)
+            rendered = True
+        except Exception as exc:  # noqa: BLE001
+            st.caption(f"원본 렌더 실패: {exc}")
+
+    if rendered:
+        return
+
+    box = bbox_to_pct(bbox)
+    if box:
+        st.markdown(
+            f"<div style='position:relative;width:100%;height:130px;"
+            f"background:#f4f4f2;border:1px solid #ccc;border-radius:6px'>"
+            f"<div style='position:absolute;left:{box['left']}%;top:{box['top']}%;"
+            f"width:{box['width']}%;height:{box['height']}%;"
+            f"background:rgba(255,193,7,0.3);border:2px solid #BA7517;border-radius:3px'></div></div>"
+            f"<div style='font-size:12px;color:#999'>원본 PDF 미첨부 — bbox 위치 비율만 표시</div>",
+            unsafe_allow_html=True,
+        )
+        return
+
+    st.markdown(
+        "<div style='width:100%;height:130px;background:#f4f4f2;"
+        "border:1px dashed #bbb;border-radius:6px;display:flex;"
+        "align-items:center;justify-content:center;color:#999;font-size:13px'>"
+        "좌표 미연결 — 정성 조항 또는 bbox 없는 증빙입니다.</div>",
+        unsafe_allow_html=True,
+    )
+
+
+def _render_supplychain_answer_detail(result, answer, *, question_map: dict[str, Any]) -> None:
+    from esgenie.provenance import primary_evidence, verification_view
+
+    code = _answer_primary_code(question_map, answer)
+    data_point = _data_point_by_code(result).get(code)
+    text_rows = _text_evidence_rows(result, answer)
+    evidence = primary_evidence(getattr(answer, "evidence_links", []) or [])
+    evidence_dir = (getattr(result, "export_paths", {}) or {}).get("evidence_dir", "")
+
+    st.markdown("#### 선택 문항 상세 근거")
+    left, right = st.columns([2, 3])
+    with left:
+        st.markdown(f"**문항**: {answer.question_text}")
+        st.markdown(f"**답변**: {_fmt_answer_value(answer.value)}")
+        st.markdown(f"**신뢰**: {answer.badge}")
+        if data_point is not None:
+            view = verification_view(getattr(data_point, "verification", ""))
+            st.caption(f"{view['label']} · D1 위험 {float(getattr(data_point, 'd1_risk', 0.0) or 0.0):.2f}")
+        if answer.flags:
+            st.markdown("**검토 포인트**")
+            for flag in answer.flags:
+                st.markdown(f"- {flag}")
+        if answer.rationale:
+            st.markdown("**판정 근거**")
+            st.write(answer.rationale)
+        if answer.evidence_links:
+            st.markdown("**연결된 증빙**")
+            for evidence_link in answer.evidence_links:
+                label = evidence_link.file_name
+                if evidence_link.page is not None:
+                    label += f" · p.{evidence_link.page + 1}"
+                if getattr(evidence_link, "bbox", None):
+                    label += " · bbox"
+                st.markdown(f"- {label}")
+
+    with right:
+        st.markdown("**원본 위치 미리보기**")
+        _render_supplychain_evidence_preview(evidence, evidence_dir=evidence_dir)
+
+        if text_rows:
+            st.markdown("**정성 조항 근거**")
+            for row in text_rows:
+                st.markdown(f"- `{row['섹션']}` · {row['파일']} · p.{row['페이지']}")
+                st.caption(row["내용"])
+
+
 def render_supplychain_tab(result, gradient: str) -> None:
     st.markdown("## 📤 공급망 실사 응답서")
     st.markdown(gradient, unsafe_allow_html=True)
@@ -536,13 +669,21 @@ def render_supplychain_tab(result, gradient: str) -> None:
         format_func=lambda k: get_framework(k).label,
         help="OEM/산업별 양식. 같은 증빙으로 여러 양식에 동시 대응됩니다.",
     )
+    framework = get_framework(sel)
 
-    sheet = respond_from_pipeline(result, sel)
+    supplier_claims = getattr(result, "supplier_claims", None) or {}
+    supplier_claim_files = getattr(result, "supplier_claim_files", None) or []
+    sheet = respond_from_pipeline(result, framework, supplier_claims=supplier_claims)
+    question_map = {question.qid: question for question in framework.questions}
 
     c1, c2, c3 = st.columns(3)
     c1.metric("자동응답 커버리지", f"{sheet.coverage_pct:.0f}%")
     c2.metric("검토 필요 (🚩)", f"{sheet.flagged_count}건")
     c3.metric("문항 수", f"{len(sheet.answers)}개")
+
+    if supplier_claims:
+        joined = ", ".join(sorted(supplier_claim_files)) if supplier_claim_files else "업로드 SAQ"
+        st.caption(f"협력사 자가주장 {len(supplier_claims)}건 연동됨: {joined}")
 
     issb_alert_rows = _supplychain_issb_alert_rows(getattr(result, "issb_gap", None))
     if issb_alert_rows:
@@ -571,6 +712,18 @@ def render_supplychain_tab(result, gradient: str) -> None:
         for a in sheet.answers
     ]
     st.dataframe(pd.DataFrame(rows), hide_index=True, use_container_width=True)
+
+    detail_answers = [a for a in sheet.answers if a.evidence_links or a.flags or a.rationale]
+    if detail_answers:
+        labels = [_answer_option_label(answer) for answer in detail_answers]
+        selected_label = st.selectbox(
+            "문항별 상세 근거",
+            labels,
+            index=0,
+            help="공급망 실사 탭 안에서 바로 플래그 이유, 정성 조항, bbox 위치를 확인합니다.",
+        )
+        selected_answer = detail_answers[labels.index(selected_label)]
+        _render_supplychain_answer_detail(result, selected_answer, question_map=question_map)
 
     flagged = [a for a in sheet.answers if a.status == "flagged"]
     if flagged:

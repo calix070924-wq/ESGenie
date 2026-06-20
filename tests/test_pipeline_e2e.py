@@ -136,6 +136,7 @@ def test_pipeline_merges_uploaded_evidence_into_ssot() -> None:
 def test_pipeline_supports_local_ssot_without_dart() -> None:
     evidence = {
         "waste_ledger_2025.pdf": str(DATA_DIR / "test_docs" / "waste_ledger_2025.pdf"),
+        "safety_policy_2025.pdf": str(DATA_DIR / "test_docs" / "safety_policy_2025.pdf"),
     }
     output = run(
         "",
@@ -150,8 +151,15 @@ def test_pipeline_supports_local_ssot_without_dart() -> None:
     )
     assert output.report is None
     assert output.sections == {}
+    assert output.extraction is not None
     assert output.v15_trace is not None
     assert len(output.evidence_graph.nodes) > 0
+    assert len(output.evidence_graph.text_nodes) > 0
+    assert output.extraction.coverage_pct > 0
+    assert any(
+        any(str(nid).startswith(f"{output.evidence_graph.corp_code}_TXT_") for nid in entry.get("evidence_node_ids", []))
+        for entry in output.extraction.mapped.values()
+    )
 
 
 def test_pipeline_passes_resolved_industry_module_to_verify(monkeypatch) -> None:

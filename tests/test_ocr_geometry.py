@@ -8,7 +8,12 @@ import pytest
 fitz = pytest.importorskip("fitz")
 
 from esgenie.ssot import ocr_router
-from esgenie.ssot.ocr_router import ExtractedMetric, _attach_geometry, _pymupdf_line_tokens
+from esgenie.ssot.ocr_router import (
+    ExtractedMetric,
+    _attach_geometry,
+    _pin_rates_from_raw,
+    _pymupdf_line_tokens,
+)
 
 _KEPCO = os.path.join(os.path.dirname(__file__), "..", "data", "test_docs",
                       "kepco_bill_2025_12.pdf")
@@ -72,3 +77,27 @@ def test_attach_geometry_keeps_existing():
                         bbox=[0.1, 0.1, 0.2, 0.2], page=0)
     _attach_geometry([m], kv)
     assert m.bbox == [0.1, 0.1, 0.2, 0.2]   # 이미 있으면 덮어쓰지 않음
+
+
+def test_pin_rates_from_raw_overrides_existing_e62_metric():
+    metrics = [
+        ExtractedMetric(
+            metric_hint="재활용량",
+            value=5400.0,
+            unit="ton",
+            period="",
+            kesg_code_guess="E-6-2",
+        )
+    ]
+    tokens = [
+        {"text": "재활용 비율", "bbox": [0.1, 0.2, 0.2, 0.25], "page": 0},
+        {"text": "29.3 %", "bbox": [0.3, 0.2, 0.35, 0.25], "page": 0},
+    ]
+
+    pinned = _pin_rates_from_raw(metrics, tokens)
+    hits = [m for m in pinned if m.kesg_code_guess == "E-6-2"]
+
+    assert len(hits) == 1
+    assert hits[0].value == 29.3
+    assert hits[0].unit == "%"
+    assert hits[0].bbox == [0.3, 0.2, 0.35, 0.25]

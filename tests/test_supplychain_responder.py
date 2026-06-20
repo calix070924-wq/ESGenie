@@ -21,6 +21,7 @@ from esgenie.supplychain import (
     all_framework_keys,
     build_response_sheet,
     get_framework,
+    manual_claims,
 )
 from esgenie.supplychain.exporters import export_response_sheet
 
@@ -181,6 +182,47 @@ def test_no_disclosure_no_crash():
     extraction = _extraction(mapped_codes=["E-6-2"])
     sheet = build_response_sheet(FW, extraction=extraction, disclosure=None)
     assert sheet.answers  # disclosure None이어도 동작
+
+
+def test_supplier_claim_treats_e62_as_ratio_even_if_unit_string_is_wrong():
+    extraction = _extraction(mapped_codes=[])
+    extraction.mapped["E-6-2"] = {
+        "code": "E-6-2",
+        "name": "폐기물 재활용 비율",
+        "value": 29.3,
+        "unit": "ton",
+        "evidence_node_ids": [],
+    }
+
+    sheet = build_response_sheet(
+        FW,
+        extraction=extraction,
+        supplier_claims=manual_claims({"E-6-2": 29.3}),
+    )
+    waste = next(a for a in sheet.answers if a.qid == "SAQ-E-NUM-WASTE")
+    assert waste.status == "self_reported"
+    assert any("자가신고 일치" in f for f in waste.flags)
+    assert all("비율(%) 미확보" not in f for f in waste.flags)
+
+
+def test_supplier_claim_flags_out_of_range_value_for_ratio_code():
+    extraction = _extraction(mapped_codes=[])
+    extraction.mapped["E-6-2"] = {
+        "code": "E-6-2",
+        "name": "폐기물 재활용 비율",
+        "value": 5400.0,
+        "unit": "ton",
+        "evidence_node_ids": [],
+    }
+
+    sheet = build_response_sheet(
+        FW,
+        extraction=extraction,
+        supplier_claims=manual_claims({"E-6-2": 29.3}),
+    )
+    waste = next(a for a in sheet.answers if a.qid == "SAQ-E-NUM-WASTE")
+    assert waste.status == "flagged"
+    assert any("비율 범위(0~100%)" in f for f in waste.flags)
 
 
 def test_issb_missing_climate_item_flags_supplychain_answer():

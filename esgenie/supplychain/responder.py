@@ -23,10 +23,12 @@ def build_response_sheet(
     issb_gap: Any | None = None,          # issb_gap.ISSBGapReport
     data_points: list[Any] | None = None,  # ssot.audit_trace.DataPoint
     evidence_graph: Any | None = None,    # ssot.evidence_graph.EvidenceGraph
+    supplier_claims: dict[str, Any] | None = None,  # code → claims.SupplierClaim
 ) -> ResponseSheet:
     """양식을 ESGenie 산출물로 자동 응답한다.
 
     인자가 모두 None이어도 동작한다(전부 '데이터부족' → 회귀 가드/빈 입력 안전).
+    supplier_claims가 주어지면 협력사 자가주장 ↔ 증빙 대조(D1)를 수행해 과장을 flagged 처리.
     """
     fw = get_framework(framework) if isinstance(framework, str) else framework
 
@@ -43,6 +45,7 @@ def build_response_sheet(
             missing=missing,
             dp_by_code=dp_by_code,
             evidence_index=evidence_index,
+            claims=supplier_claims or {},
         )
         ans = apply_gating(ans, q, disclosure=disclosure, issb_gap=issb_gap)
         answers.append(ans)
@@ -57,11 +60,17 @@ def build_response_sheet(
     return sheet
 
 
-def respond_from_pipeline(pipeline_output: Any, framework: str | Framework) -> ResponseSheet:
+def respond_from_pipeline(
+    pipeline_output: Any,
+    framework: str | Framework,
+    *,
+    supplier_claims: dict[str, Any] | None = None,
+) -> ResponseSheet:
     """PipelineOutput에서 필요한 산출물을 뽑아 응답서를 만든다(편의 함수).
 
     pipeline.run()이 반환한 객체를 그대로 넘기면 된다. pipeline.run 시그니처는
     건드리지 않으므로 기존 동작에 회귀 없음.
+    supplier_claims(선택): 협력사 자가주장 {code: SupplierClaim} — 증빙과 대조해 과장 검출.
     """
     v15 = getattr(pipeline_output, "v15_trace", None)
     data_points = list(getattr(v15, "data_points", []) or []) if v15 else []
@@ -74,6 +83,7 @@ def respond_from_pipeline(pipeline_output: Any, framework: str | Framework) -> R
         issb_gap=getattr(pipeline_output, "issb_gap", None),
         data_points=data_points,
         evidence_graph=getattr(pipeline_output, "evidence_graph", None),
+        supplier_claims=supplier_claims,
     )
 
 

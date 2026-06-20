@@ -25,6 +25,7 @@ from .knowledge.kesg_items import (
     KESGItem,
     PROFILE_LABELS,
     Profile,
+    by_code,
     detect_profile,
     items_for_profile,
 )
@@ -139,13 +140,18 @@ def _match_evidence_nodes(
 
     매칭 전략:
     1. K-ESG 코드를 키워드로 직접 검색 (가장 정확)
-    2. 매칭 결과를 현재 보고 연도로 필터
+    2. 코드만으로 놓치는 동의어 표기를 SearchTerm으로 보강 (ESGReveal <SearchTerm>)
+    3. 매칭 결과를 현재 보고 연도로 필터
     """
     if evidence_graph is None:
         return []
-    # EvidenceGraph.search_nodes는 코드 직접 매칭을 최우선으로 처리
+    # 코드 직접 매칭(최우선) + 항목별 동의어로 재현율 보강.
+    keywords = [code]
+    item = by_code(code)
+    if item is not None and item.search_terms:
+        keywords.extend(item.search_terms)
     nodes = evidence_graph.search_nodes(
-        keywords=[code],
+        keywords=keywords,
         period=report.report_year,
     )
     return [n.id for n in nodes]

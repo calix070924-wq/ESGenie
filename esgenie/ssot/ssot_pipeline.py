@@ -29,6 +29,7 @@ v10의 Layer1(K-ESG 추출)과 Layer2(Hybrid RAG)를 v15 EvidenceGraph(SSOT)와 
 """
 from __future__ import annotations
 
+from collections import defaultdict
 from typing import Any
 
 from .evidence_graph import EvidenceGraph, EvidenceNode
@@ -62,7 +63,82 @@ def extract_with_ssot(
     # v15 EvidenceGraph에 search_nodes()가 추가됐으므로 직접 전달 가능.
     result = _v10_extract(report, evidence_graph=graph, profile=profile)
 
-    # ── OCR 노드 증거 병합 ────────────────────────────────────────────
+    _merge_ssot_evidence(result, graph)
+    return result
+
+
+def extract_local_with_ssot(
+    graph: EvidenceGraph,
+    *,
+    corp_code: str,
+    corp_name: str,
+    report_year: int,
+    industry: str = "",
+    profile: str | None = None,
+):
+    """비상장/비DART 경로용 L1 추출.
+
+    SSOT(graph)에 이미 편입된 OCR 정량/정성 노드를 CompanyReport 형태로 얇게 합성한 뒤
+    기존 extract_with_ssot()를 재사용한다. 이렇게 하면 공급망 실사·커버리지·D6/ISSB 계산이
+    상장사 경로와 같은 ExtractionResult 스키마를 공유한다.
+    """
+    from esgenie.dart_client import CompanyReport
+    from esgenie.knowledge.kesg_items import by_code
+
+    kesg_data: dict[str, dict[str, Any]] = {}
+    snippets: list[str] = []
+
+    # metric별 최신/고신뢰 노드를 대표값으로 사용한다.
+    best_nodes: dict[str, EvidenceNode] = {}
+    for node in graph.nodes.values():
+        current = best_nodes.get(node.metric)
+        if current is None or (node.period, node.confidence) >= (current.period, current.confidence):
+            best_nodes[node.metric] = node
+
+    for code, node in best_nodes.items():
+        item = by_code(code)
+        kesg_data[code] = {
+            "value": node.value,
+            "unit": node.unit or (item.unit if item else ""),
+            "note": node.source_file or node.source,
+        }
+        if node.raw_text:
+            snippets.append(node.raw_text)
+
+    text_by_code: dict[str, list[Any]] = defaultdict(list)
+    for tnode in graph.text_nodes.values():
+        if not tnode.kesg_code:
+            continue
+        text_by_code[tnode.kesg_code].append(tnode)
+        snippets.append(tnode.text)
+
+    for code, nodes in text_by_code.items():
+        if code in kesg_data:
+            continue
+        item = by_code(code)
+        kesg_data[code] = {
+            "value": "문서 조항 확인",
+            "unit": "",
+            "note": nodes[0].section if nodes else (item.name if item else ""),
+        }
+
+    synthetic = CompanyReport(
+        corp_code=corp_code,
+        corp_name=corp_name,
+        industry=industry,
+        report_year=report_year,
+        financials={},
+        kesg_data=kesg_data,
+        raw_text_snippets=snippets[:20],
+        source="ssot_local",
+    )
+    result = extract_with_ssot(synthetic, graph, profile=profile)
+    result.notes.append("SSOT 로컬 추출: OCR 정량/정성 노드로 비상장 경로 L1 매핑")
+    return result
+
+
+def _merge_ssot_evidence(result: Any, graph: EvidenceGraph) -> None:
+    """SSOT graph의 OCR/TextNode를 L1 결과에 병합."""
     # v10 extract()는 DART 노드만 탐색하므로, OCR 출처(ocr_structured / ocr_unstructured)
     # 노드도 evidence_node_ids에 추가하고 'no_evidence' 플래그를 해소한다.
     ocr_by_metric: dict[str, list[str]] = {}
@@ -144,8 +220,6 @@ def extract_with_ssot(
     )
     if ocr_resolved:
         result.notes.append(f"OCR 증빙 병합: {ocr_resolved}개 항목에 내부 증빙 노드 부착")
-
-    return result
 
 
 # ====================================================================

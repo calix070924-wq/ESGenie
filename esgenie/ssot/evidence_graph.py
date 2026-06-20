@@ -16,6 +16,7 @@
 """
 from __future__ import annotations
 
+import hashlib
 from dataclasses import dataclass, field, asdict
 from typing import Any, Literal
 
@@ -259,11 +260,19 @@ def merge_ocr_extraction(
         "ocr_structured" if extraction.channel is DocChannel.STRUCTURED else "ocr_unstructured"
     )
 
-    for m in extraction.metrics:
+    for idx, m in enumerate(extraction.metrics):
         code = _resolve_kesg_code(m)
         period = _normalize_period(m.period, fallback=report_year)
         node = EvidenceNode(
-            id=f"{graph.corp_code}_{code or m.metric_hint}_{period}__{origin}",
+            id=_make_ocr_node_id(
+                graph.corp_code,
+                code or m.metric_hint,
+                period,
+                origin,
+                extraction.source_file,
+                m.metric_hint,
+                idx,
+            ),
             metric=code or m.metric_hint,
             value=m.value,
             unit=m.unit,
@@ -278,7 +287,13 @@ def merge_ocr_extraction(
         )
         graph.add_node(node)
         _link_cross_check(graph, node)
-        _emit_derived_emission(graph, node, industry_module=industry_module)
+        _emit_derived_emission(
+            graph,
+            node,
+            industry_module=industry_module,
+            source_file=extraction.source_file,
+            seq=idx,
+        )
 
     for c in extraction.clauses:
         tnode = TextNode(
@@ -357,7 +372,12 @@ def _link_cross_check(graph: EvidenceGraph, node: EvidenceNode) -> None:
 
 
 def _emit_derived_emission(
-    graph: EvidenceGraph, node: EvidenceNode, industry_module=None
+    graph: EvidenceGraph,
+    node: EvidenceNode,
+    industry_module=None,
+    *,
+    source_file: str | None = None,
+    seq: int = 0,
 ) -> None:
     """전력/가스 사용량 노드 → 탄소 배출량(E-3-1) 파생 노드 자동 생성.
 
@@ -375,7 +395,15 @@ def _emit_derived_emission(
     if tco2 is None:
         return
     derived = EvidenceNode(
-        id=f"{graph.corp_code}_E-3-1_{node.period}__derived_{node.origin}",
+        id=_make_derived_node_id(
+            graph.corp_code,
+            "E-3-1",
+            node.period,
+            node.origin,
+            source_file or node.source_file,
+            node.id,
+            seq,
+        ),
         metric="E-3-1",
         value=round(tco2, 3),
         unit="tCO2eq",
@@ -393,3 +421,34 @@ def _pct_diff(a: float, b: float) -> float:
     if b == 0:
         return 0.0 if a == 0 else 100.0
     return abs(a - b) / abs(b) * 100.0
+
+
+def _make_ocr_node_id(
+    corp_code: str,
+    metric: str,
+    period: int,
+    origin: Origin,
+    source_file: str | None,
+    metric_hint: str,
+    seq: int,
+) -> str:
+    suffix = _stable_suffix(source_file or "", metric_hint, seq)
+    return f"{corp_code}_{metric}_{period}__{origin}__{suffix}"
+
+
+def _make_derived_node_id(
+    corp_code: str,
+    metric: str,
+    period: int,
+    origin: Origin,
+    source_file: str | None,
+    parent_id: str,
+    seq: int,
+) -> str:
+    suffix = _stable_suffix(source_file or "", parent_id, seq)
+    return f"{corp_code}_{metric}_{period}__derived_{origin}__{suffix}"
+
+
+def _stable_suffix(*parts: object) -> str:
+    raw = "||".join(str(p) for p in parts)
+    return hashlib.sha1(raw.encode("utf-8")).hexdigest()[:10]

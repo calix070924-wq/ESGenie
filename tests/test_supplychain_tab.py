@@ -15,6 +15,7 @@ import pytest
 
 from esgenie.layer3_disclosure import DisclosureReport, OrphanRatio
 from esgenie.ssot.audit_trace import DataPoint, EvidenceLink
+from esgenie.supplychain.claims import SupplierClaim, is_saq_upload
 
 
 def _fake_streamlit() -> MagicMock:
@@ -85,3 +86,54 @@ def test_render_with_full_result(tabs_module, tmp_path, monkeypatch):
     # 응답서 xlsx가 생성됐는지
     produced = list(tmp_path.glob("outputs/_supplychain/**/*.xlsx"))
     assert produced, "응답서 xlsx가 생성되지 않음"
+
+
+def test_is_saq_upload_uses_filename_or_text_hints(monkeypatch, tmp_path):
+    saq = tmp_path / "partner_form.pdf"
+    evidence = tmp_path / "waste_ledger.pdf"
+    image = tmp_path / "OEM_ESG자가진단설문.png"
+    saq.write_bytes(b"%PDF-1.4")
+    evidence.write_bytes(b"%PDF-1.4")
+    image.write_bytes(b"fake")
+
+    monkeypatch.setattr(
+        "esgenie.supplychain.claims._extract_text",
+        lambda path: (
+            "Drive Sustainability supplier questionnaire"
+            if path == str(saq) else
+            "폐기물 재활용 비율 29.3%"
+        ),
+    )
+
+    assert is_saq_upload(str(saq), file_name="partner_form.pdf")
+    assert is_saq_upload(str(saq), file_name="OEM_ESG자가진단설문.pdf")
+    assert not is_saq_upload(str(evidence), file_name="03_사업장폐기물_위탁처리명세.pdf")
+    assert not is_saq_upload(str(image), file_name="OEM_ESG자가진단설문.png")
+
+
+def test_render_with_supplier_claims_flags_d1_mismatch(tabs_module, tmp_path, monkeypatch):
+    monkeypatch.chdir(tmp_path)
+    result = _fake_result()
+    result.disclosure = None
+    result.v15_trace = SimpleNamespace(data_points=[
+        DataPoint(
+            kesg_code="E-6-2", kesg_name="폐기물 재활용 비율", value=29.3, unit="%",
+            period=2025, confidence=0.9, verification="verified", d1_risk=0.0,
+            evidence_files=[],
+        )
+    ])
+    result.supplier_claims = {
+        "E-6-2": SupplierClaim(
+            code="E-6-2", value=92.0, unit="%",
+            raw="재활용률 92%", source="saq:OEM_ESG자가진단설문.pdf",
+        )
+    }
+    result.supplier_claim_files = ["OEM_ESG자가진단설문.pdf"]
+
+    tabs_module.render_supplychain_tab(result, "<div></div>")
+
+    error_texts = [str(call.args[0]) for call in tabs_module.st.error.call_args_list]
+    caption_texts = [str(call.args[0]) for call in tabs_module.st.caption.call_args_list]
+
+    assert any("92.0%" in text and "29.3%" in text for text in error_texts)
+    assert any("협력사 자가주장 1건 연동됨" in text for text in caption_texts)

@@ -22,6 +22,13 @@ _VERIF_TO_STATUS = {
 }
 
 
+# 자가주장 ↔ 증빙 불일치 판정 임계 (절대 %p). 이 이상 벌어지면 D1 불일치 → flagged.
+_CLAIM_DISCREPANCY_PP = 10.0
+# K-ESG상 단위가 '%(비율)'인 코드 — 다운스트림 단위문자열이 깨져도 비율로 취급.
+_RATE_KESG_CODES = {"E-5-2", "E-6-2"}
+_RATE_MAX_VALUE = 100.0
+
+
 def derive_answer(
     q: Question,
     *,
@@ -29,9 +36,10 @@ def derive_answer(
     missing: set[str],
     dp_by_code: dict[str, Any],   # code → ssot.audit_trace.DataPoint
     evidence_index: dict[str, Any] | None = None,  # node_id → EvidenceLink
+    claims: dict[str, Any] | None = None,  # code → supplychain.claims.SupplierClaim
 ) -> Answer:
     if q.qtype == "numeric":
-        return _derive_numeric(q, mapped, missing, dp_by_code)
+        return _derive_numeric(q, mapped, missing, dp_by_code, claims or {})
     if q.qtype == "multi_select":
         return _derive_multi(q, mapped, missing, evidence_index or {})
     # yes_no / yes_no_evidence / text → 존재형
@@ -42,29 +50,137 @@ def _base(q: Question, **kw: Any) -> Answer:
     return Answer(qid=q.qid, section=q.section, question_text=q.text, **kw)
 
 
-def _derive_numeric(q, mapped, missing, dp_by_code) -> Answer:
+def _derive_numeric(q, mapped, missing, dp_by_code, claims=None) -> Answer:
+    claims = claims or {}
     code = q.primary_code
+    evid_value: Any = None
+    evid_unit = ""
     dp = dp_by_code.get(code)
     if dp is not None and dp.value is not None:
         status = _VERIF_TO_STATUS.get(dp.verification, "self_reported")
-        return _base(
+        evid_value, evid_unit = dp.value, dp.unit
+        ans = _base(
             q, value=dp.value, status=status,
             evidence_links=list(dp.evidence_files),
             rationale=f"{dp.kesg_name} = {dp.value}{dp.unit} "
                       f"(D1 위험 {dp.d1_risk}, 검증={dp.verification})",
         )
-    # data_point는 없지만 정성/설문으로 값이 들어온 경우
-    entry = mapped.get(code)
-    if entry is not None and entry.get("value") is not None:
-        return _base(
-            q, value=entry.get("value"), status="self_reported",
-            rationale=f"{entry.get('name', code)} = {entry.get('value')}"
-                      f"{entry.get('unit', '')} (증빙 미연결, 자가신고)",
+    else:
+        entry = mapped.get(code)
+        if entry is not None and entry.get("value") is not None:
+            evid_value, evid_unit = entry.get("value"), entry.get("unit", "")
+            ans = _base(
+                q, value=entry.get("value"), status="self_reported",
+                rationale=f"{entry.get('name', code)} = {entry.get('value')}"
+                          f"{entry.get('unit', '')} (증빙 미연결, 자가신고)",
+            )
+        else:
+            ans = _base(
+                q, value=None, status="insufficient",
+                rationale=f"{code} 증빙 없음 — 해당 수치를 입증할 고지서/명세서 업로드 필요",
+            )
+    # ── 협력사 자가주장 대조 (D1) ──────────────────────────────────────────
+    claim = claims.get(code)
+    if claim is not None:
+        ans = _reconcile_claim(ans, claim, evid_value, evid_unit, code=code)
+    return ans
+
+
+def _as_number(v: Any) -> float | None:
+    try:
+        return float(v)
+    except (TypeError, ValueError):
+        return None
+
+
+def _looks_like_rate_unit(unit: str) -> bool:
+    unit = unit or ""
+    return "%" in unit or "비율" in unit or "이용률" in unit or unit.lower() == "pct"
+
+
+def _reconcile_claim(
+    ans: Answer,
+    claim: Any,
+    evid_value: Any,
+    evid_unit: str,
+    *,
+    code: str = "",
+) -> Answer:
+    """자가주장값을 증빙값과 대조해 신뢰상태를 덧씌운다.
+
+    · 증빙 있음 + 괴리 큼 → flagged (자가신고 과장 의심, D1 불일치)
+    · 증빙 있음 + 일치     → 기존 상태 유지(자가신고 일치 메모)
+    · 증빙 없음            → self_reported (응답은 있으나 증빙 미연결)
+    """
+    cval = _as_number(getattr(claim, "value", None))
+    cunit = getattr(claim, "unit", "") or ""
+    craw = getattr(claim, "raw", "") or ""
+    csrc = getattr(claim, "source", "") or ""
+    if cval is None:
+        return ans
+
+    evid_num = _as_number(evid_value)
+    if evid_num is None:
+        # 증빙 없음 → 자가신고만 기록
+        ans.value = cval
+        ans.status = "self_reported"
+        ans.flags.append(f"자가신고(증빙 미연결): {craw} [{csrc}]")
+        ans.rationale = (ans.rationale + f" · 자가주장 {cval}{cunit} 입력됨(증빙 없음)").strip()
+        return ans
+
+    # K-ESG상 '비율(%)' 코드는 다운스트림 단위문자열이 ton 등으로 와도 본질적으로 비율로 본다.
+    ccode = code or getattr(claim, "code", "") or ""
+    claim_is_rate = _looks_like_rate_unit(cunit) or ccode in _RATE_KESG_CODES
+    evid_is_rate = _looks_like_rate_unit(evid_unit)
+
+    # E-6-2 같은 '본질적으로 비율' 코드면 단위 문자열이 깨져도 값 자체를 %로 본다.
+    # 다만 0~100 범위를 벗어나면 비율값이 아니라 오추출로 보고 즉시 flagged 처리한다.
+    if ccode in _RATE_KESG_CODES and not evid_is_rate:
+        if 0.0 <= evid_num <= _RATE_MAX_VALUE:
+            evid_is_rate = True
+            evid_unit = "%"
+        else:
+            ans.status = "flagged"
+            ans.flags.append(
+                f"D1 불일치: {ccode}는 비율 코드인데 증빙값 {evid_num}{evid_unit}이 "
+                "비율 범위(0~100%)를 벗어남"
+            )
+            ans.rationale = (
+                ans.rationale
+                + f" · ⚠ {ccode}는 비율 코드인데 증빙 추출값 {evid_num}{evid_unit}이 "
+                  "0~100% 범위를 벗어남 — OCR/매핑 보정 필요."
+            ).strip()
+            return ans
+
+    # 단위 불일치(주장은 비율% / 증빙은 톤 등) → %p 비교 불가. 정직하게 '비율 증빙 미확보'로 flagged.
+    if claim_is_rate and not evid_is_rate:
+        ans.status = "flagged"
+        ans.flags.append(
+            f"D1 불일치: 자가신고 {cval}{cunit}(비율) ↔ 증빙은 비율(%) 미확보"
+            f"(추출 {evid_num}{evid_unit}, {csrc})"
         )
-    return _base(
-        q, value=None, status="insufficient",
-        rationale=f"{code} 증빙 없음 — 해당 수치를 입증할 고지서/명세서 업로드 필요",
-    )
+        ans.rationale = (
+            ans.rationale
+            + f" · ⚠ 자가주장은 재활용 '비율'({cval}{cunit})인데 증빙에서 비율(%)이 확보되지 않음"
+              f"(추출값 {evid_num}{evid_unit}) — 재활용 비율 증빙 보완·소명 필요."
+        ).strip()
+        return ans
+
+    diff = round(abs(cval - evid_num), 1)
+    if diff >= _CLAIM_DISCREPANCY_PP:
+        ans.status = "flagged"
+        ans.flags.append(
+            f"D1 불일치: 자가신고 {cval}{cunit} ↔ 증빙 {evid_num}{evid_unit} "
+            f"(Δ{diff}%p, {csrc})"
+        )
+        ans.rationale = (
+            ans.rationale
+            + f" · ⚠ 자가주장({cval}{cunit})이 증빙({evid_num}{evid_unit})과 {diff}%p 괴리 "
+              "— 과장 의심, 실사 시 소명 필요."
+        ).strip()
+    else:
+        ans.flags.append(f"자가신고 일치: {cval}{cunit} ≈ 증빙 {evid_num}{evid_unit}")
+    return ans
 
 
 def _derive_presence(q, mapped, missing, evidence_index) -> Answer:

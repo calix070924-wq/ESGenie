@@ -275,7 +275,170 @@ def _parse_financials(fin_data: dict) -> tuple[dict, list[str]]:
 
 
 def _extract_kesg_from_dart(corp_code: str, year: int, ann_rcept_no: str = "") -> dict[str, dict]:
-    """DART 공시에서 K-ESG 수치 최대한 추출.
+    """DART에서 K-ESG 수치 추출 — 구조화 API + 원문 텍스트(정규식) 결합.
+
+    구조화 JSON API는 라벨-값이 분리돼 있어 표/문장 형식에 흔들리지 않는다(견고).
+    따라서 구조화로 얻은 값은 정규식 추출보다 **우선** 적용한다.
+    """
+    kesg = _extract_kesg_from_text_sources(corp_code, year, ann_rcept_no)
+    structured = _fetch_structured_esg(corp_code, year)
+    kesg.update(structured)   # 구조화 API 값이 정규식 추출을 덮어씀(더 신뢰)
+    return kesg
+
+
+# ====================================================================
+# 구조화 정기보고서 API — 거버넌스(G) 견고 추출
+# ====================================================================
+
+def _to_num(s: Any) -> float | None:
+    """'9.7' / '1,234' / '-' / '' → float|None."""
+    if s is None:
+        return None
+    t = str(s).replace(",", "").strip()
+    if not t or t in {"-", "—", "N/A", "해당없음"}:
+        return None
+    try:
+        return float(t)
+    except ValueError:
+        return None
+
+
+def _fetch_structured_esg(corp_code: str, year: int) -> dict[str, dict]:
+    """DART 정기보고서 구조화 API로 ESG 핵심 수치 추출.
+
+    항목별 소스:
+    - G-3-4 배당성향    : /alotMatter.json
+    - G-1-2 사외이사비율 : /outcmpnyDrctrNdChangeSttus.json
+    - G-1-4 여성이사비율 : /exctvSttus.json          [추가]
+    - S-2-2 정규직비율   : /empSttus.json            [추가]
+    - S-3-1 여성직원비율 : /empSttus.json            [추가]
+    """
+    out: dict[str, dict] = {}
+    _WANT = {"G-3-4", "G-1-2", "G-1-4", "S-2-2", "S-3-1"}
+    for y in (year, year - 1):       # 당해 미제출 대비 직전연도 폴백
+        if "G-3-4" not in out:
+            d = _dart_get("/alotMatter.json", corp_code=corp_code,
+                          bsns_year=str(y), reprt_code="11011")
+            payout = _pick_dividend_payout(d)
+            if payout is not None:
+                out["G-3-4"] = {"value": payout, "unit": "%",
+                                "note": "DART 배당 구조화 API(현금배당성향)"}
+        if "G-1-2" not in out:
+            b = _dart_get("/outcmpnyDrctrNdChangeSttus.json", corp_code=corp_code,
+                          bsns_year=str(y), reprt_code="11011")
+            br = _pick_board_ratio(b)
+            if br is not None:
+                ratio, outside, total = br
+                out["G-1-2"] = {"value": ratio, "unit": "%",
+                                "note": f"DART 사외이사 구조화 API({outside}/{total}인)"}
+        if "G-1-4" not in out:
+            e = _dart_get("/exctvSttus.json", corp_code=corp_code,
+                          bsns_year=str(y), reprt_code="11011")
+            fr = _pick_female_director_ratio(e)
+            if fr is not None:
+                ratio, female, total = fr
+                out["G-1-4"] = {"value": ratio, "unit": "%",
+                                "note": f"DART 임원현황 API(여성 등기임원 {female}/{total}인)"}
+        if "S-2-2" not in out or "S-3-1" not in out:
+            emp = _dart_get("/empSttus.json", corp_code=corp_code,
+                            bsns_year=str(y), reprt_code="11011")
+            emp_data = _pick_employee_stats(emp)
+            if emp_data:
+                if "S-2-2" not in out and "regular_ratio" in emp_data:
+                    out["S-2-2"] = {"value": emp_data["regular_ratio"], "unit": "%",
+                                    "note": "DART 직원현황 API(정규직 비율)"}
+                if "S-3-1" not in out and "female_ratio" in emp_data:
+                    out["S-3-1"] = {"value": emp_data["female_ratio"], "unit": "%",
+                                    "note": "DART 직원현황 API(여성 직원 비율)"}
+        if _WANT <= out.keys():
+            break
+    return out
+
+
+# ── 후보 없애기: 기존 함수명 별칭 유지 (하위 호환) ──────────────────────────────
+_fetch_structured_governance = _fetch_structured_esg
+
+
+def _pick_dividend_payout(data: dict | None) -> float | None:
+    """alotMatter 응답에서 현금배당성향(%) 당기값. (연결) 우선, 수익률과 혼동 금지."""
+    if not data:
+        return None
+    rows = data.get("list") or []
+    # '(연결)현금배당성향' 우선 → 일반 '현금배당성향'
+    for want in ("연결현금배당성향", "현금배당성향"):
+        for it in rows:
+            se = str(it.get("se", "")).replace(" ", "").replace("(", "").replace(")", "")
+            if se.startswith(want) and "수익률" not in se:
+                v = _to_num(it.get("thstrm"))
+                if v is not None:
+                    return v
+    return None
+
+
+def _pick_board_ratio(data: dict | None) -> tuple[float, int, int] | None:
+    """outcmpnyDrctrNdChangeSttus 응답에서 사외이사 비율(%) = 사외이사 수 / 이사의 수."""
+    if not data:
+        return None
+    for it in (data.get("list") or []):
+        total = _to_num(it.get("drctr_co"))
+        outside = _to_num(it.get("otcmp_drctr_co"))
+        if total and outside is not None and total >= outside >= 0 and total > 0:
+            return round(outside / total * 100, 1), int(outside), int(total)
+    return None
+
+
+def _pick_female_director_ratio(data: dict | None) -> tuple[float, int, int] | None:
+    """exctvSttus 응답에서 여성 등기임원 비율(%) = 여성 등기임원 / 전체 등기임원."""
+    if not data:
+        return None
+    rows = data.get("list") or []
+    registered = [r for r in rows if "등기임원" in str(r.get("rgist_exctv_at", ""))]
+    if not registered:
+        return None
+    female = sum(1 for r in registered if str(r.get("sexdstn", "")).strip() == "여")
+    total = len(registered)
+    if total == 0:
+        return None
+    return round(female / total * 100, 1), female, total
+
+
+def _pick_employee_stats(data: dict | None) -> dict | None:
+    """empSttus 응답에서 여성 직원 비율·정규직 비율 계산.
+
+    반환: {"female_ratio": float, "regular_ratio": float}  — 없으면 None.
+    """
+    if not data:
+        return None
+    rows = data.get("list") or []
+    if not rows:
+        return None
+
+    male_total = female_total = 0
+    total_regular = total_all = 0
+
+    for r in rows:
+        sex = str(r.get("sexdstn", "")).strip()
+        sm      = _to_num(r.get("sm")) or 0
+        rgllbr  = _to_num(r.get("rgllbr_co")) or 0
+
+        if sex == "여":
+            female_total += sm
+        elif sex == "남":
+            male_total += sm
+        total_regular += rgllbr
+        total_all += sm
+
+    result: dict = {}
+    combined = male_total + female_total
+    if combined > 0:
+        result["female_ratio"] = round(female_total / combined * 100, 1)
+    if total_all > 0:
+        result["regular_ratio"] = round(total_regular / total_all * 100, 1)
+    return result or None
+
+
+def _extract_kesg_from_text_sources(corp_code: str, year: int, ann_rcept_no: str = "") -> dict[str, dict]:
+    """사업보고서/지속가능경영보고서 '원문 텍스트'에서 정규식으로 K-ESG 수치 추출(폴백).
 
     우선순위:
       1) 재무제표에서 이미 얻은 rcept_no로 사업보고서 원문 직접 다운로드
@@ -327,11 +490,30 @@ def _extract_kesg_from_dart(corp_code: str, year: int, ann_rcept_no: str = "") -
                 if kesg:
                     return kesg
 
+    # 4) 기업지배구조보고서 — G항목 상세 소스 (pblntf_ty 미지정, report_nm 필터링)
+    #    DART 공시 특성상 유형코드가 없어 전체 공시에서 이름으로 찾음
+    for try_year in [year + 1, year]:
+        cg_list = _dart_get(
+            "/list.json",
+            corp_code=corp_code,
+            bgn_de=f"{try_year}0101",
+            end_de=f"{try_year}1231",
+            page_count="30",
+        )
+        for rpt_item in (cg_list.get("list") or []) if cg_list else []:
+            if "기업지배구조" in rpt_item.get("report_nm", ""):
+                text = _fetch_report_zip_text(rpt_item.get("rcept_no", ""))
+                if text:
+                    kesg.update(_regex_extract_kesg(text))
+        if any(k.startswith("G-") for k in kesg):
+            break   # G항목 하나라도 찾으면 충분
+
     return kesg
 
 
 _ESG_ZIP_KEYWORDS = ["온실가스", "tCO2", "에너지 사용", "폐기물", "용수", "재해율",
-                     "Scope", "GHG", "재생에너지", "에너지소비"]
+                     "Scope", "GHG", "재생에너지", "에너지소비",
+                     "이사회", "사외이사", "주주총회", "감사위원회", "지배구조"]
 
 def _fetch_report_zip_text(rcept_no: str, max_chars: int = 800000) -> str:
     """DART 공시 원문 ZIP 다운로드 (/document.xml) → XML/HTML 텍스트 추출.
@@ -400,15 +582,62 @@ _KESG_PATTERNS: list[tuple[str, str, str, float]] = [
     # ── G-1-2 사외이사 비율 ─────────────────────────────────────────────────
     # "사내이사 N인...사외이사 M인...총 T인" 형식에서 비율 계산
     ("G-1-2", "%",      r"사외이사\s*(\d+)\s*인", 1.0),   # count만 추출, 비율은 후처리
-    # ── G-1-4 여성 이사 수 ──────────────────────────────────────────────────
-    ("G-1-4", "명",     r"여성\s*(?:이사|임원)[^\d]{0,50}(\d+)\s*(?:인|명|개)", 1.0),
+    # ── G-1-4 여성 이사 수/비율 ────────────────────────────────────────────────
+    ("G-1-4", "%",      r"여성\s*(?:이사|등기임원)[^\d]{0,60}([\d\.]+)\s*%", 1.0),
+    ("G-1-4", "명",     r"여성\s*(?:이사|등기임원|임원)[^\d]{0,60}(\d+)\s*(?:인|명)", 1.0),
     # ── G-2-1 이사 출석률 ────────────────────────────────────────────────────
     ("G-2-1", "%",      r"출석률\s*:?\s*([\d\.]+)\s*%", 1.0),
+    # ── G-2-3 이사회 안건 수 ────────────────────────────────────────────────
+    ("G-2-3", "건",     r"(?:이사회\s*)?(?:안건|의안)\s*(?:처리|상정|심의)?\s*(?:건수\s*)?:?\s*(\d+)\s*건", 1.0),
+    # ── G-3-1 주주총회 소집 공고 기간 ──────────────────────────────────────────
+    ("G-3-1", "일",     r"(?:주주총회\s*소집\s*공고|소집\s*공고일)[^\d]{0,60}(\d+)\s*일\s*(?:전|이전)", 1.0),
+    # ── G-6-1 지배구조 법규 위반 ───────────────────────────────────────────────
+    ("G-6-1", "건",     r"(?:법규\s*위반|공정거래\s*위반|과징금\s*부과)[^\d]{0,60}(\d+)\s*건", 1.0),
 ]
 
-_BOARD_RATIO_PATTERN = re.compile(
-    r"사외이사\s*(\d+)\s*인.*?총\s*(\d+)\s*인", re.DOTALL
-)
+# 사외이사 비율(G-1-2) — 사업보고서의 다양한 표현(표준표/문장/역순) 방어적 처리
+# DART 표준표: "이사의 수  사외이사 수  사외이사 변동현황 …  5  3  - - -"
+_BOARD_TABLE_RE = re.compile(r"이사의?\s*수\s*사외이사\s*수[^\d]{0,60}?(\d+)\s+(\d+)\b")
+# 문장(역순): "… 3인의 사외이사 …"  /  정순: "사외이사 3인"
+_OUTSIDE_REV_RE = re.compile(r"(\d+)\s*[인명]\s*의\s*사외이사")
+_OUTSIDE_FWD_RE = re.compile(r"사외이사\s*(\d+)\s*[인명]")
+_INSIDE_RE      = re.compile(r"(\d+)\s*[인명]\s*의\s*사내이사|사내이사\s*(\d+)\s*[인명]")
+_TOTAL_RES      = [
+    re.compile(r"이사회(?:는|가)?\s*총\s*(\d+)\s*[명인]"),       # "이사회는 총 5명"
+    re.compile(r"(?:이사의?\s*총?\s*수|등기이사\s*수|총\s*이사\s*수)\s*[:은는]?\s*(\d+)\s*[명인]"),
+]
+
+
+def _extract_board_ratio(text: str) -> tuple[float, int, int] | None:
+    """사외이사 비율(%) = 사외이사 / 전체이사. 표준표 → 문장 순으로 시도."""
+    # 1) DART 표준표("이사의 수  사외이사 수 … 총 사외")
+    tm = _BOARD_TABLE_RE.search(text)
+    if tm:
+        total, outside = float(tm.group(1)), float(tm.group(2))
+        if total >= outside > 0:
+            return round(outside / total * 100, 1), int(outside), int(total)
+
+    # 2) 사외이사 수 (역순 우선: "3인의 사외이사", 없으면 정순 "사외이사 3인")
+    om = _OUTSIDE_REV_RE.search(text) or _OUTSIDE_FWD_RE.search(text)
+    if not om:
+        return None
+    outside = float(om.group(1))
+
+    total: float | None = None
+    for re_t in _TOTAL_RES:
+        t = re_t.search(text)
+        if t:
+            total = float(t.group(1))
+            break
+    if total is None:
+        im = _INSIDE_RE.search(text)
+        if im:
+            inside = float(im.group(1) or im.group(2))
+            total = outside + inside
+    if total and total >= outside > 0:
+        return round(outside / total * 100, 1), int(outside), int(total)
+    return None
+
 
 def _regex_extract_kesg(text: str) -> dict[str, dict]:
     result: dict[str, dict] = {}
@@ -424,18 +653,17 @@ def _regex_extract_kesg(text: str) -> dict[str, dict]:
             except ValueError:
                 pass
 
-    # G-1-2 후처리: 사외이사 수 / 전체 이사 수 → 비율(%)
-    if "G-1-2" in result:
-        bm = _BOARD_RATIO_PATTERN.search(text)
-        if bm:
-            outside = float(bm.group(1))
-            total   = float(bm.group(2))
-            if total > 0:
-                result["G-1-2"] = {
-                    "value": round(outside / total * 100, 1),
-                    "unit": "%",
-                    "note": f"DART 사외이사 {int(outside)}/{int(total)}인 — 정규식 추출",
-                }
+    # G-1-2 후처리: 사외이사 비율(%) 재계산. 계산 가능하면 확정, 아니면 잘못된 count 제거(→ insufficient).
+    br = _extract_board_ratio(text)
+    if br:
+        ratio, outside, total = br
+        result["G-1-2"] = {
+            "value": ratio,
+            "unit": "%",
+            "note": f"DART 사외이사 {outside}/{total}인 — 정규식 추출",
+        }
+    elif "G-1-2" in result:
+        del result["G-1-2"]  # 비율 산출 불가 → 잘못된 카운트값 남기지 않음
 
     return result
 

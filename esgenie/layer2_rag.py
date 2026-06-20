@@ -23,6 +23,35 @@ from .llm import CLIENT
 
 WEIGHTS = {"kesg": 0.40, "industry": 0.30, "corp": 0.30}
 
+# 영역별 쿼리 확장에 쓸 SearchTerm 상한 (쿼리 과팽창 방지)
+_QUERY_EXPANSION_MAX_TERMS = 12
+
+
+def _expand_query_with_search_terms(query: str, area: str) -> str:
+    """기존 큐레이션 쿼리에 해당 영역 지표들의 SearchTerm을 덧붙인다.
+
+    중복·과팽창을 막기 위해 새 키워드만 골라 상한까지만 추가한다.
+    kesg_items 임포트는 순환 회피 위해 함수 내부에서 수행.
+    """
+    from .knowledge.kesg_items import by_area
+
+    have = query
+    extra: list[str] = []
+    seen: set[str] = set()
+    for item in by_area(area):  # type: ignore[arg-type]
+        for term in item.search_terms:
+            if term in seen or term in have:
+                continue
+            seen.add(term)
+            extra.append(term)
+            if len(extra) >= _QUERY_EXPANSION_MAX_TERMS:
+                break
+        if len(extra) >= _QUERY_EXPANSION_MAX_TERMS:
+            break
+    if not extra:
+        return query
+    return f"{query}, " + ", ".join(extra)
+
 
 @dataclass
 class RAGContext:
@@ -137,6 +166,9 @@ class HybridRAG:
             "S": "정규직, 이직률, 여성 비율, 산업재해율, 정보보호",
             "G": "사외이사 비율, 이사회 다양성, 출석률, 윤리경영, 감사기구",
         }[area]
+        # 해당 영역 지표의 SearchTerm으로 쿼리 확장 → 검색 재현율 보강
+        # (ESGReveal <SearchTerm>). 기존 큐레이션 쿼리는 유지하고 덧붙인다.
+        query = _expand_query_with_search_terms(query, area)
         ctx = self.retrieve(query, k=3)
         corp_ctx = report.to_context_dict()
         system = (
