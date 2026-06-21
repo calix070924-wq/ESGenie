@@ -197,6 +197,11 @@ class TestOcrRouter:
         ext = extract_unstructured("회의록.pdf", doc_type="safety_minutes")
         assert ext.clauses or ext.metrics
 
+    def test_policy_manual_mock_exposes_policy_codes(self):
+        ext = ocr_router_mod._mock_unstructured("policy.pdf", "policy_manual")
+        codes = {clause.kesg_code_guess for clause in ext.clauses}
+        assert {"E-1-1", "E-1-2", "G-4-1"} <= codes
+
     def test_unstructured_text_fallback_promotes_policy_clauses(self, monkeypatch):
         class _EmptyLLM:
             def complete(self, **kwargs):

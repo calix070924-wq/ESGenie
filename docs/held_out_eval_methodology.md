@@ -69,15 +69,15 @@ held-out test에는 동일도메인(ESG 보고서) **양성이 사실상 없다*
 
 §4에서 미뤄둔 "증빙 기반 트랙"을 별도 측정 스크립트로 정식 편입했다
 (`scripts/evidence_recall_eval.py`, 골드 `data/benchmark_v2/evidence_recall_gold.json`).
-본 텍스트분류 CI 가 측정하지 못하는 축 — **K-ESG 코드 → 올바른 증빙 노드 검색 재현율** — 을 잰다.
+본 텍스트분류 CI 가 측정하지 못하는 축 — **K-ESG 코드 → 올바른 증빙 노드/조항 검색 재현율** — 을 잰다.
 
 - **데이터**: 한울정밀공업 시연 증빙 PDF(전기·가스·폐기물·사내규정). 실 양식·가상 수치.
 - **실측 경로**: `ocr_router`(정형→Azure Document Intelligence / 비정형→gpt-4.1-mini)
-  → SSOT `EvidenceGraph` → `layer1._match_evidence_nodes` 와 **동일한 키워드·검색 호출**.
+  → SSOT `EvidenceGraph` / `TextNode` → `layer1._match_evidence_nodes` 와 **동일한 키워드·검색 호출**.
 - **before/after**: before = 코드만(`[code]`), after = 코드 + `KESGItem.search_terms`
   (ESGReveal `<SearchTerm>`). 코드단위 recall 을 부트스트랩 95% CI 로 산출.
-- **추출 vs 검색 분리**: OCR 가 증빙을 노드로 뽑았는지(추출)와 그 노드를 코드로
-  검색해냈는지(검색)를 분리 집계 → SearchTerm 의 순수 검색 기여만 격리.
+- **추출 vs 검색 분리**: OCR 가 증빙을 정량 노드/정성 조항으로 뽑았는지(추출)와
+  그 정답 ID를 코드로 검색해냈는지(검색)를 분리 집계 → SearchTerm 의 순수 검색 기여만 격리.
 
 **왜 '실측'인가**: Azure 키가 연결된 환경에서만 OCR 이 실엔진으로 돌고, 키가 없으면
 mock 으로 떨어져 리포트에 "실측 아님" 경고가 박힌다(held_out_eval 과 동일 규약).

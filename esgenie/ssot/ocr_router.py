@@ -1002,6 +1002,18 @@ def _mock_unstructured(file_path: str, doc_type: str) -> OcrExtraction:
                     kesg_code_guess="E-1-1",
                     page=1,
                 ),
+                ExtractedClause(
+                    section="환경경영 추진체계",
+                    text="주관 부서 ESG경영팀 / 환경안전팀",
+                    kesg_code_guess="E-1-2",
+                    page=1,
+                ),
+                ExtractedClause(
+                    section="윤리경영",
+                    text="회사는 공정·윤리 원칙을 준수하고 관련 기준을 전사에 배포한다.",
+                    kesg_code_guess="G-4-1",
+                    page=2,
+                ),
             ],
             raw_text="[MOCK] 사내 규정집 데모 데이터",
             router_meta={"mock": True},

@@ -269,6 +269,7 @@ def run(
     max_iter: int = MAX_REFINEMENT_ITER,
     export_outputs: bool = False,
     export_root: str | Path = "outputs",
+    export_report: bool = False,  # True면 통합 보고서(.md/.pdf)를 export_paths에 저장
     profile: str | None = None,   # "sme" | "full" | None(자동: 상장코드→full, 그 외→sme)
     active_industry: str | None = None,  # 업종 모듈 키 명시(추론보다 우선). None이면 SETTINGS→DART추론→전역
 ) -> PipelineOutput:
@@ -458,7 +459,7 @@ def run(
         industry_module=industry_module,
     )
 
-    return PipelineOutput(
+    result = PipelineOutput(
         report=report,
         evidence_graph=evidence_graph,
         extraction=extraction,
@@ -476,6 +477,23 @@ def run(
         requested_areas=list(areas),
         industry_module_key=industry_module_key,
     )
+
+    if export_report and sections:
+        try:
+            from .layer6_report import assemble_report
+            from .exporters.report_pdf import export_report_pdf
+            doc = assemble_report(result)
+            out_dir = Path(export_root) / f"{corp_code_final or corp_name_final}_{report_year_final}"
+            out_dir.mkdir(parents=True, exist_ok=True)
+            md_path = out_dir / f"ESG보고서_{(corp_name_final or 'corp').replace('/', '_')}_{report_year_final}.md"
+            md_path.write_text(doc.to_markdown(), encoding="utf-8")
+            result.export_paths["report_md"] = str(md_path)
+            result.export_paths["report_pdf"] = export_report_pdf(doc, out_dir)
+            logger.info("[L6] 통합 보고서 저장: %s", result.export_paths["report_pdf"])
+        except Exception as exc:
+            logger.warning("[L6] 통합 보고서 생성 실패: %s", exc)
+
+    return result
 
 
 # ---- CLI 진입점 -------------------------------------------------------------
@@ -495,6 +513,8 @@ def _cli() -> None:
     parser.add_argument("--industry", default=None,
                         help="업종 모듈 키 명시 (예: automotive_parts). 기본: DART 업종명 자동 추론")
     parser.add_argument("--no-save", action="store_true", help="audit_trace 파일 미저장")
+    parser.add_argument("--export-report", action="store_true",
+                        help="통합 보고서(.md/.pdf)를 outputs/에 생성")
     parser.add_argument("--report-year", type=int, default=None, help="분석 기준 연도")
     args = parser.parse_args()
 
@@ -512,6 +532,7 @@ def _cli() -> None:
         report_year=args.report_year,
         profile=args.profile,
         active_industry=args.industry,
+        export_report=args.export_report,
     )
 
     print(f"\n{'='*60}")
@@ -541,6 +562,11 @@ def _cli() -> None:
         print("\nAudit Trace 저장:")
         for area, path in output.trace_paths.items():
             print(f"  [{area}] {path}")
+    if output.export_paths.get("report_pdf"):
+        print("\n통합 보고서:")
+        print(f"  PDF: {output.export_paths['report_pdf']}")
+        if output.export_paths.get("report_md"):
+            print(f"  MD : {output.export_paths['report_md']}")
     print("="*60)
 
 

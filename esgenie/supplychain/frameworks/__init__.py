@@ -2,9 +2,14 @@
 from __future__ import annotations
 
 from ..schema import Framework
+from .kesg_self import KESG28, KESG61
 from .saq5 import SAQ5, SAQ5_ENV
 
 _REGISTRY: dict[str, Framework] = {
+    # 캐노니컬 자가진단(substrate) — 1차 출력.
+    KESG28.key: KESG28,
+    KESG61.key: KESG61,
+    # OEM 폼 어댑터.
     SAQ5.key: SAQ5,
     SAQ5_ENV.key: SAQ5_ENV,
 }

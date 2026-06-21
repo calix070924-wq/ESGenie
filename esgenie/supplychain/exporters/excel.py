@@ -77,7 +77,8 @@ def export_response_sheet(sheet: ResponseSheet, out_dir: str | Path) -> str:
     ws["A1"] = f"{sheet.framework_label}"
     ws["A1"].font = Font(size=13, bold=True)
     ws["A2"] = (
-        f"기업: {sheet.corp_name or '—'}  |  자동응답 커버리지: {sheet.coverage_pct}%  "
+        f"기업: {sheet.corp_name or '—'}  |  자동응답 {sheet.auto_pct}% · "
+        f"작성필요 {sheet.hitl_pct}% · 증빙대기 {sheet.pending_pct}%  "
         f"|  검토필요: {sheet.flagged_count}건"
     )
     ws["A2"].font = Font(size=10, color="555555")
@@ -93,10 +94,12 @@ def export_response_sheet(sheet: ResponseSheet, out_dir: str | Path) -> str:
 
     # ── 데이터 행 ──
     status_fill = {
-        "verified":     PatternFill("solid", fgColor="E2EFDA"),
+        "verified":      PatternFill("solid", fgColor="E2EFDA"),
         "self_reported": PatternFill("solid", fgColor="FFF2CC"),
-        "insufficient": PatternFill("solid", fgColor="F2F2F2"),
-        "flagged":      PatternFill("solid", fgColor="FCE4E4"),
+        "insufficient":  PatternFill("solid", fgColor="F2F2F2"),
+        "flagged":       PatternFill("solid", fgColor="FCE4E4"),
+        "hitl_required": PatternFill("solid", fgColor="DDEBF7"),  # 작성필요 — 연한 파랑
+        "not_applicable": PatternFill("solid", fgColor="EAEAEA"),  # 해당없음 — 회색
     }
     r = header_row + 1
     for a in sheet.answers:
@@ -112,6 +115,38 @@ def export_response_sheet(sheet: ResponseSheet, out_dir: str | Path) -> str:
             for col in range(1, len(_HEADER) + 1):
                 ws.cell(row=r, column=col).fill = f
         r += 1
+
+    # ── 증빙 체크리스트 시트 (STEP 4: 제출 전 실행 항목) ──
+    from ..checklist import checklist_rows
+    rows = checklist_rows(sheet)
+    if rows:
+        cw = wb.create_sheet("증빙 체크리스트")
+        cw["A1"] = "제출 전 증빙 체크리스트"
+        cw["A1"].font = Font(size=12, bold=True)
+        cw["A2"] = "증빙 업로드=문서 올리면 자동 해소 / 담당자 작성=사람이 서술 / 검토·보완=경고 소명"
+        cw["A2"].font = Font(size=10, color="555555")
+        headers = ["문항 ID", "섹션", "문항", "할 일", "올릴 문서 / 작성 사항", "안내"]
+        cfill = PatternFill("solid", fgColor="1F4E78")
+        for col, name in enumerate(headers, start=1):
+            c = cw.cell(row=4, column=col, value=name)
+            c.font = Font(bold=True, color="FFFFFF")
+            c.fill = cfill
+            c.alignment = Alignment(vertical="center", horizontal="center", wrap_text=True)
+        action_fill = {
+            "증빙 업로드": PatternFill("solid", fgColor="F2F2F2"),
+            "담당자 작성": PatternFill("solid", fgColor="DDEBF7"),
+            "검토·보완":   PatternFill("solid", fgColor="FCE4E4"),
+        }
+        for ridx, row in enumerate(rows, start=5):
+            for col, key in enumerate(headers, start=1):
+                cell = cw.cell(row=ridx, column=col, value=row[key])
+                cell.alignment = Alignment(wrap_text=True, vertical="top")
+            f = action_fill.get(row["할 일"])
+            if f:
+                for col in range(1, len(headers) + 1):
+                    cw.cell(row=ridx, column=col).fill = f
+        for col, width in enumerate((14, 18, 46, 12, 40, 50), start=1):
+            cw.column_dimensions[cw.cell(row=4, column=col).column_letter].width = width
 
     # ── 보완/검토 목록 시트 ──
     if sheet.gaps:

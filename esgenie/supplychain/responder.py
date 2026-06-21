@@ -91,7 +91,11 @@ def _build_gaps(answers: list[Answer]) -> list[str]:
     gaps: list[str] = []
     for a in answers:
         if a.status == "insufficient":
-            gaps.append(f"[보완] {a.question_text} — 증빙 업로드 필요")
+            detail = a.rationale or "증빙 업로드 필요"
+            gaps.append(f"[보완] {a.question_text} — {detail}")
+        elif a.status == "hitl_required":
+            detail = a.rationale or "담당자 직접 작성 필요"
+            gaps.append(f"[작성] {a.question_text} — {detail}")
         elif a.status == "flagged":
             why = "; ".join(a.flags) or "검토 필요"
             gaps.append(f"[검토] {a.question_text} — {why}")
