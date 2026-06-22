@@ -207,6 +207,22 @@ def export_response_sheet_pdf(
     # ── 응답표 ──
     header = ["문항 ID", "섹션", "문항", "답변", "신뢰", "근거 / 비고"]
     col_w = [w / 100.0 * page_w for w in (9, 11, 27, 16, 9, 28)]
+    # 섹션(현대차 영역)별 집계 — 그룹 헤더 요약용.
+    from collections import defaultdict
+    sec_total: dict[str, int] = defaultdict(int)
+    sec_auto: dict[str, int] = defaultdict(int)
+    sec_flag: dict[str, int] = defaultdict(int)
+    for a in sheet.answers:
+        if a.status == "not_applicable":
+            continue
+        sec_total[a.section] += 1
+        if a.status in ("verified", "self_reported", "flagged"):
+            sec_auto[a.section] += 1
+        if a.status == "flagged":
+            sec_flag[a.section] += 1
+
+    group_style = ParagraphStyle("group", parent=base, fontName=font.bold, fontSize=9.5,
+                                 textColor=colors.HexColor("#1F4E78"))
     data = [[Paragraph(h, head_cell) for h in header]]
     style_cmds = [
         ("BACKGROUND", (0, 0), (-1, 0), colors.HexColor(_HEADER_BG)),
@@ -215,7 +231,20 @@ def export_response_sheet_pdf(
         ("TOPPADDING", (0, 0), (-1, -1), 3),
         ("BOTTOMPADDING", (0, 0), (-1, -1), 3),
     ]
-    for ri, a in enumerate(sheet.answers, start=1):
+    ri = 0
+    cur_section: str | None = None
+    for a in sheet.answers:
+        # 영역이 바뀌면 전폭 그룹 헤더 행을 끼운다.
+        if a.section != cur_section:
+            cur_section = a.section
+            ri += 1
+            flag_note = f" · 검토필요 {sec_flag[a.section]}건" if sec_flag[a.section] else ""
+            glabel = (f"▌ {a.section}    "
+                      f"(자동응답 {sec_auto[a.section]}/{sec_total[a.section]}{flag_note})")
+            data.append([Paragraph(glabel, group_style), "", "", "", "", ""])
+            style_cmds.append(("SPAN", (0, ri), (-1, ri)))
+            style_cmds.append(("BACKGROUND", (0, ri), (-1, ri), colors.HexColor("#D9E1F2")))
+        ri += 1
         label, bg = _STATUS_STYLE.get(a.status, (a.status, "#FFFFFF"))
         data.append([
             Paragraph(a.qid, cell),

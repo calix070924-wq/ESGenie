@@ -187,6 +187,73 @@ class TestOcrRouter:
         assert d.channel is DocChannel.UNSTRUCTURED
         assert "폴백" in d.rationale
 
+    def test_table_ratio_rescues_weak_keyword_to_structured(self):
+        """약한 키워드(1개)라도 표비율 신호가 붙으면 정형으로 승격된다.
+
+        라이브 경로는 preview_text 없이 호출되므로 estimate_layout_features가
+        자동 주입돼야 한다(이전엔 미배선이라 table_ratio가 항상 0이었음).
+        """
+        from unittest import mock
+        from esgenie.ssot import ocr_router as R
+        with mock.patch.object(R, "_quick_preview", return_value="전기요금"), \
+             mock.patch.object(R, "estimate_layout_features",
+                               return_value={"table_area_ratio": 0.5}) as est:
+            d = route_document("x.pdf")
+        assert est.called  # preview_text 미주입 → 자동 추정 호출
+        assert d.channel is DocChannel.STRUCTURED
+        assert "table_ratio=0.50" in d.rationale
+
+    def test_estimate_layout_features_safe_fallbacks(self):
+        """없는 파일·PDF 외 확장자는 빈 dict(신호 없음)로 안전 폴백."""
+        from esgenie.ssot.ocr_router import estimate_layout_features
+        assert estimate_layout_features("nope_does_not_exist.pdf") == {}
+        assert estimate_layout_features("/tmp/foo.png") == {}
+
+    def test_explicit_preview_text_skips_auto_estimate(self):
+        """preview_text를 직접 준 호출은 자동 추정을 건너뛴다(결정성·비용 보존)."""
+        from unittest import mock
+        from esgenie.ssot import ocr_router as R
+        with mock.patch.object(R, "estimate_layout_features") as est:
+            route_document("dummy.pdf", preview_text="한국전력 전기요금 kWh")
+        assert not est.called
+
+    def test_ocr_preview_returns_empty_without_azure_keys(self):
+        """Azure 키 미설정 시 OCR 에스컬레이션은 빈 문자열(→ 파일명 폴백, 안전)."""
+        from unittest import mock
+        from esgenie.ssot import ocr_router as R
+        with mock.patch.object(R, "_get_azure_docintel_keys", return_value=(None, "")):
+            assert R._ocr_preview_first_page("scan.pdf") == ""
+
+    def test_ocr_preview_uses_read_model_one_page(self):
+        """스캔본 에스컬레이션은 prebuilt-read를 1페이지로만 호출한다(과금 최소)."""
+        from unittest import mock
+        from esgenie.ssot import ocr_router as R
+        with mock.patch.object(R, "_get_azure_docintel_keys", return_value=("k", "ep")), \
+             mock.patch.object(R, "_call_azure_docintel",
+                               return_value=[{"text": "한국전력 전기요금 kWh"}]) as call:
+            txt = R._ocr_preview_first_page("scan.pdf")
+        assert "전기요금" in txt
+        assert call.call_args.kwargs["model"] == "prebuilt-read"
+        assert call.call_args.kwargs["pages"] == "1"
+
+    def test_quick_preview_escalates_when_no_embedded_text(self, tmp_path):
+        """임베디드 텍스트 없음(스캔본/미설치) → _quick_preview가 OCR 에스컬레이션 텍스트 사용."""
+        from unittest import mock
+        from esgenie.ssot import ocr_router as R
+        f = tmp_path / "scan_001.pdf"
+        f.write_bytes(b"%PDF-1.4 fake")  # 텍스트레이어 없는 더미
+        with mock.patch.object(R, "_ocr_preview_first_page",
+                               return_value="한국전력 전기요금 사용전력량 kWh") as esc:
+            txt = R._quick_preview(str(f))
+        assert esc.called           # 임베디드 텍스트가 없어 에스컬레이션을 탐
+        assert "전기요금" in txt    # 파일명 stem이 아닌 OCR 본문 신호를 반환
+
+    def test_scanned_pdf_filename_meaningless_still_routes_structured(self):
+        """파일명이 무의미해도 OCR 본문 신호로 정형 라우팅된다(A 회귀 가드)."""
+        d = route_document("scan_001.pdf", preview_text="한국전력 전기요금 사용전력량 kWh")
+        assert d.channel is DocChannel.STRUCTURED
+        assert d.doc_type == "kepco_bill"
+
     def test_structured_mock_without_keys(self):
         """CLOVA 키 없음 → mock 추출이 동작하고 단위 있는 수치를 반환."""
         ext = extract_structured("한전고지서.pdf", doc_type="kepco_bill")
@@ -398,3 +465,82 @@ class TestAuditTraceV15:
         d = trace.to_dict()
         assert d["schema_version"] == "v15"
         assert d["summary"]["verified_count"] == 1
+
+
+def test_recycle_mass_does_not_clobber_recycle_rate():
+    """재활용량(톤, 코드없음)이 재활용 비율(%) E-6-2를 덮어쓰지 않는지 회귀 가드.
+
+    OCR이 '재활용 비율 29.3%'를 정확히 뽑아도, '재활용량 5.4톤'(hint에 '재활용' 포함)이
+    _HINT_TO_KESG의 부분문자열 매칭으로 E-6-2를 차지해 5.4로 덮어쓰던 버그(한울정밀 시연).
+    """
+    mk = lambda h, v, u, g: ExtractedMetric(
+        metric_hint=h, value=v, unit=u, period="2026", kesg_code_guess=g)
+    metrics = [
+        mk("폐기물 처리량", 18400.0, "ton", "E-6-1"),
+        mk("재활용량", 5.4, "ton", None),       # 보조수치 — E-6-2로 가면 안 됨
+        mk("재활용 비율", 29.3, "%", "E-6-2"),   # 정답 비율
+    ]
+    ext = OcrExtraction(
+        source_file="03_waste.pdf", channel=DocChannel.STRUCTURED,
+        doc_type="waste_ledger", metrics=metrics, raw_text="", router_meta={})
+    g = EvidenceGraph(corp_code="HANUL", corp_name="한울정밀")
+    merge_ocr_extraction(g, ext, report_year=2026)
+
+    e62 = [(n.value, n.unit) for n in g.nodes.values() if n.metric == "E-6-2"]
+    assert e62 == [(29.3, "%")], f"E-6-2는 29.3%만 있어야 함, 실제={e62}"
+    # 재활용량은 코드 없는 보조수치로만 남는다
+    assert any(n.metric == "재활용량" and n.value == 5.4 for n in g.nodes.values())
+
+
+def test_designated_waste_not_counted_as_total():
+    """지정폐기물(하위 분류)이 E-6-1 총량 코드로 잡혀 노드가 중복되지 않는지 가드.
+
+    hint '지정폐기물'은 '폐기물'(E-6-1) 부분문자열에 걸려 총량으로 둔갑하던 버그.
+    추정코드가 E-6-1로 와도 _HINT_EXCLUDE로 차단되어 보조수치로만 남아야 한다.
+    """
+    mk = lambda h, v, u, g: ExtractedMetric(
+        metric_hint=h, value=v, unit=u, period="2026", kesg_code_guess=g)
+    metrics = [
+        mk("폐기물 처리량", 18400.0, "ton", "E-6-1"),
+        mk("지정 폐기물", 18.4, "ton", "E-6-1"),   # 추정 E-6-1로 와도 제외돼야
+    ]
+    g = EvidenceGraph(corp_code="HANUL", corp_name="한울정밀")
+    merge_ocr_extraction(g, OcrExtraction(
+        source_file="03_waste.pdf", channel=DocChannel.STRUCTURED,
+        doc_type="waste_ledger", metrics=metrics, raw_text="", router_meta={}),
+        report_year=2026)
+    e61 = [n.value for n in g.nodes.values() if n.metric == "E-6-1"]
+    assert e61 == [18400.0], f"E-6-1 총량 노드는 1개여야 함, 실제={e61}"
+
+
+def test_pin_totals_from_raw_fixes_billing_cells():
+    """청구서 본문 명시값으로 전력·가스·폐기물 대표수치를 결정적 교정(표 오집 교정)."""
+    from esgenie.ssot.ocr_router import _pin_totals_from_raw, ExtractedMetric
+    tok = lambda s: [{"text": s, "bbox": None, "page": 0}]
+    mk = lambda v, u, g: ExtractedMetric(metric_hint="x", value=v, unit=u, period="", kesg_code_guess=g)
+    # 전력: 전월지침(48,210) 오집 → 사용량 142,560kWh
+    out = _pin_totals_from_raw([mk(48210.0, "kWh", "E-4-1")],
+        tok("유효전력 48,210 50,586 60 142,560 전력량요금 (142,560kWh)"), "kepco_bill")
+    assert [(m.value, m.unit) for m in out if m.kesg_code_guess == "E-4-1"] == [(142560.0, "kWh")]
+    # 가스: 2.0 오추출 → 360,772MJ
+    out = _pin_totals_from_raw([mk(2.0, "MJ", "E-4-1")],
+        tok("사용요금 (360,772MJ × 20.13원)"), "gas_bill")
+    assert [(m.value, m.unit) for m in out if m.kesg_code_guess == "E-4-1"] == [(360772.0, "MJ")]
+    # 폐기물: 18400 ton(kg오인) → 총 위탁량 18,400kg = 18.4톤
+    out = _pin_totals_from_raw([mk(18400.0, "ton", "E-6-1")],
+        tok("합계 총 위탁량 18,400 재활용"), "waste_ledger")
+    assert [(m.value, m.unit) for m in out if m.kesg_code_guess == "E-6-1"] == [(18.4, "ton")]
+
+
+def test_scope12_sums_electricity_and_gas():
+    """E-3-1(Scope1+2)은 전력 파생 + 가스 파생을 합산한다(코드당 1노드 선택 → 합산)."""
+    from esgenie.ssot.audit_trace import build_data_points
+    mk = lambda v, u: ExtractedMetric(metric_hint="E-4-1 본문확정", value=v, unit=u,
+                                      period="2026", kesg_code_guess="E-4-1")
+    g = EvidenceGraph(corp_code="HANUL", corp_name="한울정밀")
+    merge_ocr_extraction(g, OcrExtraction(source_file="01.pdf", channel=DocChannel.STRUCTURED,
+        doc_type="kepco_bill", metrics=[mk(142560.0, "kWh")], raw_text="", router_meta={}), report_year=2026)
+    merge_ocr_extraction(g, OcrExtraction(source_file="02.pdf", channel=DocChannel.STRUCTURED,
+        doc_type="gas_bill", metrics=[mk(360772.0, "MJ")], raw_text="", router_meta={}), report_year=2026)
+    dps = {d.kesg_code: d for d in build_data_points(g, {}, target_codes=["E-3-1"])}
+    assert dps["E-3-1"].value == 88.397, dps["E-3-1"].value

@@ -32,10 +32,13 @@ def build_response_sheet(
     """
     fw = get_framework(framework) if isinstance(framework, str) else framework
 
-    mapped: dict[str, dict[str, Any]] = getattr(extraction, "mapped", {}) or {}
+    mapped: dict[str, dict[str, Any]] = dict(getattr(extraction, "mapped", {}) or {})
     missing: set[str] = set(getattr(extraction, "missing", []) or [])
     dp_by_code = {dp.kesg_code: dp for dp in (data_points or [])}
     evidence_index = _build_evidence_index(evidence_graph)
+    # RBA 고유 조항: clause에 태깅된 RBA 코드를 증빙풀(mapped)에 합류.
+    # 키(RBA "A-3" vs K-ESG "E-4-1")가 안 겹쳐 안전. 크로스워크 항목은 기존 K-ESG 경로 유지.
+    _merge_rba_clause_evidence(mapped, evidence_graph)
 
     answers: list[Answer] = []
     for q in fw.questions:
@@ -105,6 +108,42 @@ def _build_gaps(answers: list[Answer]) -> list[str]:
                 if f.startswith("미충족"):
                     gaps.append(f"[보완] {a.question_text} — {f}")
     return gaps
+
+
+def _merge_rba_clause_evidence(
+    mapped: dict[str, dict[str, Any]], evidence_graph: Any | None
+) -> None:
+    """RBA 코드로 태깅된 TextNode를 mapped에 존재형 엔트리로 합류시킨다.
+
+    RBA 고유 조항(K-ESG 크로스워크 없음)은 K-ESG 증빙풀에 없어 항상 insufficient였다.
+    clause 태깅(tag_rba_codes)으로 부여된 rba_code를 mapped[rba_code] 엔트리로 만들어
+    _derive_presence가 해당 RBA 문항을 'verified/self_reported'로 채울 수 있게 한다.
+    이미 mapped에 같은 코드가 있으면(이론상 없음 — 키 비충돌) 덮어쓰지 않는다.
+    """
+    if evidence_graph is None:
+        return
+    from ..knowledge.rba_items import RBA_BY_CODE
+
+    by_code: dict[str, list[str]] = {}
+    for node in getattr(evidence_graph, "text_nodes", {}).values():
+        code = getattr(node, "rba_code", None)
+        if code:
+            by_code.setdefault(code, []).append(node.id)
+
+    for code, node_ids in by_code.items():
+        if code in mapped:
+            continue
+        item = RBA_BY_CODE.get(code)
+        mapped[code] = {
+            "code": code,
+            "name": item.name_ko if item else code,
+            "area": item.section_ko if item else "",
+            "data_type": item.data_type if item else "정성",
+            "value": True,
+            "unit": "",
+            "evidence_node_ids": node_ids,
+            "origin": "rba_clause",
+        }
 
 
 def _build_evidence_index(evidence_graph: Any | None) -> dict[str, Any]:

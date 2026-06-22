@@ -1,0 +1,20 @@
+{
+  "generated_at": "2026-06-22T13:02:27.719209+00:00",
+  "n_extractions": 10,
+  "n_files_without_tables": 10,
+  "files_without_tables": [
+    "01_전기요금청구서_2026-05.pdf",
+    "02_도시가스요금고지서_2026-05.pdf",
+    "03_사업장폐기물_위탁처리명세_2026-04.pdf",
+    "04_사내_환경ESG경영방침_규정.pdf",
+    "05_OEM_ESG자가진단설문_한성모터스.pdf",
+    "06_OEM_ESG자가진단설문_대주오토.pdf",
+    "07_OEM_ESG자가진단설문_GL모빌리티.pdf",
+    "kepco_bill_2025_12.pdf",
+    "safety_policy_2025.pdf",
+    "waste_ledger_2025.pdf"
+  ],
+  "n_cases": 0,
+  "by_gate_status_pred": {},
+  "by_doc_type": {}
+}

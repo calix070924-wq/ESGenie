@@ -34,8 +34,8 @@ class IndustryModule:
     emission_factors: Mapping[str, float] = field(default_factory=dict)
     # 예: {"kWh_to_tco2": ..., "MJ_gas_to_tco2": ...}
     thresholds: Mapping[str, float] = field(default_factory=dict)
-    # 2차 이후: 출력 양식 매핑(CBAM/협력사). PR1에서는 선언만 하고 배선하지 않는다.
-    output_mappings: Mapping[str, Mapping[str, str]] = field(default_factory=dict)
+    # 주의: 협력사/CBAM '출력 양식 매핑'은 더 이상 업종 모듈이 아니라
+    #       supplychain/frameworks(K-ESG·RBA substrate + OEM 어댑터)가 담당한다.
 
 
 # ====================================================================

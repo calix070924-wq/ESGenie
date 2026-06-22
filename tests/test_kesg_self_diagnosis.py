@@ -139,6 +139,9 @@ def test_sample_regression_full_catalog(tmp_path: Path):
     assert "응답서" in wb.sheetnames
     assert "증빙 체크리스트" in wb.sheetnames
     ws = wb["응답서"]
-    # 헤더(4행) 다음부터 28개 데이터 행
-    data_rows = [r for r in ws.iter_rows(min_row=5, max_col=1, values_only=True) if r[0]]
+    # 헤더(4행) 다음부터 데이터 행 — 영역 그룹 헤더(▌로 시작)는 제외하고 문항 행만 센다.
+    data_rows = [
+        r for r in ws.iter_rows(min_row=5, max_col=1, values_only=True)
+        if r[0] and not str(r[0]).startswith("▌")
+    ]
     assert len(data_rows) == 28

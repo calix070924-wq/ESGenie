@@ -92,7 +92,21 @@ def export_response_sheet(sheet: ResponseSheet, out_dir: str | Path) -> str:
         c.fill = fill
         c.alignment = Alignment(vertical="center", horizontal="center", wrap_text=True)
 
-    # ── 데이터 행 ──
+    # ── 섹션(현대차 영역)별 집계 — 그룹 헤더 요약용 ──
+    from collections import defaultdict
+    sec_total: dict[str, int] = defaultdict(int)
+    sec_auto: dict[str, int] = defaultdict(int)
+    sec_flag: dict[str, int] = defaultdict(int)
+    for a in sheet.answers:
+        if a.status == "not_applicable":
+            continue
+        sec_total[a.section] += 1
+        if a.status in ("verified", "self_reported", "flagged"):
+            sec_auto[a.section] += 1
+        if a.status == "flagged":
+            sec_flag[a.section] += 1
+
+    # ── 데이터 행 (영역 그룹 헤더 + 문항) ──
     status_fill = {
         "verified":      PatternFill("solid", fgColor="E2EFDA"),
         "self_reported": PatternFill("solid", fgColor="FFF2CC"),
@@ -101,8 +115,22 @@ def export_response_sheet(sheet: ResponseSheet, out_dir: str | Path) -> str:
         "hitl_required": PatternFill("solid", fgColor="DDEBF7"),  # 작성필요 — 연한 파랑
         "not_applicable": PatternFill("solid", fgColor="EAEAEA"),  # 해당없음 — 회색
     }
+    group_fill = PatternFill("solid", fgColor="D9E1F2")
     r = header_row + 1
+    cur_section: str | None = None
     for a in sheet.answers:
+        # 영역이 바뀌면 그룹 헤더 행을 끼운다(영역명 + 영역 요약).
+        if a.section != cur_section:
+            cur_section = a.section
+            flag_note = f" · 🚩 검토필요 {sec_flag[a.section]}건" if sec_flag[a.section] else ""
+            label = (f"▌ {a.section}    "
+                     f"(자동응답 {sec_auto[a.section]}/{sec_total[a.section]}{flag_note})")
+            ws.merge_cells(start_row=r, start_column=1, end_row=r, end_column=len(_HEADER))
+            gc = ws.cell(row=r, column=1, value=label)
+            gc.font = Font(bold=True, size=11, color="1F4E78")
+            gc.fill = group_fill
+            gc.alignment = Alignment(vertical="center", horizontal="left")
+            r += 1
         ws.cell(row=r, column=1, value=a.qid)
         ws.cell(row=r, column=2, value=a.section)
         ws.cell(row=r, column=3, value=a.question_text).alignment = Alignment(wrap_text=True)
@@ -115,6 +143,9 @@ def export_response_sheet(sheet: ResponseSheet, out_dir: str | Path) -> str:
             for col in range(1, len(_HEADER) + 1):
                 ws.cell(row=r, column=col).fill = f
         r += 1
+
+    # 헤더 행 고정 — 스크롤해도 열 제목이 보이게.
+    ws.freeze_panes = ws.cell(row=header_row + 1, column=1)
 
     # ── 증빙 체크리스트 시트 (STEP 4: 제출 전 실행 항목) ──
     from ..checklist import checklist_rows

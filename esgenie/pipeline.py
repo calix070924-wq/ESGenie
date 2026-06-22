@@ -31,6 +31,7 @@ from .ssot import (
     detector_5axis,
     evidence_graph as ssot_evidence_graph,
     excel_exporter,
+    ocr_table_gate,
     ocr_router,
 )
 from .ssot.ssot_pipeline import build_rag_with_ssot, extract_local_with_ssot, extract_with_ssot
@@ -93,6 +94,12 @@ def _collect_ocr_extractions(
             decision = ocr_router.route_document(path)
             extraction = ocr_router.extract_document(path, decision)
             extraction.source_file = fname
+            ocr_table_gate.apply_table_gate(extraction, tier=0)
+            # L0-B 일관성 검증 (Tier A 산술 정합) — merge 전에 finding 부착·confidence 보정
+            from esgenie.ssot.ocr_consistency import validate_consistency
+            validate_consistency(extraction)
+            # RBA 고유 조항 태깅 — K-ESG 크로스워크 없는 clause에 RBA 코드 부여
+            ocr_router.tag_rba_codes(extraction)
             extractions.append(extraction)
         except Exception as exc:
             logger.warning("OCR 처리 실패 [%s]: %s", fname, exc)

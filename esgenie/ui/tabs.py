@@ -35,7 +35,6 @@ from esgenie.supplychain.exporters import (
     export_response_sheet_pdf,
 )
 from esgenie.ui.components import (
-    badge_html,
     callout_html,
     download_tile_html,
     panel_html,
