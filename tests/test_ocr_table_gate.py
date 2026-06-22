@@ -31,7 +31,7 @@ def _table(rows: list[list[str]], *, confidences: list[list[float | None]] | Non
         row_count=len(rows),
         column_count=max((len(row) for row in rows), default=0),
         cells=cells,
-        source="azure_docintel",
+        source="upstage_dp",
         page=0,
     )
 

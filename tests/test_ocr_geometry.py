@@ -30,8 +30,7 @@ def _make_pdf(path):
 
 def _force_pymupdf(monkeypatch):
     """모든 OCR/LLM 키 게터를 비활성화 → pymupdf+규칙 경로 확정."""
-    monkeypatch.setattr(ocr_router, "_get_azure_docintel_keys", lambda: (None, ""))
-    monkeypatch.setattr(ocr_router, "_get_clova_keys", lambda: (None, ""))
+    monkeypatch.setattr(ocr_router, "_get_upstage_key", lambda: None)
     monkeypatch.setattr(ocr_router, "_get_openai_key", lambda: None)
     monkeypatch.setattr(ocr_router, "_get_anthropic_key", lambda: None)
 

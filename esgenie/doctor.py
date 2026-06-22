@@ -6,7 +6,7 @@
 
 점검 항목:
   1) 필수/선택 패키지 설치 여부 + 버전
-  2) API 키 상태 (DART / OpenAI / Anthropic / Azure OCR / CLOVA legacy)
+  2) API 키 상태 (DART / OpenAI / Anthropic / Upstage OCR)
   3) 임베딩 백엔드 (SBERT 정상 vs 해시 폴백 — D3 품질 직결)
   4) 샘플 데이터·벤치마크 데이터셋 존재
   5) (--smoke) mock 파이프라인 E2E 1회 실행
@@ -65,14 +65,9 @@ def check_keys() -> list[dict[str, Any]]:
         {"name": "ANTHROPIC_API_KEY", "set": bool(SETTINGS.anthropic_api_key),
          "fallback": "mock LLM (하이브리드 판정·벤치마크는 mock 수치)"},
         {
-            "name": "AZURE_DOC_INTEL",
-            "set": bool(os.getenv("AZURE_DOC_INTEL_ENDPOINT")) and bool(os.getenv("AZURE_DOC_INTEL_KEY")),
+            "name": "UPSTAGE_API_KEY",
+            "set": bool(os.getenv("UPSTAGE_API_KEY")),
             "fallback": "pymupdf+정규식 → 정형 mock 샘플",
-        },
-        {
-            "name": "CLOVA_OCR_SECRET",
-            "set": bool(os.getenv("CLOVA_OCR_SECRET")),
-            "fallback": "레거시 OCR 경로 (Azure OCR 미설정 시 선택적 사용)",
         },
     ]
     if SETTINGS.force_mock:
