@@ -96,6 +96,20 @@ RISK_LEVEL_THRESHOLDS: dict[str, float] = {
 MAX_REFINEMENT_ITER: int = int(os.getenv("MAX_REFINEMENT_ITER", "3"))
 
 
+# ---- RAG 게이트 -------------------------------------------------------------
+# R1: corp top-1 점수 하한. 현재 시드 eval sweep best F1 ≈ 0.5445를 반영.
+# 단, hash-fallback 백엔드에서는 재보정이 필요하다.
+RAG_R1_MIN: float = float(os.getenv("RAG_R1_MIN", "0.54"))
+RAG_R2_MIN: float = float(os.getenv("RAG_R2_MIN", "0.12"))
+RAG_R4_MIN: float = float(os.getenv("RAG_R4_MIN", "0.2"))
+RAG_MAX_TIER: int = int(os.getenv("RAG_MAX_TIER", "2"))
+# 임계값은 sbert 점수 스케일 기준이다. hash-fallback 임베딩에선 유사도 절댓값이
+# 구조적으로 낮아 R1 등이 상시 hard-fail → 생성이 통째로 차단된다.
+# 이 스위치가 켜져 있으면 폴백 백엔드에서 게이트를 "차단"이 아닌 "자문(진단)"으로만
+# 동작시킨다. hard_fails/soft_flags는 그대로 기록하되 생성은 막지 않는다.
+RAG_GATE_FALLBACK_BYPASS: bool = os.getenv("RAG_GATE_FALLBACK_BYPASS", "1") not in ("0", "false", "False")
+
+
 # ---- 하이브리드 검출 (룰 1차 + LLM 2차 판정) ---------------------------------
 # 룰 점수가 이 값 이상인 축만 LLM 판정으로 보낸다 (비용 절감 — 전수 LLM 호출 방지)
 JUDGE_TRIGGER: float = float(os.getenv("JUDGE_TRIGGER", "0.25"))

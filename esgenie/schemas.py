@@ -6,7 +6,8 @@
 """
 from __future__ import annotations
 
-from dataclasses import dataclass, field, asdict
+from dataclasses import asdict, dataclass, field
+from enum import Enum
 from typing import Any
 
 
@@ -75,6 +76,13 @@ class RiskVector:
 
 # ---- L4 재생성 시도 기록 -----------------------------------------------------
 
+
+class GateDecision(str, Enum):
+    ACCEPT = "ACCEPT"
+    ESCALATE = "ESCALATE"
+    HUMAN = "HUMAN"
+
+
 @dataclass
 class RefinementAttempt:
     """L4 재생성 1회 시도 기록."""
@@ -97,6 +105,43 @@ class RefinementAttempt:
         return d
 
 
+@dataclass
+class GroundingResult:
+    """게이트 B 결과 (PR-A: G1 인용 강제 + G2 숫자 원문 대조)."""
+
+    decision: str
+    g1_uncited_sentences: list[str]
+    g2_orphan_numbers: list[str]
+    g4_unit_mismatches: list[str]
+    g5_overclaim: bool
+    hard_fails: list[str]
+    soft_flags: list[str]
+    faithfulness: float
+
+    def to_dict(self) -> dict[str, Any]:
+        return asdict(self)
+
+
+@dataclass
+class RetrievalDecision:
+    """게이트 A 결과 (PR-B 최소 범위)."""
+
+    decision: str
+    tier: int
+    top1_score: float
+    field_coverage: dict[str, bool]
+    hard_fails: list[str]
+    soft_flags: list[str]
+    chunk_ids: list[str]
+    scores: list[float]
+    score_margin: float = 0.0
+    method_overlap: float = 0.0
+    queries_tried: list[str] = field(default_factory=list)
+
+    def to_dict(self) -> dict[str, Any]:
+        return asdict(self)
+
+
 # ---- L5 감사 추적 ------------------------------------------------------------
 
 @dataclass
@@ -110,11 +155,14 @@ class AuditSentence:
     kesg_item_id: str | None      # 연결된 K-ESG 코드 (None 이면 미매핑)
     evidence_node_ids: list[str]  # L0 노드 ID
     retrieved_chunk_ids: list[str]  # L2 RAG 청크 ID
-    risk_vector: RiskVector | None
-    refinement_attempts: list[RefinementAttempt]
-    hitl_status: str              # "ok" | "HITL_REQUIRED"
-    timestamps: dict[str, str]    # {"created": ..., "finalized": ...}
-    model_versions: dict[str, str]  # {"llm": ..., "embed": ...}
+    risk_vector: RiskVector | None = None
+    retrieval_tier: int | None = None
+    retrieval_scores: list[float] = field(default_factory=list)
+    grounding_status: str = "unknown"
+    refinement_attempts: list[RefinementAttempt] = field(default_factory=list)
+    hitl_status: str = "ok"              # "ok" | "HITL_REQUIRED"
+    timestamps: dict[str, str] = field(default_factory=dict)    # {"created": ..., "finalized": ...}
+    model_versions: dict[str, str] = field(default_factory=dict)  # {"llm": ..., "embed": ...}
 
     def to_dict(self) -> dict[str, Any]:
         return {
@@ -123,6 +171,9 @@ class AuditSentence:
             "kesg_item_id":         self.kesg_item_id,
             "evidence_node_ids":    self.evidence_node_ids,
             "retrieved_chunk_ids":  self.retrieved_chunk_ids,
+            "retrieval_tier":       self.retrieval_tier,
+            "retrieval_scores":     self.retrieval_scores,
+            "grounding_status":     self.grounding_status,
             "risk_vector":          self.risk_vector.to_dict() if self.risk_vector else None,
             "refinement_attempts":  [r.to_dict() for r in self.refinement_attempts],
             "hitl_status":          self.hitl_status,

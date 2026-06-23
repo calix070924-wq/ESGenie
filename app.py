@@ -379,7 +379,7 @@ with st.container(border=True):
         render_stat_row(quick_cards, columns=2)
 
         if upload_rows:
-            st.dataframe(upload_rows, use_container_width=True, hide_index=True)
+            st.dataframe(upload_rows, width='stretch', hide_index=True)
 
     with setup_advanced:
         adv1, adv2 = st.columns(2)
@@ -509,7 +509,7 @@ with action_col:
     run_btn = st.button(
         "▶ 분석 시작" if result is None else "▶ 다시 분석",
         type="primary",
-        use_container_width=True,
+        width='stretch',
         disabled=not corp_name,
     )
 

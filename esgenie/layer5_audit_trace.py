@@ -19,6 +19,7 @@ from .layer1_extract import ExtractionResult
 from .layer2_rag import GenerationResult
 from .layer3_detect import detect_risk_vector
 from .layer4_verify import VerificationResult
+from .rag_gates import CitedSentence, parse_cited_sentences, strip_citation_markers
 from .schemas import AuditSentence, AuditTrace, RefinementAttempt, RiskVector
 
 OUTPUT_DIR = ROOT_DIR / "outputs"
@@ -44,19 +45,22 @@ def build_audit_trace(
         industry_stats: 업종 벤치마크 dict
     """
     final_text = verification.final.generation.text
-    sentences   = _split_sentences(final_text)
+    parsed_sentences = _parse_audit_sentences(final_text)
     gen         = verification.final.generation
 
     # RAG 청크 → retrieved_chunks 형식
     chunks = _gen_to_chunks(gen)
+    chunk_map = {chunk["id"]: chunk for chunk in chunks}
 
     # K-ESG 코드 → sentence 텍스트 역매핑 (간단 키워드 기반)
-    kesg_map = _build_kesg_sentence_map(sentences, extraction)
+    sentence_texts = [entry.clean_text for entry in parsed_sentences]
+    kesg_map = _build_kesg_sentence_map(sentence_texts, extraction)
 
     audit_sentences: list[AuditSentence] = []
     now_iso = _now_iso()
 
-    for idx, sent_text in enumerate(sentences):
+    for idx, sent in enumerate(parsed_sentences):
+        sent_text = sent.clean_text
         sent_id = f"{report.corp_code}_{area}_{idx:03d}"
 
         # evidence_node_ids
@@ -67,8 +71,15 @@ def build_audit_trace(
                 nodes = evidence_graph.search_nodes(keywords=[code], period=report.report_year)
                 ev_node_ids.extend(n.id for n in nodes)
 
-        # retrieved_chunk_ids (최대 3개)
-        chunk_ids = _match_chunk_ids(sent_text, chunks)
+        # retrieved_chunk_ids: citation 우선, 없으면 키워드 매칭 폴백
+        chunk_ids = [cid for cid in sent.cited_chunk_ids if cid in chunk_map]
+        if not chunk_ids:
+            chunk_ids = _match_chunk_ids(sent_text, chunks)
+        retrieval_scores = [
+            float(chunk_map[cid]["score"])
+            for cid in chunk_ids
+            if cid in chunk_map
+        ]
 
         # kesg_item_id
         kesg_item_id = kesg_map.get(sent_text)
@@ -110,6 +121,9 @@ def build_audit_trace(
             kesg_item_id=kesg_item_id,
             evidence_node_ids=list(dict.fromkeys(ev_node_ids)),   # 중복 제거
             retrieved_chunk_ids=chunk_ids,
+            retrieval_tier=gen.context.retrieval_tier,
+            retrieval_scores=retrieval_scores,
+            grounding_status=_grounding_status(sent, chunk_ids),
             risk_vector=rv,
             refinement_attempts=ref_attempts,
             hitl_status=hitl_status,
@@ -183,6 +197,16 @@ def _split_sentences(text: str) -> list[str]:
     return [p.strip() for p in parts if p.strip() and len(p.strip()) > 5]
 
 
+def _parse_audit_sentences(text: str) -> list[CitedSentence]:
+    parsed = parse_cited_sentences(text)
+    if parsed:
+        return parsed
+    return [
+        CitedSentence(raw_text=sentence, clean_text=sentence, cited_chunk_ids=[])
+        for sentence in _split_sentences(strip_citation_markers(text))
+    ]
+
+
 def _now_iso() -> str:
     return datetime.datetime.now(datetime.timezone.utc).isoformat()
 
@@ -190,10 +214,10 @@ def _now_iso() -> str:
 def _gen_to_chunks(gen: GenerationResult) -> list[dict[str, Any]]:
     """GenerationResult의 RAG 히트를 retrieved_chunks 형식으로 변환."""
     chunks: list[dict[str, Any]] = []
-    all_hits = gen.context.kesg_hits + gen.context.industry_hits + gen.context.corp_hits
+    all_hits = gen.context.all_hits()
     for i, (doc, score) in enumerate(all_hits):
         chunks.append({
-            "id":    doc.meta.get("code") or doc.meta.get("source") or f"chunk_{i}",
+            "id":    doc.chunk_id or doc.meta.get("id") or doc.meta.get("code") or doc.meta.get("source") or f"chunk_{i}",
             "text":  doc.text,
             "score": score,
         })
@@ -257,3 +281,11 @@ def _filter_attempts(
         a for a in attempts
         if sentence[:30] in a.before_text or sentence[:30] in a.after_text
     ]
+
+
+def _grounding_status(sent: CitedSentence, chunk_ids: list[str]) -> str:
+    if sent.cited_chunk_ids and chunk_ids:
+        return "grounded"
+    if chunk_ids:
+        return "partial"
+    return "ungrounded"

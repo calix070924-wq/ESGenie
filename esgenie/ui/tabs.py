@@ -505,14 +505,14 @@ def render_deliverables_workspace(result, active_area: str, gradient: str) -> No
                     fh.read(),
                     file_name=os.path.basename(pdf_path),
                     mime="application/pdf",
-                    use_container_width=True,
+                    width='stretch',
                 )
         st.download_button(
             "📥 통합 보고서 (.md)",
             doc.to_markdown().encode(),
             file_name=f"esgenie_report_{doc.corp_name}.md",
             mime="text/markdown",
-            use_container_width=True,
+            width='stretch',
         )
     with d2:
         st.markdown(
@@ -530,7 +530,7 @@ def render_deliverables_workspace(result, active_area: str, gradient: str) -> No
                     fh.read(),
                     file_name=os.path.basename(export_paths["xlsx"]),
                     mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-                    use_container_width=True,
+                    width='stretch',
                 )
     with d3:
         st.markdown(
@@ -548,7 +548,7 @@ def render_deliverables_workspace(result, active_area: str, gradient: str) -> No
                     fh.read(),
                     file_name=os.path.basename(export_paths["audit_json"]),
                     mime="application/json",
-                    use_container_width=True,
+                    width='stretch',
                 )
 
     report_tab, supply_tab = st.tabs(["📝 통합 보고서", "📤 공급망 실사 응답서"])
@@ -641,7 +641,7 @@ def render_ssot_tab(result, gradient: str, *, show_header: bool = True) -> None:
         for node in ssot.nodes.values()
     ]
     if node_rows:
-        st.dataframe(node_rows, use_container_width=True, hide_index=True)
+        st.dataframe(node_rows, width='stretch', hide_index=True)
 
     if ssot.text_nodes:
         st.markdown("#### 정성 조항 노드 (규정집·회의록)")
@@ -655,7 +655,7 @@ def render_ssot_tab(result, gradient: str, *, show_header: bool = True) -> None:
             }
             for node in ssot.text_nodes.values()
         ]
-        st.dataframe(text_rows, use_container_width=True, hide_index=True)
+        st.dataframe(text_rows, width='stretch', hide_index=True)
 
 
 def render_diag_tab(result, gradient: str, *, show_header: bool = True) -> None:
@@ -692,7 +692,7 @@ def render_diag_tab(result, gradient: str, *, show_header: bool = True) -> None:
         }
         for node in sorted(ssot.nodes.values(), key=lambda item: item.metric)
     ])
-    st.dataframe(node_df, hide_index=True, use_container_width=True)
+    st.dataframe(node_df, hide_index=True, width='stretch')
 
     from esgenie.knowledge.kesg_items import items_for_profile
 
@@ -721,7 +721,7 @@ def render_diag_tab(result, gradient: str, *, show_header: bool = True) -> None:
             }
             for entry in extraction.mapped.values()
             if entry["code"] in profile_codes and not entry.get("beyond_profile")
-        ]), hide_index=True, use_container_width=True)
+        ]), hide_index=True, width='stretch')
 
     with missing_tab:
         st.dataframe(pd.DataFrame([
@@ -732,7 +732,7 @@ def render_diag_tab(result, gradient: str, *, show_header: bool = True) -> None:
                 "유형": item.data_type,
             }
             for item in profile_items if item.code in extraction.missing
-        ]), hide_index=True, use_container_width=True)
+        ]), hide_index=True, width='stretch')
 
     if extraction.beyond_profile:
         with st.expander(f"➕ 프로파일 외 추가 공시 ({len(extraction.beyond_profile)}개) — 커버리지 미반영"):
@@ -745,7 +745,7 @@ def render_diag_tab(result, gradient: str, *, show_header: bool = True) -> None:
                     "단위": entry.get("unit") or "-",
                 }
                 for entry in extraction.mapped.values() if entry.get("beyond_profile")
-            ]), hide_index=True, use_container_width=True)
+            ]), hide_index=True, width='stretch')
 
 
 def render_draft_tab(result, active_area: str, gradient: str, *, show_header: bool = True) -> None:
@@ -840,7 +840,7 @@ def render_verify_tab(result, active_area: str, gradient: str, *, show_header: b
             margin=dict(t=30, b=20),
             title=f"4축 위험 분해 (종합 {final_risk.risk_score*100:.1f})",
         )
-        st.plotly_chart(fig, use_container_width=True, key="radar_final")
+        st.plotly_chart(fig, width='stretch', key="radar_final")
 
     if len(verify.steps) > 1:
         progress_df = pd.DataFrame([
@@ -864,7 +864,7 @@ def render_verify_tab(result, active_area: str, gradient: str, *, show_header: b
             annotation_text=f"목표 임계치 ({verify.metadata['threshold']})",
         )
         _apply_plotly_theme(fig, height=220, yaxis=dict(title="위험도", range=[0, 105]), margin=dict(t=10, b=10))
-        st.plotly_chart(fig, use_container_width=True, key="progress")
+        st.plotly_chart(fig, width='stretch', key="progress")
 
     if result.risk_rows:
         st.markdown("#### K-ESG 항목별 4축 리스크 (증빙 기반)")
@@ -878,7 +878,7 @@ def render_verify_tab(result, active_area: str, gradient: str, *, show_header: b
                     return "background-color:#FFEB9C"
             return ""
 
-        st.dataframe(df.style.map(_color, subset=["종합 위험도"]), use_container_width=True, hide_index=True)
+        st.dataframe(df.style.map(_color, subset=["종합 위험도"]), width='stretch', hide_index=True)
 
 
 def render_policy_tab(result, gradient: str, *, show_header: bool = True) -> None:
@@ -1089,7 +1089,7 @@ def _render_supplychain_evidence_preview(evidence, *, evidence_dir: str = "") ->
             from esgenie.pdf_render import render_page_with_box
 
             png = render_page_with_box(pdf_path, bbox, page=page, dpi=120)
-            st.image(png, caption=f"{file_name} · p.{page + 1}", use_container_width=True)
+            st.image(png, caption=f"{file_name} · p.{page + 1}", width='stretch')
             rendered = True
         except Exception as exc:  # noqa: BLE001
             st.caption(f"원본 렌더 실패: {exc}")
@@ -1209,7 +1209,7 @@ def render_supplychain_tab(result, gradient: str, *, show_header: bool = True) -
     if issb_alert_rows:
         with st.expander(f"🛡 ISSB 방어 관점 보완 항목 ({len(issb_alert_rows)}건)", expanded=bool(sheet.flagged_count)):
             st.caption("실사 응답서 제출 전 보완이 필요한 ISSB 기후/그린워싱 방어 항목입니다.")
-            st.dataframe(pd.DataFrame(issb_alert_rows), hide_index=True, use_container_width=True)
+            st.dataframe(pd.DataFrame(issb_alert_rows), hide_index=True, width='stretch')
 
     upload_cta_rows = _supplychain_upload_cta_rows(
         sheet,
@@ -1218,7 +1218,7 @@ def render_supplychain_tab(result, gradient: str, *, show_header: bool = True) -
     if upload_cta_rows:
         with st.expander(f"📋 제출 전 증빙 체크리스트 ({len(upload_cta_rows)}건)", expanded=bool(sheet.flagged_count)):
             st.caption("증빙 업로드=문서 올리면 자동 해소 / 담당자 작성=사람이 서술 / 검토·보완=경고 소명")
-            st.dataframe(pd.DataFrame(upload_cta_rows), hide_index=True, use_container_width=True)
+            st.dataframe(pd.DataFrame(upload_cta_rows), hide_index=True, width='stretch')
 
     st.markdown("#### 자동 응답")
     rows = [
@@ -1231,7 +1231,7 @@ def render_supplychain_tab(result, gradient: str, *, show_header: bool = True) -
         }
         for a in sheet.answers
     ]
-    st.dataframe(pd.DataFrame(rows), hide_index=True, use_container_width=True)
+    st.dataframe(pd.DataFrame(rows), hide_index=True, width='stretch')
 
     detail_answers = [a for a in sheet.answers if a.evidence_links or a.flags or a.rationale]
     if detail_answers:
@@ -1333,7 +1333,7 @@ def render_benchmark_tab(gradient: str, *, show_header: bool = True) -> None:
             "Accuracy": metrics["accuracy"],
             "LLM 호출": metrics["llm_calls"],
         })
-    st.dataframe(pd.DataFrame(metric_rows), hide_index=True, use_container_width=True)
+    st.dataframe(pd.DataFrame(metric_rows), hide_index=True, width='stretch')
 
     fig = go.Figure()
     for metric_name in ("precision", "recall", "f1"):
@@ -1349,7 +1349,7 @@ def render_benchmark_tab(gradient: str, *, show_header: bool = True) -> None:
         margin=dict(t=30, b=20),
         title="검출기별 Precision / Recall / F1",
     )
-    st.plotly_chart(fig, use_container_width=True)
+    st.plotly_chart(fig, width='stretch')
 
     st.markdown("#### 카테고리별 정답률")
     category_names = sorted({case.category for report in reports.values() for case in report.cases})
@@ -1360,7 +1360,7 @@ def render_benchmark_tab(gradient: str, *, show_header: bool = True) -> None:
             breakdown = report.by_category().get(category, {})
             row[_DET_LABELS.get(name, name)] = f"{breakdown.get('correct', 0)}/{breakdown.get('total', 0)}"
         category_rows.append(row)
-    st.dataframe(pd.DataFrame(category_rows), hide_index=True, use_container_width=True)
+    st.dataframe(pd.DataFrame(category_rows), hide_index=True, width='stretch')
     st.caption("backed_modifier(근거 수반 수식어)·future_plan(미래 계획)이 룰 단독의 구조적 오탐 영역 — 하이브리드가 LLM 맥락 판정으로 해소")
 
     st.markdown("#### 오답 상세")
@@ -1377,7 +1377,7 @@ def render_benchmark_tab(gradient: str, *, show_header: bool = True) -> None:
                         "비고": case.detail[:60],
                     }
                     for case in wrong
-                ]), hide_index=True, use_container_width=True)
+                ]), hide_index=True, width='stretch')
             else:
                 st.success("오답 없음")
 
@@ -1435,7 +1435,7 @@ def _render_disclosure_panel(disclosure) -> None:
                     for item in sorted(disclosure.omitted_sensitive, key=lambda item: item.sensitivity, reverse=True)
                 ]),
                 hide_index=True,
-                use_container_width=True,
+                width='stretch',
             )
     st.divider()
 
@@ -1465,11 +1465,11 @@ def _render_issb_gap_panel(gap_report) -> None:
     ])
 
     with climate_tab:
-        st.dataframe(pd.DataFrame(climate_rows), hide_index=True, use_container_width=True)
+        st.dataframe(pd.DataFrame(climate_rows), hide_index=True, width='stretch')
     with defense_tab:
-        st.dataframe(pd.DataFrame(defense_rows), hide_index=True, use_container_width=True)
+        st.dataframe(pd.DataFrame(defense_rows), hide_index=True, width='stretch')
     with general_tab:
-        st.dataframe(pd.DataFrame(general_rows), hide_index=True, use_container_width=True)
+        st.dataframe(pd.DataFrame(general_rows), hide_index=True, width='stretch')
 
     st.divider()
 
@@ -1506,9 +1506,9 @@ def _render_coverage_panel(extraction) -> None:
             height=300,
             margin=dict(t=40, b=20),
         )
-        st.plotly_chart(fig, use_container_width=True)
+        st.plotly_chart(fig, width='stretch')
     with table_col:
-        st.dataframe(coverage_df, hide_index=True, use_container_width=True)
+        st.dataframe(coverage_df, hide_index=True, width='stretch')
 
 
 def _render_provenance_panel(result) -> None:
@@ -1564,7 +1564,7 @@ def _render_provenance_panel(result) -> None:
                         from esgenie.pdf_render import render_page_with_box
 
                         png = render_page_with_box(pdf_path, bbox, page=page, dpi=110)
-                        st.image(png, caption=f"{file_name} · p.{page + 1}", use_container_width=True)
+                        st.image(png, caption=f"{file_name} · p.{page + 1}", width='stretch')
                         rendered = True
                     except Exception as exc:  # noqa: BLE001
                         st.caption(f"원본 렌더 실패: {exc}")
@@ -1590,7 +1590,7 @@ def _render_provenance_panel(result) -> None:
                         )
 
     with st.expander("정량 데이터시트 원본(표) 보기"):
-        st.dataframe([data_point.to_dict() for data_point in v15_trace.data_points], use_container_width=True, hide_index=True)
+        st.dataframe([data_point.to_dict() for data_point in v15_trace.data_points], width='stretch', hide_index=True)
 
 
 def _render_hitl_panel(sentence_trace) -> None:
@@ -1627,7 +1627,7 @@ def _render_hitl_panel(sentence_trace) -> None:
                             ("D3 의미괴리", risk_vector.D3_semantic.score, risk_vector.D3_semantic.detail),
                             ("D5 시계열모순", risk_vector.D5_timeseries.score, risk_vector.D5_timeseries.detail),
                         ]
-                    ]), hide_index=True, use_container_width=True)
+                    ]), hide_index=True, width='stretch')
             with meta_col:
                 st.markdown("**K-ESG 연결**")
                 st.code(sentence.kesg_item_id or "미매핑")
@@ -1661,7 +1661,7 @@ def _render_hitl_panel(sentence_trace) -> None:
         st.dataframe(
             pd.DataFrame([{"문장 ID": sentence_id, "판정": decision} for sentence_id, decision in st.session_state.hitl_decisions.items()]),
             hide_index=True,
-            use_container_width=True,
+            width='stretch',
         )
 
 

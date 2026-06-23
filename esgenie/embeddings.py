@@ -1,7 +1,10 @@
-"""Embedding 및 FAISS 래퍼. sentence-transformers가 없으면 TF-IDF 폴백."""
+"""Embedding 및 FAISS/BM25 래퍼."""
 from __future__ import annotations
 
 import hashlib
+import math
+import re
+from collections import Counter
 from dataclasses import dataclass
 from typing import Any
 
@@ -14,6 +17,7 @@ from .config import SETTINGS
 class IndexedDoc:
     text: str
     meta: dict[str, Any]
+    chunk_id: str = ""
 
 
 # 모듈 수준 캐시 — SentenceTransformer·FAISS는 한 번만 로드
@@ -76,7 +80,7 @@ class VectorIndex:
 
     # ---- public API ---------------------------------------------------
     def build(self, docs: list[IndexedDoc]) -> None:
-        self._docs = docs
+        self._docs = _assign_chunk_ids(docs)
         texts = [d.text for d in docs]
         self._vectors = self._embed(texts)
         if self._faiss is not None and self._vectors.size > 0:
@@ -96,11 +100,104 @@ class VectorIndex:
         return [(self._docs[int(i)], float(sims[int(i)])) for i in order]
 
 
+class BM25Index:
+    """경량 BM25 인덱스."""
+
+    def __init__(self, *, k1: float = 1.5, b: float = 0.75) -> None:
+        self.k1 = k1
+        self.b = b
+        self._docs: list[IndexedDoc] = []
+        self._doc_tokens: list[list[str]] = []
+        self._doc_term_freqs: list[Counter[str]] = []
+        self._idf: dict[str, float] = {}
+        self._avgdl = 0.0
+
+    def build(self, docs: list[IndexedDoc]) -> None:
+        self._docs = _assign_chunk_ids(docs)
+        self._doc_tokens = [_tokenize(doc.text) for doc in self._docs]
+        self._doc_term_freqs = [Counter(tokens) for tokens in self._doc_tokens]
+        self._avgdl = (
+            sum(len(tokens) for tokens in self._doc_tokens) / len(self._doc_tokens)
+            if self._doc_tokens else 0.0
+        )
+        df: Counter[str] = Counter()
+        for tokens in self._doc_tokens:
+            df.update(set(tokens))
+        n_docs = len(self._doc_tokens)
+        self._idf = {
+            term: math.log(1.0 + (n_docs - freq + 0.5) / (freq + 0.5))
+            for term, freq in df.items()
+        }
+
+    def search(self, query: str, k: int = 3) -> list[tuple[IndexedDoc, float]]:
+        if not self._docs:
+            return []
+        q_tokens = _tokenize(query)
+        if not q_tokens:
+            return []
+        scores = np.zeros(len(self._docs), dtype="float32")
+        for idx, tf in enumerate(self._doc_term_freqs):
+            dl = max(1, len(self._doc_tokens[idx]))
+            score = 0.0
+            for term in q_tokens:
+                freq = tf.get(term, 0)
+                if freq == 0:
+                    continue
+                idf = self._idf.get(term, 0.0)
+                denom = freq + self.k1 * (1 - self.b + self.b * dl / max(self._avgdl, 1.0))
+                score += idf * (freq * (self.k1 + 1)) / max(denom, 1e-9)
+            scores[idx] = score
+        order = np.argsort(-scores)[:k]
+        return [
+            (self._docs[int(i)], float(scores[int(i)]))
+            for i in order
+            if scores[int(i)] > 0
+        ]
+
+
 def _tokenize(text: str) -> list[str]:
     """Simple Korean-aware tokenizer: 2-gram characters + space-split words."""
     words = [w for w in text.split() if w]
     bigrams = [text[i:i + 2] for i in range(len(text) - 1) if not text[i:i + 2].isspace()]
     return words + bigrams
+
+
+def _assign_chunk_ids(docs: list[IndexedDoc]) -> list[IndexedDoc]:
+    seen: dict[str, int] = {}
+    out: list[IndexedDoc] = []
+    for idx, doc in enumerate(docs):
+        base = doc.chunk_id or _chunk_id_from_meta(doc.meta, idx)
+        suffix = seen.get(base, 0)
+        seen[base] = suffix + 1
+        chunk_id = base if suffix == 0 else f"{base}_{suffix}"
+        doc.chunk_id = chunk_id
+        doc.meta.setdefault("id", chunk_id)
+        out.append(doc)
+    return out
+
+
+def _chunk_id_from_meta(meta: dict[str, Any], idx: int) -> str:
+    node_id = str(meta.get("node_id") or "").strip()
+    if node_id:
+        return _slug(node_id)
+
+    source = _slug(meta.get("source") or "chunk")
+    corp_code = _slug(meta.get("corp_code") or "")
+    code = _slug(meta.get("code") or meta.get("kesg_code") or "")
+    source_file = _slug(meta.get("source_file") or "")
+    page = _slug(meta.get("page") or meta.get("report_year") or "")
+    parts = [p for p in (source, corp_code, code, source_file, page, str(idx)) if p]
+    return "_".join(parts) or f"chunk_{idx}"
+
+
+def _slug(value: Any) -> str:
+    text = str(value).strip()
+    if not text:
+        return ""
+    text = text.replace("/", "_").replace("\\", "_")
+    text = re.sub(r"[^0-9A-Za-z가-힣._-]+", "_", text)
+    text = re.sub(r"_+", "_", text).strip("._")
+    return text.lower()
 
 
 # ---- 백엔드 가시화 -----------------------------------------------------------

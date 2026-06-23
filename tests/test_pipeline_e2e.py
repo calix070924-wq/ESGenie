@@ -80,7 +80,8 @@ def test_audit_trace_sentence_schema() -> None:
     for s in trace.sentences:
         d = s.to_dict()
         for key in ("sentence_id", "sentence_text", "evidence_node_ids",
-                    "retrieved_chunk_ids", "hitl_status", "timestamps", "model_versions"):
+                    "retrieved_chunk_ids", "retrieval_tier", "retrieval_scores",
+                    "grounding_status", "hitl_status", "timestamps", "model_versions"):
             assert key in d, f"AuditSentence 필드 누락: {key}"
         assert d["hitl_status"] in ("ok", "HITL_REQUIRED")
 

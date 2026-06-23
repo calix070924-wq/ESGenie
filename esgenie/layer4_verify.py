@@ -14,9 +14,11 @@ from typing import Any
 
 from .config import MAX_REFINEMENT_ITER, SETTINGS
 from .dart_client import CompanyReport
-from .layer2_rag import GenerationResult, HybridRAG
+from .layer2_rag import GenerationResult, HybridRAG, _gate_blocking_enabled
 from .layer3_detect import DetectionResult, detect, detect_risk_vector, risk_band
-from .schemas import RefinementAttempt, RiskVector
+from .rag_gates import evaluate_grounding, strip_citation_markers
+from .rag_gates.grounding_gate import grounding_feedback
+from .schemas import GroundingResult, RefinementAttempt, RiskVector
 
 DEFAULT_THRESHOLD = 30.0
 
@@ -48,6 +50,7 @@ class VerificationStep:
     iteration: int
     generation: GenerationResult
     detection: DetectionResult
+    grounding: GroundingResult | None
     instruction: str
 
 
@@ -64,7 +67,7 @@ class VerificationResult:
 
     @property
     def final_text(self) -> str:
-        return self.final.generation.text
+        return strip_citation_markers(self.final.generation.text)
 
     @property
     def final_score(self) -> float:
@@ -158,6 +161,7 @@ def verify_and_refine(
     industry_stats: dict[str, Any] | None = None,  # v10: 업종 벤치마크
     industry_module=None,                # 업종 모듈. pipeline에서 1회 resolve된 동일 객체 전달
     llm_judge: bool = False,             # 하이브리드: LLM 2차 판정 활성화
+    grounding_gate=None,
 ) -> VerificationResult:
     """반복 검증 루프.
 
@@ -169,22 +173,62 @@ def verify_and_refine(
     """
     steps: list[VerificationStep] = []
     refinement_attempts: list[RefinementAttempt] = []
+    grounding_evaluator = grounding_gate or evaluate_grounding
+    # 폴백 백엔드에선 faithfulness 점수도 신뢰 불가 → 수렴 판정에서 grounding을 자문용으로만 사용
+    grounding_blocks = _gate_blocking_enabled()
+
+    ctx = rag.retrieve_for_area(area, k=5)
+    retrieval_decision = ctx.retrieval_decision
+    if retrieval_decision is not None and retrieval_decision.decision != "ACCEPT":
+        gen = rag.generate_section(report, area, demo_greenwash=demo_greenwash, context=ctx)
+        det = _retrieval_blocked_detection(gen)
+        step = VerificationStep(
+            iteration=0,
+            generation=gen,
+            detection=det,
+            grounding=None,
+            instruction="retrieval_gate_blocked",
+        )
+        return VerificationResult(
+            area=area,
+            steps=[step],
+            final=step,
+            iterations_used=0,
+            converged=False,
+            hitl_required=True,
+            refinement_attempts=[],
+            metadata={
+                "threshold": threshold,
+                "max_iter": max_iter,
+                "hitl_status": "HITL_REQUIRED",
+                "grounding_status": "skipped_retrieval_gate",
+                "retrieval_decision": retrieval_decision.to_dict(),
+            },
+        )
 
     # --- 초안 생성 (iteration 0) ---
-    gen = rag.generate_section(report, area, demo_greenwash=demo_greenwash)
-    det = detect(gen.text, report)
+    gen = rag.generate_section(report, area, demo_greenwash=demo_greenwash, context=ctx)
+    clean_text = strip_citation_markers(gen.text)
+    det = detect(clean_text, report)
+    grounding = grounding_evaluator(gen.text, gen.context.as_chunk_dicts())
 
     # 5축 벡터 계산 (evidence_graph 있을 때만)
     rv: RiskVector | None = None
     if evidence_graph is not None:
-        rv = _compute_text_risk_vector(gen.text, evidence_graph, gen, industry_stats,
+        rv = _compute_text_risk_vector(clean_text, evidence_graph, gen, industry_stats,
                                        industry_module=industry_module,
                                        llm_judge=llm_judge)
         det.risk_vector = rv
 
-    steps.append(VerificationStep(iteration=0, generation=gen, detection=det, instruction=""))
+    steps.append(VerificationStep(
+        iteration=0,
+        generation=gen,
+        detection=det,
+        grounding=grounding,
+        instruction="",
+    ))
 
-    converged = det.risk_score <= threshold
+    converged = det.risk_score <= threshold and (grounding.decision == "ACCEPT" or not grounding_blocks)
     i = 0
 
     while not converged and i < max_iter:
@@ -192,14 +236,19 @@ def verify_and_refine(
         before_text = gen.text
 
         # 5축 제약 지시문 조합
-        instruction, applied_axes = _axis_constraint_instruction(rv, det)
+        risk_instruction, applied_axes = _axis_constraint_instruction(rv, det)
+        ground_instruction = grounding_feedback(grounding)
+        instruction = _merge_instructions(risk_instruction, ground_instruction)
+        applied_constraints = applied_axes + grounding.hard_fails
 
         # 재생성
-        gen = rag.generate_section(report, area, extra_instruction=instruction)
-        det = detect(gen.text, report)
+        gen = rag.generate_section(report, area, extra_instruction=instruction, context=ctx)
+        clean_text = strip_citation_markers(gen.text)
+        det = detect(clean_text, report)
+        grounding = grounding_evaluator(gen.text, gen.context.as_chunk_dicts())
 
         if evidence_graph is not None:
-            rv = _compute_text_risk_vector(gen.text, evidence_graph, gen, industry_stats,
+            rv = _compute_text_risk_vector(clean_text, evidence_graph, gen, industry_stats,
                                            industry_module=industry_module,
                                            llm_judge=llm_judge)
             det.risk_vector = rv
@@ -208,12 +257,18 @@ def verify_and_refine(
             attempt_no=i,
             before_text=before_text,
             after_text=gen.text,
-            constraints=applied_axes,
+            constraints=applied_constraints,
             risk_vector=rv,
         ))
-        steps.append(VerificationStep(iteration=i, generation=gen, detection=det, instruction=instruction))
+        steps.append(VerificationStep(
+            iteration=i,
+            generation=gen,
+            detection=det,
+            grounding=grounding,
+            instruction=instruction,
+        ))
 
-        if det.risk_score <= threshold:
+        if det.risk_score <= threshold and (grounding.decision == "ACCEPT" or not grounding_blocks):
             converged = True
             break
 
@@ -231,7 +286,37 @@ def verify_and_refine(
             "threshold": threshold,
             "max_iter":  max_iter,
             "hitl_status": "HITL_REQUIRED" if hitl_required else "ok",
+            "grounding_status": steps[-1].grounding.decision if steps[-1].grounding else "unknown",
+            "faithfulness": steps[-1].grounding.faithfulness if steps[-1].grounding else None,
+            "retrieval_decision": retrieval_decision.to_dict() if retrieval_decision is not None else None,
         },
+    )
+
+
+def _merge_instructions(*blocks: str) -> str:
+    return "\n\n".join(block for block in blocks if block.strip())
+
+
+def _retrieval_blocked_detection(gen: GenerationResult) -> DetectionResult:
+    text = strip_citation_markers(gen.text)
+    return DetectionResult(
+        text=text,
+        sentences=[text] if text else [],
+        numeric_claims=[],
+        claim_checks=[],
+        vague_phrases=[],
+        semantic_similarity=0.0,
+        risk_score=100.0,
+        components={"retrieval_gate": 100.0},
+        highlights=[{
+            "type": "retrieval_gate",
+            "sentence": text,
+            "reason": (
+                gen.context.retrieval_decision.hard_fails
+                if gen.context.retrieval_decision is not None else []
+            ),
+        }],
+        risk_vector=None,
     )
 
 
