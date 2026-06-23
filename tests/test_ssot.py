@@ -217,24 +217,24 @@ class TestOcrRouter:
             route_document("dummy.pdf", preview_text="한국전력 전기요금 kWh")
         assert not est.called
 
-    def test_ocr_preview_returns_empty_without_azure_keys(self):
-        """Azure 키 미설정 시 OCR 에스컬레이션은 빈 문자열(→ 파일명 폴백, 안전)."""
+    def test_ocr_preview_returns_empty_without_upstage_key(self):
+        """Upstage 키 미설정 시 OCR 에스컬레이션은 빈 문자열(→ 파일명 폴백, 안전)."""
         from unittest import mock
         from esgenie.ssot import ocr_router as R
-        with mock.patch.object(R, "_get_azure_docintel_keys", return_value=(None, "")):
+        with mock.patch.object(R, "_get_upstage_key", return_value=None):
             assert R._ocr_preview_first_page("scan.pdf") == ""
 
-    def test_ocr_preview_uses_read_model_one_page(self):
-        """스캔본 에스컬레이션은 prebuilt-read를 1페이지로만 호출한다(과금 최소)."""
+    def test_ocr_preview_uses_upstage_one_page(self):
+        """스캔본 에스컬레이션은 Upstage DP를 1페이지(pages='1')로만 호출한다(과금 최소)."""
         from unittest import mock
         from esgenie.ssot import ocr_router as R
-        with mock.patch.object(R, "_get_azure_docintel_keys", return_value=("k", "ep")), \
-             mock.patch.object(R, "_call_azure_docintel",
+        with mock.patch.object(R, "_get_upstage_key", return_value="k"), \
+             mock.patch.object(R, "_call_upstage_dp",
                                return_value=[{"text": "한국전력 전기요금 kWh"}]) as call:
             txt = R._ocr_preview_first_page("scan.pdf")
         assert "전기요금" in txt
-        assert call.call_args.kwargs["model"] == "prebuilt-read"
         assert call.call_args.kwargs["pages"] == "1"
+        assert call.call_args.kwargs["ocr_mode"] == "force"
 
     def test_quick_preview_escalates_when_no_embedded_text(self, tmp_path):
         """임베디드 텍스트 없음(스캔본/미설치) → _quick_preview가 OCR 에스컬레이션 텍스트 사용."""
@@ -255,7 +255,7 @@ class TestOcrRouter:
         assert d.doc_type == "kepco_bill"
 
     def test_structured_mock_without_keys(self):
-        """CLOVA 키 없음 → mock 추출이 동작하고 단위 있는 수치를 반환."""
+        """OCR 키 없음 → mock 추출이 동작하고 단위 있는 수치를 반환."""
         ext = extract_structured("한전고지서.pdf", doc_type="kepco_bill")
         assert ext.metrics
         assert ext.router_meta.get("mock") or any(m.value for m in ext.metrics)

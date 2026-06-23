@@ -1,12 +1,12 @@
 # -*- coding: utf-8 -*-
 """verify_routing_live.py — 라우팅 패치 A·B Mac 라이브 재검증.
 
-샌드박스는 Azure 망차단이라 A의 OCR 호출이 빈 결과(→파일명 폴백)로 보일 수 있다.
-Mac(.env의 AZURE_DOC_INTEL_* 키 유효)에서 실행하면 두 패치가 라이브로 닫힌다:
+샌드박스는 Upstage 망차단이라 A의 OCR 호출이 빈 결과(→파일명 폴백)로 보일 수 있다.
+Mac(.env의 UPSTAGE_API_KEY 유효)에서 실행하면 두 패치가 라이브로 닫힌다:
 
   [B] 정형 문서 route_document이 layout_features(table_area_ratio)를 자동 주입해
       키워드가 약해도 표구조로 정형 승격되는지.
-  [A] 스캔본(텍스트레이어 없는) PDF도 Azure read 1p 에스컬레이션으로 본문 키워드를
+  [A] 스캔본(텍스트레이어 없는) PDF도 Upstage DP 1p 에스컬레이션으로 본문 키워드를
       확보해 파일명이 아닌 OCR 텍스트로 정형 라우팅되는지.
 
 사용:
@@ -30,9 +30,8 @@ DEFAULT_STRUCTURED = [
 ]
 
 
-def _azure_ready() -> bool:
-    key, ep = R._get_azure_docintel_keys()
-    return bool(key and ep)
+def _upstage_ready() -> bool:
+    return bool(R._get_upstage_key())
 
 
 def _make_scanned_copy(src: Path, dst: Path) -> bool:
@@ -86,7 +85,7 @@ def check_a(src: Path) -> None:
     preview = R._quick_preview(str(scanned))
     used_ocr = bool(preview.strip()) and preview.strip() != scanned.stem
     print(f"  _quick_preview 길이={len(preview)} 앞60자={preview[:60]!r}")
-    print(f"  → OCR 에스컬레이션 사용? {'예 ✅' if used_ocr else '아니오 ⚠️ (파일명 폴백 — Azure 키/망 확인)'}")
+    print(f"  → OCR 에스컬레이션 사용? {'예 ✅' if used_ocr else '아니오 ⚠️ (파일명 폴백 — Upstage 키/망 확인)'}")
 
     d = R.route_document(str(scanned))
     ok = d.channel is R.DocChannel.STRUCTURED
@@ -97,11 +96,11 @@ def check_a(src: Path) -> None:
 def main() -> None:
     args = [Path(a) for a in sys.argv[1:]]
     pdfs = args or DEFAULT_STRUCTURED
-    ready = _azure_ready()
-    print("Azure DocIntel 키 감지:", "있음 ✅" if ready else "없음 ⚠️ (에스컬레이션은 파일명 폴백)")
+    ready = _upstage_ready()
+    print("Upstage API 키 감지:", "있음 ✅" if ready else "없음 ⚠️ (에스컬레이션은 파일명 폴백)")
     check_b(pdfs)
     check_a(pdfs[0])
-    print("\n[참고] 샌드박스는 cognitiveservices egress 차단이라 A의 Azure 호출이 빈 결과일 수 있음.")
+    print("\n[참고] 샌드박스는 api.upstage.ai egress 차단이라 A의 Upstage 호출이 빈 결과일 수 있음.")
     print("       Mac(키 유효)에서는 _quick_preview가 OCR 본문을 반환하고 스캔본이 정형으로 떠야 정상.")
 
 

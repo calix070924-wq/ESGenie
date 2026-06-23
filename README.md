@@ -196,14 +196,15 @@ python -m esgenie.benchmark --detectors rule hybrid
 
 | 채널 | 대상 문서 | 처리 방식 |
 |------|----------|----------|
-| 정형 (Structured) | 전기요금·가스·수도 고지서, 폐기물 대장, 연료 영수증 | **Azure AI Document Intelligence**(`prebuilt-read`, 한국어·표·좌표) → `gpt-4.1-mini`(Azure) 단위 정규화·K-ESG 코드 추정. 키 없으면 pymupdf+정규식(디지털 PDF) → mock 폴백 |
-| 비정형 (Unstructured) | 안전보건위원회 회의록, 비상대응 매뉴얼, 사내 규정집 | VLM(`gpt-4.1-mini` via Azure) → 정성 텍스트 추출 |
+| 정형 (Structured) | 전기요금·가스·수도 고지서, 폐기물 대장, 연료 영수증 | **Upstage Document Parse**(`document-parse`, 한국어·표(HTML 복원)·좌표) → `gpt-4.1-mini`(Azure OpenAI) 단위 정규화·K-ESG 코드 추정. 키 없으면 pymupdf+정규식(디지털 PDF) → mock 폴백 |
+| 비정형 (Unstructured) | 안전보건위원회 회의록, 비상대응 매뉴얼, 사내 규정집 | VLM(`gpt-4.1-mini` via Azure OpenAI) → 정성 텍스트 추출. 스캔본은 Upstage DP로 OCR 텍스트화 후 동일 경로 |
 
-> 2026-06-13 OCR 스택 Azure 이관: 정형=Azure Document Intelligence, 비정형=gpt-4.1-mini(Anthropic 경로 제거).
+> 2026-06-22 OCR 스택 교체: 정형 OCR을 Azure Document Intelligence → **Upstage Document Parse**로 이관(Azure/CLOVA 경로 완전 제거). 판정·정규화 LLM은 gpt-4.1-mini(Azure OpenAI) 유지.
 
 - API 키 없이도 **mock fallback**으로 전 채널 동작 보장
 - OCR 수치는 DART와 cross_check 엣지로 연결 → D1 교차검증 자동화
-- OCR 토큰의 polygon 좌표를 [0,1] 정규화해 저장 → 감사 추적의 **bbox 오버레이**(원본 PDF 위 위치 표시) 재료
+- Upstage 좌표(이미 [0,1] 정규화)를 외접 bbox로 저장 → 감사 추적의 **bbox 오버레이**(원본 PDF 위 위치 표시) 재료
+- 라이브 검증: `python -m scripts.verify_upstage_live` (Mac, `UPSTAGE_API_KEY` 필요)
 - 정성 조항(TextNode)은 P축 규정 검증과 L2 RAG 인덱스에 공유
 
 ---
@@ -222,8 +223,7 @@ OPENAI_API_KEY=           # LLM 1순위 (Azure Foundry 키도 여기에) — 없
 AZURE_OPENAI_ENDPOINT=    # Azure OpenAI(Foundry) 엔드포인트 — gpt-4.1-mini 판정/생성/OCR 후처리
 ANTHROPIC_API_KEY=        # LLM 폴백 (선택)
 DART_API_KEY=             # 실시간 DART 조회 (없으면 샘플 데이터)
-AZURE_DOC_INTEL_ENDPOINT= # 정형 증빙 OCR — Azure Document Intelligence (없으면 pymupdf → mock)
-AZURE_DOC_INTEL_KEY=
+UPSTAGE_API_KEY=          # 정형 증빙 OCR — Upstage Document Parse (없으면 pymupdf → mock)
 OPENAI_MODEL=gpt-4.1-mini
 EMBED_MODEL=paraphrase-multilingual-MiniLM-L12-v2
 ```
@@ -284,7 +284,7 @@ API 키 없이도 전체 파이프라인이 동작한다.
 | 키 미설정 시 | 동작 |
 |------------|------|
 | `OPENAI_API_KEY` | 템플릿 기반 Mock LLM 활성화 |
-| `AZURE_DOC_INTEL_*` | pymupdf+정규식(디지털 PDF) → kepco_bill·gas_bill·waste_ledger 샘플 데이터 폴백 |
+| `UPSTAGE_API_KEY` | pymupdf+정규식(디지털 PDF) → kepco_bill·gas_bill·waste_ledger 샘플 데이터 폴백 |
 | `DART_API_KEY` | 로컬 샘플 DART JSON 사용 (삼성·현대차·POSCO) |
 
 ```bash
@@ -324,7 +324,7 @@ ESGenie/
 │   ├── doctor.py                       # 데모 전 환경 사전점검 (--smoke)
 │   ├── ssot/                           # SSOT/OCR 확장 (구 v15_scaffold/esgenie_v15)
 │   │   ├── evidence_graph.py           # L0: SSOT 통합 그래프 (DART + OCR)
-│   │   ├── ocr_router.py               # OCR 듀얼 채널 (Azure Doc Intelligence + VLM, mock 폴백)
+│   │   ├── ocr_router.py               # OCR 듀얼 채널 (Upstage Document Parse + VLM, mock 폴백)
 │   │   ├── ssot_pipeline.py            # L1/L2 SSOT 브리지
 │   │   ├── detector_5axis.py           # L3: D1 증빙 강화 + P축 규정 검증
 │   │   ├── prompts.py                  # LLM 프롬프트 전략

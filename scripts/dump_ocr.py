@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 """
-dump_ocr.py — 특정 증빙에 대한 Azure OCR '원본'을 그대로 까본다.
+dump_ocr.py — 특정 증빙에 대한 Upstage DP OCR '원본'을 그대로 까본다.
 
 OCR 엔진을 바꿀지 판단하려면 추측이 아니라 실제 추출물을 봐야 한다.
 이 스크립트는 ① 라우팅 ② raw 텍스트(글자 인식 결과) ③ 정규화된 metric(코드/값/단위/bbox)
@@ -36,7 +36,7 @@ def main():
 
     ext = ocr_router.extract_document(target, dec)
     meta = ext.router_meta or {}
-    print(f"엔진  : {meta.get('engine')}   azure_error={meta.get('azure_error')}")
+    print(f"엔진  : {meta.get('engine')}   upstage_error={meta.get('upstage_error')}")
     print("=" * 78)
 
     raw = getattr(ext, "raw_text", "") or ""
@@ -45,7 +45,7 @@ def main():
     print(raw[:2500])
     print("-" * 78)
 
-    # 비율(%) 출현 위치 — Azure가 '29.3 %'를 글자로 잡았는지 직접 확인
+    # 비율(%) 출현 위치 — OCR이 '29.3 %'를 글자로 잡았는지 직접 확인
     hits = list(re.finditer(r"(\d{1,3}(?:\.\d+)?)\s*%", raw))
     print(f"\n[%] 패턴 출현 {len(hits)}건:")
     for h in hits:
@@ -58,7 +58,7 @@ def main():
               f"hint={m.metric_hint!r} bbox={'Y' if m.bbox else '-'}")
 
     print("\n판정 가이드:")
-    print("  · RAW/[%]에 '29.3 %'가 보이면 → Azure OCR 정상. 문제는 후처리(엔진 교체 불필요).")
+    print("  · RAW/[%]에 '29.3 %'가 보이면 → Upstage OCR 정상. 문제는 후처리(엔진 교체 불필요).")
     print("  · '29.3'이 깨졌거나(28.3 등) 한글이 망가졌으면 → OCR 인식 품질 이슈.")
 
 

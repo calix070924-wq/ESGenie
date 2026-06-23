@@ -119,14 +119,14 @@ def _render_sidebar() -> None:
         dart_ok = bool(os.getenv("DART_API_KEY"))
         openai_ok = bool(os.getenv("OPENAI_API_KEY"))
         anthropic_ok = bool(os.getenv("ANTHROPIC_API_KEY"))
-        azure_ocr_ok = bool(os.getenv("AZURE_DOC_INTEL_ENDPOINT")) and bool(os.getenv("AZURE_DOC_INTEL_KEY"))
+        upstage_ocr_ok = bool(os.getenv("UPSTAGE_API_KEY"))
 
         st.markdown("#### 연결 상태")
         st.markdown(
             _service_chip("DART", dart_ok)
             + _service_chip("OpenAI", openai_ok)
             + _service_chip("Anthropic", anthropic_ok)
-            + _service_chip("Azure OCR", azure_ocr_ok),
+            + _service_chip("Upstage OCR", upstage_ocr_ok),
             unsafe_allow_html=True,
         )
 

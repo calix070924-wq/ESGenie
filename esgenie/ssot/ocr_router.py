@@ -18,6 +18,7 @@ from __future__ import annotations
 import re
 from dataclasses import dataclass, field, asdict
 from enum import Enum
+from html.parser import HTMLParser
 from pathlib import Path
 from typing import Any
 
@@ -204,7 +205,7 @@ def extract_document(file_path: str, decision: RouteDecision | None = None) -> O
         ext = extract_structured(file_path, doc_type=decision.doc_type)
     else:
         ext = extract_unstructured(file_path, doc_type=decision.doc_type)
-    # 채널 추출기가 기록한 router_meta(engine/azure_error 등)를 보존하고 라우팅 정보만 병합
+    # 채널 추출기가 기록한 router_meta(engine/upstage_error 등)를 보존하고 라우팅 정보만 병합
     ext.router_meta.update({
         "route_confidence": decision.confidence,
         "matched_keywords": decision.matched_keywords,
@@ -220,9 +221,14 @@ def _backfill_kesg_codes(ext: OcrExtraction) -> None:
 
     하이브리드 1단계(결정적 사전)다. 사전이 못 잡으면 코드를 비워 두어 상위 LLM
     폴백/HITL이 처리하게 한다. fuzzy로만 걸린 건 confidence를 낮춰 검증 큐로 보낸다.
+
+    중복 가드: 이미 다른 metric이 점유한 코드(템플릿/본문확정 등 권위 있는 산출물)는
+    backfill이 다시 붙이지 않는다. 예) 보조수치 '지정폐기물'(template code=None)이
+    E-6-1로 해소돼 본문확정 18.4t와 1000× 어긋난 유령 중복노드를 만드는 사례 차단.
     """
     from ..knowledge.kesg_items import resolve_kesg_code
 
+    taken_codes = {m.kesg_code_guess for m in ext.metrics if m.kesg_code_guess}
     resolved: list[dict[str, Any]] = []
     for m in ext.metrics:
         if m.kesg_code_guess:
@@ -230,7 +236,10 @@ def _backfill_kesg_codes(ext: OcrExtraction) -> None:
         code, score, method = resolve_kesg_code(m.metric_hint)
         if not code:
             continue
+        if code in taken_codes:
+            continue  # 이미 점유된 코드 → 중복노드 방지(권위 산출물 우선)
         m.kesg_code_guess = code
+        taken_codes.add(code)
         if method == "fuzzy":
             m.confidence = min(m.confidence, 0.5)  # 불확실 → HITL 검증 큐
         resolved.append({"metric_hint": m.metric_hint, "code": code,
@@ -267,57 +276,32 @@ def tag_rba_codes(ext: OcrExtraction) -> None:
 # ====================================================================
 
 def extract_structured(file_path: str, *, doc_type: str) -> OcrExtraction:
-    """정형 문서 채널 — OCR 엔진(우선순위) + 템플릿 매칭 + LLM 후처리.
+    """정형 문서 채널 — Upstage Document Parse + 템플릿 매칭 + LLM 후처리.
 
     엔진 우선순위:
-      1) Azure AI Document Intelligence (AZURE_DOC_INTEL_*) — 한국어·표·좌표
-      2) CLOVA OCR (CLOVA_OCR_*) — 레거시 경로
-      3) pymupdf + 정규식 (키 불필요) — 디지털 PDF
-      4) mock (데모)
+      1) Upstage Document Parse (UPSTAGE_API_KEY) — 한국어·표(HTML 복원)·좌표
+      2) pymupdf + 정규식 (키 불필요) — 디지털 PDF
+      3) mock (데모)
     공통 후처리:
       · doc_type 템플릿/키워드로 라벨↔값 1차 추출
-      · LLM(gpt-4.1-mini via Azure) 단위 정규화 + K-ESG 코드 추정
+      · LLM(gpt-4.1-mini via Azure OpenAI) 단위 정규화 + K-ESG 코드 추정
     """
-    az_key, az_ep = _get_azure_docintel_keys()
-    upstage_key = _get_upstage_key()
-    clova_key, clova_url = _get_clova_keys()
-
-    if az_key and az_ep:
+    if _get_upstage_key():
         try:
-            payload = _call_azure_docintel_payload(
-                file_path,
-                model="prebuilt-layout",
-            )
+            payload = _call_upstage_dp_payload(file_path, ocr_mode="force")
             return _tokens_to_extraction(
                 payload["tokens"],
                 doc_type=doc_type,
                 file_path=file_path,
-                engine="azure_docintel",
+                engine="upstage_dp",
                 tables=payload.get("tables") or [],
-                engine_meta={"azure_docintel_model": "prebuilt-layout"},
+                engine_meta={"upstage_model": "document-parse"},
             )
         except Exception as exc:
-            # Azure 실패 → 디지털 PDF 폴백 (데모 안정성)
-            ext = _extract_structured_no_llm(file_path, doc_type=doc_type)
-            ext.router_meta["azure_error"] = str(exc)
-            return ext
-
-    if upstage_key:
-        try:
-            tokens = _call_upstage_dp(file_path)
-            return _tokens_to_extraction(
-                tokens, doc_type=doc_type, file_path=file_path, engine="upstage_dp"
-            )
-        except Exception as exc:
+            # Upstage 실패 → 디지털 PDF 폴백 (데모 안정성)
             ext = _extract_structured_no_llm(file_path, doc_type=doc_type)
             ext.router_meta["upstage_error"] = str(exc)
             return ext
-
-    if clova_key:
-        tokens = _call_clova_ocr(file_path, api_url=clova_url, secret_key=clova_key)
-        return _tokens_to_extraction(
-            tokens, doc_type=doc_type, file_path=file_path, engine="clova"
-        )
 
     # OCR 키 없음 → pymupdf + 정규식, 스캔본이면 VLM 에스컬레이션
     return _extract_structured_no_llm(file_path, doc_type=doc_type)
@@ -541,228 +525,231 @@ def _pin_totals_from_raw(
 # ---- 정형 채널 내부 헬퍼 ------------------------------------------------------
 
 def _get_upstage_key() -> str | None:
-    """Upstage Document Parse API 키 조회."""
+    """Upstage API 키 조회 (UPSTAGE_API_KEY)."""
     import os
     return os.getenv("UPSTAGE_API_KEY") or None
 
 
-def _call_upstage_dp(file_path: str) -> list[dict[str, Any]]:
-    """Upstage Document Parse API 호출 → [{text, html, category, page}] 반환.
+# Upstage Document Parse 엔드포인트 (환경변수로 오버라이드 가능)
+_UPSTAGE_DP_DEFAULT_URL = "https://api.upstage.ai/v1/document-digitization"
 
-    표(category=table)는 html 키에 HTML 원본 보존.
-    텍스트(paragraph 등)는 text 키에 평문 저장.
+
+def _upstage_dp_url() -> str:
+    import os
+    return os.getenv("UPSTAGE_DP_URL", _UPSTAGE_DP_DEFAULT_URL)
+
+
+def _norm_bbox_from_points(points: list[dict[str, Any]] | None) -> list[float] | None:
+    """Upstage coordinates(정규화 0~1 꼭짓점 리스트) → [x0,y0,x1,y1] bbox.
+
+    points = [{"x":0.07,"y":0.15}, {"x":..}, {"x":..}, {"x":..}] (네 꼭짓점).
+    Upstage는 이미 페이지 기준 0~1로 정규화된 좌표를 준다 → 외접 사각형만 취한다.
     """
-    import requests as _requests
+    pts = points or []
+    xs = [float(pt["x"]) for pt in pts if isinstance(pt, dict) and pt.get("x") is not None]
+    ys = [float(pt["y"]) for pt in pts if isinstance(pt, dict) and pt.get("y") is not None]
+    if not xs or not ys:
+        return None
+    clamp = lambda v: max(0.0, min(1.0, v))
+    return [clamp(min(xs)), clamp(min(ys)), clamp(max(xs)), clamp(max(ys))]
 
+
+def _slice_first_page_pdf(file_path: str) -> bytes | None:
+    """PDF 1페이지만 떼어 bytes 반환 (라우팅 프리뷰 과금 최소화).
+
+    Upstage DP는 Azure 같은 `pages` 파라미터가 없어, 1페이지만 보내려면 문서를 직접
+    잘라야 한다. fitz(pymupdf)로 첫 장만 새 PDF로 만든다.
+    비PDF·단일페이지·fitz 미설치·실패 시 None → 호출부가 전체 파일을 전송.
+    """
+    p = Path(file_path)
+    if p.suffix.lower() != ".pdf":
+        return None
+    try:
+        import fitz  # pymupdf
+        src = fitz.open(str(p))
+        if src.page_count <= 1:
+            return None
+        out = fitz.open()
+        out.insert_pdf(src, from_page=0, to_page=0)
+        return out.tobytes()
+    except Exception:
+        return None
+
+
+def _call_upstage_dp(
+    file_path: str, *, ocr_mode: str = "force", pages: str | None = None
+) -> list[dict[str, Any]]:
+    """Upstage Document Parse 호출 → 요소 단위 토큰 [{text, bbox, page}]."""
+    return _call_upstage_dp_payload(file_path, ocr_mode=ocr_mode, pages=pages)["tokens"]
+
+
+def _call_upstage_dp_payload(
+    file_path: str,
+    *,
+    ocr_mode: str = "force",
+    pages: str | None = None,
+) -> dict[str, Any]:
+    """Upstage Document Parse REST 호출 → 토큰 + 표(HTML 복원) 메타데이터.
+
+    POST multipart/form-data:
+      files: document=<파일 bytes>
+      data : model=document-parse, ocr=force|auto, output_formats=['html','text'],
+             coordinates=true, base64_encoding=[]
+    응답 JSON: {content, elements:[{id,category,content:{html,text},page,coordinates}], usage}
+      · 텍스트 토큰: 모든 요소의 content.text + coordinates(외접 bbox) + page(0-기준 변환)
+      · 표: category=='table' 요소의 content.html을 셀 그리드로 파싱 → ExtractedTable
+    ocr_mode 'force'는 텍스트 레이어 유무와 무관하게 항상 OCR(정확도 우선, 스캔본 안전).
+    pages="1"이면 PDF 첫 장만 잘라 전송(라우팅 프리뷰 비용 최소화).
+    """
+    import requests
     key = _get_upstage_key()
     if not key:
         raise RuntimeError("UPSTAGE_API_KEY 미설정")
 
-    url = "https://api.upstage.ai/v1/document-digitization"
+    doc_bytes: bytes | None = None
+    if pages == "1":
+        doc_bytes = _slice_first_page_pdf(file_path)
+    if doc_bytes is None:
+        doc_bytes = Path(file_path).read_bytes()
+
     headers = {"Authorization": f"Bearer {key}"}
-    with open(file_path, "rb") as f:
-        files = {"document": (Path(file_path).name, f)}
-        data = {"ocr": "force"}
-        resp = _requests.post(url, headers=headers, files=files, data=data, timeout=120)
+    data = {
+        "model": "document-parse",
+        "ocr": ocr_mode,
+        "output_formats": "['html', 'text']",
+        "coordinates": "true",
+        "base64_encoding": "[]",
+    }
+    files = {"document": (Path(file_path).name, doc_bytes)}
+
+    resp = requests.post(_upstage_dp_url(), headers=headers, data=data, files=files, timeout=120)
     resp.raise_for_status()
     body = resp.json()
+    elements = body.get("elements", []) or []
 
     tokens: list[dict[str, Any]] = []
-    for elem in body.get("elements", []):
-        category = elem.get("category", "")
-        page = int(elem.get("page", 1)) - 1
-        content = elem.get("content", {})
-        if category == "table":
-            html = content.get("html", "")
-            tokens.append({
-                "text": "",
-                "html": html,
-                "category": "table",
-                "page": page,
-            })
-        else:
-            text = content.get("text", "")
-            tokens.append({
-                "text": text,
-                "html": "",
-                "category": category,
-                "page": page,
-            })
-    return tokens
-
-
-def _get_azure_docintel_keys() -> tuple[str | None, str]:
-    """Azure Document Intelligence 키와 엔드포인트 조회."""
-    import os
-    key = os.getenv("AZURE_DOC_INTEL_KEY", "")
-    endpoint = os.getenv("AZURE_DOC_INTEL_ENDPOINT", "").rstrip("/")
-    return (key or None), endpoint
-
-
-def _norm_bbox_from_polygon(
-    polygon: list[float] | None,
-    *,
-    width: float | None,
-    height: float | None,
-) -> list[float] | None:
-    """polygon = [x1,y1,...] 를 [x0,y0,x1,y1] 정규화 bbox로 변환."""
-    poly = polygon or []
-    if len(poly) < 8 or not width or not height:
-        return None
-    xs = [float(poly[i]) for i in range(0, len(poly), 2)]
-    ys = [float(poly[i]) for i in range(1, len(poly), 2)]
-    return [
-        max(0.0, min(1.0, min(xs) / width)),
-        max(0.0, min(1.0, min(ys) / height)),
-        max(0.0, min(1.0, max(xs) / width)),
-        max(0.0, min(1.0, max(ys) / height)),
-    ]
-
-
-def _call_azure_docintel(
-    file_path: str, *, model: str = "prebuilt-read", pages: str | None = None
-) -> list[dict[str, Any]]:
-    """Azure AI Document Intelligence REST 호출 → 줄 단위 토큰 [{text, bbox}].
-
-    pages: "1" / "1-2" 형식 페이지 범위(라우팅용 1p 등 과금 최소화). None이면 전체.
-    """
-    return _call_azure_docintel_payload(file_path, model=model, pages=pages)["tokens"]
-
-
-def _call_azure_docintel_payload(
-    file_path: str,
-    *,
-    model: str = "prebuilt-read",
-    pages: str | None = None,
-) -> dict[str, Any]:
-    """Azure AI Document Intelligence REST 호출 → 토큰 + 표 메타데이터.
-
-    v4.0(2024-11-30) Analyze API: POST로 분석 시작 → Operation-Location 폴링 →
-    analyzeResult.pages[].lines[]에서 content + polygon 추출.
-    polygon = [x1,y1,x2,y2,x3,y3,x4,y4] → bbox = [x1,y1,x3,y3].
-    """
-    import requests, time
-    key, endpoint = _get_azure_docintel_keys()
-    if not key or not endpoint:
-        raise RuntimeError("AZURE_DOC_INTEL_ENDPOINT/KEY 미설정")
-
-    api_version = "2024-11-30"
-    url = f"{endpoint}/documentintelligence/documentModels/{model}:analyze?api-version={api_version}"
-    if pages:
-        url += f"&pages={pages}"
-    headers = {"Ocp-Apim-Subscription-Key": key, "Content-Type": "application/octet-stream"}
-    data = Path(file_path).read_bytes()
-
-    resp = requests.post(url, headers=headers, data=data, timeout=60)
-    resp.raise_for_status()
-    op_loc = resp.headers.get("Operation-Location") or resp.headers.get("operation-location")
-    if not op_loc:
-        raise RuntimeError("Operation-Location 헤더 없음")
-
-    body: dict[str, Any] = {}
-    for _ in range(30):
-        time.sleep(2)
-        r = requests.get(op_loc, headers={"Ocp-Apim-Subscription-Key": key}, timeout=30)
-        r.raise_for_status()
-        body = r.json()
-        status = body.get("status")
-        if status == "succeeded":
-            break
-        if status == "failed":
-            raise RuntimeError(f"Azure DocIntel 분석 실패: {body.get('error')}")
-    else:
-        raise RuntimeError("Azure DocIntel 폴링 타임아웃")
-
-    analyze_result = body.get("analyzeResult", {}) or {}
-    page_dims: dict[int, tuple[float | None, float | None]] = {}
-    tokens: list[dict[str, Any]] = []
-    for page in analyze_result.get("pages", []):
-        pw = float(page.get("width") or 0) or None
-        ph = float(page.get("height") or 0) or None
-        pno = int(page.get("pageNumber", 1)) - 1   # 0-기준 인덱스
-        page_dims[pno] = (pw, ph)
-        for line in page.get("lines", []):
-            bbox = _norm_bbox_from_polygon(line.get("polygon"), width=pw, height=ph)
-            tokens.append({"text": line.get("content", ""), "bbox": bbox, "page": pno})
-
     tables: list[ExtractedTable] = []
-    for t_idx, table in enumerate(analyze_result.get("tables", []) or []):
-        cells: list[TableCell] = []
-        page_hint = None
-        for cell in table.get("cells", []) or []:
-            bbox = None
-            regions = cell.get("boundingRegions") or []
-            if regions:
-                region = regions[0]
-                page_hint = int(region.get("pageNumber", 1)) - 1
-                pw, ph = page_dims.get(page_hint, (None, None))
-                bbox = _norm_bbox_from_polygon(region.get("polygon"), width=pw, height=ph)
-            cells.append(TableCell(
-                row_index=int(cell.get("rowIndex", 0)),
-                column_index=int(cell.get("columnIndex", 0)),
-                content=str(cell.get("content", "")),
-                row_span=max(1, int(cell.get("rowSpan", 1) or 1)),
-                column_span=max(1, int(cell.get("columnSpan", 1) or 1)),
-                kind=cell.get("kind"),
+    for el in elements:
+        content = el.get("content") or {}
+        text = str(content.get("text") or "").strip()
+        page0 = int(el.get("page", 1) or 1) - 1   # 1-기준 → 0-기준
+        bbox = _norm_bbox_from_points(el.get("coordinates"))
+        if text:
+            tokens.append({"text": text, "bbox": bbox, "page": page0})
+        if el.get("category") == "table":
+            html = str(content.get("html") or "")
+            table = _parse_html_table(
+                html,
+                table_id=f"upstage_table_{len(tables)}",
+                page=page0,
                 bbox=bbox,
-                page=page_hint,
-                confidence=(
-                    float(cell["confidence"])
-                    if cell.get("confidence") is not None else None
-                ),
-            ))
-        tables.append(ExtractedTable(
-            table_id=f"azure_table_{t_idx}",
-            row_count=int(table.get("rowCount", 0) or 0),
-            column_count=int(table.get("columnCount", 0) or 0),
-            cells=cells,
-            source="azure_docintel",
-            page=page_hint,
-        ))
+            )
+            if table is not None:
+                tables.append(table)
+
     return {"tokens": tokens, "tables": tables}
 
 
-def _get_clova_keys() -> tuple[str | None, str]:
-    """CLOVA OCR API 키와 URL 조회."""
-    import os
-    secret = os.getenv("CLOVA_OCR_SECRET", "")
-    url = os.getenv("CLOVA_OCR_URL", "")
-    return (secret or None), url
+class _HTMLTableParser(HTMLParser):
+    """Upstage 표 요소의 content.html(<table>)을 행×셀 구조로 파싱."""
+
+    def __init__(self) -> None:
+        super().__init__()
+        self.rows: list[list[dict[str, Any]]] = []
+        self._row: list[dict[str, Any]] | None = None
+        self._cell: dict[str, Any] | None = None
+
+    def handle_starttag(self, tag: str, attrs: list[tuple[str, str | None]]) -> None:
+        a = {k: v for k, v in attrs}
+        if tag == "tr":
+            self._row = []
+        elif tag in ("td", "th"):
+            def _span(name: str) -> int:
+                try:
+                    return max(1, int(a.get(name) or 1))
+                except (TypeError, ValueError):
+                    return 1
+            self._cell = {
+                "text": "",
+                "rowspan": _span("rowspan"),
+                "colspan": _span("colspan"),
+                "is_header": tag == "th",
+            }
+
+    def handle_data(self, data: str) -> None:
+        if self._cell is not None:
+            self._cell["text"] += data
+
+    def handle_endtag(self, tag: str) -> None:
+        if tag in ("td", "th") and self._cell is not None:
+            if self._row is None:
+                self._row = []
+            self._row.append(self._cell)
+            self._cell = None
+        elif tag == "tr" and self._row is not None:
+            self.rows.append(self._row)
+            self._row = None
 
 
-def _call_clova_ocr(file_path: str, *, api_url: str, secret_key: str) -> list[dict[str, Any]]:
-    """CLOVA OCR API 호출 → 토큰 리스트 [{text, bbox:[x,y,w,h]}].
+def _parse_html_table(
+    html: str,
+    *,
+    table_id: str,
+    page: int | None,
+    bbox: list[float] | None,
+) -> ExtractedTable | None:
+    """<table> HTML → ExtractedTable. rowspan/colspan을 점유 격자로 풀어 셀 좌표를 부여.
 
-    응답 형태: https://api.ncloud-docs.com/docs/ai-application-service-ocr-general
+    Upstage는 셀별 좌표/confidence를 주지 않으므로 bbox는 표 전체 외접 사각형(전 셀 공유),
+    confidence는 None(게이트 C1/C2 신호는 confidence 부재 시 자동 스킵).
     """
-    import requests, base64, json as _json
+    if not html or "<" not in html:
+        return None
+    parser = _HTMLTableParser()
+    try:
+        parser.feed(html)
+    except Exception:
+        return None
+    if not parser.rows:
+        return None
 
-    p = Path(file_path)
-    ext = p.suffix.lower().lstrip(".")
-    img_b64 = base64.b64encode(p.read_bytes()).decode()
+    occupied: dict[tuple[int, int], bool] = {}
+    cells: list[TableCell] = []
+    max_row = 0
+    max_col = 0
+    for r, row in enumerate(parser.rows):
+        c = 0
+        for raw in row:
+            while occupied.get((r, c)):
+                c += 1
+            rs = int(raw["rowspan"])
+            cs = int(raw["colspan"])
+            cells.append(TableCell(
+                row_index=r,
+                column_index=c,
+                content=raw["text"].strip(),
+                row_span=rs,
+                column_span=cs,
+                kind="columnHeader" if raw["is_header"] and r == 0 else None,
+                bbox=bbox,
+                page=page,
+                confidence=None,
+            ))
+            for dr in range(rs):
+                for dc in range(cs):
+                    occupied[(r + dr, c + dc)] = True
+            max_row = max(max_row, r + rs)
+            max_col = max(max_col, c + cs)
+            c += cs
 
-    payload = {
-        "version": "V2",
-        "requestId": p.stem,
-        "timestamp": 0,
-        "images": [{"format": ext, "name": p.stem, "data": img_b64}],
-    }
-    headers = {"X-OCR-SECRET": secret_key, "Content-Type": "application/json"}
-    resp = requests.post(api_url, headers=headers, data=_json.dumps(payload), timeout=30)
-    resp.raise_for_status()
-    data = resp.json()
-
-    tokens: list[dict[str, Any]] = []
-    for img in data.get("images", []):
-        for field in img.get("fields", []):
-            vertices = field.get("boundingPoly", {}).get("vertices", [])
-            bbox = (
-                [vertices[0]["x"], vertices[0]["y"],
-                 vertices[2]["x"], vertices[2]["y"]]
-                if len(vertices) >= 3 else None
-            )
-            tokens.append({"text": field.get("inferText", ""), "bbox": bbox})
-    return tokens
+    return ExtractedTable(
+        table_id=table_id,
+        row_count=max_row,
+        column_count=max_col,
+        cells=cells,
+        source="upstage_dp",
+        page=page,
+    )
 
 
 _DIGIT_SEP_RE = __import__("re").compile(r"(?<=\d)[,\s]+(?=\d)")
@@ -772,7 +759,7 @@ _NUMBER_RE = __import__("re").compile(r"\d+\.?\d*")
 def _find_number(text: str):
     """텍스트에서 첫 숫자를 추출. 천 단위 콤마·공백 구분자 정규화.
 
-    Azure OCR이 '128, 400'처럼 콤마 뒤 공백을 넣어도 128400으로 합친다.
+    OCR이 '128, 400'처럼 콤마 뒤 공백을 넣어도 128400으로 합친다.
     """
     cleaned = _DIGIT_SEP_RE.sub("", text)
     return _NUMBER_RE.search(cleaned)
@@ -931,12 +918,12 @@ def _parse_normalize_response(data: dict[str, Any]) -> list[ExtractedMetric]:
 
 
 def _extract_structured_gpt_fallback(file_path: str, *, doc_type: str, api_key: str) -> OcrExtraction:
-    """CLOVA 없을 때 pymupdf 텍스트 추출 + GPT-4o 정규화 폴백."""
+    """OCR 키 없을 때 pymupdf 텍스트 추출 + 규칙 정규화 폴백."""
     return _extract_structured_no_llm(file_path, doc_type=doc_type)
 
 
 def _extract_structured_no_llm(file_path: str, *, doc_type: str) -> OcrExtraction:
-    """CLOVA/LLM 없이 pymupdf + 정규식으로 디지털 PDF 처리.
+    """Upstage/LLM 없이 pymupdf + 정규식으로 디지털 PDF 처리.
 
     한전 전기요금·올바로 폐기물 대장 같은 텍스트 임베딩 PDF는 이 경로로 충분.
     스캔 이미지 PDF는 텍스트가 비어 → VLM 채널로 에스컬레이션.
@@ -962,7 +949,7 @@ def _extract_structured_no_llm(file_path: str, *, doc_type: str) -> OcrExtractio
         kv_pairs = _keyword_extract(tokens, doc_type)
 
     metrics = _rule_normalize(kv_pairs, doc_type=doc_type)
-    metrics = _pin_rates_from_raw(metrics, tokens)  # 비율(%) 결정적 고정 (Azure 경로와 동일)
+    metrics = _pin_rates_from_raw(metrics, tokens)  # 비율(%) 결정적 고정 (Upstage 경로와 동일)
     metrics = _pin_totals_from_raw(metrics, tokens, doc_type)  # 대표 사용량·총량 고정
 
     return OcrExtraction(
@@ -971,14 +958,14 @@ def _extract_structured_no_llm(file_path: str, *, doc_type: str) -> OcrExtractio
         doc_type=doc_type,
         metrics=metrics,
         raw_text=raw_text,
-        router_meta={"fallback": "pymupdf+regex", "clova": False},
+        router_meta={"fallback": "pymupdf+regex", "upstage": False},
     )
 
 
 def _pymupdf_line_tokens(file_path: str, max_pages: int = 5) -> list[dict[str, Any]]:
     """pymupdf로 줄 단위 토큰 추출 [{text, bbox(0~1 정규화), page}].
 
-    디지털(텍스트 임베딩) PDF면 Azure 없이도 위치 좌표를 제공 → provenance 박스 가능.
+    디지털(텍스트 임베딩) PDF면 OCR 없이도 위치 좌표를 제공 → provenance 박스 가능.
     스캔본/실패 시 빈 리스트.
     """
     out: list[dict[str, Any]] = []
@@ -1021,7 +1008,7 @@ def _extract_text_pymupdf(file_path: str, max_pages: int = 5) -> str:
 
 
 def _mock_structured(file_path: str, doc_type: str) -> OcrExtraction:
-    """CLOVA OCR 키 없을 때 데모용 Mock 반환."""
+    """OCR 키 없을 때 데모용 Mock 반환."""
     source_file = Path(file_path).name
 
     _MOCK_METRICS: dict[str, list[ExtractedMetric]] = {
@@ -1078,7 +1065,7 @@ def extract_unstructured(file_path: str, *, doc_type: str) -> OcrExtraction:
 
     파이프라인:
       1) 디지털 PDF → pymupdf 텍스트 추출 (정확·저렴)
-      2) 스캔본(임베딩 텍스트 없음) → Azure Document Intelligence로 OCR 텍스트화
+      2) 스캔본(임베딩 텍스트 없음) → Upstage Document Parse로 OCR 텍스트화
       3) 텍스트 → LLM(VLM_EXTRACT_PROMPT)로 metrics + clauses JSON 추출
       텍스트도 키도 없으면 Mock 폴백.
     """
@@ -1089,12 +1076,11 @@ def extract_unstructured(file_path: str, *, doc_type: str) -> OcrExtraction:
     # 1) 디지털 PDF 텍스트
     raw_text = _extract_text_pymupdf(file_path, max_pages=10)
 
-    # 2) 스캔본 → Azure Document Intelligence OCR로 텍스트화
+    # 2) 스캔본 → Upstage Document Parse OCR로 텍스트화
     if not raw_text.strip():
-        az_key, az_ep = _get_azure_docintel_keys()
-        if az_key and az_ep:
+        if _get_upstage_key():
             try:
-                tokens = _call_azure_docintel(file_path)
+                tokens = _call_upstage_dp(file_path, ocr_mode="force")
                 raw_text = "\n".join(t["text"] for t in tokens)
             except Exception:
                 raw_text = ""
@@ -1364,17 +1350,17 @@ def _quick_preview(file_path: str, max_chars: int = 1500) -> str:
             text = doc[0].get_text() if len(doc) > 0 else ""
             if text.strip():
                 return text[:max_chars]
-            # 임베디드 텍스트 없음 = 스캔본 → Azure read 1p OCR 에스컬레이션(정확 라우팅).
+            # 임베디드 텍스트 없음 = 스캔본 → Upstage DP 1p OCR 에스컬레이션(정확 라우팅).
             ocr_text = _ocr_preview_first_page(str(p), max_chars=max_chars)
             if ocr_text.strip():
                 return ocr_text
         except Exception:
-            # pymupdf 미설치/파일 손상 → Azure read 1p로라도 본문 신호 확보 시도.
+            # pymupdf 미설치/파일 손상 → Upstage DP 1p로라도 본문 신호 확보 시도.
             ocr_text = _ocr_preview_first_page(str(p), max_chars=max_chars)
             if ocr_text.strip():
                 return ocr_text
 
-    # 이미지(스캔 jpg/png) → Azure read 1p 시도 후, 실패 시 파일명만 신호로 사용
+    # 이미지(스캔 jpg/png) → Upstage DP 1p 시도 후, 실패 시 파일명만 신호로 사용
     if p.suffix.lower() in (".png", ".jpg", ".jpeg", ".tif", ".tiff"):
         ocr_text = _ocr_preview_first_page(str(p), max_chars=max_chars)
         if ocr_text.strip():
@@ -1383,18 +1369,17 @@ def _quick_preview(file_path: str, max_chars: int = 1500) -> str:
 
 
 def _ocr_preview_first_page(file_path: str, *, max_chars: int = 1500) -> str:
-    """스캔본 라우팅용 — Azure read로 1페이지만 OCR해 본문 텍스트 확보.
+    """스캔본 라우팅용 — Upstage DP로 1페이지만 OCR해 본문 텍스트 확보.
 
     디지털 텍스트가 없는 스캔본은 라우팅이 파일명에만 의존하게 돼 오분류 위험이 크다
-    (정형 고지서가 비정형 VLM으로 새는 등). prebuilt-read(페이지당 과금 최소)로 1p만
-    OCR해 키워드 신호를 살린다. 정확도 우선 정책.
-    Azure 키 미설정·망 차단·실패 시 빈 문자열 → 호출부가 파일명으로 안전 폴백.
+    (정형 고지서가 비정형 VLM으로 새는 등). PDF 첫 장만 잘라(pages="1") 보내 과금을
+    최소화하면서 키워드 신호를 살린다. 정확도 우선 정책.
+    Upstage 키 미설정·망 차단·실패 시 빈 문자열 → 호출부가 파일명으로 안전 폴백.
     """
-    key, endpoint = _get_azure_docintel_keys()
-    if not key or not endpoint:
+    if not _get_upstage_key():
         return ""
     try:
-        tokens = _call_azure_docintel(file_path, model="prebuilt-read", pages="1")
+        tokens = _call_upstage_dp(file_path, ocr_mode="force", pages="1")
         return " ".join(t.get("text", "") for t in tokens)[:max_chars]
     except Exception:
         return ""

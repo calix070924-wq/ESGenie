@@ -1585,7 +1585,7 @@ def _render_provenance_panel(result) -> None:
                             "<div style='width:100%;height:110px;background:#f4f4f2;"
                             "border:1px dashed #bbb;border-radius:6px;display:flex;"
                             "align-items:center;justify-content:center;color:#999;font-size:13px'>"
-                            "좌표 미연결 — OCR 증빙(Azure Doc Intelligence) 경로 시 bbox 표시</div>",
+                            "좌표 미연결 — OCR 증빙(Upstage Document Parse) 경로 시 bbox 표시</div>",
                             unsafe_allow_html=True,
                         )
 

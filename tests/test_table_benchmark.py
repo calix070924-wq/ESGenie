@@ -17,7 +17,7 @@ from esgenie.ssot.table_benchmark import (
 
 def _table() -> ExtractedTable:
     return ExtractedTable(
-        table_id="azure_table_0",
+        table_id="upstage_table_0",
         row_count=4,
         column_count=2,
         page=0,
@@ -36,7 +36,7 @@ def _table() -> ExtractedTable:
 
 
 def test_make_case_id():
-    assert make_case_id("01_전기요금청구서_2026-05.pdf", 0, "azure_table_0").startswith("01_전기요금청구서_2026_05__p1")
+    assert make_case_id("01_전기요금청구서_2026-05.pdf", 0, "upstage_table_0").startswith("01_전기요금청구서_2026_05__p1")
 
 
 def test_extract_table_cases_writes_snapshot(tmp_path: Path):
@@ -51,7 +51,7 @@ def test_extract_table_cases_writes_snapshot(tmp_path: Path):
                 "resolved_tier": 1,
                 "needs_semantic_check": False,
                 "tables": [{
-                    "table_id": "azure_table_0",
+                    "table_id": "upstage_table_0",
                     "decision": "ACCEPT",
                     "hard_fail_count": 0,
                     "soft_flag_count": 1,
@@ -73,7 +73,7 @@ def test_extract_table_cases_writes_snapshot(tmp_path: Path):
     snap = tmp_path / "raw" / f"{cases[0]['id']}.json"
     assert snap.exists()
     payload = json.loads(snap.read_text(encoding="utf-8"))
-    assert payload["table"]["table_id"] == "azure_table_0"
+    assert payload["table"]["table_id"] == "upstage_table_0"
 
 
 def test_write_cases_jsonl_and_load_roundtrip(tmp_path: Path):
