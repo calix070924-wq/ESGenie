@@ -317,7 +317,16 @@ def _tokens_to_extraction(
     engine_meta: dict[str, Any] | None = None,
 ) -> OcrExtraction:
     """OCR 토큰[{text,bbox}] → 템플릿/키워드 추출 → LLM/규칙 정규화 → OcrExtraction."""
-    raw_text = " ".join(t["text"] for t in tokens)
+    if engine == "upstage_dp":
+        raw_parts: list[str] = []
+        for t in tokens:
+            if t.get("html"):
+                raw_parts.append(t["html"])
+            elif t.get("text"):
+                raw_parts.append(t["text"])
+        raw_text = "\n".join(raw_parts)
+    else:
+        raw_text = " ".join(t["text"] for t in tokens)
     openai_key = _get_openai_key()
 
     try:
