@@ -150,12 +150,19 @@ _SEARCH_TERMS: dict[str, tuple[str, ...]] = {
               "Scope1+2", "직접배출", "간접배출", "탄소배출량"),
     "E-3-2": ("Scope 3", "기타 간접배출", "가치사슬 배출", "scope3"),
     "E-3-3": ("온실가스 검증", "배출량 검증", "제3자 검증", "verification"),
-    "E-4-1": ("에너지 사용량", "에너지사용", "전력 사용량", "TJ", "kWh", "전력량"),
+    "E-4-1": ("에너지 사용량", "에너지사용", "에너지소비량", "전력 사용량", "전력사용량",
+              "사용전력량", "사용전력", "전기 사용량", "전기사용량", "전기소비량",
+              "전력소비량", "소비전력", "가스 사용량", "가스사용량", "도시가스 사용량",
+              "TJ", "kWh", "MWh", "MJ", "전력량"),
     "E-4-2": ("재생에너지", "RE100", "신재생", "태양광", "재생에너지 비율"),
-    "E-5-1": ("취수량", "용수 사용량", "취수", "용수 취수"),
+    "E-5-1": ("취수량", "용수 사용량", "용수사용량", "취수", "용수 취수", "급수량",
+              "수도 사용량", "상수도 사용량"),
     "E-5-2": ("재사용 용수", "용수 재사용", "공정 내 재사용", "용수 재이용"),
-    "E-6-1": ("폐기물 배출량", "사업장폐기물", "지정폐기물", "슬래그", "위탁처리"),
-    "E-6-2": ("폐기물 재활용", "재활용 비율", "재활용률", "자원순환"),
+    "E-6-1": ("폐기물 배출량", "폐기물 처리량", "폐기물처리량", "폐기물량",
+              "총 위탁량", "총위탁량", "위탁수량", "위탁처리량", "사업장폐기물",
+              "지정폐기물", "슬래그", "위탁처리"),
+    "E-6-2": ("폐기물 재활용", "재활용 비율", "재활용률", "순환이용률",
+              "재활용율", "자원순환"),
     "E-7-1": ("대기오염물질", "NOx", "SOx", "비산먼지", "질소산화물", "황산화물"),
     "E-7-2": ("수질오염물질", "BOD", "COD", "SS", "부유물질"),
     "E-8-1": ("환경 법규 위반", "환경 과징금", "환경 행정처분", "환경규제 위반"),
@@ -315,3 +322,101 @@ def by_code(code: str) -> KESGItem | None:
         if it.code == code:
             return it
     return None
+
+
+# ============================================================================
+# 라벨 → K-ESG 코드 동의어 해소기 (하이브리드 1단계: 결정적 사전 매칭)
+# ============================================================================
+# 회사·파일마다 라벨 표기가 다르다("전력사용량"/"전기소비량"/"사용전력" …).
+# search_terms + name을 단일 진실원천으로 삼아 결정적으로 코드를 부여한다.
+# 사전이 None을 반환한 라벨만 상위(OCR)에서 LLM 폴백으로 넘긴다.
+
+import re as _re
+
+# 정규화 시 제거할 단위/잡음 토큰 (긴 것부터 — 부분제거 사고 방지)
+_UNIT_NOISE_TOKENS: tuple[str, ...] = (
+    "tco2eq", "tco2", "co2eq", "co2", "kwh", "mwh", "gwh",
+    "kg", "tj", "mj", "㎥", "m3", "ton", "톤", "원", "건", "명", "‰", "pct",
+)
+
+
+def _normalize_label(s: str) -> str:
+    """라벨 정규화: 소문자화 → 괄호내용(단위 등) 제거 → 기호/공백 제거 → 단위토큰 제거."""
+    s = (s or "").lower()
+    s = _re.sub(r"\([^)]*\)", " ", s)        # "(kWh)", "(순환이용)" 등 제거
+    s = _re.sub(r"[^0-9a-z가-힣]+", "", s)     # 공백·기호 제거
+    for tok in _UNIT_NOISE_TOKENS:
+        s = s.replace(tok, "")
+    return s
+
+
+def _build_alias_index() -> dict[str, set[str]]:
+    idx: dict[str, set[str]] = {}
+    for it in ALL_ITEMS:
+        for term in (*it.search_terms, it.name):
+            n = _normalize_label(term)
+            if len(n) >= 2:
+                idx.setdefault(n, set()).add(it.code)
+    return idx
+
+
+_ALIAS_INDEX: dict[str, set[str]] = _build_alias_index()
+# 고유(단일 코드) 별칭만 결정적 매칭에 사용 — 모호한 별칭은 제외해 오부여 방지.
+_ALIAS_UNIQUE: dict[str, str] = {
+    n: next(iter(codes)) for n, codes in _ALIAS_INDEX.items() if len(codes) == 1
+}
+
+
+def _bigrams(s: str) -> set[str]:
+    return {s[i:i + 2] for i in range(len(s) - 1)} or ({s} if s else set())
+
+
+def _jaccard(a: str, b: str) -> float:
+    A, B = _bigrams(a), _bigrams(b)
+    if not A or not B:
+        return 0.0
+    return len(A & B) / len(A | B)
+
+
+def resolve_kesg_code(
+    label: str, *, fuzzy_threshold: float = 0.62
+) -> tuple[str | None, float, str]:
+    """라벨 → (K-ESG 코드 | None, 신뢰도, 방법).
+
+    방법: "exact"(완전/부분 일치) · "fuzzy"(char-bigram Jaccard) · "none".
+    결정적 단계(exact)는 동일 입력에 항상 동일 출력 → 시연·감사 재현성 보장.
+    fuzzy는 사전에 없는 변형 보완용이며, 모호하면 None을 돌려 LLM 폴백에 맡긴다.
+    """
+    n = _normalize_label(label)
+    if len(n) < 2:
+        return (None, 0.0, "none")
+
+    # 1) 완전 일치
+    if n in _ALIAS_UNIQUE:
+        return (_ALIAS_UNIQUE[n], 1.0, "exact")
+
+    # 2) 부분 포함: 라벨이 '알려진 별칭'을 통째로 포함할 때(별칭⊆라벨).
+    #    여러 별칭이 걸리면 가장 긴(=가장 구체적인) 별칭을 채택해 오매칭을 막는다.
+    #    라벨⊆별칭 방향은 쓰지 않는다(짧은 라벨이 더 긴 타 코드 별칭에 잘못 빨려감).
+    sub = [(alias, code) for alias, code in _ALIAS_UNIQUE.items()
+           if len(alias) >= 2 and alias in n]
+    if sub:
+        sub.sort(key=lambda x: len(x[0]), reverse=True)
+        top_len = len(sub[0][0])
+        winners = {code for alias, code in sub if len(alias) == top_len}
+        if len(winners) == 1:
+            return (sub[0][1], 0.9, "exact")
+
+    # 3) 퍼지(char-bigram Jaccard) — 모호하지 않을 때만
+    best_code, best_score, second = None, 0.0, 0.0
+    for alias, code in _ALIAS_UNIQUE.items():
+        sc = _jaccard(n, alias)
+        if sc > best_score:
+            best_code, best_score, second = code, sc, best_score
+        elif sc > second:
+            second = sc
+    # 1·2위 격차가 너무 작으면 모호 → 포기
+    if best_code and best_score >= fuzzy_threshold and (best_score - second) >= 0.08:
+        return (best_code, round(best_score, 3), "fuzzy")
+
+    return (None, round(best_score, 3), "none")

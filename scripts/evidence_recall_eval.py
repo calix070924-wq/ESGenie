@@ -1,7 +1,7 @@
 """증빙-그라운딩 재현율(recall) 실측 — held_out_eval '증빙 트랙'.
 
 held_out_eval.py(텍스트분류 CI)가 측정하지 못하는 축을 채운다(방법론 §5 참조):
-'K-ESG 코드 → 올바른 증빙 노드'를 실제로 검색해내는가(검색 재현율).
+'K-ESG 코드 → 올바른 증빙 노드/조항'을 실제로 검색해내는가(검색 재현율).
 
   · 데이터  : 한울정밀공업 시연 증빙 PDF (data/benchmark_v2/evidence_recall_gold.json)
   · 파이프  : ocr_router(Azure Doc Intelligence / gpt-4.1-mini) → SSOT EvidenceGraph
@@ -121,29 +121,57 @@ def _is_real(engines: list[tuple[str, str]]) -> bool:
 
 # ─────────────────────────────────────────────────────────────────────────────
 # 2) 코드단위 before/after 재현율 측정
-#    layer1._match_evidence_nodes 와 동일한 키워드 구성/검색 호출을 재현한다.
+#    layer1._match_evidence_nodes 와 동일한 키워드 구성을 쓰되,
+#    정량 EvidenceNode + 정성 TextNode 를 함께 측정한다.
 # ─────────────────────────────────────────────────────────────────────────────
-def _relevant_node_ids(graph, row: dict, period: int) -> set[str]:
-    """gold 가 지정한 '올바른 파일 + 목표 지표'에 해당하는 정답 노드 집합."""
+def _target_kind(row: dict) -> str:
+    return str(row.get("target_kind") or "metric_node")
+
+
+def _relevant_evidence_ids(graph, row: dict, period: int) -> set[str]:
+    """gold 가 지정한 '올바른 파일 + 목표 지표'에 해당하는 정답 ID 집합."""
     code = row["code"]
-    expect_files = row["evidence_files"]
+    expect_files = [str(token).lower() for token in row["evidence_files"]]
     relevant_terms = [str(t).lower() for t in row.get("relevant_terms", [])]
+    target_kind = _target_kind(row)
     out: set[str] = set()
+    if target_kind == "text_node":
+        for t in graph.text_nodes.values():
+            if t.kesg_code != code:
+                continue
+            src = f"{t.source_file or ''} {t.section or ''}".lower()
+            if not any(token in src for token in expect_files):
+                continue
+            hay = f"{t.kesg_code or ''} {t.section or ''} {t.text or ''}".lower()
+            if relevant_terms and not any(term in hay for term in relevant_terms):
+                continue
+            out.add(t.id)
+        return out
+
     for n in graph.nodes.values():
         if n.period != period:
             continue
         if n.metric != code:
             continue
-        src = (n.source_file or "") + " " + (n.source or "")
-        if any(token in src for token in expect_files):
-            hay = f"{n.metric} {n.raw_text}".lower()
-            if relevant_terms and not any(term in hay for term in relevant_terms):
-                continue
-            out.add(n.id)
+        src = f"{n.source_file or ''} {n.source or ''}".lower()
+        if not any(token in src for token in expect_files):
+            continue
+        hay = f"{n.metric} {n.raw_text}".lower()
+        if relevant_terms and not any(term in hay for term in relevant_terms):
+            continue
+        out.add(n.id)
     return out
 
 
-def _search(graph, keywords: list[str], period: int) -> set[str]:
+def _search(graph, keywords: list[str], period: int, *, target_kind: str) -> set[str]:
+    if target_kind == "text_node":
+        hits: set[str] = set()
+        lowered = [kw.lower() for kw in keywords if kw]
+        for t in graph.text_nodes.values():
+            hay = f"{t.kesg_code or ''} {t.section or ''} {t.text or ''}".lower()
+            if any((t.kesg_code or "").lower() == kw or kw in hay for kw in lowered):
+                hits.add(t.id)
+        return hits
     return {n.id for n in graph.search_nodes(keywords=keywords, period=period)}
 
 
@@ -157,12 +185,13 @@ def measure(graph, gold: dict):
         code = g["code"]
         item = by_code(code)
         search_terms = list(item.search_terms) if item is not None else []
+        target_kind = _target_kind(g)
 
-        relevant = _relevant_node_ids(graph, g, period)
+        relevant = _relevant_evidence_ids(graph, g, period)
         extracted = len(relevant) > 0   # OCR 가 애초에 그 증빙을 노드로 뽑았는가
 
-        before = _search(graph, [code], period)
-        after = _search(graph, [code] + search_terms, period)
+        before = _search(graph, [code], period, target_kind=target_kind)
+        after = _search(graph, [code] + search_terms, period, target_kind=target_kind)
 
         hit_before = int(bool(relevant & before))
         hit_after = int(bool(relevant & after))
@@ -171,6 +200,9 @@ def measure(graph, gold: dict):
 
         rows.append({
             "code": code, "name": g["name"],
+            "target_kind": target_kind,
+            "depends_on": list(g.get("depends_on", [])),
+            "rationale": str(g.get("rationale", "")),
             "extracted": extracted, "n_relevant": len(relevant),
             "hit_before": hit_before, "hit_after": hit_after,
             "gain": hit_after - hit_before,
@@ -189,18 +221,38 @@ def measure(graph, gold: dict):
 # ─────────────────────────────────────────────────────────────────────────────
 # 3) 리포트
 # ─────────────────────────────────────────────────────────────────────────────
-def report(rows, agg, mode, engines, n_nodes) -> str:
+def _kind_label(kind: str) -> str:
+    return {
+        "metric_node": "정량",
+        "derived_node": "파생",
+        "text_node": "정성",
+    }.get(kind, kind)
+
+
+def _detail_note(row: dict) -> str:
+    parts: list[str] = []
+    depends_on = row.get("depends_on") or []
+    if depends_on:
+        parts.append(f"파생 ← {', '.join(depends_on)}")
+    rationale = str(row.get("rationale", "")).strip()
+    if rationale:
+        parts.append(rationale)
+    note = " / ".join(parts) or "—"
+    return note.replace("|", "/").replace("\n", " ")
+
+
+def report(rows, agg, mode, engines, n_nodes, n_text_nodes) -> str:
     real = _is_real(engines)
     L = [f"# 증빙-그라운딩 재현율 (증빙 트랙)  (모드: {mode})",
          "",
          "held_out_eval(텍스트분류 CI)와 분리된 **증빙-대조 트랙**. "
-         "K-ESG 코드 → 올바른 증빙 노드 검색 재현율을 "
+         "K-ESG 코드 → 올바른 증빙 노드/조항 검색 재현율을 "
          "**SearchTerm 적용 전/후(before/after)** 로 실측한다.",
          "",
          "## OCR 엔진 (mock/None 이면 실측 아님)"]
     for fname, eng in engines:
         L.append(f"- {fname}  →  `{eng}`")
-    L += [f"- EvidenceGraph 노드 수: {n_nodes}",
+    L += [f"- EvidenceGraph 노드 수: {n_nodes} · TextNode 수: {n_text_nodes}",
           "",
           f"## 재현율 — before(코드만) vs after(코드+SearchTerm)  ·  코드 {agg['n']}건",
           "",
@@ -215,14 +267,18 @@ def report(rows, agg, mode, engines, n_nodes) -> str:
           "",
           "## 코드별 상세",
           "",
-          "| 코드 | 항목 | 추출 | 정답노드 | before | after | Δ |",
-          "|---|---|:--:|:--:|:--:|:--:|:--:|"]
+          "| 코드 | 항목 | 유형 | 추출 | 정답ID | before | after | Δ | 비고 |",
+          "|---|---|---|:--:|:--:|:--:|:--:|:--:|---|"]
     for r in rows:
         ext = "✅" if r["extracted"] else "—"
         b = "✅" if r["hit_before"] else "❌"
         a = "✅" if r["hit_after"] else "❌"
         d = f"+{r['gain']}" if r["gain"] > 0 else ("0" if r["gain"] == 0 else str(r["gain"]))
-        L.append(f"| {r['code']} | {r['name']} | {ext} | {r['n_relevant']} | {b} | {a} | {d} |")
+        note = _detail_note(r)
+        L.append(
+            f"| {r['code']} | {r['name']} | {_kind_label(r['target_kind'])} | "
+            f"{ext} | {r['n_relevant']} | {b} | {a} | {d} | {note} |"
+        )
 
     gained = [r["code"] for r in rows if r["gain"] > 0]
     L += ["",
@@ -249,7 +305,7 @@ def main() -> None:
 
     graph, engines = build_graph(gold)
     rows, agg = measure(graph, gold)
-    out = report(rows, agg, mode, engines, len(graph.nodes))
+    out = report(rows, agg, mode, engines, len(graph.nodes), len(graph.text_nodes))
 
     OUT_DIR.mkdir(parents=True, exist_ok=True)
     (OUT_DIR / "evidence_recall.md").write_text(out, encoding="utf-8")

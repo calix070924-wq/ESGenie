@@ -12,6 +12,7 @@ from __future__ import annotations
 
 from typing import Any
 
+from ..knowledge.kesg_evidence_requirements import requirement_for
 from .schema import Answer, Question
 
 # DataPoint.verification → Answer.status 1차 매핑
@@ -50,6 +51,23 @@ def _base(q: Question, **kw: Any) -> Answer:
     return Answer(qid=q.qid, section=q.section, question_text=q.text, **kw)
 
 
+def _unresolved(q: Question, fallback: str) -> tuple[str, str, list[str]]:
+    """미해소 문항의 (status, 안내문, 올릴문서)를 데이터타입 룩업으로 결정한다(STEP 3·4).
+
+    · 정성·서술필요(human_narrative) → hitl_required(증빙 올려도 사람이 서술해야 함)
+    · 그 외(정량/공시존재형/정성-증빙형) → insufficient(증빙 올리면 풀림)
+    안내문은 kesg_evidence_requirements의 구체적 request를 쓴다(없으면 fallback).
+    olril문서(evidence_needed)는 체크리스트/exporter/UI가 재사용한다.
+    새 검출은 하지 않는다 — 룩업 조회만.
+    """
+    code = q.primary_code
+    if not code:
+        return "insufficient", fallback, []
+    req = requirement_for(code)
+    status = "hitl_required" if req.human_narrative else "insufficient"
+    return status, (req.request or fallback), list(req.evidence_types)
+
+
 def _derive_numeric(q, mapped, missing, dp_by_code, claims=None) -> Answer:
     claims = claims or {}
     code = q.primary_code
@@ -75,10 +93,10 @@ def _derive_numeric(q, mapped, missing, dp_by_code, claims=None) -> Answer:
                           f"{entry.get('unit', '')} (증빙 미연결, 자가신고)",
             )
         else:
-            ans = _base(
-                q, value=None, status="insufficient",
-                rationale=f"{code} 증빙 없음 — 해당 수치를 입증할 고지서/명세서 업로드 필요",
-            )
+            status, request, ev_needed = _unresolved(
+                q, f"{code} 증빙 없음 — 해당 수치를 입증할 고지서/명세서 업로드 필요")
+            ans = _base(q, value=None, status=status, rationale=request,
+                        evidence_needed=ev_needed)
     # ── 협력사 자가주장 대조 (D1) ──────────────────────────────────────────
     claim = claims.get(code)
     if claim is not None:
@@ -195,11 +213,11 @@ def _derive_presence(q, mapped, missing, evidence_index) -> Answer:
             rationale = f"공시 근거: {', '.join(present)}"
         return _base(q, value=True, status=status,
                      evidence_links=ev, rationale=rationale)
-    # 공시 안 됨 — 양식이 요구하는 항목이면 보완 안내
-    return _base(
-        q, value=None, status="insufficient",
-        rationale="관련 공시/규정 미확인 — 환경방침서·인증서 등 증빙 업로드 필요",
-    )
+    # 공시 안 됨 — 데이터타입 기준 라우팅(정성 서술필요면 hitl_required, 그 외 insufficient)
+    status, request, ev_needed = _unresolved(
+        q, "관련 공시/규정 미확인 — 환경방침서·인증서 등 증빙 업로드 필요")
+    return _base(q, value=None, status=status, rationale=request,
+                 evidence_needed=ev_needed)
 
 
 def _derive_multi(q, mapped, missing, evidence_index) -> Answer:

@@ -5,7 +5,7 @@ DART 공시 + 내부 증빙 OCR을 단일 진실 원천(SSOT)으로 통합하고
 K-ESG 4축 그린워싱 자동 검증 + D6 선택적 공시(체리피킹) 탐지 + 사내 규정 누락 조항 검출을 end-to-end로 제공.
 
 > 그린워싱 측정의 학계 2기둥 중 **decoupling(말↔성과 괴리)** 은 D1·D2·D5가, **selective disclosure(유리한 것만 공개·불리한 건 누락)** 은 D6가 담당한다. 후자는 기존 도구(greenwatch.ai 등)가 비워둔 영역.
-
+codex -p azure
 ---
 
 ## 6-Layer AI 파이프라인

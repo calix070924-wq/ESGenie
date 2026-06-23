@@ -83,9 +83,11 @@ def test_render_with_none_result(tabs_module):
 def test_render_with_full_result(tabs_module, tmp_path, monkeypatch):
     monkeypatch.chdir(tmp_path)   # export가 outputs/ 에 쓰므로 격리
     tabs_module.render_supplychain_tab(_fake_result(), "<div></div>")
-    # 응답서 xlsx가 생성됐는지
+    # 응답서 xlsx·pdf가 둘 다 생성됐는지
     produced = list(tmp_path.glob("outputs/_supplychain/**/*.xlsx"))
     assert produced, "응답서 xlsx가 생성되지 않음"
+    produced_pdf = list(tmp_path.glob("outputs/_supplychain/**/*.pdf"))
+    assert produced_pdf, "응답서 pdf가 생성되지 않음"
 
 
 def test_is_saq_upload_uses_filename_or_text_hints(monkeypatch, tmp_path):

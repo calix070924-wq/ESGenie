@@ -70,6 +70,11 @@ def check_keys() -> list[dict[str, Any]]:
             "fallback": "pymupdf+정규식 → 정형 mock 샘플",
         },
         {
+            "name": "UPSTAGE_API_KEY",
+            "set": bool(os.getenv("UPSTAGE_API_KEY")),
+            "fallback": "Upstage DP 경로 비활성 (Azure → CLOVA → pymupdf 폴백)",
+        },
+        {
             "name": "CLOVA_OCR_SECRET",
             "set": bool(os.getenv("CLOVA_OCR_SECRET")),
             "fallback": "레거시 OCR 경로 (Azure OCR 미설정 시 선택적 사용)",

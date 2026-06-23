@@ -85,6 +85,10 @@ class AuditTraceV15:
 # 빌더
 # ====================================================================
 
+# 출처별 파생값을 합산해야 하는 가산 코드(예: Scope1+2 = 전력 Scope2 + 가스 Scope1).
+_ADDITIVE_DERIVED: frozenset[str] = frozenset({"E-3-1"})
+
+
 def build_data_points(
     graph: EvidenceGraph,
     d1_scores: dict[str, float],
@@ -105,12 +109,22 @@ def build_data_points(
         latest_year = max(n.period for n in nodes)
         year_nodes = [n for n in nodes if n.period == latest_year]
         primary = _pick_primary(year_nodes)
+        value = primary.value
+        # 가산 코드(Scope1+2 등)는 출처별 파생값을 합산한다 — 단 공시(reported)값이
+        # 있으면 그것을 우선해 이중계산을 피한다(전력 Scope2 + 가스 Scope1 합산).
+        if code in _ADDITIVE_DERIVED and len(year_nodes) > 1:
+            derived = [n for n in year_nodes
+                       if str(getattr(n, "source", "")).startswith("derived_from:")]
+            reported = [n for n in year_nodes if n not in derived]
+            if derived and not reported:
+                value = round(sum(n.value for n in derived), 3)
+                primary = _pick_primary(derived)
         links = [_to_link(n) for n in year_nodes]
         d1 = d1_scores.get(code, 0.0)
         points.append(DataPoint(
             kesg_code=code,
             kesg_name=_kesg_name(code),
-            value=primary.value,
+            value=value,
             unit=primary.unit,
             period=primary.period,
             confidence=round(primary.confidence, 3),

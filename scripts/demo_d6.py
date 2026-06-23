@@ -28,8 +28,13 @@ from pathlib import Path
 REPO = Path(__file__).resolve().parents[1]
 EVID_DIR = REPO / "시연증빙세트_한울정밀공업"
 CORP_NAME = "한울정밀공업㈜"
-WASTE_QID = "SAQ-E-NUM-WASTE"   # "(수치) 폐기물 재활용률" (K-ESG E-6-2)
-FRAMEWORK = "saq5_env"
+# 양식별 '폐기물 재활용률(K-ESG E-6-2)' 문항 ID — D6 핵심 판정행.
+WASTE_QID_BY_FW = {
+    "saq5_env": "SAQ-E-NUM-WASTE",
+    "saq5": "SAQ-E-NUM-WASTE",
+    "hmc": "HMC-C-4-E-6-2",      # 현대차 어댑터(RBA C-4 재활용률 수치행)
+    "rba42": "RBA-C-4-E-6-2",    # RBA substrate
+}
 
 # 업로드 증빙 = 고지서 3종 + 사내규정 1종 (OEM SAQ PDF는 양식 소품이라 제외)
 EVIDENCE_GLOBS = ["01_*.pdf", "02_*.pdf", "03_*.pdf", "04_*.pdf"]
@@ -45,6 +50,11 @@ def parse_args():
     ap.add_argument("--no-judge", dest="judge", action="store_false")
     ap.add_argument("--no-greenwash", dest="greenwash", action="store_false")
     ap.add_argument("--export", action="store_true")
+    ap.add_argument("--framework", default="saq5_env",
+                    choices=["saq5_env", "saq5", "hmc", "rba42"],
+                    help="응답 양식. 실사 기둥은 hmc(현대차)/rba42.")
+    ap.add_argument("--dump", action="store_true",
+                    help="문서별 추출 메트릭(hint/value/unit/code)을 덤프 — 단위·매핑 디버깅용.")
     ap.set_defaults(judge=True, greenwash=True)
     return ap.parse_args()
 
@@ -65,6 +75,8 @@ def collect_evidence() -> dict[str, str]:
 
 def main():
     args = parse_args()
+    framework = args.framework
+    waste_qid = WASTE_QID_BY_FW[framework]
     if args.strict:
         os.environ["ESGENIE_STRICT"] = "1"
 
@@ -119,13 +131,26 @@ def main():
         dt = m.get("doc_type") or getattr(ext, "doc_type", "?")
         print(f"   {str(getattr(ext,'source_file',''))[:32]:34} {ch:13} {str(dt):16} {eng}")
 
+    # ── 추출 메트릭 덤프 (단위·매핑 디버깅) ─────────────────────────────────
+    if args.dump:
+        hr("═"); print(" [덤프] 문서별 추출 메트릭 (hint | value | unit | code) + raw_text"); hr()
+        for ext in getattr(result, "ocr_extractions", []) or []:
+            print(f"  · {getattr(ext, 'source_file', '?')}  (doc_type={getattr(ext,'doc_type','?')})")
+            for m in getattr(ext, "metrics", []) or []:
+                print(f"      {str(getattr(m,'metric_hint',''))[:24]:24} | "
+                      f"{getattr(m,'value',None)!s:>12} | {str(getattr(m,'unit',''))[:8]:8} | "
+                      f"{getattr(m,'kesg_code_guess',None)}")
+            raw = str(getattr(ext, "raw_text", "") or "")
+            if raw:
+                print(f"      raw_text(700자): {raw[:700]}")
+
     # ── 실사 응답서 생성 (+자가주장 대조) + D6 플래그 확인 ───────────────────
-    sheet = respond_from_pipeline(result, FRAMEWORK, supplier_claims=claims)
+    sheet = respond_from_pipeline(result, framework, supplier_claims=claims)
     if not sheet.corp_name:
         sheet.corp_name = CORP_NAME
 
     hr("═")
-    print(f" [3/3] 실사 응답서 ({FRAMEWORK}) — 커버리지 {sheet.coverage_pct}% · 🚩 {sheet.flagged_count}건")
+    print(f" [3/3] 실사 응답서 ({framework}) — 커버리지 {sheet.coverage_pct}% · 🚩 {sheet.flagged_count}건")
     hr()
     waste = None
     for a in sheet.answers:
@@ -133,7 +158,7 @@ def main():
         print(f" {mark} [{a.qid:14}] {a.badge:10} value={a.value}")
         for f in a.flags:
             print(f"            └ {f}")
-        if a.qid == WASTE_QID:
+        if a.qid == waste_qid:
             waste = a
 
     # ── 핵심 판정: 폐기물 재활용률 행 ───────────────────────────────────────
@@ -141,7 +166,7 @@ def main():
     print(" 핵심 — 폐기물 재활용률 (증빙 실측 ≈ 29.3%, SAQ 자가주장 92%)")
     hr()
     if waste is None:
-        print("   [!] SAQ-E-NUM-WASTE 문항을 응답서에서 찾지 못함 (매핑 확인 필요)")
+        print(f"   [!] {waste_qid} 문항을 응답서에서 찾지 못함 (매핑 확인 필요)")
     else:
         print(f"   상태   : {waste.badge}")
         print(f"   값     : {waste.value}")

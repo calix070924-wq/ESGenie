@@ -51,6 +51,33 @@ class ExtractedClause:
     text: str
     kesg_code_guess: str | None = None
     page: int | None = None
+    rba_code_guess: str | None = None    # RBA 자가진단 substrate 매칭(고유 조항용)
+
+
+@dataclass
+class TableCell:
+    """표 셀 원문 + 위치 메타데이터."""
+    row_index: int
+    column_index: int
+    content: str
+    row_span: int = 1
+    column_span: int = 1
+    kind: str | None = None
+    bbox: list[float] | None = None
+    page: int | None = None
+    confidence: float | None = None
+
+
+@dataclass
+class ExtractedTable:
+    """OCR가 복원한 표 구조. Tier 0 게이트와 후속 복원기의 공통 입력."""
+    table_id: str
+    row_count: int
+    column_count: int
+    cells: list[TableCell] = field(default_factory=list)
+    source: str = ""
+    page: int | None = None
+    meta: dict[str, Any] = field(default_factory=dict)
 
 
 @dataclass
@@ -61,6 +88,7 @@ class OcrExtraction:
     doc_type: str                          # "kepco_bill" | "waste_ledger" | "safety_minutes" | ...
     metrics: list[ExtractedMetric] = field(default_factory=list)
     clauses: list[ExtractedClause] = field(default_factory=list)
+    tables: list[ExtractedTable] = field(default_factory=list)
     raw_text: str = ""                     # 전체 OCR 텍스트 (디버그/재처리용)
     router_meta: dict[str, Any] = field(default_factory=dict)  # 라우팅 근거 기록
 
@@ -124,6 +152,11 @@ def route_document(
     text = (preview_text or _quick_preview(file_path)).lower()
     fname = Path(file_path).name.lower()
 
+    # 표비율은 정형 판별의 핵심 신호다. 명시 주입이 없고 실파일이 있으면 자동 추정한다.
+    # preview_text를 직접 준 호출(단위테스트 등)은 자동 추정을 건너뛰어 결정성·비용을 유지한다.
+    if layout_features is None and preview_text is None:
+        layout_features = estimate_layout_features(file_path)
+
     structured_hits = _score_signatures(text, fname, _STRUCTURED_SIGNATURES)
     unstructured_hits = _score_signatures(text, fname, _UNSTRUCTURED_SIGNATURES)
 
@@ -177,7 +210,56 @@ def extract_document(file_path: str, decision: RouteDecision | None = None) -> O
         "matched_keywords": decision.matched_keywords,
         "rationale": decision.rationale,
     })
+    # 동의어 해소 backstop — 코드 미부여 metric을 사전 매칭으로 채움(전 채널 공통 합류점).
+    _backfill_kesg_codes(ext)
     return ext
+
+
+def _backfill_kesg_codes(ext: OcrExtraction) -> None:
+    """kesg_code_guess가 비어 있는 metric을 라벨 동의어 사전으로 결정적 보강한다.
+
+    하이브리드 1단계(결정적 사전)다. 사전이 못 잡으면 코드를 비워 두어 상위 LLM
+    폴백/HITL이 처리하게 한다. fuzzy로만 걸린 건 confidence를 낮춰 검증 큐로 보낸다.
+    """
+    from ..knowledge.kesg_items import resolve_kesg_code
+
+    resolved: list[dict[str, Any]] = []
+    for m in ext.metrics:
+        if m.kesg_code_guess:
+            continue
+        code, score, method = resolve_kesg_code(m.metric_hint)
+        if not code:
+            continue
+        m.kesg_code_guess = code
+        if method == "fuzzy":
+            m.confidence = min(m.confidence, 0.5)  # 불확실 → HITL 검증 큐
+        resolved.append({"metric_hint": m.metric_hint, "code": code,
+                         "score": score, "method": method})
+    if resolved:
+        ext.router_meta["alias_backfill"] = resolved
+
+
+def tag_rba_codes(ext: OcrExtraction) -> None:
+    """clause에 RBA 코드를 태깅한다(K-ESG 크로스워크 없는 RBA 고유 조항 대응).
+
+    RBA 자가진단 substrate의 고유 항목(근로시간·유해물질·분쟁광물·IP·개인정보 등)은
+    K-ESG 증빙풀에 안 걸려 항상 'insufficient'였다. 업로드 규정/매뉴얼의 조항 텍스트를
+    RBA search_terms로 결정적 매칭해 코드를 부여 → responder가 해당 칸을 채울 수 있게.
+    이미 rba_code_guess가 있으면 존중. 매칭 실패는 None(insufficient 유지 — 거짓경보 방지).
+    """
+    from ..knowledge.rba_items import resolve_rba_code
+
+    tagged: list[dict[str, Any]] = []
+    for c in ext.clauses:
+        if c.rba_code_guess:
+            continue
+        code, score, method = resolve_rba_code(f"{c.section} {c.text}")
+        if code:
+            c.rba_code_guess = code
+            tagged.append({"section": c.section, "rba_code": code,
+                           "score": score, "method": method})
+    if tagged:
+        ext.router_meta["rba_tagging"] = tagged
 
 
 # ====================================================================
@@ -197,18 +279,38 @@ def extract_structured(file_path: str, *, doc_type: str) -> OcrExtraction:
       · LLM(gpt-4.1-mini via Azure) 단위 정규화 + K-ESG 코드 추정
     """
     az_key, az_ep = _get_azure_docintel_keys()
+    upstage_key = _get_upstage_key()
     clova_key, clova_url = _get_clova_keys()
 
     if az_key and az_ep:
         try:
-            tokens = _call_azure_docintel(file_path)
+            payload = _call_azure_docintel_payload(
+                file_path,
+                model="prebuilt-layout",
+            )
             return _tokens_to_extraction(
-                tokens, doc_type=doc_type, file_path=file_path, engine="azure_docintel"
+                payload["tokens"],
+                doc_type=doc_type,
+                file_path=file_path,
+                engine="azure_docintel",
+                tables=payload.get("tables") or [],
+                engine_meta={"azure_docintel_model": "prebuilt-layout"},
             )
         except Exception as exc:
             # Azure 실패 → 디지털 PDF 폴백 (데모 안정성)
             ext = _extract_structured_no_llm(file_path, doc_type=doc_type)
             ext.router_meta["azure_error"] = str(exc)
+            return ext
+
+    if upstage_key:
+        try:
+            tokens = _call_upstage_dp(file_path)
+            return _tokens_to_extraction(
+                tokens, doc_type=doc_type, file_path=file_path, engine="upstage_dp"
+            )
+        except Exception as exc:
+            ext = _extract_structured_no_llm(file_path, doc_type=doc_type)
+            ext.router_meta["upstage_error"] = str(exc)
             return ext
 
     if clova_key:
@@ -222,10 +324,25 @@ def extract_structured(file_path: str, *, doc_type: str) -> OcrExtraction:
 
 
 def _tokens_to_extraction(
-    tokens: list[dict[str, Any]], *, doc_type: str, file_path: str, engine: str
+    tokens: list[dict[str, Any]],
+    *,
+    doc_type: str,
+    file_path: str,
+    engine: str,
+    tables: list[ExtractedTable] | None = None,
+    engine_meta: dict[str, Any] | None = None,
 ) -> OcrExtraction:
     """OCR 토큰[{text,bbox}] → 템플릿/키워드 추출 → LLM/규칙 정규화 → OcrExtraction."""
-    raw_text = " ".join(t["text"] for t in tokens)
+    if engine == "upstage_dp":
+        raw_parts: list[str] = []
+        for t in tokens:
+            if t.get("html"):
+                raw_parts.append(t["html"])
+            elif t.get("text"):
+                raw_parts.append(t["text"])
+        raw_text = "\n".join(raw_parts)
+    else:
+        raw_text = " ".join(t["text"] for t in tokens)
     openai_key = _get_openai_key()
 
     try:
@@ -243,14 +360,17 @@ def _tokens_to_extraction(
 
     # 비율(%) 항목은 표 토큰 인접매칭이 깨지기 쉬워, raw 텍스트 정규식으로 결정적 고정
     metrics = _pin_rates_from_raw(metrics, tokens)
+    # 대표 사용량·총량(전력·가스·폐기물)도 본문 명시값으로 결정적 고정
+    metrics = _pin_totals_from_raw(metrics, tokens, doc_type)
 
     return OcrExtraction(
         source_file=Path(file_path).name,
         channel=DocChannel.STRUCTURED,
         doc_type=doc_type,
         metrics=metrics,
+        tables=list(tables or []),
         raw_text=raw_text,
-        router_meta={"engine": engine},
+        router_meta={"engine": engine, **(engine_meta or {})},
     )
 
 
@@ -371,7 +491,105 @@ def _pin_rates_from_raw(
     return metrics
 
 
+# doc_type별 '대표 사용량/총량' raw-텍스트 고정 규칙.
+# (정규식, K-ESG코드, 단위, 값배율) — 본문 명시값 × 배율 = 확정값.
+# 표 키워드 인접매칭이 옆 칸(전월지침 등)을 잘못 집는 사례를 청구서 본문값으로 결정적 교정.
+_TOTAL_RAW_PATTERNS: dict[str, list[tuple[str, str, str, float]]] = {
+    # 전력량요금 (142,560kWh) → 실사용량. '사용전력량'이 전월지침(48,210)을 잡던 것 교정.
+    "kepco_bill": [(r"\(([\d,]+)\s*kWh\)", "E-4-1", "kWh", 1.0)],
+    # 사용요금 (360,772MJ × …) → 가스 사용열량(MJ). 2.0 오추출 교정.
+    "gas_bill": [(r"\(([\d,]+)\s*MJ", "E-4-1", "MJ", 1.0)],
+    # 올바로 위탁수량은 kg 단위. '총 위탁량 18,400' → kg→ton(÷1000) = 18.4톤.
+    "waste_ledger": [(r"총\s*위탁량\s*([\d,]+)", "E-6-1", "ton", 0.001)],
+}
+
+
+def _pin_totals_from_raw(
+    metrics: list["ExtractedMetric"], tokens: list[dict[str, Any]], doc_type: str
+) -> list["ExtractedMetric"]:
+    """청구서/명세서 본문에 명시된 대표 사용량·총량을 raw에서 직접 집어 결정적 고정.
+
+    표 키워드 인접매칭이 옆 칸(전월지침·보조계수 등)을 잘못 집는 사례를 교정한다.
+    같은 코드의 기존 산출물은 폐기하고 본문 명시값으로 확정한다(비율 고정과 동일 전략).
+    """
+    import re
+    rules = _TOTAL_RAW_PATTERNS.get(doc_type)
+    if not rules:
+        return metrics
+    raw = " ".join(str(t.get("text", "")) for t in tokens)
+    for pat, code, unit, factor in rules:
+        mt = re.search(pat, raw)
+        if not mt:
+            continue
+        try:
+            val = float(mt.group(1).replace(",", "")) * factor
+        except ValueError:
+            continue
+        numstr = mt.group(1)
+        bbox = page = None
+        for t in tokens:
+            if numstr in str(t.get("text", "")):
+                bbox, page = t.get("bbox"), t.get("page"); break
+        metrics = [mm for mm in metrics if mm.kesg_code_guess != code]
+        metrics.append(ExtractedMetric(
+            metric_hint=f"{code} 본문확정", value=round(val, 3), unit=unit,
+            period="", kesg_code_guess=code, bbox=bbox, page=page, confidence=0.92,
+        ))
+    return metrics
+
+
 # ---- 정형 채널 내부 헬퍼 ------------------------------------------------------
+
+def _get_upstage_key() -> str | None:
+    """Upstage Document Parse API 키 조회."""
+    import os
+    return os.getenv("UPSTAGE_API_KEY") or None
+
+
+def _call_upstage_dp(file_path: str) -> list[dict[str, Any]]:
+    """Upstage Document Parse API 호출 → [{text, html, category, page}] 반환.
+
+    표(category=table)는 html 키에 HTML 원본 보존.
+    텍스트(paragraph 등)는 text 키에 평문 저장.
+    """
+    import requests as _requests
+
+    key = _get_upstage_key()
+    if not key:
+        raise RuntimeError("UPSTAGE_API_KEY 미설정")
+
+    url = "https://api.upstage.ai/v1/document-digitization"
+    headers = {"Authorization": f"Bearer {key}"}
+    with open(file_path, "rb") as f:
+        files = {"document": (Path(file_path).name, f)}
+        data = {"ocr": "force"}
+        resp = _requests.post(url, headers=headers, files=files, data=data, timeout=120)
+    resp.raise_for_status()
+    body = resp.json()
+
+    tokens: list[dict[str, Any]] = []
+    for elem in body.get("elements", []):
+        category = elem.get("category", "")
+        page = int(elem.get("page", 1)) - 1
+        content = elem.get("content", {})
+        if category == "table":
+            html = content.get("html", "")
+            tokens.append({
+                "text": "",
+                "html": html,
+                "category": "table",
+                "page": page,
+            })
+        else:
+            text = content.get("text", "")
+            tokens.append({
+                "text": text,
+                "html": "",
+                "category": category,
+                "page": page,
+            })
+    return tokens
+
 
 def _get_azure_docintel_keys() -> tuple[str | None, str]:
     """Azure Document Intelligence 키와 엔드포인트 조회."""
@@ -381,8 +599,43 @@ def _get_azure_docintel_keys() -> tuple[str | None, str]:
     return (key or None), endpoint
 
 
-def _call_azure_docintel(file_path: str, *, model: str = "prebuilt-read") -> list[dict[str, Any]]:
+def _norm_bbox_from_polygon(
+    polygon: list[float] | None,
+    *,
+    width: float | None,
+    height: float | None,
+) -> list[float] | None:
+    """polygon = [x1,y1,...] 를 [x0,y0,x1,y1] 정규화 bbox로 변환."""
+    poly = polygon or []
+    if len(poly) < 8 or not width or not height:
+        return None
+    xs = [float(poly[i]) for i in range(0, len(poly), 2)]
+    ys = [float(poly[i]) for i in range(1, len(poly), 2)]
+    return [
+        max(0.0, min(1.0, min(xs) / width)),
+        max(0.0, min(1.0, min(ys) / height)),
+        max(0.0, min(1.0, max(xs) / width)),
+        max(0.0, min(1.0, max(ys) / height)),
+    ]
+
+
+def _call_azure_docintel(
+    file_path: str, *, model: str = "prebuilt-read", pages: str | None = None
+) -> list[dict[str, Any]]:
     """Azure AI Document Intelligence REST 호출 → 줄 단위 토큰 [{text, bbox}].
+
+    pages: "1" / "1-2" 형식 페이지 범위(라우팅용 1p 등 과금 최소화). None이면 전체.
+    """
+    return _call_azure_docintel_payload(file_path, model=model, pages=pages)["tokens"]
+
+
+def _call_azure_docintel_payload(
+    file_path: str,
+    *,
+    model: str = "prebuilt-read",
+    pages: str | None = None,
+) -> dict[str, Any]:
+    """Azure AI Document Intelligence REST 호출 → 토큰 + 표 메타데이터.
 
     v4.0(2024-11-30) Analyze API: POST로 분석 시작 → Operation-Location 폴링 →
     analyzeResult.pages[].lines[]에서 content + polygon 추출.
@@ -395,6 +648,8 @@ def _call_azure_docintel(file_path: str, *, model: str = "prebuilt-read") -> lis
 
     api_version = "2024-11-30"
     url = f"{endpoint}/documentintelligence/documentModels/{model}:analyze?api-version={api_version}"
+    if pages:
+        url += f"&pages={pages}"
     headers = {"Ocp-Apim-Subscription-Key": key, "Content-Type": "application/octet-stream"}
     data = Path(file_path).read_bytes()
 
@@ -418,20 +673,53 @@ def _call_azure_docintel(file_path: str, *, model: str = "prebuilt-read") -> lis
     else:
         raise RuntimeError("Azure DocIntel 폴링 타임아웃")
 
+    analyze_result = body.get("analyzeResult", {}) or {}
+    page_dims: dict[int, tuple[float | None, float | None]] = {}
     tokens: list[dict[str, Any]] = []
-    for page in body.get("analyzeResult", {}).get("pages", []):
+    for page in analyze_result.get("pages", []):
         pw = float(page.get("width") or 0) or None
         ph = float(page.get("height") or 0) or None
         pno = int(page.get("pageNumber", 1)) - 1   # 0-기준 인덱스
+        page_dims[pno] = (pw, ph)
         for line in page.get("lines", []):
-            poly = line.get("polygon") or []
-            # polygon 좌표를 페이지 크기로 나눠 [0,1] 정규화 (단위 무관: inch/pixel 동일 처리)
-            if len(poly) >= 6 and pw and ph:
-                bbox = [poly[0] / pw, poly[1] / ph, poly[4] / pw, poly[5] / ph]
-            else:
-                bbox = None
+            bbox = _norm_bbox_from_polygon(line.get("polygon"), width=pw, height=ph)
             tokens.append({"text": line.get("content", ""), "bbox": bbox, "page": pno})
-    return tokens
+
+    tables: list[ExtractedTable] = []
+    for t_idx, table in enumerate(analyze_result.get("tables", []) or []):
+        cells: list[TableCell] = []
+        page_hint = None
+        for cell in table.get("cells", []) or []:
+            bbox = None
+            regions = cell.get("boundingRegions") or []
+            if regions:
+                region = regions[0]
+                page_hint = int(region.get("pageNumber", 1)) - 1
+                pw, ph = page_dims.get(page_hint, (None, None))
+                bbox = _norm_bbox_from_polygon(region.get("polygon"), width=pw, height=ph)
+            cells.append(TableCell(
+                row_index=int(cell.get("rowIndex", 0)),
+                column_index=int(cell.get("columnIndex", 0)),
+                content=str(cell.get("content", "")),
+                row_span=max(1, int(cell.get("rowSpan", 1) or 1)),
+                column_span=max(1, int(cell.get("columnSpan", 1) or 1)),
+                kind=cell.get("kind"),
+                bbox=bbox,
+                page=page_hint,
+                confidence=(
+                    float(cell["confidence"])
+                    if cell.get("confidence") is not None else None
+                ),
+            ))
+        tables.append(ExtractedTable(
+            table_id=f"azure_table_{t_idx}",
+            row_count=int(table.get("rowCount", 0) or 0),
+            column_count=int(table.get("columnCount", 0) or 0),
+            cells=cells,
+            source="azure_docintel",
+            page=page_hint,
+        ))
+    return {"tokens": tokens, "tables": tables}
 
 
 def _get_clova_keys() -> tuple[str | None, str]:
@@ -566,6 +854,17 @@ def _keyword_extract(tokens: list[dict[str, Any]], doc_type: str) -> dict[str, A
     return result
 
 
+def _candidate_codes_block() -> str:
+    """LLM 정규화 프롬프트용 후보 K-ESG 코드 목록(정량 항목 위주, 'code — name (unit)')."""
+    from ..knowledge.kesg_items import ALL_ITEMS
+    lines = [
+        f"- {it.code} — {it.name}" + (f" ({it.unit})" if it.unit else "")
+        for it in ALL_ITEMS
+        if it.area == "E" or it.data_type in ("정량", "혼합")
+    ]
+    return "\n".join(lines)
+
+
 def _llm_normalize(
     kv_pairs: dict[str, Any],
     *,
@@ -578,7 +877,9 @@ def _llm_normalize(
     from .prompts import STRUCTURED_NORMALIZE_SYSTEM, STRUCTURED_NORMALIZE_PROMPT
 
     tokens_str = _json.dumps(kv_pairs, ensure_ascii=False, indent=2)
-    prompt = STRUCTURED_NORMALIZE_PROMPT.format(doc_type=doc_type, ocr_tokens=tokens_str)
+    prompt = STRUCTURED_NORMALIZE_PROMPT.format(
+        doc_type=doc_type, ocr_tokens=tokens_str, candidate_codes=_candidate_codes_block(),
+    )
 
     resp = LLMClient().complete(
         system=STRUCTURED_NORMALIZE_SYSTEM,
@@ -662,6 +963,7 @@ def _extract_structured_no_llm(file_path: str, *, doc_type: str) -> OcrExtractio
 
     metrics = _rule_normalize(kv_pairs, doc_type=doc_type)
     metrics = _pin_rates_from_raw(metrics, tokens)  # 비율(%) 결정적 고정 (Azure 경로와 동일)
+    metrics = _pin_totals_from_raw(metrics, tokens, doc_type)  # 대표 사용량·총량 고정
 
     return OcrExtraction(
         source_file=Path(file_path).name,
@@ -1002,6 +1304,18 @@ def _mock_unstructured(file_path: str, doc_type: str) -> OcrExtraction:
                     kesg_code_guess="E-1-1",
                     page=1,
                 ),
+                ExtractedClause(
+                    section="환경경영 추진체계",
+                    text="주관 부서 ESG경영팀 / 환경안전팀",
+                    kesg_code_guess="E-1-2",
+                    page=1,
+                ),
+                ExtractedClause(
+                    section="윤리경영",
+                    text="회사는 공정·윤리 원칙을 준수하고 관련 기준을 전사에 배포한다.",
+                    kesg_code_guess="G-4-1",
+                    page=2,
+                ),
             ],
             raw_text="[MOCK] 사내 규정집 데모 데이터",
             router_meta={"mock": True},
@@ -1050,11 +1364,72 @@ def _quick_preview(file_path: str, max_chars: int = 1500) -> str:
             text = doc[0].get_text() if len(doc) > 0 else ""
             if text.strip():
                 return text[:max_chars]
-        except ImportError:
-            pass
+            # 임베디드 텍스트 없음 = 스캔본 → Azure read 1p OCR 에스컬레이션(정확 라우팅).
+            ocr_text = _ocr_preview_first_page(str(p), max_chars=max_chars)
+            if ocr_text.strip():
+                return ocr_text
+        except Exception:
+            # pymupdf 미설치/파일 손상 → Azure read 1p로라도 본문 신호 확보 시도.
+            ocr_text = _ocr_preview_first_page(str(p), max_chars=max_chars)
+            if ocr_text.strip():
+                return ocr_text
 
-    # 이미지 or pymupdf 미설치 → 파일명만 신호로 사용
+    # 이미지(스캔 jpg/png) → Azure read 1p 시도 후, 실패 시 파일명만 신호로 사용
+    if p.suffix.lower() in (".png", ".jpg", ".jpeg", ".tif", ".tiff"):
+        ocr_text = _ocr_preview_first_page(str(p), max_chars=max_chars)
+        if ocr_text.strip():
+            return ocr_text
     return p.stem
+
+
+def _ocr_preview_first_page(file_path: str, *, max_chars: int = 1500) -> str:
+    """스캔본 라우팅용 — Azure read로 1페이지만 OCR해 본문 텍스트 확보.
+
+    디지털 텍스트가 없는 스캔본은 라우팅이 파일명에만 의존하게 돼 오분류 위험이 크다
+    (정형 고지서가 비정형 VLM으로 새는 등). prebuilt-read(페이지당 과금 최소)로 1p만
+    OCR해 키워드 신호를 살린다. 정확도 우선 정책.
+    Azure 키 미설정·망 차단·실패 시 빈 문자열 → 호출부가 파일명으로 안전 폴백.
+    """
+    key, endpoint = _get_azure_docintel_keys()
+    if not key or not endpoint:
+        return ""
+    try:
+        tokens = _call_azure_docintel(file_path, model="prebuilt-read", pages="1")
+        return " ".join(t.get("text", "") for t in tokens)[:max_chars]
+    except Exception:
+        return ""
+
+
+def estimate_layout_features(file_path: str) -> dict[str, float]:
+    """1페이지 표 면적 비율 추정 — 정형 판별의 보조 신호(table_area_ratio).
+
+    pymupdf find_tables()로 감지된 표 bbox 합면적 / 페이지 면적(0~1).
+    고지서·명세서처럼 표 격자가 촘촘한 정형 문서일수록 값이 높다.
+    pymupdf 미설치·스캔본(표 미검출)·PDF 외·실패 시 빈 dict(=신호 없음, 안전 폴백).
+    """
+    p = Path(file_path)
+    if not p.exists() or p.suffix.lower() != ".pdf":
+        return {}
+    try:
+        import fitz  # pymupdf
+    except ImportError:
+        return {}
+    try:
+        doc = fitz.open(str(p))
+        if len(doc) == 0:
+            return {}
+        page = doc[0]
+        page_area = abs(page.rect.width * page.rect.height)
+        if page_area <= 0:
+            return {}
+        finder = page.find_tables()
+        table_area = 0.0
+        for t in getattr(finder, "tables", []):
+            x0, y0, x1, y1 = t.bbox
+            table_area += abs((x1 - x0) * (y1 - y0))
+        return {"table_area_ratio": round(min(table_area / page_area, 1.0), 4)}
+    except Exception:
+        return {}
 
 
 def _score_signatures(text: str, fname: str, table: dict[str, list[str]]) -> dict[str, dict[str, Any]]:
@@ -1139,10 +1514,12 @@ def _load_template(doc_type: str) -> dict[str, Any]:
                 "unit": "ton",
                 "kesg_code": "E-6-1",
             },
+            # 지정폐기물은 총 배출량(E-6-1)의 하위 분류일 뿐 총량이 아니다.
+            # E-6-1로 잡으면 '폐기물 처리량'과 노드가 중복되므로 보조수치(코드 None)로 둔다.
             "지정폐기물": {
                 "keywords": ["지정폐기물"],
                 "unit": "ton",
-                "kesg_code": "E-6-1",
+                "kesg_code": None,
             },
             # 재활용 '량(톤)'은 비율과 별개 보조수치 — 표의 'R-1' 등에 오매칭되지 않게 키워드 한정
             "재활용량": {

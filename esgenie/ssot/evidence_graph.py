@@ -58,6 +58,7 @@ class TextNode:
     source_file: str
     page: int | None = None
     origin: Origin = "ocr_unstructured"
+    rba_code: str | None = None    # RBA 자가진단 substrate 매칭(고유 조항용)
 
     def to_dict(self) -> dict[str, Any]:
         return asdict(self)
@@ -123,6 +124,9 @@ class EvidenceGraph:
 
     def text_nodes_by_code(self, code: str) -> list[TextNode]:
         return [t for t in self._text_nodes.values() if t.kesg_code == code]
+
+    def text_nodes_by_rba_code(self, code: str) -> list[TextNode]:
+        return [t for t in self._text_nodes.values() if t.rba_code == code]
 
     def search_nodes(
         self,
@@ -220,6 +224,7 @@ def build_from_dart(report: Any) -> EvidenceGraph:
 
 # OCR metric_hint → K-ESG 코드 매핑 사전 (LLM 추정 보정용 화이트리스트)
 _HINT_TO_KESG: dict[str, str] = {
+    # ── 환경 E ──
     "사용전력량": "E-4-1",   # 에너지 사용량
     "전력": "E-4-1",
     "도시가스": "E-4-1",
@@ -228,11 +233,39 @@ _HINT_TO_KESG: dict[str, str] = {
     "용수": "E-5-1",
     "수도": "E-5-1",
     "폐기물": "E-6-1",
-    "지정폐기물": "E-6-1",
-    "재활용": "E-6-2",
+    # 지정폐기물은 하위 분류 → 보조수치(None). E-6-1 총량에 중복으로 들어가지 않게 hint 제외.
+    # E-6-2는 재활용 '비율(%)' 전용. '재활용량(톤)'은 부분문자열 "재활용"에 걸려
+    # E-6-1 총량 대신 비율 칸을 덮어쓰던 버그가 있어, 비율 키워드로만 한정한다.
+    # (재활용량은 코드 None으로 남겨 보조수치로만 다룬다 → 비율은 별도 추출/파생)
+    "재활용비율": "E-6-2",
+    "순환이용률": "E-6-2",
+    "재활용률": "E-6-2",
     "온실가스": "E-3-1",
     "scope1": "E-3-1",
     "scope2": "E-3-1",
+    # ── 사회 S ──
+    "신규채용": "S-2-1",
+    "채용인원": "S-2-1",
+    "정규직비율": "S-2-2",
+    "정규직전환율": "S-2-2",
+    "비정규직비율": "S-2-2",
+    "이직률": "S-2-3",
+    "퇴사율": "S-2-3",
+    "교육훈련비": "S-2-4",
+    "1인당교육훈련비": "S-2-4",
+    "복리후생비": "S-2-5",
+    "1인당복리후생비": "S-2-5",
+    "노조가입률": "S-2-6",
+    "여성비율": "S-3-1",
+    "여성임직원비율": "S-3-1",
+    "여성급여비율": "S-3-2",
+    "장애인고용률": "S-3-3",
+    "재해율": "S-4-2",
+    "사망만인율": "S-4-2",
+    "ltifr": "S-4-2",
+    "봉사참여율": "S-7-2",
+    "개인정보유출": "S-8-2",
+    "법규위반건수": "S-9-1",
 }
 
 # 단위 환산 → 탄소/에너지 표준화 (예시 계수, 실제는 환경부/한전 배출계수 사용)
@@ -304,6 +337,7 @@ def merge_ocr_extraction(
             source_file=extraction.source_file,
             page=c.page,
             origin=origin,
+            rba_code=getattr(c, "rba_code_guess", None),
         )
         graph.add_text_node(tnode)
 
@@ -338,11 +372,19 @@ def build_unified_graph(
 # 내부 헬퍼
 # ====================================================================
 
+# 총량/대표 코드로 잡으면 안 되는 하위·보조 수치(상위코드 부분문자열에 걸리는 것).
+# 예: '지정폐기물'은 '폐기물'(E-6-1)에 걸리지만 총량이 아니라 하위 분류다.
+_HINT_EXCLUDE: tuple[str, ...] = ("지정폐기물",)
+
+
 def _resolve_kesg_code(m: ExtractedMetric) -> str | None:
     """LLM 추정 코드 + 화이트리스트 사전으로 K-ESG 코드 확정."""
+    hint = m.metric_hint.lower().replace(" ", "")
+    # 하위·보조 수치는 어떤 추정코드가 와도 총량 코드로 잡지 않는다(중복 노드 방지).
+    if any(x in hint for x in _HINT_EXCLUDE):
+        return None
     if m.kesg_code_guess:
         return m.kesg_code_guess
-    hint = m.metric_hint.lower().replace(" ", "")
     for key, code in _HINT_TO_KESG.items():
         if key.lower() in hint:
             return code

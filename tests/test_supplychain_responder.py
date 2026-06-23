@@ -288,3 +288,135 @@ def test_excel_export_skips_issb_followup_sheet_when_no_issb_flags(tmp_path: Pat
     wb = load_workbook(path)
 
     assert "ISSB 보완" not in wb.sheetnames
+
+
+# ── 5. STEP 1: status 모델 확장 + 3분할 집계 ───────────────────────────
+from esgenie.supplychain.schema import Answer, ResponseSheet  # noqa: E402
+
+
+def _answer(qid: str, status: str) -> Answer:
+    return Answer(qid=qid, section="X", question_text=qid, value=None, status=status)
+
+
+def test_new_statuses_have_badges():
+    # hitl_required / not_applicable 도 배지 매핑이 있어야 함(렌더 시 KeyError 금지)
+    assert _answer("a", "hitl_required").badge == "✍️ 작성필요"
+    assert _answer("b", "not_applicable").badge == "➖ 해당없음"
+
+
+def test_answered_excludes_hitl_and_na():
+    # 자동응답으로 카운트되는 건 verified/self_reported/flagged 뿐
+    assert _answer("a", "verified").answered
+    assert _answer("a", "self_reported").answered
+    assert _answer("a", "flagged").answered
+    assert not _answer("a", "hitl_required").answered
+    assert not _answer("a", "insufficient").answered
+    assert not _answer("a", "not_applicable").answered
+
+
+def test_coverage_three_way_split_sums_to_100():
+    sheet = ResponseSheet(
+        framework_key="t", framework_label="t", corp_name="c",
+        answers=[
+            _answer("1", "verified"),       # 자동
+            _answer("2", "self_reported"),  # 자동
+            _answer("3", "flagged"),        # 자동
+            _answer("4", "hitl_required"),  # 사람필요
+            _answer("5", "insufficient"),   # 증빙대기
+        ],
+    )
+    assert sheet.denominator == 5
+    assert sheet.auto_pct == 60.0
+    assert sheet.hitl_pct == 20.0
+    assert sheet.pending_pct == 20.0
+    assert sheet.auto_pct + sheet.hitl_pct + sheet.pending_pct == 100.0
+    # 하위호환: coverage_pct == auto_pct
+    assert sheet.coverage_pct == sheet.auto_pct
+
+
+def test_not_applicable_excluded_from_denominator():
+    sheet = ResponseSheet(
+        framework_key="t", framework_label="t", corp_name="c",
+        answers=[
+            _answer("1", "verified"),
+            _answer("2", "not_applicable"),  # 분모에서 빠짐
+            _answer("3", "not_applicable"),
+        ],
+    )
+    assert sheet.denominator == 1
+    assert sheet.auto_pct == 100.0  # 1/1, NA 제외
+
+
+def test_all_not_applicable_no_zero_division():
+    sheet = ResponseSheet(
+        framework_key="t", framework_label="t", corp_name="c",
+        answers=[_answer("1", "not_applicable")],
+    )
+    assert sheet.denominator == 0
+    assert sheet.auto_pct == 0.0
+    assert sheet.hitl_pct == 0.0
+    assert sheet.pending_pct == 0.0
+
+
+def test_to_dict_includes_three_way_split():
+    sheet = ResponseSheet(
+        framework_key="t", framework_label="t", corp_name="c",
+        answers=[_answer("1", "verified"), _answer("2", "hitl_required")],
+    )
+    d = sheet.to_dict()
+    assert d["auto_pct"] == 50.0
+    assert d["hitl_pct"] == 50.0
+    assert d["pending_pct"] == 0.0
+
+
+def test_excel_export_handles_new_statuses(tmp_path: Path):
+    # hitl_required/not_applicable 행이 섞여도 색칠·저장에서 KeyError 없이 동작
+    sheet = ResponseSheet(
+        framework_key="t", framework_label="테스트", corp_name="한국정밀",
+        answers=[
+            _answer("1", "verified"),
+            _answer("2", "hitl_required"),
+            _answer("3", "not_applicable"),
+        ],
+    )
+    path = export_response_sheet(sheet, tmp_path)
+    assert Path(path).exists()
+
+
+# ── 6. STEP 3: derive를 데이터타입 기준으로 라우팅 ──────────────────────
+def test_empty_full_saq5_routes_narrative_item_to_hitl():
+    # 전체본(saq5)은 G-4-1(윤리위반 공시, 서술필요) 문항을 포함 → 빈입력 시 hitl_required
+    sheet = build_response_sheet("saq5")
+    ethics = next(a for a in sheet.answers if a.qid == "SAQ-B-1")
+    assert ethics.status == "hitl_required"
+    assert ethics.badge == "✍️ 작성필요"
+    # 작성필요 버킷이 0이 아니어야 함(3분할이 실제로 갈림)
+    assert sheet.hitl_pct > 0.0
+
+
+def test_empty_full_saq5_evidence_policy_item_stays_insufficient():
+    # 정보보호(S-8-1)는 정성이지만 증빙 올리면 풀리는 항목 → hitl 아닌 insufficient
+    sheet = build_response_sheet("saq5")
+    infosec = next(a for a in sheet.answers if a.qid == "SAQ-B-2")
+    assert infosec.status == "insufficient"
+    assert "정보보호" in infosec.rationale  # 룩업 테이블의 구체 안내문이 실림
+
+
+def test_unresolved_quantitative_uses_specific_request():
+    # 미해소 정량 문항은 insufficient + 룩업의 구체 증빙요청
+    sheet = build_response_sheet(FW)  # saq5_env, 빈입력
+    energy = next(a for a in sheet.answers if a.qid == "SAQ-E-NUM-ENERGY")
+    assert energy.status == "insufficient"
+    assert "고지서" in energy.rationale  # E-4-1 request에 고지서 언급
+
+
+def test_env_only_framework_has_no_hitl_when_empty():
+    # saq5_env는 E 코드만 → 빈입력 시 서술필요 항목이 없어 전부 insufficient(STEP1 회귀 유지)
+    sheet = build_response_sheet(FW)
+    assert all(a.status == "insufficient" for a in sheet.answers)
+    assert sheet.hitl_pct == 0.0
+
+
+def test_gaps_surface_hitl_as_write_task():
+    sheet = build_response_sheet("saq5")
+    assert any(g.startswith("[작성]") for g in sheet.gaps)
