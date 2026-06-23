@@ -69,7 +69,7 @@ def test_extract_table_cases_writes_snapshot(tmp_path: Path):
     assert summary["n_cases"] == 1
     assert cases[0]["gate_status_pred"] == "ACCEPT"
     assert cases[0]["resolved_tier_pred"] == 1
-    assert cases[0]["snapshot_path"].startswith("raw/")
+    assert Path(cases[0]["snapshot_path"]).parts[0] == "raw"
     snap = tmp_path / "raw" / f"{cases[0]['id']}.json"
     assert snap.exists()
     payload = json.loads(snap.read_text(encoding="utf-8"))
