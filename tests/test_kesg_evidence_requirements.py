@@ -69,3 +69,63 @@ def test_unknown_code_safe_default():
     req = requirement_for("Z-9-9")
     assert req.kind == "policy"
     assert req.evidence_types and req.request
+
+
+# ── RBA 고유 10항목 증빙 안내 테스트 ─────────────────────────────────────────
+
+_RBA_UNIQUE_CODES = ("A-3", "B-7", "C-3", "C-6", "D-4", "D-7", "E-3", "E-7", "E-10", "E-11")
+
+
+def test_rba_unique_items_explicitly_mapped():
+    """RBA 고유 10항목이 명시 매핑되어 있고 well-formed이다."""
+    for code in _RBA_UNIQUE_CODES:
+        req = requirement_for(code)
+        assert isinstance(req, EvidenceRequirement)
+        assert req.code == code
+        assert req.kind == "policy"
+        assert len(req.evidence_types) >= 2, f"{code}: evidence_types 너무 적음"
+        assert req.request.strip(), f"{code}: request 비어있음"
+        assert not req.human_narrative, f"{code}: RBA 고유항목은 증빙형(human_narrative=False)"
+
+
+def test_rba_items_are_evidence_resolvable():
+    """RBA 고유 10항목은 증빙 업로드로 자동 해소된다(insufficient 경로)."""
+    for code in _RBA_UNIQUE_CODES:
+        req = requirement_for(code)
+        assert req.resolvable_by_evidence, f"{code}: 증빙으로 풀려야 함"
+
+
+def test_rba_requirement_request_is_actionable():
+    """RBA 증빙 안내문이 구체적이고 실행 가능하다(단순 폴백이 아님)."""
+    from esgenie.knowledge.kesg_evidence_requirements import _DEFAULT_POLICY_REQUEST
+    for code in _RBA_UNIQUE_CODES:
+        req = requirement_for(code)
+        assert req.request != _DEFAULT_POLICY_REQUEST, (
+            f"{code}: 기본 폴백 안내문이 아닌 구체적 안내여야 함"
+        )
+
+
+def test_rba_derive_path_uses_explicit_requirement():
+    """RBA 고유항목이 insufficient일 때 명시 안내문이 derive에 반영된다."""
+    from esgenie.supplychain.responder import build_response_sheet
+    from esgenie.supplychain.frameworks.rba_self import RBA42
+
+    class _FakeExt:
+        mapped = {}
+        missing = []
+        corp_name = "test"
+
+    sheet = build_response_sheet(RBA42, corp_name="test",
+                                 extraction=_FakeExt(), evidence_graph=None)
+    by_qid = {a.qid: a for a in sheet.answers}
+    for code in _RBA_UNIQUE_CODES:
+        qid = f"RBA-{code}"
+        a = by_qid.get(qid)
+        if a is None:
+            continue
+        assert a.status == "insufficient"
+        req = requirement_for(code)
+        assert req.request in a.rationale, (
+            f"{qid}: derive 안내문에 명시 requirement가 반영되지 않음"
+        )
+        assert a.evidence_needed, f"{qid}: evidence_needed가 비어있음"
