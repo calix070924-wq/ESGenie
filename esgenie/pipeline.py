@@ -21,7 +21,7 @@ from .industry import resolve_module  # 업종 모듈 self-register 포함
 from .issb_gap import ISSBGapReport, build_issb_gap_report
 from .layer1_extract import ExtractionResult
 from .layer3_disclosure import DisclosureReport, detect_selective_disclosure
-from .layer2_rag import HybridRAG
+from .layer2_rag import HybridRAG, get_hybrid_rag
 from .layer4_verify import VerificationResult, verify_and_refine
 from .layer5_audit_trace import AuditTrace, build_audit_trace, save_audit_trace
 from .llm import CLIENT as LLM_CLIENT
@@ -382,8 +382,8 @@ def run(
                 "[L2] ⚠ 임베딩 폴백 모드(%s) — D3 의미검증 품질 저하. sentence-transformers 설치 권장",
                 backend,
             )
-        logger.info("[L2] Hybrid RAG 인덱스 빌드 중... (backend=%s)", backend)
-        rag = HybridRAG()
+        logger.info("[L2] Hybrid RAG 인덱스 로드 중... (backend=%s)", backend)
+        rag = get_hybrid_rag()
         build_rag_with_ssot(rag, report, evidence_graph)
 
         industry_stats = _load_industry_stats(report.industry)

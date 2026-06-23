@@ -313,10 +313,14 @@ def _extend_corp_index(rag: Any, extra_docs: list[Any]) -> None:
     if hasattr(index, "_docs"):
         existing = list(index._docs)
 
-    from esgenie.embeddings import VectorIndex
+    from esgenie.embeddings import BM25Index, VectorIndex
     new_index = VectorIndex()
     new_index.build(existing + extra_docs)
     rag.corp_index = new_index
+    if hasattr(rag, "corp_bm25_index"):
+        new_bm25 = BM25Index()
+        new_bm25.build(existing + extra_docs)
+        rag.corp_bm25_index = new_bm25
 
 
 # ====================================================================

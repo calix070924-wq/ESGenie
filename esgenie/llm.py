@@ -168,6 +168,8 @@ class LLMClient:
             content = _mock_rewrite(user)
         else:
             content = _mock_default(user)
+        if hint in {"generate", "rewrite"}:
+            content = _attach_mock_citations(content, user)
         if json_mode and not content.strip().startswith("{"):
             content = json.dumps({"result": content}, ensure_ascii=False)
         return LLMResponse(
@@ -603,6 +605,51 @@ def _parse_context(text: str) -> dict[str, Any]:
     elif "지배구조" in text and "G=지배구조" not in text:
         ctx["area"] = "G"
     return ctx
+
+
+def _extract_context_chunk_ids(user_prompt: str) -> list[str]:
+    corp_ids: list[str] = []
+    fallback_ids: list[str] = []
+    section = ""
+    for raw_line in user_prompt.splitlines():
+        line = raw_line.strip()
+        if not line:
+            continue
+        if line.startswith("[") and line.endswith("]"):
+            section = line
+            continue
+        match = re.match(r"- \[([0-9A-Za-z가-힣._:-]+)\]\s+", line)
+        if not match:
+            continue
+        chunk_id = match.group(1)
+        if section == "[자사 DART 원문]":
+            corp_ids.append(chunk_id)
+        fallback_ids.append(chunk_id)
+    ids = corp_ids or fallback_ids
+    return list(dict.fromkeys(ids))[:5]
+
+
+def _attach_mock_citations(text: str, user_prompt: str) -> str:
+    chunk_ids = _extract_context_chunk_ids(user_prompt)
+    if not chunk_ids:
+        return text
+    citation = " " + "".join(f"[{chunk_id}]" for chunk_id in chunk_ids)
+    lines: list[str] = []
+    for raw_line in text.splitlines():
+        line = raw_line.rstrip()
+        stripped = line.strip()
+        if (
+            not stripped
+            or stripped.startswith("#")
+            or stripped.startswith("|")
+            or stripped.startswith(">")
+            or stripped.startswith("[")
+            or re.search(r"\[[0-9A-Za-z가-힣._:-]+\]\s*$", stripped)
+        ):
+            lines.append(line)
+            continue
+        lines.append(line + citation)
+    return "\n".join(lines)
 
 
 def _mock_judge(user_prompt: str) -> str:
