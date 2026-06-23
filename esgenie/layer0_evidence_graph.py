@@ -152,6 +152,42 @@ _S_HEADCOUNT_PATTERN = re.compile(
     r"(?P<value>[\d,]+)\s*명",
 )
 
+# ── DART 사업보고서 표 형식 전용 패턴 ────────────────────────────────────────────
+# DART 원문 ZIP은 HTML/XML 태그 제거 후 표가 공백으로 평탄화되어 있음.
+# "직원 등의 현황" 섹션 내 표 데이터에서 S 수치를 추출하는 패턴.
+
+# 직원 합계 행: "합 계 {정규직수} {-} {기간제수} {-} {합계} {근속연수}"
+_S_DART_EMP_TOTAL_PATTERN = re.compile(
+    r"합\s*계\s+(?P<regular>[\d,]+)\s+[\d,-]+\s+(?P<contract>[\d,]+)\s+[\d,-]+\s+"
+    r"(?P<total>[\d,]+)\s+(?P<tenure>[\d.]+)"
+)
+
+# 성별합계 행: "성별합계 남/여 {정규직} {-} {기간제} {-} {합계} {근속}"
+_S_DART_GENDER_PATTERN = re.compile(
+    r"성별합계\s+(?P<gender>남|여)\s+(?P<regular>[\d,]+)\s+[\d,-]+\s+"
+    r"(?P<contract>[\d,]+)\s+[\d,-]+\s+(?P<total>[\d,]+)"
+)
+
+# 사업부문/직종별 남/여 행 (성별합계 없는 경우 — 현대차, POSCO 등):
+#   "자동차부문 남 59,625 - 9,829 - 69,454 16.2 ..."
+#   "사무직 남 335 - 82 9 417 13.3 ..."
+_S_DART_DEPT_GENDER_PATTERN = re.compile(
+    r"\S+(?:부문|직)\s+(?P<gender>남|여)\s+(?P<regular>[\d,]+)\s+[\d,-]+\s+"
+    r"(?P<contract>[\d,]+)\s+[\d,-]+\s+(?P<total>[\d,]+)"
+)
+
+# 육아휴직 사용률 전체:
+#   삼성: "육아휴직 사용률 남 x% 여 x% 전체 x%"
+#   현대: "육아휴직 사용률(전체) x%"
+_S_DART_PARENTAL_RATE_PATTERN = re.compile(
+    r"육아휴직\s*사용률\s*(?:\(전체\)|.*?전체)\s+(?P<value>[\d.]+)\s*%"
+)
+
+# 복리후생비 (손익계산서 항목): "복리후생비 {금액}" (단위: 백만원)
+_S_DART_WELFARE_PATTERN = re.compile(
+    r"복리후생비\s+(?P<value>[\d,]+)"
+)
+
 # 비율/퍼센트: "정규직 비율 xx.x%" / "여성 비율 xx%" / "재해율 x.xx%"
 _S_RATIO_PATTERN = re.compile(
     r"(?P<label>정규직\s*비율|비정규직\s*비율|이직률|퇴사율|재해율|사망만인율|"
@@ -362,10 +398,16 @@ def _extract_social_nodes(
     이미 kesg_data(정형)에서 생성된 노드와 중복이면 source를 병기하고 건너뛴다.
 
     커버하는 패턴:
-      - _S_HEADCOUNT_PATTERN : "신규 채용 xxx명" 등 인원 수치
-      - _S_RATIO_PATTERN     : "이직률 xx.x%" 등 비율 수치
-      - _S_MONEY_PATTERN     : "교육훈련비 xxx만 원" 등 금액 수치
-      - _S_COUNT_PATTERN     : "개인정보 유출 x건" 등 건수 수치
+      Phase A (문장형 — 지속가능경영보고서):
+        - _S_HEADCOUNT_PATTERN : "신규 채용 xxx명" 등 인원 수치
+        - _S_RATIO_PATTERN     : "이직률 xx.x%" 등 비율 수치
+        - _S_MONEY_PATTERN     : "교육훈련비 xxx만 원" 등 금액 수치
+        - _S_COUNT_PATTERN     : "개인정보 유출 x건" 등 건수 수치
+      Phase B (표 형식 — DART 사업보고서 원문):
+        - _S_DART_EMP_TOTAL_PATTERN   : 직원현황 표 합계행
+        - _S_DART_GENDER_PATTERN      : 성별합계행 (여성 비율 산출)
+        - _S_DART_PARENTAL_RATE_PATTERN: 육아휴직 사용률
+        - _S_DART_WELFARE_PATTERN     : 복리후생비 (손익계산서)
     """
     nodes: list[EvidenceNode] = []
     seen_metrics: set[str] = set()  # 스니펫 내 중복 방지
@@ -389,11 +431,11 @@ def _extract_social_nodes(
         (_S_COUNT_PATTERN, "건"),
     ]
 
+    # Phase A: 문장형 패턴 추출
     for idx, snippet in enumerate(report.raw_text_snippets):
         for pattern, fixed_unit in _PATTERNS:
             for m in pattern.finditer(snippet):
                 raw_label = m.group("label").replace(" ", "")
-                # 레이블을 정규화해 매핑 검색
                 kesg_code = None
                 for label_key, code in _S_LABEL_TO_KESG.items():
                     if label_key.replace(" ", "") in raw_label or raw_label in label_key.replace(" ", ""):
@@ -402,10 +444,8 @@ def _extract_social_nodes(
                 if not kesg_code:
                     continue
 
-                # 값 파싱
                 try:
                     if fixed_unit is None:
-                        # 금액 패턴: unit group 포함
                         value, unit = _unit_normalize(
                             m.group("value"), m.group("unit")
                         )
@@ -418,7 +458,6 @@ def _extract_social_nodes(
                 node_id = f"{report.corp_code}_{kesg_code}_{report.report_year}"
                 dedup_key = f"{kesg_code}_{idx}"
                 if node_id in graph.nodes or dedup_key in seen_metrics:
-                    # 이미 정형 데이터로 생성된 노드 → 중복 생성 방지
                     seen_metrics.add(dedup_key)
                     continue
                 seen_metrics.add(dedup_key)
@@ -432,6 +471,112 @@ def _extract_social_nodes(
                     source=f"raw_text/{idx}_social",
                     raw_text=snippet,
                 ))
+
+    # Phase B: DART 사업보고서 표 형식 추출
+    nodes.extend(_extract_social_from_dart_table(graph, report, seen_metrics))
+
+    return nodes
+
+
+def _extract_social_from_dart_table(
+    graph: EvidenceGraph,
+    report: CompanyReport,
+    seen_metrics: set[str],
+) -> list[EvidenceNode]:
+    """DART 사업보고서 원문의 '직원 등의 현황' 표에서 S 수치를 추출.
+
+    사업보고서 원문은 HTML/XML 태그 제거 후 표가 공백으로 평탄화되어 있어
+    문장형 패턴으로는 매칭 불가. 표 구조에 특화된 패턴으로 처리한다.
+    """
+    nodes: list[EvidenceNode] = []
+    full_text = "\n".join(report.raw_text_snippets)
+    if not full_text:
+        return nodes
+
+    # "직원 등의 현황" ~ "미등기임원 보수" 섹션 분리
+    # 목차 hit를 건너뛰기 위해 finditer로 순회하며 본문 위치를 특정
+    emp_start = -1
+    for marker in ("직원 등의 현황", "직원 등 현황", "직원현황"):
+        for m in re.finditer(re.escape(marker), full_text):
+            after = full_text[m.end(): m.end() + 80]
+            if re.search(r"-{3,}|\s+\d{3}\s", after):
+                continue
+            emp_start = m.start()
+            break
+        if emp_start >= 0:
+            break
+
+    if emp_start < 0:
+        return nodes
+
+    emp_end = full_text.find("미등기임원 보수", emp_start)
+    if emp_end < 0:
+        emp_end = emp_start + 30000
+    emp_section = full_text[emp_start:emp_end]
+
+    def _add_node(kesg_code: str, value: float, unit: str, source_tag: str, raw: str) -> None:
+        node_id = f"{report.corp_code}_{kesg_code}_{report.report_year}"
+        if node_id in graph.nodes or kesg_code in seen_metrics:
+            return
+        seen_metrics.add(kesg_code)
+        nodes.append(EvidenceNode(
+            id=f"{node_id}_dart_table",
+            metric=kesg_code,
+            value=value,
+            unit=unit,
+            period=report.report_year,
+            source=f"dart_table/{source_tag}",
+            raw_text=raw[:200],
+        ))
+
+    # 1) 직원 합계 → 정규직 비율 (S-2-2)
+    emp_match = _S_DART_EMP_TOTAL_PATTERN.search(emp_section)
+    if emp_match:
+        regular = int(emp_match.group("regular").replace(",", ""))
+        total = int(emp_match.group("total").replace(",", ""))
+        if total > 100 and regular <= total:
+            ratio = round(regular / total * 100, 1)
+            _add_node("S-2-2", ratio, "%", "emp_regular_ratio",
+                      f"정규직 {regular:,}명 / 전체 {total:,}명 = {ratio}%")
+
+    # 2) 성별합계 → 여성 비율 (S-3-1)
+    male_total = female_total = 0
+    for gm in _S_DART_GENDER_PATTERN.finditer(emp_section):
+        total_val = int(gm.group("total").replace(",", ""))
+        if gm.group("gender") == "남":
+            male_total = total_val
+        else:
+            female_total = total_val
+    # "성별합계" 행이 없으면 사업부문별 남/여 합산 (현대차 등)
+    if male_total + female_total == 0:
+        for gm in _S_DART_DEPT_GENDER_PATTERN.finditer(emp_section):
+            total_val = int(gm.group("total").replace(",", ""))
+            if gm.group("gender") == "남":
+                male_total += total_val
+            else:
+                female_total += total_val
+    combined = male_total + female_total
+    if combined > 100:
+        female_ratio = round(female_total / combined * 100, 1)
+        _add_node("S-3-1", female_ratio, "%", "emp_female_ratio",
+                  f"여성 {female_total:,}명 / 전체 {combined:,}명 = {female_ratio}%")
+
+    # 3) 육아휴직 사용률 (정보성 — S-2-7 없으면 S-2-2 보완 참고용)
+    parental_match = _S_DART_PARENTAL_RATE_PATTERN.search(full_text)
+    if parental_match:
+        parental_rate = float(parental_match.group("value"))
+        if 0 < parental_rate <= 100:
+            _add_node("S-2-7", parental_rate, "%", "parental_leave_rate",
+                      f"육아휴직 사용률 전체 {parental_rate}%")
+
+    # 4) 복리후생비 (S-2-5) — 손익계산서 항목 (단위: 백만원)
+    # 직원현황 섹션 외부 전체 텍스트에서 검색 (손익계산서에 위치)
+    welfare_match = _S_DART_WELFARE_PATTERN.search(full_text)
+    if welfare_match:
+        welfare_val = int(welfare_match.group("value").replace(",", ""))
+        if welfare_val > 1000:  # 최소 10억 이상 (백만원 단위)
+            _add_node("S-2-5", float(welfare_val), "백만원", "welfare_expense",
+                      f"복리후생비 {welfare_val:,}백만원")
 
     return nodes
 
