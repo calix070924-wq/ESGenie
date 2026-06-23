@@ -32,6 +32,7 @@ class Settings:
     force_mock: bool = False   # ESGENIE_FORCE_MOCK=1 → 키가 있어도 mock 강제 (테스트 결정성)
     strict_llm: bool = False   # ESGENIE_STRICT=1 → API 실패 시 mock fallback 금지, 예외 raise (평가/운영 모드)
     active_industry: str | None = None  # ESGENIE_INDUSTRY=automotive_parts → 업종 모듈 명시 선택(추론보다 우선)
+    pii_mask: bool = True      # ESGENIE_PII_MASK=0 → LLM 전송 및 트레이스 저장 시 PII 마스킹 비활성화
 
     @property
     def use_mock_llm(self) -> bool:
@@ -56,6 +57,7 @@ def load_settings() -> Settings:
         force_mock=os.getenv("ESGENIE_FORCE_MOCK", "0") == "1",
         strict_llm=os.getenv("ESGENIE_STRICT", "0") == "1",
         active_industry=os.getenv("ESGENIE_INDUSTRY") or None,
+        pii_mask=os.getenv("ESGENIE_PII_MASK", "1") == "1",
     )
 
 

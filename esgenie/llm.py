@@ -84,12 +84,17 @@ class LLMClient:
         """
         if self._openai_client is not None:
             try:
+                if SETTINGS.pii_mask:
+                    from .pii import mask_pii as _mask_pii
+                    _sys, _usr = _mask_pii(system), _mask_pii(user)
+                else:
+                    _sys, _usr = system, user
                 kwargs: dict[str, Any] = {
                     "model": SETTINGS.openai_model,
                     "temperature": temperature,
                     "messages": [
-                        {"role": "system", "content": system},
-                        {"role": "user", "content": user},
+                        {"role": "system", "content": _sys},
+                        {"role": "user", "content": _usr},
                     ],
                 }
                 if json_mode:
@@ -106,7 +111,12 @@ class LLMClient:
 
         if self._anthropic_client is not None:
             try:
-                sys_prompt = system
+                if SETTINGS.pii_mask:
+                    from .pii import mask_pii as _mask_pii
+                    _sys, _usr = _mask_pii(system), _mask_pii(user)
+                else:
+                    _sys, _usr = system, user
+                sys_prompt = _sys
                 if json_mode:
                     sys_prompt += "\n\n응답은 반드시 유효한 JSON 객체 하나로만 출력하라. 코드블록·설명 금지."
                 resp = self._anthropic_client.messages.create(
@@ -114,7 +124,7 @@ class LLMClient:
                     max_tokens=2048,
                     temperature=temperature,
                     system=sys_prompt,
-                    messages=[{"role": "user", "content": user}],
+                    messages=[{"role": "user", "content": _usr}],
                 )
                 text = "".join(
                     block.text for block in resp.content if getattr(block, "type", "") == "text"

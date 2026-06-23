@@ -169,8 +169,12 @@ def save_audit_trace(trace: AuditTrace) -> Path:
     ts = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
     filename = f"audit_trace_{trace.ticker}_{trace.area}_{ts}.json"
     out_path = OUTPUT_DIR / filename
+    data = trace.to_dict()
+    if SETTINGS.pii_mask:
+        from .pii import mask_pii_obj
+        data = mask_pii_obj(data)
     with open(out_path, "w", encoding="utf-8") as fp:
-        json.dump(trace.to_dict(), fp, ensure_ascii=False, indent=2)
+        json.dump(data, fp, ensure_ascii=False, indent=2)
     return out_path
 
 
