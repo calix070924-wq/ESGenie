@@ -475,6 +475,112 @@ def _extract_social_nodes(
     # Phase B: DART 사업보고서 표 형식 추출
     nodes.extend(_extract_social_from_dart_table(graph, report, seen_metrics))
 
+    # Phase C: Upstage DP HTML 표 추출 (raw_text_snippets에 <table 태그 포함 시)
+    for idx, snippet in enumerate(report.raw_text_snippets):
+        if "<table" in snippet.lower():
+            html_nodes = _extract_social_from_html_table(
+                html=snippet,
+                corp_code=report.corp_code,
+                report_year=report.report_year,
+                graph=graph,
+                seen_metrics=seen_metrics,
+            )
+            nodes.extend(html_nodes)
+
+    return nodes
+
+
+def _extract_social_from_html_table(
+    html: str,
+    corp_code: str,
+    report_year: int,
+    graph: EvidenceGraph,
+    seen_metrics: set[str],
+) -> list[EvidenceNode]:
+    """Upstage DP가 반환한 직원현황 HTML 표에서 S 수치 추출.
+
+    추출 대상:
+    - 합계 행: 정규직 수 / 전체 = 정규직 비율 (S-2-2)
+    - 성별합계 남/여: 여성 비율 (S-3-1)
+    html 파싱은 표준 라이브러리(re로 td 추출)만 사용.
+    """
+    nodes: list[EvidenceNode] = []
+
+    _TD_RE = re.compile(r"<t[dh][^>]*>(.*?)</t[dh]>", re.DOTALL | re.IGNORECASE)
+    _TR_RE = re.compile(r"<tr[^>]*>(.*?)</tr>", re.DOTALL | re.IGNORECASE)
+
+    def _parse_rows(table_html: str) -> list[list[str]]:
+        rows: list[list[str]] = []
+        for tr_m in _TR_RE.finditer(table_html):
+            cells = [
+                re.sub(r"<[^>]+>", "", c).strip()
+                for c in _TD_RE.findall(tr_m.group(1))
+            ]
+            if cells:
+                rows.append(cells)
+        return rows
+
+    def _parse_int(s: str) -> int | None:
+        cleaned = s.replace(",", "").replace(" ", "").replace("-", "")
+        if not cleaned or not cleaned.isdigit():
+            return None
+        return int(cleaned)
+
+    def _add_node(kesg_code: str, value: float, unit: str, raw: str) -> None:
+        node_id = f"{corp_code}_{kesg_code}_{report_year}"
+        if node_id in graph.nodes or kesg_code in seen_metrics:
+            return
+        seen_metrics.add(kesg_code)
+        nodes.append(EvidenceNode(
+            id=f"{node_id}_html_table",
+            metric=kesg_code,
+            value=value,
+            unit=unit,
+            period=report_year,
+            source=f"html_table/{kesg_code}",
+            raw_text=raw[:200],
+        ))
+
+    rows = _parse_rows(html)
+    if not rows:
+        return nodes
+
+    total_regular = total_all = 0
+    male_total = female_total = 0
+
+    for row in rows:
+        label = row[0].replace(" ", "") if row else ""
+
+        if "합계" in label and "성별" not in label:
+            nums = [_parse_int(c) for c in row[1:]]
+            valid = [n for n in nums if n is not None and n > 100]
+            if len(valid) >= 2:
+                total_regular = valid[0]
+                total_all = valid[-1]
+
+        if "성별합계" in label or ("성별" in label and "합계" in label):
+            if "남" in label:
+                nums = [_parse_int(c) for c in row[1:]]
+                valid = [n for n in nums if n is not None and n > 100]
+                if valid:
+                    male_total = max(valid)
+            elif "여" in label:
+                nums = [_parse_int(c) for c in row[1:]]
+                valid = [n for n in nums if n is not None and n > 100]
+                if valid:
+                    female_total = max(valid)
+
+    if total_regular > 0 and total_all > 0 and total_regular <= total_all:
+        ratio = round(total_regular / total_all * 100, 1)
+        _add_node("S-2-2", ratio, "%",
+                  f"정규직 {total_regular:,}명 / 전체 {total_all:,}명 = {ratio}%")
+
+    combined = male_total + female_total
+    if combined > 100:
+        female_ratio = round(female_total / combined * 100, 1)
+        _add_node("S-3-1", female_ratio, "%",
+                  f"여성 {female_total:,}명 / 전체 {combined:,}명 = {female_ratio}%")
+
     return nodes
 
 

@@ -197,6 +197,7 @@ def extract_structured(file_path: str, *, doc_type: str) -> OcrExtraction:
       · LLM(gpt-4.1-mini via Azure) 단위 정규화 + K-ESG 코드 추정
     """
     az_key, az_ep = _get_azure_docintel_keys()
+    upstage_key = _get_upstage_key()
     clova_key, clova_url = _get_clova_keys()
 
     if az_key and az_ep:
@@ -209,6 +210,17 @@ def extract_structured(file_path: str, *, doc_type: str) -> OcrExtraction:
             # Azure 실패 → 디지털 PDF 폴백 (데모 안정성)
             ext = _extract_structured_no_llm(file_path, doc_type=doc_type)
             ext.router_meta["azure_error"] = str(exc)
+            return ext
+
+    if upstage_key:
+        try:
+            tokens = _call_upstage_dp(file_path)
+            return _tokens_to_extraction(
+                tokens, doc_type=doc_type, file_path=file_path, engine="upstage_dp"
+            )
+        except Exception as exc:
+            ext = _extract_structured_no_llm(file_path, doc_type=doc_type)
+            ext.router_meta["upstage_error"] = str(exc)
             return ext
 
     if clova_key:
@@ -225,7 +237,16 @@ def _tokens_to_extraction(
     tokens: list[dict[str, Any]], *, doc_type: str, file_path: str, engine: str
 ) -> OcrExtraction:
     """OCR 토큰[{text,bbox}] → 템플릿/키워드 추출 → LLM/규칙 정규화 → OcrExtraction."""
-    raw_text = " ".join(t["text"] for t in tokens)
+    if engine == "upstage_dp":
+        raw_parts: list[str] = []
+        for t in tokens:
+            if t.get("html"):
+                raw_parts.append(t["html"])
+            elif t.get("text"):
+                raw_parts.append(t["text"])
+        raw_text = "\n".join(raw_parts)
+    else:
+        raw_text = " ".join(t["text"] for t in tokens)
     openai_key = _get_openai_key()
 
     try:
@@ -372,6 +393,57 @@ def _pin_rates_from_raw(
 
 
 # ---- 정형 채널 내부 헬퍼 ------------------------------------------------------
+
+def _get_upstage_key() -> str | None:
+    """Upstage Document Parse API 키 조회."""
+    import os
+    return os.getenv("UPSTAGE_API_KEY") or None
+
+
+def _call_upstage_dp(file_path: str) -> list[dict[str, Any]]:
+    """Upstage Document Parse API 호출 → [{text, html, category, page}] 반환.
+
+    표(category=table)는 html 키에 HTML 원본 보존.
+    텍스트(paragraph 등)는 text 키에 평문 저장.
+    """
+    import requests as _requests
+
+    key = _get_upstage_key()
+    if not key:
+        raise RuntimeError("UPSTAGE_API_KEY 미설정")
+
+    url = "https://api.upstage.ai/v1/document-digitization"
+    headers = {"Authorization": f"Bearer {key}"}
+    with open(file_path, "rb") as f:
+        files = {"document": (Path(file_path).name, f)}
+        data = {"ocr": "force"}
+        resp = _requests.post(url, headers=headers, files=files, data=data, timeout=120)
+    resp.raise_for_status()
+    body = resp.json()
+
+    tokens: list[dict[str, Any]] = []
+    for elem in body.get("elements", []):
+        category = elem.get("category", "")
+        page = int(elem.get("page", 1)) - 1
+        content = elem.get("content", {})
+        if category == "table":
+            html = content.get("html", "")
+            tokens.append({
+                "text": "",
+                "html": html,
+                "category": "table",
+                "page": page,
+            })
+        else:
+            text = content.get("text", "")
+            tokens.append({
+                "text": text,
+                "html": "",
+                "category": category,
+                "page": page,
+            })
+    return tokens
+
 
 def _get_azure_docintel_keys() -> tuple[str | None, str]:
     """Azure Document Intelligence 키와 엔드포인트 조회."""
