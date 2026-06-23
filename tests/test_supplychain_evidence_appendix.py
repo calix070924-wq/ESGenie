@@ -109,3 +109,62 @@ def test_embed_evidence_false_skips_appendix(tmp_path: Path):
     text, _ = _pdf_text(path)
     assert "증빙 부록" not in text
     assert "[E1]" not in text
+
+
+# ── 부록 dedup 테스트 ──────────────────────────────────────────────────────
+
+def test_appendix_dedup_same_file_same_page(tmp_path: Path):
+    """같은 파일+같은 페이지를 가리키는 복수 링크가 하나의 [E#]로 통합된다."""
+    _make_evidence_pdf(tmp_path / "evidence_pack" / "01.pdf")
+    ev1 = EvidenceLink(
+        file_name="01.pdf", relative_path="evidence_pack/01.pdf",
+        origin="ocr", bbox=[0.10, 0.05, 0.50, 0.10], page=0, node_id="n1",
+    )
+    ev2 = EvidenceLink(
+        file_name="01.pdf", relative_path="evidence_pack/01.pdf",
+        origin="ocr", bbox=[0.20, 0.30, 0.80, 0.40], page=0, node_id="n2",
+    )
+    answers = [
+        Answer("E-4-1", "환경", "전력 사용량(kWh)", 128400.0,
+               "verified", [ev1], [], "D1 통과", []),
+        Answer("E-3-1", "환경", "GHG 배출량(tCO2eq)", 45.2,
+               "verified", [ev2], [], "D1 통과", []),
+    ]
+    sheet = ResponseSheet("kesg28", "K-ESG 자가진단", "한울정밀㈜", answers, gaps=[])
+    path = export_response_sheet_pdf(sheet, tmp_path, evidence_base_dir=tmp_path)
+    text, _ = _pdf_text(path)
+
+    assert "[E1]" in text, "첫 번째 figure 참조가 있어야 함"
+    assert "[E2]" not in text, "같은 파일+페이지는 중복 figure를 만들지 않아야 함"
+
+
+def test_appendix_dedup_different_pages_get_separate_figures(tmp_path: Path):
+    """같은 파일이라도 다른 페이지를 가리키면 별도 [E#]이다."""
+    ev_path = tmp_path / "evidence_pack" / "multi.pdf"
+    ev_path.parent.mkdir(parents=True, exist_ok=True)
+    doc = fitz.open()
+    p1 = doc.new_page(width=600, height=800)
+    p1.insert_text((72, 60), "PAGE 1", fontsize=14)
+    p2 = doc.new_page(width=600, height=800)
+    p2.insert_text((72, 60), "PAGE 2", fontsize=14)
+    doc.save(str(ev_path))
+    doc.close()
+
+    ev1 = EvidenceLink(
+        file_name="multi.pdf", relative_path="evidence_pack/multi.pdf",
+        origin="ocr", bbox=[0.1, 0.05, 0.8, 0.1], page=0, node_id="n1",
+    )
+    ev2 = EvidenceLink(
+        file_name="multi.pdf", relative_path="evidence_pack/multi.pdf",
+        origin="ocr", bbox=[0.1, 0.05, 0.8, 0.1], page=1, node_id="n2",
+    )
+    answers = [
+        Answer("E-4-1", "환경", "전력", 100.0, "verified", [ev1], [], "", []),
+        Answer("E-3-1", "환경", "GHG", 50.0, "verified", [ev2], [], "", []),
+    ]
+    sheet = ResponseSheet("kesg28", "K-ESG", "Corp", answers, gaps=[])
+    path = export_response_sheet_pdf(sheet, tmp_path, evidence_base_dir=tmp_path)
+    text, _ = _pdf_text(path)
+
+    assert "[E1]" in text
+    assert "[E2]" in text, "다른 페이지는 별도 figure여야 함"

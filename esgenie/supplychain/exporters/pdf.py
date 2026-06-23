@@ -105,20 +105,33 @@ def _build_evidence_index(sheet, base_dir: Path) -> tuple[list[dict], dict[int, 
     반환: (figures, fig_map)
       figures = [{"fig_id","answer","link","path"}], fig_map = {id(link): "E3"}
     렌더 불가(파일 없음 등)는 figure에 넣지 않음 → 표 근거는 텍스트로만 남는다.
+
+    Dedup: 같은 (해석된 파일 경로, page) 조합은 한 번만 임베드하고, 그 조합을
+    가리키는 모든 링크가 동일한 [E#]를 공유한다.
+    # bbox가 다른 경우: 같은 파일+페이지면 첫 번째 링크의 bbox 기준으로 렌더하고
+    # 나머지 링크도 동일 figure를 참조한다. 페이지 전체 맥락을 보여주는 것이 목적이므로
+    # 개별 bbox마다 별도 figure를 만들지 않는다.
     """
     figures: list[dict] = []
     fig_map: dict[int, str] = {}
+    # (resolved_path_str, page) → fig_id: 중복 검출용
+    seen: dict[tuple[str, int | None], str] = {}
     n = 0
     for a in sheet.answers:
         for e in a.evidence_links:
-            # 페이지·bbox 둘 다 없으면 '원본 위치 시각화'의 의미가 없음 → 스킵
             if e.page is None and not e.bbox:
                 continue
             path = _resolve_evidence_path(base_dir, e)
             if path is None or path.suffix.lower() != ".pdf":
                 continue
+            dedup_key = (str(path.resolve()), e.page)
+            existing_fid = seen.get(dedup_key)
+            if existing_fid is not None:
+                fig_map[id(e)] = existing_fid
+                continue
             n += 1
             fid = f"E{n}"
+            seen[dedup_key] = fid
             fig_map[id(e)] = fid
             figures.append({"fig_id": fid, "answer": a, "link": e, "path": path})
     return figures, fig_map
