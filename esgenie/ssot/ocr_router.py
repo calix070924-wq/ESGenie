@@ -221,9 +221,14 @@ def _backfill_kesg_codes(ext: OcrExtraction) -> None:
 
     하이브리드 1단계(결정적 사전)다. 사전이 못 잡으면 코드를 비워 두어 상위 LLM
     폴백/HITL이 처리하게 한다. fuzzy로만 걸린 건 confidence를 낮춰 검증 큐로 보낸다.
+
+    중복 가드: 이미 다른 metric이 점유한 코드(템플릿/본문확정 등 권위 있는 산출물)는
+    backfill이 다시 붙이지 않는다. 예) 보조수치 '지정폐기물'(template code=None)이
+    E-6-1로 해소돼 본문확정 18.4t와 1000× 어긋난 유령 중복노드를 만드는 사례 차단.
     """
     from ..knowledge.kesg_items import resolve_kesg_code
 
+    taken_codes = {m.kesg_code_guess for m in ext.metrics if m.kesg_code_guess}
     resolved: list[dict[str, Any]] = []
     for m in ext.metrics:
         if m.kesg_code_guess:
@@ -231,7 +236,10 @@ def _backfill_kesg_codes(ext: OcrExtraction) -> None:
         code, score, method = resolve_kesg_code(m.metric_hint)
         if not code:
             continue
+        if code in taken_codes:
+            continue  # 이미 점유된 코드 → 중복노드 방지(권위 산출물 우선)
         m.kesg_code_guess = code
+        taken_codes.add(code)
         if method == "fuzzy":
             m.confidence = min(m.confidence, 0.5)  # 불확실 → HITL 검증 큐
         resolved.append({"metric_hint": m.metric_hint, "code": code,
