@@ -93,9 +93,10 @@ def test_detect_risk_vector_greenwash_higher_d2() -> None:
 
 
 def test_detect_risk_vector_industry_module_affects_d2() -> None:
-    mod = IndustryModule(key="test_risk_vector", lexicon_extra={"env": ("친환경 성과",)})
-    base = detect_risk_vector("친환경 성과를 달성하였다.")
-    over = detect_risk_vector("친환경 성과를 달성하였다.", industry_module=mod)
+    # "업사이클링 소재"는 글로벌 사전에 없는 업종 전용 표현 — base=0, over>0 검증
+    mod = IndustryModule(key="test_risk_vector", lexicon_extra={"env": ("업사이클링 소재",)})
+    base = detect_risk_vector("업사이클링 소재를 활용해 성과를 달성하였다.")
+    over = detect_risk_vector("업사이클링 소재를 활용해 성과를 달성하였다.", industry_module=mod)
     assert over.D2_modifier.score > base.D2_modifier.score
 
 
