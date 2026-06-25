@@ -544,3 +544,54 @@ def test_scope12_sums_electricity_and_gas():
         doc_type="gas_bill", metrics=[mk(360772.0, "MJ")], raw_text="", router_meta={}), report_year=2026)
     dps = {d.kesg_code: d for d in build_data_points(g, {}, target_codes=["E-3-1"])}
     assert dps["E-3-1"].value == 88.397, dps["E-3-1"].value
+
+
+# ---- OCR 무음 실패 노출 (ocr_health_report) ------------------------------------
+
+def _ext(source_file: str, router_meta: dict) -> OcrExtraction:
+    return OcrExtraction(
+        source_file=source_file,
+        channel=DocChannel.STRUCTURED,
+        doc_type="kepco_bill",
+        metrics=[],
+        raw_text="",
+        router_meta=router_meta,
+    )
+
+
+def test_ocr_health_clean_run_is_silent():
+    """정상 upstage_dp 추출만 있으면 경고 0건(노이즈 억제)."""
+    exts = [_ext("01.pdf", {"engine": "upstage_dp"})]
+    msgs = ocr_router_mod.ocr_health_report(exts, ["01.pdf"], upstage_key_present=True)
+    assert msgs == []
+
+
+def test_ocr_health_flags_upstage_fallback():
+    """upstage_error가 있으면 error 레벨로 사유까지 노출."""
+    exts = [_ext("01.pdf", {"fallback": "pymupdf+regex", "upstage_error": "HTTP 429 quota"})]
+    msgs = ocr_router_mod.ocr_health_report(exts, ["01.pdf"], upstage_key_present=True)
+    assert len(msgs) == 1
+    lvl, msg = msgs[0]
+    assert lvl == "error" and "429" in msg and "01.pdf" in msg
+
+
+def test_ocr_health_flags_missing_and_mock():
+    """추출 누락=error, mock=warning."""
+    exts = [_ext("01.pdf", {"mock": True})]
+    msgs = ocr_router_mod.ocr_health_report(
+        exts, ["01.pdf", "02.pdf"], upstage_key_present=True)
+    levels = {name_part: lvl for lvl, m in msgs for name_part in ("01.pdf", "02.pdf") if name_part in m}
+    assert levels["01.pdf"] == "warning"   # mock
+    assert levels["02.pdf"] == "error"     # 누락
+
+
+def test_ocr_health_warns_when_key_absent():
+    """키 미설정이면 전역 warning 1건 선두에 추가."""
+    msgs = ocr_router_mod.ocr_health_report([], ["01.pdf"], upstage_key_present=False)
+    assert msgs and msgs[0][0] == "warning" and "UPSTAGE_API_KEY" in msgs[0][1]
+
+
+def test_ocr_health_ignores_survey_and_no_evidence():
+    """SAQ/설문 외 증빙이 없으면 빈 목록."""
+    exts = [_ext("survey_form", {"source": "survey"})]
+    assert ocr_router_mod.ocr_health_report(exts, [], upstage_key_present=True) == []

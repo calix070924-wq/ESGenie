@@ -271,6 +271,64 @@ def tag_rba_codes(ext: OcrExtraction) -> None:
         ext.router_meta["rba_tagging"] = tagged
 
 
+def ocr_health_report(
+    extractions: list["OcrExtraction"],
+    evidence_names: list[str],
+    *,
+    upstage_key_present: bool,
+) -> list[tuple[str, str]]:
+    """업로드 증빙별 OCR 무음 실패를 (level, message) 목록으로 보고한다.
+
+    extract_structured는 Upstage 호출이 실패하면 pymupdf로 조용히 폴백하고 사유를
+    router_meta['upstage_error']에 숨긴다. 키/텍스트가 없으면 mock으로 떨어진다.
+    파싱 예외가 나면 _collect_ocr_extractions가 해당 파일을 통째로 누락시킨다.
+    이 함수는 그 세 흔적을 모아 UI가 경고를 띄울 수 있게 한다. 정상 추출은
+    메시지를 만들지 않는다(노이즈 억제) → '안 도는 것처럼 보이는' 무음 실패만 표면화.
+
+    level: 'error'(추출 실패/폴백) | 'warning'(키 미설정/mock).
+    evidence_names: OCR 대상 업로드 증빙 파일명(자가주장 SAQ 제외).
+    """
+    msgs: list[tuple[str, str]] = []
+    if not evidence_names:
+        return msgs
+
+    by_file: dict[str, OcrExtraction] = {}
+    for e in extractions or []:
+        sf = getattr(e, "source_file", None)
+        if sf and sf != "survey_form":
+            by_file[sf] = e
+
+    if not upstage_key_present:
+        msgs.append((
+            "warning",
+            "UPSTAGE_API_KEY 미설정 — 정형 증빙이 로컬 파서로 폴백됩니다(표·수치 정확도 저하).",
+        ))
+
+    for name in evidence_names:
+        e = by_file.get(name)
+        if e is None:
+            msgs.append((
+                "error",
+                f"{name} — OCR 추출 실패(파싱 예외로 제외). 터미널 로그 확인 필요.",
+            ))
+            continue
+        meta = getattr(e, "router_meta", {}) or {}
+        err = meta.get("upstage_error")
+        if err:
+            short = str(err)
+            short = short if len(short) <= 200 else short[:200] + "…"
+            msgs.append((
+                "error",
+                f"{name} — Upstage OCR 실패 → 로컬 폴백. 사유: {short}",
+            ))
+        elif meta.get("mock"):
+            msgs.append((
+                "warning",
+                f"{name} — Mock 추출(실 OCR 미수행). API 키·네트워크 확인.",
+            ))
+    return msgs
+
+
 # ====================================================================
 # 채널 A — 정형: 전통 OCR + LLM 후처리   (STUB)
 # ====================================================================
