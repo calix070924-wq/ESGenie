@@ -204,6 +204,73 @@ _REQUIREMENTS: dict[str, EvidenceRequirement] = {
     ),
 }
 
+# ── RBA 고유 10항목 (K-ESG 크로스워크 없음) ──────────────────────────────────
+# K-ESG에 대응 항목이 없는 RBA 고유 조항의 증빙 안내. 대부분 정성 내부정책이므로
+# kind="policy"이며, 증빙 업로드로 자동 해소된다(human_narrative=False).
+_RBA_REQUIREMENTS: dict[str, EvidenceRequirement] = {
+    "A-3": EvidenceRequirement(
+        "A-3", "policy",
+        ("근로시간 관리 규정", "연장근로 동의서 양식", "출퇴근·근태 관리 시스템 캡처"),
+        "주 60시간(연장 포함) 근로시간 상한 준수를 입증할 근로시간 관리 규정, "
+        "연장근로 자발적 동의서 양식, 주간 근태 집계 자료를 올려주세요.",
+    ),
+    "B-7": EvidenceRequirement(
+        "B-7", "policy",
+        ("위생·급식 관리 규정", "기숙사 안전점검 체크리스트", "식품위생 점검 기록"),
+        "청결한 화장실·식수·급식 시설과 기숙사(제공 시) 안전·위생 관리를 입증할 "
+        "위생관리 규정, 기숙사 점검기록, 식품위생 점검표를 올려주세요.",
+    ),
+    "C-3": EvidenceRequirement(
+        "C-3", "policy",
+        ("유해화학물질 관리 대장", "MSDS 비치 현황", "유해폐기물 위탁처리 계약서"),
+        "유해물질 식별·표시·안전관리 체계를 입증할 화학물질 관리대장, "
+        "MSDS 비치 현황표, 유해폐기물 처리 계약서를 올려주세요.",
+    ),
+    "C-6": EvidenceRequirement(
+        "C-6", "policy",
+        ("제품 함유물질 관리 규정", "RoHS/REACH 적합성 시험 성적서", "고객사 물질규제 준수 대응 문서"),
+        "제품 내 규제물질(RoHS/REACH 등) 관리 체계를 입증할 함유물질 관리 규정, "
+        "적합성 시험성적서, 고객사 물질규제 대응 문서를 올려주세요.",
+    ),
+    "D-4": EvidenceRequirement(
+        "D-4", "policy",
+        ("지식재산 보호 규정", "영업비밀 관리 지침", "비밀유지서약서(NDA) 양식"),
+        "지식재산·영업비밀 보호 체계를 입증할 IP 보호 규정, "
+        "영업비밀 관리 지침, 비밀유지서약서(NDA) 양식을 올려주세요.",
+    ),
+    "D-7": EvidenceRequirement(
+        "D-7", "policy",
+        ("책임광물 실사 정책서", "CMRT(분쟁광물 보고서)", "3TG·코발트 공급망 실사 결과"),
+        "책임있는 광물 조달(3TG·코발트) 실사 체계를 입증할 분쟁광물 정책서, "
+        "CMRT 보고서, 공급망 실사 결과 문서를 올려주세요.",
+    ),
+    "E-3": EvidenceRequirement(
+        "E-3", "policy",
+        ("법규 준수 관리 대장", "컴플라이언스 모니터링 절차서", "고객 요구사항 등록·추적 대장"),
+        "관련 법규·고객 요구사항(RBA 행동규범 포함) 식별·모니터링 체계를 입증할 "
+        "법규 관리 대장, 컴플라이언스 절차서, 고객 요구사항 추적 대장을 올려주세요.",
+    ),
+    "E-7": EvidenceRequirement(
+        "E-7", "policy",
+        ("이해관계자 의사소통 절차서", "근로자 공지·게시 기록", "공급사·고객 소통 채널 운영 현황"),
+        "방침·관행·기대·성과를 근로자·공급사·고객에 전달하는 프로세스를 입증할 "
+        "의사소통 절차서, 공지 기록, 소통 채널 운영 현황을 올려주세요.",
+    ),
+    "E-10": EvidenceRequirement(
+        "E-10", "policy",
+        ("시정조치(CAPA) 절차서", "내부감사 부적합 시정 기록", "시정조치 이행 확인서"),
+        "내·외부 평가에서 발견된 미흡사항의 시정 프로세스를 입증할 "
+        "CAPA 절차서, 부적합 시정 기록, 이행 확인서를 올려주세요.",
+    ),
+    "E-11": EvidenceRequirement(
+        "E-11", "policy",
+        ("문서·기록 관리 규정", "문서 보존 기한 목록", "기록 관리 시스템 운영 현황"),
+        "법규 준수 입증을 위한 문서·기록 관리 체계를 입증할 "
+        "문서관리 규정, 보존기한 목록, 기록관리 시스템 현황을 올려주세요.",
+    ),
+}
+_REQUIREMENTS.update(_RBA_REQUIREMENTS)
+
 # 정성 항목 기본 안내(미등재 코드의 policy 폴백에 사용).
 _DEFAULT_POLICY_REQUEST = "관련 내부 방침서·규정·인증서를 올리면 자동으로 검토됩니다."
 _DEFAULT_QUANT_REQUEST = "해당 수치를 입증할 고지서·명세서·산정표를 올려주세요."
@@ -237,8 +304,12 @@ def derive_kind_for(code: str) -> DeriveKind:
 
 
 # ── 무결성 가드 ───────────────────────────────────────────────────────────────
-# 명시 매핑은 모두 실재하는 K-ESG 코드여야 한다.
-assert all(kesg_items.by_code(c) is not None for c in _REQUIREMENTS), (
+# 명시 매핑은 실재하는 K-ESG 코드 또는 등록된 RBA 고유 코드여야 한다.
+from .rba_items import RBA_BY_CODE as _RBA_BY_CODE  # noqa: E402
+assert all(
+    kesg_items.by_code(c) is not None or c in _RBA_BY_CODE
+    for c in _REQUIREMENTS
+), (
     "kesg_evidence_requirements에 존재하지 않는 코드가 있습니다."
 )
 # BASIC_28은 전부 명시 매핑되어 있어야 한다(폴백에 의존하지 않음).
