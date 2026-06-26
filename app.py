@@ -322,6 +322,22 @@ def _run_pipeline_now(
     return result
 
 
+def _render_ocr_health(result) -> None:
+    """OCR 무음 실패(Upstage 폴백·mock·파싱 누락)를 화면 경고로 노출."""
+    roles = st.session_state.get("upload_roles", {})
+    evidence_names = [
+        name for name in st.session_state.get("upload_paths", {})
+        if roles.get(name) != "supplier_claim"
+    ]
+    msgs = ocr_router.ocr_health_report(
+        getattr(result, "ocr_extractions", None) or [],
+        evidence_names,
+        upstage_key_present=bool(os.getenv("UPSTAGE_API_KEY")),
+    )
+    for lvl, msg in msgs:
+        (st.error if lvl == "error" else st.warning)(f"🔍 OCR · {msg}")
+
+
 _ensure_state_defaults()
 _render_sidebar()
 
@@ -539,6 +555,7 @@ else:
     active_area = area
 
 if result is not None:
+    _render_ocr_health(result)
     summary_cards = []
     extraction = getattr(result, "extraction", None)
     v15_trace = getattr(result, "v15_trace", None)
