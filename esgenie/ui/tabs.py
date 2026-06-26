@@ -717,7 +717,7 @@ def render_diag_tab(result, gradient: str, *, show_header: bool = True) -> None:
                 "항목명": _item_name_with_issb(entry["name"], entry["code"]),
                 "값": entry["value"],
                 "단위": entry.get("unit") or "-",
-                "출처": _source_tag(entry),
+                "출처": _source_tag(entry, ssot),
             }
             for entry in extraction.mapped.values()
             if entry["code"] in profile_codes and not entry.get("beyond_profile")
@@ -1665,10 +1665,48 @@ def _render_hitl_panel(sentence_trace) -> None:
         )
 
 
-def _source_tag(entry: dict) -> str:
+def _source_tag(entry: dict, graph=None) -> str:
+    """공시 항목의 출처 배지를 실제 evidence 노드의 origin으로 판정한다.
+
+    노드 ID 문자열에 "ocr"가 들어있는지로 추측하던 기존 휴리스틱은 정성 조항
+    TextNode(`{corp}_TXT_0001`)와 OCR로만 채운 합성 항목을 전부 DART로 잘못
+    분류했다. 이제 evidence_node_ids로 그래프 노드를 실제 조회해
+    origin(dart | ocr_structured | ocr_unstructured)과 TextNode 여부로 판정한다.
+
+    - survey_ 노드 → 📝 설문
+    - origin이 ocr_structured/ocr_unstructured 이거나 TextNode → 📄 OCR
+    - origin이 dart인 EvidenceNode → 🏛 DART
+    - OCR·DART 증거가 섞이면 둘 다 표기(🏛 DART · 📄 OCR)
+    graph가 없으면(과거 호출부) ID 문자열 휴리스틱으로 폴백한다.
+    """
     evidence_ids = entry.get("evidence_node_ids", [])
     if any(node_id.startswith("survey_") for node_id in evidence_ids):
         return "📝 설문"
-    if any("ocr" in node_id for node_id in evidence_ids):
+
+    if graph is None:
+        # 폴백: 그래프 미전달 시 기존 문자열 휴리스틱 유지
+        return "📄 OCR" if any("ocr" in node_id for node_id in evidence_ids) else "🏛 DART"
+
+    nodes = getattr(graph, "nodes", {}) or {}
+    text_nodes = getattr(graph, "text_nodes", {}) or {}
+    has_ocr = False
+    has_dart = False
+    for node_id in evidence_ids:
+        if node_id in text_nodes:
+            has_ocr = True
+            continue
+        node = nodes.get(node_id)
+        if node is None:
+            continue
+        if getattr(node, "origin", "dart") in ("ocr_structured", "ocr_unstructured"):
+            has_ocr = True
+        else:
+            has_dart = True
+
+    if has_dart and has_ocr:
+        return "🏛 DART · 📄 OCR"
+    if has_ocr:
         return "📄 OCR"
+    if has_dart:
+        return "🏛 DART"
     return "🏛 DART"

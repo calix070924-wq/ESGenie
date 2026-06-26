@@ -5,6 +5,7 @@ from types import SimpleNamespace
 
 from esgenie.issb_gap import build_issb_gap_report
 from esgenie.knowledge.kesg_items import PROFILE_LABELS, items_for_profile
+from esgenie.ssot.evidence_graph import EvidenceGraph, EvidenceNode, TextNode
 import esgenie.ui.tabs as tabs
 from esgenie.ui.tabs import (
     _esg_coverage_rows,
@@ -12,6 +13,7 @@ from esgenie.ui.tabs import (
     _issb_badge_text,
     _issb_gap_table_rows,
     _item_name_with_issb,
+    _source_tag,
     _supplychain_issb_alert_rows,
     _supplychain_upload_cta_rows,
 )
@@ -174,3 +176,75 @@ def test_supplychain_upload_cta_rows_cover_checklist_statuses():
     assert by_q["(수치) 연간 에너지 사용량"]["할 일"] == "검토·보완"
     assert "인권정책서" in by_q["인권 정책 또는 인권 실사 체계를 운영합니까?"]["올릴 문서 / 작성 사항"]
     assert by_q["윤리규범/준법경영 체계를 운영합니까?"]["할 일"] == "담당자 작성"
+
+
+# ────────────────────────────────────────────────────────────────────
+# _source_tag — 출처 배지 판정 (노드 origin 기반)
+# ────────────────────────────────────────────────────────────────────
+
+def _graph_with_nodes(nodes=(), text_nodes=()):
+    graph = EvidenceGraph(corp_code="00000000", corp_name="테스트")
+    for node in nodes:
+        graph.add_node(node)
+    for tnode in text_nodes:
+        graph.add_text_node(tnode)
+    return graph
+
+
+def _evidence_node(node_id: str, origin: str) -> EvidenceNode:
+    return EvidenceNode(
+        id=node_id, metric="E-4-1", value=1.0, unit="kWh",
+        period=2024, source="src", origin=origin,
+    )
+
+
+def _text_node(node_id: str) -> TextNode:
+    return TextNode(
+        id=node_id, section="환경방침", text="...",
+        kesg_code="E-1-1", source_file="규정집.pdf",
+    )
+
+
+def test_source_tag_textnode_only_is_ocr():
+    # 정성 조항 TextNode(`{corp}_TXT_0001`)만 증거 — "ocr" 문자열이 ID에 없어도 OCR로 판정
+    graph = _graph_with_nodes(text_nodes=[_text_node("00000000_TXT_0001")])
+    entry = {"evidence_node_ids": ["00000000_TXT_0001"]}
+    assert _source_tag(entry, graph) == "📄 OCR"
+
+
+def test_source_tag_ocr_structured_node_is_ocr():
+    graph = _graph_with_nodes(nodes=[_evidence_node("n_ocr", "ocr_structured")])
+    entry = {"evidence_node_ids": ["n_ocr"]}
+    assert _source_tag(entry, graph) == "📄 OCR"
+
+
+def test_source_tag_dart_only_is_dart():
+    graph = _graph_with_nodes(nodes=[_evidence_node("n_dart", "dart")])
+    entry = {"evidence_node_ids": ["n_dart"]}
+    assert _source_tag(entry, graph) == "🏛 DART"
+
+
+def test_source_tag_mixed_dart_and_ocr():
+    graph = _graph_with_nodes(nodes=[
+        _evidence_node("n_dart", "dart"),
+        _evidence_node("n_ocr", "ocr_unstructured"),
+    ])
+    entry = {"evidence_node_ids": ["n_dart", "n_ocr"]}
+    assert _source_tag(entry, graph) == "🏛 DART · 📄 OCR"
+
+
+def test_source_tag_survey_node_is_survey():
+    graph = _graph_with_nodes()
+    entry = {"evidence_node_ids": ["survey_E-1-1"]}
+    assert _source_tag(entry, graph) == "📝 설문"
+
+
+def test_source_tag_no_evidence_defaults_to_dart():
+    graph = _graph_with_nodes()
+    assert _source_tag({"evidence_node_ids": []}, graph) == "🏛 DART"
+
+
+def test_source_tag_without_graph_falls_back_to_heuristic():
+    # graph 미전달 시 기존 ID 문자열 휴리스틱 유지
+    assert _source_tag({"evidence_node_ids": ["x__ocr_structured__y"]}) == "📄 OCR"
+    assert _source_tag({"evidence_node_ids": ["00000000_E-4-1_2024__dart"]}) == "🏛 DART"
