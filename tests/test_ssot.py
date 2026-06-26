@@ -513,6 +513,97 @@ def test_designated_waste_not_counted_as_total():
     assert e61 == [18400.0], f"E-6-1 총량 노드는 1개여야 함, 실제={e61}"
 
 
+# ---- (원인 2-c) DART 미공시 코드의 OCR 정량노드 승격 ------------------------------
+
+def _waste_extraction() -> OcrExtraction:
+    """폐기물 명세 — 총량 E-6-1(DART도 공시) + 재활용률 E-6-2(DART 미공시)."""
+    return OcrExtraction(
+        source_file="03_사업장폐기물.pdf", channel=DocChannel.STRUCTURED,
+        doc_type="waste_ledger",
+        metrics=[
+            ExtractedMetric(metric_hint="E-6-1 본문확정", value=18.4, unit="ton",
+                            period="2026", kesg_code_guess="E-6-1", confidence=0.92),
+            ExtractedMetric(metric_hint="재활용 비율", value=29.3, unit="%",
+                            period="2026", kesg_code_guess="E-6-2", confidence=0.90),
+        ],
+    )
+
+
+def test_ocr_quant_node_promoted_when_dart_missing_code():
+    """DART가 공시 안 한 코드라도 OCR 정량노드가 있으면 공시 항목으로 승격된다.
+
+    원인 2-c 회귀 가드: 기존엔 OCR 정량노드가 'DART가 먼저 만든 mapped 항목'에만
+    보조증거로 붙어, 재활용률 E-6-2(DART 미공시)는 통째로 버려져 공시 항목 표에서
+    누락됐다. 이제 by_code 유효 코드면 실제 OCR 수치로 채워 승격해야 한다.
+    """
+    report = load_report("SME001")
+    assert "E-6-2" not in report.kesg_data   # 전제: DART 미공시
+    graph = build_unified_graph(
+        report, [_kepco_extraction(), _waste_extraction()],
+        corp_code=report.corp_code, corp_name=report.corp_name,
+        report_year=report.report_year,
+    )
+    res = extract_with_ssot(report, graph)
+
+    e62 = res.mapped.get("E-6-2")
+    assert e62 is not None, "DART 미공시여도 OCR 정량노드로 E-6-2가 승격돼야 함"
+    assert e62["value"] == 29.3
+    assert e62["unit"] == "%"
+    # OCR 정량 노드(ocr_structured)가 증거로 붙어야 함
+    ocr_ids = [nid for nid in e62["evidence_node_ids"]
+               if nid in graph.nodes and graph.nodes[nid].origin in ("ocr_structured", "ocr_unstructured")]
+    assert ocr_ids, "승격된 항목에 OCR 정량 노드가 증거로 붙어야 함"
+    assert "E-6-2" not in res.missing
+
+
+def test_ocr_quant_promotion_skips_broken_vlm_hints():
+    """깨진 VLM hint(유효 K-ESG 코드 아님)는 승격되지 않는다 — by_code 게이트.
+
+    VLM 폴백이 'CSPD count' 같은 잡음 metric_hint를 만들어 metric=hint 그대로
+    노드가 생겨도, by_code(None)이라 mapped로 승격되지 않아 표가 오염되지 않아야 한다.
+    """
+    report = load_report("SME001")
+    junk = OcrExtraction(
+        source_file="11_원부자재.pdf", channel=DocChannel.UNSTRUCTURED,
+        doc_type="ambiguous_fallback_vlm",
+        metrics=[
+            ExtractedMetric(metric_hint="CSPD count", value=380.0, unit="units",
+                            period="2026", kesg_code_guess=None, confidence=0.75),
+            ExtractedMetric(metric_hint="unknown category counts", value=85.0, unit="units",
+                            period="2026", kesg_code_guess=None, confidence=0.75),
+        ],
+    )
+    graph = build_unified_graph(
+        report, [junk],
+        corp_code=report.corp_code, corp_name=report.corp_name,
+        report_year=report.report_year,
+    )
+    res = extract_with_ssot(report, graph)
+    assert "CSPD count" not in res.mapped
+    assert "unknown category counts" not in res.mapped
+
+
+def test_dart_disclosed_code_keeps_dart_value_with_ocr_evidence():
+    """DART가 공시한 코드는 DART 값 유지 + OCR은 보조증거로만 붙는다(승격 아님).
+
+    승격 경로 추가가 기존 'DART 우선' 동작을 깨지 않는지 확인.
+    """
+    report = load_report("SME001")
+    assert "E-4-1" in report.kesg_data   # 전제: DART 공시
+    graph = build_unified_graph(
+        report, [_kepco_extraction()],
+        corp_code=report.corp_code, corp_name=report.corp_name,
+        report_year=report.report_year,
+    )
+    res = extract_with_ssot(report, graph)
+    e41 = res.mapped["E-4-1"]
+    # 값은 DART 원천 유지(OCR 128400으로 덮어쓰지 않음)
+    assert str(e41["value"]) == str(report.kesg_data["E-4-1"]["value"])
+    ocr_ids = [nid for nid in e41["evidence_node_ids"]
+               if nid in graph.nodes and graph.nodes[nid].origin in ("ocr_structured", "ocr_unstructured")]
+    assert ocr_ids, "DART 항목에도 OCR 보조증거가 붙어야 함"
+
+
 def test_pin_totals_from_raw_fixes_billing_cells():
     """청구서 본문 명시값으로 전력·가스·폐기물 대표수치를 결정적 교정(표 오집 교정)."""
     from esgenie.ssot.ocr_router import _pin_totals_from_raw, ExtractedMetric
