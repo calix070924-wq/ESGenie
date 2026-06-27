@@ -604,6 +604,41 @@ def test_dart_disclosed_code_keeps_dart_value_with_ocr_evidence():
     assert ocr_ids, "DART 항목에도 OCR 보조증거가 붙어야 함"
 
 
+def test_apply_template_column_match_picks_usage_not_first_cell():
+    """한전 표: 단위가 헤더 셀(사용량(kWh))·값이 데이터 행에 분리된 구조에서
+    컬럼 정렬(bbox x중심)로 사용량 컬럼 값(142,560)을 집고, 첫 숫자 컬럼
+    (전월지침 48,210)을 잘못 집지 않는다. 단위는 헤더 괄호단위(kWh) 우선."""
+    from esgenie.ssot.ocr_router import _apply_template, _load_template
+    tokens = [
+        {"text": "구분", "bbox": [0.105, 0.307, 0.133, 0.318], "page": 0},
+        {"text": "전월지침", "bbox": [0.267, 0.307, 0.323, 0.318], "page": 0},
+        {"text": "당월지침", "bbox": [0.429, 0.307, 0.485, 0.318], "page": 0},
+        {"text": "배율", "bbox": [0.591, 0.307, 0.619, 0.318], "page": 0},
+        {"text": "사용량(kWh)", "bbox": [0.686, 0.307, 0.772, 0.318], "page": 0},
+        {"text": "유효전력", "bbox": [0.105, 0.332, 0.161, 0.343], "page": 0},
+        {"text": "48,210", "bbox": [0.363, 0.332, 0.409, 0.343], "page": 0},
+        {"text": "50,586", "bbox": [0.525, 0.332, 0.571, 0.343], "page": 0},
+        {"text": "60", "bbox": [0.649, 0.332, 0.666, 0.343], "page": 0},
+        {"text": "142,560", "bbox": [0.700, 0.332, 0.760, 0.343], "page": 0},
+    ]
+    kv = _apply_template(tokens, _load_template("kepco_bill"))
+    assert kv["사용전력량"]["value"] == 142560.0
+    assert kv["사용전력량"]["unit"] == "kWh"          # 헤더 괄호단위 우선(템플릿 기본단위 아님)
+    assert kv["사용전력량"]["bbox"] == [0.700, 0.332, 0.760, 0.343]  # 사용량 컬럼(전월지침 아님)
+
+
+def test_apply_template_falls_back_when_no_bbox():
+    """bbox 없는 토큰(pymupdf 일부 경로)은 컬럼 매칭 불가 → 기존 인접매칭 폴백."""
+    from esgenie.ssot.ocr_router import _apply_template, _load_template
+    tokens = [
+        {"text": "사용전력량", "bbox": None, "page": None},
+        {"text": "128,400", "bbox": None, "page": None},
+    ]
+    kv = _apply_template(tokens, _load_template("kepco_bill"))
+    assert kv["사용전력량"]["value"] == 128400.0
+    assert kv["사용전력량"]["unit"] == "kWh"
+
+
 def test_pin_totals_from_raw_fixes_billing_cells():
     """청구서 본문 명시값으로 전력·가스·폐기물 대표수치를 결정적 교정(표 오집 교정)."""
     from esgenie.ssot.ocr_router import _pin_totals_from_raw, ExtractedMetric

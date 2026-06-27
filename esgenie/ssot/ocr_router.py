@@ -823,10 +823,68 @@ def _find_number(text: str):
     return _NUMBER_RE.search(cleaned)
 
 
+_HEADER_UNIT_RE = __import__("re").compile(r"\(\s*(kWh|MWh|MJ|GJ|TJ|kW|ton|t|m3|㎥|L|원|%)\s*\)", __import__("re").IGNORECASE)
+
+
+def _x_center(bbox: list[float] | None) -> float | None:
+    """bbox 가로 중심(0~1). 컬럼 정렬 판정용."""
+    if not bbox or len(bbox) < 4:
+        return None
+    return (float(bbox[0]) + float(bbox[2])) / 2.0
+
+
+def _y_top(bbox: list[float] | None) -> float | None:
+    """bbox 상단 y(0~1). 행 순서 판정용."""
+    if not bbox or len(bbox) < 4:
+        return None
+    return float(bbox[1])
+
+
+def _match_column_value(
+    header_tok: dict[str, Any], tokens: list[dict[str, Any]], *, x_tol: float = 0.06
+) -> dict[str, Any] | None:
+    """헤더 토큰과 같은 컬럼(x중심 근접)·아래 행의 숫자 토큰을 값으로 채택.
+
+    표에서 단위가 헤더 셀('사용량(kWh)')에, 값이 데이터 행에 분리돼 있고 데이터 행
+    첫 컬럼(전월지침)을 인접매칭이 잘못 집던 사례를 컬럼 정렬로 교정한다.
+    헤더 bbox가 없으면(좌표 미상) None → 호출부가 기존 인접매칭으로 폴백.
+    """
+    hx = _x_center(header_tok.get("bbox"))
+    hy = _y_top(header_tok.get("bbox"))
+    if hx is None or hy is None:
+        return None
+    best: dict[str, Any] | None = None
+    best_dy: float | None = None
+    for t in tokens:
+        ty = _y_top(t.get("bbox"))
+        tx = _x_center(t.get("bbox"))
+        if ty is None or tx is None or ty <= hy:
+            continue  # 헤더보다 위/같은 행 제외(데이터 행만)
+        if abs(tx - hx) > x_tol:
+            continue  # 다른 컬럼
+        m = _find_number(t.get("text", ""))
+        if not m:
+            continue
+        dy = ty - hy
+        if best_dy is None or dy < best_dy:   # 헤더 바로 아래(첫 데이터 행) 우선
+            best, best_dy = t, dy
+    if best is None:
+        return None
+    return {
+        "value": float(_find_number(best["text"]).group()),
+        "bbox": best.get("bbox"),
+        "page": best.get("page"),
+    }
+
+
 def _apply_template(tokens: list[dict[str, Any]], template: dict[str, Any]) -> dict[str, Any]:
     """템플릿의 라벨 키워드와 토큰 텍스트를 매칭해 {라벨: {value, unit, bbox}} 추출.
 
-    전략: 라벨 키워드와 인접한(오른쪽 또는 아래) 숫자 토큰을 값으로 채택.
+    전략(우선순위):
+      1) 헤더 토큰과 같은 컬럼(bbox x중심)·아래 행의 값 — 표에서 단위가 헤더 셀에,
+         값이 데이터 행에 분리된 경우 첫 숫자 컬럼(전월지침 등) 오집을 방지.
+      2) bbox가 없거나 컬럼 매칭 실패 시 — 기존 인접(오른쪽/아래) 숫자 토큰 폴백.
+    단위는 헤더 텍스트의 괄호 단위('사용량(kWh)'→kWh)를 우선, 없으면 템플릿 unit.
     """
     number_re = None  # _find_number 사용
     result: dict[str, Any] = {}
@@ -838,25 +896,40 @@ def _apply_template(tokens: list[dict[str, Any]], template: dict[str, Any]) -> d
 
         for i, tok in enumerate(tokens):
             if any(kw in tok["text"] for kw in keywords):
+                # 헤더 셀 괄호 단위가 있으면 그것을 우선(템플릿 기본단위·K-ESG 라벨 덮어쓰기 방지)
+                hu = _HEADER_UNIT_RE.search(tok["text"])
+                eff_unit = hu.group(1) if hu else unit
                 # 현재 토큰에 숫자가 있으면 우선 사용 (예: "사용전력량(kWh): 128,400")
                 m = _find_number(tok["text"])
                 if m:
                     result[label_key] = {
                         "value": float(m.group()),
-                        "unit": unit,
+                        "unit": eff_unit,
                         "kesg_code": kesg,
                         "bbox": tok.get("bbox"),
                         "page": tok.get("page"),
                         "raw_label": tok["text"],
                     }
                     break
-                # 현재 토큰에 숫자 없으면 인접 토큰(최대 5개) 탐색
+                # ① 컬럼 정렬 매칭(헤더와 같은 x, 아래 행) — 첫 숫자 컬럼 오집 방지
+                col = _match_column_value(tok, tokens)
+                if col is not None:
+                    result[label_key] = {
+                        "value": col["value"],
+                        "unit": eff_unit,
+                        "kesg_code": kesg,
+                        "bbox": col["bbox"],
+                        "page": col["page"],
+                        "raw_label": tok["text"],
+                    }
+                    break
+                # ② 폴백: 현재 토큰에 숫자 없으면 인접 토큰(최대 5개) 탐색
                 for j in range(i + 1, min(i + 6, len(tokens))):
                     m = _find_number(tokens[j]["text"])
                     if m:
                         result[label_key] = {
                             "value": float(m.group()),
-                            "unit": unit,
+                            "unit": eff_unit,
                             "kesg_code": kesg,
                             "bbox": tokens[j].get("bbox"),
                             "page": tokens[j].get("page"),
