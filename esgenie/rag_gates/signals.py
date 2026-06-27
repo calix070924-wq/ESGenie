@@ -6,7 +6,7 @@ from dataclasses import dataclass, field
 
 
 _CITATION_RE = re.compile(r"\[([0-9A-Za-z가-힣._:-]+)\]")
-_NUMBER_RE = re.compile(r"\d[\d,]*(?:\.\d+)?")
+_NUMBER_RE = re.compile(r"\d[\d,]*(?:\.\d+)?(?:[eE][+-]?\d+)?")
 _SEPARATOR_RE = re.compile(r"^\|\s*[-: ]+\|\s*$")
 
 
@@ -48,9 +48,15 @@ def extract_numbers(text: str) -> list[str]:
 
 
 def number_in_text(number: str, text: str) -> bool:
-    target = number.replace(",", "")
+    """Check if a number appears in text using normalized comparison."""
+    from .units import numeric_equal, parse_number as _parse
+
+    target = _parse(number.replace(",", ""))
+    if target is None:
+        return False
     for match in _NUMBER_RE.finditer(text):
-        if match.group(0).replace(",", "") == target:
+        candidate = _parse(match.group(0).replace(",", ""))
+        if candidate is not None and numeric_equal(target, candidate):
             return True
     return False
 

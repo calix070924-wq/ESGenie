@@ -11,7 +11,15 @@ from .signals import (
     parse_cited_sentences,
     strip_citation_markers,
 )
+from .units import extract_number_unit_pairs, numeric_equal, units_compatible
+from ..knowledge.greenwash_lexicon import ABSOLUTE_UNVERIFIABLE, VAGUE_SUPERLATIVES, vague_matches
 from ..schemas import GroundingResult
+
+# Absolute/superlative expressions that trigger G5 when ungrounded
+_G5_OVERCLAIM_PATTERNS: list[str] = ABSOLUTE_UNVERIFIABLE + VAGUE_SUPERLATIVES + [
+    "업계 유일", "업계 1위", "세계 1위", "국내 유일", "국내 1위",
+    "100%", "유일한", "완전한",
+]
 
 
 def evaluate_grounding(answer_text: str, cited_chunks: list[dict[str, Any]]) -> GroundingResult:
@@ -24,6 +32,8 @@ def evaluate_grounding(answer_text: str, cited_chunks: list[dict[str, Any]]) -> 
 
     uncited: list[str] = []
     orphan_numbers: list[str] = []
+    unit_mismatches: list[str] = []
+    overclaim = False
     supported_sentences = 0
     claim_sentences = 0
 
@@ -38,15 +48,24 @@ def evaluate_grounding(answer_text: str, cited_chunks: list[dict[str, Any]]) -> 
         cited_texts = [chunk_map[cid] for cid in sent.cited_chunk_ids if cid in chunk_map]
         if cited_texts:
             supported_sentences += 1
-        for number in extract_numbers(sent.clean_text):
-            if not any(number_in_text(number, chunk_text) for chunk_text in cited_texts):
-                orphan_numbers.append(number)
+
+        # G2 + G4: number and unit checks
+        _check_numbers_and_units(sent.clean_text, cited_texts, orphan_numbers, unit_mismatches)
+
+        # G5: overclaim check
+        if not overclaim:
+            overclaim = _check_overclaim(sent.clean_text, cited_texts)
 
     hard_fails: list[str] = []
+    soft_flags: list[str] = []
     if uncited:
         hard_fails.append("G1_uncited_claims")
     if orphan_numbers:
         hard_fails.append("G2_orphan_numbers")
+    if unit_mismatches:
+        hard_fails.append("G4_unit_mismatch")
+    if overclaim:
+        soft_flags.append("G5_overclaim")
 
     decision = "ACCEPT" if not hard_fails else "ESCALATE"
     faithfulness = 1.0 if claim_sentences == 0 else round(supported_sentences / claim_sentences, 4)
@@ -55,16 +74,64 @@ def evaluate_grounding(answer_text: str, cited_chunks: list[dict[str, Any]]) -> 
         decision=decision,
         g1_uncited_sentences=uncited,
         g2_orphan_numbers=_dedupe(orphan_numbers),
-        g4_unit_mismatches=[],
-        g5_overclaim=False,
+        g4_unit_mismatches=_dedupe(unit_mismatches),
+        g5_overclaim=overclaim,
         hard_fails=hard_fails,
-        soft_flags=[],
+        soft_flags=soft_flags,
         faithfulness=faithfulness,
     )
 
 
+def _check_numbers_and_units(
+    sentence: str,
+    cited_texts: list[str],
+    orphan_numbers: list[str],
+    unit_mismatches: list[str],
+) -> None:
+    """Check sentence numbers against cited chunks; route to G2 or G4."""
+    sent_pairs = extract_number_unit_pairs(sentence)
+    chunk_pairs_all = []
+    for ct in cited_texts:
+        chunk_pairs_all.extend(extract_number_unit_pairs(ct))
+
+    # Numbers with units: check unit compatibility
+    matched_numbers: set[str] = set()
+    for s_val, s_unit in sent_pairs:
+        found_match = False
+        for c_val, c_unit in chunk_pairs_all:
+            if not numeric_equal(s_val, c_val):
+                continue
+            if units_compatible(s_unit, c_unit):
+                found_match = True
+                break
+            else:
+                unit_mismatches.append(f"{s_val} {s_unit} ↔ {c_val} {c_unit}")
+                found_match = True  # routed to G4, not orphan
+                break
+        if found_match:
+            matched_numbers.add(str(int(s_val)) if s_val == int(s_val) else str(s_val))
+
+    # Plain numbers without recognized units: fall back to G2 text search
+    for number in extract_numbers(sentence):
+        if number in matched_numbers:
+            continue
+        if not any(number_in_text(number, chunk_text) for chunk_text in cited_texts):
+            orphan_numbers.append(number)
+
+
+def _check_overclaim(sentence: str, cited_texts: list[str]) -> bool:
+    """G5: detect overclaim expressions not grounded in cited chunks."""
+    for pattern in _G5_OVERCLAIM_PATTERNS:
+        if pattern in sentence:
+            # Exemption: if the same expression exists in any cited chunk, it's grounded
+            if any(pattern in ct for ct in cited_texts):
+                continue
+            return True
+    return False
+
+
 def grounding_feedback(result: GroundingResult) -> str:
-    if result.decision == "ACCEPT":
+    if result.decision == "ACCEPT" and not result.soft_flags:
         return ""
 
     parts = [
@@ -79,6 +146,11 @@ def grounding_feedback(result: GroundingResult) -> str:
     if result.g2_orphan_numbers:
         parts.append("청크 원문에서 확인되지 않은 숫자:")
         parts.append("- " + ", ".join(result.g2_orphan_numbers[:10]))
+    if result.g4_unit_mismatches:
+        parts.append("단위 불일치 — 인용 문장과 청크의 단위를 통일하거나 환산해 일치시킬 것:")
+        parts.extend(f"- {m}" for m in result.g4_unit_mismatches[:10])
+    if result.g5_overclaim:
+        parts.append("근거 없는 절대화/강조 표현을 완화하거나 출처를 제시할 것.")
     parts.append("=== 위 제약을 모두 지켜 재작성하라. ===")
     return "\n".join(parts)
 
