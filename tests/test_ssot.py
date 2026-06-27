@@ -513,6 +513,132 @@ def test_designated_waste_not_counted_as_total():
     assert e61 == [18400.0], f"E-6-1 총량 노드는 1개여야 함, 실제={e61}"
 
 
+# ---- (원인 2-c) DART 미공시 코드의 OCR 정량노드 승격 ------------------------------
+
+def _waste_extraction() -> OcrExtraction:
+    """폐기물 명세 — 총량 E-6-1(DART도 공시) + 재활용률 E-6-2(DART 미공시)."""
+    return OcrExtraction(
+        source_file="03_사업장폐기물.pdf", channel=DocChannel.STRUCTURED,
+        doc_type="waste_ledger",
+        metrics=[
+            ExtractedMetric(metric_hint="E-6-1 본문확정", value=18.4, unit="ton",
+                            period="2026", kesg_code_guess="E-6-1", confidence=0.92),
+            ExtractedMetric(metric_hint="재활용 비율", value=29.3, unit="%",
+                            period="2026", kesg_code_guess="E-6-2", confidence=0.90),
+        ],
+    )
+
+
+def test_ocr_quant_node_promoted_when_dart_missing_code():
+    """DART가 공시 안 한 코드라도 OCR 정량노드가 있으면 공시 항목으로 승격된다.
+
+    원인 2-c 회귀 가드: 기존엔 OCR 정량노드가 'DART가 먼저 만든 mapped 항목'에만
+    보조증거로 붙어, 재활용률 E-6-2(DART 미공시)는 통째로 버려져 공시 항목 표에서
+    누락됐다. 이제 by_code 유효 코드면 실제 OCR 수치로 채워 승격해야 한다.
+    """
+    report = load_report("SME001")
+    assert "E-6-2" not in report.kesg_data   # 전제: DART 미공시
+    graph = build_unified_graph(
+        report, [_kepco_extraction(), _waste_extraction()],
+        corp_code=report.corp_code, corp_name=report.corp_name,
+        report_year=report.report_year,
+    )
+    res = extract_with_ssot(report, graph)
+
+    e62 = res.mapped.get("E-6-2")
+    assert e62 is not None, "DART 미공시여도 OCR 정량노드로 E-6-2가 승격돼야 함"
+    assert e62["value"] == 29.3
+    assert e62["unit"] == "%"
+    # OCR 정량 노드(ocr_structured)가 증거로 붙어야 함
+    ocr_ids = [nid for nid in e62["evidence_node_ids"]
+               if nid in graph.nodes and graph.nodes[nid].origin in ("ocr_structured", "ocr_unstructured")]
+    assert ocr_ids, "승격된 항목에 OCR 정량 노드가 증거로 붙어야 함"
+    assert "E-6-2" not in res.missing
+
+
+def test_ocr_quant_promotion_skips_broken_vlm_hints():
+    """깨진 VLM hint(유효 K-ESG 코드 아님)는 승격되지 않는다 — by_code 게이트.
+
+    VLM 폴백이 'CSPD count' 같은 잡음 metric_hint를 만들어 metric=hint 그대로
+    노드가 생겨도, by_code(None)이라 mapped로 승격되지 않아 표가 오염되지 않아야 한다.
+    """
+    report = load_report("SME001")
+    junk = OcrExtraction(
+        source_file="11_원부자재.pdf", channel=DocChannel.UNSTRUCTURED,
+        doc_type="ambiguous_fallback_vlm",
+        metrics=[
+            ExtractedMetric(metric_hint="CSPD count", value=380.0, unit="units",
+                            period="2026", kesg_code_guess=None, confidence=0.75),
+            ExtractedMetric(metric_hint="unknown category counts", value=85.0, unit="units",
+                            period="2026", kesg_code_guess=None, confidence=0.75),
+        ],
+    )
+    graph = build_unified_graph(
+        report, [junk],
+        corp_code=report.corp_code, corp_name=report.corp_name,
+        report_year=report.report_year,
+    )
+    res = extract_with_ssot(report, graph)
+    assert "CSPD count" not in res.mapped
+    assert "unknown category counts" not in res.mapped
+
+
+def test_dart_disclosed_code_keeps_dart_value_with_ocr_evidence():
+    """DART가 공시한 코드는 DART 값 유지 + OCR은 보조증거로만 붙는다(승격 아님).
+
+    승격 경로 추가가 기존 'DART 우선' 동작을 깨지 않는지 확인.
+    """
+    report = load_report("SME001")
+    assert "E-4-1" in report.kesg_data   # 전제: DART 공시
+    graph = build_unified_graph(
+        report, [_kepco_extraction()],
+        corp_code=report.corp_code, corp_name=report.corp_name,
+        report_year=report.report_year,
+    )
+    res = extract_with_ssot(report, graph)
+    e41 = res.mapped["E-4-1"]
+    # 값은 DART 원천 유지(OCR 128400으로 덮어쓰지 않음)
+    assert str(e41["value"]) == str(report.kesg_data["E-4-1"]["value"])
+    ocr_ids = [nid for nid in e41["evidence_node_ids"]
+               if nid in graph.nodes and graph.nodes[nid].origin in ("ocr_structured", "ocr_unstructured")]
+    assert ocr_ids, "DART 항목에도 OCR 보조증거가 붙어야 함"
+
+
+def test_apply_template_column_match_picks_usage_not_first_cell():
+    """한전 표: 단위가 헤더 셀(사용량(kWh))·값이 데이터 행에 분리된 구조에서
+    컬럼 정렬(bbox x중심)로 사용량 컬럼 값(142,560)을 집고, 첫 숫자 컬럼
+    (전월지침 48,210)을 잘못 집지 않는다. 단위는 헤더 괄호단위(kWh) 우선."""
+    from esgenie.ssot.ocr_router import _apply_template, _load_template
+    tokens = [
+        {"text": "구분", "bbox": [0.105, 0.307, 0.133, 0.318], "page": 0},
+        {"text": "전월지침", "bbox": [0.267, 0.307, 0.323, 0.318], "page": 0},
+        {"text": "당월지침", "bbox": [0.429, 0.307, 0.485, 0.318], "page": 0},
+        {"text": "배율", "bbox": [0.591, 0.307, 0.619, 0.318], "page": 0},
+        {"text": "사용량(kWh)", "bbox": [0.686, 0.307, 0.772, 0.318], "page": 0},
+        {"text": "유효전력", "bbox": [0.105, 0.332, 0.161, 0.343], "page": 0},
+        {"text": "48,210", "bbox": [0.363, 0.332, 0.409, 0.343], "page": 0},
+        {"text": "50,586", "bbox": [0.525, 0.332, 0.571, 0.343], "page": 0},
+        {"text": "60", "bbox": [0.649, 0.332, 0.666, 0.343], "page": 0},
+        {"text": "142,560", "bbox": [0.700, 0.332, 0.760, 0.343], "page": 0},
+    ]
+    kv = _apply_template(tokens, _load_template("kepco_bill"))
+    assert kv["사용전력량"]["value"] == 142560.0
+    assert kv["사용전력량"]["unit"] == "kWh"          # 헤더 괄호단위 우선(템플릿 기본단위 아님)
+    assert kv["사용전력량"]["bbox"] == [0.700, 0.332, 0.760, 0.343]  # 사용량 컬럼(전월지침 아님)
+
+
+def test_apply_template_falls_back_when_no_bbox():
+    """bbox 없는 토큰(pymupdf 일부 경로)은 컬럼 매칭 불가 → 기존 인접매칭 폴백."""
+    from esgenie.ssot.ocr_router import _apply_template, _load_template
+    tokens = [
+        {"text": "사용전력량", "bbox": None, "page": None},
+        {"text": "128,400", "bbox": None, "page": None},
+    ]
+    kv = _apply_template(tokens, _load_template("kepco_bill"))
+    assert kv["사용전력량"]["value"] == 128400.0
+    assert kv["사용전력량"]["unit"] == "kWh"
+
+
 def test_pin_totals_from_raw_fixes_billing_cells():
     """청구서 본문 명시값으로 전력·가스·폐기물 대표수치를 결정적 교정(표 오집 교정)."""
     from esgenie.ssot.ocr_router import _pin_totals_from_raw, ExtractedMetric
@@ -544,3 +670,54 @@ def test_scope12_sums_electricity_and_gas():
         doc_type="gas_bill", metrics=[mk(360772.0, "MJ")], raw_text="", router_meta={}), report_year=2026)
     dps = {d.kesg_code: d for d in build_data_points(g, {}, target_codes=["E-3-1"])}
     assert dps["E-3-1"].value == 88.397, dps["E-3-1"].value
+
+
+# ---- OCR 무음 실패 노출 (ocr_health_report) ------------------------------------
+
+def _ext(source_file: str, router_meta: dict) -> OcrExtraction:
+    return OcrExtraction(
+        source_file=source_file,
+        channel=DocChannel.STRUCTURED,
+        doc_type="kepco_bill",
+        metrics=[],
+        raw_text="",
+        router_meta=router_meta,
+    )
+
+
+def test_ocr_health_clean_run_is_silent():
+    """정상 upstage_dp 추출만 있으면 경고 0건(노이즈 억제)."""
+    exts = [_ext("01.pdf", {"engine": "upstage_dp"})]
+    msgs = ocr_router_mod.ocr_health_report(exts, ["01.pdf"], upstage_key_present=True)
+    assert msgs == []
+
+
+def test_ocr_health_flags_upstage_fallback():
+    """upstage_error가 있으면 error 레벨로 사유까지 노출."""
+    exts = [_ext("01.pdf", {"fallback": "pymupdf+regex", "upstage_error": "HTTP 429 quota"})]
+    msgs = ocr_router_mod.ocr_health_report(exts, ["01.pdf"], upstage_key_present=True)
+    assert len(msgs) == 1
+    lvl, msg = msgs[0]
+    assert lvl == "error" and "429" in msg and "01.pdf" in msg
+
+
+def test_ocr_health_flags_missing_and_mock():
+    """추출 누락=error, mock=warning."""
+    exts = [_ext("01.pdf", {"mock": True})]
+    msgs = ocr_router_mod.ocr_health_report(
+        exts, ["01.pdf", "02.pdf"], upstage_key_present=True)
+    levels = {name_part: lvl for lvl, m in msgs for name_part in ("01.pdf", "02.pdf") if name_part in m}
+    assert levels["01.pdf"] == "warning"   # mock
+    assert levels["02.pdf"] == "error"     # 누락
+
+
+def test_ocr_health_warns_when_key_absent():
+    """키 미설정이면 전역 warning 1건 선두에 추가."""
+    msgs = ocr_router_mod.ocr_health_report([], ["01.pdf"], upstage_key_present=False)
+    assert msgs and msgs[0][0] == "warning" and "UPSTAGE_API_KEY" in msgs[0][1]
+
+
+def test_ocr_health_ignores_survey_and_no_evidence():
+    """SAQ/설문 외 증빙이 없으면 빈 목록."""
+    exts = [_ext("survey_form", {"source": "survey"})]
+    assert ocr_router_mod.ocr_health_report(exts, [], upstage_key_present=True) == []

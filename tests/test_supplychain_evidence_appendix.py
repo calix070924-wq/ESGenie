@@ -138,6 +138,36 @@ def test_appendix_dedup_same_file_same_page(tmp_path: Path):
     assert "[E2]" not in text, "같은 파일+페이지는 중복 figure를 만들지 않아야 함"
 
 
+def test_bbox_empty_excluded_from_figures_but_text_kept(tmp_path: Path):
+    """bbox=[] 링크는 부록 figure에 포함되지 않지만 표 근거 텍스트는 유지된다."""
+    _make_evidence_pdf(tmp_path / "evidence_pack" / "01.pdf")
+    ev_no_bbox = EvidenceLink(
+        file_name="환경방침.pdf", relative_path="evidence_pack/01.pdf",
+        origin="dart", bbox=[], page=0, node_id="n1",
+    )
+    ev_with_bbox = EvidenceLink(
+        file_name="01.pdf", relative_path="evidence_pack/01.pdf",
+        origin="ocr", bbox=[0.10, 0.05, 0.50, 0.10], page=0, node_id="n2",
+    )
+    answers = [
+        Answer("E-4-1", "환경", "전력 사용량(kWh)", 128400.0,
+               "verified", [ev_no_bbox], [], "D1 통과", []),
+        Answer("E-3-1", "환경", "GHG 배출량", 45.2,
+               "verified", [ev_with_bbox], [], "D1 통과", []),
+    ]
+    sheet = ResponseSheet("kesg28", "K-ESG 자가진단", "한울정밀㈜", answers, gaps=[])
+    path = export_response_sheet_pdf(sheet, tmp_path, evidence_base_dir=tmp_path)
+    text, _ = _pdf_text(path)
+
+    # bbox 없는 링크는 figure에 포함되지 않음 — [E#] 태그 없음
+    assert "[E1]" not in text or "환경방침" not in text or "[E2]" not in text, \
+        "bbox=[] 링크가 figure를 생성하면 안 됨"
+    # bbox 있는 링크는 정상 figure 생성
+    assert "[E1]" in text, "bbox 있는 링크의 figure [E1]이 없음"
+    # 표 근거 텍스트(파일명)는 유지
+    assert "환경방침" in text, "bbox=[] 링크의 표 근거 텍스트가 사라지면 안 됨"
+
+
 def test_appendix_dedup_different_pages_get_separate_figures(tmp_path: Path):
     """같은 파일이라도 다른 페이지를 가리키면 별도 [E#]이다."""
     ev_path = tmp_path / "evidence_pack" / "multi.pdf"

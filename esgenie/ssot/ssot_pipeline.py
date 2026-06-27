@@ -142,9 +142,14 @@ def _merge_ssot_evidence(result: Any, graph: EvidenceGraph) -> None:
     # v10 extract()는 DART 노드만 탐색하므로, OCR 출처(ocr_structured / ocr_unstructured)
     # 노드도 evidence_node_ids에 추가하고 'no_evidence' 플래그를 해소한다.
     ocr_by_metric: dict[str, list[str]] = {}
+    # 코드별 대표 OCR 노드(최신 연도·고신뢰 우선) — DART 미공시 코드를 승격할 때 표시값 출처.
+    ocr_repr: dict[str, EvidenceNode] = {}
     for node in graph.nodes.values():
         if node.origin in ("ocr_structured", "ocr_unstructured"):
             ocr_by_metric.setdefault(node.metric, []).append(node.id)
+            current = ocr_repr.get(node.metric)
+            if current is None or (node.period, node.confidence) >= (current.period, current.confidence):
+                ocr_repr[node.metric] = node
 
     # 정성 조항(TextNode)도 존재형 문항의 증빙 근거다. 규정집/회의록에서 매핑된
     # K-ESG 코드가 있으면 해당 항목의 evidence_node_ids에 편입한다.
@@ -166,19 +171,40 @@ def _merge_ssot_evidence(result: Any, graph: EvidenceGraph) -> None:
                 result.confidence_flags[code] = [f for f in flags if f != "no_evidence"]
                 result.notes.append(f"[OCR resolved] {code}: OCR 증빙 노드로 근거 확보")
 
-    # DART에 없더라도 규정집/회의록 TextNode가 있으면 존재형 문항은 채울 수 있다.
-    # 예: 환경방침, 안전보건 체계, 인권정책.
-    if text_by_code:
+    # DART에 없더라도 OCR 정량노드(전기·가스·수도·폐기물 등)나 규정집/회의록 TextNode가
+    # 있으면 공시 항목으로 승격한다. 기존엔 TextNode(정성)만 승격하고 OCR 정량노드는
+    # 'DART가 먼저 만든 mapped 항목'에만 보조증거로 붙어, DART 미공시 코드의 OCR 정량값이
+    # 통째로 버려졌다(예: 재활용률 E-6-2, 용수 E-5-1 — 공시 항목 표에서 누락).
+    # by_code()로 유효 K-ESG 코드만 승격해 깨진 VLM hint('CSPD count' 등)는 자동 제외하며,
+    # 이 게이트가 그래프 빌드 단계의 중복가드(지정폐기물 차단·재활용량/률 구분)도 그대로 보존한다.
+    candidate_codes = sorted(set(ocr_by_metric) | set(text_by_code))
+    if candidate_codes:
         from esgenie.knowledge.kesg_items import by_code, items_for_profile
 
         profile_codes = {item.code for item in items_for_profile(result.profile)}
-        synthetic_added = 0
-        for code, text_ids in text_by_code.items():
+        quant_added = 0
+        text_added = 0
+        for code in candidate_codes:
             if code in result.mapped:
                 continue
             item = by_code(code)
             if item is None:
                 continue
+            ocr_ids = ocr_by_metric.get(code, [])
+            text_ids = text_by_code.get(code, [])
+            repr_node = ocr_repr.get(code)
+            if repr_node is not None:
+                # 정량 OCR 노드 → 실제 수치로 채움
+                value: Any = repr_node.value
+                unit = repr_node.unit or (item.unit or "")
+                note = f"OCR 정량 증빙으로 자동 인식 ({repr_node.source_file or repr_node.source})"
+                quant_added += 1
+            else:
+                # 정성 TextNode만 있는 존재형 문항 → 문서 조항 확인
+                value = "문서 조항 확인"
+                unit = ""
+                note = "OCR 정성 증빙으로 자동 인식"
+                text_added += 1
             in_profile = code in profile_codes
             result.mapped[code] = {
                 "code": item.code,
@@ -186,10 +212,10 @@ def _merge_ssot_evidence(result: Any, graph: EvidenceGraph) -> None:
                 "area": item.area,
                 "category": item.category,
                 "data_type": item.data_type,
-                "value": "문서 조항 확인",
-                "unit": "",
-                "note": "OCR 정성 증빙으로 자동 인식",
-                "evidence_node_ids": list(dict.fromkeys(text_ids)),
+                "value": value,
+                "unit": unit,
+                "note": note,
+                "evidence_node_ids": list(dict.fromkeys(ocr_ids + text_ids)),
                 "beyond_profile": not in_profile,
             }
             if in_profile:
@@ -198,17 +224,21 @@ def _merge_ssot_evidence(result: Any, graph: EvidenceGraph) -> None:
                 result.by_area[item.area]["present"] += 1
             elif code not in result.beyond_profile:
                 result.beyond_profile.append(code)
-            synthetic_added += 1
 
-        if synthetic_added:
+        if quant_added or text_added:
             profile_items = items_for_profile(result.profile)
             in_profile_mapped = sum(
                 1 for entry in result.mapped.values() if not entry.get("beyond_profile")
             )
             result.coverage_pct = 100 * in_profile_mapped / len(profile_items)
-            result.notes.append(
-                f"TextNode 증빙 병합: {synthetic_added}개 항목을 규정/회의록 근거로 자동 채움"
-            )
+            if quant_added:
+                result.notes.append(
+                    f"OCR 정량 증빙 승격: {quant_added}개 항목을 내부 증빙 수치로 자동 채움"
+                )
+            if text_added:
+                result.notes.append(
+                    f"TextNode 증빙 병합: {text_added}개 항목을 규정/회의록 근거로 자동 채움"
+                )
 
     # ── 커버리지 메모 추가 ─────────────────────────────────────────────
     ocr_resolved = sum(
