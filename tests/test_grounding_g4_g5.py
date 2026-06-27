@@ -162,6 +162,50 @@ class TestG4UnitMismatch:
         assert result.decision == "ACCEPT"
         assert result.g4_unit_mismatches == []
 
+    def test_conversion_mwh_to_kwh_accept(self):
+        """1 MWh in answer vs 1000 kWh in chunk -> ACCEPT (same group, conversion match)."""
+        answer = "사용량은 1 MWh입니다 [c1]"
+        chunks = [{"id": "c1", "text": "전력 사용량 1000 kWh"}]
+
+        result = evaluate_grounding(answer, chunks)
+
+        assert result.decision == "ACCEPT"
+        assert result.g2_orphan_numbers == []
+        assert result.g4_unit_mismatches == []
+
+    def test_conversion_gwh_to_mwh_accept(self):
+        """2.5 GWh in answer vs 2500 MWh in chunk -> ACCEPT."""
+        answer = "전력생산 2.5 GWh 달성 [c1]"
+        chunks = [{"id": "c1", "text": "전력생산 2500 MWh"}]
+
+        result = evaluate_grounding(answer, chunks)
+
+        assert result.decision == "ACCEPT"
+        assert result.g2_orphan_numbers == []
+        assert result.g4_unit_mismatches == []
+
+    def test_same_group_value_mismatch_is_orphan(self):
+        """Same unit group but values don't match after conversion -> G2 orphan."""
+        answer = "사용량은 1 MWh입니다 [c1]"
+        chunks = [{"id": "c1", "text": "전력 사용량 500 kWh"}]
+
+        result = evaluate_grounding(answer, chunks)
+
+        assert result.decision == "ESCALATE"
+        assert "G2_orphan_numbers" in result.hard_fails
+        assert result.g4_unit_mismatches == []
+
+    def test_incompatible_units_still_g4(self):
+        """Incompatible units with same numeric value -> still G4 (regression guard)."""
+        answer = "배출량은 120 t입니다 [chunk_1]"
+        chunks = [{"id": "chunk_1", "text": "에너지 사용량 120 kWh"}]
+
+        result = evaluate_grounding(answer, chunks)
+
+        assert result.decision == "ESCALATE"
+        assert len(result.g4_unit_mismatches) > 0
+        assert "G4_unit_mismatch" in result.hard_fails
+
 
 # ═══════════════════════════════════════════════════════════════════════════════
 # G5: Overclaim detection

@@ -95,7 +95,12 @@ def normalize_unit(raw: str) -> str | None:
 
 
 def units_compatible(u1: str, u2: str) -> bool:
-    """Check whether two canonical units are in the same compatibility group or identical."""
+    """Check whether two canonical units are in the same conversion group or identical.
+
+    NOTE: layer3_detect.py에도 동명 함수가 있으나 시맨틱이 다름.
+    여기는 '같은 환산 그룹(kWh↔MWh↔GWh)' 판정(근거 게이트용 환산 비교),
+    layer3_detect 쪽은 '동일 단위 or 미상' 판정(탐지기용 보수적 비교).
+    """
     if u1 == u2:
         return True
     g1 = _UNIT_TO_GROUP.get(u1)
