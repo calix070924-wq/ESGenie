@@ -1,7 +1,7 @@
 {
   "ticker": "005930",
-  "n_cases": 113,
-  "n_pos": 27,
+  "n_cases": 143,
+  "n_pos": 57,
   "n_neg": 86,
   "cases": [
     {
@@ -81,6 +81,246 @@
       "sentence": "에코 레더로 만든, 환경을 생각하는 가죽 제품입니다.",
       "label": "greenwash",
       "category": "vague_abstract",
+      "split": "test",
+      "domain": "regulatory_ad"
+    },
+    {
+      "id": "GOLD-15",
+      "sentence": "친환경 철강제품",
+      "label": "greenwash",
+      "category": "vague_abstract",
+      "split": "test",
+      "domain": "regulatory_ad"
+    },
+    {
+      "id": "GOLD-16",
+      "sentence": "친환경 강건재 프리미엄 브랜드",
+      "label": "greenwash",
+      "category": "vague_abstract",
+      "split": "test",
+      "domain": "regulatory_ad"
+    },
+    {
+      "id": "GOLD-17",
+      "sentence": "철은 우리 삶의 터전을 더 친환경적으로 만듭니다",
+      "label": "greenwash",
+      "category": "vague_abstract",
+      "split": "test",
+      "domain": "regulatory_ad"
+    },
+    {
+      "id": "GOLD-18",
+      "sentence": "친환경적인 철의 순환과정 속에 이노빌트가 있습니다",
+      "label": "greenwash",
+      "category": "vague_abstract",
+      "split": "test",
+      "domain": "regulatory_ad"
+    },
+    {
+      "id": "GOLD-19",
+      "sentence": "3대 친환경 브랜드",
+      "label": "greenwash",
+      "category": "vague_abstract",
+      "split": "test",
+      "domain": "regulatory_ad"
+    },
+    {
+      "id": "GOLD-20",
+      "sentence": "포스코는 기존에 출시한 INNOVILT, e Autopos, Greenable과 함께 친환경 사회 구현에 기여하겠습니다",
+      "label": "greenwash",
+      "category": "partial_truth",
+      "split": "test",
+      "domain": "regulatory_ad"
+    },
+    {
+      "id": "GOLD-21",
+      "sentence": "eco-friendly & sustainable",
+      "label": "greenwash",
+      "category": "vague_abstract",
+      "split": "test",
+      "domain": "regulatory_ad"
+    },
+    {
+      "id": "GOLD-22",
+      "sentence": "renewable and environmentally sustainable bedding",
+      "label": "greenwash",
+      "category": "vague_abstract",
+      "split": "test",
+      "domain": "regulatory_ad"
+    },
+    {
+      "id": "GOLD-23",
+      "sentence": "free of harmful chemicals, using clean, non-toxic materials",
+      "label": "greenwash",
+      "category": "absolute_unsubstantiated",
+      "split": "test",
+      "domain": "regulatory_ad"
+    },
+    {
+      "id": "GOLD-24",
+      "sentence": "Conscious 컬렉션 — 더 나은 소재, 더 나은 미래",
+      "label": "greenwash",
+      "category": "vague_label",
+      "split": "test",
+      "domain": "regulatory_ad"
+    },
+    {
+      "id": "GOLD-25",
+      "sentence": "Conscious Choice로 지속가능한 패션을 선택하세요",
+      "label": "greenwash",
+      "category": "vague_label",
+      "split": "test",
+      "domain": "regulatory_ad"
+    },
+    {
+      "id": "GOLD-26",
+      "sentence": "Ecodesign 제품으로 환경을 생각하는 스포츠를 즐기세요",
+      "label": "greenwash",
+      "category": "vague_label",
+      "split": "test",
+      "domain": "regulatory_ad"
+    },
+    {
+      "id": "GOLD-27",
+      "sentence": "climate-neutral supermarket",
+      "label": "greenwash",
+      "category": "absolute_unsubstantiated",
+      "split": "test",
+      "domain": "regulatory_ad"
+    },
+    {
+      "id": "GOLD-28",
+      "sentence": "most responsible supermarket of the Netherlands",
+      "label": "greenwash",
+      "category": "absolute_unsubstantiated",
+      "split": "test",
+      "domain": "regulatory_ad"
+    },
+    {
+      "id": "GOLD-29",
+      "sentence": "Plus의 conscious 제품으로 더 나은 선택을 시작하세요",
+      "label": "greenwash",
+      "category": "vague_label",
+      "split": "test",
+      "domain": "regulatory_ad"
+    },
+    {
+      "id": "GOLD-30",
+      "sentence": "Plus — sustainable 쇼핑의 새로운 기준",
+      "label": "greenwash",
+      "category": "vague_label",
+      "split": "test",
+      "domain": "regulatory_ad"
+    },
+    {
+      "id": "GOLD-31",
+      "sentence": "sustainability 태그 상품으로 더 나은 패션을 선택하세요",
+      "label": "greenwash",
+      "category": "vague_label",
+      "split": "test",
+      "domain": "regulatory_ad"
+    },
+    {
+      "id": "GOLD-32",
+      "sentence": "Travel Sustainable 등급 숙소를 예약해 친환경 여행을 즐기세요",
+      "label": "greenwash",
+      "category": "vague_label",
+      "split": "test",
+      "domain": "regulatory_ad"
+    },
+    {
+      "id": "GOLD-33",
+      "sentence": "DHL GoGreen 서비스로 탄소 발자국을 줄이는 배송을 이용하세요",
+      "label": "greenwash",
+      "category": "vague_label",
+      "split": "test",
+      "domain": "regulatory_ad"
+    },
+    {
+      "id": "GOLD-34",
+      "sentence": "Naturally on the road — 자연과 함께 달리는 DHL 배송",
+      "label": "greenwash",
+      "category": "vague_abstract",
+      "split": "test",
+      "domain": "regulatory_ad"
+    },
+    {
+      "id": "GOLD-35",
+      "sentence": "Your parcel is sustainably delivered",
+      "label": "greenwash",
+      "category": "partial_truth",
+      "split": "test",
+      "domain": "regulatory_ad"
+    },
+    {
+      "id": "GOLD-36",
+      "sentence": "ASOS Responsible Edit 컬렉션으로 책임감 있는 패션을 선택하세요",
+      "label": "greenwash",
+      "category": "vague_label",
+      "split": "test",
+      "domain": "regulatory_ad"
+    },
+    {
+      "id": "GOLD-37",
+      "sentence": "Ready for the Future — Boohoo 지속가능 패션 컬렉션",
+      "label": "greenwash",
+      "category": "partial_truth",
+      "split": "test",
+      "domain": "regulatory_ad"
+    },
+    {
+      "id": "GOLD-38",
+      "sentence": "George for Good — Asda의 지속가능 패션 라인",
+      "label": "greenwash",
+      "category": "vague_label",
+      "split": "test",
+      "domain": "regulatory_ad"
+    },
+    {
+      "id": "GOLD-39",
+      "sentence": "썩는 비닐 봉투를 사용하시면 환경오염 걱정이 없습니다",
+      "label": "greenwash",
+      "category": "condition_omitted",
+      "split": "test",
+      "domain": "regulatory_ad"
+    },
+    {
+      "id": "GOLD-40",
+      "sentence": "친환경 인증 침대로 가족 건강을 지키세요",
+      "label": "greenwash",
+      "category": "partial_truth",
+      "split": "test",
+      "domain": "regulatory_ad"
+    },
+    {
+      "id": "GOLD-41",
+      "sentence": "탄소배출권 구매를 통해 탄소 배출량 제로를 달성한 항공편입니다",
+      "label": "greenwash",
+      "category": "absolute_unsubstantiated",
+      "split": "test",
+      "domain": "regulatory_ad"
+    },
+    {
+      "id": "GOLD-42",
+      "sentence": "당사의 新생산 공법으로 탄소 배출량을 33% 줄인 제품입니다",
+      "label": "greenwash",
+      "category": "condition_omitted",
+      "split": "test",
+      "domain": "regulatory_ad"
+    },
+    {
+      "id": "GOLD-43",
+      "sentence": "이 커피 컵은 생분해성 소재로 만들어 환경 부담이 없습니다",
+      "label": "greenwash",
+      "category": "condition_omitted",
+      "split": "test",
+      "domain": "regulatory_ad"
+    },
+    {
+      "id": "GOLD-44",
+      "sentence": "KC 인증을 획득한 친환경·무독성 어린이 제품입니다",
+      "label": "greenwash",
+      "category": "vague_label",
       "split": "test",
       "domain": "regulatory_ad"
     },
