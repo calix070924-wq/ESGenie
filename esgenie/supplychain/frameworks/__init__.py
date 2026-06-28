@@ -34,3 +34,13 @@ def all_framework_keys() -> list[str]:
     # 등록(삽입) 순서를 유지한다 — substrate(K-ESG/RBA) 먼저, OEM 어댑터(SAQ/현대차) 나중.
     # 알파벳 정렬을 쓰지 않는 이유: UI 기본 선택(첫 항목)이 새 양식 등록만으로 바뀌지 않게 한다.
     return list(_REGISTRY)
+
+
+def keys_by_pillar(pillar: str) -> list[str]:
+    """해당 기둥(pillar)에 속한 양식 key를 등록(삽입) 순서대로 반환한다.
+
+    pillar 값: "disclosure"(공시) | "due_diligence"(실사).
+    알파벳 정렬을 쓰지 않으므로 UI 기본 선택(첫 항목)이 새 양식 등록만으로 바뀌지 않는다.
+    예) "due_diligence" → ["rba42", "hmc"].
+    """
+    return [k for k, fw in _REGISTRY.items() if fw.pillar == pillar]

@@ -24,6 +24,7 @@ from esgenie.ui.components import (
 from esgenie.ui.tabs import (
     render_analysis_workspace,
     render_deliverables_workspace,
+    render_due_diligence_workspace,
     render_evidence_workspace,
     render_lab_workspace,
     render_overview_workspace,
@@ -570,8 +571,8 @@ if result is not None:
         summary_cards.append({"label": "HITL", "value": "필요" if verify.hitl_required else "완료", "note": f"검증 {verify.iterations_used}회"})
     render_stat_row(summary_cards, columns=min(5, len(summary_cards)) or 1)
 
-main_tabs = st.tabs(["🏠 Overview", "📊 Analysis", "🗂 Evidence", "📤 Deliverables", "🧪 Lab"])
-tab_overview, tab_analysis, tab_evidence, tab_deliverables, tab_lab = main_tabs
+main_tabs = st.tabs(["🏠 Overview", "📊 Analysis", "🗂 Evidence", "📄 공시 산출물", "🤝 실사 응답서", "🧪 Lab"])
+tab_overview, tab_analysis, tab_evidence, tab_deliverables, tab_due_diligence, tab_lab = main_tabs
 
 overview_profile = getattr(getattr(result, "extraction", None), "profile", None) or resolved_profile
 
@@ -591,6 +592,9 @@ with tab_evidence:
 
 with tab_deliverables:
     render_deliverables_workspace(result, active_area, "")
+
+with tab_due_diligence:
+    render_due_diligence_workspace(result, active_area, "")
 
 with tab_lab:
     render_lab_workspace("")

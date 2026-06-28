@@ -42,4 +42,5 @@ HMC = Framework(
     key="hmc",
     label="현대자동차 협력사 ESG 실사 응답서 (RBA v8.0 기반)",
     questions=_hmc_questions(),
+    pillar="due_diligence",
 )

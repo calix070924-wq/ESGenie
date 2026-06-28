@@ -74,6 +74,9 @@ class Framework:
     key: str
     label: str
     questions: tuple[Question, ...]
+    # 양식이 속한 기둥(pillar): "disclosure"(공시) | "due_diligence"(실사).
+    # 기본값 disclosure → 기존 양식(K-ESG/SAQ)은 무회귀, 실사 양식만 명시 지정.
+    pillar: str = "disclosure"
 
     def __post_init__(self) -> None:
         if not self.questions:

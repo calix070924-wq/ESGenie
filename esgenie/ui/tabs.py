@@ -30,6 +30,7 @@ from esgenie.supplychain import (
     get_framework,
     respond_from_pipeline,
 )
+from esgenie.supplychain.frameworks import keys_by_pillar
 from esgenie.supplychain.exporters import (
     export_response_sheet,
     export_response_sheet_pdf,
@@ -564,7 +565,7 @@ def render_deliverables_workspace(result, active_area: str, gradient: str) -> No
         )
         st.markdown(_report_card(doc.to_markdown(), "final", "FINAL"), unsafe_allow_html=True)
     with supply_tab:
-        render_supplychain_tab(result, gradient, show_header=False)
+        _render_responder_workspace(result, gradient, pillar="disclosure")
 
 
 def render_lab_workspace(gradient: str) -> None:
@@ -1165,7 +1166,15 @@ def _render_supplychain_answer_detail(result, answer, *, question_map: dict[str,
                 st.caption(row["내용"])
 
 
-def render_supplychain_tab(result, gradient: str, *, show_header: bool = True) -> None:
+def _render_responder_workspace(
+    result,
+    gradient: str,
+    *,
+    pillar: str | None = None,
+    default_key: str | None = None,
+    show_header: bool = False,
+) -> None:
+    """공통 실사 응답서 렌더 본체. pillar=None이면 전체 양식, 지정하면 해당 기둥만 노출."""
     if show_header:
         render_section_header("Supply Chain Response", "OEM 제출용 실사 응답서를 증빙 근거와 함께 자동 생성합니다.", kicker="Deliverable")
         if gradient:
@@ -1177,10 +1186,12 @@ def render_supplychain_tab(result, gradient: str, *, show_header: bool = True) -
         st.info("분석을 시작하면 협력사 실사 응답서가 자동 생성됩니다.")
         return
 
-    keys = all_framework_keys()
+    keys = keys_by_pillar(pillar) if pillar is not None else all_framework_keys()
+    default_idx = keys.index(default_key) if (default_key and default_key in keys) else 0
     sel = st.selectbox(
         "제출 양식 선택",
         keys,
+        index=default_idx,
         format_func=lambda k: get_framework(k).label,
         help="OEM/산업별 양식. 같은 증빙으로 여러 양식에 동시 대응됩니다.",
     )
@@ -1284,6 +1295,21 @@ def render_supplychain_tab(result, gradient: str, *, show_header: bool = True) -
             )
     except Exception as exc:  # noqa: BLE001  — PDF 실패해도 xlsx 경로는 유지
         dl_pdf.caption(f"PDF 생성 불가: {exc}")
+
+
+def render_supplychain_tab(result, gradient: str, *, show_header: bool = True) -> None:
+    """하위호환 래퍼 — 전체 양식(pillar 무관)을 보여 준다."""
+    _render_responder_workspace(result, gradient, pillar=None, show_header=show_header)
+
+
+def render_due_diligence_workspace(result, active_area: str, gradient: str) -> None:
+    """실사 응답서 탭 — due_diligence 기둥(RBA42·현대차)만 노출, 기본 선택=rba42."""
+    render_section_header(
+        "실사 응답서",
+        "OEM 협력사 실사(RBA·현대차) 응답서를 증빙 근거와 함께 자동 생성합니다.",
+        kicker="Due Diligence",
+    )
+    _render_responder_workspace(result, gradient, pillar="due_diligence", default_key="rba42")
 
 
 def render_benchmark_tab(gradient: str, *, show_header: bool = True) -> None:
