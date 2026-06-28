@@ -135,7 +135,7 @@ def main() -> None:
             "  $env:ESGENIE_STRICT='1'; python scripts/held_out_eval.py"))
     else:
         content = ci_path.read_text(encoding="utf-8")
-        if "MOCK" in content.upper():
+        if "모드: MOCK" in content or "mode: MOCK" in content.upper():
             results.append(("VB6", "WARN",
                 "held_out_ci.md 존재하나 MOCK 실행 결과 -실키 재실행 필요\n"
                 "  $env:ESGENIE_STRICT='1'; python scripts/held_out_eval.py"))
