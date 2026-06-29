@@ -93,5 +93,5 @@ def test_pdf_contains_korean_text(tmp_path: Path):
 def test_pdf_filename(tmp_path: Path):
     path = export_response_sheet_pdf(_full_sheet(), tmp_path)
     name = Path(path).name
-    assert name.startswith("실사응답서_kesg28_")
+    assert name.startswith("공시응답서_kesg28_")  # kesg28 은 disclosure → 공시응답서 prefix
     assert name.endswith(".pdf")

@@ -108,3 +108,45 @@ def test_due_diligence_workspace_default_is_rba42(tabs_module, tmp_path, monkeyp
     assert responder_call is not None, "제출 양식 selectbox가 호출되지 않음"
     options = responder_call.args[1]
     assert options[0] == "rba42", f"기본 선택이 rba42가 아님: {options}"
+
+
+# ── 변경 2 보강 ───────────────────────────────────────────────────────
+
+def test_invalid_pillar_raises():
+    """잘못된 pillar 값으로 Framework를 만들면 즉시 ValueError가 난다."""
+    from esgenie.supplychain.schema import Framework, Question
+    q = (Question(qid="x", section="s", text="t", qtype="yes_no"),)
+    with pytest.raises(ValueError, match="pillar"):
+        Framework(key="bad", label="bad", questions=q, pillar="typo")
+
+
+def test_pillar_label_separation(tabs_module):
+    """_PILLAR_LABELS 매핑: disclosure 라벨에 '공시'가 있고 '실사'가 없으며,
+    due_diligence 라벨엔 '실사'가 있어야 한다."""
+    labels = tabs_module._PILLAR_LABELS
+    dis = labels["disclosure"]
+    dd = labels["due_diligence"]
+
+    assert "공시" in dis["doc_kind"]
+    assert "실사" not in dis["doc_kind"]
+    assert "공시" in dis["caption"]
+
+    assert "실사" in dd["doc_kind"]
+    assert "공시" not in dd["doc_kind"]
+    assert "실사" in dd["caption"]
+
+
+def test_exporter_prefix_by_pillar(tmp_path):
+    """disclosure 양식(kesg28)과 due_diligence 양식(rba42) 산출물 파일명 prefix가 다르다."""
+    from pathlib import Path
+    from esgenie.supplychain.schema import Answer, ResponseSheet
+    from esgenie.supplychain.exporters import export_response_sheet
+
+    dis_sheet = ResponseSheet("kesg28", "K-ESG 자가진단", "테스트사", [], [])
+    dd_sheet = ResponseSheet("rba42", "RBA v8.0", "테스트사", [], [])
+
+    dis_path = Path(export_response_sheet(dis_sheet, tmp_path / "dis"))
+    dd_path = Path(export_response_sheet(dd_sheet, tmp_path / "dd"))
+
+    assert dis_path.name.startswith("공시응답서_"), f"disclosure 파일명 오류: {dis_path.name}"
+    assert dd_path.name.startswith("실사응답서_"), f"due_diligence 파일명 오류: {dd_path.name}"
