@@ -158,7 +158,12 @@ def canon_unit(u: str | None) -> str:
 
 
 def units_compatible(a: str | None, b: str | None) -> bool:
-    """두 단위가 비교 가능한가. 어느 한쪽이 미상이면 허용(보수적), 둘 다 있으면 동일해야 함."""
+    """두 단위가 비교 가능한가. 어느 한쪽이 미상이면 허용(보수적), 둘 다 있으면 동일해야 함.
+
+    NOTE: rag_gates/units.py에도 동명 함수가 있으나 시맨틱이 다름.
+    여기는 '동일 단위 or 미상' 판정(탐지기용 보수적 비교),
+    rag_gates 쪽은 '같은 환산 그룹(kWh↔MWh)' 판정(근거 게이트용 환산 비교).
+    """
     ca, cb = canon_unit(a), canon_unit(b)
     if not ca or not cb:
         return True
