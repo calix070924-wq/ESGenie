@@ -639,6 +639,80 @@ def test_apply_template_falls_back_when_no_bbox():
     assert kv["사용전력량"]["unit"] == "kWh"
 
 
+def test_find_number_does_not_merge_multiple_values_on_one_line():
+    """줄 단위 토큰의 여러 숫자를 하나로 이어붙이지 않고 첫 숫자만 잡는다."""
+    from esgenie.ssot.ocr_router import _find_number
+    m = _find_number("유효전력 48,210 50,586 60 142,560")
+    assert m is not None
+    assert m.group() == "48210"
+
+
+def test_apply_template_column_match_stays_on_same_page():
+    """헤더가 있는 페이지의 값만 집고 다음 페이지 숫자를 끌어오지 않는다."""
+    from esgenie.ssot.ocr_router import _apply_template, _load_template
+    tokens = [
+        {"text": "사용량(kWh)", "bbox": [0.686, 0.950, 0.772, 0.970], "page": 0},
+        {"text": "123", "bbox": [0.700, 0.975, 0.760, 0.990], "page": 0},
+        {"text": "999", "bbox": [0.700, 0.100, 0.760, 0.120], "page": 1},
+    ]
+    kv = _apply_template(tokens, _load_template("kepco_bill"))
+    assert kv["사용전력량"]["value"] == 123.0
+    assert kv["사용전력량"]["page"] == 0
+
+
+def test_pymupdf_line_tokens_prefers_spans(monkeypatch):
+    """pymupdf 경로는 line 전체보다 span 토큰을 우선 써서 표 수치를 잘게 분리한다."""
+    import sys
+    import types
+    from esgenie.ssot.ocr_router import _pymupdf_line_tokens
+
+    class _FakePage:
+        rect = types.SimpleNamespace(width=100.0, height=100.0)
+
+        def get_text(self, kind):
+            assert kind == "dict"
+            return {
+                "blocks": [{
+                    "lines": [
+                        {
+                            "bbox": (10.0, 30.0, 77.2, 31.8),
+                            "spans": [
+                                {"text": "구분", "bbox": (10.5, 30.7, 13.3, 31.8)},
+                                {"text": "사용량(kWh)", "bbox": (68.6, 30.7, 77.2, 31.8)},
+                            ],
+                        },
+                        {
+                            "bbox": (10.0, 33.2, 76.0, 34.3),
+                            "spans": [
+                                {"text": "유효전력", "bbox": (10.5, 33.2, 16.1, 34.3)},
+                                {"text": "48,210", "bbox": (36.3, 33.2, 40.9, 34.3)},
+                                {"text": "50,586", "bbox": (52.5, 33.2, 57.1, 34.3)},
+                                {"text": "60", "bbox": (64.9, 33.2, 66.6, 34.3)},
+                                {"text": "142,560", "bbox": (70.0, 33.2, 76.0, 34.3)},
+                            ],
+                        },
+                    ],
+                }],
+            }
+
+    class _FakeDoc:
+        def __enter__(self):
+            return self
+
+        def __exit__(self, exc_type, exc, tb):
+            return False
+
+        def __iter__(self):
+            return iter([_FakePage()])
+
+    monkeypatch.setitem(sys.modules, "fitz", types.SimpleNamespace(open=lambda _path: _FakeDoc()))
+    tokens = _pymupdf_line_tokens("dummy.pdf")
+    texts = [t["text"] for t in tokens]
+    assert "사용량(kWh)" in texts
+    assert "142,560" in texts
+    assert "유효전력48,21050,58660142,560" not in texts
+
+
 def test_pin_totals_from_raw_fixes_billing_cells():
     """청구서 본문 명시값으로 전력·가스·폐기물 대표수치를 결정적 교정(표 오집 교정)."""
     from esgenie.ssot.ocr_router import _pin_totals_from_raw, ExtractedMetric

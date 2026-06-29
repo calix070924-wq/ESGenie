@@ -811,7 +811,21 @@ def _parse_html_table(
 
 
 _DIGIT_SEP_RE = __import__("re").compile(r"(?<=\d)[,\s]+(?=\d)")
+_NUMBER_TOKEN_RE = __import__("re").compile(r"\d+(?:[,\s]+\d{3})*(?:\.\d+)?")
 _NUMBER_RE = __import__("re").compile(r"\d+\.?\d*")
+
+
+def _find_number_tokens(text: str) -> list[str]:
+    """텍스트 안 숫자 토큰들을 개별적으로 정규화해 반환한다."""
+    return [_DIGIT_SEP_RE.sub("", m.group(0)) for m in _NUMBER_TOKEN_RE.finditer(text)]
+
+
+def _find_single_number(text: str) -> str | None:
+    """텍스트에 숫자 토큰이 정확히 하나일 때만 그 값을 반환한다."""
+    nums = _find_number_tokens(text)
+    if len(nums) != 1:
+        return None
+    return nums[0]
 
 
 def _find_number(text: str):
@@ -819,8 +833,10 @@ def _find_number(text: str):
 
     OCR이 '128, 400'처럼 콤마 뒤 공백을 넣어도 128400으로 합친다.
     """
-    cleaned = _DIGIT_SEP_RE.sub("", text)
-    return _NUMBER_RE.search(cleaned)
+    nums = _find_number_tokens(text)
+    if not nums:
+        return None
+    return _NUMBER_RE.search(nums[0])
 
 
 _HEADER_UNIT_RE = __import__("re").compile(r"\(\s*(kWh|MWh|MJ|GJ|TJ|kW|ton|t|m3|㎥|L|원|%)\s*\)", __import__("re").IGNORECASE)
@@ -851,6 +867,7 @@ def _match_column_value(
     """
     hx = _x_center(header_tok.get("bbox"))
     hy = _y_top(header_tok.get("bbox"))
+    header_page = header_tok.get("page")
     if hx is None or hy is None:
         return None
     best: dict[str, Any] | None = None
@@ -858,12 +875,14 @@ def _match_column_value(
     for t in tokens:
         ty = _y_top(t.get("bbox"))
         tx = _x_center(t.get("bbox"))
+        if t.get("page") != header_page:
+            continue  # 페이지 경계 넘김 금지
         if ty is None or tx is None or ty <= hy:
             continue  # 헤더보다 위/같은 행 제외(데이터 행만)
         if abs(tx - hx) > x_tol:
             continue  # 다른 컬럼
-        m = _find_number(t.get("text", ""))
-        if not m:
+        num = _find_single_number(t.get("text", ""))
+        if num is None:
             continue
         dy = ty - hy
         if best_dy is None or dy < best_dy:   # 헤더 바로 아래(첫 데이터 행) 우선
@@ -871,7 +890,7 @@ def _match_column_value(
     if best is None:
         return None
     return {
-        "value": float(_find_number(best["text"]).group()),
+        "value": float(_find_single_number(best["text"])),
         "bbox": best.get("bbox"),
         "page": best.get("page"),
     }
@@ -899,11 +918,11 @@ def _apply_template(tokens: list[dict[str, Any]], template: dict[str, Any]) -> d
                 # 헤더 셀 괄호 단위가 있으면 그것을 우선(템플릿 기본단위·K-ESG 라벨 덮어쓰기 방지)
                 hu = _HEADER_UNIT_RE.search(tok["text"])
                 eff_unit = hu.group(1) if hu else unit
-                # 현재 토큰에 숫자가 있으면 우선 사용 (예: "사용전력량(kWh): 128,400")
-                m = _find_number(tok["text"])
-                if m:
+                # 현재 토큰에 숫자가 정확히 하나면 우선 사용 (예: "사용전력량(kWh): 128,400")
+                num = _find_single_number(tok["text"])
+                if num is not None:
                     result[label_key] = {
-                        "value": float(m.group()),
+                        "value": float(num),
                         "unit": eff_unit,
                         "kesg_code": kesg,
                         "bbox": tok.get("bbox"),
@@ -925,10 +944,10 @@ def _apply_template(tokens: list[dict[str, Any]], template: dict[str, Any]) -> d
                     break
                 # ② 폴백: 현재 토큰에 숫자 없으면 인접 토큰(최대 5개) 탐색
                 for j in range(i + 1, min(i + 6, len(tokens))):
-                    m = _find_number(tokens[j]["text"])
-                    if m:
+                    num = _find_single_number(tokens[j]["text"])
+                    if num is not None:
                         result[label_key] = {
-                            "value": float(m.group()),
+                            "value": float(num),
                             "unit": eff_unit,
                             "kesg_code": kesg,
                             "bbox": tokens[j].get("bbox"),
@@ -1094,10 +1113,11 @@ def _extract_structured_no_llm(file_path: str, *, doc_type: str) -> OcrExtractio
 
 
 def _pymupdf_line_tokens(file_path: str, max_pages: int = 5) -> list[dict[str, Any]]:
-    """pymupdf로 줄 단위 토큰 추출 [{text, bbox(0~1 정규화), page}].
+    """pymupdf로 span 우선 토큰 추출 [{text, bbox(0~1 정규화), page}].
 
-    디지털(텍스트 임베딩) PDF면 OCR 없이도 위치 좌표를 제공 → provenance 박스 가능.
-    스캔본/실패 시 빈 리스트.
+    표/명세서의 숫자 셀은 span 단위가 line 단위보다 안정적이다. 한 줄 전체를 토큰화하면
+    '48,210 50,586 60 142,560' 같은 다중 수치 행에서 첫 값만 집는 오집이 생길 수 있어,
+    span이 있으면 그것을 우선 사용하고 span이 없을 때만 line 폴백한다.
     """
     out: list[dict[str, Any]] = []
     try:
@@ -1112,6 +1132,17 @@ def _pymupdf_line_tokens(file_path: str, max_pages: int = 5) -> list[dict[str, A
                 data = page.get_text("dict")
                 for blk in data.get("blocks", []):
                     for line in blk.get("lines", []):
+                        emitted = False
+                        for span in line.get("spans", []):
+                            text = str(span.get("text", "")).strip()
+                            if not text:
+                                continue
+                            x0, y0, x1, y1 = span.get("bbox", line.get("bbox", (0, 0, 0, 0)))
+                            bbox = [x0 / pw, y0 / ph, x1 / pw, y1 / ph]
+                            out.append({"text": text, "bbox": bbox, "page": i})
+                            emitted = True
+                        if emitted:
+                            continue
                         text = "".join(s.get("text", "") for s in line.get("spans", []))
                         if not text.strip():
                             continue
