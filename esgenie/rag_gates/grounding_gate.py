@@ -1,6 +1,7 @@
 """Post-generation grounding gate for citation and numeric support checks."""
 from __future__ import annotations
 
+import re
 from typing import Any
 
 from .signals import (
@@ -12,15 +13,26 @@ from .signals import (
     strip_citation_markers,
 )
 from .units import convert_to_common, extract_number_unit_pairs, numeric_equal, units_compatible
-from ..knowledge.greenwash_lexicon import ABSOLUTE_UNVERIFIABLE, VAGUE_SUPERLATIVES
+from ..knowledge.greenwash_lexicon import (
+    ABSOLUTE_UNVERIFIABLE,
+    VAGUE_ENVIRONMENTAL,
+    VAGUE_SUPERLATIVES,
+)
 from ..schemas import GroundingResult
 
 # Absolute/superlative expressions that trigger G5 when ungrounded
 _G5_OVERCLAIM_PATTERNS: list[str] = ABSOLUTE_UNVERIFIABLE + VAGUE_SUPERLATIVES + [
     "업계 유일", "업계 1위", "세계 1위", "국내 유일", "국내 1위",
-    "100% 친환경", "100% 완전", "100% 유일",
     "유일한", "완전한",
 ]
+
+# "100%" + 과장/절대화 어휘 결합 시에만 G5 발화 (정량 사실 오탐 방지)
+_100_PERCENT_ABSOLUTES = VAGUE_ENVIRONMENTAL + [
+    "천연", "재활용", "완전", "유일", "무공해", "생분해", "자연분해",
+]
+_G5_100_PERCENT_RE = re.compile(
+    r"100\s*%\s*(" + "|".join(re.escape(w) for w in _100_PERCENT_ABSOLUTES) + r")"
+)
 
 
 def evaluate_grounding(answer_text: str, cited_chunks: list[dict[str, Any]]) -> GroundingResult:
@@ -138,9 +150,14 @@ def _check_overclaim(sentence: str, cited_texts: list[str]) -> bool:
     """G5: detect overclaim expressions not grounded in cited chunks."""
     for pattern in _G5_OVERCLAIM_PATTERNS:
         if pattern in sentence:
-            # Exemption: if the same expression exists in any cited chunk, it's grounded
             if any(pattern in ct for ct in cited_texts):
                 continue
+            return True
+    # "100% + 과장/절대화 어휘" 결합 패턴
+    m = _G5_100_PERCENT_RE.search(sentence)
+    if m:
+        matched_expr = m.group(0)
+        if not any(matched_expr in ct for ct in cited_texts):
             return True
     return False
 
