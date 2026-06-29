@@ -206,6 +206,26 @@ class TestG4UnitMismatch:
         assert len(result.g4_unit_mismatches) > 0
         assert "G4_unit_mismatch" in result.hard_fails
 
+    def test_order_independence_correct_pair_after_noise(self):
+        """Chunk has noise pair (100 명) before correct pair (100 kWh) — must ACCEPT."""
+        answer = "전력 사용량은 100 kWh 입니다 [c1]"
+        chunks = [{"id": "c1", "text": "직원 100명이며 전력 사용량은 100 kWh 이다"}]
+
+        result = evaluate_grounding(answer, chunks)
+
+        assert result.decision == "ACCEPT"
+        assert result.g4_unit_mismatches == []
+
+    def test_order_independence_correct_pair_before_noise(self):
+        """Chunk has correct pair (100 kWh) before noise pair (100 명) — must ACCEPT."""
+        answer = "전력 사용량은 100 kWh 입니다 [c1]"
+        chunks = [{"id": "c1", "text": "전력 사용량은 100 kWh 이고 직원은 100명 이다"}]
+
+        result = evaluate_grounding(answer, chunks)
+
+        assert result.decision == "ACCEPT"
+        assert result.g4_unit_mismatches == []
+
 
 # ═══════════════════════════════════════════════════════════════════════════════
 # G5: Overclaim detection
@@ -245,10 +265,19 @@ class TestG5Overclaim:
         assert result.g5_overclaim is True
         assert result.decision == "ACCEPT"  # soft flag only
 
-    def test_100_percent_ungrounded(self):
-        """'100%' without chunk evidence triggers G5."""
-        answer = "100% 재생에너지로 전환 완료 [chunk_1]"
+    def test_100_percent_quantitative_fact_no_g5(self):
+        """'재생에너지 100% 달성' is a quantitative fact, not overclaim."""
+        answer = "재생에너지 100% 달성 [chunk_1]"
         chunks = [{"id": "chunk_1", "text": "재생에너지 비율 85%"}]
+
+        result = evaluate_grounding(answer, chunks)
+
+        assert result.g5_overclaim is False
+
+    def test_100_percent_with_absolute_modifier_g5(self):
+        """'업계 유일 100% 친환경' combines absolute modifier -> triggers G5."""
+        answer = "업계 유일 100% 친환경 제품입니다 [chunk_1]"
+        chunks = [{"id": "chunk_1", "text": "친환경 인증 제품 생산"}]
 
         result = evaluate_grounding(answer, chunks)
 

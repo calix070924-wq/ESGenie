@@ -12,13 +12,14 @@ from .signals import (
     strip_citation_markers,
 )
 from .units import convert_to_common, extract_number_unit_pairs, numeric_equal, units_compatible
-from ..knowledge.greenwash_lexicon import ABSOLUTE_UNVERIFIABLE, VAGUE_SUPERLATIVES, vague_matches
+from ..knowledge.greenwash_lexicon import ABSOLUTE_UNVERIFIABLE, VAGUE_SUPERLATIVES
 from ..schemas import GroundingResult
 
 # Absolute/superlative expressions that trigger G5 when ungrounded
 _G5_OVERCLAIM_PATTERNS: list[str] = ABSOLUTE_UNVERIFIABLE + VAGUE_SUPERLATIVES + [
     "업계 유일", "업계 1위", "세계 1위", "국내 유일", "국내 1위",
-    "100%", "유일한", "완전한",
+    "100% 친환경", "100% 완전", "100% 유일",
+    "유일한", "완전한",
 ]
 
 
@@ -90,10 +91,9 @@ def _check_numbers_and_units(
 ) -> None:
     """Check sentence numbers against cited chunks; route to G2 or G4.
 
-    Matching order per (s_val, s_unit):
-    1. units_compatible → convert_to_common → numeric_equal → MATCHED (grounded)
-    2. units NOT compatible but numeric_equal(s_val, c_val) → G4 (unit mismatch)
-    3. No match at all → fall through to plain G2 orphan check
+    2-pass approach per (s_val, s_unit) to eliminate order dependence:
+    Pass 1: full scan for compatible-unit match (grounded) — if found, skip G4.
+    Pass 2: only if no match found, collect incompatible-unit same-value pairs as G4.
     """
     sent_pairs = extract_number_unit_pairs(sentence)
     chunk_pairs_all = []
@@ -102,24 +102,28 @@ def _check_numbers_and_units(
 
     matched_numbers: set[str] = set()
     for s_val, s_unit in sent_pairs:
+        # Pass 1: search for a grounded match (compatible units + value match)
         found_match = False
-        found_g4 = False
         for c_val, c_unit in chunk_pairs_all:
             if units_compatible(s_unit, c_unit):
-                # Same group: convert chunk value to sentence unit scale, then compare
                 converted = convert_to_common(c_val, c_unit, s_unit)
                 if converted is not None and numeric_equal(s_val, converted):
                     found_match = True
                     break
-                # Compatible units but values don't match after conversion — not a match,
-                # continue searching other chunk pairs
-            else:
-                # Incompatible units with same numeric value → G4
-                if numeric_equal(s_val, c_val):
-                    unit_mismatches.append(f"{s_val} {s_unit} ↔ {c_val} {c_unit}")
-                    found_g4 = True
-                    break
-        if found_match or found_g4:
+
+        if found_match:
+            matched_numbers.add(str(int(s_val)) if s_val == int(s_val) else str(s_val))
+            continue
+
+        # Pass 2: no grounded match — check for G4 (incompatible unit, same value)
+        found_g4 = False
+        for c_val, c_unit in chunk_pairs_all:
+            if not units_compatible(s_unit, c_unit) and numeric_equal(s_val, c_val):
+                unit_mismatches.append(f"{s_val} {s_unit} ↔ {c_val} {c_unit}")
+                found_g4 = True
+                break
+
+        if found_g4:
             matched_numbers.add(str(int(s_val)) if s_val == int(s_val) else str(s_val))
 
     # Plain numbers without recognized units: fall back to G2 text search
