@@ -119,12 +119,12 @@ def _build_evidence_index(sheet, base_dir: Path) -> tuple[list[dict], dict[int, 
     n = 0
     for a in sheet.answers:
         for e in a.evidence_links:
-            if e.page is None and not e.bbox:
+            if not e.bbox:
                 continue
             path = _resolve_evidence_path(base_dir, e)
             if path is None or path.suffix.lower() != ".pdf":
                 continue
-            dedup_key = (str(path.resolve()), e.page)
+            dedup_key = (str(path.resolve()), e.page if e.page is not None else 0)
             existing_fid = seen.get(dedup_key)
             if existing_fid is not None:
                 fig_map[id(e)] = existing_fid
