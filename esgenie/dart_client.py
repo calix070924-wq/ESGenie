@@ -93,10 +93,9 @@ def search_companies(query: str, limit: int = 10) -> list[dict[str, str]]:
 def _load_corp_list() -> list[dict[str, str]]:
     """DART 기업 코드 목록 — 캐시 우선, 없으면 다운로드.
 
-    샘플 기업(data/sample_dart/*.json)은 항상 목록 앞에 포함.
+    샘플 기업(data/sample_dart/*.json)은 오프라인(mock) 모드에서만 사용.
     """
     samples = _sample_corp_list()
-    sample_codes = {s["corp_code"] for s in samples}
 
     if CORP_CACHE.exists():
         import time
@@ -104,9 +103,11 @@ def _load_corp_list() -> list[dict[str, str]]:
         if age_days < CACHE_DAYS:
             with open(CORP_CACHE, encoding="utf-8") as f:
                 cached = json.load(f)
-            # 샘플 기업을 앞에 붙이되 중복 제거
-            extra = [s for s in samples if s["corp_code"] not in {c["corp_code"] for c in cached}]
-            return extra + cached
+            if SETTINGS.use_mock_dart:
+                # 샘플 기업을 앞에 붙이되 중복 제거
+                extra = [s for s in samples if s["corp_code"] not in {c["corp_code"] for c in cached}]
+                return extra + cached
+            return cached
 
     if SETTINGS.use_mock_dart:
         return samples
@@ -116,10 +117,9 @@ def _load_corp_list() -> list[dict[str, str]]:
         CORP_CACHE.parent.mkdir(parents=True, exist_ok=True)
         with open(CORP_CACHE, "w", encoding="utf-8") as f:
             json.dump(corps, f, ensure_ascii=False)
-        extra = [s for s in samples if s["corp_code"] not in {c["corp_code"] for c in corps}]
-        return extra + corps
+        return corps
 
-    return samples
+    return []
 
 
 def _download_corp_list() -> list[dict[str, str]]:
