@@ -47,6 +47,21 @@ from esgenie.ui.theme import PLOTLY_TEMPLATE
 
 _DET_LABELS = {"rule": "룰 단독", "hybrid": "하이브리드 (룰+LLM)", "llm_only": "LLM 단독"}
 
+_PILLAR_LABELS: dict[str, dict[str, str]] = {
+    "disclosure": {
+        "doc_kind":       "공시 응답서",
+        "caption":        "K-ESG·SAQ 기반 공시 제출본을 자동 생성합니다.",
+        "download_label": "공시 응답서 다운로드",
+        "file_prefix":    "공시응답서",
+    },
+    "due_diligence": {
+        "doc_kind":       "실사 응답서",
+        "caption":        "RBA·현대차 기반 협력사 실사 응답서를 자동 생성합니다.",
+        "download_label": "실사 응답서 다운로드",
+        "file_prefix":    "실사응답서",
+    },
+}
+
 
 def _issb_badge_text(code: str) -> str:
     badges: list[str] = []
@@ -552,7 +567,7 @@ def render_deliverables_workspace(result, active_area: str, gradient: str) -> No
                     width='stretch',
                 )
 
-    report_tab, supply_tab = st.tabs(["📝 통합 보고서", "📤 공급망 실사 응답서"])
+    report_tab, supply_tab = st.tabs(["📝 통합 보고서", "📤 공급망 공시 응답서"])
     with report_tab:
         st.markdown(
             panel_html(
@@ -1174,16 +1189,16 @@ def _render_responder_workspace(
     default_key: str | None = None,
     show_header: bool = False,
 ) -> None:
-    """공통 실사 응답서 렌더 본체. pillar=None이면 전체 양식, 지정하면 해당 기둥만 노출."""
+    """공통 응답서 렌더 본체. pillar=None이면 전체 양식, 지정하면 해당 기둥만 노출."""
+    pillar_labels = _PILLAR_LABELS.get(pillar or "due_diligence", _PILLAR_LABELS["due_diligence"])
     if show_header:
         render_section_header("Supply Chain Response", "OEM 제출용 실사 응답서를 증빙 근거와 함께 자동 생성합니다.", kicker="Deliverable")
         if gradient:
             st.markdown(gradient, unsafe_allow_html=True)
-    st.caption("증빙·공시·그린워싱 검증 결과를 대기업(OEM) ESG 자가진단 양식으로 자동 응답합니다. "
-               "각 답변에 원본 증빙과 신뢰 배지가 함께 실립니다.")
+    st.caption(pillar_labels["caption"] + " 각 답변에 원본 증빙과 신뢰 배지가 함께 실립니다.")
 
     if result is None or getattr(result, "v15_trace", None) is None:
-        st.info("분석을 시작하면 협력사 실사 응답서가 자동 생성됩니다.")
+        st.info(f"분석을 시작하면 {pillar_labels['doc_kind']}가 자동 생성됩니다.")
         return
 
     keys = keys_by_pillar(pillar) if pillar is not None else all_framework_keys()
@@ -1219,7 +1234,7 @@ def _render_responder_workspace(
     issb_alert_rows = _supplychain_issb_alert_rows(getattr(result, "issb_gap", None))
     if issb_alert_rows:
         with st.expander(f"🛡 ISSB 방어 관점 보완 항목 ({len(issb_alert_rows)}건)", expanded=bool(sheet.flagged_count)):
-            st.caption("실사 응답서 제출 전 보완이 필요한 ISSB 기후/그린워싱 방어 항목입니다.")
+            st.caption(f"{pillar_labels['doc_kind']} 제출 전 보완이 필요한 ISSB 기후/그린워싱 방어 항목입니다.")
             st.dataframe(pd.DataFrame(issb_alert_rows), hide_index=True, width='stretch')
 
     upload_cta_rows = _supplychain_upload_cta_rows(
@@ -1272,7 +1287,7 @@ def _render_responder_workspace(
     dl_xlsx, dl_pdf = st.columns(2)
     with open(xlsx_path, "rb") as fh:
         dl_xlsx.download_button(
-            "📥 실사 응답서 (.xlsx)",
+            f"📥 {pillar_labels['doc_kind']} (.xlsx)",
             fh.read(),
             file_name=os.path.basename(xlsx_path),
             mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
@@ -1288,7 +1303,7 @@ def _render_responder_workspace(
         pdf_path = export_response_sheet_pdf(sheet, out_dir, evidence_base_dir=out_dir)
         with open(pdf_path, "rb") as fh:
             dl_pdf.download_button(
-                "📄 실사 응답서 (.pdf)",
+                f"📄 {pillar_labels['doc_kind']} (.pdf)",
                 fh.read(),
                 file_name=os.path.basename(pdf_path),
                 mime="application/pdf",

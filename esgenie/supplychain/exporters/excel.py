@@ -8,6 +8,7 @@ from __future__ import annotations
 from pathlib import Path
 from typing import Any
 
+from ..frameworks import get_framework
 from ..schema import ResponseSheet
 
 _HEADER = ["문항 ID", "섹션", "문항", "답변", "신뢰", "근거 / 비고"]
@@ -67,7 +68,12 @@ def export_response_sheet(sheet: ResponseSheet, out_dir: str | Path) -> str:
 
     out_dir = Path(out_dir)
     out_dir.mkdir(parents=True, exist_ok=True)
-    out_path = out_dir / f"실사응답서_{sheet.framework_key}_{sheet.corp_name or 'corp'}.xlsx"
+    try:
+        _pillar = get_framework(sheet.framework_key).pillar
+    except KeyError:
+        _pillar = "due_diligence"
+    _prefix = "공시응답서" if _pillar == "disclosure" else "실사응답서"
+    out_path = out_dir / f"{_prefix}_{sheet.framework_key}_{sheet.corp_name or 'corp'}.xlsx"
 
     wb = Workbook()
     ws = wb.active
