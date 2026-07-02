@@ -66,6 +66,7 @@ def build_response_sheet(
         try:
             from .drafter import generate_drafts
             sheet = generate_drafts(sheet, evidence_graph)
+            sheet.gaps = _build_gaps(sheet.answers)
         except Exception:
             import logging
             logging.getLogger(__name__).warning(

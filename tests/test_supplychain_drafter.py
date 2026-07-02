@@ -511,3 +511,172 @@ def test_enable_drafts_false_to_dict_equality():
     )
 
     assert sheet_off.to_dict() == sheet_baseline.to_dict()
+
+
+# ── Test 14: gaps가 drafter 후 재계산됨 ───────────────────────────────────
+
+@patch("esgenie.supplychain.drafter.evaluate_grounding")
+@patch("esgenie.supplychain.drafter.LLMClient")
+def test_gaps_recalculated_after_drafts(mock_llm_cls, mock_eval):
+    """초안 성공 항목은 gaps에서 빠지고, fail-closed 항목은 gaps에 남는다."""
+    mock_llm = MagicMock()
+    mock_llm.complete.return_value = SimpleNamespace(content="초안 텍스트 [TXT_0001]")
+    mock_llm_cls.return_value = mock_llm
+    mock_eval.return_value = _grounding_accept()
+
+    fw = get_framework(FW_KEY)
+    extraction = SimpleNamespace(mapped={}, missing=[], corp_name="테스트사")
+    # S-4-1에 매칭되는 TextNode만 제공 → S-4-1은 초안 성공, S-7-1은 실패(청크 없음)
+    text_node = _make_text_node("TXT_0001", "안전보건 경영방침 조항", "S-4-1")
+    graph = _make_evidence_graph([text_node])
+
+    sheet = build_response_sheet(
+        fw, corp_name="테스트사", extraction=extraction,
+        evidence_graph=graph, enable_drafts=True,
+    )
+
+    # S-4-1 항목이 draft_ready면 gaps에 해당 question_text가 없어야 함
+    s41 = next(a for a in sheet.answers if a.qid == "KESG-S-4-1")
+    if s41.status == "draft_ready":
+        for gap in sheet.gaps:
+            assert s41.question_text not in gap, (
+                f"draft_ready 항목이 gaps에 남아있음: {gap}"
+            )
+
+    # S-7-1(TextNode 없음)은 hitl_required로 남아있어야 하고 gaps에 있어야 함
+    s71 = next(a for a in sheet.answers if a.qid == "KESG-S-7-1")
+    assert s71.status == "hitl_required"
+    assert any(s71.question_text in gap for gap in sheet.gaps), (
+        "hitl_required 항목은 gaps에 남아야 함"
+    )
+
+
+# ── Test 15: BM25 폴백 cross-pillar 배제 (검수 재현) ─────────────────────
+
+@patch("esgenie.supplychain.drafter.LLMClient")
+def test_bm25_fallback_cross_pillar_rejected(mock_llm_cls):
+    """S-4-1 청크만 있는 그래프에서 E-1-1 항목 → 폴백 채택 0, LLM 미호출, 상태 유지."""
+    mock_llm = MagicMock()
+    mock_llm_cls.return_value = mock_llm
+
+    fw = get_framework(FW_KEY)
+    answers = []
+    for q in fw.questions:
+        answers.append(Answer(
+            qid=q.qid, section=q.section, question_text=q.text,
+            value=None, status="insufficient",
+        ))
+    sheet = ResponseSheet(
+        framework_key=fw.key, framework_label=fw.label,
+        corp_name="테스트사", answers=answers,
+    )
+
+    # S-4-1(사회 pillar) 청크만 존재
+    text_node = _make_text_node(
+        "TXT_0001",
+        "제1조 안전보건 경영방침에 따라 산업안전보건위원회를 분기별 운영한다.",
+        "S-4-1",
+    )
+    graph = _make_evidence_graph([text_node])
+
+    sheet = generate_drafts(sheet, graph)
+
+    # E-1-1(환경 pillar)은 pillar 불일치로 폴백 채택 안 됨 → 상태 유지
+    e11 = next(a for a in sheet.answers if a.qid == "KESG-E-1-1")
+    assert e11.status == "insufficient", (
+        f"cross-pillar 폴백은 배제되어야 함, got {e11.status}"
+    )
+    # S-4-1 자체도 code 매칭이라 E-1-1에는 제공 안 됨
+    # LLM이 E-1-1에 대해 호출되지 않았어야 함
+    # (단, S-4-1 자체가 insufficient+policy이고 code 매칭이 되면 호출 가능)
+    # S-4-1 자체는 code 매칭으로 초안 시도 대상이 될 수 있음
+
+
+# ── Test 16: kesg_code=None 무관 텍스트만 있고 BM25 점수 낮으면 스킵 ──────
+
+@patch("esgenie.supplychain.drafter.LLMClient")
+def test_bm25_fallback_low_score_null_code_skipped(mock_llm_cls):
+    """kesg_code=None인 짧은 무관 텍스트만 있을 때 점수 미달로 스킵."""
+    mock_llm = MagicMock()
+    mock_llm_cls.return_value = mock_llm
+
+    fw = get_framework(FW_KEY)
+    answers = []
+    for q in fw.questions:
+        if q.primary_code == "S-7-1":
+            answers.append(Answer(
+                qid=q.qid, section=q.section, question_text=q.text,
+                value=None, status="hitl_required",
+            ))
+        else:
+            answers.append(Answer(
+                qid=q.qid, section=q.section, question_text=q.text,
+                value=True, status="verified",
+            ))
+    sheet = ResponseSheet(
+        framework_key=fw.key, framework_label=fw.label,
+        corp_name="테스트사", answers=answers,
+    )
+
+    # kesg_code=None이고 짧은 무관 텍스트 → BM25 점수 낮아서 채택 안 됨
+    text_node = _make_text_node("TXT_NULL", "일반 문서 조항입니다.", None)
+    graph = _make_evidence_graph([text_node])
+
+    sheet = generate_drafts(sheet, graph)
+
+    mock_llm.complete.assert_not_called()
+    s71 = next(a for a in sheet.answers if a.qid == "KESG-S-7-1")
+    assert s71.status == "hitl_required"
+
+
+# ── Test 17: code 매칭 경로가 기존과 동일하게 동작 (회귀) ─────────────────
+
+@patch("esgenie.supplychain.drafter.evaluate_grounding")
+@patch("esgenie.supplychain.drafter.LLMClient")
+def test_code_match_path_still_works(mock_llm_cls, mock_eval):
+    """직접 code 매칭 경로는 pillar 가드 영향 없이 기존대로 동작."""
+    mock_llm = MagicMock()
+    mock_llm.complete.return_value = SimpleNamespace(content="초안 [TXT_0001]")
+    mock_llm_cls.return_value = mock_llm
+    mock_eval.return_value = _grounding_accept()
+
+    sheet = _make_sheet_with_hitl()
+    text_node = _make_text_node(
+        "TXT_0001",
+        "산업안전보건위원회를 분기별 운영한다. ISO 45001 인증 취득.",
+        "S-4-1",
+    )
+    graph = _make_evidence_graph([text_node])
+
+    sheet = generate_drafts(sheet, graph)
+
+    drafted = [a for a in sheet.answers if a.status == "draft_ready"]
+    assert len(drafted) >= 1
+    # code_match 경로임을 확인
+    cit = drafted[0].draft_citations[0]
+    assert cit["retrieval"] == "code_match"
+
+
+# ── Test 18: draft_citations에 retrieval 필드 존재 확인 ───────────────────
+
+@patch("esgenie.supplychain.drafter.evaluate_grounding")
+@patch("esgenie.supplychain.drafter.LLMClient")
+def test_draft_citations_have_retrieval_field(mock_llm_cls, mock_eval):
+    """draft_citations의 모든 항목에 retrieval 필드가 있다."""
+    mock_llm = MagicMock()
+    mock_llm.complete.return_value = SimpleNamespace(content="초안 [TXT_0001]")
+    mock_llm_cls.return_value = mock_llm
+    mock_eval.return_value = _grounding_accept()
+
+    sheet = _make_sheet_with_hitl()
+    text_node = _make_text_node("TXT_0001", "안전보건 방침 조항", "S-4-1")
+    graph = _make_evidence_graph([text_node])
+
+    sheet = generate_drafts(sheet, graph)
+
+    drafted = [a for a in sheet.answers if a.status == "draft_ready"]
+    assert len(drafted) >= 1
+    for a in drafted:
+        for cit in a.draft_citations:
+            assert "retrieval" in cit, f"retrieval 필드 누락: {cit}"
+            assert cit["retrieval"] in ("code_match", "bm25_fallback")

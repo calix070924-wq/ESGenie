@@ -35,7 +35,18 @@ _DRAFTER_USER_TEMPLATE = """\
 답변:"""
 
 _BM25_TOP_K = 5
-_BM25_MIN_SCORE = 0.5
+_BM25_MIN_SCORE = 2.0
+_BM25_RELATIVE_THRESHOLD = 0.4
+
+
+def _code_pillar(code: str) -> str:
+    """K-ESG 코드의 pillar(E/S/G/P 등)를 반환. RBA 코드(A-3 등)는 빈 문자열."""
+    if not code:
+        return ""
+    first = code[0].upper()
+    if first in ("E", "S", "G", "P"):
+        return first
+    return ""
 
 
 def generate_drafts(
@@ -56,8 +67,8 @@ def generate_drafts(
     if not text_nodes:
         return sheet
 
-    # qid→primary_code 맵을 루프 밖에서 한 번만 빌드
-    code_map = _build_code_map(sheet)
+    # qid→(primary_code, question_text) 맵을 루프 밖에서 한 번만 빌드
+    code_map, qtext_map = _build_code_map(sheet)
 
     bm25 = _build_bm25_index(text_nodes)
     llm = LLMClient()
@@ -70,7 +81,8 @@ def generate_drafts(
         if not primary_code:
             continue
 
-        chunks = _collect_chunks(primary_code, evidence_graph, bm25)
+        question_text = qtext_map.get(answer.qid, answer.question_text)
+        chunks = _collect_chunks(primary_code, evidence_graph, bm25, question_text)
         if not chunks:
             continue
 
@@ -79,14 +91,16 @@ def generate_drafts(
     return sheet
 
 
-def _build_code_map(sheet: ResponseSheet) -> dict[str, str]:
-    """framework를 한 번 역조회해 qid→primary_code 맵을 구축."""
+def _build_code_map(sheet: ResponseSheet) -> tuple[dict[str, str], dict[str, str]]:
+    """framework를 한 번 역조회해 qid→primary_code, qid→question_text 맵을 구축."""
     from .frameworks import get_framework
     try:
         fw = get_framework(sheet.framework_key)
     except (KeyError, ValueError):
-        return {}
-    return {q.qid: q.primary_code for q in fw.questions}
+        return {}, {}
+    code_map = {q.qid: q.primary_code for q in fw.questions}
+    qtext_map = {q.qid: q.text for q in fw.questions}
+    return code_map, qtext_map
 
 
 def _is_draft_candidate(answer: Answer, primary_code: str) -> bool:
@@ -109,6 +123,7 @@ def _build_bm25_index(text_nodes: dict[str, Any]) -> BM25Index:
                 "id": node.id,
                 "source_file": getattr(node, "source_file", ""),
                 "page": getattr(node, "page", None),
+                "kesg_code": getattr(node, "kesg_code", None),
             },
             chunk_id=node.id,
         )
@@ -124,42 +139,58 @@ def _collect_chunks(
     code: str,
     evidence_graph: Any,
     bm25: BM25Index,
+    question_text: str,
 ) -> list[dict[str, Any]]:
     """코드에 매칭되는 TextNode를 수집. 1차 code 매칭, 부족 시 BM25 보조."""
     nodes = evidence_graph.text_nodes_by_code(code)
 
-    if not nodes:
-        req = requirement_for(code)
-        query = " ".join(req.evidence_types) if req.evidence_types else code
-        results = bm25.search(query, k=_BM25_TOP_K)
-        nodes = [
-            _result_to_pseudo_node(doc)
-            for doc, score in results
-            if score >= _BM25_MIN_SCORE
+    if nodes:
+        return [
+            {
+                "id": _node_id(n),
+                "text": _node_text(n),
+                "source_file": getattr(n, "source_file", ""),
+                "page": getattr(n, "page", None),
+                "retrieval": "code_match",
+            }
+            for n in nodes
         ]
 
-    if not nodes:
+    # BM25 폴백 — pillar 가드 + 임계 보수화
+    req = requirement_for(code)
+    query = " ".join(req.evidence_types) + " " + question_text
+    results = bm25.search(query, k=_BM25_TOP_K)
+
+    if not results:
         return []
 
-    return [
-        {
-            "id": _node_id(n),
-            "text": _node_text(n),
-            "source_file": getattr(n, "source_file", ""),
-            "page": getattr(n, "page", None),
-        }
-        for n in nodes
-    ]
+    target_pillar = _code_pillar(code)
+    top1_score = results[0][1] if results else 0.0
 
+    accepted: list[dict[str, Any]] = []
+    for doc, score in results:
+        # 절대점수 기준
+        if score < _BM25_MIN_SCORE:
+            continue
+        # top1 대비 상대비율 기준
+        if top1_score > 0 and score < top1_score * _BM25_RELATIVE_THRESHOLD:
+            continue
+        # pillar 가드: 노드에 kesg_code가 있고 pillar가 다르면 배제
+        node_code = doc.meta.get("kesg_code")
+        if node_code:
+            node_pillar = _code_pillar(node_code)
+            if node_pillar and target_pillar and node_pillar != target_pillar:
+                continue
 
-def _result_to_pseudo_node(doc: IndexedDoc) -> "_PseudoNode":
-    """BM25 결과를 TextNode-like 객체로 변환."""
-    return _PseudoNode(
-        id=doc.chunk_id or doc.meta.get("id", ""),
-        text=doc.text,
-        source_file=doc.meta.get("source_file", ""),
-        page=doc.meta.get("page"),
-    )
+        accepted.append({
+            "id": doc.chunk_id or doc.meta.get("id", ""),
+            "text": doc.text,
+            "source_file": doc.meta.get("source_file", ""),
+            "page": doc.meta.get("page"),
+            "retrieval": "bm25_fallback",
+        })
+
+    return accepted
 
 
 class _PseudoNode:
@@ -239,6 +270,7 @@ def _build_citations(chunks: list[dict[str, Any]]) -> list[dict]:
             "source_file": c.get("source_file", ""),
             "page": c.get("page"),
             "text_preview": c["text"][:100],
+            "retrieval": c.get("retrieval", "code_match"),
         }
         for c in chunks
     ]
