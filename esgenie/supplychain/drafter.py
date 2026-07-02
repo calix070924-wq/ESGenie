@@ -39,16 +39,6 @@ _BM25_MIN_SCORE = 2.0
 _BM25_RELATIVE_THRESHOLD = 0.4
 
 
-def _code_pillar(code: str) -> str:
-    """K-ESG 코드의 pillar(E/S/G/P 등)를 반환. RBA 코드(A-3 등)는 빈 문자열."""
-    if not code:
-        return ""
-    first = code[0].upper()
-    if first in ("E", "S", "G", "P"):
-        return first
-    return ""
-
-
 def generate_drafts(
     sheet: ResponseSheet,
     evidence_graph: Any,
@@ -115,7 +105,12 @@ def _is_draft_candidate(answer: Answer, primary_code: str) -> bool:
 
 
 def _build_bm25_index(text_nodes: dict[str, Any]) -> BM25Index:
-    """전체 TextNode로 BM25 인덱스를 구축."""
+    """미분류(kesg_code=None) TextNode만으로 BM25 인덱스를 구축.
+
+    kesg_code가 있는 노드는 code_match 경로에서만 사용된다.
+    폴백 인덱스를 미분류 노드로 한정함으로써 same-pillar 오염을 원천 차단한다.
+    (이전 pillar 가드를 포섭·대체)
+    """
     docs = [
         IndexedDoc(
             text=node.text,
@@ -123,11 +118,12 @@ def _build_bm25_index(text_nodes: dict[str, Any]) -> BM25Index:
                 "id": node.id,
                 "source_file": getattr(node, "source_file", ""),
                 "page": getattr(node, "page", None),
-                "kesg_code": getattr(node, "kesg_code", None),
+                "kesg_code": None,
             },
             chunk_id=node.id,
         )
         for node in text_nodes.values()
+        if getattr(node, "kesg_code", None) is None
     ]
     index = BM25Index()
     if docs:
@@ -141,7 +137,12 @@ def _collect_chunks(
     bm25: BM25Index,
     question_text: str,
 ) -> list[dict[str, Any]]:
-    """코드에 매칭되는 TextNode를 수집. 1차 code 매칭, 부족 시 BM25 보조."""
+    """코드에 매칭되는 TextNode를 수집. 1차 code 매칭, 부족 시 BM25 보조.
+
+    BM25 폴백은 미분류(kesg_code=None) 노드만 대상으로 한다.
+    이미 다른 코드로 분류된 노드는 자기 코드의 code_match 경로에서만 사용되며,
+    폴백 시장에 나오지 않는다 — same-pillar 오염 원천 차단.
+    """
     nodes = evidence_graph.text_nodes_by_code(code)
 
     if nodes:
@@ -156,7 +157,7 @@ def _collect_chunks(
             for n in nodes
         ]
 
-    # BM25 폴백 — pillar 가드 + 임계 보수화
+    # BM25 폴백 — 인덱스 자체가 미분류 노드만 포함(pillar 가드 대체)
     req = requirement_for(code)
     query = " ".join(req.evidence_types) + " " + question_text
     results = bm25.search(query, k=_BM25_TOP_K)
@@ -164,23 +165,14 @@ def _collect_chunks(
     if not results:
         return []
 
-    target_pillar = _code_pillar(code)
     top1_score = results[0][1] if results else 0.0
 
     accepted: list[dict[str, Any]] = []
     for doc, score in results:
-        # 절대점수 기준
         if score < _BM25_MIN_SCORE:
             continue
-        # top1 대비 상대비율 기준
         if top1_score > 0 and score < top1_score * _BM25_RELATIVE_THRESHOLD:
             continue
-        # pillar 가드: 노드에 kesg_code가 있고 pillar가 다르면 배제
-        node_code = doc.meta.get("kesg_code")
-        if node_code:
-            node_pillar = _code_pillar(node_code)
-            if node_pillar and target_pillar and node_pillar != target_pillar:
-                continue
 
         accepted.append({
             "id": doc.chunk_id or doc.meta.get("id", ""),
@@ -191,16 +183,6 @@ def _collect_chunks(
         })
 
     return accepted
-
-
-class _PseudoNode:
-    __slots__ = ("id", "text", "source_file", "page")
-
-    def __init__(self, id: str, text: str, source_file: str, page: Any):
-        self.id = id
-        self.text = text
-        self.source_file = source_file
-        self.page = page
 
 
 def _node_id(node: Any) -> str:

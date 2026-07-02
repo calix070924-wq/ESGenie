@@ -680,3 +680,140 @@ def test_draft_citations_have_retrieval_field(mock_llm_cls, mock_eval):
         for cit in a.draft_citations:
             assert "retrieval" in cit, f"retrieval 필드 누락: {cit}"
             assert cit["retrieval"] in ("code_match", "bm25_fallback")
+
+
+# ── Test 19: same-pillar 오염 차단 — 분류된 청크는 다른 항목에 폴백 불가 ────
+
+@patch("esgenie.supplychain.drafter.evaluate_grounding")
+@patch("esgenie.supplychain.drafter.LLMClient")
+def test_classified_chunk_not_leaked_to_same_pillar(mock_llm_cls, mock_eval):
+    """S-4-1로 분류된 청크만 있으면 S-1-1은 폴백으로도 채택 못 함(LLM 미호출)."""
+    mock_llm = MagicMock()
+    mock_llm.complete.return_value = SimpleNamespace(content="초안 [TXT_0001]")
+    mock_llm_cls.return_value = mock_llm
+    mock_eval.return_value = _grounding_accept()
+
+    fw = get_framework(FW_KEY)
+    answers = []
+    for q in fw.questions:
+        answers.append(Answer(
+            qid=q.qid, section=q.section, question_text=q.text,
+            value=None, status="insufficient",
+        ))
+    sheet = ResponseSheet(
+        framework_key=fw.key, framework_label=fw.label,
+        corp_name="테스트사", answers=answers,
+    )
+
+    # S-4-1(안전보건)으로 분류된 청크 1개만 존재
+    text_node = _make_text_node(
+        "TXT_0001",
+        "제1조 안전보건 경영방침에 따라 산업안전보건위원회를 분기별 운영한다.",
+        "S-4-1",
+    )
+    graph = _make_evidence_graph([text_node])
+
+    sheet = generate_drafts(sheet, graph)
+
+    # S-1-1(사회적 책임 목표)은 same-pillar지만 해당 청크를 폴백으로 받으면 안 됨
+    s11 = next(a for a in sheet.answers if a.qid == "KESG-S-1-1")
+    assert s11.status == "insufficient", (
+        f"분류된 청크는 폴백 시장에 나오면 안 됨, got {s11.status}"
+    )
+
+    # LLM이 S-1-1 질문에 대해 호출되지 않았음을 검증
+    s11_q_text = s11.question_text
+    for call in mock_llm.complete.call_args_list:
+        user_arg = call.kwargs.get("user", "") or (call.args[1] if len(call.args) > 1 else "")
+        assert s11_q_text not in str(user_arg), (
+            f"S-1-1 질문 텍스트가 LLM 프롬프트에 포함됨 — 폴백 오염 발생"
+        )
+
+    # S-4-1 자체는 code_match로 초안 성공해야 함
+    s41 = next(a for a in sheet.answers if a.qid == "KESG-S-4-1")
+    assert s41.status == "draft_ready", "S-4-1은 code_match로 초안 성공해야 함"
+
+
+# ── Test 20: 미분류 노드는 폴백으로 채택 + draft_ready ───────────────────────
+
+@patch("esgenie.supplychain.drafter.evaluate_grounding")
+@patch("esgenie.supplychain.drafter.LLMClient")
+def test_unclassified_node_fallback_produces_draft_ready(mock_llm_cls, mock_eval):
+    """kesg_code=None인 관련 텍스트는 BM25 폴백으로 채택되어 draft_ready가 된다."""
+    mock_llm = MagicMock()
+    mock_llm.complete.return_value = SimpleNamespace(content="초안 [TXT_POLICY]")
+    mock_llm_cls.return_value = mock_llm
+    mock_eval.return_value = _grounding_accept()
+
+    fw = get_framework(FW_KEY)
+    answers = []
+    for q in fw.questions:
+        if q.primary_code == "S-4-1":
+            answers.append(Answer(
+                qid=q.qid, section=q.section, question_text=q.text,
+                value=None, status="hitl_required",
+            ))
+        else:
+            answers.append(Answer(
+                qid=q.qid, section=q.section, question_text=q.text,
+                value=True, status="verified",
+            ))
+    sheet = ResponseSheet(
+        framework_key=fw.key, framework_label=fw.label,
+        corp_name="테스트사", answers=answers,
+    )
+
+    # kesg_code=None이고 안전보건 관련 텍스트 — BM25 폴백으로 높은 점수 기대
+    text_node = _make_text_node(
+        "TXT_POLICY",
+        "산업안전보건법에 따른 안전보건 경영방침 수립 및 산업안전보건위원회 구성·운영 절차를 규정한다. "
+        "안전보건 교육훈련 계획 수립, 위험성 평가 실시, 안전보건 목표 설정 및 이행점검 체계.",
+        None,
+        source_file="통합안전보건규정.pdf",
+    )
+    graph = _make_evidence_graph([text_node])
+
+    sheet = generate_drafts(sheet, graph)
+
+    s41 = next(a for a in sheet.answers if a.qid == "KESG-S-4-1")
+    assert s41.status == "draft_ready", (
+        f"미분류 고관련 노드가 폴백으로 채택되어 draft_ready여야 함, got {s41.status}"
+    )
+    assert s41.draft_citations[0]["retrieval"] == "bm25_fallback"
+
+
+# ── Test 21: 미분류 노드여도 점수 미달이면 스킵 (short unrelated) ─────────────
+
+@patch("esgenie.supplychain.drafter.LLMClient")
+def test_unclassified_node_low_score_skipped(mock_llm_cls):
+    """kesg_code=None이어도 BM25 점수가 임계 미만이면 채택 안 됨."""
+    mock_llm = MagicMock()
+    mock_llm_cls.return_value = mock_llm
+
+    fw = get_framework(FW_KEY)
+    answers = []
+    for q in fw.questions:
+        if q.primary_code == "E-1-1":
+            answers.append(Answer(
+                qid=q.qid, section=q.section, question_text=q.text,
+                value=None, status="hitl_required",
+            ))
+        else:
+            answers.append(Answer(
+                qid=q.qid, section=q.section, question_text=q.text,
+                value=True, status="verified",
+            ))
+    sheet = ResponseSheet(
+        framework_key=fw.key, framework_label=fw.label,
+        corp_name="테스트사", answers=answers,
+    )
+
+    # kesg_code=None이지만 짧은 무관 텍스트 → 점수 미달
+    text_node = _make_text_node("TXT_SHORT", "회의록 작성 요령", None)
+    graph = _make_evidence_graph([text_node])
+
+    sheet = generate_drafts(sheet, graph)
+
+    mock_llm.complete.assert_not_called()
+    e11 = next(a for a in sheet.answers if a.qid == "KESG-E-1-1")
+    assert e11.status == "hitl_required"
