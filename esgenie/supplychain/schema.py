@@ -30,7 +30,7 @@ _ALLOWED_PILLARS: tuple[str, ...] = ("disclosure", "due_diligence")
 #   not_applicable: 해당 기업/문항에 적용되지 않음 → 커버리지 분모에서 제외.
 AnswerStatus = Literal[
     "verified", "self_reported", "insufficient", "flagged",
-    "hitl_required", "not_applicable",
+    "hitl_required", "not_applicable", "draft_ready",
 ]
 
 _BADGE: dict[str, tuple[str, str]] = {
@@ -40,6 +40,7 @@ _BADGE: dict[str, tuple[str, str]] = {
     "flagged":        ("🚩", "검토필요"),    # D1 불일치 / D6 누락 / 과장 의심
     "hitl_required":  ("✍️", "작성필요"),    # 사람이 직접 서술해야 함(증빙 추가로 자동화 불가)
     "not_applicable": ("➖", "해당없음"),     # 적용 불가 → 분모 제외
+    "draft_ready":    ("🤖", "AI초안"),      # AI 초안 생성·근거게이트 통과 → 승인 대기
 }
 
 # ── status 그룹 (3분할 집계용) ────────────────────────────────────────────────
@@ -50,6 +51,7 @@ _BADGE: dict[str, tuple[str, str]] = {
 _AUTO_STATUSES: tuple[str, ...] = ("verified", "self_reported", "flagged")
 _HITL_STATUSES: tuple[str, ...] = ("hitl_required",)
 _PENDING_STATUSES: tuple[str, ...] = ("insufficient",)
+_DRAFT_STATUSES: tuple[str, ...] = ("draft_ready",)
 
 
 @dataclass(frozen=True)
@@ -105,6 +107,10 @@ class Answer:
     # 미해소(insufficient/hitl_required) 시 '무엇을 올리면/작성하면 풀리는가'.
     # derive 시 증빙요구 룩업에서 채워, 응답이 자기기술적이 되게 한다(체크리스트/exporter/UI 재사용).
     evidence_needed: list[str] = field(default_factory=list)
+    # AI 초안 필드 — drafter가 채움, draft_ready 상태에서만 유의미.
+    draft_text: str = ""
+    draft_citations: list[dict] = field(default_factory=list)
+    draft_grounding: dict | None = None
 
     @property
     def badge(self) -> str:
@@ -160,6 +166,11 @@ class ResponseSheet:
         return self._pct(_PENDING_STATUSES)
 
     @property
+    def draft_pct(self) -> float:
+        """AI초안% — 근거게이트 통과 초안이 있는 문항(승인 전)."""
+        return self._pct(_DRAFT_STATUSES)
+
+    @property
     def coverage_pct(self) -> float:
         """하위호환 별칭 — '자동응답 커버리지'를 의미한다."""
         return self.auto_pct
@@ -175,6 +186,7 @@ class ResponseSheet:
             "corp_name": self.corp_name,
             "coverage_pct": self.coverage_pct,
             "auto_pct": self.auto_pct,
+            "draft_pct": self.draft_pct,
             "hitl_pct": self.hitl_pct,
             "pending_pct": self.pending_pct,
             "flagged_count": self.flagged_count,

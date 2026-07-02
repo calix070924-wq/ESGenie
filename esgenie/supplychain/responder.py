@@ -24,6 +24,7 @@ def build_response_sheet(
     data_points: list[Any] | None = None,  # ssot.audit_trace.DataPoint
     evidence_graph: Any | None = None,    # ssot.evidence_graph.EvidenceGraph
     supplier_claims: dict[str, Any] | None = None,  # code → claims.SupplierClaim
+    enable_drafts: bool = False,
 ) -> ResponseSheet:
     """양식을 ESGenie 산출물로 자동 응답한다.
 
@@ -60,6 +61,17 @@ def build_response_sheet(
         answers=answers,
         gaps=_build_gaps(answers),
     )
+
+    if enable_drafts and evidence_graph is not None:
+        try:
+            from .drafter import generate_drafts
+            sheet = generate_drafts(sheet, evidence_graph)
+        except Exception:
+            import logging
+            logging.getLogger(__name__).warning(
+                "drafter 실행 중 예외 — 기존 경로 무손상으로 계속", exc_info=True
+            )
+
     return sheet
 
 
@@ -68,6 +80,7 @@ def respond_from_pipeline(
     framework: str | Framework,
     *,
     supplier_claims: dict[str, Any] | None = None,
+    enable_drafts: bool = False,
 ) -> ResponseSheet:
     """PipelineOutput에서 필요한 산출물을 뽑아 응답서를 만든다(편의 함수).
 
@@ -87,6 +100,7 @@ def respond_from_pipeline(
         data_points=data_points,
         evidence_graph=getattr(pipeline_output, "evidence_graph", None),
         supplier_claims=supplier_claims,
+        enable_drafts=enable_drafts,
     )
 
 
