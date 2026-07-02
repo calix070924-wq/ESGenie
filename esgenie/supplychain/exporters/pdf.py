@@ -26,6 +26,7 @@ from __future__ import annotations
 from pathlib import Path
 from typing import Any
 
+from ..frameworks import get_framework
 from ..schema import ResponseSheet
 from ._fonts import resolve_korean_font
 
@@ -170,7 +171,13 @@ def export_response_sheet_pdf(
     out_dir = Path(out_dir)
     out_dir.mkdir(parents=True, exist_ok=True)
     base_dir = Path(evidence_base_dir) if evidence_base_dir else out_dir
-    out_path = out_dir / f"실사응답서_{sheet.framework_key}_{sheet.corp_name or 'corp'}.pdf"
+    try:
+        _pillar = get_framework(sheet.framework_key).pillar
+    except KeyError:
+        _pillar = "due_diligence"
+    _prefix = "공시응답서" if _pillar == "disclosure" else "실사응답서"
+    _title_kind = "공시 응답서" if _pillar == "disclosure" else "실사 응답서"
+    out_path = out_dir / f"{_prefix}_{sheet.framework_key}_{sheet.corp_name or 'corp'}.pdf"
 
     # 증빙 부록 인덱스 먼저 — 표의 근거 셀에 [E#] 상호참조를 달기 위해 선행 계산.
     figures: list[dict] = []
@@ -199,7 +206,7 @@ def export_response_sheet_pdf(
         str(out_path), pagesize=landscape(A4),
         leftMargin=12 * mm, rightMargin=12 * mm,
         topMargin=12 * mm, bottomMargin=12 * mm,
-        title=f"실사 응답서 {sheet.corp_name or ''}".strip(),
+        title=f"{_title_kind} {sheet.corp_name or ''}".strip(),
     )
     page_w = landscape(A4)[0] - 24 * mm
     elements: list[Any] = []

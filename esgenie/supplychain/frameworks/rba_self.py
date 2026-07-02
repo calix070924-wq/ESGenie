@@ -91,6 +91,7 @@ def build_rba_self() -> Framework:
         key="rba42",
         label="RBA 행동규범 자가진단 (v8.0, 42항목)",
         questions=tuple(questions),
+        pillar="due_diligence",
     )
 
 

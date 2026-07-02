@@ -20,6 +20,9 @@ from ..ssot.audit_trace import EvidenceLink
 
 QType = Literal["yes_no", "yes_no_evidence", "multi_select", "numeric", "text"]
 
+Pillar = Literal["disclosure", "due_diligence"]
+_ALLOWED_PILLARS: tuple[str, ...] = ("disclosure", "due_diligence")
+
 # 답변 신뢰 상태 → 출력 배지
 #   insufficient  : 증빙만 올리면 자동으로 풀림(데이터 타입은 정량/공시존재형).
 #   hitl_required : 증빙이 있어도 사람이 직접 서술해야 함(정성 내부정책 서술형).
@@ -74,10 +77,18 @@ class Framework:
     key: str
     label: str
     questions: tuple[Question, ...]
+    # 양식이 속한 기둥(pillar): "disclosure"(공시) | "due_diligence"(실사).
+    # 기본값 disclosure → 기존 양식(K-ESG/SAQ)은 무회귀, 실사 양식만 명시 지정.
+    pillar: Pillar = "disclosure"
 
     def __post_init__(self) -> None:
         if not self.questions:
             raise ValueError(f"Framework '{self.key}'에 문항이 없습니다.")
+        if self.pillar not in _ALLOWED_PILLARS:
+            raise ValueError(
+                f"Framework '{self.key}'의 pillar 값이 잘못됨: {self.pillar!r} "
+                f"(허용: {_ALLOWED_PILLARS})"
+            )
 
 
 @dataclass
