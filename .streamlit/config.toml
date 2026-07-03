@@ -1,0 +1,9 @@
+# ESGenie 데모 테마 — 크림 배경 + ESG 그린 액센트
+# 시연/발표 영상 촬영용. 세부 스타일은 esgenie/ui/theme.py 의 CSS 가 보강.
+[theme]
+base = "light"
+primaryColor = "#2E6F40"
+backgroundColor = "#F5F2EB"
+secondaryBackgroundColor = "#EBE6DA"
+textColor = "#1F2A22"
+font = "sans serif"

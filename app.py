@@ -18,8 +18,10 @@ from esgenie.ui.components import (
     callout_html,
     hero_html,
     panel_html,
+    render_metric_cards,
+    render_pipeline_loading,
+    render_section_badge,
     render_section_header,
-    render_stat_row,
 )
 from esgenie.ui.tabs import (
     render_diagnosis_workspace,
@@ -395,6 +397,7 @@ def _render_ocr_health(result) -> None:
 _ensure_state_defaults()
 _render_sidebar()
 
+render_section_badge("ESG 자동 진단 콘솔")
 render_section_header(
     "ESG 진단 준비",
     "① 회사 선택 → ② 증빙 서류 업로드 → ③ 분석 시작. 세 단계면 준비가 끝납니다.",
@@ -554,7 +557,8 @@ if corp_name and corp_name != corp_name_raw:
 st.caption(status_detail)
 
 if run_btn:
-    with st.spinner("서류 읽기 → 데이터 통합 → 보고서 생성 → 그린워싱 검증 → 규정 점검 → 제출 서류 생성…"):
+    render_pipeline_loading("L0~L5 파이프라인 실행 중 — 서류 읽기 → 데이터 통합 → 보고서 생성 → 그린워싱 검증 → 규정 점검 → 제출 서류 생성")
+    with st.spinner("분석을 진행하고 있습니다…"):
         st.session_state.result = _run_pipeline_now(
             corp_code=corp_code,
             corp_name=corp_name,
@@ -592,7 +596,7 @@ if result is not None:
     if verify is not None:
         summary_cards.append({"label": "그린워싱 위험도", "value": f"{verify.final_score:.1f}", "note": verify.final_band})
         summary_cards.append({"label": "담당자 확인", "value": "필요" if verify.hitl_required else "완료", "note": f"검증 {verify.iterations_used}회"})
-    render_stat_row(summary_cards, columns=min(5, len(summary_cards)) or 1)
+    render_metric_cards(summary_cards, columns=min(5, len(summary_cards)) or 1)
 
 expert_mode = bool(st.session_state.expert_mode)
 overview_profile = getattr(getattr(result, "extraction", None), "profile", None) or resolved_profile

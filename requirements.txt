@@ -26,5 +26,8 @@ regex>=2024.4.16
 # Visualization
 plotly>=5.20.0
 
+# UI 컴포넌트 (카드형 stylable_container 등)
+streamlit-extras>=0.4.0
+
 # Testing
 pytest>=9.0.0
