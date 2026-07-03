@@ -38,6 +38,26 @@ OUT_ROOT = Path("outputs")
 AREA_LABELS = {"E": "환경 (E)", "S": "사회 (S)", "G": "지배구조 (G)"}
 INDUSTRY_OPTIONS = ["자동차부품", "전자부품", "화학", "금속가공", "식품", "기타"]
 PROFILE_OPTIONS = ["자동 판별", "중소기업 기본형 (28)", "전체 (61)"]
+PURPOSE_OPTIONS = ["둘 다 (공시 + 실사)", "공시 보고서", "고객사 실사 대응"]
+PURPOSE_FOCUS = {
+    "둘 다 (공시 + 실사)": "both",
+    "공시 보고서": "disclosure",
+    "고객사 실사 대응": "due_diligence",
+}
+UPLOAD_GUIDES = {
+    "둘 다 (공시 + 실사)": (
+        "전기요금 고지서, 폐기물 처리 대장, 사내 규정집, 안전보건 문서, 고객사 SAQ 등 "
+        "가지고 있는 서류를 그대로 올리면 됩니다. 서류가 없어도 진단은 가능합니다."
+    ),
+    "공시 보고서": (
+        "공시 보고서에는 정량 증빙이 특히 중요합니다 — 전기·가스 요금 고지서, 폐기물 처리 대장, "
+        "온실가스·에너지 집계표, 용수 사용량 자료를 우선 올려주세요. 서류가 없어도 진단은 가능합니다."
+    ),
+    "고객사 실사 대응": (
+        "실사 응답에는 정책·체계 문서가 특히 중요합니다 — 취업규칙, 윤리규범·행동강령, 안전보건 관리 문서, "
+        "인권정책, 협력사 행동강령, 고객사 SAQ 회신본을 우선 올려주세요. 서류가 없어도 진단은 가능합니다."
+    ),
+}
 SURVEY_ITEMS = [
     ("P-1-1", "ESG 정보를 공시하는 방식이 있습니까?", "예: 홈페이지, DART, 자체 보고서 등"),
     ("E-1-1", "중장기 환경경영 목표를 수립하였습니까?", "예: 2030년 탄소 20% 감축 목표 등"),
@@ -81,6 +101,7 @@ def _ensure_state_defaults() -> None:
         "profile_select": PROFILE_OPTIONS[0],
         "llm_judge_opt": False,
         "expert_mode": False,
+        "purpose_select": PURPOSE_OPTIONS[0],
         "_last_search_corp_code": "",
     }
     for key, value in defaults.items():
@@ -333,7 +354,7 @@ def _render_onboarding_guide() -> None:
     st.markdown("### 이렇게 진행됩니다")
     guide_cols = st.columns(3)
     steps = [
-        ("① 회사 선택", "회사 이름만 검색하면 DART 공시 정보를 자동으로 불러옵니다. 비상장 기업은 직접 입력해도 됩니다."),
+        ("① 목적·회사 선택", "필요한 것(공시 보고서/실사 대응)을 고르고 회사 이름을 검색하면 DART 공시 정보를 자동으로 불러옵니다."),
         ("② 증빙 서류 업로드", "전기요금 고지서, 폐기물 대장, 규정집 등 가지고 있는 서류를 그대로 올리세요. 없어도 진단은 가능합니다."),
         ("③ 분석 시작", "버튼 하나로 진단 → 그린워싱 검증 → 제출 서류 생성까지 자동으로 진행됩니다."),
     ]
@@ -381,7 +402,14 @@ render_section_header(
 )
 
 with st.container(border=True):
-    st.markdown("#### ① 회사 선택")
+    st.markdown("#### ① 목적·회사 선택")
+    st.radio(
+        "무엇이 필요하세요?",
+        PURPOSE_OPTIONS,
+        key="purpose_select",
+        horizontal=True,
+        help="분석은 한 번에 모두 수행됩니다. 선택에 따라 추천 증빙 안내와 결과 화면 순서가 바뀝니다.",
+    )
     _handle_search_prefill()
     corp_col1, corp_col2, corp_col3 = st.columns([1.35, 1.0, 0.75])
     with corp_col1:
@@ -406,10 +434,7 @@ with st.container(border=True):
         )
 
     st.markdown("#### ② 증빙 서류 업로드")
-    st.caption(
-        "전기요금 고지서, 폐기물 처리 대장, 사내 규정집, 안전보건 문서, 고객사 SAQ 등 "
-        "가지고 있는 서류를 그대로 올리면 됩니다. 서류가 없어도 진단은 가능합니다."
-    )
+    st.caption(UPLOAD_GUIDES.get(st.session_state.purpose_select, UPLOAD_GUIDES[PURPOSE_OPTIONS[0]]))
     upload_rows, upload_paths = _handle_uploads()
     answered_count = _render_survey_editor()
     if upload_rows:
@@ -503,6 +528,7 @@ subtitle = (
 
 hero_badges = [
     badge_html(status_label, status_tone),
+    badge_html(st.session_state.purpose_select, "neutral"),
     badge_html(industry or "업종 미선택", "neutral"),
     badge_html(AREA_LABELS[area], "neutral"),
 ]
@@ -591,7 +617,11 @@ else:
         render_greenwash_workspace(result, active_area)
 
     with main_tabs[2]:
-        render_submission_workspace(result, active_area)
+        render_submission_workspace(
+            result,
+            active_area,
+            focus=PURPOSE_FOCUS.get(st.session_state.purpose_select, "both"),
+        )
 
     if expert_mode:
         with main_tabs[3]:

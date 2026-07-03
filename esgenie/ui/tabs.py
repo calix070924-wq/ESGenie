@@ -687,8 +687,12 @@ def render_greenwash_workspace(result, active_area: str) -> None:
     render_verify_tab(result, active_area, "", show_header=False, show_final_text=False)
 
 
-def render_submission_workspace(result, active_area: str) -> None:
-    """제출 서류 탭 — 보고서·데이터시트·응답서를 내려받는 곳."""
+def render_submission_workspace(result, active_area: str, *, focus: str = "both") -> None:
+    """제출 서류 탭 — 보고서·데이터시트·응답서를 내려받는 곳.
+
+    focus: 설정의 목적 선택에 따라 서브탭 순서만 바꾼다("both"/"disclosure"/"due_diligence").
+    분석 내용 자체는 동일 — 같은 증빙으로 모든 양식에 동시 대응된다.
+    """
     render_section_header(
         "제출 서류",
         "생성된 보고서와 응답서를 내려받아 그대로 제출하면 됩니다.",
@@ -765,25 +769,34 @@ def render_submission_workspace(result, active_area: str) -> None:
                     width='stretch',
                 )
 
-    report_tab, dd_tab, supply_tab = st.tabs([
-        "📝 통합 보고서 미리보기",
-        "🤝 실사 응답서 (RBA·현대차)",
-        "📤 공급망 공시 응답서",
-    ])
-    with report_tab:
-        st.markdown(
-            panel_html(
-                "통합 보고서",
-                "진단 수치와 서술을 하나로 엮은 최종 보고서입니다. 위에서 PDF로 내려받을 수 있습니다.",
-                compact_note=f"종합 위험도 {doc.meta.get('overall_risk', 0):.1f} · 섹션 {len(doc.blocks)}개",
-            ),
-            unsafe_allow_html=True,
-        )
-        st.markdown(_report_card(doc.to_markdown(), "final", "FINAL"), unsafe_allow_html=True)
-    with dd_tab:
-        _render_responder_workspace(result, "", pillar="due_diligence", default_key="rba42")
-    with supply_tab:
-        _render_responder_workspace(result, "", pillar="disclosure")
+    section_labels = {
+        "report": "📝 통합 보고서 미리보기",
+        "dd": "🤝 실사 응답서 (RBA·현대차)",
+        "supply": "📤 공급망 공시 응답서",
+    }
+    section_order = {
+        "both": ["report", "dd", "supply"],
+        "disclosure": ["report", "supply", "dd"],
+        "due_diligence": ["dd", "report", "supply"],
+    }.get(focus, ["report", "dd", "supply"])
+
+    sub_tabs = st.tabs([section_labels[key] for key in section_order])
+    for sub_tab, key in zip(sub_tabs, section_order):
+        with sub_tab:
+            if key == "report":
+                st.markdown(
+                    panel_html(
+                        "통합 보고서",
+                        "진단 수치와 서술을 하나로 엮은 최종 보고서입니다. 위에서 PDF로 내려받을 수 있습니다.",
+                        compact_note=f"종합 위험도 {doc.meta.get('overall_risk', 0):.1f} · 섹션 {len(doc.blocks)}개",
+                    ),
+                    unsafe_allow_html=True,
+                )
+                st.markdown(_report_card(doc.to_markdown(), "final", "FINAL"), unsafe_allow_html=True)
+            elif key == "dd":
+                _render_responder_workspace(result, "", pillar="due_diligence", default_key="rba42")
+            else:
+                _render_responder_workspace(result, "", pillar="disclosure")
 
 
 def render_home_tab(result, active_area: str, gradient: str, *, show_header: bool = True) -> None:
