@@ -22,12 +22,11 @@ from esgenie.ui.components import (
     render_stat_row,
 )
 from esgenie.ui.tabs import (
-    render_analysis_workspace,
-    render_deliverables_workspace,
-    render_due_diligence_workspace,
+    render_diagnosis_workspace,
     render_evidence_workspace,
+    render_greenwash_workspace,
     render_lab_workspace,
-    render_overview_workspace,
+    render_submission_workspace,
 )
 from esgenie.ui.theme import apply_theme
 
@@ -39,6 +38,26 @@ OUT_ROOT = Path("outputs")
 AREA_LABELS = {"E": "환경 (E)", "S": "사회 (S)", "G": "지배구조 (G)"}
 INDUSTRY_OPTIONS = ["자동차부품", "전자부품", "화학", "금속가공", "식품", "기타"]
 PROFILE_OPTIONS = ["자동 판별", "중소기업 기본형 (28)", "전체 (61)"]
+PURPOSE_OPTIONS = ["둘 다 (공시 + 실사)", "공시 보고서", "고객사 실사 대응"]
+PURPOSE_FOCUS = {
+    "둘 다 (공시 + 실사)": "both",
+    "공시 보고서": "disclosure",
+    "고객사 실사 대응": "due_diligence",
+}
+UPLOAD_GUIDES = {
+    "둘 다 (공시 + 실사)": (
+        "전기요금 고지서, 폐기물 처리 대장, 사내 규정집, 안전보건 문서, 고객사 SAQ 등 "
+        "가지고 있는 서류를 그대로 올리면 됩니다. 서류가 없어도 진단은 가능합니다."
+    ),
+    "공시 보고서": (
+        "공시 보고서에는 정량 증빙이 특히 중요합니다 — 전기·가스 요금 고지서, 폐기물 처리 대장, "
+        "온실가스·에너지 집계표, 용수 사용량 자료를 우선 올려주세요. 서류가 없어도 진단은 가능합니다."
+    ),
+    "고객사 실사 대응": (
+        "실사 응답에는 정책·체계 문서가 특히 중요합니다 — 취업규칙, 윤리규범·행동강령, 안전보건 관리 문서, "
+        "인권정책, 협력사 행동강령, 고객사 SAQ 회신본을 우선 올려주세요. 서류가 없어도 진단은 가능합니다."
+    ),
+}
 SURVEY_ITEMS = [
     ("P-1-1", "ESG 정보를 공시하는 방식이 있습니까?", "예: 홈페이지, DART, 자체 보고서 등"),
     ("E-1-1", "중장기 환경경영 목표를 수립하였습니까?", "예: 2030년 탄소 20% 감축 목표 등"),
@@ -58,7 +77,7 @@ SURVEY_ITEMS = [
 ]
 
 
-st.set_page_config(page_title="ESGenie — K-ESG Demo Console", layout="wide", page_icon="🌿")
+st.set_page_config(page_title="ESGenie — 중소기업 ESG 자동 진단", layout="wide", page_icon="🌿")
 apply_theme()
 
 
@@ -81,6 +100,8 @@ def _ensure_state_defaults() -> None:
         "demo_greenwash": True,
         "profile_select": PROFILE_OPTIONS[0],
         "llm_judge_opt": False,
+        "expert_mode": False,
+        "purpose_select": PURPOSE_OPTIONS[0],
         "_last_search_corp_code": "",
     }
     for key, value in defaults.items():
@@ -107,10 +128,10 @@ def _render_sidebar() -> None:
             <div style="padding:18px 16px;border-radius:22px;
                         background:linear-gradient(135deg, rgba(255,255,255,0.10), rgba(255,255,255,0.04));
                         border:1px solid rgba(255,255,255,0.10);margin-bottom:18px;">
-                <div style="font-size:12px;font-weight:800;letter-spacing:.08em;opacity:.82;">ESG DEMO CONSOLE</div>
+                <div style="font-size:12px;font-weight:800;letter-spacing:.08em;opacity:.82;">중소기업 ESG 자동 진단</div>
                 <div style="font-size:28px;font-weight:900;margin-top:6px;">ESGenie</div>
                 <div style="font-size:13px;line-height:1.6;opacity:.86;margin-top:8px;">
-                    공시 진단, 그린워싱 검증, 증빙 추적, 공급망 응답서 생성을 하나의 Streamlit 데모로 묶습니다.
+                    회사를 고르고 서류를 올리면 진단, 그린워싱 검증, 제출 서류까지 자동으로 만들어 드립니다.
                 </div>
             </div>
             """,
@@ -131,11 +152,16 @@ def _render_sidebar() -> None:
             unsafe_allow_html=True,
         )
 
+        st.markdown("#### 보기 설정")
+        st.toggle(
+            "🔬 전문가 모드",
+            key="expert_mode",
+            help="증빙 추적(원본 데이터), 감사 추적, 벤치마크 등 상세 화면을 추가로 엽니다.",
+        )
+
         emb = embedding_backend()
         emb_note = "SBERT (정상)" if emb == "sbert" else "해시 폴백 - 품질 저하 가능"
-        st.markdown("#### 운영 메모")
         st.caption(f"임베딩 백엔드: {emb_note}")
-        st.caption("시연 추천 흐름: 기업 선택 → 증빙 업로드 → 분석 실행 → Overview/Analysis → Deliverables")
 
 
 def _handle_search_prefill() -> None:
@@ -323,6 +349,33 @@ def _run_pipeline_now(
     return result
 
 
+def _render_onboarding_guide() -> None:
+    """분석 전 빈 탭 대신 보여주는 3단계 안내."""
+    st.markdown("### 이렇게 진행됩니다")
+    guide_cols = st.columns(3)
+    steps = [
+        ("① 목적·회사 선택", "필요한 것(공시 보고서/실사 대응)을 고르고 회사 이름을 검색하면 DART 공시 정보를 자동으로 불러옵니다."),
+        ("② 증빙 서류 업로드", "전기요금 고지서, 폐기물 대장, 규정집 등 가지고 있는 서류를 그대로 올리세요. 없어도 진단은 가능합니다."),
+        ("③ 분석 시작", "버튼 하나로 진단 → 그린워싱 검증 → 제출 서류 생성까지 자동으로 진행됩니다."),
+    ]
+    for col, (step_title, step_body) in zip(guide_cols, steps):
+        with col:
+            st.markdown(panel_html(step_title, step_body), unsafe_allow_html=True)
+
+    st.markdown(
+        callout_html(
+            "분석이 끝나면 받는 것",
+            [
+                "📊 진단 결과 — 우리 회사 공시 수준, 부족한 항목, 지금 준비할 일",
+                "🔍 그린워싱 검증 — 과장·모호 표현을 찾아 고친 전후 비교",
+                "📄 제출 서류 — 통합 보고서(PDF), 대기업 제출용 데이터시트, 실사 응답서",
+            ],
+            tone="info",
+        ),
+        unsafe_allow_html=True,
+    )
+
+
 def _render_ocr_health(result) -> None:
     """OCR 무음 실패(Upstage 폴백·mock·파싱 누락)를 화면 경고로 노출."""
     roles = st.session_state.get("upload_roles", {})
@@ -343,62 +396,51 @@ _ensure_state_defaults()
 _render_sidebar()
 
 render_section_header(
-    "Analysis Setup",
-    "대회 시연에서는 입력 준비 상태가 한눈에 보여야 하므로 회사, 증빙, 고급 설정을 한 패널에 모았습니다.",
-    kicker="Control Deck",
+    "ESG 진단 준비",
+    "① 회사 선택 → ② 증빙 서류 업로드 → ③ 분석 시작. 세 단계면 준비가 끝납니다.",
+    kicker="시작하기",
 )
 
 with st.container(border=True):
-    setup_company, setup_evidence, setup_advanced = st.tabs(["🏢 Company Context", "📎 Evidence Intake", "⚙️ Advanced Controls"])
+    st.markdown("#### ① 목적·회사 선택")
+    st.radio(
+        "무엇이 필요하세요?",
+        PURPOSE_OPTIONS,
+        key="purpose_select",
+        horizontal=True,
+        help="분석은 한 번에 모두 수행됩니다. 선택에 따라 추천 증빙 안내와 결과 화면 순서가 바뀝니다.",
+    )
+    _handle_search_prefill()
+    corp_col1, corp_col2, corp_col3 = st.columns([1.35, 1.0, 0.75])
+    with corp_col1:
+        st.text_input("회사명", key="corp_name_manual")
+    with corp_col2:
+        st.text_input("DART 코드 (모르면 비워두세요)", key="corp_code_manual")
+    with corp_col3:
+        st.checkbox("DART 연동", key="use_dart", help="위에서 회사를 검색해 선택하면 자동으로 켜집니다.")
 
-    with setup_company:
-        _handle_search_prefill()
-        corp_col1, corp_col2, corp_col3 = st.columns([1.35, 1.0, 0.75])
-        with corp_col1:
-            st.text_input("회사명", key="corp_name_manual")
-        with corp_col2:
-            st.text_input("DART 코드 (없으면 공란)", key="corp_code_manual")
-        with corp_col3:
-            st.checkbox("DART 연동", key="use_dart")
-
-        meta_col1, meta_col2, meta_col3 = st.columns(3)
-        with meta_col1:
-            st.selectbox("업종", INDUSTRY_OPTIONS, key="industry_select")
-        with meta_col2:
-            st.number_input("보고 연도", 2020, 2030, key="report_year")
-        with meta_col3:
-            st.selectbox(
-                "분석 영역",
-                options=["E", "S", "G"],
-                format_func=lambda area_code: {"E": "🌿 환경 (E)", "S": "🤝 사회 (S)", "G": "🏛 지배구조 (G)"}[area_code],
-                key="area_select",
-            )
-
-        st.markdown(
-            panel_html(
-                "Company Context Note",
-                "검색으로 종목을 찾으면 DART 코드와 업종을 자동으로 채웁니다. 시연 익명화가 적용되는 경우 화면에는 별칭만 노출됩니다.",
-                compact_note="기업 검색이 실패해도 직접 입력으로 분석을 계속할 수 있습니다.",
-            ),
-            unsafe_allow_html=True,
+    meta_col1, meta_col2, meta_col3 = st.columns(3)
+    with meta_col1:
+        st.selectbox("업종", INDUSTRY_OPTIONS, key="industry_select")
+    with meta_col2:
+        st.number_input("보고 연도", 2020, 2030, key="report_year")
+    with meta_col3:
+        st.selectbox(
+            "집중 분석 영역",
+            options=["E", "S", "G"],
+            format_func=lambda area_code: {"E": "🌿 환경 (E)", "S": "🤝 사회 (S)", "G": "🏛 지배구조 (G)"}[area_code],
+            key="area_select",
+            help="한 영역을 깊게 분석합니다. 나머지 영역도 같은 방식으로 확장됩니다.",
         )
 
-    with setup_evidence:
-        st.markdown("#### 내부 증빙 파일 업로드")
-        st.caption("전기요금 고지서, 폐기물 대장, 규정집, 안전보건 문서, OEM SAQ PDF를 함께 업로드할 수 있습니다.")
-        upload_rows, upload_paths = _handle_uploads()
-        answered_count = _render_survey_editor()
+    st.markdown("#### ② 증빙 서류 업로드")
+    st.caption(UPLOAD_GUIDES.get(st.session_state.purpose_select, UPLOAD_GUIDES[PURPOSE_OPTIONS[0]]))
+    upload_rows, upload_paths = _handle_uploads()
+    answered_count = _render_survey_editor()
+    if upload_rows:
+        st.dataframe(upload_rows, width='stretch', hide_index=True)
 
-        quick_cards = [
-            {"label": "업로드 파일", "value": str(len(upload_paths)), "note": "증빙 + SAQ 포함"},
-            {"label": "정성 설문", "value": str(answered_count), "note": "수동 입력 완료 항목"},
-        ]
-        render_stat_row(quick_cards, columns=2)
-
-        if upload_rows:
-            st.dataframe(upload_rows, width='stretch', hide_index=True)
-
-    with setup_advanced:
+    with st.expander("⚙️ 고급 설정 — 기본값 그대로 두어도 됩니다", expanded=False):
         adv1, adv2 = st.columns(2)
         with adv1:
             st.slider("자가 검증 임계치 (위험도 ≤)", 10, 80, key="threshold", step=5)
@@ -406,7 +448,7 @@ with st.container(border=True):
             st.checkbox(
                 "그린워싱 시연 모드",
                 key="demo_greenwash",
-                help="의도적 과장 생성 → L3/L4 탐지·수정 과정을 시연합니다.",
+                help="의도적 과장 생성 → 탐지·수정 과정을 시연합니다.",
             )
         with adv2:
             st.selectbox(
@@ -421,18 +463,15 @@ with st.container(border=True):
                 help="룰 1차 스크리닝 + LLM 맥락 판정. 키가 없으면 mock 판정으로 시연합니다.",
             )
 
-        st.markdown(
-            callout_html(
-                "Demo Tuning",
-                [
-                    "대회 시연은 `그린워싱 시연 모드`를 켜면 전후 대비가 더 선명합니다.",
-                    "임계치를 너무 낮게 두면 재생성 루프가 늘고, 너무 높게 두면 개선 폭이 덜 보일 수 있습니다.",
-                    "LLM 2차 판정은 실키가 있으면 설득력이 좋아지고, 없으면 아키텍처 데모용으로 동작합니다.",
-                ],
-                tone="info",
-            ),
-            unsafe_allow_html=True,
-        )
+    st.markdown("#### ③ 분석 시작")
+    run_btn = st.button(
+        "▶ 분석 시작" if st.session_state.result is None else "▶ 다시 분석 (바뀐 설정 반영)",
+        type="primary",
+        width='stretch',
+        disabled=not st.session_state.corp_name_manual.strip(),
+    )
+    if not st.session_state.corp_name_manual.strip():
+        st.caption("①에서 회사명을 입력하면 버튼이 활성화됩니다.")
 
 from esgenie.demo_aliases import display_name as _demo_display_name
 
@@ -484,54 +523,38 @@ if result is not None and area not in result.sections and result.requested_areas
 status_label, status_tone, status_detail = _hero_status(result, is_result_stale, active_area)
 display_name = corp_name or "대상 기업을 선택하세요"
 subtitle = (
-    "DART 공시, OCR 증빙, 정성 설문을 하나의 워크벤치에서 연결해 K-ESG 분석과 제출 패키지를 만듭니다."
+    "공시 자료와 증빙 서류를 모아 K-ESG 진단, 그린워싱 검증, 제출 서류 생성까지 한 번에 처리합니다."
 )
 
-hero_col, action_col = st.columns([5.2, 1.1])
-with hero_col:
-    hero_badges = [
-        badge_html(status_label, status_tone),
-        badge_html(industry or "업종 미선택", "neutral"),
-        badge_html(AREA_LABELS[area], "neutral"),
-    ]
-    hero_meta = [
-        display_name,
-        f"{report_year} 기준",
-        st.session_state.profile_select,
-        f"증빙 {len(upload_paths)}건",
-        f"정성 설문 {answered_count}건",
-    ]
-    st.markdown(
-        hero_html(
-            kicker="K-ESG WORKBENCH",
-            title=f"{display_name} 분석 콘솔",
-            subtitle=subtitle,
-            badges=hero_badges,
-            meta=hero_meta,
-        ),
-        unsafe_allow_html=True,
-    )
-    if corp_name and corp_name != corp_name_raw:
-        st.caption("🔒 시연 익명화 적용 — 실명 대신 익명으로 표시합니다. DART 및 내부 처리에는 실제 식별값이 사용됩니다.")
-    st.caption(status_detail)
-
-with action_col:
-    st.markdown(
-        panel_html(
-            "Run Control",
-            "설정이 바뀌면 상단 상태 배지가 `설정 변경됨`으로 바뀝니다. 시연 전에는 한 번 더 재실행하는 것이 안전합니다.",
-        ),
-        unsafe_allow_html=True,
-    )
-    run_btn = st.button(
-        "▶ 분석 시작" if result is None else "▶ 다시 분석",
-        type="primary",
-        width='stretch',
-        disabled=not corp_name,
-    )
+hero_badges = [
+    badge_html(status_label, status_tone),
+    badge_html(st.session_state.purpose_select, "neutral"),
+    badge_html(industry or "업종 미선택", "neutral"),
+    badge_html(AREA_LABELS[area], "neutral"),
+]
+hero_meta = [
+    display_name,
+    f"{report_year} 기준",
+    st.session_state.profile_select,
+    f"증빙 {len(upload_paths)}건",
+    f"정성 설문 {answered_count}건",
+]
+st.markdown(
+    hero_html(
+        kicker="ESG 자동 진단",
+        title=f"{display_name} ESG 진단",
+        subtitle=subtitle,
+        badges=hero_badges,
+        meta=hero_meta,
+    ),
+    unsafe_allow_html=True,
+)
+if corp_name and corp_name != corp_name_raw:
+    st.caption("🔒 시연 익명화 적용 — 실명 대신 익명으로 표시합니다. DART 및 내부 처리에는 실제 식별값이 사용됩니다.")
+st.caption(status_detail)
 
 if run_btn:
-    with st.spinner("증빙 파싱 → SSOT 통합 → 보고서 생성 → 그린워싱 검증 → 규정 심사 → 서류철 생성…"):
+    with st.spinner("서류 읽기 → 데이터 통합 → 보고서 생성 → 그린워싱 검증 → 규정 점검 → 제출 서류 생성…"):
         st.session_state.result = _run_pipeline_now(
             corp_code=corp_code,
             corp_name=corp_name,
@@ -562,39 +585,46 @@ if result is not None:
     v15_trace = getattr(result, "v15_trace", None)
     verify = result.sections.get(active_area)
     if extraction is not None:
-        summary_cards.append({"label": "Coverage", "value": f"{extraction.coverage_pct:.1f}%", "note": extraction.profile_label})
+        summary_cards.append({"label": "공시 완료율", "value": f"{extraction.coverage_pct:.1f}%", "note": extraction.profile_label})
     if v15_trace is not None:
-        summary_cards.append({"label": "Verified", "value": f"{v15_trace.summary['verified_ratio']*100:.0f}%", "note": f"정량 {v15_trace.summary['data_point_count']}건"})
-        summary_cards.append({"label": "Policy", "value": f"{v15_trace.summary['policy_pass']}/{v15_trace.summary['policy_total']}", "note": "규정 충족"})
+        summary_cards.append({"label": "증빙 확인률", "value": f"{v15_trace.summary['verified_ratio']*100:.0f}%", "note": f"정량 {v15_trace.summary['data_point_count']}건"})
+        summary_cards.append({"label": "규정 충족", "value": f"{v15_trace.summary['policy_pass']}/{v15_trace.summary['policy_total']}", "note": "법규·사내 규정"})
     if verify is not None:
-        summary_cards.append({"label": "Risk", "value": f"{verify.final_score:.1f}", "note": verify.final_band})
-        summary_cards.append({"label": "HITL", "value": "필요" if verify.hitl_required else "완료", "note": f"검증 {verify.iterations_used}회"})
+        summary_cards.append({"label": "그린워싱 위험도", "value": f"{verify.final_score:.1f}", "note": verify.final_band})
+        summary_cards.append({"label": "담당자 확인", "value": "필요" if verify.hitl_required else "완료", "note": f"검증 {verify.iterations_used}회"})
     render_stat_row(summary_cards, columns=min(5, len(summary_cards)) or 1)
 
-main_tabs = st.tabs(["🏠 Overview", "📊 Analysis", "🗂 Evidence", "📄 공시 산출물", "🤝 실사 응답서", "🧪 Lab"])
-tab_overview, tab_analysis, tab_evidence, tab_deliverables, tab_due_diligence, tab_lab = main_tabs
-
+expert_mode = bool(st.session_state.expert_mode)
 overview_profile = getattr(getattr(result, "extraction", None), "profile", None) or resolved_profile
 
-with tab_overview:
-    render_overview_workspace(
-        result,
-        active_area,
-        uploaded_names=sorted(upload_paths.keys()),
-        profile=overview_profile,
-    )
+if result is None and not expert_mode:
+    _render_onboarding_guide()
+else:
+    tab_labels = ["📊 진단 결과", "🔍 그린워싱 검증", "📄 제출 서류"]
+    if expert_mode:
+        tab_labels += ["🗂 근거·검증 상세", "🧪 실험실"]
+    main_tabs = st.tabs(tab_labels)
 
-with tab_analysis:
-    render_analysis_workspace(result, active_area, "")
+    with main_tabs[0]:
+        render_diagnosis_workspace(
+            result,
+            active_area,
+            uploaded_names=sorted(upload_paths.keys()),
+            profile=overview_profile,
+        )
 
-with tab_evidence:
-    render_evidence_workspace(result, active_area, "", uploaded_names=sorted(upload_paths.keys()))
+    with main_tabs[1]:
+        render_greenwash_workspace(result, active_area)
 
-with tab_deliverables:
-    render_deliverables_workspace(result, active_area, "")
+    with main_tabs[2]:
+        render_submission_workspace(
+            result,
+            active_area,
+            focus=PURPOSE_FOCUS.get(st.session_state.purpose_select, "both"),
+        )
 
-with tab_due_diligence:
-    render_due_diligence_workspace(result, active_area, "")
-
-with tab_lab:
-    render_lab_workspace("")
+    if expert_mode:
+        with main_tabs[3]:
+            render_evidence_workspace(result, active_area, "", uploaded_names=sorted(upload_paths.keys()))
+        with main_tabs[4]:
+            render_lab_workspace("")
