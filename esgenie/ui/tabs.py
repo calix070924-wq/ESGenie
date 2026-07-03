@@ -149,35 +149,35 @@ def _result_status_meta(result, active_area: str) -> list[dict[str, str]]:
     rows: list[dict[str, str]] = []
     if extraction is not None:
         rows.append({
-            "label": "Coverage",
+            "label": "공시 완료율",
             "value": f"{extraction.coverage_pct:.1f}%",
             "note": extraction.profile_label,
         })
     if summary:
         rows.append({
-            "label": "SSOT Nodes",
+            "label": "수집한 데이터",
             "value": str(summary["total_nodes"]),
-            "note": f"DART {summary['by_origin'].get('dart', 0)} · OCR {summary['by_origin'].get('ocr_structured', 0) + summary['by_origin'].get('ocr_unstructured', 0)}",
+            "note": f"DART {summary['by_origin'].get('dart', 0)} · 서류 {summary['by_origin'].get('ocr_structured', 0) + summary['by_origin'].get('ocr_unstructured', 0)}",
         })
     if v15_trace is not None:
         rows.append({
-            "label": "Verified Ratio",
+            "label": "증빙 확인률",
             "value": f"{v15_trace.summary['verified_ratio']*100:.0f}%",
             "note": f"정량 {v15_trace.summary['data_point_count']}건",
         })
         rows.append({
-            "label": "Policy Pass",
+            "label": "규정 충족",
             "value": f"{v15_trace.summary['policy_pass']}/{v15_trace.summary['policy_total']}",
-            "note": "사내 규정 점검",
+            "note": "법규·사내 규정 점검",
         })
     if verify is not None:
         rows.append({
-            "label": "Risk Score",
+            "label": "그린워싱 위험도",
             "value": f"{verify.final_score:.1f}",
             "note": f"{verify.final_band} · 검증 {verify.iterations_used}회",
         })
         rows.append({
-            "label": "HITL",
+            "label": "담당자 확인",
             "value": "필요" if verify.hitl_required else "완료",
             "note": "문장 단위 수동 검토",
         })
@@ -193,15 +193,15 @@ def _draft_vs_final_panel(result, active_area: str) -> None:
     first_step = verify.steps[0]
     left, right = st.columns(2)
     with left:
-        st.markdown(panel_html("초안", "L0 SSOT + L2 RAG 기반 초기 생성본입니다."), unsafe_allow_html=True)
+        st.markdown(panel_html("초안 (검증 전)", "수집한 데이터로 처음 만든 보고서입니다. 과장·모호 표현이 남아 있을 수 있습니다."), unsafe_allow_html=True)
         st.markdown(_report_card(first_step.generation.text, "draft", "DRAFT"), unsafe_allow_html=True)
     with right:
         delta = first_step.detection.risk_score - verify.final_score
         delta_text = f"위험도 {delta:.1f} 감소" if delta > 0 else "초안이 이미 기준치 이하"
-        st.markdown(panel_html("최종본", "검증과 재생성을 거친 제출 직전 버전입니다.", compact_note=delta_text), unsafe_allow_html=True)
+        st.markdown(panel_html("최종본 (검증 후)", "그린워싱 검증과 자동 수정을 거친 제출 직전 버전입니다.", compact_note=delta_text), unsafe_allow_html=True)
         st.markdown(_report_card(verify.final_text, "final", "FINAL"), unsafe_allow_html=True)
 
-    with st.expander("📚 RAG 검색 근거", expanded=False):
+    with st.expander("📚 이 보고서의 근거 문서 보기", expanded=False):
         context = first_step.generation.context
         c1, c2, c3 = st.columns(3)
         with c1:
@@ -430,8 +430,8 @@ def render_evidence_workspace(
     uploaded_names: list[str] | None = None,
 ) -> None:
     render_section_header(
-        "Evidence",
-        "증빙 업로드 상태부터 SSOT, 규정 검증, 감사 추적까지 근거 축으로 묶었습니다.",
+        "근거·검증 상세",
+        "업로드 증빙, 수집 데이터 원본(SSOT), 규정 검증, 감사 추적을 확인합니다. (전문가 모드 전용)",
         kicker="Source of Truth",
     )
 
@@ -585,11 +585,205 @@ def render_deliverables_workspace(result, active_area: str, gradient: str) -> No
 
 def render_lab_workspace(gradient: str) -> None:
     render_section_header(
-        "Lab",
-        "벤치마크와 내부 실험 기능은 메인 시연 흐름과 분리해 정리했습니다.",
+        "실험실",
+        "그린워싱 검출기 벤치마크 등 내부 실험 기능입니다. (전문가 모드 전용)",
         kicker="Experiment",
     )
     render_benchmark_tab(gradient, show_header=False)
+
+
+# ====================================================================
+# 간소화 메인 탭 3종 — 진단 결과 / 그린워싱 검증 / 제출 서류
+# ====================================================================
+
+def render_diagnosis_workspace(
+    result,
+    active_area: str,
+    *,
+    uploaded_names: list[str] | None = None,
+    profile: str = "sme",
+) -> None:
+    """진단 결과 탭 — 현재 수준, 부족한 항목, 다음 할 일을 한 화면에."""
+    render_section_header(
+        "진단 결과",
+        "우리 회사 공시가 지금 어느 수준인지, 무엇이 부족한지, 다음에 할 일이 무엇인지 보여줍니다.",
+        kicker="STEP 1 · 현재 위치",
+    )
+
+    _render_esg_coverage_strip(result, active_area, profile)
+
+    if result is None:
+        render_empty_state("분석 결과가 아직 없습니다.", "위에서 회사를 선택하고 분석을 시작하세요.")
+        return
+
+    verify = result.sections.get(active_area)
+    extraction = getattr(result, "extraction", None)
+    render_stat_row(_result_status_meta(result, active_area), columns=3)
+
+    actions: list[str] = []
+    if extraction is not None and extraction.missing:
+        actions.append(f"공시 항목 {len(extraction.missing)}건이 비어 있습니다. 아래 '부족한 항목'에서 확인하세요.")
+    if verify is not None and verify.hitl_required:
+        actions.append("일부 문장은 담당자 확인이 필요합니다. '그린워싱 검증' 탭에서 검토하세요.")
+    if getattr(result, "policy_drafts", None):
+        actions.append(f"사내 규정 보완 초안 {len(result.policy_drafts)}건이 준비되었습니다. 아래 '법규·사내 규정 점검'에서 확인하세요.")
+    if uploaded_names:
+        actions.append(f"업로드한 증빙 {len(uploaded_names)}건이 결과에 반영되었습니다.")
+    else:
+        actions.append("전기요금 고지서, 폐기물 대장, 규정집을 올리면 진단 신뢰도가 크게 좋아집니다.")
+
+    left, right = st.columns([1.7, 1.0])
+    with left:
+        preview_text = verify.final_text if verify is not None else "분석 결과가 없습니다."
+        st.markdown(
+            panel_html(
+                "보고서 핵심 요약",
+                "생성된 보고서의 앞부분입니다. 전체 보고서는 '제출 서류' 탭에서 내려받을 수 있습니다.",
+                compact_note=f"분석 영역: {active_area}",
+            ),
+            unsafe_allow_html=True,
+        )
+        st.markdown(
+            _report_card(_final_preview(preview_text, 720), "final", "요약"),
+            unsafe_allow_html=True,
+        )
+    with right:
+        st.markdown(callout_html("지금 할 일", actions, tone="info"), unsafe_allow_html=True)
+
+    st.divider()
+    st.markdown("### 무엇이 부족한가요?")
+    render_diag_tab(result, "", show_header=False)
+
+    with st.expander("⚖️ 법규·사내 규정 점검 — 중대재해처벌법·개인정보보호법·공정거래법 등", expanded=False):
+        render_policy_tab(result, "", show_header=False)
+
+
+def render_greenwash_workspace(result, active_area: str) -> None:
+    """그린워싱 검증 탭 — 초안 vs 최종 전후 비교와 위험도 분석."""
+    render_section_header(
+        "그린워싱 검증",
+        "보고서 초안에서 과장·모호 표현을 찾아 고쳤습니다. 왼쪽(초안)과 오른쪽(최종)을 비교해 보세요.",
+        kicker="STEP 2 · 신뢰 확보",
+    )
+
+    if result is None or getattr(result, "sections", {}).get(active_area) is None:
+        render_empty_state("검증 결과가 아직 없습니다.", "분석을 시작하면 초안과 최종본 비교가 여기에 나타납니다.")
+        return
+
+    verify = result.sections[active_area]
+    delta = verify.steps[0].detection.risk_score - verify.final_score
+    cards = [
+        {"label": "초안 위험도", "value": f"{verify.steps[0].detection.risk_score:.1f}", "note": "첫 생성본 기준"},
+        {"label": "최종 위험도", "value": f"{verify.final_score:.1f}", "note": verify.final_band},
+        {"label": "위험도 개선", "value": f"{max(delta, 0):.1f}", "note": "자동 수정으로 감소"},
+        {"label": "검증 반복", "value": f"{verify.iterations_used}회", "note": "기준 충족까지 반복"},
+    ]
+    render_stat_row(cards, columns=4)
+
+    _draft_vs_final_panel(result, active_area)
+
+    st.divider()
+    st.markdown("### 위험도 상세 분석")
+    render_verify_tab(result, active_area, "", show_header=False, show_final_text=False)
+
+
+def render_submission_workspace(result, active_area: str) -> None:
+    """제출 서류 탭 — 보고서·데이터시트·응답서를 내려받는 곳."""
+    render_section_header(
+        "제출 서류",
+        "생성된 보고서와 응답서를 내려받아 그대로 제출하면 됩니다.",
+        kicker="STEP 3 · 산출물",
+    )
+
+    if result is None or getattr(result, "sections", {}).get(active_area) is None:
+        render_empty_state("제출 서류가 아직 없습니다.", "분석이 끝나면 내려받을 수 있는 서류가 여기에 나타납니다.")
+        return
+
+    export_paths = getattr(result, "export_paths", {}) or {}
+    doc, pdf_path = _get_assembled_report(result)
+
+    d1, d2, d3 = st.columns(3)
+    with d1:
+        st.markdown(
+            download_tile_html(
+                "통합 보고서",
+                "E·S·G 본문에 진단 결과와 개선 로드맵을 엮은 제출용 보고서입니다.",
+                note=f"섹션 {len(doc.blocks)}개 · PDF/MD",
+            ),
+            unsafe_allow_html=True,
+        )
+        if pdf_path and os.path.exists(pdf_path):
+            with open(pdf_path, "rb") as fh:
+                st.download_button(
+                    "📥 통합 보고서 (.pdf)",
+                    fh.read(),
+                    file_name=os.path.basename(pdf_path),
+                    mime="application/pdf",
+                    width='stretch',
+                )
+        st.download_button(
+            "📥 통합 보고서 (.md)",
+            doc.to_markdown().encode(),
+            file_name=f"esgenie_report_{doc.corp_name}.md",
+            mime="text/markdown",
+            width='stretch',
+        )
+    with d2:
+        st.markdown(
+            download_tile_html(
+                "K-ESG 데이터시트",
+                "대기업·고객사 제출용 엑셀 데이터시트입니다. 각 수치에 증빙이 연결되어 있습니다.",
+                note=os.path.basename(export_paths.get("xlsx", "")) or "분석 후 생성",
+            ),
+            unsafe_allow_html=True,
+        )
+        if export_paths.get("xlsx"):
+            with open(export_paths["xlsx"], "rb") as fh:
+                st.download_button(
+                    "📥 데이터시트 (.xlsx)",
+                    fh.read(),
+                    file_name=os.path.basename(export_paths["xlsx"]),
+                    mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                    width='stretch',
+                )
+    with d3:
+        st.markdown(
+            download_tile_html(
+                "증빙 추적 자료",
+                "보고서의 모든 수치가 어떤 서류에서 왔는지 확인할 수 있는 검증용 자료입니다.",
+                note=os.path.basename(export_paths.get("audit_json", "")) or "분석 후 생성",
+            ),
+            unsafe_allow_html=True,
+        )
+        if export_paths.get("audit_json"):
+            with open(export_paths["audit_json"], "rb") as fh:
+                st.download_button(
+                    "📥 증빙 추적 (.json)",
+                    fh.read(),
+                    file_name=os.path.basename(export_paths["audit_json"]),
+                    mime="application/json",
+                    width='stretch',
+                )
+
+    report_tab, dd_tab, supply_tab = st.tabs([
+        "📝 통합 보고서 미리보기",
+        "🤝 실사 응답서 (RBA·현대차)",
+        "📤 공급망 공시 응답서",
+    ])
+    with report_tab:
+        st.markdown(
+            panel_html(
+                "통합 보고서",
+                "진단 수치와 서술을 하나로 엮은 최종 보고서입니다. 위에서 PDF로 내려받을 수 있습니다.",
+                compact_note=f"종합 위험도 {doc.meta.get('overall_risk', 0):.1f} · 섹션 {len(doc.blocks)}개",
+            ),
+            unsafe_allow_html=True,
+        )
+        st.markdown(_report_card(doc.to_markdown(), "final", "FINAL"), unsafe_allow_html=True)
+    with dd_tab:
+        _render_responder_workspace(result, "", pillar="due_diligence", default_key="rba42")
+    with supply_tab:
+        _render_responder_workspace(result, "", pillar="disclosure")
 
 
 def render_home_tab(result, active_area: str, gradient: str, *, show_header: bool = True) -> None:
@@ -689,26 +883,8 @@ def render_diag_tab(result, gradient: str, *, show_header: bool = True) -> None:
 
     badge = "🏢" if extraction.profile == "full" else "🏭"
     extra = f" · 프로파일 외 추가 공시 {len(extraction.beyond_profile)}개" if extraction.beyond_profile else ""
-    st.markdown(f"{badge} **프로파일: {extraction.profile_label}** · 커버리지 **{extraction.coverage_pct:.1f}%**{extra}")
-    st.caption("커버리지 분모는 프로파일 기준 — 해당 기업 규모에 적용 가능한 항목만 평가")
-
-    _render_disclosure_panel(result.disclosure)
-    _render_issb_gap_panel(result.issb_gap)
-    _render_coverage_panel(extraction)
-
-    st.markdown("#### Evidence 노드")
-    node_df = pd.DataFrame([
-        {
-            "K-ESG": node.metric,
-            "값": node.value,
-            "단위": node.unit,
-            "연도": node.period,
-            "출처": node.origin,
-            "신뢰도": round(node.confidence, 2),
-        }
-        for node in sorted(ssot.nodes.values(), key=lambda item: item.metric)
-    ])
-    st.dataframe(node_df, hide_index=True, width='stretch')
+    st.markdown(f"{badge} **평가 기준: {extraction.profile_label}** · 공시 완료율 **{extraction.coverage_pct:.1f}%**{extra}")
+    st.caption("완료율 분모는 우리 회사 규모에 적용되는 항목만 계산합니다.")
 
     from esgenie.knowledge.kesg_items import items_for_profile
 
@@ -720,10 +896,22 @@ def render_diag_tab(result, gradient: str, *, show_header: bool = True) -> None:
         if code in profile_codes and not extraction.mapped[code].get("beyond_profile")
     ]
 
-    present_tab, missing_tab = st.tabs([
-        f"✅ 공시 항목 ({len(present_codes)}개 / {len(profile_items)}개)",
-        f"⚠️ 누락 항목 ({len(missing_codes)}개 / {len(profile_items)}개)",
+    missing_tab, present_tab = st.tabs([
+        f"⚠️ 부족한 항목 ({len(missing_codes)}개 / {len(profile_items)}개)",
+        f"✅ 공시된 항목 ({len(present_codes)}개 / {len(profile_items)}개)",
     ])
+
+    with missing_tab:
+        st.caption("아래 항목은 아직 공시 근거가 없습니다. 관련 서류를 올리거나 정성 설문에 답하면 채워집니다.")
+        st.dataframe(pd.DataFrame([
+            {
+                "코드": item.code,
+                "영역": item.area,
+                "항목명": _item_name_with_issb(item.name, item.code),
+                "유형": item.data_type,
+            }
+            for item in profile_items if item.code in extraction.missing
+        ]), hide_index=True, width='stretch')
 
     with present_tab:
         st.dataframe(pd.DataFrame([
@@ -739,16 +927,23 @@ def render_diag_tab(result, gradient: str, *, show_header: bool = True) -> None:
             if entry["code"] in profile_codes and not entry.get("beyond_profile")
         ]), hide_index=True, width='stretch')
 
-    with missing_tab:
-        st.dataframe(pd.DataFrame([
+    _render_coverage_panel(extraction)
+    _render_disclosure_panel(result.disclosure)
+    _render_issb_gap_panel(result.issb_gap)
+
+    with st.expander("🧾 수집된 데이터 원본 보기"):
+        node_df = pd.DataFrame([
             {
-                "코드": item.code,
-                "영역": item.area,
-                "항목명": _item_name_with_issb(item.name, item.code),
-                "유형": item.data_type,
+                "K-ESG": node.metric,
+                "값": node.value,
+                "단위": node.unit,
+                "연도": node.period,
+                "출처": node.origin,
+                "신뢰도": round(node.confidence, 2),
             }
-            for item in profile_items if item.code in extraction.missing
-        ]), hide_index=True, width='stretch')
+            for node in sorted(ssot.nodes.values(), key=lambda item: item.metric)
+        ])
+        st.dataframe(node_df, hide_index=True, width='stretch')
 
     if extraction.beyond_profile:
         with st.expander(f"➕ 프로파일 외 추가 공시 ({len(extraction.beyond_profile)}개) — 커버리지 미반영"):
@@ -801,7 +996,14 @@ def render_draft_tab(result, active_area: str, gradient: str, *, show_header: bo
                 st.caption(f"[{score:.3f}] {doc.text[:80]}...")
 
 
-def render_verify_tab(result, active_area: str, gradient: str, *, show_header: bool = True) -> None:
+def render_verify_tab(
+    result,
+    active_area: str,
+    gradient: str,
+    *,
+    show_header: bool = True,
+    show_final_text: bool = True,
+) -> None:
     if show_header:
         render_section_header("Verification & Final", "리스크 감소 추이와 최종 제출본 품질을 확인합니다.", kicker="Verification")
         if gradient:
@@ -824,8 +1026,9 @@ def render_verify_tab(result, active_area: str, gradient: str, *, show_header: b
     else:
         st.info("ℹ️ 초안이 이미 기준치 이하")
 
-    st.markdown("### 최종 보고서")
-    st.markdown(_report_card(verify.final_text, "final", "FINAL"), unsafe_allow_html=True)
+    if show_final_text:
+        st.markdown("### 최종 보고서")
+        st.markdown(_report_card(verify.final_text, "final", "FINAL"), unsafe_allow_html=True)
     st.caption(
         f"{band_emoji.get(verify.final_band, '')} 위험도 **{verify.final_score:.1f}** ({verify.final_band}) · "
         f"검증 {verify.iterations_used}회 · "
