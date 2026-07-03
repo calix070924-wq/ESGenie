@@ -1,7 +1,7 @@
 {
   "ticker": "005930",
-  "n_cases": 143,
-  "n_pos": 57,
+  "n_cases": 153,
+  "n_pos": 67,
   "n_neg": 86,
   "cases": [
     {
@@ -1147,6 +1147,116 @@
       "category": "report_sentence",
       "split": "test",
       "domain": "esg_report"
+    },
+    {
+      "id": "KORP-01",
+      "sentence": "BGF리테일은 상품 포장재에서 발생하는 플라스틱 사용 저감을 위해 간편식 상품 포장재를 생분해성 수지(PLA, Poly Lactic Acid)로 변경하여 약 175톤을 저감하였습니다.",
+      "label": "greenwash",
+      "category": "condition_omitted",
+      "split": "test",
+      "domain": "esg_report",
+      "company": "BGF리테일",
+      "source": "2023-2024 BGF Retail Sustainability Report p.12",
+      "source_url": "https://kind.krx.co.kr/external/2024/06/28/001168/20240628000485/2023-2024%20BGF%EB%A6%AC%ED%85%8C%EC%9D%BC%20%EC%A7%80%EC%86%8D%EA%B0%80%EB%8A%A5%EA%B2%BD%EC%98%81%EB%B3%B4%EA%B3%A0%EC%84%9C(%EA%B5%AD%EB%AC%B8).pdf"
+    },
+    {
+      "id": "KORP-02",
+      "sentence": "흙, 바다에서도 분해가 가능한 소재로 일반 플라스틱 소재보다 생산 과정에서 탄소저감 효과가 우수합니다.",
+      "label": "greenwash",
+      "category": "condition_omitted",
+      "split": "test",
+      "domain": "esg_report",
+      "company": "롯데케미칼",
+      "source": "LOTTE CHEMICAL ESG REPORT 2023 p.19",
+      "source_url": "https://kind.krx.co.kr/external/2024/06/28/000376/20240628000480/2023%20%EB%A1%AF%EB%8D%B0%EC%BC%80%EB%AF%B8%EC%B9%BC%20ESG%20Report.pdf"
+    },
+    {
+      "id": "KORP-03",
+      "sentence": "토양 및 해양 등 일반 자연 환경에서 분해 성능이 가장 뛰어난 PHA(폴리하이드록시알카노에이트, PolyHydroxyAlkanoate) 소재 개발",
+      "label": "greenwash",
+      "category": "pure_exaggeration",
+      "split": "test",
+      "domain": "esg_report",
+      "company": "코오롱인더스트리",
+      "source": "KOLON INDUSTRIES SUSTAINABILITY REPORT 2023 p.25",
+      "source_url": "https://kind.krx.co.kr/external/2024/06/28/000045/20240628000050/2023%20%EC%BD%94%EC%98%A4%EB%A1%B1%EC%9D%B8%EB%8D%94%EC%8A%A4%ED%8A%B8%EB%A6%AC%20%EC%A7%80%EC%86%8D%EA%B0%80%EB%8A%A5%EA%B2%BD%EC%98%81%EB%B3%B4%EA%B3%A0%EC%84%9C.pdf"
+    },
+    {
+      "id": "KORP-04",
+      "sentence": "버려지는 사과를 가공한 비건 가죽, 수명이 다한 폐방화복을 가공하여 제품의 90% 이상을 친환경 소재로만 제작했습니다.",
+      "label": "greenwash",
+      "category": "vague_label",
+      "split": "test",
+      "domain": "esg_report",
+      "company": "코오롱인더스트리",
+      "source": "KOLON INDUSTRIES SUSTAINABILITY REPORT 2023 p.38",
+      "source_url": "https://kind.krx.co.kr/external/2024/06/28/000045/20240628000050/2023%20%EC%BD%94%EC%98%A4%EB%A1%B1%EC%9D%B8%EB%8D%94%EC%8A%A4%ED%8A%B8%EB%A6%AC%20%EC%A7%80%EC%86%8D%EA%B0%80%EB%8A%A5%EA%B2%BD%EC%98%81%EB%B3%B4%EA%B3%A0%EC%84%9C.pdf"
+    },
+    {
+      "id": "KORP-05",
+      "sentence": "수소를 활용하여 무공해 발전이 가능하며, 기존의 발전 방식대비 현저히 낮은 배출가스와 소음 수준을 자랑합니다.",
+      "label": "greenwash",
+      "category": "condition_omitted",
+      "split": "test",
+      "domain": "esg_report",
+      "company": "두산퓨얼셀",
+      "source": "두산퓨얼셀 지속가능경영보고서 2024 p.10",
+      "source_url": "https://kind.krx.co.kr/external/2024/06/28/001290/20240627001772/%EB%91%90%EC%82%B0%ED%93%A8%EC%96%BC%EC%85%80%20%EC%A7%80%EC%86%8D%EA%B0%80%EB%8A%A5%EA%B2%BD%EC%98%81%EB%B3%B4%EA%B3%A0%EC%84%9C%202024.pdf"
+    },
+    {
+      "id": "KORP-06",
+      "sentence": "수소를 공급하여 발전하는 무공해 청정 에너지 솔루션",
+      "label": "greenwash",
+      "category": "vague_label",
+      "split": "test",
+      "domain": "esg_report",
+      "company": "두산퓨얼셀",
+      "source": "두산퓨얼셀 지속가능경영보고서 2024 p.12",
+      "source_url": "https://kind.krx.co.kr/external/2024/06/28/001290/20240627001772/%EB%91%90%EC%82%B0%ED%93%A8%EC%96%BC%EC%85%80%20%EC%A7%80%EC%86%8D%EA%B0%80%EB%8A%A5%EA%B2%BD%EC%98%81%EB%B3%B4%EA%B3%A0%EC%84%9C%202024.pdf"
+    },
+    {
+      "id": "KORP-07",
+      "sentence": "비가열 소비 제품군(샌드위치, 용기 김밥)과 단품도시락의 포장용기를 생분해성 수지(PLA, Poly Lactic Acid) 소재로 적용하고 운영하고 있으며 이를 통해 총 175톤의 플라스틱을 저감하였습니다.",
+      "label": "greenwash",
+      "category": "condition_omitted",
+      "split": "test",
+      "domain": "esg_report",
+      "company": "BGF리테일",
+      "source": "2023-2024 BGF Retail Sustainability Report p.34",
+      "source_url": "https://kind.krx.co.kr/external/2024/06/28/001168/20240628000485/2023-2024%20BGF%EB%A6%AC%ED%85%8C%EC%9D%BC%20%EC%A7%80%EC%86%8D%EA%B0%80%EB%8A%A5%EA%B2%BD%EC%98%81%EB%B3%B4%EA%B3%A0%EC%84%9C(%EA%B5%AD%EB%AC%B8).pdf"
+    },
+    {
+      "id": "KORP-08",
+      "sentence": "재고 의류를 업사이클링하여 재탄생시키는 친환경 인테리어 마감재는 의류에 사용되는 섬유로 만들어지기 때문에 인체에 무해하며, 유해 화학 물질인 폼알데하이드도 거의 검출되지 않아 친환경적입니다.",
+      "label": "greenwash",
+      "category": "vague_label",
+      "split": "test",
+      "domain": "esg_report",
+      "company": "한섬",
+      "source": "한섬 지속가능경영보고서 2023 p.38",
+      "source_url": "https://kind.krx.co.kr/external/2024/06/27/000071/20240621001249/%ED%95%9C%EC%84%AC%20%EC%A7%80%EC%86%8D%EA%B0%80%EB%8A%A5%EA%B2%BD%EC%98%81%EB%B3%B4%EA%B3%A0%EC%84%9C%202023.pdf"
+    },
+    {
+      "id": "KORP-09",
+      "sentence": "코오롱인더스트리가 KT&G와 공동으로 개발 중인 라이오셀(Lyocell) 토우는 비플라스틱 소재로서 자연에서 빠르고 완벽하게 분해되기 때문에 담배꽁초로 인한 플라스틱 발생량을 효과적으로 감축시킬 것이라 기대하고 있습니다.",
+      "label": "greenwash",
+      "category": "condition_omitted",
+      "split": "test",
+      "domain": "esg_report",
+      "company": "코오롱인더스트리",
+      "source": "KOLON INDUSTRIES SUSTAINABILITY REPORT 2023 p.37",
+      "source_url": "https://kind.krx.co.kr/external/2024/06/28/000045/20240628000050/2023%20%EC%BD%94%EC%98%A4%EB%A1%B1%EC%9D%B8%EB%8D%94%EC%8A%A4%ED%8A%B8%EB%A6%AC%20%EC%A7%80%EC%86%8D%EA%B0%80%EB%8A%A5%EA%B2%BD%EC%98%81%EB%B3%B4%EA%B3%A0%EC%84%9C.pdf"
+    },
+    {
+      "id": "KORP-10",
+      "sentence": "PHA는 미생물이 식물 성분을 먹고 세포 안에 생성하는 고분자 물질로써 여러 생분해 소재 가운데 토양과 해양 등 자연환경에게 자연 분해 성능이 가장 우수하다고 알려져 있습니다.",
+      "label": "greenwash",
+      "category": "pure_exaggeration",
+      "split": "test",
+      "domain": "esg_report",
+      "company": "BGF리테일",
+      "source": "2023-2024 BGF Retail Sustainability Report p.34",
+      "source_url": "https://kind.krx.co.kr/external/2024/06/28/001168/20240628000485/2023-2024%20BGF%EB%A6%AC%ED%85%8C%EC%9D%BC%20%EC%A7%80%EC%86%8D%EA%B0%80%EB%8A%A5%EA%B2%BD%EC%98%81%EB%B3%B4%EA%B3%A0%EC%84%9C(%EA%B5%AD%EB%AC%B8).pdf"
     }
   ]
 }
