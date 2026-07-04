@@ -20,7 +20,9 @@ _DRAFTER_SYSTEM = (
     "당신은 ESG 실사 응답 초안 작성기입니다. "
     "아래 제공된 발췌(청크)만을 근거로 답변을 작성하세요. "
     "각 문장 끝에 반드시 [chunk_id] 형식으로 인용을 붙이세요. "
-    "발췌에 없는 내용은 절대 포함하지 마세요."
+    "발췌에 없는 내용은 절대 포함하지 마세요. "
+    "발췌가 질문에 답하기에 불충분하면 다른 말을 덧붙이지 말고 "
+    "정확히 INSUFFICIENT_EVIDENCE 라고만 출력하라."
 )
 
 _DRAFTER_USER_TEMPLATE = """\
@@ -28,6 +30,7 @@ _DRAFTER_USER_TEMPLATE = """\
 
 아래 발췌만 근거로 답변을 작성하세요. 각 문장 끝에 [chunk_id] 인용 필수.
 발췌에 없는 내용을 작성하면 안 됩니다.
+발췌가 질문에 답하기에 불충분하면 정확히 INSUFFICIENT_EVIDENCE 라고만 출력하세요.
 
 [검색 청크]
 {chunks_text}
@@ -35,8 +38,29 @@ _DRAFTER_USER_TEMPLATE = """\
 답변:"""
 
 _BM25_TOP_K = 5
+# 후보 축소용 1차 필터 — 관련도 보장은 관련성 사전 게이트(_check_relevance)가 담당
 _BM25_MIN_SCORE = 2.0
 _BM25_RELATIVE_THRESHOLD = 0.4
+
+_INSUFFICIENCY_PATTERNS: tuple[str, ...] = (
+    "포함되어 있지 않",
+    "답변을 제공할 수 없",
+    "확인할 수 없",
+    "언급된 내용이 없",
+    "포함되지 않",
+)
+
+_RELEVANCE_SYSTEM = "당신은 ESG 증빙 문서와 질문 간 관련성을 판정하는 전문가입니다."
+
+_RELEVANCE_USER_TEMPLATE = """\
+다음 발췌가 아래 질문에 실질적으로 답할 근거를 담고 있는가?
+
+질문: {question}
+
+발췌:
+{chunks_text}
+
+반드시 YES 또는 NO 한 단어로만 답하라."""
 
 
 def generate_drafts(
@@ -74,6 +98,14 @@ def generate_drafts(
         question_text = qtext_map.get(answer.qid, answer.question_text)
         chunks = _collect_chunks(primary_code, evidence_graph, bm25, question_text)
         if not chunks:
+            continue
+
+        # BM25 폴백 경로는 관련성 사전 게이트를 통과해야 초안 생성으로 진입
+        is_fallback = chunks[0].get("retrieval") == "bm25_fallback"
+        if is_fallback and not _check_relevance(question_text, chunks, llm):
+            logger.info(
+                "drafter: 관련성 게이트 NO (qid=%s)", answer.qid,
+            )
             continue
 
         _attempt_draft(answer, chunks, llm, max_retries=max_retries)
@@ -193,6 +225,42 @@ def _node_text(node: Any) -> str:
     return getattr(node, "text", "")
 
 
+def _check_relevance(
+    question_text: str,
+    chunks: list[dict[str, Any]],
+    llm: LLMClient,
+) -> bool:
+    """BM25 폴백 청크가 질문에 실질적으로 답할 근거를 담고 있는지 판정.
+
+    Fail-closed: "YES"로 시작하지 않는 모든 응답은 NO로 취급.
+    """
+    chunks_text = "\n".join(
+        f"- [{c['id']}] {c['text']}" for c in chunks
+    )
+    user_prompt = _RELEVANCE_USER_TEMPLATE.format(
+        question=question_text,
+        chunks_text=chunks_text,
+    )
+    resp: LLMResponse = llm.complete(
+        system=_RELEVANCE_SYSTEM,
+        user=user_prompt,
+        mock_hint="classify",
+        temperature=0.0,
+    )
+    verdict = resp.content.strip().upper()
+    return verdict.startswith("YES")
+
+
+def _is_insufficient_draft(draft_text: str) -> bool:
+    """센티널("INSUFFICIENT_EVIDENCE") 또는 자백 문구 패턴 감지."""
+    if "INSUFFICIENT_EVIDENCE" in draft_text:
+        return True
+    for pattern in _INSUFFICIENCY_PATTERNS:
+        if pattern in draft_text:
+            return True
+    return False
+
+
 def _attempt_draft(
     answer: Answer,
     chunks: list[dict[str, Any]],
@@ -225,6 +293,13 @@ def _attempt_draft(
         draft_text = resp.content.strip()
         if not draft_text:
             continue
+
+        # 센티널·자백 차단 — 재시도 없이 즉시 포기
+        if _is_insufficient_draft(draft_text):
+            logger.info(
+                "drafter: 불충분 센티널/자백 감지 (qid=%s)", answer.qid,
+            )
+            return
 
         result = evaluate_grounding(draft_text, chunks)
 

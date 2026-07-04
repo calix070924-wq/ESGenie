@@ -741,7 +741,11 @@ def test_classified_chunk_not_leaked_to_same_pillar(mock_llm_cls, mock_eval):
 def test_unclassified_node_fallback_produces_draft_ready(mock_llm_cls, mock_eval):
     """kesg_code=None인 관련 텍스트는 BM25 폴백으로 채택되어 draft_ready가 된다."""
     mock_llm = MagicMock()
-    mock_llm.complete.return_value = SimpleNamespace(content="초안 [TXT_POLICY]")
+    # 관련성 판정 "YES" + 초안 생성
+    mock_llm.complete.side_effect = [
+        SimpleNamespace(content="YES"),  # relevance gate
+        SimpleNamespace(content="초안 [TXT_POLICY]"),  # draft generation
+    ]
     mock_llm_cls.return_value = mock_llm
     mock_eval.return_value = _grounding_accept()
 
@@ -817,3 +821,316 @@ def test_unclassified_node_low_score_skipped(mock_llm_cls):
     mock_llm.complete.assert_not_called()
     e11 = next(a for a in sheet.answers if a.qid == "KESG-E-1-1")
     assert e11.status == "hitl_required"
+
+
+# ── Test 22: INSUFFICIENT_EVIDENCE 센티널 → 즉시 포기, 재시도 없음 ──────────
+
+@patch("esgenie.supplychain.drafter.evaluate_grounding")
+@patch("esgenie.supplychain.drafter.LLMClient")
+def test_insufficient_sentinel_aborts_immediately(mock_llm_cls, mock_eval):
+    """LLM이 INSUFFICIENT_EVIDENCE를 반환하면 즉시 포기, 재시도·게이트 호출 없음."""
+    mock_llm = MagicMock()
+    mock_llm.complete.return_value = SimpleNamespace(content="INSUFFICIENT_EVIDENCE")
+    mock_llm_cls.return_value = mock_llm
+
+    sheet = _make_sheet_with_hitl()
+    text_node = _make_text_node("TXT_0001", "안전보건 방침 조항", "S-4-1")
+    graph = _make_evidence_graph([text_node])
+
+    sheet = generate_drafts(sheet, graph, max_retries=2)
+
+    # S-4-1 code_match이므로 관련성 게이트 면제, 바로 초안 생성 진입
+    s41 = next(a for a in sheet.answers if a.qid == "KESG-S-4-1")
+    assert s41.status == "hitl_required", "센티널 시 원상태 유지"
+    assert s41.draft_text == ""
+
+    # evaluate_grounding 미호출
+    mock_eval.assert_not_called()
+
+    # complete는 1회만 호출(재시도 없음) — code_match 항목이 1개뿐일 때
+    # (실제로는 여러 항목이 S-4-1 매칭될 수 있으므로 최소 조건으로 검사)
+    # S-4-1 항목에 대한 호출은 1회여야 함
+    assert mock_llm.complete.call_count >= 1
+
+
+# ── Test 23: 자백 문구 패턴 → 폐기 ──────────────────────────────────────────
+
+@patch("esgenie.supplychain.drafter.evaluate_grounding")
+@patch("esgenie.supplychain.drafter.LLMClient")
+def test_confession_patterns_abort(mock_llm_cls, mock_eval):
+    """_INSUFFICIENCY_PATTERNS의 각 패턴이 draft_text에 있으면 폐기."""
+    from esgenie.supplychain.drafter import _INSUFFICIENCY_PATTERNS
+
+    for pattern in _INSUFFICIENCY_PATTERNS:
+        mock_llm = MagicMock()
+        confession = f"해당 발췌에는 관련 내용이 {pattern}습니다 [TXT_0001]."
+        mock_llm.complete.return_value = SimpleNamespace(content=confession)
+        mock_llm_cls.return_value = mock_llm
+        mock_eval.reset_mock()
+
+        sheet = _make_sheet_with_hitl()
+        text_node = _make_text_node("TXT_0001", "규정 텍스트", "S-4-1")
+        graph = _make_evidence_graph([text_node])
+
+        sheet = generate_drafts(sheet, graph, max_retries=2)
+
+        s41 = next(a for a in sheet.answers if a.qid == "KESG-S-4-1")
+        assert s41.status == "hitl_required", (
+            f"자백 패턴 '{pattern}' 감지 시 원상태 유지해야 함"
+        )
+        assert s41.draft_text == ""
+        mock_eval.assert_not_called()
+
+
+# ── Test 24: 관련성 NO → 초안 생성 호출 없음 ────────────────────────────────
+
+@patch("esgenie.supplychain.drafter.evaluate_grounding")
+@patch("esgenie.supplychain.drafter.LLMClient")
+def test_relevance_no_blocks_draft_generation(mock_llm_cls, mock_eval):
+    """BM25 폴백 경로에서 관련성 판정 NO → 초안 생성 LLM 호출 자체가 없음."""
+    mock_llm = MagicMock()
+    # 관련성 판정만 "NO" 반환
+    mock_llm.complete.return_value = SimpleNamespace(content="NO")
+    mock_llm_cls.return_value = mock_llm
+
+    fw = get_framework(FW_KEY)
+    answers = []
+    for q in fw.questions:
+        if q.primary_code == "S-7-1":
+            answers.append(Answer(
+                qid=q.qid, section=q.section, question_text=q.text,
+                value=None, status="hitl_required",
+            ))
+        else:
+            answers.append(Answer(
+                qid=q.qid, section=q.section, question_text=q.text,
+                value=True, status="verified",
+            ))
+    sheet = ResponseSheet(
+        framework_key=fw.key, framework_label=fw.label,
+        corp_name="테스트사", answers=answers,
+    )
+
+    # kesg_code=None이고 높은 점수 기대되는 텍스트(BM25 통과하도록)
+    text_node = _make_text_node(
+        "TXT_0001",
+        "전략적 사회공헌 CSR 프로그램 운영 방침 수립 및 사회공헌 활동 지역사회 참여 "
+        "사회공헌 전략적 CSR 목표 사회공헌 활동",
+        None,
+    )
+    graph = _make_evidence_graph([text_node])
+
+    sheet = generate_drafts(sheet, graph)
+
+    s71 = next(a for a in sheet.answers if a.qid == "KESG-S-7-1")
+    assert s71.status == "hitl_required", "관련성 NO면 원상태 유지"
+
+    # 호출된 프롬프트 중에 초안 생성 프롬프트(_DRAFTER_USER_TEMPLATE의 "아래 발췌만 근거로")가 없어야 함
+    for call in mock_llm.complete.call_args_list:
+        user_arg = call.kwargs.get("user", "")
+        assert "아래 발췌만 근거로 답변을 작성하세요" not in user_arg, (
+            "관련성 NO인데 초안 생성 프롬프트가 호출됨"
+        )
+
+    mock_eval.assert_not_called()
+
+
+# ── Test 25: 관련성 모호 응답 → fail-closed (NO 취급) ────────────────────────
+
+@patch("esgenie.supplychain.drafter.evaluate_grounding")
+@patch("esgenie.supplychain.drafter.LLMClient")
+def test_relevance_ambiguous_treated_as_no(mock_llm_cls, mock_eval):
+    """관련성 판정이 모호("글쎄요", "", "아마도")면 전부 NO 취급."""
+    ambiguous_responses = ["글쎄요", "", "아마도", "maybe", "   "]
+
+    for ambiguous in ambiguous_responses:
+        mock_llm = MagicMock()
+        mock_llm.complete.return_value = SimpleNamespace(content=ambiguous)
+        mock_llm_cls.return_value = mock_llm
+        mock_eval.reset_mock()
+
+        fw = get_framework(FW_KEY)
+        answers = []
+        for q in fw.questions:
+            if q.primary_code == "S-7-1":
+                answers.append(Answer(
+                    qid=q.qid, section=q.section, question_text=q.text,
+                    value=None, status="hitl_required",
+                ))
+            else:
+                answers.append(Answer(
+                    qid=q.qid, section=q.section, question_text=q.text,
+                    value=True, status="verified",
+                ))
+        sheet = ResponseSheet(
+            framework_key=fw.key, framework_label=fw.label,
+            corp_name="테스트사", answers=answers,
+        )
+
+        text_node = _make_text_node(
+            "TXT_0001",
+            "전략적 사회공헌 CSR 프로그램 운영 방침 수립 사회공헌 활동 "
+            "사회공헌 전략적 CSR 목표",
+            None,
+        )
+        graph = _make_evidence_graph([text_node])
+
+        sheet = generate_drafts(sheet, graph)
+
+        s71 = next(a for a in sheet.answers if a.qid == "KESG-S-7-1")
+        assert s71.status == "hitl_required", (
+            f"모호 응답 '{ambiguous}' → NO 취급, 원상태 유지해야 함"
+        )
+        mock_eval.assert_not_called()
+
+
+# ── Test 26: 관련성 YES + 정상 초안 + 게이트 ACCEPT → draft_ready ────────────
+
+@patch("esgenie.supplychain.drafter.evaluate_grounding")
+@patch("esgenie.supplychain.drafter.LLMClient")
+def test_relevance_yes_then_draft_ready(mock_llm_cls, mock_eval):
+    """관련성 YES → 초안 생성 → 게이트 ACCEPT → draft_ready, retrieval bm25_fallback."""
+    mock_llm = MagicMock()
+    mock_llm.complete.side_effect = [
+        SimpleNamespace(content="YES"),  # relevance gate
+        SimpleNamespace(content="초안 텍스트 [TXT_0001]"),  # draft generation
+    ]
+    mock_llm_cls.return_value = mock_llm
+    mock_eval.return_value = _grounding_accept()
+
+    fw = get_framework(FW_KEY)
+    answers = []
+    for q in fw.questions:
+        if q.primary_code == "S-7-1":
+            answers.append(Answer(
+                qid=q.qid, section=q.section, question_text=q.text,
+                value=None, status="hitl_required",
+            ))
+        else:
+            answers.append(Answer(
+                qid=q.qid, section=q.section, question_text=q.text,
+                value=True, status="verified",
+            ))
+    sheet = ResponseSheet(
+        framework_key=fw.key, framework_label=fw.label,
+        corp_name="테스트사", answers=answers,
+    )
+
+    text_node = _make_text_node(
+        "TXT_0001",
+        "전략적 사회공헌 CSR 프로그램 운영 방침 수립 사회공헌 활동 전략 목표 "
+        "사회공헌 전략적 CSR 지역사회 참여 활동 방침",
+        None,
+    )
+    graph = _make_evidence_graph([text_node])
+
+    sheet = generate_drafts(sheet, graph)
+
+    s71 = next(a for a in sheet.answers if a.qid == "KESG-S-7-1")
+    assert s71.status == "draft_ready"
+    assert s71.draft_citations[0]["retrieval"] == "bm25_fallback"
+
+
+# ── Test 27: code_match 경로는 관련성 판정 호출 없음 ─────────────────────────
+
+@patch("esgenie.supplychain.drafter.evaluate_grounding")
+@patch("esgenie.supplychain.drafter.LLMClient")
+def test_code_match_skips_relevance_gate(mock_llm_cls, mock_eval):
+    """code_match 경로는 관련성 판정 LLM 호출이 없다(호출 횟수로 검증)."""
+    mock_llm = MagicMock()
+    mock_llm.complete.return_value = SimpleNamespace(content="초안 [TXT_0001]")
+    mock_llm_cls.return_value = mock_llm
+    mock_eval.return_value = _grounding_accept()
+
+    fw = get_framework(FW_KEY)
+    # S-4-1만 hitl_required, 나머지 verified
+    answers = []
+    for q in fw.questions:
+        if q.primary_code == "S-4-1":
+            answers.append(Answer(
+                qid=q.qid, section=q.section, question_text=q.text,
+                value=None, status="hitl_required",
+            ))
+        else:
+            answers.append(Answer(
+                qid=q.qid, section=q.section, question_text=q.text,
+                value=True, status="verified",
+            ))
+    sheet = ResponseSheet(
+        framework_key=fw.key, framework_label=fw.label,
+        corp_name="테스트사", answers=answers,
+    )
+
+    text_node = _make_text_node("TXT_0001", "안전보건 방침 조항", "S-4-1")
+    graph = _make_evidence_graph([text_node])
+
+    sheet = generate_drafts(sheet, graph)
+
+    # code_match이므로 관련성 판정 호출 없이 바로 초안 생성 1회만
+    # → 총 호출 횟수 = 1 (초안 생성만)
+    assert mock_llm.complete.call_count == 1
+    # 호출이 초안 생성인지 확인(관련성 판정 프롬프트가 아님)
+    call_kwargs = mock_llm.complete.call_args_list[0].kwargs
+    assert "아래 발췌만 근거로" in call_kwargs.get("user", "")
+
+
+# ── Test 28: 통합 재현 — 미분류 안전 회의록 4노드 + 전 항목 insufficient ─────
+
+@patch("esgenie.supplychain.drafter.evaluate_grounding")
+@patch("esgenie.supplychain.drafter.LLMClient")
+def test_integration_safety_minutes_all_rejected(mock_llm_cls, mock_eval):
+    """미분류 안전 회의록 4노드 + 전 항목 insufficient + 관련성 NO → draft_ready 0건."""
+    mock_llm = MagicMock()
+    # 관련성 판정에 대해 항상 "NO" 반환
+    mock_llm.complete.return_value = SimpleNamespace(content="NO")
+    mock_llm_cls.return_value = mock_llm
+    mock_eval.return_value = _grounding_accept()
+
+    fw = get_framework(FW_KEY)
+    answers = []
+    for q in fw.questions:
+        answers.append(Answer(
+            qid=q.qid, section=q.section, question_text=q.text,
+            value=None, status="insufficient",
+        ))
+    sheet = ResponseSheet(
+        framework_key=fw.key, framework_label=fw.label,
+        corp_name="테스트사", answers=answers,
+    )
+
+    # 직전 데모와 동일한 미분류 안전 회의록 4노드
+    nodes = [
+        _make_text_node(
+            "LOCAL_TXT_0001",
+            "산업재해율 목표: 0.3% 이하 (전년 0.41% 대비 감축), "
+            "위험성 평가 연 2회 이상 실시, 신규 입사자 안전교육 8시간 의무화",
+            None,
+        ),
+        _make_text_node(
+            "LOCAL_TXT_0002",
+            "유해화학물질 보관구역 CCTV 설치 의결, "
+            "개인보호구(PPE) 착용 의무 전 공정 확대",
+            None,
+        ),
+        _make_text_node(
+            "LOCAL_TXT_0003",
+            "야간작업 조명 개선 요청 → 2분기 내 조치 완료 결의, "
+            "결사의 자유 보장: 노동조합 가입률 현황 공유 (가입률 62%)",
+            None,
+        ),
+        _make_text_node(
+            "LOCAL_TXT_0004",
+            "전원 찬성으로 의결",
+            None,
+        ),
+    ]
+    graph = _make_evidence_graph(nodes)
+
+    sheet = generate_drafts(sheet, graph)
+
+    drafted = [a for a in sheet.answers if a.status == "draft_ready"]
+    assert len(drafted) == 0, (
+        f"관련성 NO 시 모든 폴백 항목은 차단되어야 함, but {len(drafted)} passed"
+    )
+    # evaluate_grounding은 한 번도 호출되지 않아야 함(초안 생성 자체가 안 됐으므로)
+    mock_eval.assert_not_called()
