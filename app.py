@@ -4,7 +4,9 @@
 """
 from __future__ import annotations
 
+import logging
 import os
+import sys
 from pathlib import Path
 
 import streamlit as st
@@ -18,8 +20,10 @@ from esgenie.ui.components import (
     callout_html,
     hero_html,
     panel_html,
+    render_metric_cards,
+    render_pipeline_loading,
+    render_section_badge,
     render_section_header,
-    render_stat_row,
 )
 from esgenie.ui.tabs import (
     render_diagnosis_workspace,
@@ -35,6 +39,7 @@ from esgenie.ssot import ocr_router
 
 
 OUT_ROOT = Path("outputs")
+APP_LOGGER = logging.getLogger("esgenie.app")
 AREA_LABELS = {"E": "환경 (E)", "S": "사회 (S)", "G": "지배구조 (G)"}
 INDUSTRY_OPTIONS = ["자동차부품", "전자부품", "화학", "금속가공", "식품", "기타"]
 PROFILE_OPTIONS = ["자동 판별", "중소기업 기본형 (28)", "전체 (61)"]
@@ -77,7 +82,26 @@ SURVEY_ITEMS = [
 ]
 
 
+def _configure_streamlit_logging() -> None:
+    """Streamlit 실행에서도 esgenie 파이프라인 INFO 로그를 터미널에 노출."""
+    logger = logging.getLogger("esgenie")
+    logger.setLevel(logging.INFO)
+
+    handler = next(
+        (h for h in logger.handlers if getattr(h, "_esgenie_streamlit_handler", False)),
+        None,
+    )
+    if handler is None:
+        handler = logging.StreamHandler(sys.stderr)
+        handler._esgenie_streamlit_handler = True  # type: ignore[attr-defined]
+        handler.setFormatter(logging.Formatter("%(asctime)s [%(levelname)s] %(name)s - %(message)s"))
+        logger.addHandler(handler)
+
+    logger.propagate = False
+
+
 st.set_page_config(page_title="ESGenie — 중소기업 ESG 자동 진단", layout="wide", page_icon="🌿")
+_configure_streamlit_logging()
 apply_theme()
 
 
@@ -395,6 +419,7 @@ def _render_ocr_health(result) -> None:
 _ensure_state_defaults()
 _render_sidebar()
 
+render_section_badge("ESG 자동 진단 콘솔")
 render_section_header(
     "ESG 진단 준비",
     "① 회사 선택 → ② 증빙 서류 업로드 → ③ 분석 시작. 세 단계면 준비가 끝납니다.",
@@ -554,7 +579,17 @@ if corp_name and corp_name != corp_name_raw:
 st.caption(status_detail)
 
 if run_btn:
-    with st.spinner("서류 읽기 → 데이터 통합 → 보고서 생성 → 그린워싱 검증 → 규정 점검 → 제출 서류 생성…"):
+    render_pipeline_loading("L0~L5 파이프라인 실행 중 — 서류 읽기 → 데이터 통합 → 보고서 생성 → 그린워싱 검증 → 규정 점검 → 제출 서류 생성")
+    with st.spinner("분석을 진행하고 있습니다…"):
+        APP_LOGGER.info(
+            "분석 시작 corp=%s code=%s area=%s uploads=%d llm_judge=%s use_dart=%s",
+            corp_name or corp_name_raw,
+            corp_code or "-",
+            area,
+            len(upload_paths),
+            llm_judge_opt,
+            use_dart,
+        )
         st.session_state.result = _run_pipeline_now(
             corp_code=corp_code,
             corp_name=corp_name,
@@ -570,6 +605,12 @@ if run_btn:
             profile_choice=profile_choice,
         )
         st.session_state.last_run_inputs = snapshot
+        APP_LOGGER.info(
+            "분석 완료 corp=%s area=%s sections=%s",
+            corp_name or corp_name_raw,
+            area,
+            sorted(st.session_state.result.sections.keys()) if st.session_state.result is not None else [],
+        )
     st.rerun()
 
 result = st.session_state.result
@@ -592,7 +633,7 @@ if result is not None:
     if verify is not None:
         summary_cards.append({"label": "그린워싱 위험도", "value": f"{verify.final_score:.1f}", "note": verify.final_band})
         summary_cards.append({"label": "담당자 확인", "value": "필요" if verify.hitl_required else "완료", "note": f"검증 {verify.iterations_used}회"})
-    render_stat_row(summary_cards, columns=min(5, len(summary_cards)) or 1)
+    render_metric_cards(summary_cards, columns=min(5, len(summary_cards)) or 1)
 
 expert_mode = bool(st.session_state.expert_mode)
 overview_profile = getattr(getattr(result, "extraction", None), "profile", None) or resolved_profile
