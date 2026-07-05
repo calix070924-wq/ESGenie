@@ -732,20 +732,33 @@ button[data-baseweb="tab"][aria-selected="true"] {
     padding-top: 0.6rem;
 }
 
-.esg-report-card {
+div[data-testid="stVerticalBlockBorderWrapper"]:has(.eg-report-card-marker) {
     background: #ffffff;
     border: 1px solid var(--border-soft);
     border-radius: 22px;
     padding: 1.45rem 1.55rem;
-    font-size: 0.97rem;
-    line-height: 1.85;
-    color: var(--text-strong);
-    word-break: keep-all;
     box-shadow: 0 14px 30px rgba(22, 34, 24, 0.06);
 }
 
-.esg-report-card.final {
+div[data-testid="stVerticalBlockBorderWrapper"]:has(.eg-report-card-marker.final) {
     border-left: 5px solid var(--accent-primary);
+}
+
+.eg-report-card-marker {
+    display: none;
+}
+
+div[data-testid="stVerticalBlockBorderWrapper"]:has(.eg-report-card-marker) [data-testid="stMarkdownContainer"] p,
+div[data-testid="stVerticalBlockBorderWrapper"]:has(.eg-report-card-marker) [data-testid="stMarkdownContainer"] li,
+div[data-testid="stVerticalBlockBorderWrapper"]:has(.eg-report-card-marker) [data-testid="stMarkdownContainer"] blockquote,
+div[data-testid="stVerticalBlockBorderWrapper"]:has(.eg-report-card-marker) [data-testid="stMarkdownContainer"] table {
+    line-height: 1.85;
+}
+
+div[data-testid="stVerticalBlockBorderWrapper"]:has(.eg-report-card-marker) [data-testid="stMarkdownContainer"] p,
+div[data-testid="stVerticalBlockBorderWrapper"]:has(.eg-report-card-marker) [data-testid="stMarkdownContainer"] li {
+    color: var(--text-strong);
+    word-break: keep-all;
 }
 
 .esg-report-tag {
@@ -862,7 +875,7 @@ button[data-baseweb="tab"][aria-selected="true"] {
     line-height: 1.45;
 }
 
-/* :shimmer[...] 로딩 텍스트 강조 (네이티브 미지원 버전 폴백 겸용) */
+/* 로딩 텍스트 shimmer */
 [data-testid="stMarkdownContainer"] .eg-shimmer,
 .eg-shimmer {
     background: linear-gradient(

@@ -37,7 +37,6 @@ from esgenie.supplychain.exporters import (
 )
 from esgenie.ui.components import (
     callout_html,
-    download_tile_html,
     panel_html,
     render_download_tiles,
     render_empty_state,

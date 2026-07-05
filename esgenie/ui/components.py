@@ -197,10 +197,15 @@ def render_report_card(text: str, kind: str = "draft", tag_label: str | None = N
     이전에는 raw 마크다운을 HTML <div> 로 감쌌으나, HTML 블록 안의 마크다운은
     재파싱되지 않아 표·헤딩(###, |)이 그대로 노출됐다. st.container 로 감싸고
     본문은 st.markdown 네이티브로 넘겨 표·헤딩이 정상 렌더되게 한다.
+    카드 외곽 스타일은 숨김 marker + CSS :has(...) 로 래퍼에 적용한다.
     """
     import streamlit as st
 
     with st.container(border=True):
+        st.markdown(
+            f'<span class="eg-report-card-marker {escape(kind)}" aria-hidden="true"></span>',
+            unsafe_allow_html=True,
+        )
         if tag_label:
             st.markdown(
                 f'<span class="esg-report-tag {escape(kind)}">{escape(tag_label)}</span>',
@@ -212,11 +217,9 @@ def render_report_card(text: str, kind: str = "draft", tag_label: str | None = N
 def render_pipeline_loading(message: str) -> None:
     """L0~L5 파이프라인 진행 중 shimmer 로딩 텍스트.
 
-    Streamlit 1.31+ 의 :shimmer[...] 디렉티브를 쓰고, 미지원 시 커스텀 CSS 로 폴백.
+    Streamlit markdown directive 지원 여부와 무관하게 동일하게 보이도록
+    커스텀 CSS shimmer 만 사용한다.
     """
     import streamlit as st
 
-    try:
-        st.markdown(f":shimmer[{message}]")
-    except Exception:  # 구버전 폴백
-        st.markdown(f'<span class="eg-shimmer">{escape(message)}</span>', unsafe_allow_html=True)
+    st.markdown(f'<span class="eg-shimmer">{escape(message)}</span>', unsafe_allow_html=True)
