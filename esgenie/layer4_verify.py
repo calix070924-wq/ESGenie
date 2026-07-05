@@ -14,7 +14,7 @@ from typing import Any
 
 from .config import MAX_REFINEMENT_ITER, SETTINGS
 from .dart_client import CompanyReport
-from .layer2_rag import GenerationResult, HybridRAG, _gate_blocking_enabled
+from .layer2_rag import CorpIndex, GenerationResult, HybridRAG, _gate_blocking_enabled
 from .layer3_detect import DetectionResult, detect, detect_risk_vector, risk_band
 from .rag_gates import evaluate_grounding, strip_citation_markers
 from .rag_gates.grounding_gate import grounding_feedback
@@ -154,6 +154,7 @@ def verify_and_refine(
     area: str,
     rag: HybridRAG,
     *,
+    corp: CorpIndex,
     threshold: float = DEFAULT_THRESHOLD,
     max_iter: int = MAX_REFINEMENT_ITER,
     demo_greenwash: bool = False,
@@ -177,10 +178,10 @@ def verify_and_refine(
     # 폴백 백엔드에선 faithfulness 점수도 신뢰 불가 → 수렴 판정에서 grounding을 자문용으로만 사용
     grounding_blocks = _gate_blocking_enabled()
 
-    ctx = rag.retrieve_for_area(area, k=5)
+    ctx = rag.retrieve_for_area(area, k=5, corp=corp)
     retrieval_decision = ctx.retrieval_decision
     if retrieval_decision is not None and retrieval_decision.decision != "ACCEPT":
-        gen = rag.generate_section(report, area, demo_greenwash=demo_greenwash, context=ctx)
+        gen = rag.generate_section(report, area, demo_greenwash=demo_greenwash, context=ctx, corp=corp)
         det = _retrieval_blocked_detection(gen)
         step = VerificationStep(
             iteration=0,
@@ -207,7 +208,7 @@ def verify_and_refine(
         )
 
     # --- 초안 생성 (iteration 0) ---
-    gen = rag.generate_section(report, area, demo_greenwash=demo_greenwash, context=ctx)
+    gen = rag.generate_section(report, area, demo_greenwash=demo_greenwash, context=ctx, corp=corp)
     clean_text = strip_citation_markers(gen.text)
     det = detect(clean_text, report)
     grounding = grounding_evaluator(gen.text, gen.context.as_chunk_dicts())
@@ -242,7 +243,7 @@ def verify_and_refine(
         applied_constraints = applied_axes + grounding.hard_fails
 
         # 재생성
-        gen = rag.generate_section(report, area, extra_instruction=instruction, context=ctx)
+        gen = rag.generate_section(report, area, extra_instruction=instruction, context=ctx, corp=corp)
         clean_text = strip_citation_markers(gen.text)
         det = detect(clean_text, report)
         grounding = grounding_evaluator(gen.text, gen.context.as_chunk_dicts())

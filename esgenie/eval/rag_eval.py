@@ -9,7 +9,7 @@ from typing import Any, Callable
 
 from ..config import DATA_DIR, ROOT_DIR
 from ..dart_client import CompanyReport, load_report
-from ..layer2_rag import HybridRAG
+from ..layer2_rag import CorpIndex, HybridRAG
 from ..rag_gates import evaluate_grounding
 
 RAG_EVAL_DIR = DATA_DIR / "rag_eval"
@@ -46,7 +46,7 @@ class GroundingEvalRow:
     faithfulness_score: float
 
 
-_RAG_CACHE: dict[str, tuple[CompanyReport, HybridRAG]] = {}
+_RAG_CACHE: dict[str, tuple[CompanyReport, HybridRAG, CorpIndex]] = {}
 
 
 def load_jsonl(path: Path) -> list[dict[str, Any]]:
@@ -176,8 +176,8 @@ def write_report(result: dict[str, Any], *, name: str) -> Path:
 
 
 def _run_retrieval_case(case: dict[str, Any], *, k: int) -> RetrievalEvalRow:
-    _, rag = _get_rag(case["corp_code"])
-    ctx = rag.retrieve(case["query"], k=k, area=case["area"])
+    _, rag, corp = _get_rag(case["corp_code"])
+    ctx = rag.retrieve(case["query"], k=k, area=case["area"], corp=corp)
     predicted_chunk_ids = [doc.chunk_id for doc, _ in ctx.corp_hits[:k]]
     relevant = list(case.get("relevant_chunk_ids", []))
     hit_at_k = any(chunk_id in predicted_chunk_ids for chunk_id in relevant)
@@ -205,15 +205,15 @@ def _run_retrieval_case(case: dict[str, Any], *, k: int) -> RetrievalEvalRow:
     )
 
 
-def _get_rag(corp_code: str) -> tuple[CompanyReport, HybridRAG]:
+def _get_rag(corp_code: str) -> tuple[CompanyReport, HybridRAG, CorpIndex]:
     cached = _RAG_CACHE.get(corp_code)
     if cached is not None:
         return cached
     report = load_report(corp_code)
     rag = HybridRAG()
-    rag.build_corp_index(report)
-    _RAG_CACHE[corp_code] = (report, rag)
-    return report, rag
+    corp = rag.build_corp_index(report)
+    _RAG_CACHE[corp_code] = (report, rag, corp)
+    return report, rag, corp
 
 
 def _mean(values: list[float]) -> float:

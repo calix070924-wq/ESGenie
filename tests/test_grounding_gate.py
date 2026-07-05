@@ -2,8 +2,8 @@ from __future__ import annotations
 
 from types import SimpleNamespace
 
-from esgenie.embeddings import IndexedDoc, VectorIndex
-from esgenie.layer2_rag import GenerationResult, RAGContext
+from esgenie.embeddings import BM25Index, IndexedDoc, VectorIndex
+from esgenie.layer2_rag import CorpIndex, GenerationResult, RAGContext
 from esgenie.layer3_detect import DetectionResult
 from esgenie.layer4_verify import VerificationResult, VerificationStep
 from esgenie.layer5_audit_trace import build_audit_trace
@@ -158,10 +158,10 @@ def test_verify_and_refine_short_circuits_when_retrieval_gate_blocks() -> None:
     ctx = RAGContext(kesg_hits=[], industry_hits=[], corp_hits=[], retrieval_tier=0, retrieval_decision=blocked)
 
     class FakeRAG:
-        def retrieve_for_area(self, area: str, k: int = 5):
+        def retrieve_for_area(self, area: str, k: int = 5, *, corp: CorpIndex):
             return ctx
 
-        def generate_section(self, report, area, extra_instruction=None, *, demo_greenwash=False, context=None):
+        def generate_section(self, report, area, extra_instruction=None, *, demo_greenwash=False, context=None, corp: CorpIndex):
             return GenerationResult(
                 area=area,
                 text="## 환경 성과\n\n검색 근거가 부족하여 자동 생성하지 않았습니다.",
@@ -169,10 +169,12 @@ def test_verify_and_refine_short_circuits_when_retrieval_gate_blocks() -> None:
                 used_mock_llm=True,
             )
 
+    dummy_corp = CorpIndex(vector=VectorIndex(), bm25=BM25Index())
     result = verify_and_refine(
         report=SimpleNamespace(corp_name="테스트", industry="전자", report_year=2024),
         area="E",
         rag=FakeRAG(),
+        corp=dummy_corp,
     )
 
     assert result.hitl_required is True
