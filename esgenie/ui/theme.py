@@ -680,12 +680,31 @@ button[data-baseweb="tab"][aria-selected="true"] {
     line-height: 1.45;
 }
 
+/* 다운로드 카드 그리드 — 본문 줄 수가 달라도 가장 큰 카드 높이에 맞춰 정렬 */
+.eg-download-grid {
+    display: grid;
+    grid-template-columns: repeat(var(--eg-tile-cols, 3), minmax(0, 1fr));
+    gap: 0.85rem;
+    margin: 0.4rem 0 0.9rem;
+    align-items: stretch;
+}
+
+@media (max-width: 900px) {
+    .eg-download-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
 .eg-download-tile {
     padding: 1rem 1.05rem;
     border-radius: 20px;
     border: 1px solid var(--border-soft);
     background: #ffffff;
     box-shadow: 0 14px 30px rgba(22, 34, 24, 0.06);
+    /* grid 안에서 stretch 되어 3개 카드가 같은 높이로 정렬된다 */
+    height: 100%;
+    display: flex;
+    flex-direction: column;
 }
 
 .eg-download-tile h3 {
@@ -705,6 +724,12 @@ button[data-baseweb="tab"][aria-selected="true"] {
     margin-top: 0.6rem;
     color: var(--text-soft);
     font-size: 0.82rem;
+}
+
+/* 다운로드 카드 안에서는 note 를 하단에 고정해 카드 높이가 늘어도 정렬을 유지 */
+.eg-download-tile .eg-compact-note {
+    margin-top: auto;
+    padding-top: 0.6rem;
 }
 
 .esg-report-card {
@@ -787,7 +812,21 @@ button[data-baseweb="tab"][aria-selected="true"] {
     background: var(--accent-primary);
 }
 
-/* stylable_container 로 감싸는 지표 카드 (그림자·radius·padding) */
+/* 지표 카드 그리드 — 카드 폭·간격을 균등하게 맞춘다 */
+.eg-metric-grid {
+    display: grid;
+    grid-template-columns: repeat(var(--eg-metric-cols, 5), minmax(0, 1fr));
+    gap: 0.85rem;
+    margin: 0.4rem 0 1.1rem;
+}
+
+@media (max-width: 900px) {
+    .eg-metric-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+}
+
+/* 지표 카드 (그림자·radius·padding) */
 .eg-metric-card {
     padding: 1.15rem 1.2rem;
     border-radius: var(--radius-md);
@@ -796,6 +835,9 @@ button[data-baseweb="tab"][aria-selected="true"] {
     box-shadow: var(--shadow-card);
     border-top: 3px solid var(--accent-primary);
     height: 100%;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-start;
 }
 
 .eg-metric-card .eg-metric-label {

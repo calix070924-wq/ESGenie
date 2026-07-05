@@ -32,7 +32,9 @@ def parse_cited_sentences(text: str) -> list[CitedSentence]:
 
 def strip_citation_markers(text: str) -> str:
     cleaned = _CITATION_RE.sub("", text)
-    cleaned = re.sub(r"\s{2,}", " ", cleaned)
+    # 가로 공백(스페이스·탭)만 정리하고 개행은 보존한다.
+    # \s{2,} 로 뭉개면 문단·헤딩·표 구분용 \n\n 이 사라져 마크다운이 깨진다.
+    cleaned = re.sub(r"[^\S\r\n]{2,}", " ", cleaned)
     return cleaned.strip()
 
 

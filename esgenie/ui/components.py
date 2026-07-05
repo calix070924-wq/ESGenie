@@ -123,6 +123,26 @@ def download_tile_html(title: str, body: str, *, note: str = "") -> str:
     )
 
 
+def render_download_tiles(tiles: Sequence[dict[str, str]]) -> None:
+    """다운로드 카드들을 CSS grid 한 블록으로 렌더.
+
+    st.columns 로 그리면 카드마다 높이가 달라 어긋나므로, grid + align-items:stretch
+    로 묶어 가장 긴 카드(예: 본문 3줄) 높이에 나머지 카드를 맞춘다.
+    """
+    import streamlit as st
+
+    if not tiles:
+        return
+    cards = "".join(
+        download_tile_html(t.get("title", ""), t.get("body", ""), note=t.get("note", ""))
+        for t in tiles
+    )
+    st.markdown(
+        f'<div class="eg-download-grid" style="--eg-tile-cols: {len(tiles)};">{cards}</div>',
+        unsafe_allow_html=True,
+    )
+
+
 def render_empty_state(title: str, message: str) -> None:
     import streamlit as st
 
@@ -137,52 +157,56 @@ def render_empty_state(title: str, message: str) -> None:
     )
 
 
-# streamlit-extras 카드 컨테이너 CSS — primaryColor(#2E6F40) 강조, 그림자·radius·padding
-_METRIC_CARD_CSS = """
-{
-    border: 1px solid rgba(46, 111, 64, 0.14);
-    border-top: 3px solid #2E6F40;
-    border-radius: 18px;
-    padding: 1.15rem 1.2rem;
-    background: #ffffff;
-    box-shadow: 0 12px 30px rgba(60, 48, 24, 0.10);
-}
-"""
+def metric_card_html(label: str, value: str, note: str = "") -> str:
+    note_html = f'<div class="eg-metric-note">{escape(note)}</div>' if note else ""
+    return (
+        '<div class="eg-metric-card">'
+        f'<div class="eg-metric-label">{escape(label)}</div>'
+        f'<div class="eg-metric-value">{escape(value)}</div>'
+        f"{note_html}"
+        "</div>"
+    )
 
 
 def render_metric_cards(cards: Sequence[dict[str, str]], *, columns: int | None = None) -> None:
-    """지표(gap score, ESG 항목별 점수 등)를 stylable_container 카드형 UI 로 렌더.
+    """지표(gap score, ESG 항목별 점수 등)를 카드형 UI 로 렌더.
 
-    streamlit-extras 가 없으면 기존 stat_card_html 로 자동 폴백한다.
+    CSS grid 한 블록으로 그려 카드 간격을 균등하게 맞춘다.
+    (streamlit-extras 의 stylable_container 는 화면에 deprecation 경고를 띄워 정렬을
+     깨뜨리므로 사용하지 않는다.)
     """
     import streamlit as st
 
     if not cards:
         return
 
-    try:
-        from streamlit_extras.stylable_container import stylable_container
-    except ImportError:
-        render_stat_row(cards, columns=columns)
-        return
-
     ncols = columns or min(len(cards), 6)
-    for start in range(0, len(cards), ncols):
-        row_cards = cards[start : start + ncols]
-        cols = st.columns(len(row_cards))
-        for idx, (col, card) in enumerate(zip(cols, row_cards)):
-            with col:
-                with stylable_container(key=f"eg-metric-{start + idx}", css_styles=_METRIC_CARD_CSS):
-                    label = escape(card.get("label", ""))
-                    value = escape(card.get("value", "—"))
-                    note = card.get("note", "")
-                    note_html = f'<div class="eg-metric-note">{escape(note)}</div>' if note else ""
-                    st.markdown(
-                        f'<div class="eg-metric-label">{label}</div>'
-                        f'<div class="eg-metric-value">{value}</div>'
-                        f"{note_html}",
-                        unsafe_allow_html=True,
-                    )
+    tiles = "".join(
+        metric_card_html(card.get("label", ""), card.get("value", "—"), card.get("note", ""))
+        for card in cards
+    )
+    st.markdown(
+        f'<div class="eg-metric-grid" style="--eg-metric-cols: {ncols};">{tiles}</div>',
+        unsafe_allow_html=True,
+    )
+
+
+def render_report_card(text: str, kind: str = "draft", tag_label: str | None = None) -> None:
+    """보고서 본문을 카드형 컨테이너 안에 네이티브 마크다운으로 렌더.
+
+    이전에는 raw 마크다운을 HTML <div> 로 감쌌으나, HTML 블록 안의 마크다운은
+    재파싱되지 않아 표·헤딩(###, |)이 그대로 노출됐다. st.container 로 감싸고
+    본문은 st.markdown 네이티브로 넘겨 표·헤딩이 정상 렌더되게 한다.
+    """
+    import streamlit as st
+
+    with st.container(border=True):
+        if tag_label:
+            st.markdown(
+                f'<span class="esg-report-tag {escape(kind)}">{escape(tag_label)}</span>',
+                unsafe_allow_html=True,
+            )
+        st.markdown(text)
 
 
 def render_pipeline_loading(message: str) -> None:

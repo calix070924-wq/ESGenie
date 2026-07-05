@@ -39,7 +39,9 @@ from esgenie.ui.components import (
     callout_html,
     download_tile_html,
     panel_html,
+    render_download_tiles,
     render_empty_state,
+    render_report_card,
     render_section_header,
     render_stat_row,
 )
@@ -118,15 +120,6 @@ def _supplychain_issb_alert_rows(gap_report) -> list[dict[str, str]]:
     return rows
 
 
-def _report_card(text: str, kind: str = "draft", tag_label: str | None = None) -> str:
-    cls = "esg-report-card final" if kind == "final" else "esg-report-card"
-    tag = (
-        f'<span class="esg-report-tag {kind}">{html.escape(tag_label)}</span>'
-        if tag_label else ""
-    )
-    return f'<div class="{cls}">{tag}\n\n{text}\n\n</div>'
-
-
 def _apply_plotly_theme(fig: go.Figure, **layout_updates) -> go.Figure:
     fig.update_layout(**PLOTLY_TEMPLATE, **layout_updates)
     return fig
@@ -194,12 +187,12 @@ def _draft_vs_final_panel(result, active_area: str) -> None:
     left, right = st.columns(2)
     with left:
         st.markdown(panel_html("초안 (검증 전)", "수집한 데이터로 처음 만든 보고서입니다. 과장·모호 표현이 남아 있을 수 있습니다."), unsafe_allow_html=True)
-        st.markdown(_report_card(first_step.generation.text, "draft", "DRAFT"), unsafe_allow_html=True)
+        render_report_card(first_step.generation.text, "draft", "DRAFT")
     with right:
         delta = first_step.detection.risk_score - verify.final_score
         delta_text = f"위험도 {delta:.1f} 감소" if delta > 0 else "초안이 이미 기준치 이하"
         st.markdown(panel_html("최종본 (검증 후)", "그린워싱 검증과 자동 수정을 거친 제출 직전 버전입니다.", compact_note=delta_text), unsafe_allow_html=True)
-        st.markdown(_report_card(verify.final_text, "final", "FINAL"), unsafe_allow_html=True)
+        render_report_card(verify.final_text, "final", "FINAL")
 
     with st.expander("📚 이 보고서의 근거 문서 보기", expanded=False):
         context = first_step.generation.context
@@ -371,10 +364,7 @@ def render_overview_workspace(
             ),
             unsafe_allow_html=True,
         )
-        st.markdown(
-            _report_card(_final_preview(preview_text, 720), "final", "FINAL SNAPSHOT"),
-            unsafe_allow_html=True,
-        )
+        render_report_card(_final_preview(preview_text, 720), "final", "FINAL SNAPSHOT")
 
     with right:
         st.markdown(callout_html("Next Actions", actions, tone="info"), unsafe_allow_html=True)
@@ -504,16 +494,25 @@ def render_deliverables_workspace(result, active_area: str, gradient: str) -> No
 
     doc, pdf_path = _get_assembled_report(result)
 
+    render_download_tiles([
+        {
+            "title": "통합 보고서",
+            "body": "E·S·G 본문에 커버리지·선택적 공시·ISSB 갭·리스크·개선 로드맵을 엮은 제출본입니다.",
+            "note": f"섹션 {len(doc.blocks)}개 · PDF/MD",
+        },
+        {
+            "title": "K-ESG 데이터시트",
+            "body": "대기업 제출용 엑셀 데이터시트와 증빙 연결 결과입니다.",
+            "note": os.path.basename(export_paths.get("xlsx", "")) or "분석 후 생성",
+        },
+        {
+            "title": "감사 추적",
+            "body": "수치와 증빙 연결을 검토할 수 있는 JSON 아티팩트입니다.",
+            "note": os.path.basename(export_paths.get("audit_json", "")) or "분석 후 생성",
+        },
+    ])
     d1, d2, d3 = st.columns(3)
     with d1:
-        st.markdown(
-            download_tile_html(
-                "통합 보고서",
-                "E·S·G 본문에 커버리지·선택적 공시·ISSB 갭·리스크·개선 로드맵을 엮은 제출본입니다.",
-                note=f"섹션 {len(doc.blocks)}개 · PDF/MD",
-            ),
-            unsafe_allow_html=True,
-        )
         if pdf_path and os.path.exists(pdf_path):
             with open(pdf_path, "rb") as fh:
                 st.download_button(
@@ -531,14 +530,6 @@ def render_deliverables_workspace(result, active_area: str, gradient: str) -> No
             width='stretch',
         )
     with d2:
-        st.markdown(
-            download_tile_html(
-                "K-ESG 데이터시트",
-                "대기업 제출용 엑셀 데이터시트와 증빙 연결 결과입니다.",
-                note=os.path.basename(export_paths.get("xlsx", "")) or "분석 후 생성",
-            ),
-            unsafe_allow_html=True,
-        )
         if export_paths.get("xlsx"):
             with open(export_paths["xlsx"], "rb") as fh:
                 st.download_button(
@@ -549,14 +540,6 @@ def render_deliverables_workspace(result, active_area: str, gradient: str) -> No
                     width='stretch',
                 )
     with d3:
-        st.markdown(
-            download_tile_html(
-                "감사 추적",
-                "수치와 증빙 연결을 검토할 수 있는 JSON 아티팩트입니다.",
-                note=os.path.basename(export_paths.get("audit_json", "")) or "분석 후 생성",
-            ),
-            unsafe_allow_html=True,
-        )
         if export_paths.get("audit_json"):
             with open(export_paths["audit_json"], "rb") as fh:
                 st.download_button(
@@ -578,7 +561,7 @@ def render_deliverables_workspace(result, active_area: str, gradient: str) -> No
             ),
             unsafe_allow_html=True,
         )
-        st.markdown(_report_card(doc.to_markdown(), "final", "FINAL"), unsafe_allow_html=True)
+        render_report_card(doc.to_markdown(), "final", "FINAL")
     with supply_tab:
         _render_responder_workspace(result, gradient, pillar="disclosure")
 
@@ -643,10 +626,7 @@ def render_diagnosis_workspace(
             ),
             unsafe_allow_html=True,
         )
-        st.markdown(
-            _report_card(_final_preview(preview_text, 720), "final", "요약"),
-            unsafe_allow_html=True,
-        )
+        render_report_card(_final_preview(preview_text, 720), "final", "요약")
     with right:
         st.markdown(callout_html("지금 할 일", actions, tone="info"), unsafe_allow_html=True)
 
@@ -706,16 +686,25 @@ def render_submission_workspace(result, active_area: str, *, focus: str = "both"
     export_paths = getattr(result, "export_paths", {}) or {}
     doc, pdf_path = _get_assembled_report(result)
 
+    render_download_tiles([
+        {
+            "title": "통합 보고서",
+            "body": "E·S·G 본문에 진단 결과와 개선 로드맵을 엮은 제출용 보고서입니다.",
+            "note": f"섹션 {len(doc.blocks)}개 · PDF/MD",
+        },
+        {
+            "title": "K-ESG 데이터시트",
+            "body": "대기업·고객사 제출용 엑셀 데이터시트입니다. 각 수치에 증빙이 연결되어 있습니다.",
+            "note": os.path.basename(export_paths.get("xlsx", "")) or "분석 후 생성",
+        },
+        {
+            "title": "증빙 추적 자료",
+            "body": "보고서의 모든 수치가 어떤 서류에서 왔는지 확인할 수 있는 검증용 자료입니다.",
+            "note": os.path.basename(export_paths.get("audit_json", "")) or "분석 후 생성",
+        },
+    ])
     d1, d2, d3 = st.columns(3)
     with d1:
-        st.markdown(
-            download_tile_html(
-                "통합 보고서",
-                "E·S·G 본문에 진단 결과와 개선 로드맵을 엮은 제출용 보고서입니다.",
-                note=f"섹션 {len(doc.blocks)}개 · PDF/MD",
-            ),
-            unsafe_allow_html=True,
-        )
         if pdf_path and os.path.exists(pdf_path):
             with open(pdf_path, "rb") as fh:
                 st.download_button(
@@ -733,14 +722,6 @@ def render_submission_workspace(result, active_area: str, *, focus: str = "both"
             width='stretch',
         )
     with d2:
-        st.markdown(
-            download_tile_html(
-                "K-ESG 데이터시트",
-                "대기업·고객사 제출용 엑셀 데이터시트입니다. 각 수치에 증빙이 연결되어 있습니다.",
-                note=os.path.basename(export_paths.get("xlsx", "")) or "분석 후 생성",
-            ),
-            unsafe_allow_html=True,
-        )
         if export_paths.get("xlsx"):
             with open(export_paths["xlsx"], "rb") as fh:
                 st.download_button(
@@ -751,14 +732,6 @@ def render_submission_workspace(result, active_area: str, *, focus: str = "both"
                     width='stretch',
                 )
     with d3:
-        st.markdown(
-            download_tile_html(
-                "증빙 추적 자료",
-                "보고서의 모든 수치가 어떤 서류에서 왔는지 확인할 수 있는 검증용 자료입니다.",
-                note=os.path.basename(export_paths.get("audit_json", "")) or "분석 후 생성",
-            ),
-            unsafe_allow_html=True,
-        )
         if export_paths.get("audit_json"):
             with open(export_paths["audit_json"], "rb") as fh:
                 st.download_button(
@@ -792,7 +765,7 @@ def render_submission_workspace(result, active_area: str, *, focus: str = "both"
                     ),
                     unsafe_allow_html=True,
                 )
-                st.markdown(_report_card(doc.to_markdown(), "final", "FINAL"), unsafe_allow_html=True)
+                render_report_card(doc.to_markdown(), "final", "FINAL")
             elif key == "dd":
                 _render_responder_workspace(result, "", pillar="due_diligence", default_key="rba42")
             else:
@@ -988,7 +961,7 @@ def render_draft_tab(result, active_area: str, gradient: str, *, show_header: bo
 
     st.info("L0 SSOT + L2 RAG 기반 초안. 그린워싱 시연 모드에서는 의도적 과장이 포함됩니다.")
     st.markdown(f"#### {area_label} 영역 초안")
-    st.markdown(_report_card(first_step.generation.text, "draft", "DRAFT"), unsafe_allow_html=True)
+    render_report_card(first_step.generation.text, "draft", "DRAFT")
     if first_step.generation.used_mock_llm:
         st.caption("⚠️ Mock LLM으로 생성 (OPENAI_API_KEY 설정 시 실 API 사용)")
 
@@ -1041,7 +1014,7 @@ def render_verify_tab(
 
     if show_final_text:
         st.markdown("### 최종 보고서")
-        st.markdown(_report_card(verify.final_text, "final", "FINAL"), unsafe_allow_html=True)
+        render_report_card(verify.final_text, "final", "FINAL")
     st.caption(
         f"{band_emoji.get(verify.final_band, '')} 위험도 **{verify.final_score:.1f}** ({verify.final_band}) · "
         f"검증 {verify.iterations_used}회 · "
