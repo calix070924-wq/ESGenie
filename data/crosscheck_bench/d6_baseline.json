@@ -1,0 +1,46 @@
+{
+  "generated_at": "2026-07-05",
+  "note": "현행 D6 검출기 실측 기준선. 갱신은 검출기 의도 변경 시에만 수동으로 (--save-snapshot). CI 통과 목적의 라벨·검출기 수정 후 snapshot 갱신 금지.",
+  "cases": [
+    {
+      "id": "IHD6-C1",
+      "actual_level": "low",
+      "score": 0.0
+    },
+    {
+      "id": "IHD6-C2",
+      "actual_level": "low",
+      "score": 0.0
+    },
+    {
+      "id": "IHD6-C3",
+      "actual_level": "low",
+      "score": 0.0284
+    },
+    {
+      "id": "IHD6-M1",
+      "actual_level": "medium",
+      "score": 0.2953
+    },
+    {
+      "id": "IHD6-M2",
+      "actual_level": "low",
+      "score": 0.077
+    },
+    {
+      "id": "IHD6-H1",
+      "actual_level": "medium",
+      "score": 0.3642
+    },
+    {
+      "id": "IHD6-H2",
+      "actual_level": "high",
+      "score": 0.627
+    },
+    {
+      "id": "IHD6-H3",
+      "actual_level": "low",
+      "score": 0.1791
+    }
+  ]
+}

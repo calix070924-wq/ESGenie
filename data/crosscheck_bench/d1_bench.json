@@ -1,7 +1,10 @@
 {
   "track": "D1 claim-evidence reconciliation — mock unit test",
   "threshold_pp": 10.0,
-  "rate_kesg_codes": ["E-5-2","E-6-2"],
+  "rate_kesg_codes": [
+    "E-5-2",
+    "E-6-2"
+  ],
   "limit_note": "D1 수치는 탐지 결정규칙의 단위검증(임계경계 포함). 자가주장 추출·증빙매칭(파이프라인 상류)은 미측정. 증빙대조 E2E recall은 Phase 2/후속 트랙.",
   "cases": [
     {
@@ -106,7 +109,7 @@
       "probe_question": "거짓 %p 괴리를 계산하는가?",
       "expected_flagged": true,
       "expected_false_pp_diff": false,
-      "expected_flag_pattern": "비율 증빙 미확보",
+      "expected_flag_pattern": "증빙은 비율(%) 미확보",
       "domain_rationale": "claim_is_rate + not evid_is_rate → 비율증빙미확보 조기 반환, diff 미산출"
     }
   ]
