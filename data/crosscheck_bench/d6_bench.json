@@ -1,0 +1,89 @@
+{
+  "track": "D6 selective_disclosure — independent held-out (designer≠evaluator)",
+  "independence_note": "IHD6 (disclosed, missing) 조합이 disclosure_bench.json 12케이스 어디에도 중복 없음 — 하네스 시작 시 assert 검증",
+  "domain_labels_note": "기대라벨은 검출기 실행 전 도메인 로직으로만 확정. 결과를 보고 재라벨·튜닝 금지.",
+  "boundary_note": "boundary=true 케이스가 검출기 반대편에 떨어지면 경계 민감도 발견으로 보고. M2·H3는 고아 없는 omission-only 탐지 공백 케이스 — FN이어도 재라벨 금지.",
+  "n_cases": 8,
+  "cases": [
+    {
+      "id": "IHD6-C1",
+      "scenario": "비율+분모 전체 공시",
+      "expected_level": "low",
+      "boundary": false,
+      "detection_gap_expected": false,
+      "disclosed": ["E-2-1","E-2-2","E-3-1","E-3-2","E-4-1","E-4-2","E-5-1","E-5-2","E-6-1","E-6-2","E-7-1","E-7-2","E-8-1","G-4-1","G-6-1","S-2-3","S-4-2","S-8-2","S-9-1"],
+      "missing": [],
+      "domain_rationale": "모든 비율+분모 공시, 고아 없음, 민감항목 전부 공시"
+    },
+    {
+      "id": "IHD6-C2",
+      "scenario": "비율 전체 미공시·총량만 공시",
+      "expected_level": "low",
+      "boundary": false,
+      "detection_gap_expected": false,
+      "disclosed": ["E-2-1","E-3-1","E-3-2","E-4-1","E-5-1","E-6-1","E-7-1","E-7-2","E-8-1","G-4-1","G-6-1","S-2-3","S-4-2","S-8-2","S-9-1"],
+      "missing": ["E-2-2","E-4-2","E-5-2","E-6-2"],
+      "domain_rationale": "비율 자체를 공시 안 했으니 고아 비율 없음. 총량은 모두 공시 = 정직한 보수 공시."
+    },
+    {
+      "id": "IHD6-C3",
+      "scenario": "윤리규범 1건 누락",
+      "expected_level": "low",
+      "boundary": false,
+      "detection_gap_expected": false,
+      "disclosed": ["E-2-1","E-3-1","E-3-2","E-4-1","E-5-1","E-6-1","E-7-1","E-7-2","E-8-1","G-6-1","S-2-3","S-4-2","S-8-2","S-9-1"],
+      "missing": ["G-4-1"],
+      "domain_rationale": "G-4-1(민감도 0.7) 단독 누락. 경미한 단일 누락."
+    },
+    {
+      "id": "IHD6-M1",
+      "scenario": "재생원부자재비율 고아",
+      "expected_level": "medium",
+      "boundary": false,
+      "detection_gap_expected": false,
+      "disclosed": ["E-2-2","E-3-1","E-3-2","E-4-1","E-5-1","E-6-1","E-6-2","E-7-1","E-7-2","E-8-1","G-4-1","G-6-1","S-2-3","S-4-2","S-8-2","S-9-1"],
+      "missing": ["E-2-1"],
+      "domain_rationale": "E-2-2(재생원부자재비율) 공시, E-2-1(총원부자재량, 분모) 침묵. 고아 비율 단독."
+    },
+    {
+      "id": "IHD6-M2",
+      "scenario": "온실가스+산재율 동시 은폐",
+      "expected_level": "high",
+      "boundary": false,
+      "detection_gap_expected": true,
+      "disclosed": ["E-2-1","E-3-2","E-4-1","E-5-1","E-6-1","E-7-1","E-7-2","E-8-1","G-4-1","G-6-1","S-2-3","S-8-2","S-9-1"],
+      "missing": ["E-3-1","S-4-2"],
+      "domain_rationale": "환경·사회 최고민감 지표(온실가스 1.0, 산재율 0.9) 2개 동시 은폐. 고아 없는 omission-only — 현행 공식 구조상 탐지 공백 예상."
+    },
+    {
+      "id": "IHD6-H1",
+      "scenario": "재활용률 고아 + 오염물질 동반 누락",
+      "expected_level": "high",
+      "boundary": true,
+      "detection_gap_expected": false,
+      "disclosed": ["E-2-1","E-3-1","E-3-2","E-4-1","E-5-1","E-6-2","E-8-1","G-4-1","G-6-1","S-2-3","S-4-2","S-8-2","S-9-1"],
+      "missing": ["E-6-1","E-7-1","E-7-2"],
+      "domain_rationale": "재활용률 고아 + 대기·수질오염물질 추가 누락. 도메인 high. ★경계: 검출기가 medium 반환 시 경계 민감도 발견으로 보고."
+    },
+    {
+      "id": "IHD6-H2",
+      "scenario": "비율 2종 고아 + 온실가스 누락",
+      "expected_level": "high",
+      "boundary": false,
+      "detection_gap_expected": false,
+      "disclosed": ["E-2-2","E-3-2","E-4-1","E-5-2","E-6-1","E-7-1","E-7-2","E-8-1","G-4-1","G-6-1","S-2-3","S-4-2","S-8-2","S-9-1"],
+      "missing": ["E-2-1","E-5-1","E-3-1"],
+      "domain_rationale": "재생원부자재비율(E-2-2)+재사용용수비율(E-5-2) 고아 2종 + 핵심 온실가스(E-3-1) 누락."
+    },
+    {
+      "id": "IHD6-H3",
+      "scenario": "법규 3종 + 산재율 누락",
+      "expected_level": "high",
+      "boundary": false,
+      "detection_gap_expected": true,
+      "disclosed": ["E-2-1","E-3-1","E-3-2","E-4-1","E-5-1","E-6-1","E-7-1","E-7-2","G-4-1"],
+      "missing": ["E-8-1","G-6-1","S-9-1","S-4-2"],
+      "domain_rationale": "법규위반 3종(E-8-1·G-6-1·S-9-1) + 산재율(S-4-2) 동시 누락. 도메인 high. 고아 없는 omission-only — 현행 공식 구조상 탐지 공백 예상."
+    }
+  ]
+}
