@@ -16,7 +16,11 @@ from unittest.mock import MagicMock, patch
 import pytest
 
 from esgenie.schemas import GroundingResult
-from esgenie.supplychain.drafter import generate_drafts
+from esgenie.supplychain.drafter import (
+    generate_drafts,
+    RETRIEVAL_BM25_FALLBACK,
+    RETRIEVAL_CODE_MATCH,
+)
 from esgenie.supplychain.schema import (
     Answer,
     ResponseSheet,
@@ -553,11 +557,14 @@ def test_gaps_recalculated_after_drafts(mock_llm_cls, mock_eval):
 
 # ── Test 15: BM25 폴백 cross-pillar 배제 (검수 재현) ─────────────────────
 
+@patch("esgenie.supplychain.drafter.evaluate_grounding")
 @patch("esgenie.supplychain.drafter.LLMClient")
-def test_bm25_fallback_cross_pillar_rejected(mock_llm_cls):
+def test_bm25_fallback_cross_pillar_rejected(mock_llm_cls, mock_eval):
     """S-4-1 청크만 있는 그래프에서 E-1-1 항목 → 폴백 채택 0, LLM 미호출, 상태 유지."""
     mock_llm = MagicMock()
+    mock_llm.complete.return_value = SimpleNamespace(content="초안 [TXT_0001]")
     mock_llm_cls.return_value = mock_llm
+    mock_eval.return_value = _grounding_accept()
 
     fw = get_framework(FW_KEY)
     answers = []
@@ -853,17 +860,18 @@ def test_insufficient_sentinel_aborts_immediately(mock_llm_cls, mock_eval):
     assert mock_llm.complete.call_count >= 1
 
 
-# ── Test 23: 자백 문구 패턴 → 폐기 ──────────────────────────────────────────
+# ── Test 23: 자백 문구 패턴 → 폐기 (sentence-level context-aware) ─────────────
 
 @patch("esgenie.supplychain.drafter.evaluate_grounding")
 @patch("esgenie.supplychain.drafter.LLMClient")
 def test_confession_patterns_abort(mock_llm_cls, mock_eval):
-    """_INSUFFICIENCY_PATTERNS의 각 패턴이 draft_text에 있으면 폐기."""
-    from esgenie.supplychain.drafter import _INSUFFICIENCY_PATTERNS
+    """Standalone 패턴은 단독으로, Contextual 패턴은 referent 동반 시 폐기."""
+    from esgenie.supplychain.drafter import _CONFESSION_STANDALONE, _CONFESSION_CONTEXTUAL
 
-    for pattern in _INSUFFICIENCY_PATTERNS:
+    # Category A: standalone — 패턴만으로 자백 확정
+    for pattern in _CONFESSION_STANDALONE:
         mock_llm = MagicMock()
-        confession = f"해당 발췌에는 관련 내용이 {pattern}습니다 [TXT_0001]."
+        confession = f"해당 내용에 대해 {pattern}습니다 [TXT_0001]."
         mock_llm.complete.return_value = SimpleNamespace(content=confession)
         mock_llm_cls.return_value = mock_llm
         mock_eval.reset_mock()
@@ -876,7 +884,28 @@ def test_confession_patterns_abort(mock_llm_cls, mock_eval):
 
         s41 = next(a for a in sheet.answers if a.qid == "KESG-S-4-1")
         assert s41.status == "hitl_required", (
-            f"자백 패턴 '{pattern}' 감지 시 원상태 유지해야 함"
+            f"standalone 자백 패턴 '{pattern}' 감지 시 원상태 유지해야 함"
+        )
+        assert s41.draft_text == ""
+        mock_eval.assert_not_called()
+
+    # Category B: contextual — referent 동반 시 자백
+    for pattern in _CONFESSION_CONTEXTUAL:
+        mock_llm = MagicMock()
+        confession = f"제공된 발췌에는 관련 내용이 {pattern}습니다 [TXT_0001]."
+        mock_llm.complete.return_value = SimpleNamespace(content=confession)
+        mock_llm_cls.return_value = mock_llm
+        mock_eval.reset_mock()
+
+        sheet = _make_sheet_with_hitl()
+        text_node = _make_text_node("TXT_0001", "규정 텍스트", "S-4-1")
+        graph = _make_evidence_graph([text_node])
+
+        sheet = generate_drafts(sheet, graph, max_retries=2)
+
+        s41 = next(a for a in sheet.answers if a.qid == "KESG-S-4-1")
+        assert s41.status == "hitl_required", (
+            f"contextual 자백 패턴 '{pattern}' + referent 감지 시 원상태 유지해야 함"
         )
         assert s41.draft_text == ""
         mock_eval.assert_not_called()
@@ -1134,3 +1163,104 @@ def test_integration_safety_minutes_all_rejected(mock_llm_cls, mock_eval):
     )
     # evaluate_grounding은 한 번도 호출되지 않아야 함(초안 생성 자체가 안 됐으므로)
     mock_eval.assert_not_called()
+
+
+# ── Test 29: contextual 자백 패턴 WITHOUT referent → 통과 (false positive 방지) ─
+
+@patch("esgenie.supplychain.drafter.evaluate_grounding")
+@patch("esgenie.supplychain.drafter.LLMClient")
+def test_contextual_pattern_without_referent_passes(mock_llm_cls, mock_eval):
+    """contextual 패턴이 referent 없이 출현하면 자백이 아니라 정상 초안."""
+    from esgenie.supplychain.drafter import _CONFESSION_CONTEXTUAL
+
+    # "확인할 수 없" 같은 패턴이 referent 없이 나오면 통과해야 함
+    pattern = _CONFESSION_CONTEXTUAL[1]  # "확인할 수 없"
+    mock_llm = MagicMock()
+    draft = f"온실가스 배출량은 현재 수치로는 확인할 수 없으나 감축 목표를 설정하였다 [TXT_0001]."
+    mock_llm.complete.return_value = SimpleNamespace(content=draft)
+    mock_llm_cls.return_value = mock_llm
+    mock_eval.return_value = _grounding_accept()
+
+    sheet = _make_sheet_with_hitl()
+    text_node = _make_text_node("TXT_0001", "규정 텍스트", "S-4-1")
+    graph = _make_evidence_graph([text_node])
+
+    sheet = generate_drafts(sheet, graph, max_retries=2)
+
+    s41 = next(a for a in sheet.answers if a.qid == "KESG-S-4-1")
+    assert s41.status == "draft_ready", (
+        f"referent 없는 contextual 패턴은 통과해야 함, got {s41.status}"
+    )
+
+
+# ── Test 30: 관련성 hedge 응답 "YES, 다만..." → fail-closed (NO 취급) ──────────
+
+@patch("esgenie.supplychain.drafter.evaluate_grounding")
+@patch("esgenie.supplychain.drafter.LLMClient")
+def test_relevance_hedge_yes_treated_as_no(mock_llm_cls, mock_eval):
+    """관련성 판정 hedge("YES, 다만...", "YES일 수도")는 NO 취급."""
+    hedge_responses = ["YES, 다만 부분적으로만 관련", "YES일 수도", "YES BUT", "YES..."]
+
+    for hedge in hedge_responses:
+        mock_llm = MagicMock()
+        mock_llm.complete.return_value = SimpleNamespace(content=hedge)
+        mock_llm_cls.return_value = mock_llm
+        mock_eval.reset_mock()
+
+        fw = get_framework(FW_KEY)
+        answers = []
+        for q in fw.questions:
+            if q.primary_code == "S-7-1":
+                answers.append(Answer(
+                    qid=q.qid, section=q.section, question_text=q.text,
+                    value=None, status="hitl_required",
+                ))
+            else:
+                answers.append(Answer(
+                    qid=q.qid, section=q.section, question_text=q.text,
+                    value=True, status="verified",
+                ))
+        sheet = ResponseSheet(
+            framework_key=fw.key, framework_label=fw.label,
+            corp_name="테스트사", answers=answers,
+        )
+
+        text_node = _make_text_node(
+            "TXT_0001",
+            "전략적 사회공헌 CSR 프로그램 운영 방침 수립 사회공헌 활동 "
+            "사회공헌 전략적 CSR 목표",
+            None,
+        )
+        graph = _make_evidence_graph([text_node])
+
+        sheet = generate_drafts(sheet, graph)
+
+        s71 = next(a for a in sheet.answers if a.qid == "KESG-S-7-1")
+        assert s71.status == "hitl_required", (
+            f"hedge 응답 '{hedge}' → NO 취급, 원상태 유지해야 함"
+        )
+        mock_eval.assert_not_called()
+
+
+# ── Test 31: 검색 경로 상수 일관성 검증 ─────────────────────────────────────────
+
+@patch("esgenie.supplychain.drafter.evaluate_grounding")
+@patch("esgenie.supplychain.drafter.LLMClient")
+def test_retrieval_constants_used_consistently(mock_llm_cls, mock_eval):
+    """RETRIEVAL_CODE_MATCH/RETRIEVAL_BM25_FALLBACK 상수가 citations에 사용됨."""
+    mock_llm = MagicMock()
+    mock_llm.complete.return_value = SimpleNamespace(content="초안 [TXT_0001]")
+    mock_llm_cls.return_value = mock_llm
+    mock_eval.return_value = _grounding_accept()
+
+    sheet = _make_sheet_with_hitl()
+    text_node = _make_text_node("TXT_0001", "안전보건 방침 조항", "S-4-1")
+    graph = _make_evidence_graph([text_node])
+
+    sheet = generate_drafts(sheet, graph)
+
+    drafted = [a for a in sheet.answers if a.status == "draft_ready"]
+    assert len(drafted) >= 1
+    for a in drafted:
+        for cit in a.draft_citations:
+            assert cit["retrieval"] in (RETRIEVAL_CODE_MATCH, RETRIEVAL_BM25_FALLBACK)

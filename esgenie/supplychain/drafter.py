@@ -6,6 +6,7 @@ Fail-closed: 근거게이트(G1·G2·G4 hard + G5 soft) 통과분만 draft_ready
 from __future__ import annotations
 
 import logging
+import re
 from typing import Any
 
 from ..embeddings import BM25Index, IndexedDoc
@@ -15,6 +16,10 @@ from ..rag_gates.grounding_gate import evaluate_grounding, grounding_feedback
 from .schema import Answer, ResponseSheet
 
 logger = logging.getLogger(__name__)
+
+# ── 검색 경로 상수 ────────────────────────────────────────────────────────────
+RETRIEVAL_CODE_MATCH = "code_match"
+RETRIEVAL_BM25_FALLBACK = "bm25_fallback"
 
 _DRAFTER_SYSTEM = (
     "당신은 ESG 실사 응답 초안 작성기입니다. "
@@ -42,12 +47,27 @@ _BM25_TOP_K = 5
 _BM25_MIN_SCORE = 2.0
 _BM25_RELATIVE_THRESHOLD = 0.4
 
-_INSUFFICIENCY_PATTERNS: tuple[str, ...] = (
-    "포함되어 있지 않",
+# ── 자백 패턴 (sentence-level context-aware) ─────────────────────────────────
+# Category A: 단독으로 불충분 자백인 패턴 (문맥 불문)
+_CONFESSION_STANDALONE: tuple[str, ...] = (
     "답변을 제공할 수 없",
+    "답변을 드리기 어렵",
+    "판단할 수 없",
+)
+
+# Category B: 발췌 지시어(referent)와 같은 문장에 동시 출현해야 자백으로 판정
+_CONFESSION_CONTEXTUAL: tuple[str, ...] = (
+    "포함되어 있지 않",
     "확인할 수 없",
     "언급된 내용이 없",
     "포함되지 않",
+    "찾을 수 없",
+    "근거가 없",
+    "내용이 없",
+)
+
+_EXCERPT_REFERENTS: tuple[str, ...] = (
+    "발췌", "청크", "제공된", "위 문서", "해당 문서",
 )
 
 _RELEVANCE_SYSTEM = "당신은 ESG 증빙 문서와 질문 간 관련성을 판정하는 전문가입니다."
@@ -67,6 +87,7 @@ def generate_drafts(
     sheet: ResponseSheet,
     evidence_graph: Any,
     *,
+    framework: Any | None = None,
     max_retries: int = 2,
 ) -> ResponseSheet:
     """hitl_required/insufficient(policy) 항목에 AI 초안을 생성해 draft_ready로 전환.
@@ -81,8 +102,7 @@ def generate_drafts(
     if not text_nodes:
         return sheet
 
-    # qid→(primary_code, question_text) 맵을 루프 밖에서 한 번만 빌드
-    code_map, qtext_map = _build_code_map(sheet)
+    code_map, qtext_map = _build_code_map(sheet, framework=framework)
 
     bm25 = _build_bm25_index(text_nodes)
     llm = LLMClient()
@@ -100,8 +120,7 @@ def generate_drafts(
         if not chunks:
             continue
 
-        # BM25 폴백 경로는 관련성 사전 게이트를 통과해야 초안 생성으로 진입
-        is_fallback = chunks[0].get("retrieval") == "bm25_fallback"
+        is_fallback = chunks[0].get("retrieval") == RETRIEVAL_BM25_FALLBACK
         if is_fallback and not _check_relevance(question_text, chunks, llm):
             logger.info(
                 "drafter: 관련성 게이트 NO (qid=%s)", answer.qid,
@@ -113,13 +132,19 @@ def generate_drafts(
     return sheet
 
 
-def _build_code_map(sheet: ResponseSheet) -> tuple[dict[str, str], dict[str, str]]:
+def _build_code_map(
+    sheet: ResponseSheet,
+    *,
+    framework: Any | None = None,
+) -> tuple[dict[str, str], dict[str, str]]:
     """framework를 한 번 역조회해 qid→primary_code, qid→question_text 맵을 구축."""
-    from .frameworks import get_framework
-    try:
-        fw = get_framework(sheet.framework_key)
-    except (KeyError, ValueError):
-        return {}, {}
+    fw = framework
+    if fw is None:
+        from .frameworks import get_framework
+        try:
+            fw = get_framework(sheet.framework_key)
+        except (KeyError, ValueError):
+            return {}, {}
     code_map = {q.qid: q.primary_code for q in fw.questions}
     qtext_map = {q.qid: q.text for q in fw.questions}
     return code_map, qtext_map
@@ -180,11 +205,11 @@ def _collect_chunks(
     if nodes:
         return [
             {
-                "id": _node_id(n),
-                "text": _node_text(n),
+                "id": getattr(n, "id", ""),
+                "text": getattr(n, "text", ""),
                 "source_file": getattr(n, "source_file", ""),
                 "page": getattr(n, "page", None),
-                "retrieval": "code_match",
+                "retrieval": RETRIEVAL_CODE_MATCH,
             }
             for n in nodes
         ]
@@ -197,7 +222,7 @@ def _collect_chunks(
     if not results:
         return []
 
-    top1_score = results[0][1] if results else 0.0
+    top1_score = results[0][1]
 
     accepted: list[dict[str, Any]] = []
     for doc, score in results:
@@ -211,18 +236,15 @@ def _collect_chunks(
             "text": doc.text,
             "source_file": doc.meta.get("source_file", ""),
             "page": doc.meta.get("page"),
-            "retrieval": "bm25_fallback",
+            "retrieval": RETRIEVAL_BM25_FALLBACK,
         })
 
     return accepted
 
 
-def _node_id(node: Any) -> str:
-    return getattr(node, "id", "")
-
-
-def _node_text(node: Any) -> str:
-    return getattr(node, "text", "")
+def _format_chunks(chunks: list[dict[str, Any]]) -> str:
+    """청크 리스트를 프롬프트용 텍스트로 포맷."""
+    return "\n".join(f"- [{c['id']}] {c['text']}" for c in chunks)
 
 
 def _check_relevance(
@@ -232,14 +254,11 @@ def _check_relevance(
 ) -> bool:
     """BM25 폴백 청크가 질문에 실질적으로 답할 근거를 담고 있는지 판정.
 
-    Fail-closed: "YES"로 시작하지 않는 모든 응답은 NO로 취급.
+    Fail-closed: 정확히 "YES" 토큰(뒤에 구두점 하나 허용)만 통과.
     """
-    chunks_text = "\n".join(
-        f"- [{c['id']}] {c['text']}" for c in chunks
-    )
     user_prompt = _RELEVANCE_USER_TEMPLATE.format(
         question=question_text,
-        chunks_text=chunks_text,
+        chunks_text=_format_chunks(chunks),
     )
     resp: LLMResponse = llm.complete(
         system=_RELEVANCE_SYSTEM,
@@ -248,16 +267,31 @@ def _check_relevance(
         temperature=0.0,
     )
     verdict = resp.content.strip().upper()
-    return verdict.startswith("YES")
+    return bool(re.fullmatch(r"YES[.!]?", verdict))
 
 
 def _is_insufficient_draft(draft_text: str) -> bool:
-    """센티널("INSUFFICIENT_EVIDENCE") 또는 자백 문구 패턴 감지."""
+    """센티널("INSUFFICIENT_EVIDENCE") 또는 문장 수준 자백 패턴 감지.
+
+    Two-category sentence-level detection:
+    - Standalone: 패턴만으로 자백 확정
+    - Contextual: 발췌 지시어(referent)와 같은 문장에 동시 출현해야 자백
+    """
     if "INSUFFICIENT_EVIDENCE" in draft_text:
         return True
-    for pattern in _INSUFFICIENCY_PATTERNS:
-        if pattern in draft_text:
-            return True
+
+    sentences = re.split(r"[.。!\n]", draft_text)
+
+    for sentence in sentences:
+        for pat in _CONFESSION_STANDALONE:
+            if pat in sentence:
+                return True
+
+        for pat in _CONFESSION_CONTEXTUAL:
+            if pat in sentence:
+                if any(ref in sentence for ref in _EXCERPT_REFERENTS):
+                    return True
+
     return False
 
 
@@ -269,9 +303,7 @@ def _attempt_draft(
     max_retries: int,
 ) -> None:
     """초안 생성 → 근거게이트 검증 → 통과 시 draft_ready, 실패 시 재시도."""
-    chunks_text = "\n".join(
-        f"- [{c['id']}] {c['text']}" for c in chunks
-    )
+    chunks_text = _format_chunks(chunks)
 
     user_prompt = _DRAFTER_USER_TEMPLATE.format(
         question=answer.question_text,
@@ -327,7 +359,7 @@ def _build_citations(chunks: list[dict[str, Any]]) -> list[dict]:
             "source_file": c.get("source_file", ""),
             "page": c.get("page"),
             "text_preview": c["text"][:100],
-            "retrieval": c.get("retrieval", "code_match"),
+            "retrieval": c.get("retrieval", RETRIEVAL_CODE_MATCH),
         }
         for c in chunks
     ]

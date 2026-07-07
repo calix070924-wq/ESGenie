@@ -65,7 +65,7 @@ def build_response_sheet(
     if enable_drafts and evidence_graph is not None:
         try:
             from .drafter import generate_drafts
-            sheet = generate_drafts(sheet, evidence_graph)
+            sheet = generate_drafts(sheet, evidence_graph, framework=fw)
             sheet.gaps = _build_gaps(sheet.answers)
         except Exception:
             import logging
