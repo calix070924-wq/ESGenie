@@ -327,30 +327,24 @@ def build_rag_with_ssot(
 
 
 def _extend_corp_index(corp: CorpIndex, extra_docs: list[Any]) -> CorpIndex:
-    """기존 CorpIndex에 문서를 추가 편입한 새(혹은 갱신된) CorpIndex를 반환.
+    """기존 CorpIndex에 extra_docs를 더해 새 CorpIndex를 반환한다.
 
-    VectorIndex가 add() API를 제공하면 그것을 사용하고,
-    없으면 기존 문서를 꺼내 합쳐서 rebuild한다.
+    vector·bm25를 항상 동일한 (기존 문서 + extra_docs) 집합으로 함께 재빌드해
+    두 인덱스의 문서 집합을 일치시킨다.
+
+    add() 증분 분기를 제거한 이유: add()가 생기면 corp.vector만 갱신되고
+    corp.bm25는 그대로 남아 hybrid search에서 문서 집합 불일치가 발생한다.
+    VectorIndex에 현재 add()가 없으므로 dead code이기도 해 제거가 가장 안전하다.
     """
-    index = corp.vector
-
-    # ── add() API 있으면 직접 추가 ────────────────────────────────────
-    if hasattr(index, "add"):
-        index.add(extra_docs)
-        return corp
-
-    # ── rebuild 방식 폴백 ─────────────────────────────────────────────
-    # VectorIndex 내부 문서 목록을 꺼내 합쳐 rebuild
-    existing: list[Any] = []
-    if hasattr(index, "_docs"):
-        existing = list(index._docs)
+    existing: list[Any] = list(getattr(corp.vector, "_docs", []))
+    all_docs = existing + extra_docs
 
     from esgenie.embeddings import BM25Index, VectorIndex
-    new_index = VectorIndex()
-    new_index.build(existing + extra_docs)
+    new_vector = VectorIndex()
+    new_vector.build(all_docs)
     new_bm25 = BM25Index()
-    new_bm25.build(existing + extra_docs)
-    return CorpIndex(vector=new_index, bm25=new_bm25)
+    new_bm25.build(all_docs)
+    return CorpIndex(vector=new_vector, bm25=new_bm25)
 
 
 # ====================================================================

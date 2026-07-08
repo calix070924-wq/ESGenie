@@ -114,3 +114,40 @@ def test_get_hybrid_rag_builds_kesg_industry_only_once(monkeypatch):
     corp2 = rag1.build_corp_index(report)
     assert corp1 is not corp2  # corp는 호출마다 새로 빌드됨
     assert calls["kesg"] == 1 and calls["industry"] == 1  # kesg/industry는 여전히 재빌드 안 됨
+
+
+def test_extend_corp_index_vector_bm25_parity():
+    """extra_docs 확장 후 corp.vector와 corp.bm25가 동일한 문서 집합(개수·ID)을 보유하는지 검증.
+
+    rebuild-only 경로에서 vector·bm25가 동일한 (기존 + extra) docs로 함께 재빌드된다.
+    add() 증분 분기가 남아 있으면 corp.bm25는 갱신되지 않아 이 테스트가 깨진다.
+    """
+    from esgenie.embeddings import BM25Index, IndexedDoc, VectorIndex
+    from esgenie.layer2_rag import CorpIndex
+    from esgenie.ssot.ssot_pipeline import _extend_corp_index
+
+    initial_docs = [
+        IndexedDoc(text="삼성전자 온실가스 배출량 2023", meta={"source": "dart"}),
+        IndexedDoc(text="삼성전자 산재율 보고서", meta={"source": "dart"}),
+    ]
+    v = VectorIndex()
+    v.build(initial_docs)
+    b = BM25Index()
+    b.build(initial_docs)
+    corp = CorpIndex(vector=v, bm25=b)
+
+    extra = [IndexedDoc(text="삼성전자 폐기물 재활용률 현황", meta={"source": "ssot"})]
+    corp2 = _extend_corp_index(corp, extra)
+
+    vec_ids = {d.chunk_id for d in corp2.vector._docs}
+    bm25_ids = {d.chunk_id for d in corp2.bm25._docs}
+
+    assert len(corp2.vector._docs) == len(initial_docs) + len(extra), (
+        f"vector 문서 수 불일치: {len(corp2.vector._docs)}"
+    )
+    assert len(corp2.bm25._docs) == len(initial_docs) + len(extra), (
+        f"bm25 문서 수 불일치: {len(corp2.bm25._docs)}"
+    )
+    assert vec_ids == bm25_ids, (
+        f"vector-only IDs: {vec_ids - bm25_ids}, bm25-only IDs: {bm25_ids - vec_ids}"
+    )
