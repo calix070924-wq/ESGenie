@@ -475,6 +475,8 @@ def _score_d5_timeseries(
         for edge in evidence_graph.edges:
             if code not in edge.target_id:
                 continue
+            if edge.edge_type != "timeseries":
+                continue
             edge_ids.append(edge.target_id)
             if edge.yoy is None:
                 continue
