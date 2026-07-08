@@ -1,0 +1,116 @@
+{
+  "track": "D1 claim-evidence reconciliation — mock unit test",
+  "threshold_pp": 10.0,
+  "rate_kesg_codes": [
+    "E-5-2",
+    "E-6-2"
+  ],
+  "limit_note": "D1 수치는 탐지 결정규칙의 단위검증(임계경계 포함). 자가주장 추출·증빙매칭(파이프라인 상류)은 미측정. 증빙대조 E2E recall은 Phase 2/후속 트랙.",
+  "cases": [
+    {
+      "id": "D1-01",
+      "code": "E-6-2",
+      "claim_value": 92.0,
+      "claim_unit": "%",
+      "evid_value": 29.3,
+      "evid_unit": "%",
+      "expected_flagged": true,
+      "boundary": false,
+      "domain_rationale": "한울정밀 대표 케이스, 극단 괴리 62.7%p"
+    },
+    {
+      "id": "D1-02",
+      "code": "E-6-2",
+      "claim_value": 50.0,
+      "claim_unit": "%",
+      "evid_value": 39.5,
+      "evid_unit": "%",
+      "expected_flagged": true,
+      "boundary": true,
+      "domain_rationale": "임계(10%p) 바로 위 경계 TP. ★반대편 시 경계 민감도 발견"
+    },
+    {
+      "id": "D1-03",
+      "code": "E-6-2",
+      "claim_value": 50.0,
+      "claim_unit": "%",
+      "evid_value": 40.5,
+      "evid_unit": "%",
+      "expected_flagged": false,
+      "boundary": true,
+      "domain_rationale": "임계 바로 아래 경계 TN. ★반대편 시 경계 민감도 발견"
+    },
+    {
+      "id": "D1-04",
+      "code": "E-6-2",
+      "claim_value": 30.0,
+      "claim_unit": "%",
+      "evid_value": 30.0,
+      "evid_unit": "%",
+      "expected_flagged": false,
+      "boundary": false,
+      "domain_rationale": "완전 일치 클린"
+    },
+    {
+      "id": "D1-05",
+      "code": "E-5-2",
+      "claim_value": 75.0,
+      "claim_unit": "%",
+      "evid_value": 20.0,
+      "evid_unit": "%",
+      "expected_flagged": true,
+      "boundary": false,
+      "domain_rationale": "재사용용수비율, 다른 코드. 55%p 괴리"
+    },
+    {
+      "id": "D1-06",
+      "code": "E-6-2",
+      "claim_value": 45.0,
+      "claim_unit": "%",
+      "evid_value": 30.0,
+      "evid_unit": "%",
+      "expected_flagged": true,
+      "boundary": false,
+      "domain_rationale": "중간 괴리 15%p"
+    },
+    {
+      "id": "D1-07",
+      "code": "E-2-2",
+      "claim_value": 60.0,
+      "claim_unit": "%",
+      "evid_value": 15.0,
+      "evid_unit": "%",
+      "expected_flagged": true,
+      "boundary": false,
+      "domain_rationale": "재생원부자재비율, 45%p 괴리"
+    }
+  ],
+  "probes": [
+    {
+      "id": "D1-P1",
+      "code": "E-6-2",
+      "claim_value": 40.0,
+      "claim_unit": "%",
+      "evid_value": 5400.0,
+      "evid_unit": "톤",
+      "probe_question": "거짓 %p 괴리를 계산하는가?",
+      "expected_flagged": true,
+      "expected_false_pp_diff": false,
+      "expected_flag_pattern": "비율 범위",
+      "domain_rationale": "_RATE_KESG_CODES + evid > 100 → 비율범위초과 조기 반환, diff 미산출"
+    },
+    {
+      "id": "D1-P2",
+      "code": "E-4-2",
+      "claim_value": 40.0,
+      "claim_unit": "%",
+      "evid_value": 500.0,
+      "evid_unit": "톤",
+      "probe_question": "거짓 %p 괴리를 계산하는가?",
+      "expected_flagged": true,
+      "expected_false_pp_diff": false,
+      "expected_flag_pattern": "증빙은 비율(%) 미확보",
+      "domain_rationale": "claim_is_rate + not evid_is_rate → 비율증빙미확보 조기 반환, diff 미산출"
+    }
+  ]
+}
