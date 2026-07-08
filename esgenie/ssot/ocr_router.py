@@ -15,12 +15,18 @@
 """
 from __future__ import annotations
 
+import os
 import re
 from dataclasses import dataclass, field, asdict
 from enum import Enum
 from html.parser import HTMLParser
 from pathlib import Path
 from typing import Any
+
+# Upstage Document Parse 모델 pin.
+# 구버전 alias "document-parse"(=document-parse-250618 계열)는 2026-07-31 지원 종료 —
+# 신버전을 명시 pin하고, 롤백·비교 실험은 UPSTAGE_DP_MODEL 환경변수로 오버라이드한다.
+UPSTAGE_DP_MODEL: str = os.getenv("UPSTAGE_DP_MODEL", "document-parse-260630")
 
 
 # ====================================================================
@@ -353,7 +359,7 @@ def extract_structured(file_path: str, *, doc_type: str) -> OcrExtraction:
                 file_path=file_path,
                 engine="upstage_dp",
                 tables=payload.get("tables") or [],
-                engine_meta={"upstage_model": "document-parse"},
+                engine_meta={"upstage_model": UPSTAGE_DP_MODEL},
             )
         except Exception as exc:
             # Upstage 실패 → 디지털 PDF 폴백 (데모 안정성)
@@ -635,10 +641,12 @@ def _slice_first_page_pdf(file_path: str) -> bytes | None:
 
 
 def _call_upstage_dp(
-    file_path: str, *, ocr_mode: str = "force", pages: str | None = None
+    file_path: str, *, ocr_mode: str = "force", pages: str | None = None,
+    model: str | None = None,
 ) -> list[dict[str, Any]]:
     """Upstage Document Parse 호출 → 요소 단위 토큰 [{text, bbox, page}]."""
-    return _call_upstage_dp_payload(file_path, ocr_mode=ocr_mode, pages=pages)["tokens"]
+    return _call_upstage_dp_payload(
+        file_path, ocr_mode=ocr_mode, pages=pages, model=model)["tokens"]
 
 
 def _call_upstage_dp_payload(
@@ -646,12 +654,13 @@ def _call_upstage_dp_payload(
     *,
     ocr_mode: str = "force",
     pages: str | None = None,
+    model: str | None = None,
 ) -> dict[str, Any]:
     """Upstage Document Parse REST 호출 → 토큰 + 표(HTML 복원) 메타데이터.
 
     POST multipart/form-data:
       files: document=<파일 bytes>
-      data : model=document-parse, ocr=force|auto, output_formats=['html','text'],
+      data : model=UPSTAGE_DP_MODEL(기본 document-parse-260630), ocr=force|auto, output_formats=['html','text'],
              coordinates=true, base64_encoding=[]
     응답 JSON: {content, elements:[{id,category,content:{html,text},page,coordinates}], usage}
       · 텍스트 토큰: 모든 요소의 content.text + coordinates(외접 bbox) + page(0-기준 변환)
@@ -672,7 +681,7 @@ def _call_upstage_dp_payload(
 
     headers = {"Authorization": f"Bearer {key}"}
     data = {
-        "model": "document-parse",
+        "model": model or UPSTAGE_DP_MODEL,
         "ocr": ocr_mode,
         "output_formats": "['html', 'text']",
         "coordinates": "true",

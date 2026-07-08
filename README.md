@@ -196,7 +196,7 @@ python -m esgenie.benchmark --detectors rule hybrid
 
 | 채널 | 대상 문서 | 처리 방식 |
 |------|----------|----------|
-| 정형 (Structured) | 전기요금·가스·수도 고지서, 폐기물 대장, 연료 영수증 | **Upstage Document Parse**(`document-parse`, 한국어·표(HTML 복원)·좌표) → `gpt-4.1-mini`(Azure OpenAI) 단위 정규화·K-ESG 코드 추정. 키 없으면 pymupdf+정규식(디지털 PDF) → mock 폴백 |
+| 정형 (Structured) | 전기요금·가스·수도 고지서, 폐기물 대장, 연료 영수증 | **Upstage Document Parse**(`document-parse-260630` pin, 한국어·표(HTML 복원)·좌표) → `gpt-4.1-mini`(Azure OpenAI) 단위 정규화·K-ESG 코드 추정. 키 없으면 pymupdf+정규식(디지털 PDF) → mock 폴백 |
 | 비정형 (Unstructured) | 안전보건위원회 회의록, 비상대응 매뉴얼, 사내 규정집 | VLM(`gpt-4.1-mini` via Azure OpenAI) → 정성 텍스트 추출. 스캔본은 Upstage DP로 OCR 텍스트화 후 동일 경로 |
 
 > 2026-06-22 OCR 스택 교체: 정형 OCR을 Azure Document Intelligence → **Upstage Document Parse**로 이관(Azure/CLOVA 경로 완전 제거). 판정·정규화 LLM은 gpt-4.1-mini(Azure OpenAI) 유지.
