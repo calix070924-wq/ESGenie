@@ -384,7 +384,7 @@ def run(
             )
         logger.info("[L2] Hybrid RAG 인덱스 로드 중... (backend=%s)", backend)
         rag = get_hybrid_rag()
-        build_rag_with_ssot(rag, report, evidence_graph)
+        corp = build_rag_with_ssot(rag, report, evidence_graph)
 
         industry_stats = _load_industry_stats(report.industry)
         for area in areas:
@@ -393,6 +393,7 @@ def run(
                 report,
                 area,
                 rag,
+                corp=corp,
                 threshold=threshold,
                 max_iter=max_iter,
                 demo_greenwash=demo_greenwash,

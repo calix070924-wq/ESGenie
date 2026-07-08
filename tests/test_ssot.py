@@ -383,8 +383,8 @@ class TestSsotPipeline:
         report, graph = setup
         from esgenie.layer2_rag import HybridRAG
         rag = HybridRAG()
-        build_rag_with_ssot(rag, report, graph)
-        docs = getattr(rag.corp_index, "_docs", [])
+        corp = build_rag_with_ssot(rag, report, graph)
+        docs = getattr(corp.vector, "_docs", [])
         assert any(d.meta.get("source") == "ssot_ocr" for d in docs)
         assert any(d.meta.get("source") == "ssot_text" for d in docs)
 

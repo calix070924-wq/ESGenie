@@ -12,10 +12,11 @@ v10의 Layer1(K-ESG 추출)과 Layer2(Hybrid RAG)를 v15 EvidenceGraph(SSOT)와 
 
   L2 — build_rag_with_ssot()
     · v10 HybridRAG.build_corp_index()로 DART 원문 인덱스 먼저 빌드
-    · SSOT TextNode(규정집·회의록)를 corp_index에 추가 편입
+    · SSOT TextNode(규정집·회의록)를 CorpIndex에 추가 편입
       → D3 의미일관성 검증과 규정 검증(P축)이 같은 인덱스를 공유
-    · SSOT EvidenceNode(OCR 수치)를 corp_index에 추가 편입
+    · SSOT EvidenceNode(OCR 수치)를 CorpIndex에 추가 편입
       → "E-4-1 128400 kWh (kepco_bill.pdf)" 같은 증빙 문자열로 검색 가능
+    · rag 인스턴스에는 얹지 않고 CorpIndex를 반환한다(회사별 격리).
 
 사용 예시 (app.py)
 ------------------
@@ -24,14 +25,14 @@ v10의 Layer1(K-ESG 추출)과 Layer2(Hybrid RAG)를 v15 EvidenceGraph(SSOT)와 
     graph  = build_unified_graph(dart_report, ocr_extractions, ...)
     l1     = extract_with_ssot(dart_report, graph)
     rag    = HybridRAG()
-    build_rag_with_ssot(rag, dart_report, graph)
-    ctx    = rag.retrieve("온실가스 감축 목표", k=3)
+    corp   = build_rag_with_ssot(rag, dart_report, graph)
 """
 from __future__ import annotations
 
 from collections import defaultdict
 from typing import Any
 
+from ..layer2_rag import CorpIndex
 from .evidence_graph import EvidenceGraph, EvidenceNode
 
 
@@ -260,8 +261,8 @@ def build_rag_with_ssot(
     rag: Any,              # esgenie.layer2_rag.HybridRAG
     report: Any,           # CompanyReport
     graph: EvidenceGraph,
-) -> None:
-    """HybridRAG corp_index에 DART + SSOT(TextNode + OCR 수치) 모두 편입.
+) -> CorpIndex:
+    """DART + SSOT(TextNode + OCR 수치)를 모두 편입한 CorpIndex를 만들어 반환.
 
     Parameters
     ----------
@@ -269,15 +270,14 @@ def build_rag_with_ssot(
     report : CompanyReport
     graph  : EvidenceGraph  (v15 SSOT)
 
-    Side-effect
-    -----------
-    rag.corp_index를 DART + OCR 텍스트로 (재)빌드한다.
-    기존 build_corp_index()를 먼저 호출한 뒤 TextNode/수치 노드를 추가 편입한다.
+    회사별로 달라지는 corp 인덱스는 rag 인스턴스에 얹지 않고 CorpIndex로
+    반환한다. 기존 build_corp_index()를 먼저 호출한 뒤 TextNode/수치 노드를
+    추가 편입한다.
     """
     from esgenie.embeddings import IndexedDoc
 
     # ── DART 원문 인덱스 먼저 빌드 (v10 원본 로직) ────────────────────
-    rag.build_corp_index(report)
+    corp = rag.build_corp_index(report)
 
     # ── SSOT TextNode 추가 편입 (규정집·회의록 조항) ───────────────────
     text_docs: list[IndexedDoc] = []
@@ -317,25 +317,27 @@ def build_rag_with_ssot(
                 },
             ))
 
-    # ── corp_index에 추가 문서 편입 ────────────────────────────────────
+    # ── corp 인덱스에 추가 문서 편입 ────────────────────────────────────
     # VectorIndex.add()가 없을 경우 기존 문서 위에 rebuild 방식으로 처리
     extra = text_docs + ocr_docs
     if extra:
-        _extend_corp_index(rag, extra)
+        corp = _extend_corp_index(corp, extra)
+
+    return corp
 
 
-def _extend_corp_index(rag: Any, extra_docs: list[Any]) -> None:
-    """기존 corp_index에 문서를 추가 편입.
+def _extend_corp_index(corp: CorpIndex, extra_docs: list[Any]) -> CorpIndex:
+    """기존 CorpIndex에 문서를 추가 편입한 새(혹은 갱신된) CorpIndex를 반환.
 
     VectorIndex가 add() API를 제공하면 그것을 사용하고,
     없으면 기존 문서를 꺼내 합쳐서 rebuild한다.
     """
-    index = rag.corp_index
+    index = corp.vector
 
     # ── add() API 있으면 직접 추가 ────────────────────────────────────
     if hasattr(index, "add"):
         index.add(extra_docs)
-        return
+        return corp
 
     # ── rebuild 방식 폴백 ─────────────────────────────────────────────
     # VectorIndex 내부 문서 목록을 꺼내 합쳐 rebuild
@@ -346,11 +348,9 @@ def _extend_corp_index(rag: Any, extra_docs: list[Any]) -> None:
     from esgenie.embeddings import BM25Index, VectorIndex
     new_index = VectorIndex()
     new_index.build(existing + extra_docs)
-    rag.corp_index = new_index
-    if hasattr(rag, "corp_bm25_index"):
-        new_bm25 = BM25Index()
-        new_bm25.build(existing + extra_docs)
-        rag.corp_bm25_index = new_bm25
+    new_bm25 = BM25Index()
+    new_bm25.build(existing + extra_docs)
+    return CorpIndex(vector=new_index, bm25=new_bm25)
 
 
 # ====================================================================

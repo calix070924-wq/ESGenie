@@ -132,16 +132,25 @@ class GenerationResult:
     used_mock_llm: bool
 
 
+@dataclass
+class CorpIndex:
+    """회사별 corp 인덱스 쌍. HybridRAG 싱글톤에 얹지 않고 호출마다 만들어 전달한다."""
+
+    vector: VectorIndex
+    bm25: BM25Index
+
+
 class HybridRAG:
     """3개의 독립 인덱스를 병렬로 검색하는 Multi-Retriever 구조."""
 
     def __init__(self) -> None:
+        # kesg/industry 인덱스는 고정 데이터 — get_hybrid_rag() 싱글톤이 공유한다.
+        # corp 인덱스는 회사별로 달라지므로 여기서 들고 있지 않고,
+        # build_corp_index()가 호출마다 CorpIndex를 새로 만들어 반환한다.
         self.kesg_index = VectorIndex()
         self.kesg_bm25_index = BM25Index()
         self.industry_index = VectorIndex()
         self.industry_bm25_index = BM25Index()
-        self.corp_index = VectorIndex()
-        self.corp_bm25_index = BM25Index()
         self._load_kesg()
         self._load_industry()
 
@@ -194,7 +203,7 @@ class HybridRAG:
         self.industry_index.build(docs)
         self.industry_bm25_index.build(docs)
 
-    def build_corp_index(self, report: CompanyReport) -> None:
+    def build_corp_index(self, report: CompanyReport) -> CorpIndex:
         docs: list[IndexedDoc] = [
             IndexedDoc(
                 text=s,
@@ -219,11 +228,14 @@ class HybridRAG:
                 },
                 chunk_id=f"corp_{report.corp_code}_{code}",
             ))
-        self.corp_index.build(docs)
-        self.corp_bm25_index.build(docs)
+        vector_index = VectorIndex()
+        vector_index.build(docs)
+        bm25_index = BM25Index()
+        bm25_index.build(docs)
+        return CorpIndex(vector=vector_index, bm25=bm25_index)
 
     # ---- retrieval ----------------------------------------------------
-    def retrieve(self, query: str, k: int = 3, *, area: str | None = None) -> RAGContext:
+    def retrieve(self, query: str, k: int = 3, *, area: str | None = None, corp: CorpIndex) -> RAGContext:
         kesg_hits = hybrid_search(
             query=query,
             vector_index=self.kesg_index,
@@ -240,16 +252,16 @@ class HybridRAG:
         retrieval_decision: RetrievalDecision | None = None
         corp_hits = hybrid_search(
             query=query,
-            vector_index=self.corp_index,
-            bm25_index=self.corp_bm25_index,
+            vector_index=corp.vector,
+            bm25_index=corp.bm25,
             k=k,
         )
         if area is not None:
             cascade = run_retrieval_cascade(
                 area=area,
                 query=query,
-                vector_index=self.corp_index,
-                bm25_index=self.corp_bm25_index,
+                vector_index=corp.vector,
+                bm25_index=corp.bm25,
                 k=k,
                 gate_enabled=_gate_blocking_enabled(),
             )
@@ -265,9 +277,9 @@ class HybridRAG:
         )
         return ctx
 
-    def retrieve_for_area(self, area: str, k: int = 5) -> RAGContext:
+    def retrieve_for_area(self, area: str, k: int = 5, *, corp: CorpIndex) -> RAGContext:
         query = _expand_query_with_search_terms(_area_query(area), area)
-        return self.retrieve(query, k=k, area=area)
+        return self.retrieve(query, k=k, area=area, corp=corp)
 
     # ---- generation ---------------------------------------------------
     def generate_section(
@@ -278,9 +290,10 @@ class HybridRAG:
         *,
         demo_greenwash: bool = False,
         context: RAGContext | None = None,
+        corp: CorpIndex,
     ) -> GenerationResult:
         assert area in ("E", "S", "G"), "area must be one of E/S/G"
-        ctx = context or self.retrieve_for_area(area, k=5)
+        ctx = context or self.retrieve_for_area(area, k=5, corp=corp)
         corp_ctx = report.to_context_dict()
         system = (
             "당신은 한국 K-ESG 가이드라인을 준수하는 ESG 공시 보고서 전문 작성자다. "
