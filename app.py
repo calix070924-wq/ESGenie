@@ -232,13 +232,21 @@ def _handle_uploads() -> tuple[list[dict[str, str]], dict[str, str]]:
         tmp.mkdir(parents=True, exist_ok=True)
         st.session_state.upload_paths = {}
         st.session_state.upload_roles = {}
+        # 라우팅 결과 세션 캐시 — Streamlit은 위젯 조작마다 전체 재실행되므로,
+        # 캐시 없이는 업로드된 스캔본마다 매 rerun에 Upstage DP 1p 호출이 반복된다
+        # (지연 + 과금). 같은 (파일명, 크기)면 재라우팅하지 않는다.
+        route_cache: dict[tuple[str, int], object] = st.session_state.setdefault("_route_cache", {})
         for uf in uploads:
             path = tmp / uf.name
             path.write_bytes(uf.getbuffer())
             st.session_state.upload_paths[uf.name] = str(path)
             role = "supplier_claim" if is_saq_upload(str(path), file_name=uf.name) else "evidence"
             st.session_state.upload_roles[uf.name] = role
-            dec = ocr_router.route_document(str(path))
+            cache_key = (uf.name, int(uf.size or 0))
+            dec = route_cache.get(cache_key)
+            if dec is None:
+                dec = ocr_router.route_document(str(path))
+                route_cache[cache_key] = dec
             upload_rows.append(
                 {
                     "파일명": uf.name,
@@ -251,6 +259,7 @@ def _handle_uploads() -> tuple[list[dict[str, str]], dict[str, str]]:
     elif st.session_state.upload_paths:
         st.session_state.upload_paths = {}
         st.session_state.upload_roles = {}
+        st.session_state.pop("_route_cache", None)
 
     return upload_rows, st.session_state.upload_paths
 
@@ -551,12 +560,34 @@ subtitle = (
     "공시 자료와 증빙 서류를 모아 K-ESG 진단, 그린워싱 검증, 제출 서류 생성까지 한 번에 처리합니다."
 )
 
+def _data_source_badge(result) -> tuple[str, str] | None:
+    """분석 결과의 데이터 출처 배지 (라벨, 톤).
+
+    라이브 DART 실패 시 조용히 샘플로 폴백하는 설계(dart_client.load_report)라,
+    심사·시연 중 어떤 데이터를 보고 있는지 화면에 항상 명시한다.
+    """
+    if result is None:
+        return None
+    report = getattr(result, "report", None)
+    if report is None:
+        return ("증빙 기반 (DART 미사용)", "neutral")
+    source = getattr(report, "source", "")
+    if source == "dart_api":
+        return ("DART 실시간", "success")
+    if source == "sample":
+        return ("샘플 데이터", "warning")
+    return ("수동 입력", "neutral")
+
+
 hero_badges = [
     badge_html(status_label, status_tone),
     badge_html(st.session_state.purpose_select, "neutral"),
     badge_html(industry or "업종 미선택", "neutral"),
     badge_html(AREA_LABELS[area], "neutral"),
 ]
+_source_badge = _data_source_badge(result)
+if _source_badge is not None:
+    hero_badges.append(badge_html(*_source_badge))
 hero_meta = [
     display_name,
     f"{report_year} 기준",
@@ -578,6 +609,21 @@ if corp_name and corp_name != corp_name_raw:
     st.caption("🔒 시연 익명화 적용 — 실명 대신 익명으로 표시합니다. DART 및 내부 처리에는 실제 식별값이 사용됩니다.")
 st.caption(status_detail)
 
+if st.session_state.get("_run_error"):
+    st.error(
+        "분석 중 오류가 발생했습니다 — 이전 결과는 유지됩니다. "
+        f"터미널 로그에서 상세를 확인하세요.\n\n`{st.session_state['_run_error']}`"
+    )
+
+# 라이브 DART를 요청했는데 결과가 실시간이 아니면(장애·키 문제로 폴백) 명시적으로 경고
+if (
+    result is not None
+    and not is_result_stale
+    and bool((st.session_state.last_run_inputs or {}).get("use_dart"))
+    and getattr(getattr(result, "report", None), "source", "") != "dart_api"
+):
+    st.warning("⚠️ DART 실시간 조회에 실패해 대체 데이터로 분석되었습니다. 네트워크·DART_API_KEY를 확인하세요.")
+
 if run_btn:
     render_pipeline_loading("L0~L5 파이프라인 실행 중 — 서류 읽기 → 데이터 통합 → 보고서 생성 → 그린워싱 검증 → 규정 점검 → 제출 서류 생성")
     with st.spinner("분석을 진행하고 있습니다…"):
@@ -590,27 +636,34 @@ if run_btn:
             llm_judge_opt,
             use_dart,
         )
-        st.session_state.result = _run_pipeline_now(
-            corp_code=corp_code,
-            corp_name=corp_name,
-            industry=industry,
-            report_year=report_year,
-            use_dart=use_dart,
-            area=area,
-            threshold=threshold,
-            max_iter=max_iter,
-            demo_greenwash=demo_greenwash,
-            llm_judge_opt=llm_judge_opt,
-            upload_paths=upload_paths,
-            profile_choice=profile_choice,
-        )
-        st.session_state.last_run_inputs = snapshot
-        APP_LOGGER.info(
-            "분석 완료 corp=%s area=%s sections=%s",
-            corp_name or corp_name_raw,
-            area,
-            sorted(st.session_state.result.sections.keys()) if st.session_state.result is not None else [],
-        )
+        # 시연 방어: 파이프라인 예외가 화면 전체 traceback으로 노출되지 않도록 감싼다.
+        # 실패 시 이전 결과·설정 스냅샷은 그대로 유지 → 데모를 이어갈 수 있다.
+        try:
+            st.session_state.result = _run_pipeline_now(
+                corp_code=corp_code,
+                corp_name=corp_name,
+                industry=industry,
+                report_year=report_year,
+                use_dart=use_dart,
+                area=area,
+                threshold=threshold,
+                max_iter=max_iter,
+                demo_greenwash=demo_greenwash,
+                llm_judge_opt=llm_judge_opt,
+                upload_paths=upload_paths,
+                profile_choice=profile_choice,
+            )
+            st.session_state.last_run_inputs = snapshot
+            st.session_state.pop("_run_error", None)
+            APP_LOGGER.info(
+                "분석 완료 corp=%s area=%s sections=%s",
+                corp_name or corp_name_raw,
+                area,
+                sorted(st.session_state.result.sections.keys()) if st.session_state.result is not None else [],
+            )
+        except Exception as exc:  # noqa: BLE001 — 시연 중 어떤 예외도 화면을 죽이면 안 됨
+            APP_LOGGER.exception("분석 실패 corp=%s area=%s", corp_name or corp_name_raw, area)
+            st.session_state["_run_error"] = f"{type(exc).__name__}: {exc}"
     st.rerun()
 
 result = st.session_state.result
