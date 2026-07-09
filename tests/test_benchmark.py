@@ -68,7 +68,8 @@ class TestMetrics:
 
 class TestRunBenchmark:
     @pytest.fixture(scope="class")
-    def reports(self):
+    @classmethod
+    def reports(cls):
         return run_benchmark(["rule", "hybrid", "llm_only"])
 
     def test_all_detectors_cover_all_cases(self, reports):

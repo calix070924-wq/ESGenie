@@ -86,7 +86,8 @@ class TestUnifiedSchemas:
 
 class TestSsotGraph:
     @pytest.fixture(scope="class")
-    def sme_report(self):
+    @classmethod
+    def sme_report(cls):
         return load_report("SME001")
 
     def test_build_from_dart_origin(self, sme_report):
@@ -353,7 +354,8 @@ class TestDetector:
 
 class TestSsotPipeline:
     @pytest.fixture(scope="class")
-    def setup(self):
+    @classmethod
+    def setup(cls):
         report = load_report("SME001")
         graph = build_unified_graph(
             report, [_kepco_extraction(), _policy_extraction()],
