@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import html
 import json
+import logging
 import os
 import re
 from collections import Counter
@@ -11,6 +12,8 @@ from typing import Any
 import pandas as pd
 import plotly.graph_objects as go
 import streamlit as st
+
+logger = logging.getLogger(__name__)
 
 from esgenie.benchmark import format_report as bench_format
 from esgenie.benchmark import load_benchmark, run_benchmark
@@ -469,6 +472,7 @@ def _get_assembled_report(result):
     try:
         doc = assemble_report(result)
     except Exception:
+        logger.exception("assemble_report 실패 — 보고서 조립 중단")
         return None, None
 
     pdf_path = None
@@ -482,13 +486,18 @@ def _get_assembled_report(result):
 
 
 def _download_if_exists(label, path, mime, *, container=None, **kw) -> None:
-    """경로가 실존할 때만 다운로드 버튼을 렌더한다(사이 파일 삭제/이동으로 인한 크래시 방지)."""
+    """다운로드 버튼을 렌더한다. open 실패(파일 삭제/이동으로 인한 레이스 포함) 시 크래시 대신 캡션 폴백."""
     target = container if container is not None else st
-    if path and os.path.exists(path):
-        with open(path, "rb") as f:
-            target.download_button(label, f.read(), mime=mime, **kw)
-    else:
+    if not path:
         target.caption("파일 없음 — 다시 분석하면 생성됩니다")
+        return
+    try:
+        with open(path, "rb") as f:
+            data = f.read()
+    except OSError:
+        target.caption("파일 없음 — 다시 분석하면 생성됩니다")
+        return
+    target.download_button(label, data, mime=mime, **kw)
 
 
 def render_deliverables_workspace(result, active_area: str, gradient: str) -> None:
@@ -529,15 +538,13 @@ def render_deliverables_workspace(result, active_area: str, gradient: str) -> No
     ])
     d1, d2, d3 = st.columns(3)
     with d1:
-        if pdf_path and os.path.exists(pdf_path):
-            with open(pdf_path, "rb") as fh:
-                st.download_button(
-                    "📥 통합 보고서 (.pdf)",
-                    fh.read(),
-                    file_name=os.path.basename(pdf_path),
-                    mime="application/pdf",
-                    width='stretch',
-                )
+        _download_if_exists(
+            "📥 통합 보고서 (.pdf)",
+            pdf_path,
+            "application/pdf",
+            file_name=os.path.basename(pdf_path) if pdf_path else "",
+            width='stretch',
+        )
         st.download_button(
             "📥 통합 보고서 (.md)",
             doc.to_markdown().encode(),
@@ -722,15 +729,13 @@ def render_submission_workspace(result, active_area: str, *, focus: str = "both"
     ])
     d1, d2, d3 = st.columns(3)
     with d1:
-        if pdf_path and os.path.exists(pdf_path):
-            with open(pdf_path, "rb") as fh:
-                st.download_button(
-                    "📥 통합 보고서 (.pdf)",
-                    fh.read(),
-                    file_name=os.path.basename(pdf_path),
-                    mime="application/pdf",
-                    width='stretch',
-                )
+        _download_if_exists(
+            "📥 통합 보고서 (.pdf)",
+            pdf_path,
+            "application/pdf",
+            file_name=os.path.basename(pdf_path) if pdf_path else "",
+            width='stretch',
+        )
         st.download_button(
             "📥 통합 보고서 (.md)",
             doc.to_markdown().encode(),

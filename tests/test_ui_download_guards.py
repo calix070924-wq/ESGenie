@@ -86,6 +86,27 @@ def test_download_if_exists_container_receives_caption(tabs_module, tmp_path):
     assert not tabs_module.st.caption.called
 
 
+def test_download_if_exists_race_between_check_and_open(tabs_module, tmp_path, monkeypatch):
+    """exists-then-deleted 레이스: 파일은 실재하지만 open() 시점에 사라진 상황을 재현한다.
+
+    os.path.exists를 건드리지 않고 open 자체가 FileNotFoundError를 던지도록 만들어,
+    선체크가 없어도(또는 선체크가 통과한 뒤에도) open 실패가 캡션 폴백으로 흡수되는지 검증한다.
+    """
+    p = tmp_path / "report.xlsx"
+    p.write_bytes(b"data")
+
+    def _raising_open(*a, **k):
+        raise FileNotFoundError("race: file removed between check and open")
+
+    monkeypatch.setattr(tabs_module, "open", _raising_open, raising=False)
+
+    tabs_module._download_if_exists("label", str(p), "application/octet-stream")
+
+    assert not tabs_module.st.download_button.called
+    caption_texts = [str(c.args[0]) for c in tabs_module.st.caption.call_args_list]
+    assert any("파일 없음" in t for t in caption_texts)
+
+
 # ── M2: _get_assembled_report + 호출부 ────────────────────────────────
 
 def test_get_assembled_report_returns_none_tuple_on_assemble_failure(tabs_module, monkeypatch):
@@ -100,6 +121,22 @@ def test_get_assembled_report_returns_none_tuple_on_assemble_failure(tabs_module
 
     assert doc is None
     assert pdf_path is None
+
+
+def test_get_assembled_report_logs_exception_on_assemble_failure(tabs_module, monkeypatch):
+    monkeypatch.setattr("esgenie.layer6_report.assemble_report", _raise_assemble)
+    fake_logger = MagicMock()
+    monkeypatch.setattr(tabs_module, "logger", fake_logger)
+    result = SimpleNamespace(
+        sections={"E": object()},
+        report=SimpleNamespace(corp_name="테스트"),
+        risk_rows=[],
+    )
+
+    doc, pdf_path = tabs_module._get_assembled_report(result)
+
+    assert doc is None and pdf_path is None
+    fake_logger.exception.assert_called_once()
 
 
 def test_render_deliverables_workspace_handles_assemble_failure(tabs_module, monkeypatch):
