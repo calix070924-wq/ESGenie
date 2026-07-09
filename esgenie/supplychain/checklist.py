@@ -23,6 +23,7 @@ _ACTION: dict[str, str] = {
     "insufficient": "증빙 업로드",
     "hitl_required": "담당자 작성",
     "flagged": "검토·보완",
+    "draft_ready": "초안 검토",
 }
 
 
@@ -60,8 +61,9 @@ def build_checklist(
             continue
         detail = a.rationale
         if a.status == "flagged":
-            # flagged는 rationale보다 경고(flags)가 핵심
             detail = "; ".join(a.flags) or a.rationale or "검토 필요"
+        elif a.status == "draft_ready":
+            detail = "AI 초안이 생성되었습니다. 내용을 검토한 뒤 승인해 주세요."
         items.append(ChecklistItem(
             qid=a.qid,
             section=a.section,

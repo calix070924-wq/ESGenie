@@ -38,12 +38,14 @@ _STATUS_STYLE: dict[str, tuple[str, str]] = {
     "flagged":        ("검토필요", "#FCE4E4"),
     "hitl_required":  ("작성필요", "#DDEBF7"),
     "not_applicable": ("해당없음", "#EAEAEA"),
+    "draft_ready":    ("AI초안(승인전)", "#E8DAEF"),
 }
 _HEADER_BG = "#1F4E78"
 _CHECK_ACTION_BG: dict[str, str] = {
     "증빙 업로드": "#F2F2F2",
     "담당자 작성": "#DDEBF7",
     "검토·보완":   "#FCE4E4",
+    "초안 검토":   "#E8DAEF",
 }
 
 
@@ -266,11 +268,21 @@ def export_response_sheet_pdf(
             style_cmds.append(("BACKGROUND", (0, ri), (-1, ri), colors.HexColor("#D9E1F2")))
         ri += 1
         label, bg = _STATUS_STYLE.get(a.status, (a.status, "#FFFFFF"))
+        if a.status == "draft_ready" and getattr(a, "draft_text", ""):
+            draft_display = "[AI 초안 — 승인 전]<br/>" + a.draft_text.replace("\n", "<br/>")
+            citations = getattr(a, "draft_citations", []) or []
+            if citations:
+                cite_parts = [f"{c.get('source_file', '')} {c.get('node_id', '')} p.{(c.get('page') or 0) + 1}"
+                              for c in citations]
+                draft_display += "<br/>출처: " + " / ".join(cite_parts)
+            answer_para = Paragraph(draft_display, cell)
+        else:
+            answer_para = Paragraph(_fmt_value(a.value), cell)
         data.append([
             Paragraph(a.qid, cell),
             Paragraph(a.section, cell),
             Paragraph(a.question_text, cell),
-            Paragraph(_fmt_value(a.value), cell),
+            answer_para,
             Paragraph(label, cell_c),
             Paragraph(_fmt_evidence(a, fig_map) or "—", cell),
         ])

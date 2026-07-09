@@ -120,6 +120,7 @@ def export_response_sheet(sheet: ResponseSheet, out_dir: str | Path) -> str:
         "flagged":       PatternFill("solid", fgColor="FCE4E4"),
         "hitl_required": PatternFill("solid", fgColor="DDEBF7"),  # 작성필요 — 연한 파랑
         "not_applicable": PatternFill("solid", fgColor="EAEAEA"),  # 해당없음 — 회색
+        "draft_ready":   PatternFill("solid", fgColor="E8DAEF"),  # AI초안 — 연보라
     }
     group_fill = PatternFill("solid", fgColor="D9E1F2")
     r = header_row + 1
@@ -140,7 +141,16 @@ def export_response_sheet(sheet: ResponseSheet, out_dir: str | Path) -> str:
         ws.cell(row=r, column=1, value=a.qid)
         ws.cell(row=r, column=2, value=a.section)
         ws.cell(row=r, column=3, value=a.question_text).alignment = Alignment(wrap_text=True)
-        ws.cell(row=r, column=4, value=_fmt_value(a.value)).alignment = Alignment(wrap_text=True)
+        if a.status == "draft_ready" and getattr(a, "draft_text", ""):
+            answer_text = f"[AI 초안 — 승인 전]\n{a.draft_text}"
+            citations = getattr(a, "draft_citations", []) or []
+            if citations:
+                cite_lines = [f"{c.get('source_file', '')} · {c.get('node_id', '')} · p.{(c.get('page') or 0) + 1}"
+                              for c in citations]
+                answer_text += "\n\n출처: " + " / ".join(cite_lines)
+            ws.cell(row=r, column=4, value=answer_text).alignment = Alignment(wrap_text=True)
+        else:
+            ws.cell(row=r, column=4, value=_fmt_value(a.value)).alignment = Alignment(wrap_text=True)
         badge = ws.cell(row=r, column=5, value=a.badge)
         badge.alignment = Alignment(horizontal="center")
         ws.cell(row=r, column=6, value=_fmt_evidence(a)).alignment = Alignment(wrap_text=True)
@@ -173,6 +183,7 @@ def export_response_sheet(sheet: ResponseSheet, out_dir: str | Path) -> str:
             "증빙 업로드": PatternFill("solid", fgColor="F2F2F2"),
             "담당자 작성": PatternFill("solid", fgColor="DDEBF7"),
             "검토·보완":   PatternFill("solid", fgColor="FCE4E4"),
+            "초안 검토":   PatternFill("solid", fgColor="E8DAEF"),
         }
         for ridx, row in enumerate(rows, start=5):
             for col, key in enumerate(headers, start=1):
