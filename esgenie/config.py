@@ -55,7 +55,7 @@ def load_settings() -> Settings:
         anthropic_model=os.getenv("ANTHROPIC_MODEL", "claude-haiku-4-5-20251001"),
         embed_model=os.getenv("EMBED_MODEL", "paraphrase-multilingual-MiniLM-L12-v2"),
         azure_openai_endpoint=os.getenv("AZURE_OPENAI_ENDPOINT") or None,
-        azure_api_version=os.getenv("AZURE_OPENAI_API_VERSION", "2024-10-21"),
+        azure_api_version=os.getenv("AZURE_OPENAI_API_VERSION") or "2024-10-21",
         force_mock=os.getenv("ESGENIE_FORCE_MOCK", "0") == "1",
         strict_llm=os.getenv("ESGENIE_STRICT", "0") == "1",
         active_industry=os.getenv("ESGENIE_INDUSTRY") or None,
