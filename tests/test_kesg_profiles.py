@@ -51,11 +51,13 @@ class TestDetectProfile:
 
 class TestExtractWithProfile:
     @pytest.fixture(scope="class")
-    def samsung(self):
+    @classmethod
+    def samsung(cls):
         return load_report("005930")
 
     @pytest.fixture(scope="class")
-    def sme(self):
+    @classmethod
+    def sme(cls):
         return load_report("SME001")
 
     def test_auto_full_for_listed(self, samsung):
