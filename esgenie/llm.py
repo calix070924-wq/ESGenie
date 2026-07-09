@@ -50,7 +50,7 @@ class LLMClient:
                         else:
                             self._openai_client = AzureOpenAI(
                                 api_key=SETTINGS.openai_api_key,
-                                api_version="2025-01-01-preview",
+                                api_version=SETTINGS.azure_api_version,
                                 azure_endpoint=SETTINGS.azure_openai_endpoint,
                             )
                     else:
