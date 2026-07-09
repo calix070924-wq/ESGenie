@@ -1369,6 +1369,29 @@ def _render_supplychain_answer_detail(result, answer, *, question_map: dict[str,
                 st.caption(row["내용"])
 
 
+def _get_cached_response_sheet(result, framework, *, supplier_claims=None):
+    """respond_from_pipeline(enable_drafts=True) 결과를 세션 캐시. LLM 재호출 방지."""
+    corp_name = (
+        getattr(getattr(result, "report", None), "corp_name", "")
+        or getattr(result, "corp_name", "") or ""
+    )
+    claims = supplier_claims or {}
+    sig = (
+        corp_name,
+        framework.key if hasattr(framework, "key") else str(framework),
+        len(getattr(getattr(result, "v15_trace", None), "data_points", []) or []),
+        len(getattr(getattr(result, "extraction", None), "mapped", {}) or {}),
+        tuple(sorted(claims.keys())),
+        len(claims),
+    )
+    cached = st.session_state.get("_cached_response_sheet")
+    if cached and cached[0] == sig:
+        return cached[1]
+    sheet = respond_from_pipeline(result, framework, supplier_claims=supplier_claims, enable_drafts=True)
+    st.session_state["_cached_response_sheet"] = (sig, sheet)
+    return sheet
+
+
 def _render_responder_workspace(
     result,
     gradient: str,
@@ -1402,17 +1425,19 @@ def _render_responder_workspace(
 
     supplier_claims = getattr(result, "supplier_claims", None) or {}
     supplier_claim_files = getattr(result, "supplier_claim_files", None) or []
-    sheet = respond_from_pipeline(result, framework, supplier_claims=supplier_claims)
+    sheet = _get_cached_response_sheet(result, framework, supplier_claims=supplier_claims)
     question_map = {question.qid: question for question in framework.questions}
 
-    c1, c2, c3, c4 = st.columns(4)
+    c1, c2, c3, c4, c5 = st.columns(5)
     c1.metric("자동응답", f"{sheet.auto_pct:.0f}%")
-    c2.metric("작성필요 (✍️)", f"{sheet.hitl_pct:.0f}%")
-    c3.metric("증빙대기 (❗)", f"{sheet.pending_pct:.0f}%")
-    c4.metric("검토 필요 (🚩)", f"{sheet.flagged_count}건")
+    c2.metric("AI초안 (🤖)", f"{sheet.draft_pct:.0f}%")
+    c3.metric("작성필요 (✍️)", f"{sheet.hitl_pct:.0f}%")
+    c4.metric("증빙대기 (❗)", f"{sheet.pending_pct:.0f}%")
+    c5.metric("검토 필요 (🚩)", f"{sheet.flagged_count}건")
     st.caption(
         f"문항 {len(sheet.answers)}개 (분모 {sheet.denominator}개, 해당없음 제외) · "
-        "자동응답=기계가 답 채움 / 작성필요=사람 서술 / 증빙대기=증빙 업로드 시 자동화"
+        "자동응답=기계가 답 채움 / AI초안=근거게이트 통과 초안(담당자 승인 전) / "
+        "작성필요=사람 서술 / 증빙대기=증빙 업로드 시 자동화"
     )
 
     if supplier_claims:
@@ -1446,6 +1471,34 @@ def _render_responder_workspace(
         for a in sheet.answers
     ]
     st.dataframe(pd.DataFrame(rows), hide_index=True, width='stretch')
+
+    draft_answers = [a for a in sheet.answers if a.status == "draft_ready"]
+    if draft_answers:
+        with st.expander(f"🤖 AI 초안 항목 ({len(draft_answers)}건)", expanded=True):
+            for da in draft_answers:
+                st.markdown(f"**{da.question_text}**")
+                st.markdown(da.draft_text)
+                if da.draft_citations:
+                    st.markdown("**근거 발췌**")
+                    for cit in da.draft_citations:
+                        retrieval_tag = cit.get("retrieval", "code_match")
+                        st.markdown(
+                            f"- {cit.get('source_file', '—')} · "
+                            f"{cit.get('node_id', '')} · "
+                            f"p.{(cit.get('page') or 0) + 1} · "
+                            f"retrieval: {retrieval_tag}"
+                        )
+                if da.draft_grounding:
+                    hard = da.draft_grounding.get("hard_fails", [])
+                    soft = da.draft_grounding.get("soft_flags", [])
+                    faith = da.draft_grounding.get("faithfulness", 0.0)
+                    gates = []
+                    for g in ("G1", "G2", "G4", "G5"):
+                        failed = any(g.lower() in h.lower() for h in hard + soft)
+                        gates.append(f"{g} {'✗' if failed else '✓'}")
+                    st.markdown(f"게이트: {' · '.join(gates)} · faithfulness {faith:.2f}")
+                st.caption("이 초안은 담당자 검토·승인 후 사용하세요.")
+                st.markdown("---")
 
     detail_answers = [a for a in sheet.answers if a.evidence_links or a.flags or a.rationale]
     if detail_answers:
