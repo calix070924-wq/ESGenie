@@ -43,6 +43,8 @@ class Settings:
 
     @property
     def use_mock_dart(self) -> bool:
+        if self.force_mock:
+            return True
         return not self.dart_api_key
 
 

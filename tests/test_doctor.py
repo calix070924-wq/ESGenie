@@ -54,3 +54,45 @@ class TestDoctor:
         r = diagnose(smoke=True)
         assert r["smoke"]["ok"], r["smoke"].get("error")
         assert "커버리지" not in r["smoke"].get("error", "")
+
+
+class TestForceMockOverridesKeys:
+    """force_mock=1은 실 키가 있어도 모든 외부 연동을 mock으로 강제해야 한다.
+
+    테스트 결정성 보장 — .env에 실 키가 존재하는 환경에서도 mock 경로로만 돌게 한다.
+    use_mock_llm/use_mock_dart 와 ocr_router의 키 게터가 force_mock을 대칭으로 존중해야 한다.
+    """
+
+    def _settings(self, **overrides):
+        from esgenie.config import Settings
+        base = dict(
+            openai_api_key="real-openai",
+            anthropic_api_key="real-anthropic",
+            dart_api_key="real-dart",
+            openai_model="gpt-4.1-mini",
+            anthropic_model="claude-haiku-4-5-20251001",
+            embed_model="paraphrase-multilingual-MiniLM-L12-v2",
+        )
+        base.update(overrides)
+        return Settings(**base)
+
+    def test_use_mock_dart_respects_force_mock(self):
+        s = self._settings(force_mock=True)
+        assert s.use_mock_dart is True
+
+    def test_use_mock_llm_respects_force_mock(self):
+        s = self._settings(force_mock=True)
+        assert s.use_mock_llm is True
+
+    def test_upstage_key_none_under_force_mock(self, monkeypatch):
+        """conftest가 ESGENIE_FORCE_MOCK=1을 걸어 SETTINGS.force_mock=True 이므로,
+        실 UPSTAGE_API_KEY가 있어도 _get_upstage_key()는 None이어야 한다."""
+        import esgenie.ssot.ocr_router as router
+        monkeypatch.setenv("UPSTAGE_API_KEY", "real-upstage")
+        assert router._get_upstage_key() is None
+
+    def test_no_force_mock_still_reads_keys(self, monkeypatch):
+        """force_mock=False일 땐 종전과 동일하게 실 키를 읽어야 한다 (런타임 동작 불변)."""
+        s = self._settings(force_mock=False)
+        assert s.use_mock_dart is False
+        assert s.use_mock_llm is False

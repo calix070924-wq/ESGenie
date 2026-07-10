@@ -589,8 +589,11 @@ def _pin_totals_from_raw(
 # ---- 정형 채널 내부 헬퍼 ------------------------------------------------------
 
 def _get_upstage_key() -> str | None:
-    """Upstage API 키 조회 (UPSTAGE_API_KEY)."""
+    """Upstage API 키 조회 (UPSTAGE_API_KEY, force_mock 시 None)."""
     import os
+    from ..config import SETTINGS
+    if SETTINGS.force_mock:
+        return None
     return os.getenv("UPSTAGE_API_KEY") or None
 
 
