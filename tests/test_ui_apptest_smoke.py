@@ -114,12 +114,10 @@ def test_t3_expert_mode_renders_ssot_and_lab(mock_result):
 
 # ---- T4 M1·M3 회귀 (다운로드 가드) ------------------------------------------
 
-@pytest.mark.xfail(reason="다운로드 파일 누락 가드는 feature/ui-download-guards 머지 대기", strict=False)
 def test_t4_missing_download_files_warn_not_crash(mock_result):
     """export_paths 키는 있으나 파일이 없는 상태에서도 FileNotFoundError 없이 렌더돼야 한다.
 
-    이 가드(파일 부재 → 경고 처리)는 팀원 작업(feature/ui-download-guards) 결과물이므로,
-    머지 전에는 xfail 로 둔다. 머지 후 xpass 로 전환되면 마커를 제거한다.
+    이 가드(파일 부재 → 경고 처리)는 feature/ui-download-guards(PR #29)로 main 에 머지됨.
 
     module-scope fixture 의 실제 산출물을 삭제하면 뒤따르는 테스트가 깨지므로,
     파일을 지우지 않고 export_paths 를 존재하지 않는 경로로 가리키게 한다(키는 유지).
@@ -151,8 +149,10 @@ def test_t5_run_error_sets_flag_and_keeps_prior_result(monkeypatch, mock_result)
 
     at = _seed_result(_fresh_app(), mock_result)
     at.run()
-    # 결과가 이미 있으므로 버튼 라벨은 "다시 분석"이다. 이 버튼을 눌러 분석부 예외를 유발한다.
-    at.button[0].click().run()
+    # 결과가 이미 있으므로 버튼 라벨은 "다시 분석"이다. 인덱스 대신 라벨로 찾아 눌러
+    # 버튼 순서가 바뀌어도 깨지지 않게 한다.
+    analyze_btn = next(b for b in at.button if "분석" in (b.label or ""))
+    analyze_btn.click().run()
 
     assert not at.exception
     assert "_run_error" in at.session_state
