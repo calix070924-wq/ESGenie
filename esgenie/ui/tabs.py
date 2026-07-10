@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import html
 import json
+import logging
 import os
 import re
 from collections import Counter
@@ -11,6 +12,8 @@ from typing import Any
 import pandas as pd
 import plotly.graph_objects as go
 import streamlit as st
+
+logger = logging.getLogger(__name__)
 
 from esgenie.benchmark import format_report as bench_format
 from esgenie.benchmark import load_benchmark, run_benchmark
@@ -466,7 +469,12 @@ def _get_assembled_report(result):
     if cached and cached[0] == sig:
         return cached[1], cached[2]
 
-    doc = assemble_report(result)
+    try:
+        doc = assemble_report(result)
+    except Exception:
+        logger.exception("assemble_report 실패 — 보고서 조립 중단")
+        return None, None
+
     pdf_path = None
     try:
         from esgenie.exporters.report_pdf import export_report_pdf
@@ -475,6 +483,21 @@ def _get_assembled_report(result):
         pdf_path = None
     st.session_state["_assembled_report"] = (sig, doc, pdf_path)
     return doc, pdf_path
+
+
+def _download_if_exists(label, path, mime, *, container=None, **kw) -> None:
+    """다운로드 버튼을 렌더한다. open 실패(파일 삭제/이동으로 인한 레이스 포함) 시 크래시 대신 캡션 폴백."""
+    target = container if container is not None else st
+    if not path:
+        target.caption("파일 없음 — 다시 분석하면 생성됩니다")
+        return
+    try:
+        with open(path, "rb") as f:
+            data = f.read()
+    except OSError:
+        target.caption("파일 없음 — 다시 분석하면 생성됩니다")
+        return
+    target.download_button(label, data, mime=mime, **kw)
 
 
 def render_deliverables_workspace(result, active_area: str, gradient: str) -> None:
@@ -492,6 +515,9 @@ def render_deliverables_workspace(result, active_area: str, gradient: str) -> No
     export_paths = getattr(result, "export_paths", {}) or {}
 
     doc, pdf_path = _get_assembled_report(result)
+    if doc is None:
+        render_empty_state("보고서 조립 실패", "로그를 확인해 주세요.")
+        return
 
     render_download_tiles([
         {
@@ -512,15 +538,13 @@ def render_deliverables_workspace(result, active_area: str, gradient: str) -> No
     ])
     d1, d2, d3 = st.columns(3)
     with d1:
-        if pdf_path and os.path.exists(pdf_path):
-            with open(pdf_path, "rb") as fh:
-                st.download_button(
-                    "📥 통합 보고서 (.pdf)",
-                    fh.read(),
-                    file_name=os.path.basename(pdf_path),
-                    mime="application/pdf",
-                    width='stretch',
-                )
+        _download_if_exists(
+            "📥 통합 보고서 (.pdf)",
+            pdf_path,
+            "application/pdf",
+            file_name=os.path.basename(pdf_path) if pdf_path else "",
+            width='stretch',
+        )
         st.download_button(
             "📥 통합 보고서 (.md)",
             doc.to_markdown().encode(),
@@ -529,25 +553,23 @@ def render_deliverables_workspace(result, active_area: str, gradient: str) -> No
             width='stretch',
         )
     with d2:
-        if export_paths.get("xlsx"):
-            with open(export_paths["xlsx"], "rb") as fh:
-                st.download_button(
-                    "📥 데이터시트 (.xlsx)",
-                    fh.read(),
-                    file_name=os.path.basename(export_paths["xlsx"]),
-                    mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-                    width='stretch',
-                )
+        xlsx_path = export_paths.get("xlsx", "")
+        _download_if_exists(
+            "📥 데이터시트 (.xlsx)",
+            xlsx_path,
+            "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+            file_name=os.path.basename(xlsx_path),
+            width='stretch',
+        )
     with d3:
-        if export_paths.get("audit_json"):
-            with open(export_paths["audit_json"], "rb") as fh:
-                st.download_button(
-                    "📥 감사 추적 (.json)",
-                    fh.read(),
-                    file_name=os.path.basename(export_paths["audit_json"]),
-                    mime="application/json",
-                    width='stretch',
-                )
+        audit_json_path = export_paths.get("audit_json", "")
+        _download_if_exists(
+            "📥 감사 추적 (.json)",
+            audit_json_path,
+            "application/json",
+            file_name=os.path.basename(audit_json_path),
+            width='stretch',
+        )
 
     report_tab, supply_tab = st.tabs(["📝 통합 보고서", "📤 공급망 공시 응답서"])
     with report_tab:
@@ -684,6 +706,9 @@ def render_submission_workspace(result, active_area: str, *, focus: str = "both"
 
     export_paths = getattr(result, "export_paths", {}) or {}
     doc, pdf_path = _get_assembled_report(result)
+    if doc is None:
+        render_empty_state("보고서 조립 실패", "로그를 확인해 주세요.")
+        return
 
     render_download_tiles([
         {
@@ -704,15 +729,13 @@ def render_submission_workspace(result, active_area: str, *, focus: str = "both"
     ])
     d1, d2, d3 = st.columns(3)
     with d1:
-        if pdf_path and os.path.exists(pdf_path):
-            with open(pdf_path, "rb") as fh:
-                st.download_button(
-                    "📥 통합 보고서 (.pdf)",
-                    fh.read(),
-                    file_name=os.path.basename(pdf_path),
-                    mime="application/pdf",
-                    width='stretch',
-                )
+        _download_if_exists(
+            "📥 통합 보고서 (.pdf)",
+            pdf_path,
+            "application/pdf",
+            file_name=os.path.basename(pdf_path) if pdf_path else "",
+            width='stretch',
+        )
         st.download_button(
             "📥 통합 보고서 (.md)",
             doc.to_markdown().encode(),
@@ -721,25 +744,23 @@ def render_submission_workspace(result, active_area: str, *, focus: str = "both"
             width='stretch',
         )
     with d2:
-        if export_paths.get("xlsx"):
-            with open(export_paths["xlsx"], "rb") as fh:
-                st.download_button(
-                    "📥 데이터시트 (.xlsx)",
-                    fh.read(),
-                    file_name=os.path.basename(export_paths["xlsx"]),
-                    mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-                    width='stretch',
-                )
+        xlsx_path = export_paths.get("xlsx", "")
+        _download_if_exists(
+            "📥 데이터시트 (.xlsx)",
+            xlsx_path,
+            "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+            file_name=os.path.basename(xlsx_path),
+            width='stretch',
+        )
     with d3:
-        if export_paths.get("audit_json"):
-            with open(export_paths["audit_json"], "rb") as fh:
-                st.download_button(
-                    "📥 증빙 추적 (.json)",
-                    fh.read(),
-                    file_name=os.path.basename(export_paths["audit_json"]),
-                    mime="application/json",
-                    width='stretch',
-                )
+        audit_json_path = export_paths.get("audit_json", "")
+        _download_if_exists(
+            "📥 증빙 추적 (.json)",
+            audit_json_path,
+            "application/json",
+            file_name=os.path.basename(audit_json_path),
+            width='stretch',
+        )
 
     section_labels = {
         "report": "📝 통합 보고서 미리보기",
@@ -1140,21 +1161,19 @@ def render_audit_tab(
     if show_downloads:
         dl1, dl2, dl3 = st.columns(3)
         with dl1:
-            with open(paths["xlsx"], "rb") as fh:
-                st.download_button(
-                    "📥 K-ESG 데이터시트 (.xlsx)",
-                    fh.read(),
-                    file_name="ESG_DataSheet_대기업제출용.xlsx",
-                    mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-                )
+            _download_if_exists(
+                "📥 K-ESG 데이터시트 (.xlsx)",
+                paths.get("xlsx", ""),
+                "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                file_name="ESG_DataSheet_대기업제출용.xlsx",
+            )
         with dl2:
-            with open(paths["audit_json"], "rb") as fh:
-                st.download_button(
-                    "📥 감사 추적 (.json)",
-                    fh.read(),
-                    file_name="audit_trace.json",
-                    mime="application/json",
-                )
+            _download_if_exists(
+                "📥 감사 추적 (.json)",
+                paths.get("audit_json", ""),
+                "application/json",
+                file_name="audit_trace.json",
+            )
         if sentence_trace:
             with dl3:
                 trace_json = json.dumps(sentence_trace.to_dict(), ensure_ascii=False, indent=2)
@@ -1165,7 +1184,9 @@ def render_audit_tab(
                     mime="application/json",
                 )
 
-    st.info(f"📁 증빙 서류철: `{paths['evidence_dir']}`")
+    evidence_dir = paths.get("evidence_dir", "")
+    if evidence_dir:
+        st.info(f"📁 증빙 서류철: `{evidence_dir}`")
 
     _render_provenance_panel(result)
 
@@ -1526,13 +1547,13 @@ def _render_responder_workspace(
     out_dir = os.path.join("outputs", "_supplychain", sheet.framework_key)
     xlsx_path = export_response_sheet(sheet, out_dir)
     dl_xlsx, dl_pdf = st.columns(2)
-    with open(xlsx_path, "rb") as fh:
-        dl_xlsx.download_button(
-            f"📥 {pillar_labels['doc_kind']} (.xlsx)",
-            fh.read(),
-            file_name=os.path.basename(xlsx_path),
-            mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-        )
+    _download_if_exists(
+        f"📥 {pillar_labels['doc_kind']} (.xlsx)",
+        xlsx_path,
+        "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        container=dl_xlsx,
+        file_name=os.path.basename(xlsx_path),
+    )
     try:
         # 응답서가 참조하는 증빙 원본을 out_dir/evidence_pack 로 복사 → 부록 임베드 가능.
         try:
@@ -1542,13 +1563,13 @@ def _render_responder_workspace(
         # evidence_base_dir=out_dir → out_dir/evidence_pack 의 원본이 있으면 증빙 부록에
         # 원본 페이지+bbox를 임베드. (원본 미복사 시 부록은 자동 스킵 — 본문은 정상)
         pdf_path = export_response_sheet_pdf(sheet, out_dir, evidence_base_dir=out_dir)
-        with open(pdf_path, "rb") as fh:
-            dl_pdf.download_button(
-                f"📄 {pillar_labels['doc_kind']} (.pdf)",
-                fh.read(),
-                file_name=os.path.basename(pdf_path),
-                mime="application/pdf",
-            )
+        _download_if_exists(
+            f"📄 {pillar_labels['doc_kind']} (.pdf)",
+            pdf_path,
+            "application/pdf",
+            container=dl_pdf,
+            file_name=os.path.basename(pdf_path),
+        )
     except Exception as exc:  # noqa: BLE001  — PDF 실패해도 xlsx 경로는 유지
         dl_pdf.caption(f"PDF 생성 불가: {exc}")
 
@@ -1839,7 +1860,7 @@ def _render_provenance_panel(result) -> None:
                 file_name = getattr(evidence, "file_name", "") if evidence else ""
                 page = (getattr(evidence, "page", 0) or 0) if evidence else 0
                 st.caption("원본 문서 내 위치")
-                pdf_path = os.path.join(result.export_paths["evidence_dir"], file_name) if file_name else ""
+                pdf_path = os.path.join(result.export_paths.get("evidence_dir", ""), file_name) if file_name else ""
                 rendered = False
                 if bbox and file_name.lower().endswith(".pdf") and os.path.exists(pdf_path):
                     try:
