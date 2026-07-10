@@ -31,6 +31,8 @@ def _patch_post(monkeypatch, body):
 
 
 def test_upstage_bbox_from_points_and_page(monkeypatch, tmp_path):
+    # 이 테스트는 라이브 키 경로(HTTP 모킹)를 검증하므로 전역 force_mock을 끈다.
+    monkeypatch.setattr("esgenie.config.SETTINGS.force_mock", False)
     monkeypatch.setenv("UPSTAGE_API_KEY", "k")
     # coordinates는 이미 페이지 기준 0~1 정규화된 네 꼭짓점.
     body = {
@@ -73,6 +75,8 @@ def test_upstage_bbox_from_points_and_page(monkeypatch, tmp_path):
 
 
 def test_upstage_table_html_parsed_to_cells(monkeypatch, tmp_path):
+    # 이 테스트는 라이브 키 경로(HTTP 모킹)를 검증하므로 전역 force_mock을 끈다.
+    monkeypatch.setattr("esgenie.config.SETTINGS.force_mock", False)
     monkeypatch.setenv("UPSTAGE_API_KEY", "k")
     html = (
         "<table>"
