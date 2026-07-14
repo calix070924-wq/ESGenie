@@ -1,0 +1,750 @@
+{
+  "version": "1.0",
+  "created": "2026-07-14",
+  "description": "비정형 OCR 신뢰도 채점용 정답셋. 원문만 보고 라벨링(LLM 출력 미참조).",
+  "labeling_rubric": "docs/labeling_rubric.md 판정 기준 준용",
+  "human_gate_note": "2인 독립 라벨 + 불일치 합의 + 일치율(%) 기록은 사람 검수 게이트. labeler2/agreement는 사람이 채움.",
+  "docs": [
+    {
+      "doc_id": "work_hours_2025",
+      "file": "시연증빙세트_한울정밀공업/근로시간관리규정_2025.pdf",
+      "channel_variant": "digital",
+      "synthetic": false,
+      "doc_type_gold": "policy_manual",
+      "metrics_gold": [],
+      "facts_gold": [
+        {
+          "id": "F1",
+          "text": "RBA 행동규범 v8.0 및 근로기준법에 따라 근로시간을 관리한다",
+          "kesg_code_hint": "S-1-1"
+        },
+        {
+          "id": "F2",
+          "text": "주간 총 근로시간은 연장근로 포함 60시간을 초과할 수 없다",
+          "kesg_code_hint": "S-1-1"
+        },
+        {
+          "id": "F3",
+          "text": "법정 기준근로시간은 주 40시간이다",
+          "kesg_code_hint": "S-1-1"
+        },
+        {
+          "id": "F4",
+          "text": "7일 중 최소 1일의 휴일을 보장한다",
+          "kesg_code_hint": "S-1-1"
+        },
+        {
+          "id": "F5",
+          "text": "모든 연장근로는 근로자의 자발적 서면 동의를 얻어야 한다",
+          "kesg_code_hint": "S-1-1"
+        },
+        {
+          "id": "F6",
+          "text": "전자 출퇴근 시스템으로 일 단위 근로시간을 기록한다",
+          "kesg_code_hint": "S-1-1"
+        },
+        {
+          "id": "F7",
+          "text": "주간 60시간 초과 경고 알림을 시행한다",
+          "kesg_code_hint": "S-1-1"
+        }
+      ],
+      "labeler1": "claude-code",
+      "labeler2": null,
+      "agreement": null,
+      "notes": "정량 수치 없음(정성 규정문서). 수치가 추출되면 환각."
+    },
+    {
+      "doc_id": "doc_record_mgmt_2025",
+      "file": "시연증빙세트_한울정밀공업/문서기록관리규정_2025.pdf",
+      "channel_variant": "digital",
+      "synthetic": false,
+      "doc_type_gold": "policy_manual",
+      "metrics_gold": [],
+      "facts_gold": [
+        {
+          "id": "F1",
+          "text": "법규 준수·요건 적합성 입증을 위한 문서와 기록을 체계적으로 관리한다",
+          "kesg_code_hint": "G-3-1"
+        },
+        {
+          "id": "F2",
+          "text": "정책문서(방침서·규정·절차서)는 5년 보존한다",
+          "kesg_code_hint": "G-3-1"
+        },
+        {
+          "id": "F3",
+          "text": "법정기록(인허가·인증서·시험성적서)은 10년 보존한다",
+          "kesg_code_hint": "G-3-1"
+        },
+        {
+          "id": "F4",
+          "text": "전자문서관리시스템(EDMS)으로 통합 관리한다",
+          "kesg_code_hint": "G-3-1"
+        },
+        {
+          "id": "F5",
+          "text": "문서 열람 권한은 직무별로 차등 부여한다",
+          "kesg_code_hint": "G-3-1"
+        },
+        {
+          "id": "F6",
+          "text": "기밀문서는 암호화 보관·접근이력 로깅한다",
+          "kesg_code_hint": "G-4-1"
+        }
+      ],
+      "labeler1": "claude-code",
+      "labeler2": null,
+      "agreement": null,
+      "notes": ""
+    },
+    {
+      "doc_id": "rohs_reach_2025",
+      "file": "시연증빙세트_한울정밀공업/물질규제_RoHS_REACH_2025.pdf",
+      "channel_variant": "digital",
+      "synthetic": false,
+      "doc_type_gold": "policy_manual",
+      "metrics_gold": [],
+      "facts_gold": [
+        {
+          "id": "F1",
+          "text": "RoHS 10종 및 REACH SVHC 함유물질을 관리한다",
+          "kesg_code_hint": "E-5-1"
+        },
+        {
+          "id": "F2",
+          "text": "원자재 입고 시 성분분석 성적서(ICP-OES) 확인한다",
+          "kesg_code_hint": "E-5-1"
+        },
+        {
+          "id": "F3",
+          "text": "연 1회 완제품 RoHS 적합성 시험(공인기관) 실시한다",
+          "kesg_code_hint": "E-5-1"
+        },
+        {
+          "id": "F4",
+          "text": "REACH SVHC 후보물질 갱신을 반기 1회 모니터링한다",
+          "kesg_code_hint": "E-5-1"
+        },
+        {
+          "id": "F5",
+          "text": "원자재 공급사는 불검출 보증서를 제출해야 한다",
+          "kesg_code_hint": "S-6-1"
+        },
+        {
+          "id": "F6",
+          "text": "시험성적서·불검출 보증서는 출하일로부터 10년 보존한다",
+          "kesg_code_hint": "E-5-1"
+        }
+      ],
+      "labeler1": "claude-code",
+      "labeler2": null,
+      "agreement": null,
+      "notes": ""
+    },
+    {
+      "doc_id": "capa_2025",
+      "file": "시연증빙세트_한울정밀공업/시정조치_CAPA절차서_2025.pdf",
+      "channel_variant": "digital",
+      "synthetic": false,
+      "doc_type_gold": "policy_manual",
+      "metrics_gold": [],
+      "facts_gold": [
+        {
+          "id": "F1",
+          "text": "내·외부 감사에서 발견된 부적합 사항을 시정하고 재발을 방지한다",
+          "kesg_code_hint": "G-3-1"
+        },
+        {
+          "id": "F2",
+          "text": "부적합 접수 후 24시간 이내 CAPA 등록한다",
+          "kesg_code_hint": "G-3-1"
+        },
+        {
+          "id": "F3",
+          "text": "근본원인 분석에 5-Why, Fish-bone 기법을 사용한다",
+          "kesg_code_hint": "G-3-1"
+        },
+        {
+          "id": "F4",
+          "text": "유효성 검증은 30일 후 재발 여부로 확인한다",
+          "kesg_code_hint": "G-3-1"
+        },
+        {
+          "id": "F5",
+          "text": "시한: 경미 30일, 중대 14일, 긴급 즉시",
+          "kesg_code_hint": "G-3-1"
+        },
+        {
+          "id": "F6",
+          "text": "CAPA 기록은 최소 5년 보존한다",
+          "kesg_code_hint": "G-3-1"
+        }
+      ],
+      "labeler1": "claude-code",
+      "labeler2": null,
+      "agreement": null,
+      "notes": ""
+    },
+    {
+      "doc_id": "sanitation_housing_2025",
+      "file": "시연증빙세트_한울정밀공업/위생_기숙사관리규정_2025.pdf",
+      "channel_variant": "digital",
+      "synthetic": false,
+      "doc_type_gold": "policy_manual",
+      "metrics_gold": [],
+      "facts_gold": [
+        {
+          "id": "F1",
+          "text": "RBA B-7(Sanitation, Food, Housing)에 따라 위생 환경을 확보한다",
+          "kesg_code_hint": "S-1-1"
+        },
+        {
+          "id": "F2",
+          "text": "화장실은 남녀 구분, 30인당 1개소 이상 설치한다",
+          "kesg_code_hint": "S-1-1"
+        },
+        {
+          "id": "F3",
+          "text": "구내식당은 식품위생법 기준을 준수한다",
+          "kesg_code_hint": "S-1-1"
+        },
+        {
+          "id": "F4",
+          "text": "기숙사는 1인당 최소 4.5㎡ 이상 개인공간을 확보한다",
+          "kesg_code_hint": "S-1-1"
+        },
+        {
+          "id": "F5",
+          "text": "비상구 2개소 이상, 소화기·감지기를 층별 비치한다",
+          "kesg_code_hint": "S-4-1"
+        },
+        {
+          "id": "F6",
+          "text": "입·퇴실 자유를 보장하며 신분증 보관을 금지한다",
+          "kesg_code_hint": "S-5-1"
+        },
+        {
+          "id": "F7",
+          "text": "식중독 예방 교육을 연 2회 실시한다",
+          "kesg_code_hint": "S-1-1"
+        }
+      ],
+      "labeler1": "claude-code",
+      "labeler2": null,
+      "agreement": null,
+      "notes": ""
+    },
+    {
+      "doc_id": "hazmat_2025",
+      "file": "시연증빙세트_한울정밀공업/유해물질관리규정_2025.pdf",
+      "channel_variant": "digital",
+      "synthetic": false,
+      "doc_type_gold": "policy_manual",
+      "metrics_gold": [],
+      "facts_gold": [
+        {
+          "id": "F1",
+          "text": "유해화학물질의 식별·표시·보관·취급·폐기 전 과정을 안전하게 관리한다",
+          "kesg_code_hint": "E-5-1"
+        },
+        {
+          "id": "F2",
+          "text": "모든 화학물질은 MSDS를 비치한다",
+          "kesg_code_hint": "E-5-1"
+        },
+        {
+          "id": "F3",
+          "text": "신규 물질 도입 시 EHS팀 사전 승인을 받는다",
+          "kesg_code_hint": "E-5-1"
+        },
+        {
+          "id": "F4",
+          "text": "유해물질 보관구역은 잠금·환기·누출방지턱을 구비한다",
+          "kesg_code_hint": "E-5-1"
+        },
+        {
+          "id": "F5",
+          "text": "유해폐기물은 허가 업체를 통해 법정 절차에 따라 위탁 처리한다",
+          "kesg_code_hint": "E-6-1"
+        },
+        {
+          "id": "F6",
+          "text": "처리 이력을 5년간 보관한다",
+          "kesg_code_hint": "E-5-1"
+        }
+      ],
+      "labeler1": "claude-code",
+      "labeler2": null,
+      "agreement": null,
+      "notes": ""
+    },
+    {
+      "doc_id": "ip_protection_2025",
+      "file": "시연증빙세트_한울정밀공업/지식재산보호규정_2025.pdf",
+      "channel_variant": "digital",
+      "synthetic": false,
+      "doc_type_gold": "policy_manual",
+      "metrics_gold": [],
+      "facts_gold": [
+        {
+          "id": "F1",
+          "text": "회사 및 거래처의 지식재산권, 영업비밀, 기술 노하우를 보호한다",
+          "kesg_code_hint": "G-4-1"
+        },
+        {
+          "id": "F2",
+          "text": "전 임직원은 입사 시 비밀유지서약서(NDA)에 서명한다",
+          "kesg_code_hint": "G-4-1"
+        },
+        {
+          "id": "F3",
+          "text": "퇴직 후 2년간 비밀유지 의무를 부담한다",
+          "kesg_code_hint": "G-4-1"
+        },
+        {
+          "id": "F4",
+          "text": "외부 방문자는 방문 전 기밀유지 동의서를 작성한다",
+          "kesg_code_hint": "G-4-1"
+        },
+        {
+          "id": "F5",
+          "text": "거래처 기술정보의 무단 복제·유출을 금지한다",
+          "kesg_code_hint": "G-4-1"
+        },
+        {
+          "id": "F6",
+          "text": "지식재산 침해 시 즉시 징계 및 손해배상 청구가 가능하다",
+          "kesg_code_hint": "G-4-1"
+        }
+      ],
+      "labeler1": "claude-code",
+      "labeler2": null,
+      "agreement": null,
+      "notes": ""
+    },
+    {
+      "doc_id": "responsible_minerals_2025",
+      "file": "시연증빙세트_한울정밀공업/책임광물실사정책_2025.pdf",
+      "channel_variant": "digital",
+      "synthetic": false,
+      "doc_type_gold": "policy_manual",
+      "metrics_gold": [],
+      "facts_gold": [
+        {
+          "id": "F1",
+          "text": "3TG(탄탈럼·주석·텅스텐·금) 및 코발트의 공급망을 투명하게 관리한다",
+          "kesg_code_hint": "S-6-1"
+        },
+        {
+          "id": "F2",
+          "text": "OECD 분쟁광물 실사 지침을 적용한다",
+          "kesg_code_hint": "S-6-1"
+        },
+        {
+          "id": "F3",
+          "text": "공급사에 연 1회 CMRT 작성·제출 요청한다",
+          "kesg_code_hint": "S-6-1"
+        },
+        {
+          "id": "F4",
+          "text": "제련소 RMAP 인증 여부를 확인한다",
+          "kesg_code_hint": "S-6-1"
+        },
+        {
+          "id": "F5",
+          "text": "고위험 공급원 식별 시 시정 요구 또는 거래 재검토한다",
+          "kesg_code_hint": "S-6-1"
+        },
+        {
+          "id": "F6",
+          "text": "연 1회 분쟁광물 실사보고서를 공개한다",
+          "kesg_code_hint": "S-6-1"
+        }
+      ],
+      "labeler1": "claude-code",
+      "labeler2": null,
+      "agreement": null,
+      "notes": ""
+    },
+    {
+      "doc_id": "safety_minutes_2025",
+      "file": "data/test_docs/safety_policy_2025.pdf",
+      "channel_variant": "digital",
+      "synthetic": false,
+      "doc_type_gold": "safety_minutes",
+      "metrics_gold": [
+        {
+          "kesg_code": "S-4-2",
+          "value": 0.3,
+          "unit": "%",
+          "tol": 0.05
+        },
+        {
+          "kesg_code": "S-2-6",
+          "value": 62.0,
+          "unit": "%",
+          "tol": 0.5
+        }
+      ],
+      "facts_gold": [
+        {
+          "id": "F1",
+          "text": "산업재해율 목표 0.3% 이하(전년 0.41% 대비 감축)",
+          "kesg_code_hint": "S-4-2"
+        },
+        {
+          "id": "F2",
+          "text": "위험성 평가 연 2회 이상 실시한다",
+          "kesg_code_hint": "S-4-1"
+        },
+        {
+          "id": "F3",
+          "text": "신규 입사자 안전교육 8시간 의무화",
+          "kesg_code_hint": "S-4-1"
+        },
+        {
+          "id": "F4",
+          "text": "유해화학물질 보관구역 CCTV 설치 의결",
+          "kesg_code_hint": "E-5-1"
+        },
+        {
+          "id": "F5",
+          "text": "개인보호구(PPE) 착용 의무 전 공정 확대",
+          "kesg_code_hint": "S-4-1"
+        },
+        {
+          "id": "F6",
+          "text": "야간작업 조명 개선 요청이 2분기 내 조치 완료로 결의됨",
+          "kesg_code_hint": "S-4-1"
+        },
+        {
+          "id": "F7",
+          "text": "결사의 자유 보장: 노동조합 가입률 62%",
+          "kesg_code_hint": "S-2-6"
+        },
+        {
+          "id": "F8",
+          "text": "전원 찬성으로 의결됨",
+          "kesg_code_hint": "S-4-1"
+        }
+      ],
+      "labeler1": "claude-code",
+      "labeler2": null,
+      "agreement": null,
+      "notes": "회의록: 정량(재해율 목표, 노조 가입률) + 정성 혼합 문서"
+    },
+    {
+      "doc_id": "emergency_manual_2025",
+      "file": "data/benchmark_ocr/synthetic_docs/emergency_manual_2025.pdf",
+      "channel_variant": "digital",
+      "synthetic": true,
+      "doc_type_gold": "emergency_manual",
+      "metrics_gold": [],
+      "facts_gold": [
+        {
+          "id": "F1",
+          "text": "화재·폭발·화학물질 누출·자연재해 등 비상상황 대피 절차를 규정한다",
+          "kesg_code_hint": "S-4-1"
+        },
+        {
+          "id": "F2",
+          "text": "1등급(긴급) 시 즉시 전원 대피한다",
+          "kesg_code_hint": "S-4-1"
+        },
+        {
+          "id": "F3",
+          "text": "각 층 2개 이상 대피 경로를 확보한다",
+          "kesg_code_hint": "S-4-1"
+        },
+        {
+          "id": "F4",
+          "text": "집결지는 본관 앞 주차장 A구역이다",
+          "kesg_code_hint": "S-4-1"
+        },
+        {
+          "id": "F5",
+          "text": "비상 연락은 현장 관리자→EHS팀장(5분 이내)→대표이사·119(10분 이내)",
+          "kesg_code_hint": "S-4-1"
+        },
+        {
+          "id": "F6",
+          "text": "전사 합동 소방훈련 연 2회 실시한다",
+          "kesg_code_hint": "S-4-1"
+        },
+        {
+          "id": "F7",
+          "text": "화학물질 누출 대응훈련 반기 1회 실시한다",
+          "kesg_code_hint": "S-4-1"
+        }
+      ],
+      "labeler1": "claude-code",
+      "labeler2": null,
+      "agreement": null,
+      "notes": "synthetic=true. 실문서 부재로 생성. 정량 수치 없음."
+    },
+    {
+      "doc_id": "hr_policy_2025",
+      "file": "data/benchmark_ocr/synthetic_docs/hr_policy_2025.pdf",
+      "channel_variant": "digital",
+      "synthetic": true,
+      "doc_type_gold": "hr_policy",
+      "metrics_gold": [],
+      "facts_gold": [
+        {
+          "id": "F1",
+          "text": "UN 기업과 인권 이행원칙 및 RBA v8.0에 따라 인권을 보호한다",
+          "kesg_code_hint": "S-5-1"
+        },
+        {
+          "id": "F2",
+          "text": "모든 고용은 자발적이며 여권·신분증 보관을 금지한다",
+          "kesg_code_hint": "S-5-1"
+        },
+        {
+          "id": "F3",
+          "text": "채용수수료는 회사가 부담하며 근로자에게 전가하지 않는다",
+          "kesg_code_hint": "S-5-1"
+        },
+        {
+          "id": "F4",
+          "text": "만 18세 미만의 근로자를 고용하지 않는다(아동노동 금지)",
+          "kesg_code_hint": "S-5-1"
+        },
+        {
+          "id": "F5",
+          "text": "성별·나이·국적·종교·장애·성적 지향에 따른 차별을 금지한다",
+          "kesg_code_hint": "S-5-1"
+        },
+        {
+          "id": "F6",
+          "text": "근로자의 노동조합 가입 및 단체교섭권을 보장한다",
+          "kesg_code_hint": "S-2-6"
+        },
+        {
+          "id": "F7",
+          "text": "노사협의회를 분기 1회 정기 개최한다",
+          "kesg_code_hint": "S-2-6"
+        },
+        {
+          "id": "F8",
+          "text": "익명 제보 핫라인을 운영하고 제보자 보복을 금지한다",
+          "kesg_code_hint": "G-5-1"
+        },
+        {
+          "id": "F9",
+          "text": "연 1회 인권영향평가(HRIA)를 실시한다",
+          "kesg_code_hint": "S-5-1"
+        }
+      ],
+      "labeler1": "claude-code",
+      "labeler2": null,
+      "agreement": null,
+      "notes": "synthetic=true. hr_policy 유형 커버리지 보강용."
+    },
+    {
+      "doc_id": "work_hours_2025_scan",
+      "file": "data/benchmark_ocr/scan_variants/근로시간관리규정_2025_scan.pdf",
+      "channel_variant": "scan",
+      "synthetic": false,
+      "doc_type_gold": "policy_manual",
+      "metrics_gold": [],
+      "facts_gold": [
+        {
+          "id": "F1",
+          "text": "RBA 행동규범 v8.0 및 근로기준법에 따라 근로시간을 관리한다",
+          "kesg_code_hint": "S-1-1"
+        },
+        {
+          "id": "F2",
+          "text": "주간 총 근로시간은 연장근로 포함 60시간을 초과할 수 없다",
+          "kesg_code_hint": "S-1-1"
+        },
+        {
+          "id": "F3",
+          "text": "법정 기준근로시간은 주 40시간이다",
+          "kesg_code_hint": "S-1-1"
+        },
+        {
+          "id": "F4",
+          "text": "7일 중 최소 1일의 휴일을 보장한다",
+          "kesg_code_hint": "S-1-1"
+        },
+        {
+          "id": "F5",
+          "text": "모든 연장근로는 근로자의 자발적 서면 동의를 얻어야 한다",
+          "kesg_code_hint": "S-1-1"
+        },
+        {
+          "id": "F6",
+          "text": "전자 출퇴근 시스템으로 일 단위 근로시간을 기록한다",
+          "kesg_code_hint": "S-1-1"
+        },
+        {
+          "id": "F7",
+          "text": "주간 60시간 초과 경고 알림을 시행한다",
+          "kesg_code_hint": "S-1-1"
+        }
+      ],
+      "labeler1": "claude-code",
+      "labeler2": null,
+      "agreement": null,
+      "notes": "scan variant of work_hours_2025 (text layer stripped)"
+    },
+    {
+      "doc_id": "hazmat_2025_scan",
+      "file": "data/benchmark_ocr/scan_variants/유해물질관리규정_2025_scan.pdf",
+      "channel_variant": "scan",
+      "synthetic": false,
+      "doc_type_gold": "policy_manual",
+      "metrics_gold": [],
+      "facts_gold": [
+        {
+          "id": "F1",
+          "text": "유해화학물질의 식별·표시·보관·취급·폐기 전 과정을 안전하게 관리한다",
+          "kesg_code_hint": "E-5-1"
+        },
+        {
+          "id": "F2",
+          "text": "모든 화학물질은 MSDS를 비치한다",
+          "kesg_code_hint": "E-5-1"
+        },
+        {
+          "id": "F3",
+          "text": "신규 물질 도입 시 EHS팀 사전 승인을 받는다",
+          "kesg_code_hint": "E-5-1"
+        },
+        {
+          "id": "F4",
+          "text": "유해물질 보관구역은 잠금·환기·누출방지턱을 구비한다",
+          "kesg_code_hint": "E-5-1"
+        },
+        {
+          "id": "F5",
+          "text": "유해폐기물은 허가 업체를 통해 법정 절차에 따라 위탁 처리한다",
+          "kesg_code_hint": "E-6-1"
+        },
+        {
+          "id": "F6",
+          "text": "처리 이력을 5년간 보관한다",
+          "kesg_code_hint": "E-5-1"
+        }
+      ],
+      "labeler1": "claude-code",
+      "labeler2": null,
+      "agreement": null,
+      "notes": "scan variant of hazmat_2025 (text layer stripped)"
+    },
+    {
+      "doc_id": "responsible_minerals_2025_scan",
+      "file": "data/benchmark_ocr/scan_variants/책임광물실사정책_2025_scan.pdf",
+      "channel_variant": "scan",
+      "synthetic": false,
+      "doc_type_gold": "policy_manual",
+      "metrics_gold": [],
+      "facts_gold": [
+        {
+          "id": "F1",
+          "text": "3TG(탄탈럼·주석·텅스텐·금) 및 코발트의 공급망을 투명하게 관리한다",
+          "kesg_code_hint": "S-6-1"
+        },
+        {
+          "id": "F2",
+          "text": "OECD 분쟁광물 실사 지침을 적용한다",
+          "kesg_code_hint": "S-6-1"
+        },
+        {
+          "id": "F3",
+          "text": "공급사에 연 1회 CMRT 작성·제출 요청한다",
+          "kesg_code_hint": "S-6-1"
+        },
+        {
+          "id": "F4",
+          "text": "제련소 RMAP 인증 여부를 확인한다",
+          "kesg_code_hint": "S-6-1"
+        },
+        {
+          "id": "F5",
+          "text": "고위험 공급원 식별 시 시정 요구 또는 거래 재검토한다",
+          "kesg_code_hint": "S-6-1"
+        },
+        {
+          "id": "F6",
+          "text": "연 1회 분쟁광물 실사보고서를 공개한다",
+          "kesg_code_hint": "S-6-1"
+        }
+      ],
+      "labeler1": "claude-code",
+      "labeler2": null,
+      "agreement": null,
+      "notes": "scan variant of responsible_minerals_2025 (text layer stripped)"
+    },
+    {
+      "doc_id": "safety_minutes_2025_scan",
+      "file": "data/benchmark_ocr/scan_variants/safety_policy_2025_scan.pdf",
+      "channel_variant": "scan",
+      "synthetic": false,
+      "doc_type_gold": "safety_minutes",
+      "metrics_gold": [
+        {
+          "kesg_code": "S-4-2",
+          "value": 0.3,
+          "unit": "%",
+          "tol": 0.05
+        },
+        {
+          "kesg_code": "S-2-6",
+          "value": 62.0,
+          "unit": "%",
+          "tol": 0.5
+        }
+      ],
+      "facts_gold": [
+        {
+          "id": "F1",
+          "text": "산업재해율 목표 0.3% 이하(전년 0.41% 대비 감축)",
+          "kesg_code_hint": "S-4-2"
+        },
+        {
+          "id": "F2",
+          "text": "위험성 평가 연 2회 이상 실시한다",
+          "kesg_code_hint": "S-4-1"
+        },
+        {
+          "id": "F3",
+          "text": "신규 입사자 안전교육 8시간 의무화",
+          "kesg_code_hint": "S-4-1"
+        },
+        {
+          "id": "F4",
+          "text": "유해화학물질 보관구역 CCTV 설치 의결",
+          "kesg_code_hint": "E-5-1"
+        },
+        {
+          "id": "F5",
+          "text": "개인보호구(PPE) 착용 의무 전 공정 확대",
+          "kesg_code_hint": "S-4-1"
+        },
+        {
+          "id": "F6",
+          "text": "야간작업 조명 개선 요청이 2분기 내 조치 완료로 결의됨",
+          "kesg_code_hint": "S-4-1"
+        },
+        {
+          "id": "F7",
+          "text": "결사의 자유 보장: 노동조합 가입률 62%",
+          "kesg_code_hint": "S-2-6"
+        },
+        {
+          "id": "F8",
+          "text": "전원 찬성으로 의결됨",
+          "kesg_code_hint": "S-4-1"
+        }
+      ],
+      "labeler1": "claude-code",
+      "labeler2": null,
+      "agreement": null,
+      "notes": "scan variant of safety_minutes_2025 (text layer stripped, needs Upstage OCR)"
+    }
+  ]
+}
