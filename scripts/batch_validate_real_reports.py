@@ -25,7 +25,7 @@ import logging
 import sys
 import time
 import traceback
-from datetime import date
+from datetime import datetime
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -78,6 +78,8 @@ def _run_one(entry: dict, *, llm_judge: bool, export_report: bool) -> dict:
 def main() -> None:
     parser = argparse.ArgumentParser(description="실보고서 배치 검증")
     parser.add_argument("--only", default=None, help="특정 ticker만 실행 (스모크 테스트)")
+    parser.add_argument("--skip", default=None,
+                        help="제외할 ticker (쉼표 구분, 예: 009150)")
     parser.add_argument("--llm-judge", action="store_true", help="룰+LLM 하이브리드 검출 (비용 발생)")
     parser.add_argument("--export-report", action="store_true", help="회사별 통합 보고서(.md/.pdf) 생성")
     args = parser.parse_args()
@@ -89,6 +91,9 @@ def main() -> None:
         manifest = [e for e in manifest if e["ticker"] == args.only]
         if not manifest:
             raise SystemExit(f"manifest에 없는 ticker: {args.only}")
+    if args.skip:
+        skip = {t.strip() for t in args.skip.split(",")}
+        manifest = [e for e in manifest if e["ticker"] not in skip]
 
     results: list[dict] = []
     for entry in manifest:
@@ -106,7 +111,7 @@ def main() -> None:
 
     out_dir = ROOT / "outputs"
     out_dir.mkdir(exist_ok=True)
-    out_path = out_dir / f"batch_validation_{date.today().isoformat()}.json"
+    out_path = out_dir / f"batch_validation_{datetime.now().strftime('%Y-%m-%d_%H%M')}.json"
     out_path.write_text(json.dumps(results, ensure_ascii=False, indent=2), encoding="utf-8")
 
     # 요약 테이블
