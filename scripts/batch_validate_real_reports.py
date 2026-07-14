@@ -47,7 +47,8 @@ def _run_one(entry: dict, *, llm_judge: bool, export_report: bool) -> dict:
     t0 = time.monotonic()
     try:
         output = pipeline.run(
-            corp_code=entry["ticker"],
+            # DART API는 6자리 종목코드가 아니라 8자리 고유번호(corp_code)를 받는다.
+            corp_code=entry.get("corp_code", entry["ticker"]),
             evidence_files={pdf.name: str(pdf)},
             llm_judge=llm_judge,
             export_report=export_report,
