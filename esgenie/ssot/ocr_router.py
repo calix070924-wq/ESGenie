@@ -1234,6 +1234,30 @@ def _mock_structured(file_path: str, doc_type: str) -> OcrExtraction:
 # 채널 B — 비정형: VLM 우선   (STUB)
 # ====================================================================
 
+# 비정형 텍스트 처리 상한 — 지속가능경영보고서(100p+) 전량 처리를 위해 상향.
+# 기존 max_pages=10 + 프롬프트 4,000자 컷으로는 대형 보고서의 내용 대부분이 유실됐다
+# (2026-07-15 실보고서 배치 검증에서 발견 — 삼성전기 130p 중 앞 10p만 처리).
+_UNSTRUCTURED_MAX_PAGES = 300
+# 청크당 글자 수 — 기존 단일 호출의 프롬프트 예산(4,000자)을 그대로 청크 단위로 유지.
+_UNSTRUCTURED_CHUNK_CHARS = 4000
+
+
+def _split_text_chunks(text: str, chunk_chars: int) -> list[str]:
+    """줄 경계를 지키며 chunk_chars 이하 청크로 분할한다."""
+    chunks: list[str] = []
+    buf: list[str] = []
+    size = 0
+    for line in text.splitlines():
+        if size + len(line) + 1 > chunk_chars and buf:
+            chunks.append("\n".join(buf))
+            buf, size = [], 0
+        buf.append(line)
+        size += len(line) + 1
+    if buf:
+        chunks.append("\n".join(buf))
+    return chunks or [text]
+
+
 def extract_unstructured(file_path: str, *, doc_type: str) -> OcrExtraction:
     """비정형 문서 채널 — 텍스트 추출 후 LLM(gpt-4.1-mini)로 정량·정성 동시 추출.
 
@@ -1248,7 +1272,7 @@ def extract_unstructured(file_path: str, *, doc_type: str) -> OcrExtraction:
         return _mock_unstructured(file_path, doc_type)
 
     # 1) 디지털 PDF 텍스트
-    raw_text = _extract_text_pymupdf(file_path, max_pages=10)
+    raw_text = _extract_text_pymupdf(file_path, max_pages=_UNSTRUCTURED_MAX_PAGES)
 
     # 2) 스캔본 → Upstage Document Parse OCR로 텍스트화
     if not raw_text.strip():
@@ -1268,22 +1292,40 @@ def extract_unstructured(file_path: str, *, doc_type: str) -> OcrExtraction:
 def _extract_unstructured_text(
     file_path: str, *, doc_type: str, raw_text: str
 ) -> OcrExtraction:
-    """텍스트 비정형 문서 → LLM(gpt-4.1-mini via Azure)으로 정량·정성 추출."""
+    """텍스트 비정형 문서 → LLM(gpt-4.1-mini via Azure)으로 정량·정성 추출.
+
+    대형 문서(지속가능경영보고서 등)는 청크로 나눠 전량 순회한다.
+    4,000자 이하 문서는 기존과 동일하게 단일 호출.
+    """
     import json as _json, re
     from ..llm import LLMClient
     from .prompts import VLM_EXTRACT_SYSTEM, VLM_EXTRACT_PROMPT
 
-    prompt = VLM_EXTRACT_PROMPT.format(doc_type=doc_type) + f"\n\n문서 텍스트:\n{raw_text[:4000]}"
-    resp = LLMClient().complete(
-        system=VLM_EXTRACT_SYSTEM,
-        user=prompt,
-        json_mode=True,
-        temperature=0.0,
-        mock_hint="ocr_unstructured",
-    )
-    m = re.search(r'\{.*\}', resp.content, re.DOTALL)
-    data = _json.loads(m.group() if m else "{}")
-    metrics, clauses = _map_vlm_json(data)
+    chunks = _split_text_chunks(raw_text, _UNSTRUCTURED_CHUNK_CHARS)
+    client = LLMClient()
+    metrics: list = []
+    clauses: list[ExtractedClause] = []
+    for chunk in chunks:
+        prompt = VLM_EXTRACT_PROMPT.format(doc_type=doc_type) + f"\n\n문서 텍스트:\n{chunk}"
+        resp = client.complete(
+            system=VLM_EXTRACT_SYSTEM,
+            user=prompt,
+            json_mode=True,
+            temperature=0.0,
+            mock_hint="ocr_unstructured",
+        )
+        m = re.search(r'\{.*\}', resp.content, re.DOTALL)
+        try:
+            data = _json.loads(m.group() if m else "{}")
+        except _json.JSONDecodeError:
+            # 청크 하나의 JSON이 깨져도 문서 전체를 버리지 않는다
+            logger.warning("비정형 청크 JSON 파싱 실패 — 건너뜀 [%s]", Path(file_path).name)
+            continue
+        chunk_metrics, chunk_clauses = _map_vlm_json(data)
+        metrics.extend(chunk_metrics)
+        clauses.extend(chunk_clauses)
+
+    # 존재형 조항 보강은 원래대로 전체 텍스트 기준 1회 — 청크별 수행 시 중복 발생
     clauses = _augment_unstructured_clauses(
         clauses,
         raw_text=raw_text,
@@ -1297,7 +1339,11 @@ def _extract_unstructured_text(
         metrics=metrics,
         clauses=clauses,
         raw_text=raw_text,
-        router_meta={"engine": "gpt-4.1-mini-text", "vision": False},
+        router_meta={
+            "engine": "gpt-4.1-mini-text",
+            "vision": False,
+            "chunks": len(chunks),
+        },
     )
 
 
