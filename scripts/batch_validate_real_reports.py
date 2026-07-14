@@ -22,12 +22,14 @@ from __future__ import annotations
 import argparse
 import json
 import logging
+import sys
 import time
 import traceback
 from datetime import date
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
+sys.path.insert(0, str(ROOT))  # repo 루트에서 `esgenie` 패키지 import (scripts/ 컨벤션)
 MANIFEST = ROOT / "data" / "real_reports" / "manifest.json"
 
 
