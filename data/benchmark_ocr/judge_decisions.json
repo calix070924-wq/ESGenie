@@ -1,0 +1,1108 @@
+{
+  "meta": {
+    "judge_model": "gpt-4.1-mini (self-judge)",
+    "generated_at": "2026-07-15T10:55:55.064931+00:00"
+  },
+  "decisions": [
+    {
+      "doc_id": "work_hours_2025",
+      "recall": [
+        {
+          "fact_id": "F1",
+          "covered": true,
+          "by_clause_idx": 0
+        },
+        {
+          "fact_id": "F2",
+          "covered": true,
+          "by_clause_idx": 1
+        },
+        {
+          "fact_id": "F3",
+          "covered": true,
+          "by_clause_idx": 1
+        },
+        {
+          "fact_id": "F4",
+          "covered": true,
+          "by_clause_idx": 2
+        },
+        {
+          "fact_id": "F5",
+          "covered": true,
+          "by_clause_idx": 3
+        },
+        {
+          "fact_id": "F6",
+          "covered": true,
+          "by_clause_idx": 4
+        },
+        {
+          "fact_id": "F7",
+          "covered": true,
+          "by_clause_idx": 4
+        }
+      ],
+      "hallucination": [
+        {
+          "clause_idx": 0,
+          "verdict": "grounded",
+          "reason": "제1조에 RBA 행동규범 v8.0 및 근로기준법에 따라 주 60시간(연장 포함) 근로시간 상한을 준수한다고 명시되어 있음."
+        },
+        {
+          "clause_idx": 1,
+          "verdict": "grounded",
+          "reason": "제2조 ①, ②항에 주간 총 근로시간 60시간 초과 불가 및 법정 기준근로시간 40시간 명시됨."
+        },
+        {
+          "clause_idx": 2,
+          "verdict": "grounded",
+          "reason": "제3조 ①항에 7일 중 최소 1일 휴일 보장 명시됨."
+        },
+        {
+          "clause_idx": 3,
+          "verdict": "grounded",
+          "reason": "제4조 ①항에 모든 연장근로는 근로자의 자발적 서면 동의를 얻어야 한다고 명시됨."
+        },
+        {
+          "clause_idx": 4,
+          "verdict": "grounded",
+          "reason": "제5조 ①항과 ②항에 전자 출퇴근 시스템 기록 및 주간 60시간 초과 경고 알림 시행 명시됨."
+        }
+      ]
+    },
+    {
+      "doc_id": "doc_record_mgmt_2025",
+      "recall": [
+        {
+          "fact_id": "F1",
+          "covered": true,
+          "by_clause_idx": 0
+        },
+        {
+          "fact_id": "F2",
+          "covered": true,
+          "by_clause_idx": 1
+        },
+        {
+          "fact_id": "F3",
+          "covered": true,
+          "by_clause_idx": 1
+        },
+        {
+          "fact_id": "F4",
+          "covered": true,
+          "by_clause_idx": 2
+        },
+        {
+          "fact_id": "F5",
+          "covered": true,
+          "by_clause_idx": 3
+        },
+        {
+          "fact_id": "F6",
+          "covered": true,
+          "by_clause_idx": 3
+        }
+      ],
+      "hallucination": [
+        {
+          "clause_idx": 0,
+          "verdict": "grounded",
+          "reason": "제1조에 법규 준수·요건 적합성 입증을 위한 문서와 기록을 체계적으로 생성·유지·보존·폐기한다고 명시됨."
+        },
+        {
+          "clause_idx": 1,
+          "verdict": "grounded",
+          "reason": "제2조에 정책문서 5년 보존, 법정기록 10년 보존 등 문서 분류 및 보존 기간이 명시됨."
+        },
+        {
+          "clause_idx": 2,
+          "verdict": "grounded",
+          "reason": "제3조에 전자문서관리시스템(EDMS)으로 통합 관리한다고 명시됨."
+        },
+        {
+          "clause_idx": 3,
+          "verdict": "grounded",
+          "reason": "제4조에 문서 열람 권한 차등 부여 및 기밀문서 암호화 보관·접근이력 로깅이 명시됨."
+        },
+        {
+          "clause_idx": 4,
+          "verdict": "grounded",
+          "reason": "제5조에 보존기한 만료 문서 폐기 절차 및 폐기 대장 작성 보관이 명시됨."
+        }
+      ]
+    },
+    {
+      "doc_id": "rohs_reach_2025",
+      "recall": [
+        {
+          "fact_id": "F1",
+          "covered": true,
+          "by_clause_idx": 0
+        },
+        {
+          "fact_id": "F2",
+          "covered": true,
+          "by_clause_idx": 2
+        },
+        {
+          "fact_id": "F3",
+          "covered": true,
+          "by_clause_idx": 2
+        },
+        {
+          "fact_id": "F4",
+          "covered": true,
+          "by_clause_idx": 2
+        },
+        {
+          "fact_id": "F5",
+          "covered": true,
+          "by_clause_idx": 3
+        },
+        {
+          "fact_id": "F6",
+          "covered": true,
+          "by_clause_idx": 4
+        }
+      ],
+      "hallucination": [
+        {
+          "clause_idx": 0,
+          "verdict": "grounded",
+          "reason": "원문 1. 목적에 '제품 내 규제물질(RoHS 10종, REACH SVHC)의 함유를 관리하고 법적·고객 요구사항을 충족한다' 명시됨."
+        },
+        {
+          "clause_idx": 1,
+          "verdict": "grounded",
+          "reason": "원문 2. 규제 기준에 EU RoHS 지침, EU REACH 규칙, 고객사 RSL 명시됨."
+        },
+        {
+          "clause_idx": 2,
+          "verdict": "grounded",
+          "reason": "원문 3.1~3.4에 원자재 입고 시 성분분석 성적서 확인, 연 1회 완제품 RoHS 시험, REACH SVHC 후보물질 반기 1회 모니터링, 부적합 시 대체물질 전환 계획 수립 명시됨."
+        },
+        {
+          "clause_idx": 3,
+          "verdict": "grounded",
+          "reason": "원문 4. 공급사 의무에 원자재 공급사는 불검출 보증서 제출 명시됨."
+        },
+        {
+          "clause_idx": 4,
+          "verdict": "grounded",
+          "reason": "원문 5. 기록에 시험성적서·불검출 보증서 10년 보존 명시됨."
+        }
+      ]
+    },
+    {
+      "doc_id": "capa_2025",
+      "recall": [
+        {
+          "fact_id": "F1",
+          "covered": true,
+          "by_clause_idx": 0
+        },
+        {
+          "fact_id": "F2",
+          "covered": true,
+          "by_clause_idx": 2
+        },
+        {
+          "fact_id": "F3",
+          "covered": true,
+          "by_clause_idx": 2
+        },
+        {
+          "fact_id": "F4",
+          "covered": true,
+          "by_clause_idx": 2
+        },
+        {
+          "fact_id": "F5",
+          "covered": true,
+          "by_clause_idx": 3
+        },
+        {
+          "fact_id": "F6",
+          "covered": true,
+          "by_clause_idx": 4
+        }
+      ],
+      "hallucination": [
+        {
+          "clause_idx": 0,
+          "verdict": "grounded",
+          "reason": "원문 1. 목적에 '내·외부 감사·평가에서 발견된 부적합 사항을 적시에 시정하고 재발을 방지하기 위한 절차를 규정한다' 명시됨."
+        },
+        {
+          "clause_idx": 1,
+          "verdict": "grounded",
+          "reason": "원문 2. 적용 범위에 '품질·환경·안전보건·윤리 분야 모든 부적합 사항' 명시됨."
+        },
+        {
+          "clause_idx": 2,
+          "verdict": "grounded",
+          "reason": "원문 3.1~3.6 절차에 부적합 접수 후 24시간 이내 CAPA 등록, 5-Why, Fish-bone 근본원인 분석, 30일 후 재발 여부 유효성 검증 등 명시됨."
+        },
+        {
+          "clause_idx": 3,
+          "verdict": "grounded",
+          "reason": "원문 4. 시한에 경미 30일, 중대 14일, 긴급 즉시 명확히 명시됨."
+        },
+        {
+          "clause_idx": 4,
+          "verdict": "grounded",
+          "reason": "원문 5. 기록 보존에 CAPA 기록 최소 5년 보존 및 이행 완료 건 경영검토 회의 보고 명시됨."
+        }
+      ]
+    },
+    {
+      "doc_id": "sanitation_housing_2025",
+      "recall": [
+        {
+          "fact_id": "F1",
+          "covered": true,
+          "by_clause_idx": 0
+        },
+        {
+          "fact_id": "F2",
+          "covered": true,
+          "by_clause_idx": 1
+        },
+        {
+          "fact_id": "F3",
+          "covered": true,
+          "by_clause_idx": 2
+        },
+        {
+          "fact_id": "F4",
+          "covered": true,
+          "by_clause_idx": 3
+        },
+        {
+          "fact_id": "F5",
+          "covered": true,
+          "by_clause_idx": 3
+        },
+        {
+          "fact_id": "F6",
+          "covered": true,
+          "by_clause_idx": 3
+        },
+        {
+          "fact_id": "F7",
+          "covered": true,
+          "by_clause_idx": 2
+        }
+      ],
+      "hallucination": [
+        {
+          "clause_idx": 0,
+          "verdict": "grounded",
+          "reason": "원문 제1조에 '본 규정은 RBA B-7(Sanitation, Food, Housing)에 따라 사업장 내 청결·위생 환경과 기숙사 안전을 확보함을 목적으로 한다' 명시됨."
+        },
+        {
+          "clause_idx": 1,
+          "verdict": "grounded",
+          "reason": "원문 제2조 ①에 '화장실은 남녀 구분, 30인당 1개소 이상 설치한다' 명시됨."
+        },
+        {
+          "clause_idx": 2,
+          "verdict": "grounded",
+          "reason": "원문 제3조 ①에 '구내식당 운영 시 식품위생법 기준을 준수한다'와 ③에 '식중독 예방 교육을 연 2회 실시한다' 명시됨."
+        },
+        {
+          "clause_idx": 3,
+          "verdict": "grounded",
+          "reason": "원문 제4조 ①에 '기숙사 제공 시 1인당 최소 4.5㎡ 이상 개인공간을 확보한다', ②에 '비상구 2개소 이상, 소화기·감지기를 층별 비치한다', ④에 '입·퇴실 자유를 보장하며, 신분증 보관을 금지한다' 명시됨."
+        }
+      ]
+    },
+    {
+      "doc_id": "hazmat_2025",
+      "recall": [
+        {
+          "fact_id": "F1",
+          "covered": true,
+          "by_clause_idx": 0
+        },
+        {
+          "fact_id": "F2",
+          "covered": true,
+          "by_clause_idx": 2
+        },
+        {
+          "fact_id": "F3",
+          "covered": true,
+          "by_clause_idx": 3
+        },
+        {
+          "fact_id": "F4",
+          "covered": true,
+          "by_clause_idx": 5
+        },
+        {
+          "fact_id": "F5",
+          "covered": true,
+          "by_clause_idx": 9
+        },
+        {
+          "fact_id": "F6",
+          "covered": true,
+          "by_clause_idx": 10
+        }
+      ],
+      "hallucination": [
+        {
+          "clause_idx": 0,
+          "verdict": "grounded",
+          "reason": "제1조에 유해화학물질의 식별·표시·보관·취급·폐기 전 과정을 안전하게 관리하여 인체와 환경을 보호한다고 명시됨."
+        },
+        {
+          "clause_idx": 1,
+          "verdict": "grounded",
+          "reason": "제2조에 사업장 내 모든 화학물질(원자재·부자재·세정제·유해폐기물)이라고 명시됨."
+        },
+        {
+          "clause_idx": 2,
+          "verdict": "grounded",
+          "reason": "제3조 ①에 모든 화학물질은 MSDS를 비치한다고 명시됨."
+        },
+        {
+          "clause_idx": 3,
+          "verdict": "grounded",
+          "reason": "제3조 ②에 신규 물질 도입 시 EHS팀 사전 승인을 받는다고 명시됨."
+        },
+        {
+          "clause_idx": 4,
+          "verdict": "grounded",
+          "reason": "제3조 ③에 연 1회 MSDS 최신본 갱신 여부 점검이 명시됨."
+        },
+        {
+          "clause_idx": 5,
+          "verdict": "grounded",
+          "reason": "제4조 ①에 유해물질 보관구역은 잠금·환기·누출방지턱을 구비한다고 명시됨."
+        },
+        {
+          "clause_idx": 6,
+          "verdict": "grounded",
+          "reason": "제4조 ②에 취급 시 지정 보호구 착용이 명시됨."
+        },
+        {
+          "clause_idx": 7,
+          "verdict": "grounded",
+          "reason": "제4조 ③에 혼합보관 금지 물질은 별도 구획한다고 명시됨."
+        },
+        {
+          "clause_idx": 8,
+          "verdict": "grounded",
+          "reason": "제5조 ①에 유해폐기물은 전용 용기에 밀봉 보관한다고 명시됨."
+        },
+        {
+          "clause_idx": 9,
+          "verdict": "grounded",
+          "reason": "제5조 ②에 허가 업체를 통해 법정 절차에 따라 위탁 처리한다고 명시됨."
+        },
+        {
+          "clause_idx": 10,
+          "verdict": "grounded",
+          "reason": "제5조 ③에 처리 이력을 5년간 보관한다고 명시됨."
+        }
+      ]
+    },
+    {
+      "doc_id": "ip_protection_2025",
+      "recall": [
+        {
+          "fact_id": "F1",
+          "covered": true,
+          "by_clause_idx": 0
+        },
+        {
+          "fact_id": "F2",
+          "covered": true,
+          "by_clause_idx": 2
+        },
+        {
+          "fact_id": "F3",
+          "covered": true,
+          "by_clause_idx": 2
+        },
+        {
+          "fact_id": "F4",
+          "covered": true,
+          "by_clause_idx": 2
+        },
+        {
+          "fact_id": "F5",
+          "covered": true,
+          "by_clause_idx": 3
+        },
+        {
+          "fact_id": "F6",
+          "covered": true,
+          "by_clause_idx": 4
+        }
+      ],
+      "hallucination": [
+        {
+          "clause_idx": 0,
+          "verdict": "grounded",
+          "reason": "조항 1조에 회사 및 거래처의 지식재산권, 영업비밀, 기술 노하우 보호 목적이 명시되어 있음."
+        },
+        {
+          "clause_idx": 1,
+          "verdict": "grounded",
+          "reason": "2조에 특허, 실용신안, 디자인, 상표, 저작권, 영업비밀, 고객사 기밀정보 일체에 적용한다고 명시됨."
+        },
+        {
+          "clause_idx": 2,
+          "verdict": "grounded",
+          "reason": "3조에 전 임직원 입사 시 NDA 서명, 퇴직 후 2년간 비밀유지 의무, 외부 방문자 기밀유지 동의서 작성이 명시됨."
+        },
+        {
+          "clause_idx": 3,
+          "verdict": "grounded",
+          "reason": "4조에 거래처 기술정보 무단 복제·유출 금지 및 기술 이전 시 쌍방 서면 계약 체결이 명시됨."
+        },
+        {
+          "clause_idx": 4,
+          "verdict": "grounded",
+          "reason": "5조에 지식재산 침해 시 즉시 징계 조치, 손해배상 청구 및 형사 고발 가능이 명시됨."
+        }
+      ]
+    },
+    {
+      "doc_id": "responsible_minerals_2025",
+      "recall": [
+        {
+          "fact_id": "F1",
+          "covered": true,
+          "by_clause_idx": 0
+        },
+        {
+          "fact_id": "F2",
+          "covered": true,
+          "by_clause_idx": 1
+        },
+        {
+          "fact_id": "F3",
+          "covered": true,
+          "by_clause_idx": 2
+        },
+        {
+          "fact_id": "F4",
+          "covered": true,
+          "by_clause_idx": 3
+        },
+        {
+          "fact_id": "F5",
+          "covered": true,
+          "by_clause_idx": 4
+        },
+        {
+          "fact_id": "F6",
+          "covered": true,
+          "by_clause_idx": 6
+        }
+      ],
+      "hallucination": [
+        {
+          "clause_idx": 0,
+          "verdict": "grounded",
+          "reason": "원문 1. 목적에 '탄탈럼(Ta)·주석(Sn)·텅스텐(W)·금(Au)(3TG) 및 코발트의 공급망을 투명하게 관리하고, 분쟁지역 인권침해와의 연루를 방지한다' 명시됨."
+        },
+        {
+          "clause_idx": 1,
+          "verdict": "grounded",
+          "reason": "원문 2. 적용 기준에 'OECD 분쟁광물 실사 지침, RBA 행동규범 v8.0 D-7, 고객사 CMRT' 명시됨."
+        },
+        {
+          "clause_idx": 2,
+          "verdict": "grounded",
+          "reason": "원문 3.1에 '공급사에 연 1회 CMRT 작성·제출 요청' 명시됨."
+        },
+        {
+          "clause_idx": 3,
+          "verdict": "grounded",
+          "reason": "원문 3.2에 '제련소 확인(RMAP 인증 여부)' 명시됨."
+        },
+        {
+          "clause_idx": 4,
+          "verdict": "grounded",
+          "reason": "원문 3.3에 '고위험 공급원 식별 시 시정 요구 또는 거래 재검토' 명시됨."
+        },
+        {
+          "clause_idx": 5,
+          "verdict": "grounded",
+          "reason": "원문 3.4에 '코발트 공급망 별도 실사(OECD 3단계 프레임워크)' 명시됨."
+        },
+        {
+          "clause_idx": 6,
+          "verdict": "grounded",
+          "reason": "원문 4. 보고에 '연 1회 분쟁광물 실사보고서를 공개하고, 고객사 요청 시 30일 이내 CMRT를 제출한다' 명시됨."
+        },
+        {
+          "clause_idx": 7,
+          "verdict": "grounded",
+          "reason": "원문 5. 위반에 '고의적 허위 보고 시 거래 중단 조치' 명시됨."
+        }
+      ]
+    },
+    {
+      "doc_id": "safety_minutes_2025",
+      "recall": [
+        {
+          "fact_id": "F1",
+          "covered": true,
+          "by_clause_idx": 0
+        },
+        {
+          "fact_id": "F2",
+          "covered": true,
+          "by_clause_idx": 0
+        },
+        {
+          "fact_id": "F3",
+          "covered": true,
+          "by_clause_idx": 0
+        },
+        {
+          "fact_id": "F4",
+          "covered": true,
+          "by_clause_idx": 1
+        },
+        {
+          "fact_id": "F5",
+          "covered": true,
+          "by_clause_idx": 1
+        },
+        {
+          "fact_id": "F6",
+          "covered": true,
+          "by_clause_idx": 2
+        },
+        {
+          "fact_id": "F7",
+          "covered": true,
+          "by_clause_idx": 2
+        },
+        {
+          "fact_id": "F8",
+          "covered": true,
+          "by_clause_idx": 3
+        }
+      ],
+      "hallucination": [
+        {
+          "clause_idx": 0,
+          "verdict": "grounded",
+          "reason": "원문 안건 1에 산업재해율 목표, 위험성 평가 연 2회 이상 실시, 신규 입사자 안전교육 8시간 의무화가 명시되어 있음."
+        },
+        {
+          "clause_idx": 1,
+          "verdict": "grounded",
+          "reason": "원문 안건 2에 유해화학물질 보관구역 CCTV 설치 의결과 개인보호구 착용 의무 전 공정 확대가 명시되어 있음."
+        },
+        {
+          "clause_idx": 2,
+          "verdict": "grounded",
+          "reason": "원문 안건 3에 야간작업 조명 개선 요청 및 2분기 내 조치 완료 결의, 결사의 자유 보장과 노동조합 가입률 62%가 명시되어 있음."
+        },
+        {
+          "clause_idx": 3,
+          "verdict": "grounded",
+          "reason": "원문 결의사항에 전원 찬성으로 의결됨이 명시되어 있음."
+        },
+        {
+          "clause_idx": 4,
+          "verdict": "unsupported",
+          "reason": "원문에 '산업안전보건위원회 회의록 안건 1. 2025년 안전보건 목표 심의'라는 문구는 있으나, 구체적 사실을 포함하지 않아 근거 불충분."
+        }
+      ]
+    },
+    {
+      "doc_id": "emergency_manual_2025",
+      "recall": [
+        {
+          "fact_id": "F1",
+          "covered": true,
+          "by_clause_idx": 0
+        },
+        {
+          "fact_id": "F2",
+          "covered": true,
+          "by_clause_idx": 1
+        },
+        {
+          "fact_id": "F3",
+          "covered": true,
+          "by_clause_idx": 4
+        },
+        {
+          "fact_id": "F4",
+          "covered": true,
+          "by_clause_idx": 6
+        },
+        {
+          "fact_id": "F5",
+          "covered": true,
+          "by_clause_idx": 7
+        },
+        {
+          "fact_id": "F5",
+          "covered": true,
+          "by_clause_idx": 8
+        },
+        {
+          "fact_id": "F6",
+          "covered": true,
+          "by_clause_idx": 10
+        },
+        {
+          "fact_id": "F7",
+          "covered": true,
+          "by_clause_idx": 11
+        }
+      ],
+      "hallucination": [
+        {
+          "clause_idx": 0,
+          "verdict": "grounded",
+          "reason": "원문 1. 목적에 '화재・폭발・화학물질 누출・자연재해 등 비상상황 발생 시 신속한 대피와 인명 피해 최소화를 위한 절차를 규정한다' 명시됨."
+        },
+        {
+          "clause_idx": 1,
+          "verdict": "grounded",
+          "reason": "원문 2. 비상 유형 분류에 '1등급(긴급): 화재・폭발・대규모 누출 → 즉시 전원 대피' 명시됨."
+        },
+        {
+          "clause_idx": 2,
+          "verdict": "grounded",
+          "reason": "원문 2. 비상 유형 분류에 '2등급(경고): 소규모 누출・정전 → 해당 구역 대피' 명시됨."
+        },
+        {
+          "clause_idx": 3,
+          "verdict": "grounded",
+          "reason": "원문 2. 비상 유형 분류에 '3등급(주의): 기상특보・경미 사고 → 상황 모니터링' 명시됨."
+        },
+        {
+          "clause_idx": 4,
+          "verdict": "grounded",
+          "reason": "원문 3. 대피 경로에 '각 층 2개 이상 대피 경로 확보' 명시됨."
+        },
+        {
+          "clause_idx": 5,
+          "verdict": "grounded",
+          "reason": "원문 3. 대피 경로에 '비상구 표시등 연 1회 점검' 명시됨."
+        },
+        {
+          "clause_idx": 6,
+          "verdict": "grounded",
+          "reason": "원문 3. 대피 경로에 '집결지: 본관 앞 주차장 A구역 (좌표: 37.12N, 127.08E)' 명시됨."
+        },
+        {
+          "clause_idx": 7,
+          "verdict": "grounded",
+          "reason": "원문 4. 비상 연락 체계에 '1차: 현장 관리자 → EHS팀장 (5분 이내)' 명시됨."
+        },
+        {
+          "clause_idx": 8,
+          "verdict": "grounded",
+          "reason": "원문 4. 비상 연락 체계에 '2차: EHS팀장 → 대표이사・119 (10분 이내)' 명시됨."
+        },
+        {
+          "clause_idx": 9,
+          "verdict": "grounded",
+          "reason": "원문 4. 비상 연락 체계에 '야간/휴일: 당직 근무자 → 비상연락망 가동' 명시됨."
+        },
+        {
+          "clause_idx": 10,
+          "verdict": "grounded",
+          "reason": "원문 5. 훈련에 '전사 합동 소방훈련 연 2회 실시' 명시됨."
+        },
+        {
+          "clause_idx": 11,
+          "verdict": "grounded",
+          "reason": "원문 5. 훈련에 '화학물질 누출 대응훈련 반기 1회' 명시됨."
+        },
+        {
+          "clause_idx": 12,
+          "verdict": "grounded",
+          "reason": "원문 5. 훈련에 '훈련 결과 기록 보존(3년)' 명시됨."
+        },
+        {
+          "clause_idx": 13,
+          "verdict": "grounded",
+          "reason": "원문 6. 장비 점검에 '소화기 월 1회, 스프링클러 분기 1회, 방독면 반기 1회 점검' 명시됨."
+        }
+      ]
+    },
+    {
+      "doc_id": "hr_policy_2025",
+      "recall": [
+        {
+          "fact_id": "F1",
+          "covered": true,
+          "by_clause_idx": 0
+        },
+        {
+          "fact_id": "F2",
+          "covered": true,
+          "by_clause_idx": 1
+        },
+        {
+          "fact_id": "F3",
+          "covered": true,
+          "by_clause_idx": 1
+        },
+        {
+          "fact_id": "F4",
+          "covered": true,
+          "by_clause_idx": 2
+        },
+        {
+          "fact_id": "F5",
+          "covered": true,
+          "by_clause_idx": 3
+        },
+        {
+          "fact_id": "F6",
+          "covered": true,
+          "by_clause_idx": 4
+        },
+        {
+          "fact_id": "F7",
+          "covered": true,
+          "by_clause_idx": 4
+        },
+        {
+          "fact_id": "F8",
+          "covered": true,
+          "by_clause_idx": 5
+        },
+        {
+          "fact_id": "F9",
+          "covered": true,
+          "by_clause_idx": 6
+        }
+      ],
+      "hallucination": [
+        {
+          "clause_idx": 0,
+          "verdict": "grounded",
+          "reason": "원문 제1조에 'UN 기업과 인권 이행원칙 및 RBA 행동규범 v8.0에 따라 모든 이해관계자의 인권을 존중하고 보호한다'라고 명시되어 있음."
+        },
+        {
+          "clause_idx": 1,
+          "verdict": "grounded",
+          "reason": "원문 제2조에 '모든 고용은 자발적이며, 근로자는 합리적 통보 후 퇴직할 자유가 있다', '여권·신분증 보관을 금지한다', '채용수수료는 회사가 부담하며, 근로자에게 전가하지 아니한다'가 명확히 기술되어 있음."
+        },
+        {
+          "clause_idx": 2,
+          "verdict": "grounded",
+          "reason": "원문 제3조에 '만 18세 미만의 근로자를 고용하지 아니한다'가 명확히 기술되어 있음."
+        },
+        {
+          "clause_idx": 3,
+          "verdict": "grounded",
+          "reason": "원문 제4조에 '성별·나이·국적·종교·장애·성적 지향에 따른 차별을 일체 금지한다'가 명확히 기술되어 있음."
+        },
+        {
+          "clause_idx": 4,
+          "verdict": "grounded",
+          "reason": "원문 제5조에 '근로자의 노동조합 가입 및 단체교섭권을 보장한다'와 '노사협의회를 분기 1회 정기 개최한다'가 명확히 기술되어 있음."
+        },
+        {
+          "clause_idx": 5,
+          "verdict": "grounded",
+          "reason": "원문 제6조에 '익명 제보 핫라인(전화·이메일·앱)을 운영한다'와 '제보자에 대한 보복을 금지하며, 위반 시 징계한다'가 명확히 기술되어 있음."
+        },
+        {
+          "clause_idx": 6,
+          "verdict": "grounded",
+          "reason": "원문 제7조에 '연 1회 인권영향평가(HRIA)를 실시하고 결과를 경영검토에 보고한다'가 명확히 기술되어 있음."
+        }
+      ]
+    },
+    {
+      "doc_id": "work_hours_2025_scan",
+      "recall": [
+        {
+          "fact_id": "F1",
+          "covered": true,
+          "by_clause_idx": 0
+        },
+        {
+          "fact_id": "F2",
+          "covered": true,
+          "by_clause_idx": 1
+        },
+        {
+          "fact_id": "F3",
+          "covered": true,
+          "by_clause_idx": 1
+        },
+        {
+          "fact_id": "F4",
+          "covered": true,
+          "by_clause_idx": 2
+        },
+        {
+          "fact_id": "F5",
+          "covered": true,
+          "by_clause_idx": 3
+        },
+        {
+          "fact_id": "F6",
+          "covered": true,
+          "by_clause_idx": 4
+        },
+        {
+          "fact_id": "F7",
+          "covered": true,
+          "by_clause_idx": 4
+        }
+      ],
+      "hallucination": [
+        {
+          "clause_idx": 0,
+          "verdict": "grounded",
+          "reason": "원문 제1조에 RBA 행동규범 v8.0 및 근로기준법에 따라 주 60시간(연장 포함) 근로시간 상한을 준수한다고 명시되어 있음."
+        },
+        {
+          "clause_idx": 1,
+          "verdict": "grounded",
+          "reason": "원문 제2조 ①, ②에 주간 총 근로시간 60시간 초과 불가 및 법정 기준근로시간 40시간 명시됨."
+        },
+        {
+          "clause_idx": 2,
+          "verdict": "grounded",
+          "reason": "원문 제3조 ①에 7일 중 최소 1일 휴일 보장 명시됨."
+        },
+        {
+          "clause_idx": 3,
+          "verdict": "grounded",
+          "reason": "원문 제4조 ①에 모든 연장근로는 근로자의 자발적 서면 동의를 얻어야 한다고 명시됨."
+        },
+        {
+          "clause_idx": 4,
+          "verdict": "grounded",
+          "reason": "원문 제5조 ①, ②에 전자 출퇴근 시스템 기록 및 주간 60시간 초과 경고 알림 시행 명시됨."
+        }
+      ]
+    },
+    {
+      "doc_id": "hazmat_2025_scan",
+      "recall": [
+        {
+          "fact_id": "F1",
+          "covered": true,
+          "by_clause_idx": 0
+        },
+        {
+          "fact_id": "F2",
+          "covered": true,
+          "by_clause_idx": 2
+        },
+        {
+          "fact_id": "F3",
+          "covered": true,
+          "by_clause_idx": 2
+        },
+        {
+          "fact_id": "F4",
+          "covered": true,
+          "by_clause_idx": 3
+        },
+        {
+          "fact_id": "F5",
+          "covered": true,
+          "by_clause_idx": 4
+        },
+        {
+          "fact_id": "F6",
+          "covered": true,
+          "by_clause_idx": 4
+        }
+      ],
+      "hallucination": [
+        {
+          "clause_idx": 0,
+          "verdict": "grounded",
+          "reason": "제1조에 유해화학물질의 식별·표시·보관·취급·폐기 전 과정을 안전하게 관리하여 인체와 환경을 보호한다고 명시되어 있음."
+        },
+        {
+          "clause_idx": 1,
+          "verdict": "grounded",
+          "reason": "제2조에 사업장 내 모든 화학물질(원자재·부자재·세정제·유해폐기물)이라고 명시되어 있음."
+        },
+        {
+          "clause_idx": 2,
+          "verdict": "grounded",
+          "reason": "제3조에 모든 화학물질은 MSDS 비치, 신규 물질 도입 시 EHS팀 사전 승인, 연 1회 MSDS 최신본 갱신 점검이 명시되어 있음."
+        },
+        {
+          "clause_idx": 3,
+          "verdict": "grounded",
+          "reason": "제4조에 유해물질 보관구역의 잠금·환기·누출방지턱 구비, 지정 보호구 착용, 혼합보관 금지 물질 별도 구획이 명시되어 있음."
+        },
+        {
+          "clause_idx": 4,
+          "verdict": "grounded",
+          "reason": "제5조에 유해폐기물 전용 용기 밀봉 보관, 허가 업체 통한 법정 절차 위탁 처리, 처리 이력 5년 보관이 명시되어 있음."
+        }
+      ]
+    },
+    {
+      "doc_id": "responsible_minerals_2025_scan",
+      "recall": [
+        {
+          "fact_id": "F1",
+          "covered": true,
+          "by_clause_idx": 0
+        },
+        {
+          "fact_id": "F2",
+          "covered": true,
+          "by_clause_idx": 1
+        },
+        {
+          "fact_id": "F3",
+          "covered": true,
+          "by_clause_idx": 2
+        },
+        {
+          "fact_id": "F4",
+          "covered": true,
+          "by_clause_idx": 3
+        },
+        {
+          "fact_id": "F5",
+          "covered": true,
+          "by_clause_idx": 4
+        },
+        {
+          "fact_id": "F6",
+          "covered": true,
+          "by_clause_idx": 6
+        }
+      ],
+      "hallucination": [
+        {
+          "clause_idx": 0,
+          "verdict": "grounded",
+          "reason": "원문 1·목적에 3TG 및 코발트 공급망 투명 관리와 분쟁지역 인권침해 방지 명시."
+        },
+        {
+          "clause_idx": 1,
+          "verdict": "grounded",
+          "reason": "원문 2·적용 기준에 OECD 분쟁광물 실사 지침, RBA 행동규범, 고객사 CMRT 명시."
+        },
+        {
+          "clause_idx": 2,
+          "verdict": "grounded",
+          "reason": "원문 3·1에 공급사에 연 1회 CMRT 작성·제출 요청 명시."
+        },
+        {
+          "clause_idx": 3,
+          "verdict": "grounded",
+          "reason": "원문 3·2에 제련소 RMAP 인증 여부 확인 명시."
+        },
+        {
+          "clause_idx": 4,
+          "verdict": "grounded",
+          "reason": "원문 3·3에 고위험 공급원 식별 시 시정 요구 또는 거래 재검토 명시."
+        },
+        {
+          "clause_idx": 5,
+          "verdict": "grounded",
+          "reason": "원문 3·4에 코발트 공급망 별도 실사(OECD 3단계 프레임워크) 명시."
+        },
+        {
+          "clause_idx": 6,
+          "verdict": "grounded",
+          "reason": "원문 4·보고에 연 1회 분쟁광물 실사보고서 공개 및 고객사 요청 시 30일 이내 CMRT 제출 명시."
+        },
+        {
+          "clause_idx": 7,
+          "verdict": "grounded",
+          "reason": "원문 5·위반에 고의적 허위 보고 시 거래 중단 조치 명시."
+        }
+      ]
+    },
+    {
+      "doc_id": "safety_minutes_2025_scan",
+      "recall": [
+        {
+          "fact_id": "F1",
+          "covered": true,
+          "by_clause_idx": 0
+        },
+        {
+          "fact_id": "F2",
+          "covered": true,
+          "by_clause_idx": 0
+        },
+        {
+          "fact_id": "F3",
+          "covered": true,
+          "by_clause_idx": 0
+        },
+        {
+          "fact_id": "F4",
+          "covered": true,
+          "by_clause_idx": 1
+        },
+        {
+          "fact_id": "F5",
+          "covered": true,
+          "by_clause_idx": 1
+        },
+        {
+          "fact_id": "F6",
+          "covered": true,
+          "by_clause_idx": 2
+        },
+        {
+          "fact_id": "F7",
+          "covered": true,
+          "by_clause_idx": 2
+        },
+        {
+          "fact_id": "F8",
+          "covered": true,
+          "by_clause_idx": 3
+        }
+      ],
+      "hallucination": [
+        {
+          "clause_idx": 0,
+          "verdict": "grounded",
+          "reason": "조항 0은 산업재해율 목표 0.3% 이하(전년 0.41% 대비 감축), 위험성 평가 연 2회 이상 실시, 신규 입사자 안전교육 8시간 의무화 내용을 원문에 명확히 포함하고 있음."
+        },
+        {
+          "clause_idx": 1,
+          "verdict": "grounded",
+          "reason": "조항 1은 유해화학물질 보관구역 CCTV 설치 의결과 개인보호구(PPE) 착용 의무 전 공정 확대 내용을 원문에 명확히 포함하고 있음."
+        },
+        {
+          "clause_idx": 2,
+          "verdict": "grounded",
+          "reason": "조항 2는 야간작업 조명 개선 요청 → 2분기 내 조치 완료 결의, 결사의 자유 보장 및 노동조합 가입률 62% 현황 공유 내용을 원문에 명확히 포함하고 있음."
+        },
+        {
+          "clause_idx": 3,
+          "verdict": "grounded",
+          "reason": "조항 3은 전원 찬성으로 의결된 사항을 원문에 명확히 포함하고 있음."
+        },
+        {
+          "clause_idx": 4,
+          "verdict": "grounded",
+          "reason": "조항 4는 산업안전보건위원회 회의록 안건 1. 2025년 안전보건 목표 심의라는 제목을 원문에 명확히 포함하고 있음."
+        }
+      ]
+    }
+  ]
+}

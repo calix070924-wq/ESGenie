@@ -1,476 +1,534 @@
-[
-  {
-    "doc_id": "work_hours_2025",
-    "file": "시연증빙세트_한울정밀공업/근로시간관리규정_2025.pdf",
-    "channel_variant": "digital",
-    "route_correct": true,
-    "route_gold": "policy_manual",
-    "route_got": "policy_manual",
-    "metric_hits": 0,
-    "metric_total": 0,
-    "metric_fp": 4,
-    "fact_recall_hits": 7,
-    "fact_recall_total": 7,
-    "halluc_clauses": 0,
-    "total_clauses": 5,
-    "cal_rows": [
-      {
-        "p": 0.75,
-        "y": 0
-      },
-      {
-        "p": 0.75,
-        "y": 0
-      },
-      {
-        "p": 0.75,
-        "y": 0
-      },
-      {
-        "p": 0.75,
-        "y": 0
-      }
-    ],
-    "engine": "gpt-4.1-mini-text",
-    "error": ""
+{
+  "meta": {
+    "mode": "strict",
+    "extractor_engine": "gpt-4.1-mini-text",
+    "judge_model": "gpt-4.1-mini (self-judge)",
+    "generated_at": "2026-07-15T10:55:55.062494+00:00",
+    "gold_path": "data/benchmark_ocr/unstructured_gold.json"
   },
-  {
-    "doc_id": "doc_record_mgmt_2025",
-    "file": "시연증빙세트_한울정밀공업/문서기록관리규정_2025.pdf",
-    "channel_variant": "digital",
-    "route_correct": true,
-    "route_gold": "policy_manual",
-    "route_got": "policy_manual",
-    "metric_hits": 0,
-    "metric_total": 0,
-    "metric_fp": 0,
-    "fact_recall_hits": 6,
-    "fact_recall_total": 6,
-    "halluc_clauses": 0,
-    "total_clauses": 5,
-    "cal_rows": [],
-    "engine": "gpt-4.1-mini-text",
-    "error": ""
-  },
-  {
-    "doc_id": "rohs_reach_2025",
-    "file": "시연증빙세트_한울정밀공업/물질규제_RoHS_REACH_2025.pdf",
-    "channel_variant": "digital",
-    "route_correct": false,
-    "route_gold": "policy_manual",
-    "route_got": "ambiguous_fallback_vlm",
-    "metric_hits": 0,
-    "metric_total": 0,
-    "metric_fp": 3,
-    "fact_recall_hits": 6,
-    "fact_recall_total": 6,
-    "halluc_clauses": 0,
-    "total_clauses": 8,
-    "cal_rows": [
-      {
-        "p": 0.75,
-        "y": 0
-      },
-      {
-        "p": 0.75,
-        "y": 0
-      },
-      {
-        "p": 0.75,
-        "y": 0
-      }
-    ],
-    "engine": "gpt-4.1-mini-text",
-    "error": ""
-  },
-  {
-    "doc_id": "capa_2025",
-    "file": "시연증빙세트_한울정밀공업/시정조치_CAPA절차서_2025.pdf",
-    "channel_variant": "digital",
-    "route_correct": false,
-    "route_gold": "policy_manual",
-    "route_got": "ambiguous_fallback_vlm",
-    "metric_hits": 0,
-    "metric_total": 0,
-    "metric_fp": 4,
-    "fact_recall_hits": 6,
-    "fact_recall_total": 6,
-    "halluc_clauses": 0,
-    "total_clauses": 5,
-    "cal_rows": [
-      {
-        "p": 0.75,
-        "y": 0
-      },
-      {
-        "p": 0.75,
-        "y": 0
-      },
-      {
-        "p": 0.75,
-        "y": 0
-      },
-      {
-        "p": 0.75,
-        "y": 0
-      }
-    ],
-    "engine": "gpt-4.1-mini-text",
-    "error": ""
-  },
-  {
-    "doc_id": "sanitation_housing_2025",
-    "file": "시연증빙세트_한울정밀공업/위생_기숙사관리규정_2025.pdf",
-    "channel_variant": "digital",
-    "route_correct": true,
-    "route_gold": "policy_manual",
-    "route_got": "policy_manual",
-    "metric_hits": 0,
-    "metric_total": 0,
-    "metric_fp": 6,
-    "fact_recall_hits": 7,
-    "fact_recall_total": 7,
-    "halluc_clauses": 0,
-    "total_clauses": 11,
-    "cal_rows": [
-      {
-        "p": 0.75,
-        "y": 0
-      },
-      {
-        "p": 0.75,
-        "y": 0
-      },
-      {
-        "p": 0.75,
-        "y": 0
-      },
-      {
-        "p": 0.75,
-        "y": 0
-      },
-      {
-        "p": 0.75,
-        "y": 0
-      },
-      {
-        "p": 0.75,
-        "y": 0
-      }
-    ],
-    "engine": "gpt-4.1-mini-text",
-    "error": ""
-  },
-  {
-    "doc_id": "hazmat_2025",
-    "file": "시연증빙세트_한울정밀공업/유해물질관리규정_2025.pdf",
-    "channel_variant": "digital",
-    "route_correct": false,
-    "route_gold": "policy_manual",
-    "route_got": "ambiguous_fallback_vlm",
-    "metric_hits": 0,
-    "metric_total": 0,
-    "metric_fp": 2,
-    "fact_recall_hits": 6,
-    "fact_recall_total": 6,
-    "halluc_clauses": 0,
-    "total_clauses": 5,
-    "cal_rows": [
-      {
-        "p": 0.75,
-        "y": 0
-      },
-      {
-        "p": 0.75,
-        "y": 0
-      }
-    ],
-    "engine": "gpt-4.1-mini-text",
-    "error": ""
-  },
-  {
-    "doc_id": "ip_protection_2025",
-    "file": "시연증빙세트_한울정밀공업/지식재산보호규정_2025.pdf",
-    "channel_variant": "digital",
-    "route_correct": false,
-    "route_gold": "policy_manual",
-    "route_got": "ambiguous_fallback_vlm",
-    "metric_hits": 0,
-    "metric_total": 0,
-    "metric_fp": 0,
-    "fact_recall_hits": 6,
-    "fact_recall_total": 6,
-    "halluc_clauses": 0,
-    "total_clauses": 5,
-    "cal_rows": [],
-    "engine": "gpt-4.1-mini-text",
-    "error": ""
-  },
-  {
-    "doc_id": "responsible_minerals_2025",
-    "file": "시연증빙세트_한울정밀공업/책임광물실사정책_2025.pdf",
-    "channel_variant": "digital",
-    "route_correct": false,
-    "route_gold": "policy_manual",
-    "route_got": "ambiguous_fallback_vlm",
-    "metric_hits": 0,
-    "metric_total": 0,
-    "metric_fp": 0,
-    "fact_recall_hits": 6,
-    "fact_recall_total": 6,
-    "halluc_clauses": 0,
-    "total_clauses": 5,
-    "cal_rows": [],
-    "engine": "gpt-4.1-mini-text",
-    "error": ""
-  },
-  {
-    "doc_id": "safety_minutes_2025",
-    "file": "data/test_docs/safety_policy_2025.pdf",
-    "channel_variant": "digital",
-    "route_correct": true,
-    "route_gold": "safety_minutes",
-    "route_got": "safety_minutes",
-    "metric_hits": 2,
-    "metric_total": 2,
-    "metric_fp": 3,
-    "fact_recall_hits": 8,
-    "fact_recall_total": 8,
-    "halluc_clauses": 0,
-    "total_clauses": 5,
-    "cal_rows": [
-      {
-        "p": 0.75,
-        "y": 1
-      },
-      {
-        "p": 0.75,
-        "y": 0
-      },
-      {
-        "p": 0.75,
-        "y": 0
-      },
-      {
-        "p": 0.75,
-        "y": 0
-      },
-      {
-        "p": 0.75,
-        "y": 1
-      }
-    ],
-    "engine": "gpt-4.1-mini-text",
-    "error": ""
-  },
-  {
-    "doc_id": "emergency_manual_2025",
-    "file": "data/benchmark_ocr/synthetic_docs/emergency_manual_2025.pdf",
-    "channel_variant": "digital",
-    "route_correct": true,
-    "route_gold": "emergency_manual",
-    "route_got": "emergency_manual",
-    "metric_hits": 0,
-    "metric_total": 0,
-    "metric_fp": 7,
-    "fact_recall_hits": 7,
-    "fact_recall_total": 7,
-    "halluc_clauses": 0,
-    "total_clauses": 6,
-    "cal_rows": [
-      {
-        "p": 0.75,
-        "y": 0
-      },
-      {
-        "p": 0.75,
-        "y": 0
-      },
-      {
-        "p": 0.75,
-        "y": 0
-      },
-      {
-        "p": 0.75,
-        "y": 0
-      },
-      {
-        "p": 0.75,
-        "y": 0
-      },
-      {
-        "p": 0.75,
-        "y": 0
-      },
-      {
-        "p": 0.75,
-        "y": 0
-      }
-    ],
-    "engine": "gpt-4.1-mini-text",
-    "error": ""
-  },
-  {
-    "doc_id": "hr_policy_2025",
-    "file": "data/benchmark_ocr/synthetic_docs/hr_policy_2025.pdf",
-    "channel_variant": "digital",
-    "route_correct": true,
-    "route_gold": "hr_policy",
-    "route_got": "hr_policy",
-    "metric_hits": 0,
-    "metric_total": 0,
-    "metric_fp": 4,
-    "fact_recall_hits": 9,
-    "fact_recall_total": 9,
-    "halluc_clauses": 0,
-    "total_clauses": 7,
-    "cal_rows": [
-      {
-        "p": 0.75,
-        "y": 0
-      },
-      {
-        "p": 0.75,
-        "y": 0
-      },
-      {
-        "p": 0.75,
-        "y": 0
-      },
-      {
-        "p": 0.75,
-        "y": 0
-      }
-    ],
-    "engine": "gpt-4.1-mini-text",
-    "error": ""
-  },
-  {
-    "doc_id": "work_hours_2025_scan",
-    "file": "data/benchmark_ocr/scan_variants/근로시간관리규정_2025_scan.pdf",
-    "channel_variant": "scan",
-    "route_correct": true,
-    "route_gold": "policy_manual",
-    "route_got": "policy_manual",
-    "metric_hits": 0,
-    "metric_total": 0,
-    "metric_fp": 4,
-    "fact_recall_hits": 6,
-    "fact_recall_total": 7,
-    "halluc_clauses": 0,
-    "total_clauses": 5,
-    "cal_rows": [
-      {
-        "p": 0.75,
-        "y": 0
-      },
-      {
-        "p": 0.75,
-        "y": 0
-      },
-      {
-        "p": 0.75,
-        "y": 0
-      },
-      {
-        "p": 0.75,
-        "y": 0
-      }
-    ],
-    "engine": "gpt-4.1-mini-text",
-    "error": ""
-  },
-  {
-    "doc_id": "hazmat_2025_scan",
-    "file": "data/benchmark_ocr/scan_variants/유해물질관리규정_2025_scan.pdf",
-    "channel_variant": "scan",
-    "route_correct": false,
-    "route_gold": "policy_manual",
-    "route_got": "ambiguous_fallback_vlm",
-    "metric_hits": 0,
-    "metric_total": 0,
-    "metric_fp": 2,
-    "fact_recall_hits": 6,
-    "fact_recall_total": 6,
-    "halluc_clauses": 0,
-    "total_clauses": 5,
-    "cal_rows": [
-      {
-        "p": 0.75,
-        "y": 0
-      },
-      {
-        "p": 0.75,
-        "y": 0
-      }
-    ],
-    "engine": "gpt-4.1-mini-text",
-    "error": ""
-  },
-  {
-    "doc_id": "responsible_minerals_2025_scan",
-    "file": "data/benchmark_ocr/scan_variants/책임광물실사정책_2025_scan.pdf",
-    "channel_variant": "scan",
-    "route_correct": false,
-    "route_gold": "policy_manual",
-    "route_got": "ambiguous_fallback_vlm",
-    "metric_hits": 0,
-    "metric_total": 0,
-    "metric_fp": 2,
-    "fact_recall_hits": 6,
-    "fact_recall_total": 6,
-    "halluc_clauses": 0,
-    "total_clauses": 5,
-    "cal_rows": [
-      {
-        "p": 0.75,
-        "y": 0
-      },
-      {
-        "p": 0.75,
-        "y": 0
-      }
-    ],
-    "engine": "gpt-4.1-mini-text",
-    "error": ""
-  },
-  {
-    "doc_id": "safety_minutes_2025_scan",
-    "file": "data/benchmark_ocr/scan_variants/safety_policy_2025_scan.pdf",
-    "channel_variant": "scan",
-    "route_correct": true,
-    "route_gold": "safety_minutes",
-    "route_got": "safety_minutes",
-    "metric_hits": 2,
-    "metric_total": 2,
-    "metric_fp": 3,
-    "fact_recall_hits": 8,
-    "fact_recall_total": 8,
-    "halluc_clauses": 0,
-    "total_clauses": 5,
-    "cal_rows": [
-      {
-        "p": 0.75,
-        "y": 1
-      },
-      {
-        "p": 0.75,
-        "y": 0
-      },
-      {
-        "p": 0.75,
-        "y": 0
-      },
-      {
-        "p": 0.75,
-        "y": 0
-      },
-      {
-        "p": 0.75,
-        "y": 1
-      }
-    ],
-    "engine": "gpt-4.1-mini-text",
-    "error": ""
-  }
-]
+  "results": [
+    {
+      "doc_id": "work_hours_2025",
+      "file": "시연증빙세트_한울정밀공업/근로시간관리규정_2025.pdf",
+      "channel_variant": "digital",
+      "route_correct": true,
+      "route_gold": "policy_manual",
+      "route_got": "policy_manual",
+      "metric_hits": 0,
+      "metric_total": 0,
+      "metric_fp_true_halluc": 0,
+      "metric_fp_unlisted_real": 4,
+      "fact_recall_hits_heuristic": 7,
+      "fact_recall_hits_judge": 7,
+      "fact_recall_total": 7,
+      "halluc_clauses_heuristic": 0,
+      "halluc_clauses_judge": 0,
+      "total_clauses": 5,
+      "cal_rows": [
+        {
+          "p": 0.75,
+          "y": 0
+        },
+        {
+          "p": 0.75,
+          "y": 0
+        },
+        {
+          "p": 0.75,
+          "y": 0
+        },
+        {
+          "p": 0.75,
+          "y": 0
+        }
+      ],
+      "engine": "gpt-4.1-mini-text",
+      "error": ""
+    },
+    {
+      "doc_id": "doc_record_mgmt_2025",
+      "file": "시연증빙세트_한울정밀공업/문서기록관리규정_2025.pdf",
+      "channel_variant": "digital",
+      "route_correct": true,
+      "route_gold": "policy_manual",
+      "route_got": "policy_manual",
+      "metric_hits": 0,
+      "metric_total": 0,
+      "metric_fp_true_halluc": 0,
+      "metric_fp_unlisted_real": 0,
+      "fact_recall_hits_heuristic": 6,
+      "fact_recall_hits_judge": 6,
+      "fact_recall_total": 6,
+      "halluc_clauses_heuristic": 0,
+      "halluc_clauses_judge": 0,
+      "total_clauses": 5,
+      "cal_rows": [],
+      "engine": "gpt-4.1-mini-text",
+      "error": ""
+    },
+    {
+      "doc_id": "rohs_reach_2025",
+      "file": "시연증빙세트_한울정밀공업/물질규제_RoHS_REACH_2025.pdf",
+      "channel_variant": "digital",
+      "route_correct": false,
+      "route_gold": "policy_manual",
+      "route_got": "ambiguous_fallback_vlm",
+      "metric_hits": 0,
+      "metric_total": 0,
+      "metric_fp_true_halluc": 0,
+      "metric_fp_unlisted_real": 0,
+      "fact_recall_hits_heuristic": 6,
+      "fact_recall_hits_judge": 6,
+      "fact_recall_total": 6,
+      "halluc_clauses_heuristic": 0,
+      "halluc_clauses_judge": 0,
+      "total_clauses": 5,
+      "cal_rows": [],
+      "engine": "gpt-4.1-mini-text",
+      "error": ""
+    },
+    {
+      "doc_id": "capa_2025",
+      "file": "시연증빙세트_한울정밀공업/시정조치_CAPA절차서_2025.pdf",
+      "channel_variant": "digital",
+      "route_correct": false,
+      "route_gold": "policy_manual",
+      "route_got": "ambiguous_fallback_vlm",
+      "metric_hits": 0,
+      "metric_total": 0,
+      "metric_fp_true_halluc": 0,
+      "metric_fp_unlisted_real": 6,
+      "fact_recall_hits_heuristic": 6,
+      "fact_recall_hits_judge": 6,
+      "fact_recall_total": 6,
+      "halluc_clauses_heuristic": 0,
+      "halluc_clauses_judge": 0,
+      "total_clauses": 5,
+      "cal_rows": [
+        {
+          "p": 0.75,
+          "y": 0
+        },
+        {
+          "p": 0.75,
+          "y": 0
+        },
+        {
+          "p": 0.75,
+          "y": 0
+        },
+        {
+          "p": 0.75,
+          "y": 0
+        },
+        {
+          "p": 0.75,
+          "y": 0
+        },
+        {
+          "p": 0.75,
+          "y": 0
+        }
+      ],
+      "engine": "gpt-4.1-mini-text",
+      "error": ""
+    },
+    {
+      "doc_id": "sanitation_housing_2025",
+      "file": "시연증빙세트_한울정밀공업/위생_기숙사관리규정_2025.pdf",
+      "channel_variant": "digital",
+      "route_correct": true,
+      "route_gold": "policy_manual",
+      "route_got": "policy_manual",
+      "metric_hits": 0,
+      "metric_total": 0,
+      "metric_fp_true_halluc": 0,
+      "metric_fp_unlisted_real": 6,
+      "fact_recall_hits_heuristic": 7,
+      "fact_recall_hits_judge": 7,
+      "fact_recall_total": 7,
+      "halluc_clauses_heuristic": 0,
+      "halluc_clauses_judge": 0,
+      "total_clauses": 4,
+      "cal_rows": [
+        {
+          "p": 0.75,
+          "y": 0
+        },
+        {
+          "p": 0.75,
+          "y": 0
+        },
+        {
+          "p": 0.75,
+          "y": 0
+        },
+        {
+          "p": 0.75,
+          "y": 0
+        },
+        {
+          "p": 0.75,
+          "y": 0
+        },
+        {
+          "p": 0.75,
+          "y": 0
+        }
+      ],
+      "engine": "gpt-4.1-mini-text",
+      "error": ""
+    },
+    {
+      "doc_id": "hazmat_2025",
+      "file": "시연증빙세트_한울정밀공업/유해물질관리규정_2025.pdf",
+      "channel_variant": "digital",
+      "route_correct": false,
+      "route_gold": "policy_manual",
+      "route_got": "ambiguous_fallback_vlm",
+      "metric_hits": 0,
+      "metric_total": 0,
+      "metric_fp_true_halluc": 0,
+      "metric_fp_unlisted_real": 2,
+      "fact_recall_hits_heuristic": 6,
+      "fact_recall_hits_judge": 6,
+      "fact_recall_total": 6,
+      "halluc_clauses_heuristic": 0,
+      "halluc_clauses_judge": 0,
+      "total_clauses": 11,
+      "cal_rows": [
+        {
+          "p": 0.75,
+          "y": 0
+        },
+        {
+          "p": 0.75,
+          "y": 0
+        }
+      ],
+      "engine": "gpt-4.1-mini-text",
+      "error": ""
+    },
+    {
+      "doc_id": "ip_protection_2025",
+      "file": "시연증빙세트_한울정밀공업/지식재산보호규정_2025.pdf",
+      "channel_variant": "digital",
+      "route_correct": false,
+      "route_gold": "policy_manual",
+      "route_got": "ambiguous_fallback_vlm",
+      "metric_hits": 0,
+      "metric_total": 0,
+      "metric_fp_true_halluc": 0,
+      "metric_fp_unlisted_real": 0,
+      "fact_recall_hits_heuristic": 6,
+      "fact_recall_hits_judge": 6,
+      "fact_recall_total": 6,
+      "halluc_clauses_heuristic": 0,
+      "halluc_clauses_judge": 0,
+      "total_clauses": 5,
+      "cal_rows": [],
+      "engine": "gpt-4.1-mini-text",
+      "error": ""
+    },
+    {
+      "doc_id": "responsible_minerals_2025",
+      "file": "시연증빙세트_한울정밀공업/책임광물실사정책_2025.pdf",
+      "channel_variant": "digital",
+      "route_correct": false,
+      "route_gold": "policy_manual",
+      "route_got": "ambiguous_fallback_vlm",
+      "metric_hits": 0,
+      "metric_total": 0,
+      "metric_fp_true_halluc": 0,
+      "metric_fp_unlisted_real": 2,
+      "fact_recall_hits_heuristic": 6,
+      "fact_recall_hits_judge": 6,
+      "fact_recall_total": 6,
+      "halluc_clauses_heuristic": 0,
+      "halluc_clauses_judge": 0,
+      "total_clauses": 8,
+      "cal_rows": [
+        {
+          "p": 0.75,
+          "y": 0
+        },
+        {
+          "p": 0.75,
+          "y": 0
+        }
+      ],
+      "engine": "gpt-4.1-mini-text",
+      "error": ""
+    },
+    {
+      "doc_id": "safety_minutes_2025",
+      "file": "data/test_docs/safety_policy_2025.pdf",
+      "channel_variant": "digital",
+      "route_correct": true,
+      "route_gold": "safety_minutes",
+      "route_got": "safety_minutes",
+      "metric_hits": 2,
+      "metric_total": 2,
+      "metric_fp_true_halluc": 0,
+      "metric_fp_unlisted_real": 3,
+      "fact_recall_hits_heuristic": 8,
+      "fact_recall_hits_judge": 8,
+      "fact_recall_total": 8,
+      "halluc_clauses_heuristic": 0,
+      "halluc_clauses_judge": 1,
+      "total_clauses": 5,
+      "cal_rows": [
+        {
+          "p": 0.75,
+          "y": 1
+        },
+        {
+          "p": 0.75,
+          "y": 0
+        },
+        {
+          "p": 0.75,
+          "y": 0
+        },
+        {
+          "p": 0.75,
+          "y": 0
+        },
+        {
+          "p": 0.75,
+          "y": 1
+        }
+      ],
+      "engine": "gpt-4.1-mini-text",
+      "error": ""
+    },
+    {
+      "doc_id": "emergency_manual_2025",
+      "file": "data/benchmark_ocr/synthetic_docs/emergency_manual_2025.pdf",
+      "channel_variant": "digital",
+      "route_correct": true,
+      "route_gold": "emergency_manual",
+      "route_got": "emergency_manual",
+      "metric_hits": 0,
+      "metric_total": 0,
+      "metric_fp_true_halluc": 0,
+      "metric_fp_unlisted_real": 7,
+      "fact_recall_hits_heuristic": 7,
+      "fact_recall_hits_judge": 7,
+      "fact_recall_total": 7,
+      "halluc_clauses_heuristic": 0,
+      "halluc_clauses_judge": 0,
+      "total_clauses": 14,
+      "cal_rows": [
+        {
+          "p": 0.75,
+          "y": 0
+        },
+        {
+          "p": 0.75,
+          "y": 0
+        },
+        {
+          "p": 0.75,
+          "y": 0
+        },
+        {
+          "p": 0.75,
+          "y": 0
+        },
+        {
+          "p": 0.75,
+          "y": 0
+        },
+        {
+          "p": 0.75,
+          "y": 0
+        },
+        {
+          "p": 0.75,
+          "y": 0
+        }
+      ],
+      "engine": "gpt-4.1-mini-text",
+      "error": ""
+    },
+    {
+      "doc_id": "hr_policy_2025",
+      "file": "data/benchmark_ocr/synthetic_docs/hr_policy_2025.pdf",
+      "channel_variant": "digital",
+      "route_correct": true,
+      "route_gold": "hr_policy",
+      "route_got": "hr_policy",
+      "metric_hits": 0,
+      "metric_total": 0,
+      "metric_fp_true_halluc": 0,
+      "metric_fp_unlisted_real": 4,
+      "fact_recall_hits_heuristic": 9,
+      "fact_recall_hits_judge": 9,
+      "fact_recall_total": 9,
+      "halluc_clauses_heuristic": 0,
+      "halluc_clauses_judge": 0,
+      "total_clauses": 7,
+      "cal_rows": [
+        {
+          "p": 0.75,
+          "y": 0
+        },
+        {
+          "p": 0.75,
+          "y": 0
+        },
+        {
+          "p": 0.75,
+          "y": 0
+        },
+        {
+          "p": 0.75,
+          "y": 0
+        }
+      ],
+      "engine": "gpt-4.1-mini-text",
+      "error": ""
+    },
+    {
+      "doc_id": "work_hours_2025_scan",
+      "file": "data/benchmark_ocr/scan_variants/근로시간관리규정_2025_scan.pdf",
+      "channel_variant": "scan",
+      "route_correct": true,
+      "route_gold": "policy_manual",
+      "route_got": "policy_manual",
+      "metric_hits": 0,
+      "metric_total": 0,
+      "metric_fp_true_halluc": 3,
+      "metric_fp_unlisted_real": 1,
+      "fact_recall_hits_heuristic": 6,
+      "fact_recall_hits_judge": 7,
+      "fact_recall_total": 7,
+      "halluc_clauses_heuristic": 0,
+      "halluc_clauses_judge": 0,
+      "total_clauses": 5,
+      "cal_rows": [
+        {
+          "p": 0.75,
+          "y": 0
+        },
+        {
+          "p": 0.75,
+          "y": 0
+        },
+        {
+          "p": 0.75,
+          "y": 0
+        },
+        {
+          "p": 0.75,
+          "y": 0
+        }
+      ],
+      "engine": "gpt-4.1-mini-text",
+      "error": ""
+    },
+    {
+      "doc_id": "hazmat_2025_scan",
+      "file": "data/benchmark_ocr/scan_variants/유해물질관리규정_2025_scan.pdf",
+      "channel_variant": "scan",
+      "route_correct": false,
+      "route_gold": "policy_manual",
+      "route_got": "ambiguous_fallback_vlm",
+      "metric_hits": 0,
+      "metric_total": 0,
+      "metric_fp_true_halluc": 0,
+      "metric_fp_unlisted_real": 2,
+      "fact_recall_hits_heuristic": 6,
+      "fact_recall_hits_judge": 6,
+      "fact_recall_total": 6,
+      "halluc_clauses_heuristic": 0,
+      "halluc_clauses_judge": 0,
+      "total_clauses": 5,
+      "cal_rows": [
+        {
+          "p": 0.75,
+          "y": 0
+        },
+        {
+          "p": 0.75,
+          "y": 0
+        }
+      ],
+      "engine": "gpt-4.1-mini-text",
+      "error": ""
+    },
+    {
+      "doc_id": "responsible_minerals_2025_scan",
+      "file": "data/benchmark_ocr/scan_variants/책임광물실사정책_2025_scan.pdf",
+      "channel_variant": "scan",
+      "route_correct": false,
+      "route_gold": "policy_manual",
+      "route_got": "ambiguous_fallback_vlm",
+      "metric_hits": 0,
+      "metric_total": 0,
+      "metric_fp_true_halluc": 1,
+      "metric_fp_unlisted_real": 1,
+      "fact_recall_hits_heuristic": 6,
+      "fact_recall_hits_judge": 6,
+      "fact_recall_total": 6,
+      "halluc_clauses_heuristic": 0,
+      "halluc_clauses_judge": 0,
+      "total_clauses": 8,
+      "cal_rows": [
+        {
+          "p": 0.75,
+          "y": 0
+        },
+        {
+          "p": 0.75,
+          "y": 0
+        }
+      ],
+      "engine": "gpt-4.1-mini-text",
+      "error": ""
+    },
+    {
+      "doc_id": "safety_minutes_2025_scan",
+      "file": "data/benchmark_ocr/scan_variants/safety_policy_2025_scan.pdf",
+      "channel_variant": "scan",
+      "route_correct": true,
+      "route_gold": "safety_minutes",
+      "route_got": "safety_minutes",
+      "metric_hits": 2,
+      "metric_total": 2,
+      "metric_fp_true_halluc": 0,
+      "metric_fp_unlisted_real": 3,
+      "fact_recall_hits_heuristic": 8,
+      "fact_recall_hits_judge": 8,
+      "fact_recall_total": 8,
+      "halluc_clauses_heuristic": 0,
+      "halluc_clauses_judge": 0,
+      "total_clauses": 5,
+      "cal_rows": [
+        {
+          "p": 0.75,
+          "y": 1
+        },
+        {
+          "p": 0.75,
+          "y": 0
+        },
+        {
+          "p": 0.75,
+          "y": 0
+        },
+        {
+          "p": 0.75,
+          "y": 0
+        },
+        {
+          "p": 0.75,
+          "y": 1
+        }
+      ],
+      "engine": "gpt-4.1-mini-text",
+      "error": ""
+    }
+  ]
+}
