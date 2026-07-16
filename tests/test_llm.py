@@ -163,3 +163,50 @@ def test_openai_non_retryable_error_strict_raises_immediately(monkeypatch):
         client.complete(system="s", user="u")
 
     assert fake.calls == 1
+
+
+# ---- 5) Anthropic 폴백 경로 — OpenAI와 동일한 대칭 케이스 -------------------
+
+def test_anthropic_retries_exhausted_non_strict_falls_back_to_mock(monkeypatch, caplog):
+    monkeypatch.setattr(llm_module.SETTINGS, "strict_llm", False)
+    fake = _FakeAnthropic([_RetryableError("boom")] * LLM_MAX_ATTEMPTS)
+    client = _client()
+    client._openai_client = None
+    client._anthropic_client = fake
+
+    with caplog.at_level(logging.WARNING, logger="esgenie.llm"):
+        resp = client.complete(system="s", user="영역: E\n보고서 작성")
+
+    assert fake.calls == LLM_MAX_ATTEMPTS
+    assert resp.used_mock is True
+    assert "boom" in resp.meta["error"]
+    messages = "\n".join(r.message for r in caplog.records)
+    assert "재시도" in messages
+    assert "mock 폴백" in messages
+
+
+def test_anthropic_retries_exhausted_strict_raises(monkeypatch):
+    monkeypatch.setattr(llm_module.SETTINGS, "strict_llm", True)
+    fake = _FakeAnthropic([_RetryableError("boom")] * LLM_MAX_ATTEMPTS)
+    client = _client()
+    client._openai_client = None
+    client._anthropic_client = fake
+
+    with pytest.raises(LLMUnavailableError):
+        client.complete(system="s", user="u")
+
+    assert fake.calls == LLM_MAX_ATTEMPTS
+
+
+def test_anthropic_non_retryable_error_skips_retry(monkeypatch):
+    monkeypatch.setattr(llm_module.SETTINGS, "strict_llm", False)
+    fake = _FakeAnthropic([_AuthError("invalid api key")])
+    client = _client()
+    client._openai_client = None
+    client._anthropic_client = fake
+
+    resp = client.complete(system="s", user="u")
+
+    assert fake.calls == 1
+    assert resp.used_mock is True
+    assert "invalid api key" in resp.meta["error"]
