@@ -14,6 +14,7 @@ from __future__ import annotations
 
 import io
 import json
+import logging
 import os
 import re
 import zipfile
@@ -25,6 +26,8 @@ from xml.etree import ElementTree as ET
 import requests
 
 from .config import SAMPLE_DART_DIR, SETTINGS
+
+logger = logging.getLogger(__name__)
 
 DART_BASE   = "https://opendart.fss.or.kr/api"
 CORP_CACHE  = SAMPLE_DART_DIR.parent / "_cache" / "corp_codes.json"   # 로컬 캐시
@@ -45,6 +48,7 @@ class CompanyReport:
     kesg_data: dict[str, dict[str, Any]]
     raw_text_snippets: list[str]
     source: str
+    fetch_error: str | None = None
 
     def kesg_value(self, code: str, default: Any = None) -> Any:
         entry = self.kesg_data.get(code)
@@ -145,7 +149,8 @@ def _download_corp_list() -> list[dict[str, str]]:
                     "industry":   "",   # 개황 API에서 별도 조회
                 })
         return corps
-    except Exception:
+    except Exception as exc:
+        logger.warning("DART 기업코드 목록 다운로드 실패: %s", exc)
         return []
 
 
@@ -186,20 +191,26 @@ def load_report(corp_code: str, report_year: int | None = None) -> CompanyReport
 
     DART_API_KEY 있으면 실제 API → 없으면 샘플 → 없으면 빈 보고서.
     """
+    fetch_error: str | None = None
     if not SETTINGS.use_mock_dart:
         try:
             return _fetch_from_dart(corp_code, report_year)
-        except Exception:
-            pass
+        except Exception as exc:
+            fetch_error = str(exc)
+            logger.warning("DART 실시간 조회 실패, 대체 데이터로 폴백: %s", exc)
 
     # 샘플 폴백
     try:
-        return load_sample_report(corp_code)
+        report = load_sample_report(corp_code)
+        report.fetch_error = fetch_error
+        return report
     except FileNotFoundError:
         pass
 
     # 빈 보고서 (OCR 증빙만 사용)
-    return _empty_report(corp_code, report_year or 2025)
+    report = _empty_report(corp_code, report_year or 2025)
+    report.fetch_error = fetch_error
+    return report
 
 
 # ====================================================================
@@ -252,12 +263,20 @@ def _dart_get(endpoint: str, **params) -> dict[str, Any] | None:
             params={"crtfc_key": SETTINGS.dart_api_key, **params},
             timeout=10,
         )
-        if r.status_code == 200:
-            data = r.json()
-            if data.get("status") == "000":
-                return data
-    except Exception:
-        pass
+        if r.status_code != 200:
+            logger.warning("DART API 비정상 HTTP status=%s [%s]", r.status_code, endpoint)
+            return None
+        data = r.json()
+        status = data.get("status")
+        if status == "000":
+            return data
+        if status == "013":
+            # 조회된 데이터 없음 — 정상적인 빈 값이므로 오류로 취급하지 않는다.
+            logger.debug("DART API 조회된 데이터 없음(status=013) [%s]", endpoint)
+        else:
+            logger.warning("DART API 오류 status=%s msg=%s [%s]", status, data.get("message", ""), endpoint)
+    except Exception as exc:
+        logger.warning("DART API 호출 실패 [%s]: %s", endpoint, exc)
     return None
 
 
