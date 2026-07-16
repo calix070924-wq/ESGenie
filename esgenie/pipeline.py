@@ -401,6 +401,7 @@ def run(
                 industry_stats=industry_stats,
                 industry_module=industry_module,
                 llm_judge=llm_judge,
+                extraction=extraction,  # 본문 형식 v2 — 커버 항목 결정적 표
             )
             sections[area] = verify
             logger.info(

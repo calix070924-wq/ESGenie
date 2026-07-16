@@ -163,6 +163,7 @@ def verify_and_refine(
     industry_module=None,                # 업종 모듈. pipeline에서 1회 resolve된 동일 객체 전달
     llm_judge: bool = False,             # 하이브리드: LLM 2차 판정 활성화
     grounding_gate=None,
+    extraction: Any | None = None,       # ExtractionResult | None — 본문 형식 v2 (커버 항목 표)
 ) -> VerificationResult:
     """반복 검증 루프.
 
@@ -181,7 +182,7 @@ def verify_and_refine(
     ctx = rag.retrieve_for_area(area, k=5, corp=corp)
     retrieval_decision = ctx.retrieval_decision
     if retrieval_decision is not None and retrieval_decision.decision != "ACCEPT":
-        gen = rag.generate_section(report, area, demo_greenwash=demo_greenwash, context=ctx, corp=corp)
+        gen = rag.generate_section(report, area, demo_greenwash=demo_greenwash, context=ctx, corp=corp, extraction=extraction)
         det = _retrieval_blocked_detection(gen)
         step = VerificationStep(
             iteration=0,
@@ -208,7 +209,7 @@ def verify_and_refine(
         )
 
     # --- 초안 생성 (iteration 0) ---
-    gen = rag.generate_section(report, area, demo_greenwash=demo_greenwash, context=ctx, corp=corp)
+    gen = rag.generate_section(report, area, demo_greenwash=demo_greenwash, context=ctx, corp=corp, extraction=extraction)
     clean_text = strip_citation_markers(gen.text)
     det = detect(clean_text, report)
     grounding = grounding_evaluator(gen.text, gen.context.as_chunk_dicts())
@@ -243,7 +244,7 @@ def verify_and_refine(
         applied_constraints = applied_axes + grounding.hard_fails
 
         # 재생성
-        gen = rag.generate_section(report, area, extra_instruction=instruction, context=ctx, corp=corp)
+        gen = rag.generate_section(report, area, extra_instruction=instruction, context=ctx, corp=corp, extraction=extraction)
         clean_text = strip_citation_markers(gen.text)
         det = detect(clean_text, report)
         grounding = grounding_evaluator(gen.text, gen.context.as_chunk_dicts())
