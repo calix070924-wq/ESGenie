@@ -150,6 +150,7 @@ def _download_corp_list() -> list[dict[str, str]]:
                 })
         return corps
     except Exception as exc:
+        # corp_list 경로는 시그니처 유지를 위해 로그 전용 구분(코드레벨 구분은 report 경로의 fetch_error 담당)
         logger.warning("DART 기업코드 목록 다운로드 실패: %s", exc)
         return []
 

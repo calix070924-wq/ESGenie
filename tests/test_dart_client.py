@@ -181,6 +181,22 @@ def test_load_report_dart_failure_falls_back_with_fetch_error(monkeypatch, caplo
     assert any("대체 데이터로 폴백" in r.message for r in caplog.records)
 
 
+def test_load_report_dart_success_keeps_fetch_error_none(monkeypatch) -> None:
+    monkeypatch.setattr(dart_client, "SETTINGS", SimpleNamespace(use_mock_dart=False, dart_api_key="fake-key"))
+
+    fake_success = dart_client.CompanyReport(
+        corp_code="005930", corp_name="삼성전자", industry="전자",
+        report_year=2024, financials={}, kesg_data={}, raw_text_snippets=[],
+        source="dart_api",
+    )
+    monkeypatch.setattr(dart_client, "_fetch_from_dart", lambda corp_code, report_year: fake_success)
+
+    result = dart_client.load_report("005930")
+
+    assert result.source == "dart_api"
+    assert result.fetch_error is None
+
+
 def test_company_report_fetch_error_defaults_to_none() -> None:
     report = dart_client.CompanyReport(
         corp_code="005930", corp_name="삼성전자", industry="전자",
