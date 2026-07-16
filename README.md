@@ -216,6 +216,8 @@ pip install -r requirements.txt   # 전체 의존성 (코어 + SSOT/OCR)
 cp .env.example .env   # 키가 있다면 채우기 (없어도 동작)
 ```
 
+정확한 재현 환경이 필요하면: `pip install -r requirements.lock`
+
 `.env` 설정 항목:
 
 ```env

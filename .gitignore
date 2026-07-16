@@ -19,6 +19,7 @@ venv/
 .vscode/
 *.tmp
 *.lock
+!requirements.lock
 
 # Outputs (generated files)
 outputs/
