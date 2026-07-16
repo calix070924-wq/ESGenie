@@ -58,6 +58,7 @@ def test_pipeline_output_schema(corp_code: str) -> None:
     assert len(trace.sentences) > 0
 
 
+@pytest.mark.writes_outputs
 @pytest.mark.parametrize("corp_code", CORP_CODES)
 def test_audit_trace_saved_to_disk(corp_code: str, tmp_path) -> None:
     """save_traces=True 시 outputs/에 파일이 생성돼야 한다."""

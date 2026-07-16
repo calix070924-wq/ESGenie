@@ -10,3 +10,10 @@ requires-python = ">=3.10"
 [tool.setuptools.packages.find]
 where = ["."]
 include = ["esgenie*"]
+
+[tool.pytest.ini_options]
+addopts = "--strict-markers"
+markers = [
+  "writes_outputs: 실제 outputs/에 파일을 쓰는 테스트 (CI 기본 제외)",
+  "live: 실 API 키/네트워크가 필요한 테스트 (CI 기본 제외; 현재 부착 대상 없음)",
+]
