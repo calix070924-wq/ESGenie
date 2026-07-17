@@ -60,3 +60,34 @@ def test_d1_still_fires_on_performance_mismatch():
     s = "당해 연도 재생에너지 사용 비율은 100%로 집계되었다."
     axis = _score_d1_numeric(s, _FakeGraph(value=72.0))
     assert axis.score > 0.5  # 실적 주장 100 vs 노드 72 — 여전히 검출
+
+
+# ---------------------------------------------------------------------------
+# 다지표 문장 교차 매칭 오탐 차단 (2026-07-17 배치 실측 대응)
+# ---------------------------------------------------------------------------
+
+class _MultiGraph:
+    """코드별 노드를 갖는 최소 그래프 — 정규직 95.1%, 여성 비율 23.8%."""
+
+    def __init__(self):
+        self.nodes = {
+            "S-2-2": SimpleNamespace(id="n_s22", value=95.1, unit="%", period=2025),
+            "S-3-1": SimpleNamespace(id="n_s31", value=23.8, unit="%", period=2025),
+        }
+
+    def search_nodes(self, keywords, period=None):
+        return [self.nodes[k] for k in keywords if k in self.nodes]
+
+
+def test_d1_multi_metric_sentence_no_cross_match():
+    """두 지표가 한 문장에 있어도 각자 제 노드와 매칭되면 오탐 없음."""
+    s = "정규직 비율은 95.1%이며, 여성 직원 비율은 23.8%로 나타났다."
+    axis = _score_d1_numeric(s, _MultiGraph())
+    assert axis.score == 0.0, axis.detail
+
+
+def test_d1_multi_metric_true_mismatch_still_fires():
+    """문장 내 어떤 노드와도 안 맞는 수치는 여전히 검출."""
+    s = "정규직 비율은 55.0%이며, 여성 직원 비율은 23.8%로 나타났다."
+    axis = _score_d1_numeric(s, _MultiGraph())
+    assert axis.score > 0.5, axis.detail

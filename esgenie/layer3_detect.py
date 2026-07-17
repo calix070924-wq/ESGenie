@@ -362,17 +362,36 @@ def _is_target_context(sentence: str, start: int, end: int) -> bool:
     return bool(_TARGET_CONTEXT_RE.search(window))
 
 
+def _sentence_topic_codes(sentence: str) -> set[str]:
+    """문장에 등장하는 모든 토픽 키워드의 K-ESG 코드 집합."""
+    return {
+        code for kw, (_topic, code) in _KEYWORD_MAP.items()
+        if code and kw in sentence
+    }
+
+
 def _score_d1_numeric(
     sentence: str,
     evidence_graph: Any | None,
 ) -> AxisScore:
-    """claim 숫자 vs L0 노드값 상대 오차. 목표/전망 문맥의 수치는 비교 제외."""
+    """claim 숫자 vs L0 노드값 상대 오차.
+
+    2026-07-17 정밀도 개선 2건:
+    - 목표/전망 문맥의 수치는 실적 노드와 비교하지 않는다 (목표 100% vs 실적 72% 오탐).
+    - 다지표 문장 교차 오탐 차단: 수치를 최근접 코드 하나가 아니라 **문장 내 전체 토픽
+      코드의 노드들과 비교해 최솟값 오차**를 쓴다. 배치 실측(5개사)에서 D1 만점의
+      대부분이 "여성 비율 16.6을 옆 지표 노드 29.0과 비교" 류의 교차 매칭이었다.
+      수치가 문장 내 어떤 관련 노드와도 안 맞을 때만 오차로 계산된다.
+      (트레이드오프: 문장 내 다른 지표의 노드값과 우연히 일치하는 허위 수치는
+      놓칠 수 있음 — 정밀도 우선. 재현율 보강은 D5·교차검증 엣지 몫.)
+    """
     if evidence_graph is None:
         return AxisScore(score=0.0, evidence=[], detail="evidence_graph 없음 — 스킵")
 
     worst_delta = 0.0
     hit_node_ids: list[str] = []
     details: list[str] = []
+    sentence_codes = _sentence_topic_codes(sentence)
 
     for m in _NUMBER_PATTERN.finditer(sentence):
         num_str, unit = m.group("num"), m.group("unit")
@@ -384,25 +403,37 @@ def _score_d1_numeric(
             details.append(f"{code}: claim={claim_val} — 목표/전망 문맥, 실적 비교 제외")
             continue
 
-        nodes = evidence_graph.search_nodes(keywords=[code])
-        if not nodes:
+        # 후보: 최근접 코드 우선 + 문장 내 나머지 토픽 코드 (교차 오탐 방지)
+        cand_codes = [code] + sorted(sentence_codes - {code})
+        best: tuple[float, Any, str] | None = None  # (delta, node, code)
+        any_nodes = False
+        for c in cand_codes:
+            nodes = evidence_graph.search_nodes(keywords=[c])
+            if not nodes:
+                continue
+            any_nodes = True
+            # 단위 호환 노드만 비교 대상 ("31 %" 주장을 tCO2eq 노드와 비교하지 않음)
+            compat = [n for n in nodes if units_compatible(claim_unit, getattr(n, "unit", None))]
+            if not compat:
+                continue
+            node = max(compat, key=lambda n: n.period)  # 가장 최신 노드
+            if node.value == 0:
+                continue
+            delta = abs(claim_val - node.value) / abs(node.value)
+            if best is None or delta < best[0]:
+                best = (delta, node, c)
+
+        if best is None:
+            if any_nodes:
+                details.append(
+                    f"{code}: claim={claim_val}{claim_unit} — 단위 불일치(노드 단위와 비교 불가, 스킵)")
             continue
 
-        # 단위 호환 노드만 비교 대상 ("31 %" 주장을 tCO2eq 노드와 비교하지 않음)
-        compat = [n for n in nodes if units_compatible(claim_unit, getattr(n, "unit", None))]
-        if not compat:
-            details.append(f"{code}: claim={claim_val}{claim_unit} — 단위 불일치(노드 단위와 비교 불가, 스킵)")
-            continue
-
-        # 가장 최신 노드와 비교
-        node = max(compat, key=lambda n: n.period)
-        if node.value == 0:
-            continue
-        delta = abs(claim_val - node.value) / abs(node.value)
+        delta, node, matched_code = best
         if delta > worst_delta:
             worst_delta = delta
         hit_node_ids.append(node.id)
-        details.append(f"{code}: claim={claim_val} vs node={node.value} (Δ={delta:.1%})")
+        details.append(f"{matched_code}: claim={claim_val} vs node={node.value} (Δ={delta:.1%})")
 
     score = min(1.0, worst_delta / max(D1_THRESHOLD, 1e-9))
     return AxisScore(
