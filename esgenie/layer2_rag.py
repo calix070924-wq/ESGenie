@@ -430,16 +430,22 @@ def _area_item_rows(
     from .knowledge.kesg_items import by_code
 
     covered: list[dict[str, Any]] = []
+    conf_flags = getattr(extraction, "confidence_flags", {}) or {}
     for code, entry in (getattr(extraction, "mapped", {}) or {}).items():
         if entry.get("area") != area:
             continue
         ev = entry.get("evidence_node_ids") or []
-        if any(str(e).startswith("survey_") for e in ev):
+        real_ev = [e for e in ev if not str(e).startswith("survey_")]
+        if ev and not real_ev:
             status = "공시(설문)"
         elif entry.get("beyond_profile"):
             status = "공시(프로파일 외)"
+        elif real_ev:
+            status = "공시(증빙연결)"  # ISSB 갭 표와 동일 어휘 (Phase 2)
         else:
-            status = "공시"
+            status = "공시(자기기재)"
+        if "unit_suspect" in conf_flags.get(code, []):
+            status += "·단위확인"
         covered.append({
             "code": code,
             "name": entry.get("name") or code,

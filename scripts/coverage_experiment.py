@@ -106,10 +106,13 @@ def _run(variant: str, args: argparse.Namespace) -> dict[str, Any]:
             pipeline.load_report = real_load  # type: ignore[assignment]
 
     ext = output.extraction
+    from esgenie.layer1_extract import evidence_coverage_pct
     row: dict[str, Any] = {
         "variant": variant,
         "injected_codes": injected,
         "coverage_pct": round(ext.coverage_pct, 1) if ext else None,
+        # Phase 2 회귀 지표: 합성값 100%여도 증빙 연결 커버리지는 낮게 유지되어야 함
+        "evidence_coverage_pct": round(evidence_coverage_pct(ext), 1) if ext else None,
         "profile": ext.profile_label if ext else None,
         "missing_after": len(ext.missing) if ext else None,
     }
@@ -159,6 +162,7 @@ def _print_comparison(base: dict[str, Any] | None, full: dict[str, Any]) -> None
     print("커버리지 100% 실험 결과  (baseline → full100)")
     print("=" * 70)
     line("커버리지 %", lambda r: r.get("coverage_pct"))
+    line("증빙 연결 커버리지 %", lambda r: r.get("evidence_coverage_pct"))
     line("누락 항목 수", lambda r: r.get("missing_after"))
     line("D6 의심도", lambda r: f'{r["d6"]["score"]} ({r["d6"]["level"]})' if r.get("d6") else "—")
     line("D6 고아비율/민감누락", lambda r: f'{r["d6"]["orphan_ratios"]}/{r["d6"]["omitted_sensitive"]}' if r.get("d6") else "—")

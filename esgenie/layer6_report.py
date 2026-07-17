@@ -29,6 +29,15 @@ from .llm import CLIENT
 AREA_LABELS = {"E": "환경", "S": "사회", "G": "지배구조"}
 
 
+def _evidence_cov(ext: Any) -> float:
+    """증빙 연결 커버리지 — 값 존재(coverage_pct)와 분리 (Phase 2)."""
+    try:
+        from .layer1_extract import evidence_coverage_pct
+        return evidence_coverage_pct(ext)
+    except Exception:
+        return 0.0
+
+
 # ====================================================================
 # 자료구조
 # ====================================================================
@@ -132,6 +141,7 @@ def _block_cover(output: Any) -> ReportBlock:
     risk, band = _overall_risk(output)
     ext = output.extraction
     cov = f"{ext.coverage_pct:.1f}%" if ext is not None else "—"
+    ecov = f"{_evidence_cov(ext):.1f}%" if ext is not None else "—"
     profile = ext.profile_label if ext is not None else "—"
     d6 = output.disclosure
     issb = output.issb_gap
@@ -142,6 +152,7 @@ def _block_cover(output: Any) -> ReportBlock:
         ["보고 연도", f"{year}년" if year else "—"],
         ["적용 프로파일", profile],
         ["K-ESG 커버리지", cov],
+        ["증빙 연결 커버리지", ecov],
         ["종합 그린워싱 위험도", f"{risk:.1f} ({band})"],
     ]
     if d6 is not None:
@@ -305,6 +316,7 @@ def _block_exec_summary(output: Any) -> ReportBlock:
     risk, band = _overall_risk(output)
     ext = output.extraction
     cov = ext.coverage_pct if ext is not None else 0.0
+    ecov = _evidence_cov(ext) if ext is not None else 0.0
     d6 = output.disclosure
     issb = output.issb_gap
 
@@ -313,6 +325,7 @@ def _block_exec_summary(output: Any) -> ReportBlock:
         "업종": industry,
         "연도": year,
         "K-ESG_커버리지_pct": round(cov, 1),
+        "증빙_연결_커버리지_pct": round(ecov, 1),
         "종합_위험도": round(risk, 1),
         "위험_밴드": band,
         "선택적공시_의심도": round(d6.score, 2) if d6 else None,
@@ -322,7 +335,7 @@ def _block_exec_summary(output: Any) -> ReportBlock:
     }
 
     fallback = (
-        f"{name}의 K-ESG 공시 커버리지는 {cov:.1f}%이며, 종합 그린워싱 위험도는 "
+        f"{name}의 K-ESG 공시 커버리지는 {cov:.1f}%(증빙 연결 기준 {ecov:.1f}%)이며, 종합 그린워싱 위험도는 "
         f"{risk:.1f}({band}) 수준이다. "
         + (f"선택적 공시 의심도는 {d6.score:.2f}({d6.level})로 평가되었다. " if d6 else "")
         + (f"ISSB/KSSB 연계 항목 중 {issb.in_profile_missing}건이 누락되었다. " if issb else "")
@@ -410,6 +423,7 @@ def assemble_report(output: Any) -> ReportDoc:
     risk, band = _overall_risk(output)
     meta = {
         "coverage_pct": output.extraction.coverage_pct if output.extraction else None,
+        "evidence_coverage_pct": _evidence_cov(output.extraction) if output.extraction else None,
         "overall_risk": risk,
         "overall_band": band,
         "d6_score": output.disclosure.score if output.disclosure else None,

@@ -95,14 +95,28 @@ def test_area_item_rows_splits_covered_and_missing_by_area():
 
 
 def test_area_item_rows_status_labels():
+    """Phase 2: 공시 상태를 증빙 연결 기준으로 분리 (ISSB 표와 동일 어휘)."""
     ext = _extraction(mapped={
         "E-3-1": _mapped_entry("E-3-1", "E", evidence=["n1"]),
         "E-4-1": _mapped_entry("E-4-1", "E", evidence=["survey_E-4-1"]),
         "E-5-1": _mapped_entry("E-5-1", "E", beyond=True),
+        "E-6-1": _mapped_entry("E-6-1", "E"),  # 증빙 없음
     })
     covered, _ = _area_item_rows(ext, "E")
     status = {r["code"]: r["status"] for r in covered}
-    assert status == {"E-3-1": "공시", "E-4-1": "공시(설문)", "E-5-1": "공시(프로파일 외)"}
+    assert status == {
+        "E-3-1": "공시(증빙연결)",
+        "E-4-1": "공시(설문)",
+        "E-5-1": "공시(프로파일 외)",
+        "E-6-1": "공시(자기기재)",
+    }
+
+
+def test_area_item_rows_unit_suspect_flag():
+    ext = _extraction(mapped={"E-4-1": _mapped_entry("E-4-1", "E", unit="명")})
+    ext.confidence_flags = {"E-4-1": ["unit_suspect"]}
+    covered, _ = _area_item_rows(ext, "E")
+    assert covered[0]["status"] == "공시(자기기재)·단위확인"
 
 
 # ---------------------------------------------------------------------------
