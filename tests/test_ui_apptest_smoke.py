@@ -26,6 +26,10 @@ APP_FILE = os.path.join(os.path.dirname(os.path.dirname(__file__)), "app.py")
 # SBERT 로드 + L0~L5 파이프라인 실행이 있어 기본 3초 타임아웃은 부족하다.
 RUN_TIMEOUT = 60
 
+# mock_result fixture(module-scope)가 export_outputs=True/save_traces=True로
+# 상대경로 outputs/에 실제로 파일을 쓴다 — CI 기본 실행에서는 제외한다.
+pytestmark = pytest.mark.writes_outputs
+
 
 @pytest.fixture(autouse=True)
 def _unpollute_ui_tabs_module():

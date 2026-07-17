@@ -1,0 +1,28 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.10"
+          cache: "pip"
+          cache-dependency-path: requirements.lock
+
+      - name: Install dependencies
+        run: |
+          pip install --upgrade pip
+          pip install -r requirements.lock
+
+      - name: Run tests (mock mode, outputs/ 미접촉 서브셋)
+        env:
+          ESGENIE_FORCE_MOCK: "1"
+        run: pytest -m "not writes_outputs" -q
