@@ -140,12 +140,14 @@ def _apply_survey_answers(
 
     from esgenie.knowledge.kesg_items import by_code
 
+    injected_in_profile = 0
     for code, answer in survey_answers.items():
         if answer.get("yn", "미입력") == "미입력" or code in extraction.mapped:
             continue
         item = by_code(code)
         if item is None:
             continue
+        in_profile = code in extraction.missing  # missing은 프로파일 내 누락만 담는다
         extraction.mapped[code] = {
             "code": code,
             "name": item.name,
@@ -156,9 +158,26 @@ def _apply_survey_answers(
             "unit": "",
             "note": answer.get("text") or None,
             "evidence_node_ids": [f"survey_{code}"],
+            "beyond_profile": not in_profile,
         }
-        if code in extraction.missing:
+        if in_profile:
             extraction.missing.remove(code)
+            injected_in_profile += 1
+            if item.area in extraction.by_area:
+                extraction.by_area[item.area]["present"] += 1
+        elif code not in extraction.beyond_profile:
+            # 프로파일 밖 설문 응답 — 커버리지 분모를 왜곡하지 않도록 beyond로 분류
+            extraction.beyond_profile.append(code)
+
+    # 커버리지 재계산 (2026-07-17): 설문으로 채운 항목도 '값 존재' 커버리지에 반영.
+    # 증빙 기준 수치는 evidence_coverage_pct가 분리 담당(survey_* 분자 제외)하므로
+    # 두 지표의 역할이 겹치지 않는다.
+    if injected_in_profile:
+        beyond = set(extraction.beyond_profile)
+        in_profile_mapped = sum(1 for c in extraction.mapped if c not in beyond)
+        denom = in_profile_mapped + len(extraction.missing)
+        if denom:
+            extraction.coverage_pct = 100.0 * in_profile_mapped / denom
 
 
 def _build_risk_rows(
