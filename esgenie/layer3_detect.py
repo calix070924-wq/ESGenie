@@ -347,11 +347,26 @@ def detect_risk_vector(
 
 # ---- D1: 수치 오차 ----------------------------------------------------------
 
+# 목표/전망 문맥 마커 — 이 문맥의 수치는 '실적 주장'이 아니므로 실적 노드와 비교하지
+# 않는다 (2026-07-17: LG화학 E "2030년까지 재생에너지 100% 목표" vs 실적 72% 오탐).
+# 보수적 목록 — '추진'·'강화' 같은 실적 서술에도 흔한 어휘는 제외.
+_TARGET_CONTEXT_RE = re.compile(
+    r"목표|계획|전망|예정|로드맵|공약|\d{4}\s*년\s*까지"
+)
+_TARGET_WINDOW = 40  # 수치 앞뒤로 살필 문자 수
+
+
+def _is_target_context(sentence: str, start: int, end: int) -> bool:
+    """수치 주변 창(window)에 목표/전망 마커가 있으면 True."""
+    window = sentence[max(0, start - _TARGET_WINDOW):min(len(sentence), end + _TARGET_WINDOW)]
+    return bool(_TARGET_CONTEXT_RE.search(window))
+
+
 def _score_d1_numeric(
     sentence: str,
     evidence_graph: Any | None,
 ) -> AxisScore:
-    """claim 숫자 vs L0 노드값 상대 오차."""
+    """claim 숫자 vs L0 노드값 상대 오차. 목표/전망 문맥의 수치는 비교 제외."""
     if evidence_graph is None:
         return AxisScore(score=0.0, evidence=[], detail="evidence_graph 없음 — 스킵")
 
@@ -364,6 +379,9 @@ def _score_d1_numeric(
         claim_val, claim_unit = _normalize_number(num_str, unit)
         _, code = _match_topic_near(sentence, m.start(), m.end())
         if not code:
+            continue
+        if _is_target_context(sentence, m.start(), m.end()):
+            details.append(f"{code}: claim={claim_val} — 목표/전망 문맥, 실적 비교 제외")
             continue
 
         nodes = evidence_graph.search_nodes(keywords=[code])

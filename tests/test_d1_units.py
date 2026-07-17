@@ -95,7 +95,9 @@ class TestCoreD1Units:
         g = _graph(16_700_000, "tCO2eq", metric="E-3-1")
         r = _score_d1_numeric("온실가스 배출량을 30% 감축할 계획입니다.", g)
         assert r.score == 0.0
-        assert "단위 불일치" in r.detail
+        # 2026-07-17: 목표 문맥 가드가 단위 검사보다 먼저 적용됨 — '계획' 문장은
+        # 목표/전망으로 분류되어 실적 비교 자체를 하지 않는다 (같은 오탐의 상류 차단).
+        assert "목표/전망 문맥" in r.detail
 
     def test_same_unit_mismatch_still_detected(self):
         """단위가 같으면 기존 오차 검출은 그대로 동작해야 함 (회귀 가드)."""

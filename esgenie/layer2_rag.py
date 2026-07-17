@@ -394,13 +394,16 @@ class HybridRAG:
             "### 전략 및 목표\n"
             "(중장기 전략 방향과 주요 목표를 2~4문장으로 서술. 연도·수치 포함 문장은 근거 인용)\n\n"
             "### 지표 해설\n"
-            f"(공시값 원장의 주요 지표를 3~5문장으로 해설 — 수준·맥락·한계. 각 수치 문장 끝 [{pseudo.chunk_id}])\n\n"
+            f"(공시값 원장의 주요 지표를 3~5문장으로 해설 — 수준·맥락·한계. 각 수치 문장 끝 [{pseudo.chunk_id}]. "
+            "**수치가 든 문장에는 지표를 반드시 1개만 언급**하고, 지표가 여러 개면 문장을 나누시오)\n\n"
             "### 주요 활동\n"
             "(지표와 연결된 구체적 이니셔티브를 2~4문장으로 서술, 근거 [chunk_id])\n\n"
             "### 향후 계획 및 공시 보완 과제\n"
             "(단기 개선 목표 1~2문장 + 미공시 항목 중 보완 우선순위 1~2개 언급)\n\n"
             "주의: 원장과 인용 청크에 없는 숫자는 절대 쓰지 마시오. "
             "근거 없는 과장 표현(혁신적, 압도적, 최고 수준 등)을 사용하지 마시오. "
+            f"다음 모호 표현을 쓰지 마시오: {_vague_ban_terms()}. "
+            "목표·전망 수치는 반드시 '목표', '계획' 등의 단어와 연도를 함께 명시하시오. "
             f"모든 주장 문장 끝에 [chunk_id] 또는 [{pseudo.chunk_id}]를 표기하시오."
         )
         if extra_instruction:
@@ -501,6 +504,23 @@ def _kesg_pseudo_chunk(covered: list[dict[str, Any]], area: str) -> IndexedDoc:
         meta={"source": "kesg_extraction", "area": area},
         chunk_id=f"kesg_items_{area}",
     )
+
+
+def _vague_ban_terms(max_terms: int = 12) -> str:
+    """D2 lexicon 상위 모호어를 프롬프트 금지 목록으로 직렬화.
+
+    검출기를 회피하려는 게 아니라, 검출기가 잡을 표현을 처음부터 쓰지 않게 하는
+    생성-검출 정합(2026-07-17: 배치에서 '노력하고 있' 1개로 D2 만점 확인)."""
+    from .knowledge.greenwash_lexicon import (
+        VAGUE_ABSTRACT,
+        VAGUE_COMMITMENT,
+        VAGUE_INTENSIFIERS,
+        VAGUE_SUPERLATIVES,
+    )
+    terms = list(dict.fromkeys(
+        VAGUE_COMMITMENT + VAGUE_SUPERLATIVES + VAGUE_INTENSIFIERS + VAGUE_ABSTRACT
+    ))[:max_terms]
+    return ", ".join(f"'{t}'" for t in terms)
 
 
 _KPI_BLOCK_RE = re.compile(r"###\s*핵심 지표.*?(?=###|\Z)", re.S)
