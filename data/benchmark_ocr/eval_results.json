@@ -3,7 +3,8 @@
     "mode": "strict",
     "extractor_engine": "gpt-4.1-mini-text",
     "judge_model": "gpt-4.1-mini (self-judge)",
-    "generated_at": "2026-07-15T10:55:55.062494+00:00",
+    "judge_is_independent": false,
+    "generated_at": "2026-07-16T16:09:04.858384+00:00",
     "gold_path": "data/benchmark_ocr/unstructured_gold.json"
   },
   "results": [
@@ -18,11 +19,12 @@
       "metric_total": 0,
       "metric_fp_true_halluc": 0,
       "metric_fp_unlisted_real": 4,
-      "fact_recall_hits_heuristic": 7,
-      "fact_recall_hits_judge": 7,
-      "fact_recall_total": 7,
+      "fact_recall_hits_heuristic": 8,
+      "fact_recall_hits_judge": 8,
+      "fact_recall_total": 8,
       "halluc_clauses_heuristic": 0,
       "halluc_clauses_judge": 0,
+      "judge_failed_clauses": 0,
       "total_clauses": 5,
       "cal_rows": [
         {
@@ -43,6 +45,9 @@
         }
       ],
       "engine": "gpt-4.1-mini-text",
+      "raw_text_source": "pymupdf",
+      "raw_text_len": 565,
+      "upstage_error": null,
       "error": ""
     },
     {
@@ -55,15 +60,36 @@
       "metric_hits": 0,
       "metric_total": 0,
       "metric_fp_true_halluc": 0,
-      "metric_fp_unlisted_real": 0,
-      "fact_recall_hits_heuristic": 6,
-      "fact_recall_hits_judge": 6,
-      "fact_recall_total": 6,
+      "metric_fp_unlisted_real": 4,
+      "fact_recall_hits_heuristic": 8,
+      "fact_recall_hits_judge": 8,
+      "fact_recall_total": 8,
       "halluc_clauses_heuristic": 0,
       "halluc_clauses_judge": 0,
+      "judge_failed_clauses": 0,
       "total_clauses": 5,
-      "cal_rows": [],
+      "cal_rows": [
+        {
+          "p": 0.75,
+          "y": 0
+        },
+        {
+          "p": 0.75,
+          "y": 0
+        },
+        {
+          "p": 0.75,
+          "y": 0
+        },
+        {
+          "p": 0.75,
+          "y": 0
+        }
+      ],
       "engine": "gpt-4.1-mini-text",
+      "raw_text_source": "pymupdf",
+      "raw_text_len": 560,
+      "upstage_error": null,
       "error": ""
     },
     {
@@ -77,14 +103,18 @@
       "metric_total": 0,
       "metric_fp_true_halluc": 0,
       "metric_fp_unlisted_real": 0,
-      "fact_recall_hits_heuristic": 6,
-      "fact_recall_hits_judge": 6,
-      "fact_recall_total": 6,
+      "fact_recall_hits_heuristic": 8,
+      "fact_recall_hits_judge": 8,
+      "fact_recall_total": 8,
       "halluc_clauses_heuristic": 0,
       "halluc_clauses_judge": 0,
+      "judge_failed_clauses": 0,
       "total_clauses": 5,
       "cal_rows": [],
       "engine": "gpt-4.1-mini-text",
+      "raw_text_source": "pymupdf",
+      "raw_text_len": 593,
+      "upstage_error": null,
       "error": ""
     },
     {
@@ -96,13 +126,14 @@
       "route_got": "ambiguous_fallback_vlm",
       "metric_hits": 0,
       "metric_total": 0,
-      "metric_fp_true_halluc": 0,
-      "metric_fp_unlisted_real": 6,
-      "fact_recall_hits_heuristic": 6,
-      "fact_recall_hits_judge": 6,
-      "fact_recall_total": 6,
+      "metric_fp_true_halluc": 1,
+      "metric_fp_unlisted_real": 5,
+      "fact_recall_hits_heuristic": 8,
+      "fact_recall_hits_judge": 8,
+      "fact_recall_total": 8,
       "halluc_clauses_heuristic": 0,
       "halluc_clauses_judge": 0,
+      "judge_failed_clauses": 0,
       "total_clauses": 5,
       "cal_rows": [
         {
@@ -131,6 +162,9 @@
         }
       ],
       "engine": "gpt-4.1-mini-text",
+      "raw_text_source": "pymupdf",
+      "raw_text_len": 534,
+      "upstage_error": null,
       "error": ""
     },
     {
@@ -144,12 +178,13 @@
       "metric_total": 0,
       "metric_fp_true_halluc": 0,
       "metric_fp_unlisted_real": 6,
-      "fact_recall_hits_heuristic": 7,
-      "fact_recall_hits_judge": 7,
-      "fact_recall_total": 7,
+      "fact_recall_hits_heuristic": 8,
+      "fact_recall_hits_judge": 8,
+      "fact_recall_total": 8,
       "halluc_clauses_heuristic": 0,
       "halluc_clauses_judge": 0,
-      "total_clauses": 4,
+      "judge_failed_clauses": 0,
+      "total_clauses": 11,
       "cal_rows": [
         {
           "p": 0.75,
@@ -177,6 +212,9 @@
         }
       ],
       "engine": "gpt-4.1-mini-text",
+      "raw_text_source": "pymupdf",
+      "raw_text_len": 595,
+      "upstage_error": null,
       "error": ""
     },
     {
@@ -190,12 +228,13 @@
       "metric_total": 0,
       "metric_fp_true_halluc": 0,
       "metric_fp_unlisted_real": 2,
-      "fact_recall_hits_heuristic": 6,
-      "fact_recall_hits_judge": 6,
-      "fact_recall_total": 6,
+      "fact_recall_hits_heuristic": 8,
+      "fact_recall_hits_judge": 8,
+      "fact_recall_total": 8,
       "halluc_clauses_heuristic": 0,
       "halluc_clauses_judge": 0,
-      "total_clauses": 11,
+      "judge_failed_clauses": 0,
+      "total_clauses": 5,
       "cal_rows": [
         {
           "p": 0.75,
@@ -207,6 +246,9 @@
         }
       ],
       "engine": "gpt-4.1-mini-text",
+      "raw_text_source": "pymupdf",
+      "raw_text_len": 545,
+      "upstage_error": null,
       "error": ""
     },
     {
@@ -220,14 +262,18 @@
       "metric_total": 0,
       "metric_fp_true_halluc": 0,
       "metric_fp_unlisted_real": 0,
-      "fact_recall_hits_heuristic": 6,
-      "fact_recall_hits_judge": 6,
-      "fact_recall_total": 6,
+      "fact_recall_hits_heuristic": 7,
+      "fact_recall_hits_judge": 7,
+      "fact_recall_total": 7,
       "halluc_clauses_heuristic": 0,
       "halluc_clauses_judge": 0,
+      "judge_failed_clauses": 0,
       "total_clauses": 5,
       "cal_rows": [],
       "engine": "gpt-4.1-mini-text",
+      "raw_text_source": "pymupdf",
+      "raw_text_len": 509,
+      "upstage_error": null,
       "error": ""
     },
     {
@@ -241,11 +287,12 @@
       "metric_total": 0,
       "metric_fp_true_halluc": 0,
       "metric_fp_unlisted_real": 2,
-      "fact_recall_hits_heuristic": 6,
-      "fact_recall_hits_judge": 6,
-      "fact_recall_total": 6,
+      "fact_recall_hits_heuristic": 7,
+      "fact_recall_hits_judge": 7,
+      "fact_recall_total": 7,
       "halluc_clauses_heuristic": 0,
       "halluc_clauses_judge": 0,
+      "judge_failed_clauses": 0,
       "total_clauses": 8,
       "cal_rows": [
         {
@@ -258,6 +305,9 @@
         }
       ],
       "engine": "gpt-4.1-mini-text",
+      "raw_text_source": "pymupdf",
+      "raw_text_len": 587,
+      "upstage_error": null,
       "error": ""
     },
     {
@@ -276,6 +326,7 @@
       "fact_recall_total": 8,
       "halluc_clauses_heuristic": 0,
       "halluc_clauses_judge": 1,
+      "judge_failed_clauses": 0,
       "total_clauses": 5,
       "cal_rows": [
         {
@@ -300,6 +351,9 @@
         }
       ],
       "engine": "gpt-4.1-mini-text",
+      "raw_text_source": "pymupdf",
+      "raw_text_len": 394,
+      "upstage_error": null,
       "error": ""
     },
     {
@@ -313,12 +367,13 @@
       "metric_total": 0,
       "metric_fp_true_halluc": 0,
       "metric_fp_unlisted_real": 7,
-      "fact_recall_hits_heuristic": 7,
-      "fact_recall_hits_judge": 7,
-      "fact_recall_total": 7,
+      "fact_recall_hits_heuristic": 8,
+      "fact_recall_hits_judge": 8,
+      "fact_recall_total": 8,
       "halluc_clauses_heuristic": 0,
       "halluc_clauses_judge": 0,
-      "total_clauses": 14,
+      "judge_failed_clauses": 0,
+      "total_clauses": 6,
       "cal_rows": [
         {
           "p": 0.75,
@@ -350,6 +405,9 @@
         }
       ],
       "engine": "gpt-4.1-mini-text",
+      "raw_text_source": "pymupdf",
+      "raw_text_len": 644,
+      "upstage_error": null,
       "error": ""
     },
     {
@@ -363,11 +421,12 @@
       "metric_total": 0,
       "metric_fp_true_halluc": 0,
       "metric_fp_unlisted_real": 4,
-      "fact_recall_hits_heuristic": 9,
-      "fact_recall_hits_judge": 9,
-      "fact_recall_total": 9,
+      "fact_recall_hits_heuristic": 10,
+      "fact_recall_hits_judge": 10,
+      "fact_recall_total": 10,
       "halluc_clauses_heuristic": 0,
       "halluc_clauses_judge": 0,
+      "judge_failed_clauses": 0,
       "total_clauses": 7,
       "cal_rows": [
         {
@@ -388,6 +447,9 @@
         }
       ],
       "engine": "gpt-4.1-mini-text",
+      "raw_text_source": "pymupdf",
+      "raw_text_len": 699,
+      "upstage_error": null,
       "error": ""
     },
     {
@@ -401,11 +463,12 @@
       "metric_total": 0,
       "metric_fp_true_halluc": 3,
       "metric_fp_unlisted_real": 1,
-      "fact_recall_hits_heuristic": 6,
-      "fact_recall_hits_judge": 7,
-      "fact_recall_total": 7,
+      "fact_recall_hits_heuristic": 7,
+      "fact_recall_hits_judge": 8,
+      "fact_recall_total": 8,
       "halluc_clauses_heuristic": 0,
       "halluc_clauses_judge": 0,
+      "judge_failed_clauses": 0,
       "total_clauses": 5,
       "cal_rows": [
         {
@@ -426,6 +489,9 @@
         }
       ],
       "engine": "gpt-4.1-mini-text",
+      "raw_text_source": "upstage",
+      "raw_text_len": 600,
+      "upstage_error": null,
       "error": ""
     },
     {
@@ -439,11 +505,12 @@
       "metric_total": 0,
       "metric_fp_true_halluc": 0,
       "metric_fp_unlisted_real": 2,
-      "fact_recall_hits_heuristic": 6,
-      "fact_recall_hits_judge": 6,
-      "fact_recall_total": 6,
+      "fact_recall_hits_heuristic": 8,
+      "fact_recall_hits_judge": 8,
+      "fact_recall_total": 8,
       "halluc_clauses_heuristic": 0,
       "halluc_clauses_judge": 0,
+      "judge_failed_clauses": 0,
       "total_clauses": 5,
       "cal_rows": [
         {
@@ -456,6 +523,9 @@
         }
       ],
       "engine": "gpt-4.1-mini-text",
+      "raw_text_source": "upstage",
+      "raw_text_len": 589,
+      "upstage_error": null,
       "error": ""
     },
     {
@@ -469,12 +539,13 @@
       "metric_total": 0,
       "metric_fp_true_halluc": 1,
       "metric_fp_unlisted_real": 1,
-      "fact_recall_hits_heuristic": 6,
-      "fact_recall_hits_judge": 6,
-      "fact_recall_total": 6,
+      "fact_recall_hits_heuristic": 7,
+      "fact_recall_hits_judge": 7,
+      "fact_recall_total": 7,
       "halluc_clauses_heuristic": 0,
       "halluc_clauses_judge": 0,
-      "total_clauses": 8,
+      "judge_failed_clauses": 0,
+      "total_clauses": 5,
       "cal_rows": [
         {
           "p": 0.75,
@@ -486,6 +557,9 @@
         }
       ],
       "engine": "gpt-4.1-mini-text",
+      "raw_text_source": "upstage",
+      "raw_text_len": 649,
+      "upstage_error": null,
       "error": ""
     },
     {
@@ -497,13 +571,14 @@
       "route_got": "safety_minutes",
       "metric_hits": 2,
       "metric_total": 2,
-      "metric_fp_true_halluc": 0,
-      "metric_fp_unlisted_real": 3,
+      "metric_fp_true_halluc": 1,
+      "metric_fp_unlisted_real": 2,
       "fact_recall_hits_heuristic": 8,
       "fact_recall_hits_judge": 8,
       "fact_recall_total": 8,
       "halluc_clauses_heuristic": 0,
-      "halluc_clauses_judge": 0,
+      "halluc_clauses_judge": 1,
+      "judge_failed_clauses": 0,
       "total_clauses": 5,
       "cal_rows": [
         {
@@ -528,6 +603,9 @@
         }
       ],
       "engine": "gpt-4.1-mini-text",
+      "raw_text_source": "upstage",
+      "raw_text_len": 409,
+      "upstage_error": null,
       "error": ""
     }
   ]
