@@ -66,10 +66,14 @@ class DocResult:
     # Axis 3: qualitative (judge) — only in strict mode
     fact_recall_hits_judge: int = 0
     halluc_clauses_judge: int = 0
+    judge_failed_clauses: int = 0
     # Axis 4: calibration rows
     cal_rows: list = field(default_factory=list)
     # Meta
     engine: str = ""
+    raw_text_source: str = ""
+    raw_text_len: int = 0
+    upstage_error: str = ""
     error: str = ""
 
 
@@ -83,34 +87,65 @@ def load_gold() -> list[dict]:
 # Axis 2: quantitative metric matching with FP split
 # ============================================================
 
-def _normalize_number_str(val: float) -> list[str]:
-    """Generate common string representations of a number for raw_text search."""
-    results = []
-    # Integer form
-    if val == int(val):
-        iv = int(val)
-        results.append(str(iv))
-        results.append(f"{iv:,}")
-    else:
-        results.append(str(val))
-        results.append(f"{val:,.1f}")
-        results.append(f"{val:.1f}")
-        results.append(f"{val:.2f}")
-    # Also try without decimal if close to int
-    if abs(val - round(val)) < 0.01:
-        results.append(str(int(round(val))))
-    return results
+def _parse_raw_numbers(raw_text: str) -> set[float]:
+    """Extract all numeric tokens from raw text and parse to float values.
+
+    Handles: integers, decimals, comma-separated thousands (e.g. 142,560).
+    Each token is parsed independently — '2060' yields 2060.0, not 60.0.
+    """
+    tokens = re.findall(r'\d[\d,]*\.?\d*', raw_text)
+    values: set[float] = set()
+    for t in tokens:
+        try:
+            values.add(float(t.replace(",", "")))
+        except ValueError:
+            continue
+    return values
 
 
 def _value_in_raw_text(value: float, raw_text: str) -> bool:
-    """Check if a numeric value actually appears in the raw text."""
-    if not raw_text:
+    """Check if a numeric value actually appears in the raw text as a standalone token.
+
+    Uses numeric comparison (not substring) to avoid false matches like
+    60 matching inside '2060' or '60,000'.
+    """
+    if not raw_text or value is None:
         return False
-    candidates = _normalize_number_str(value)
-    for c in candidates:
-        if c in raw_text:
-            return True
-    return False
+    raw_numbers = _parse_raw_numbers(raw_text)
+    eps = max(0.01, abs(value) * 1e-6)
+    return any(abs(value - n) <= eps for n in raw_numbers)
+
+
+_UNIT_SYNONYMS: dict[str, str] = {
+    "ton": "t", "tons": "t", "톤": "t", "tco2eq": "tco2eq", "tco2e": "tco2eq",
+    "kwh": "kwh", "mwh": "mwh", "gwh": "gwh",
+    "%": "%", "퍼센트": "%", "percent": "%",
+    "원": "krw", "won": "krw", "krw": "krw",
+    "명": "persons", "인": "persons", "people": "persons", "persons": "persons",
+    "건": "cases", "件": "cases", "cases": "cases",
+    "시간": "hours", "hours": "hours", "hr": "hours", "hrs": "hours",
+    "일": "days", "days": "days",
+    "kg": "kg", "g": "g", "mg": "mg",
+    "m3": "m3", "㎥": "m3",
+    "l": "l", "리터": "l",
+}
+
+
+def _normalize_unit(unit: str | None) -> str:
+    """Normalize a unit string for comparison."""
+    if not unit:
+        return ""
+    u = unit.strip().lower().replace(" ", "")
+    return _UNIT_SYNONYMS.get(u, u)
+
+
+def _units_match(extracted_unit: str | None, gold_unit: str | None) -> bool:
+    """Check if extracted unit matches gold unit (with synonym normalization).
+    If gold has no unit specified, any unit matches (backwards compat).
+    """
+    if not gold_unit:
+        return True
+    return _normalize_unit(extracted_unit) == _normalize_unit(gold_unit)
 
 
 def score_metrics(extracted_metrics, gold_metrics, raw_text: str) -> tuple[int, int, int, int]:
@@ -123,10 +158,12 @@ def score_metrics(extracted_metrics, gold_metrics, raw_text: str) -> tuple[int, 
         code = gm["kesg_code"]
         want = gm["value"]
         tol = gm["tol"]
+        gold_unit = gm.get("unit")
         found = False
         for i, em in enumerate(extracted_metrics):
             if em.kesg_code_guess == code and i not in matched_indices:
-                if em.value is not None and abs(em.value - want) <= tol:
+                if (em.value is not None and abs(em.value - want) <= tol
+                        and _units_match(getattr(em, "unit", None), gold_unit)):
                     hits += 1
                     matched_indices.add(i)
                     found = True
@@ -134,7 +171,8 @@ def score_metrics(extracted_metrics, gold_metrics, raw_text: str) -> tuple[int, 
         if not found:
             for i, em in enumerate(extracted_metrics):
                 if i not in matched_indices and em.value is not None:
-                    if abs(em.value - want) <= tol:
+                    if (abs(em.value - want) <= tol
+                            and _units_match(getattr(em, "unit", None), gold_unit)):
                         hits += 1
                         matched_indices.add(i)
                         break
@@ -209,20 +247,39 @@ def _significant_tokens(text: str) -> set[str]:
 # ============================================================
 
 def _build_judge_client():
-    """Build a separate LLM client for judge calls."""
+    """Build a judge LLM client that prefers Anthropic for independent judgment.
+
+    If ANTHROPIC_API_KEY is available, builds an Anthropic-only client
+    so the judge is independent from the extraction model (OpenAI/Azure).
+    Falls back to default LLMClient if Anthropic is unavailable.
+    """
+    from esgenie.config import SETTINGS
     from esgenie.llm import LLMClient
+    if SETTINGS.anthropic_api_key:
+        client = LLMClient.__new__(LLMClient)
+        client._openai_client = None
+        client._anthropic_client = None
+        try:
+            import anthropic
+            client._anthropic_client = anthropic.Anthropic(
+                api_key=SETTINGS.anthropic_api_key
+            )
+        except Exception:
+            return LLMClient()
+        return client
     return LLMClient()
 
 
 def _judge_combined(facts_gold: list[dict], clause_texts: list[str],
-                    raw_text: str, judge_client) -> tuple[list[dict], list[dict]]:
+                    raw_text: str, judge_client) -> tuple[list[dict], list[dict], dict]:
     """Single LLM call: judge both recall and hallucination together.
-    Returns (recall_decisions, halluc_decisions).
+    Returns (recall_decisions, halluc_decisions, resp_meta).
     """
     if not clause_texts:
         return (
             [{"fact_id": f["id"], "covered": False, "by_clause_idx": None} for f in facts_gold],
-            []
+            [],
+            {},
         )
 
     facts_str = "\n".join(f"  {f['id']}: {f['text']}" for f in facts_gold)
@@ -257,13 +314,14 @@ def _judge_combined(facts_gold: list[dict], clause_texts: list[str],
             data = json.loads(m.group())
             recall = data.get("recall", [])
             grounding = data.get("grounding", [])
-            return recall, grounding
+            return recall, grounding, resp.meta
     except Exception:
         pass
 
     return (
         [{"fact_id": f["id"], "covered": False, "by_clause_idx": None} for f in facts_gold],
-        [{"clause_idx": i, "verdict": "judge_failed", "reason": "judge_call_failed"} for i in range(len(clause_texts))]
+        [{"clause_idx": i, "verdict": "judge_failed", "reason": "judge_call_failed"} for i in range(len(clause_texts))],
+        {"provider": "failed", "model": "N/A"},
     )
 
 
@@ -279,13 +337,12 @@ def run_eval() -> tuple[list[DocResult], list[dict], str]:
 
     judge_client = None
     judge_model = "N/A (mock)"
+    judge_is_independent = False
     if MODE != "mock":
         judge_client = _build_judge_client()
-        from esgenie.config import SETTINGS
-        if SETTINGS.anthropic_api_key:
-            judge_model = SETTINGS.anthropic_model
-        elif SETTINGS.openai_api_key:
-            judge_model = SETTINGS.openai_model + " (self-judge)"
+        # Label will be determined from actual response meta after the run.
+        # Set a provisional label that will be overridden.
+        judge_model = "(pending — determined from response meta)"
 
     total_docs = len(gold_docs)
     for idx, entry in enumerate(gold_docs, 1):
@@ -315,7 +372,11 @@ def run_eval() -> tuple[list[DocResult], list[dict], str]:
 
             # Extract
             ext = R.extract_document(file_path, decision)
-            dr.engine = (ext.router_meta or {}).get("engine", "unknown")
+            meta = ext.router_meta or {}
+            dr.engine = meta.get("engine", "unknown")
+            dr.raw_text_source = meta.get("raw_text_source", "unknown")
+            dr.raw_text_len = meta.get("raw_text_len", 0)
+            dr.upstage_error = meta.get("upstage_error", "")
             raw_text = ext.raw_text or ""
 
             # Axis 2: quantitative with FP split
@@ -339,7 +400,7 @@ def run_eval() -> tuple[list[DocResult], list[dict], str]:
             # Axis 3 judge (strict/default only) — single combined call
             clause_texts = [c.text for c in ext.clauses]
             if judge_client is not None and MODE != "mock":
-                recall_decisions, halluc_decisions = _judge_combined(
+                recall_decisions, halluc_decisions, judge_resp_meta = _judge_combined(
                     entry["facts_gold"], clause_texts, raw_text, judge_client
                 )
                 gold_ids = {f["id"] for f in entry["facts_gold"]}
@@ -354,8 +415,14 @@ def run_eval() -> tuple[list[DocResult], list[dict], str]:
                     1 for d in halluc_decisions
                     if d.get("verdict") in ("unsupported", "contradicts")
                 )
+                dr.judge_failed_clauses = sum(
+                    1 for d in halluc_decisions
+                    if d.get("verdict") == "judge_failed"
+                )
                 judge_decisions.append({
                     "doc_id": doc_id,
+                    "judge_model": judge_resp_meta.get("model", "unknown"),
+                    "judge_provider": judge_resp_meta.get("provider", "unknown"),
                     "recall": recall_decisions,
                     "hallucination": halluc_decisions,
                 })
@@ -381,6 +448,26 @@ def run_eval() -> tuple[list[DocResult], list[dict], str]:
         results.append(dr)
         if not dr.error:
             print("OK", flush=True)
+
+    # Determine judge model from actual response meta (never from config alone)
+    if judge_decisions:
+        actual_providers = {d.get("judge_provider", "unknown") for d in judge_decisions}
+        actual_providers.discard("failed")
+        if actual_providers:
+            provider = next(iter(actual_providers))
+            model_name = judge_decisions[0].get("judge_model", "unknown")
+            # Determine independence by comparing to extractor provider
+            extractor_provider = "openai"  # hardcoded: extraction always uses OpenAI/Azure
+            is_self = (provider == extractor_provider)
+            judge_model = f"{model_name} ({'self-judge' if is_self else 'independent'})"
+            judge_is_independent = not is_self
+            if not is_self:
+                print(f"  ✅ Judge is INDEPENDENT (provider={provider}, extractor={extractor_provider})")
+        else:
+            judge_model = "N/A (all judge calls failed)"
+            print("  ⚠ WARNING: All judge calls failed — no valid judge model determined")
+    elif MODE != "mock":
+        judge_model = "N/A (no judge calls made)"
 
     return results, judge_decisions, judge_model
 
@@ -456,8 +543,10 @@ def print_report(results: list[DocResult], judge_model: str) -> None:
     # Judge
     j_rh = sum(r.fact_recall_hits_judge for r in valid)
     j_hc = sum(r.halluc_clauses_judge for r in valid)
+    j_failed = sum(r.judge_failed_clauses for r in valid)
+    j_judged = h_tc - j_failed  # denominator excludes judge failures
     j_recall_pct = 100 * j_rh / h_rt if h_rt else 0
-    j_halluc_pct = 100 * j_hc / h_tc if h_tc else 0
+    j_halluc_pct = 100 * j_hc / j_judged if j_judged else 0
 
     print(f"\n{'─'*90}")
     print(f"[축 3] 정성 충실도")
@@ -466,7 +555,8 @@ def print_report(results: list[DocResult], judge_model: str) -> None:
           f"{h_hc}/{h_tc} ({h_halluc_pct:.1f}%)")
     if MODE != "mock":
         print(f"  {'LLM-judge':<12} {j_rh}/{h_rt} ({j_recall_pct:.1f}%){'':5}"
-              f"{j_hc}/{h_tc} ({j_halluc_pct:.1f}%)")
+              f"{j_hc}/{j_judged} ({j_halluc_pct:.1f}%)"
+              f"{'  ('+str(j_failed)+' failed 제외)' if j_failed else ''}")
         print(f"  judge 모델: {judge_model}")
     print(f"  ⚠ clause에 confidence 필드 없음 → 정성 캘리브레이션 불가 (한계)")
     print(f"{'─'*90}")
@@ -484,11 +574,13 @@ def print_report(results: list[DocResult], judge_model: str) -> None:
             vrt = sum(r.fact_recall_total for r in subset)
             vhc = sum(r.halluc_clauses_judge for r in subset) if MODE != "mock" else sum(r.halluc_clauses_heuristic for r in subset)
             vtc = sum(r.total_clauses for r in subset)
+            vfailed = sum(r.judge_failed_clauses for r in subset) if MODE != "mock" else 0
+            vjudged = vtc - vfailed
             method = "judge" if MODE != "mock" else "heuristic"
             vr_pct = 100 * vrh / vrt if vrt else 0
-            vh_pct = 100 * vhc / vtc if vtc else 0
+            vh_pct = 100 * vhc / vjudged if vjudged else 0
             print(f"  [{variant}] ({method}) recall={vrh}/{vrt} ({vr_pct:.1f}%), "
-                  f"환각={vhc}/{vtc} ({vh_pct:.1f}%)")
+                  f"환각={vhc}/{vjudged} ({vh_pct:.1f}%)")
 
     # --- Axis 4: Calibration ---
     all_cal = []
@@ -552,18 +644,24 @@ def export_json(results: list[DocResult], judge_decisions: list[dict],
             "fact_recall_total": r.fact_recall_total,
             "halluc_clauses_heuristic": r.halluc_clauses_heuristic,
             "halluc_clauses_judge": r.halluc_clauses_judge,
+            "judge_failed_clauses": r.judge_failed_clauses,
             "total_clauses": r.total_clauses,
             "cal_rows": r.cal_rows,
             "engine": r.engine,
+            "raw_text_source": r.raw_text_source,
+            "raw_text_len": r.raw_text_len,
+            "upstage_error": r.upstage_error or None,
             "error": r.error,
         })
 
     engines = list(set(r.engine for r in results if r.engine and not r.error))
+    is_independent = "independent" in judge_model
     output = {
         "meta": {
             "mode": MODE,
             "extractor_engine": engines[0] if engines else "unknown",
             "judge_model": judge_model,
+            "judge_is_independent": is_independent,
             "generated_at": datetime.now(timezone.utc).isoformat(),
             "gold_path": str(GOLD_PATH),
         },
