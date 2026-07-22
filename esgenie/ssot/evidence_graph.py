@@ -88,6 +88,10 @@ class EvidenceGraph:
     def __init__(self, corp_code: str, corp_name: str) -> None:
         self.corp_code = corp_code
         self.corp_name = corp_name
+        # 보고 대상 연도 — G5(D1 노드 선택)가 '보고연도 최근접'을 판정할 기준.
+        # build_unified_graph/merge_ocr_extraction가 report_year로 세팅한다. None이면
+        # 검출기가 후보 노드의 최신 연도로 폴백(기존 동작 보존).
+        self.report_year: int | None = None
         self._nodes: dict[str, EvidenceNode] = {}
         self._text_nodes: dict[str, TextNode] = {}
         self._edges: list[EvidenceEdge] = []
@@ -139,13 +143,25 @@ class EvidenceGraph:
           1) node.metric이 keywords 중 하나와 정확히 일치 (K-ESG 코드 직접 매칭)
           2) node.metric에 keyword가 부분 포함
         period가 주어지면 해당 연도 노드만 반환.
+
+        G4 주의: '{code}__projection'(미래 전망 분리 노드)은 실적 코드 검색에서 제외한다.
+        부분 포함 매칭이 'E-3-1'로 'E-3-1__projection'을 잡으면 D1이 전망치를 실적과
+        비교하게 되므로, keyword가 명시적으로 projection을 요구하지 않는 한 걸러낸다.
         """
         result: list[EvidenceNode] = []
         for node in self._nodes.values():
-            matched = any(
-                kw == node.metric or kw.lower() in node.metric.lower()
-                for kw in keywords
-            )
+            is_projection = node.metric.endswith("__projection")
+            matched = False
+            for kw in keywords:
+                if kw == node.metric:
+                    matched = True
+                    break
+                # 부분 포함 매칭: projection 노드는 keyword가 projection을 명시할 때만.
+                if kw.lower() in node.metric.lower():
+                    if is_projection and "projection" not in kw.lower():
+                        continue
+                    matched = True
+                    break
             if not matched:
                 continue
             if period is not None and node.period != period:
@@ -232,6 +248,11 @@ _HINT_TO_KESG: dict[str, str] = {
     "재생에너지": "E-4-2",
     "용수": "E-5-1",
     "수도": "E-5-1",
+    # 재사용/재이용률(%)은 용수 사용량(E-5-1, ton)이 아니라 E-5-2. 최장 일치(G2)로
+    # '용수'보다 먼저 잡혀 올바른 코드로 정정된다(LG화학 2.72% 오매핑 차단).
+    "용수재이용률": "E-5-2",
+    "용수재활용률": "E-5-2",
+    "재사용용수비율": "E-5-2",
     "폐기물": "E-6-1",
     # 지정폐기물은 하위 분류 → 보조수치(None). E-6-1 총량에 중복으로 들어가지 않게 hint 제외.
     # E-6-2는 재활용 '비율(%)' 전용. '재활용량(톤)'은 부분문자열 "재활용"에 걸려
@@ -292,21 +313,38 @@ def merge_ocr_extraction(
     origin: Origin = (
         "ocr_structured" if extraction.channel is DocChannel.STRUCTURED else "ocr_unstructured"
     )
+    # G5 참조 기준 — 그래프에 보고 연도 기록(검출기가 최근접 노드 선택에 사용).
+    if getattr(graph, "report_year", None) is None:
+        graph.report_year = report_year
 
     for idx, m in enumerate(extraction.metrics):
         code = _resolve_kesg_code(m)
         period = _normalize_period(m.period, fallback=report_year)
+        confidence = m.confidence
+        # G4. 미래 기간 분리 — 보고 연도보다 '충분히' 미래(2030/2035/2040 목표·전망 등)인
+        # 확정 코드 노드는 실적 코드에서 떼어내 '{code}__projection'으로 보존. search_nodes
+        # (실적 코드)로는 안 잡혀 D1 비교 대상에서 제외되고, 값은 향후 목표 대비 실적 분석
+        # 재료로 남는다.
+        #
+        # 임계값 _PROJECTION_YEAR_GAP(=2): report_year+1 은 실적으로 인정한다. 증빙(전기요금
+        # 명세 등)은 DART 공시연도보다 1년 앞설 수 있어(예: 2024 보고서 + 2025-12 고지서),
+        # +1까지 미래로 보면 정상 최신 증빙까지 projection으로 오분류된다. 목표·전망 곡선의
+        # 축 연도(2030+)는 +2 이상이라 이 임계값으로 정확히 걸러진다.
+        metric = code or m.metric_hint
+        if code and period - report_year >= _PROJECTION_YEAR_GAP:
+            metric = f"{code}__projection"
+            confidence = round(confidence * 0.3, 4)
         node = EvidenceNode(
             id=_make_ocr_node_id(
                 graph.corp_code,
-                code or m.metric_hint,
+                metric,
                 period,
                 origin,
                 extraction.source_file,
                 m.metric_hint,
                 idx,
             ),
-            metric=code or m.metric_hint,
+            metric=metric,
             value=m.value,
             unit=m.unit,
             period=period,
@@ -316,7 +354,7 @@ def merge_ocr_extraction(
             source_file=extraction.source_file,
             bbox=m.bbox,
             page=m.page,
-            confidence=m.confidence,
+            confidence=confidence,
         )
         graph.add_node(node)
         _link_cross_check(graph, node)
@@ -361,6 +399,7 @@ def build_unified_graph(
         graph = build_from_dart(dart_report)
     else:
         graph = EvidenceGraph(corp_code, corp_name)
+    graph.report_year = report_year   # G5 기준 연도(OCR 없는 DART-only 경로도 보장)
 
     for ext in extractions:
         merge_ocr_extraction(
@@ -376,19 +415,60 @@ def build_unified_graph(
 # 예: '지정폐기물'은 '폐기물'(E-6-1)에 걸리지만 총량이 아니라 하위 분류다.
 _HINT_EXCLUDE: tuple[str, ...] = ("지정폐기물",)
 
+# G1 가드 어휘 — "실적 총량이 아닌 값"을 알리는 수식어. hint에 포함되면 코드 미부여.
+#   · 미래·의도: 목표/전망/계획/예정/로드맵/선언
+#   · 부분·파생(총량 자리에 오면 안 됨): 감축량/전환량/절감량/누적
+#   · 정규화 지표(총량과 단위 다름): 원단위/집약도/intensity
+# 주의: '재활용률'·'재생에너지'처럼 정당한 비율/항목은 넣지 않는다(과차단 방지).
+#       가드는 "같은 지표의 다른 성격 값"만 겨냥한다.
+_GUARD_TERMS: tuple[str, ...] = (
+    "목표", "전망", "계획", "예정", "로드맵", "선언",
+    "감축량", "전환량", "절감량", "누적",
+    "원단위", "집약도", "intensity",
+)
+
+# G4. 미래 기간 분리 임계값 — period가 report_year보다 이 값 이상 앞서면 projection.
+# 2로 둔다: report_year+1(최신 증빙)은 실적, +2 이상(2030/2035/2040 목표축)은 전망.
+_PROJECTION_YEAR_GAP: int = 2
+
 
 def _resolve_kesg_code(m: ExtractedMetric) -> str | None:
-    """LLM 추정 코드 + 화이트리스트 사전으로 K-ESG 코드 확정."""
+    """LLM 추정 코드 + 화이트리스트 사전으로 K-ESG 코드 확정 (매칭 정합성 게이트 적용).
+
+    게이트 순서(하나라도 걸리면 코드 None → 노드는 metric_hint로 보존, 폐기 아님):
+      G1. 가드 어휘 — hint에 목표/전망/감축량/집약도 등이 있으면 실적 총량이 아님.
+      G2. 최장 일치 — _HINT_TO_KESG를 긴 키 우선으로 순회(부분문자열 선착순 오매칭 방지).
+      G3. 단위 정합성 — 확정 코드의 kesg_items.unit과 m.unit이 명백히 다르면 기각.
+    LLM 추정 코드(kesg_code_guess)도 G1·G3 검증을 거친다(무검증 통과 제거).
+    """
+    from ..knowledge.kesg_items import by_code
+    from ..layer1_extract import _unit_suspect
+
     hint = m.metric_hint.lower().replace(" ", "")
     # 하위·보조 수치는 어떤 추정코드가 와도 총량 코드로 잡지 않는다(중복 노드 방지).
     if any(x in hint for x in _HINT_EXCLUDE):
         return None
-    if m.kesg_code_guess:
-        return m.kesg_code_guess
-    for key, code in _HINT_TO_KESG.items():
-        if key.lower() in hint:
-            return code
-    return None
+
+    # G1. 가드 어휘 — 실적 총량이 아닌 값(목표·전환량·집약도 등)은 코드 미부여.
+    if any(g in hint for g in _GUARD_TERMS):
+        return None
+
+    # 후보 코드 결정: LLM 추정 우선, 없으면 사전 최장 일치(G2).
+    code = m.kesg_code_guess
+    if not code:
+        for key, mapped in sorted(_HINT_TO_KESG.items(), key=lambda kv: -len(kv[0])):
+            if key.lower() in hint:
+                code = mapped
+                break
+    if not code:
+        return None
+
+    # G3. 단위 정합성 — 항목 정의 단위와 명백히 다르면 기각(표기용 _unit_suspect 승격).
+    item = by_code(code)
+    if item and item.unit and _unit_suspect(m.unit, item.unit):
+        return None
+
+    return code
 
 
 def _normalize_period(period_raw: str, *, fallback: int) -> int:
