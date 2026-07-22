@@ -52,34 +52,52 @@ _UNIT_ALIASES: dict[str, str] = {
     "ton": "t",
     "tons": "t",
     "톤": "t",
+    "kg": "kg",
+    "킬로그램": "kg",
     "tco2eq": "tCO2eq",
     "tco2": "tCO2eq",
     "톤co2eq": "tCO2eq",
     "톤co2": "tCO2eq",
-    # Energy
+    # Energy — TJ·GJ·MWh·kWh·GWh (E-4-1 에너지 사용량이 TJ 정의라 필수)
     "kwh": "kWh",
     "킬로와트시": "kWh",
     "mwh": "MWh",
     "메가와트시": "MWh",
     "gwh": "GWh",
     "기가와트시": "GWh",
-    # Percentage
+    "tj": "TJ",
+    "gj": "GJ",
+    "mj": "MJ",
+    # Percentage / permille — ‰(퍼밀)은 %와 다른 단위(산업재해율 오매핑 차단용)
     "%": "%",
     "퍼센트": "%",
+    "‰": "‰",
+    "퍼밀": "‰",
     # Currency
     "원": "원",
     "백만원": "백만원",
     "억원": "억원",
-    # People
+    # People / count
     "명": "명",
     "인": "명",
+    "건": "건",
+    "건수": "건",
 }
 
 # Groups of compatible units with conversion factor TO the base unit.
 # Base unit is the first entry (factor=1).
+# 에너지군: kWh 기준. 1 kWh = 3.6 MJ, 1 GJ = 1000 MJ = 277.778 kWh, 1 TJ = 1e6 MJ.
 _UNIT_GROUPS: list[dict[str, float]] = [
-    {"kWh": 1.0, "MWh": 1000.0, "GWh": 1_000_000.0},
+    {
+        "kWh": 1.0,
+        "MWh": 1_000.0,
+        "GWh": 1_000_000.0,
+        "MJ": 1.0 / 3.6,               # 3.6 MJ = 1 kWh
+        "GJ": 1_000.0 / 3.6,           # 1 GJ = 277.78 kWh
+        "TJ": 1_000_000.0 / 3.6,       # 1 TJ = 277,778 kWh
+    },
     {"원": 1.0, "백만원": 1_000_000.0, "억원": 100_000_000.0},
+    {"t": 1.0, "kg": 0.001},           # 질량: 1 t = 1000 kg
 ]
 
 _UNIT_TO_GROUP: dict[str, dict[str, float]] = {}
