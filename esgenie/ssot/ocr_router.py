@@ -1607,6 +1607,25 @@ def _render_pages_b64(file_path: str, max_pages: int = 10) -> list[str]:
         return []
 
 
+# G6. 각주 마커 정규식 — 지표명 말미의 'N)' (예: '재해율 4)', '도수율6)').
+_FOOTNOTE_MARK_TAIL_RE = re.compile(r"(\d+)\s*\)\s*$")
+
+
+def _is_footnote_marker_value(metric_hint: str, value: float) -> bool:
+    """지표명이 각주 마커 'N)'로 끝나고 값이 그 마커 숫자와 같으면 True(오파싱).
+
+    표에서 '재해율 4)' 같은 각주 마커의 번호(4)를 지표 값(4.0)으로 잘못 읽는 사례를
+    배제한다(삼성전기 재해율 4.0 오염 — 실제 0.033%). 마커 번호와 값이 다르면(정상값이
+    우연히 각주 붙은 항목) 건드리지 않는다 — 오검출보다 미검출 리스크를 최소화."""
+    m = _FOOTNOTE_MARK_TAIL_RE.search(metric_hint or "")
+    if not m:
+        return False
+    try:
+        return float(m.group(1)) == float(value)
+    except (TypeError, ValueError):
+        return False
+
+
 def _map_vlm_json(data: dict[str, Any], *, page_no: int = 1) -> tuple[list[ExtractedMetric], list[ExtractedClause]]:
     """VLM 응답 JSON → ExtractedMetric[] + ExtractedClause[]."""
     metrics: list[ExtractedMetric] = []
@@ -1614,9 +1633,13 @@ def _map_vlm_json(data: dict[str, Any], *, page_no: int = 1) -> tuple[list[Extra
 
     for m in data.get("metrics", []):
         try:
+            hint = str(m.get("metric_hint", ""))
+            value = float(m.get("value", 0))
+            if _is_footnote_marker_value(hint, value):
+                continue  # G6: 각주 마커('재해율 4)')를 값(4.0)으로 오파싱한 노드 배제
             metrics.append(ExtractedMetric(
-                metric_hint=str(m.get("metric_hint", "")),
-                value=float(m.get("value", 0)),
+                metric_hint=hint,
+                value=value,
                 unit=str(m.get("unit", "")),
                 period=str(m.get("period", "")),
                 kesg_code_guess=m.get("kesg_code") or None,

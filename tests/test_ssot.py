@@ -522,11 +522,14 @@ def _waste_extraction() -> OcrExtraction:
     return OcrExtraction(
         source_file="03_사업장폐기물.pdf", channel=DocChannel.STRUCTURED,
         doc_type="waste_ledger",
+        # period는 report_year(SME001=2024)에 맞춘다. G4(미래기간 분리)는 report_year보다
+        # 2년 이상 앞선 값을 projection으로 떼어내므로, 실적 증빙 픽스처는 보고연도와
+        # 정렬해야 코드 승격 테스트의 의도(정량노드→공시항목)가 유지된다.
         metrics=[
             ExtractedMetric(metric_hint="E-6-1 본문확정", value=18.4, unit="ton",
-                            period="2026", kesg_code_guess="E-6-1", confidence=0.92),
+                            period="2024", kesg_code_guess="E-6-1", confidence=0.92),
             ExtractedMetric(metric_hint="재활용 비율", value=29.3, unit="%",
-                            period="2026", kesg_code_guess="E-6-2", confidence=0.90),
+                            period="2024", kesg_code_guess="E-6-2", confidence=0.90),
         ],
     )
 
