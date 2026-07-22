@@ -39,3 +39,6 @@ ESGenie_도전제안서_*.pdf
 
 CLAUDE.md
 .claude/settings.local.json
+
+# 실보고서 배치 검증용 원본 PDF — 제3자 저작물, 커밋 금지 (manifest만 추적)
+data/real_reports/*.pdf

@@ -16,6 +16,7 @@ v10 변경:
 """
 from __future__ import annotations
 
+import re
 from dataclasses import dataclass, field
 from typing import Any
 
@@ -84,6 +85,8 @@ def extract(
         flags: list[str] = []
         if not node_ids and item.data_type == "정량":
             flags.append("no_evidence")
+        if item.data_type == "정량" and _unit_suspect(entry.get("unit"), item.unit):
+            flags.append("unit_suspect")
 
         mapped[item.code] = {
             "code":              item.code,
@@ -159,3 +162,54 @@ def _match_evidence_nodes(
 
 def missing_items_detail(missing: list[str]) -> list[KESGItem]:
     return [it for it in ALL_ITEMS if it.code in missing]
+
+
+# ====================================================================
+# 증빙 연결 커버리지 + 단위 타당성 (Phase 2, 2026-07-17)
+# ====================================================================
+
+def evidence_coverage_pct(extraction: "ExtractionResult") -> float:
+    """프로파일 내 항목 중 실제 증빙 노드(L0)가 연결된 비율.
+
+    coverage_pct(값 존재)와 분리된 지표 — 합성값·설문(survey_*) 응답처럼 값만 있는
+    항목은 분자에 들어가지 않는다. 상태를 저장하지 않고 호출 시점에 계산하므로
+    survey 주입(_apply_survey_answers) 이후에도 낡은 값이 되지 않는다.
+    """
+    beyond = set(extraction.beyond_profile or [])
+    in_profile = [c for c in extraction.mapped if c not in beyond]
+    denom = len(in_profile) + len(extraction.missing or [])
+    if denom == 0:
+        return 0.0
+    linked = 0
+    for code in in_profile:
+        ev = extraction.mapped[code].get("evidence_node_ids") or []
+        if any(not str(e).startswith("survey_") for e in ev):
+            linked += 1
+    return 100.0 * linked / denom
+
+
+def _relaxed_unit(u: str) -> str:
+    """공백 제거·소문자화 + 흔한 동의 표기 축약 ('ton CO2eq'→'tco2eq')."""
+    s = re.sub(r"\s+", "", str(u)).lower()
+    s = s.replace("co₂", "co2").replace("톤", "t")
+    s = re.sub(r"^tons?(?=co2|$)", "t", s)
+    return s
+
+
+def _unit_suspect(extracted: Any, expected: str) -> bool:
+    """추출 단위가 항목 정의 단위(kesg_items.unit)와 명백히 다르면 True.
+
+    보수적 판정 — 둘 다 비어있지 않고, 관대 정규화 후에도 다르고, 환산 그룹
+    (kWh↔MWh 등)으로도 호환되지 않을 때만 플래그. 오탐(정상 단위에 검증필요
+    표기)보다 미탐이 낫다는 게 아니라, 표기 요동('ton CO2eq' vs 'tCO2eq')을
+    오결합('명' vs 'TJ')과 구분하기 위한 것."""
+    if not extracted or not expected:
+        return False
+    a, b = _relaxed_unit(extracted), _relaxed_unit(expected)
+    if a == b:
+        return False
+    from .rag_gates.units import normalize_unit, units_compatible
+    na, nb = normalize_unit(a), normalize_unit(b)
+    if na is not None and nb is not None and units_compatible(na, nb):
+        return False
+    return True

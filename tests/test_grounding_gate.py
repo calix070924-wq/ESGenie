@@ -161,7 +161,7 @@ def test_verify_and_refine_short_circuits_when_retrieval_gate_blocks() -> None:
         def retrieve_for_area(self, area: str, k: int = 5, *, corp: CorpIndex):
             return ctx
 
-        def generate_section(self, report, area, extra_instruction=None, *, demo_greenwash=False, context=None, corp: CorpIndex):
+        def generate_section(self, report, area, extra_instruction=None, *, demo_greenwash=False, context=None, corp: CorpIndex, extraction=None):
             return GenerationResult(
                 area=area,
                 text="## 환경 성과\n\n검색 근거가 부족하여 자동 생성하지 않았습니다.",
