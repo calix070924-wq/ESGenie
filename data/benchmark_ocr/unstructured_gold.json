@@ -15,6 +15,65 @@
       "facts_gold": [
         {
           "id": "F1",
+          "text": "RBA 행동규범 v8.0 및 근로기준법 준수 기반 근로시간 관리",
+          "kesg_code_hint": ""
+        },
+        {
+          "id": "F2",
+          "text": "주간 총 근로시간은 연장근로 포함 60시간 초과 불가",
+          "kesg_code_hint": ""
+        },
+        {
+          "id": "F3",
+          "text": "법정 기준근로시간은 주 40시간 지정",
+          "kesg_code_hint": ""
+        },
+        {
+          "id": "F4",
+          "text": "연장근로는 주 12시간 초과 금지",
+          "kesg_code_hint": ""
+        },
+        {
+          "id": "F5",
+          "text": "7일 중 최소 1일의 휴일 보장 필수",
+          "kesg_code_hint": ""
+        },
+        {
+          "id": "F6",
+          "text": "모든 연장근로는 근로자의 자발적 서면 동의 필요",
+          "kesg_code_hint": ""
+        },
+        {
+          "id": "F7",
+          "text": "전자 출퇴근 시스템을 통해 일 단위 근로시간 기록 의무",
+          "kesg_code_hint": ""
+        },
+        {
+          "id": "F8",
+          "text": "주간 60시간 초과 경고 알림 시스템 시행",
+          "kesg_code_hint": ""
+        }
+      ],
+      "labeler1": "claude-code-passA",
+      "labeler2": "claude-code-passB (AI cross-validation, not human)",
+      "agreement": null,
+      "notes": "정량 수치 없음(정성 규정문서). 60h/40h/12h는 규정 상한이지 측정 지표가 아님.",
+      "agreement_ai": 0.9333,
+      "agreement_human": 1.0,
+      "labeler2_human": "장지민",
+      "facts_gold_human": [
+        "RBA 행동규범 v8.0 및 근로기준법 준수 기반 근로시간 관리",
+        "주간 총 근로시간은 연장근로 포함 60시간 초과 불가",
+        "법정 기준근로시간은 주 40시간 지정",
+        "연장근로는 주 12시간 초과 금지",
+        "7일 중 최소 1일의 휴일 보장 필수",
+        "모든 연장근로는 근로자의 자발적 서면 동의 필요",
+        "전자 출퇴근 시스템을 통해 일 단위 근로시간 기록 의무",
+        "주간 60시간 초과 경고 알림 시스템 시행"
+      ],
+      "facts_gold_ai": [
+        {
+          "id": "F1",
           "text": "RBA 행동규범 v8.0 및 근로기준법에 따라 근로시간을 관리한다",
           "kesg_code_hint": "S-1-1"
         },
@@ -54,23 +113,8 @@
           "kesg_code_hint": "S-1-1"
         }
       ],
-      "labeler1": "claude-code-passA",
-      "labeler2": "claude-code-passB (AI cross-validation, not human)",
-      "agreement": null,
-      "notes": "정량 수치 없음(정성 규정문서). 60h/40h/12h는 규정 상한이지 측정 지표가 아님.",
-      "agreement_ai": 0.9333,
-      "agreement_human": 1.0,
-      "labeler2_human": "장지민",
-      "facts_gold_human": [
-        "RBA 행동규범 v8.0 및 근로기준법 준수 기반 근로시간 관리",
-        "주간 총 근로시간은 연장근로 포함 60시간 초과 불가",
-        "법정 기준근로시간은 주 40시간 지정",
-        "연장근로는 주 12시간 초과 금지",
-        "7일 중 최소 1일의 휴일 보장 필수",
-        "모든 연장근로는 근로자의 자발적 서면 동의 필요",
-        "전자 출퇴근 시스템을 통해 일 단위 근로시간 기록 의무",
-        "주간 60시간 초과 경고 알림 시스템 시행"
-      ]
+      "gold_source": "human (장지민, 원문 PDF only)",
+      "agreement_human_source": "scripts/human_ai_agreement.py (결정적, 재현 가능)"
     },
     {
       "doc_id": "doc_record_mgmt_2025",
@@ -80,6 +124,71 @@
       "doc_type_gold": "policy_manual",
       "metrics_gold": [],
       "facts_gold": [
+        {
+          "id": "F1",
+          "text": "정책문서(방침서·규정·절차서)의 보존기한은 5년으로 지정",
+          "kesg_code_hint": ""
+        },
+        {
+          "id": "F2",
+          "text": "운영기록(점검표·회의록·교육기록)의 보존기한은 3년으로 지정",
+          "kesg_code_hint": ""
+        },
+        {
+          "id": "F3",
+          "text": "법정기록(인허가·인증서·시험성적서)의 보존기한은 10년으로 지정",
+          "kesg_code_hint": ""
+        },
+        {
+          "id": "F4",
+          "text": "개인정보(인사기록)는 재직 중 보존 및 퇴직 후 3년간 보존 필수",
+          "kesg_code_hint": ""
+        },
+        {
+          "id": "F5",
+          "text": "전자문서관리시스템(EDMS)을 통한 통합 관리 체계 운영",
+          "kesg_code_hint": ""
+        },
+        {
+          "id": "F6",
+          "text": "문서 발행·개정·폐기는 정해진 문서관리 절차 준수 필요",
+          "kesg_code_hint": ""
+        },
+        {
+          "id": "F7",
+          "text": "원본 대조가 필요한 기록에 대한 원본 별도 보관 의무",
+          "kesg_code_hint": ""
+        },
+        {
+          "id": "F8",
+          "text": "직무별 문서 열람 권한 차등 부여 및 기밀문서 암호화·접근이력 로깅 관리",
+          "kesg_code_hint": ""
+        },
+        {
+          "id": "F9",
+          "text": "보존기한 만료 문서는 승인 후 파쇄 처리하며, 폐기 대장은 작성 후 3년간 보관 필수",
+          "kesg_code_hint": ""
+        }
+      ],
+      "labeler1": "claude-code-passA",
+      "labeler2": "claude-code-passB (AI cross-validation, not human)",
+      "agreement": null,
+      "notes": "정량 수치 없음. 보존기한 숫자(5년/3년/10년)는 규정값.",
+      "agreement_ai": 0.8,
+      "agreement_human": 0.7059,
+      "labeler2_human": "장지민",
+      "facts_gold_human": [
+        "정책문서(방침서·규정·절차서)의 보존기한은 5년으로 지정",
+        "운영기록(점검표·회의록·교육기록)의 보존기한은 3년으로 지정",
+        "법정기록(인허가·인증서·시험성적서)의 보존기한은 10년으로 지정",
+        "개인정보(인사기록)는 재직 중 보존 및 퇴직 후 3년간 보존 필수",
+        "전자문서관리시스템(EDMS)을 통한 통합 관리 체계 운영",
+        "문서 발행·개정·폐기는 정해진 문서관리 절차 준수 필요",
+        "원본 대조가 필요한 기록에 대한 원본 별도 보관 의무",
+        "직무별 문서 열람 권한 차등 부여 및 기밀문서 암호화·접근이력 로깅 관리",
+        "보존기한 만료 문서는 승인 후 파쇄 처리하며, 폐기 대장은 작성 후 3년간 보관 필수"
+      ],
+      "facts_gold_ai": [
         {
           "id": "F1",
           "text": "법규 준수·요건 적합성 입증을 위한 문서와 기록을 체계적으로 관리한다",
@@ -121,24 +230,8 @@
           "kesg_code_hint": "G-3-1"
         }
       ],
-      "labeler1": "claude-code-passA",
-      "labeler2": "claude-code-passB (AI cross-validation, not human)",
-      "agreement": null,
-      "notes": "정량 수치 없음. 보존기한 숫자(5년/3년/10년)는 규정값.",
-      "agreement_ai": 0.8,
-      "agreement_human": 0.6364,
-      "labeler2_human": "장지민",
-      "facts_gold_human": [
-        "정책문서(방침서·규정·절차서)의 보존기한은 5년으로 지정",
-        "운영기록(점검표·회의록·교육기록)의 보존기한은 3년으로 지정",
-        "법정기록(인허가·인증서·시험성적서)의 보존기한은 10년으로 지정",
-        "개인정보(인사기록)는 재직 중 보존 및 퇴직 후 3년간 보존 필수",
-        "전자문서관리시스템(EDMS)을 통한 통합 관리 체계 운영",
-        "문서 발행·개정·폐기는 정해진 문서관리 절차 준수 필요",
-        "원본 대조가 필요한 기록에 대한 원본 별도 보관 의무",
-        "직무별 문서 열람 권한 차등 부여 및 기밀문서 암호화·접근이력 로깅 관리",
-        "보존기한 만료 문서는 승인 후 파쇄 처리하며, 폐기 대장은 작성 후 3년간 보관 필수"
-      ]
+      "gold_source": "human (장지민, 원문 PDF only)",
+      "agreement_human_source": "scripts/human_ai_agreement.py (결정적, 재현 가능)"
     },
     {
       "doc_id": "rohs_reach_2025",
@@ -148,6 +241,65 @@
       "doc_type_gold": "policy_manual",
       "metrics_gold": [],
       "facts_gold": [
+        {
+          "id": "F1",
+          "text": "제품 내 규제물질(RoHS 10종, REACH SVHC) 함유 관리 및 법적·고객 요구사항 충족 목적",
+          "kesg_code_hint": ""
+        },
+        {
+          "id": "F2",
+          "text": "EU RoHS 지침, EU REACH 규칙 SVHC 후보물질, 고객사 RSL을 규제 기준으로 지정",
+          "kesg_code_hint": ""
+        },
+        {
+          "id": "F3",
+          "text": "원자재 입고 시 성분분석 성적서(ICP-OES) 확인 의무",
+          "kesg_code_hint": ""
+        },
+        {
+          "id": "F4",
+          "text": "연 1회 공인기관을 통한 완제품 RoHS 적합성 시험 실시",
+          "kesg_code_hint": ""
+        },
+        {
+          "id": "F5",
+          "text": "반기 1회 REACH SVHC 후보물질 갱신 모니터링 수행",
+          "kesg_code_hint": ""
+        },
+        {
+          "id": "F6",
+          "text": "부적합 발생 시 대체물질 전환 계획 수립 필수",
+          "kesg_code_hint": ""
+        },
+        {
+          "id": "F7",
+          "text": "원자재 공급사의 불검출 보증서 제출 의무",
+          "kesg_code_hint": ""
+        },
+        {
+          "id": "F8",
+          "text": "시험성적서 및 불검출 보증서는 출하일로부터 10년간 보존",
+          "kesg_code_hint": ""
+        }
+      ],
+      "labeler1": "claude-code-passA",
+      "labeler2": "claude-code-passB (AI cross-validation, not human)",
+      "agreement": null,
+      "notes": "정량 수치 없음. 규제 기준 명시 문서.",
+      "agreement_ai": 0.9333,
+      "agreement_human": 1.0,
+      "labeler2_human": "장지민",
+      "facts_gold_human": [
+        "제품 내 규제물질(RoHS 10종, REACH SVHC) 함유 관리 및 법적·고객 요구사항 충족 목적",
+        "EU RoHS 지침, EU REACH 규칙 SVHC 후보물질, 고객사 RSL을 규제 기준으로 지정",
+        "원자재 입고 시 성분분석 성적서(ICP-OES) 확인 의무",
+        "연 1회 공인기관을 통한 완제품 RoHS 적합성 시험 실시",
+        "반기 1회 REACH SVHC 후보물질 갱신 모니터링 수행",
+        "부적합 발생 시 대체물질 전환 계획 수립 필수",
+        "원자재 공급사의 불검출 보증서 제출 의무",
+        "시험성적서 및 불검출 보증서는 출하일로부터 10년간 보존"
+      ],
+      "facts_gold_ai": [
         {
           "id": "F1",
           "text": "제품 내 규제물질(RoHS 10종, REACH SVHC)의 함유를 관리한다",
@@ -189,23 +341,8 @@
           "kesg_code_hint": "E-5-1"
         }
       ],
-      "labeler1": "claude-code-passA",
-      "labeler2": "claude-code-passB (AI cross-validation, not human)",
-      "agreement": null,
-      "notes": "정량 수치 없음. 규제 기준 명시 문서.",
-      "agreement_ai": 0.9333,
-      "agreement_human": 1.0,
-      "labeler2_human": "장지민",
-      "facts_gold_human": [
-        "제품 내 규제물질(RoHS 10종, REACH SVHC) 함유 관리 및 법적·고객 요구사항 충족 목적",
-        "EU RoHS 지침, EU REACH 규칙 SVHC 후보물질, 고객사 RSL을 규제 기준으로 지정",
-        "원자재 입고 시 성분분석 성적서(ICP-OES) 확인 의무",
-        "연 1회 공인기관을 통한 완제품 RoHS 적합성 시험 실시",
-        "반기 1회 REACH SVHC 후보물질 갱신 모니터링 수행",
-        "부적합 발생 시 대체물질 전환 계획 수립 필수",
-        "원자재 공급사의 불검출 보증서 제출 의무",
-        "시험성적서 및 불검출 보증서는 출하일로부터 10년간 보존"
-      ]
+      "gold_source": "human (장지민, 원문 PDF only)",
+      "agreement_human_source": "scripts/human_ai_agreement.py (결정적, 재현 가능)"
     },
     {
       "doc_id": "capa_2025",
@@ -215,6 +352,59 @@
       "doc_type_gold": "policy_manual",
       "metrics_gold": [],
       "facts_gold": [
+        {
+          "id": "F1",
+          "text": "부적합 접수 후 24시간 이내에 CAPA 등록 필수",
+          "kesg_code_hint": ""
+        },
+        {
+          "id": "F2",
+          "text": "5-Why 또는 Fish-bone 기법을 활용한 근본원인 분석 수행",
+          "kesg_code_hint": ""
+        },
+        {
+          "id": "F3",
+          "text": "담당자와 기한을 명시하여 시정조치 계획 수립 및 실행 의무",
+          "kesg_code_hint": ""
+        },
+        {
+          "id": "F4",
+          "text": "조치 완료 30일 후 재발 여부를 확인하는 유효성 검증 실시",
+          "kesg_code_hint": ""
+        },
+        {
+          "id": "F5",
+          "text": "부적합 중요도별 조치 시한 지정 (경미: 30일 이내 / 중대: 14일 이내 / 긴급: 즉시)",
+          "kesg_code_hint": ""
+        },
+        {
+          "id": "F6",
+          "text": "CAPA 기록은 최소 5년간 보존 필수",
+          "kesg_code_hint": ""
+        },
+        {
+          "id": "F7",
+          "text": "이행 완료된 건은 경영검토 회의 보고 의무",
+          "kesg_code_hint": ""
+        }
+      ],
+      "labeler1": "claude-code-passA",
+      "labeler2": "claude-code-passB (AI cross-validation, not human)",
+      "agreement": null,
+      "notes": "정량 수치 없음. 시한 숫자(24h/30일/14일)는 절차 기한.",
+      "agreement_ai": 0.8,
+      "agreement_human": 0.8,
+      "labeler2_human": "장지민",
+      "facts_gold_human": [
+        "부적합 접수 후 24시간 이내에 CAPA 등록 필수",
+        "5-Why 또는 Fish-bone 기법을 활용한 근본원인 분석 수행",
+        "담당자와 기한을 명시하여 시정조치 계획 수립 및 실행 의무",
+        "조치 완료 30일 후 재발 여부를 확인하는 유효성 검증 실시",
+        "부적합 중요도별 조치 시한 지정 (경미: 30일 이내 / 중대: 14일 이내 / 긴급: 즉시)",
+        "CAPA 기록은 최소 5년간 보존 필수",
+        "이행 완료된 건은 경영검토 회의 보고 의무"
+      ],
+      "facts_gold_ai": [
         {
           "id": "F1",
           "text": "내·외부 감사·평가에서 발견된 부적합 사항을 시정하고 재발을 방지한다",
@@ -256,22 +446,8 @@
           "kesg_code_hint": "G-3-1"
         }
       ],
-      "labeler1": "claude-code-passA",
-      "labeler2": "claude-code-passB (AI cross-validation, not human)",
-      "agreement": null,
-      "notes": "정량 수치 없음. 시한 숫자(24h/30일/14일)는 절차 기한.",
-      "agreement_ai": 0.8,
-      "agreement_human": 0.6667,
-      "labeler2_human": "장지민",
-      "facts_gold_human": [
-        "부적합 접수 후 24시간 이내에 CAPA 등록 필수",
-        "5-Why 또는 Fish-bone 기법을 활용한 근본원인 분석 수행",
-        "담당자와 기한을 명시하여 시정조치 계획 수립 및 실행 의무",
-        "조치 완료 30일 후 재발 여부를 확인하는 유효성 검증 실시",
-        "부적합 중요도별 조치 시한 지정 (경미: 30일 이내 / 중대: 14일 이내 / 긴급: 즉시)",
-        "CAPA 기록은 최소 5년간 보존 필수",
-        "이행 완료된 건은 경영검토 회의 보고 의무"
-      ]
+      "gold_source": "human (장지민, 원문 PDF only)",
+      "agreement_human_source": "scripts/human_ai_agreement.py (결정적, 재현 가능)"
     },
     {
       "doc_id": "sanitation_housing_2025",
@@ -281,6 +457,71 @@
       "doc_type_gold": "policy_manual",
       "metrics_gold": [],
       "facts_gold": [
+        {
+          "id": "F1",
+          "text": "RBA B-7(Sanitation, Food, Housing) 기준에 따른 청결·위생 환경 및 기숙사 안전 확보",
+          "kesg_code_hint": ""
+        },
+        {
+          "id": "F2",
+          "text": "남녀 구분된 화장실을 30인당 1개소 이상 설치 의무",
+          "kesg_code_hint": ""
+        },
+        {
+          "id": "F3",
+          "text": "음용 가능한 깨끗한 식수의 상시 제공 및 월 1회 위생시설 점검 실시",
+          "kesg_code_hint": ""
+        },
+        {
+          "id": "F4",
+          "text": "구내식당 운영 시 식품위생법 준수 및 월 1회 식자재 위생 검사 수행",
+          "kesg_code_hint": ""
+        },
+        {
+          "id": "F5",
+          "text": "연 2회 식중독 예방 교육 실시 필수",
+          "kesg_code_hint": ""
+        },
+        {
+          "id": "F6",
+          "text": "기숙사 제공 시 1인당 최소 4.5㎡ 이상의 개인 공간 확보 의무",
+          "kesg_code_hint": ""
+        },
+        {
+          "id": "F7",
+          "text": "기숙사 내 비상구 2개소 이상 확보 및 소화기, 감지기 층별 비치 필수",
+          "kesg_code_hint": ""
+        },
+        {
+          "id": "F8",
+          "text": "기숙사 온수, 냉난방, 환기 확보 및 분기별 안전점검 실시 의무",
+          "kesg_code_hint": ""
+        },
+        {
+          "id": "F9",
+          "text": "기숙사 거주자의 입퇴실 자유 보장 및 신분증 강제 보관 금지",
+          "kesg_code_hint": ""
+        }
+      ],
+      "labeler1": "claude-code-passA",
+      "labeler2": "claude-code-passB (AI cross-validation, not human)",
+      "agreement": null,
+      "notes": "정량 수치 없음. 30인/4.5㎡ 등은 시설 규정 기준값.",
+      "agreement_ai": 0.75,
+      "agreement_human": 0.9412,
+      "labeler2_human": "장지민",
+      "facts_gold_human": [
+        "RBA B-7(Sanitation, Food, Housing) 기준에 따른 청결·위생 환경 및 기숙사 안전 확보",
+        "남녀 구분된 화장실을 30인당 1개소 이상 설치 의무",
+        "음용 가능한 깨끗한 식수의 상시 제공 및 월 1회 위생시설 점검 실시",
+        "구내식당 운영 시 식품위생법 준수 및 월 1회 식자재 위생 검사 수행",
+        "연 2회 식중독 예방 교육 실시 필수",
+        "기숙사 제공 시 1인당 최소 4.5㎡ 이상의 개인 공간 확보 의무",
+        "기숙사 내 비상구 2개소 이상 확보 및 소화기, 감지기 층별 비치 필수",
+        "기숙사 온수, 냉난방, 환기 확보 및 분기별 안전점검 실시 의무",
+        "기숙사 거주자의 입퇴실 자유 보장 및 신분증 강제 보관 금지"
+      ],
+      "facts_gold_ai": [
         {
           "id": "F1",
           "text": "RBA B-7(Sanitation, Food, Housing)에 따라 위생 환경을 확보한다",
@@ -322,24 +563,8 @@
           "kesg_code_hint": "S-1-1"
         }
       ],
-      "labeler1": "claude-code-passA",
-      "labeler2": "claude-code-passB (AI cross-validation, not human)",
-      "agreement": null,
-      "notes": "정량 수치 없음. 30인/4.5㎡ 등은 시설 규정 기준값.",
-      "agreement_ai": 0.75,
-      "agreement_human": 0.8889,
-      "labeler2_human": "장지민",
-      "facts_gold_human": [
-        "RBA B-7(Sanitation, Food, Housing) 기준에 따른 청결·위생 환경 및 기숙사 안전 확보",
-        "남녀 구분된 화장실을 30인당 1개소 이상 설치 의무",
-        "음용 가능한 깨끗한 식수의 상시 제공 및 월 1회 위생시설 점검 실시",
-        "구내식당 운영 시 식품위생법 준수 및 월 1회 식자재 위생 검사 수행",
-        "연 2회 식중독 예방 교육 실시 필수",
-        "기숙사 제공 시 1인당 최소 4.5㎡ 이상의 개인 공간 확보 의무",
-        "기숙사 내 비상구 2개소 이상 확보 및 소화기, 감지기 층별 비치 필수",
-        "기숙사 온수, 냉난방, 환기 확보 및 분기별 안전점검 실시 의무",
-        "기숙사 거주자의 입퇴실 자유 보장 및 신분증 강제 보관 금지"
-      ]
+      "gold_source": "human (장지민, 원문 PDF only)",
+      "agreement_human_source": "scripts/human_ai_agreement.py (결정적, 재현 가능)"
     },
     {
       "doc_id": "hazmat_2025",
@@ -349,6 +574,59 @@
       "doc_type_gold": "policy_manual",
       "metrics_gold": [],
       "facts_gold": [
+        {
+          "id": "F1",
+          "text": "모든 화학물질에 대한 MSDS 비치 의무 및 연 1회 최신본 갱신 여부 점검 실시",
+          "kesg_code_hint": ""
+        },
+        {
+          "id": "F2",
+          "text": "신규 화학물질 도입 시 EHS팀 사전 승인 필수",
+          "kesg_code_hint": ""
+        },
+        {
+          "id": "F3",
+          "text": "유해물질 보관구역 내 잠금·환기·누출방지턱 구비 의무",
+          "kesg_code_hint": ""
+        },
+        {
+          "id": "F4",
+          "text": "유해물질 취급 시 지정 보호구(내화학 장갑·고글·방독면) 착용 필수",
+          "kesg_code_hint": ""
+        },
+        {
+          "id": "F5",
+          "text": "혼합보관 금지 물질에 대한 별도 구획 보관 의무",
+          "kesg_code_hint": ""
+        },
+        {
+          "id": "F6",
+          "text": "유해폐기물의 전용 용기 밀봉 보관 및 허가 업체를 통한 위탁 처리 준수",
+          "kesg_code_hint": ""
+        },
+        {
+          "id": "F7",
+          "text": "유해폐기물 처리 이력에 대한 5년간의 보관 의무",
+          "kesg_code_hint": ""
+        }
+      ],
+      "labeler1": "claude-code-passA",
+      "labeler2": "claude-code-passB (AI cross-validation, not human)",
+      "agreement": null,
+      "notes": "정량 수치 없음. 절차/시설 요건 문서.",
+      "agreement_ai": 0.75,
+      "agreement_human": 0.6667,
+      "labeler2_human": "장지민",
+      "facts_gold_human": [
+        "모든 화학물질에 대한 MSDS 비치 의무 및 연 1회 최신본 갱신 여부 점검 실시",
+        "신규 화학물질 도입 시 EHS팀 사전 승인 필수",
+        "유해물질 보관구역 내 잠금·환기·누출방지턱 구비 의무",
+        "유해물질 취급 시 지정 보호구(내화학 장갑·고글·방독면) 착용 필수",
+        "혼합보관 금지 물질에 대한 별도 구획 보관 의무",
+        "유해폐기물의 전용 용기 밀봉 보관 및 허가 업체를 통한 위탁 처리 준수",
+        "유해폐기물 처리 이력에 대한 5년간의 보관 의무"
+      ],
+      "facts_gold_ai": [
         {
           "id": "F1",
           "text": "유해화학물질의 식별·표시·보관·취급·폐기 전 과정을 안전하게 관리한다",
@@ -390,22 +668,8 @@
           "kesg_code_hint": "E-5-1"
         }
       ],
-      "labeler1": "claude-code-passA",
-      "labeler2": "claude-code-passB (AI cross-validation, not human)",
-      "agreement": null,
-      "notes": "정량 수치 없음. 절차/시설 요건 문서.",
-      "agreement_ai": 0.75,
-      "agreement_human": 0.7778,
-      "labeler2_human": "장지민",
-      "facts_gold_human": [
-        "모든 화학물질에 대한 MSDS 비치 의무 및 연 1회 최신본 갱신 여부 점검 실시",
-        "신규 화학물질 도입 시 EHS팀 사전 승인 필수",
-        "유해물질 보관구역 내 잠금·환기·누출방지턱 구비 의무",
-        "유해물질 취급 시 지정 보호구(내화학 장갑·고글·방독면) 착용 필수",
-        "혼합보관 금지 물질에 대한 별도 구획 보관 의무",
-        "유해폐기물의 전용 용기 밀봉 보관 및 허가 업체를 통한 위탁 처리 준수",
-        "유해폐기물 처리 이력에 대한 5년간의 보관 의무"
-      ]
+      "gold_source": "human (장지민, 원문 PDF only)",
+      "agreement_human_source": "scripts/human_ai_agreement.py (결정적, 재현 가능)"
     },
     {
       "doc_id": "ip_protection_2025",
@@ -415,6 +679,65 @@
       "doc_type_gold": "policy_manual",
       "metrics_gold": [],
       "facts_gold": [
+        {
+          "id": "F1",
+          "text": "회사 및 거래처의 지식재산권, 영업비밀, 기술 노하우 보호 목적",
+          "kesg_code_hint": ""
+        },
+        {
+          "id": "F2",
+          "text": "특허, 실용신안, 디자인, 상표, 저작권, 영업비밀, 고객사 기밀정보 일체에 규정 적용",
+          "kesg_code_hint": ""
+        },
+        {
+          "id": "F3",
+          "text": "전 임직원의 입사 시 비밀유지서약서(NDA) 서명 의무",
+          "kesg_code_hint": ""
+        },
+        {
+          "id": "F4",
+          "text": "퇴직 후 2년간 비밀유지 의무 부담",
+          "kesg_code_hint": ""
+        },
+        {
+          "id": "F5",
+          "text": "외부 방문자의 방문 전 기밀유지 동의서 작성 의무",
+          "kesg_code_hint": ""
+        },
+        {
+          "id": "F6",
+          "text": "기술 이전 시 쌍방 서면 계약 체결 필수",
+          "kesg_code_hint": ""
+        },
+        {
+          "id": "F7",
+          "text": "지식재산 침해 행위 적발 시 즉시 징계 조치 실시",
+          "kesg_code_hint": ""
+        },
+        {
+          "id": "F8",
+          "text": "위반 사항에 대한 손해배상 청구 및 형사 고발 조치 가능",
+          "kesg_code_hint": ""
+        }
+      ],
+      "labeler1": "claude-code-passA",
+      "labeler2": "claude-code-passB (AI cross-validation, not human)",
+      "agreement": null,
+      "notes": "정량 수치 없음. 지재권 보호 규정.",
+      "agreement_ai": 0.9231,
+      "agreement_human": 0.8,
+      "labeler2_human": "장지민",
+      "facts_gold_human": [
+        "회사 및 거래처의 지식재산권, 영업비밀, 기술 노하우 보호 목적",
+        "특허, 실용신안, 디자인, 상표, 저작권, 영업비밀, 고객사 기밀정보 일체에 규정 적용",
+        "전 임직원의 입사 시 비밀유지서약서(NDA) 서명 의무",
+        "퇴직 후 2년간 비밀유지 의무 부담",
+        "외부 방문자의 방문 전 기밀유지 동의서 작성 의무",
+        "기술 이전 시 쌍방 서면 계약 체결 필수",
+        "지식재산 침해 행위 적발 시 즉시 징계 조치 실시",
+        "위반 사항에 대한 손해배상 청구 및 형사 고발 조치 가능"
+      ],
+      "facts_gold_ai": [
         {
           "id": "F1",
           "text": "회사 및 거래처의 지식재산권, 영업비밀, 기술 노하우를 보호한다",
@@ -451,23 +774,8 @@
           "kesg_code_hint": "G-4-1"
         }
       ],
-      "labeler1": "claude-code-passA",
-      "labeler2": "claude-code-passB (AI cross-validation, not human)",
-      "agreement": null,
-      "notes": "정량 수치 없음. 지재권 보호 규정.",
-      "agreement_ai": 0.9231,
-      "agreement_human": 0.6667,
-      "labeler2_human": "장지민",
-      "facts_gold_human": [
-        "회사 및 거래처의 지식재산권, 영업비밀, 기수르 노하우 보호 목적",
-        "특허, 실용신안, 디자인, 상표, 저작권, 영업비밀, 고객사 기밀정보 일체에 규정 적용",
-        "전 임직원의 입사 시 비밀유지서약서(NDA) 서명 의무",
-        "퇴직 후 2년간 비밀유지 의무 부담",
-        "외부 방문자의 방문 전 기밀유지 동의서 작성 의무",
-        "기술 이전 시 쌍방 서면 게약 체결 필수",
-        "지식재산 침해 행위 적발 시 즉시 징계 조치 실시",
-        "위반 사항에 대한 손해배상 청구 및 형사 고발 조치 가능"
-      ]
+      "gold_source": "human (장지민, 원문 PDF only)",
+      "agreement_human_source": "scripts/human_ai_agreement.py (결정적, 재현 가능)"
     },
     {
       "doc_id": "responsible_minerals_2025",
@@ -477,6 +785,65 @@
       "doc_type_gold": "policy_manual",
       "metrics_gold": [],
       "facts_gold": [
+        {
+          "id": "F1",
+          "text": "탄탈럼 주석 텅스텐 금 및 코발트 공급망의 투명한 관리와 분쟁지역 인권침해 연루 방지 목적",
+          "kesg_code_hint": ""
+        },
+        {
+          "id": "F2",
+          "text": "OECD 분쟁광물 실사 지침, RBA 행동규범 v8.0 D-7, 고객사 CMRT를 적용 기준으로 지정",
+          "kesg_code_hint": ""
+        },
+        {
+          "id": "F3",
+          "text": "공급사에서 연 1회 CMRT 작성 및 제출 요청 의무",
+          "kesg_code_hint": ""
+        },
+        {
+          "id": "F4",
+          "text": "제련소의 RMAP 인증 여부 확인 수행",
+          "kesg_code_hint": ""
+        },
+        {
+          "id": "F5",
+          "text": "고위험 공급원 식별 시 시정 요구 또는 거래 재검토 실시",
+          "kesg_code_hint": ""
+        },
+        {
+          "id": "F6",
+          "text": "코발트 공급망에 대한 별도 실사(OECD 3단계 프레임워크) 수행 의무",
+          "kesg_code_hint": ""
+        },
+        {
+          "id": "F7",
+          "text": "연 1회 분쟁광물 실사보고서 공개 및 고객사 요청 시 30일 이내 CMRT 제출 의무",
+          "kesg_code_hint": ""
+        },
+        {
+          "id": "F8",
+          "text": "고의적 허위 보고 적발 시 거래 중단 조치 적용",
+          "kesg_code_hint": ""
+        }
+      ],
+      "labeler1": "claude-code-passA",
+      "labeler2": "claude-code-passB (AI cross-validation, not human)",
+      "agreement": null,
+      "notes": "정량 수치 없음. 공급망 실사 정책.",
+      "agreement_ai": 0.9333,
+      "agreement_human": 0.8,
+      "labeler2_human": "장지민",
+      "facts_gold_human": [
+        "탄탈럼 주석 텅스텐 금 및 코발트 공급망의 투명한 관리와 분쟁지역 인권침해 연루 방지 목적",
+        "OECD 분쟁광물 실사 지침, RBA 행동규범 v8.0 D-7, 고객사 CMRT를 적용 기준으로 지정",
+        "공급사에서 연 1회 CMRT 작성 및 제출 요청 의무",
+        "제련소의 RMAP 인증 여부 확인 수행",
+        "고위험 공급원 식별 시 시정 요구 또는 거래 재검토 실시",
+        "코발트 공급망에 대한 별도 실사(OECD 3단계 프레임워크) 수행 의무",
+        "연 1회 분쟁광물 실사보고서 공개 및 고객사 요청 시 30일 이내 CMRT 제출 의무",
+        "고의적 허위 보고 적발 시 거래 중단 조치 적용"
+      ],
+      "facts_gold_ai": [
         {
           "id": "F1",
           "text": "3TG(탄탈럼·주석·텅스텐·금) 및 코발트의 공급망을 투명하게 관리한다",
@@ -513,23 +880,8 @@
           "kesg_code_hint": "S-6-1"
         }
       ],
-      "labeler1": "claude-code-passA",
-      "labeler2": "claude-code-passB (AI cross-validation, not human)",
-      "agreement": null,
-      "notes": "정량 수치 없음. 공급망 실사 정책.",
-      "agreement_ai": 0.9333,
-      "agreement_human": 0.7778,
-      "labeler2_human": "장지민",
-      "facts_gold_human": [
-        "탄탈럼 주석 텅스텐 금 및 코발트 공급망의 투명한 관리와 분쟁지역 인권침해 연루 방지 목적",
-        "OECD 분쟁광물 실사 지침, RBA 행동규범 v8.0 D-7, 고객사 CMRT를 적용 기준으로 지정",
-        "공급사에서 연 1회 CMRT 작성 및 제출 요청 의무",
-        "제련소의 RMAP 인증 여부 확신 수행",
-        "고위험 공급원 식별 시 시정 요구 또는 거래 재검토 실시",
-        "코발트 공급망에 대한 별도 실사(OECD 3단계 프레임워크) 수행 의무",
-        "연 1회 분쟁광물 실사보고서 공개 및 고객사 요청 시 30일 이내 CMRT 제출 의뮤ㅜ",
-        "고의적 허위 보고 적발 시 거래 중단 조치 적용"
-      ]
+      "gold_source": "human (장지민, 원문 PDF only)",
+      "agreement_human_source": "scripts/human_ai_agreement.py (결정적, 재현 가능)"
     },
     {
       "doc_id": "safety_minutes_2025",
@@ -552,6 +904,59 @@
         }
       ],
       "facts_gold": [
+        {
+          "id": "F1",
+          "text": "산업재해율 목표를 전년 0.41%대비 감축된 0.3% 이하로 설정",
+          "kesg_code_hint": ""
+        },
+        {
+          "id": "F2",
+          "text": "위험성 평가를 연 2회 이상 실시하도록 지정",
+          "kesg_code_hint": ""
+        },
+        {
+          "id": "F3",
+          "text": "신규 입사자에 대한 안전교육 8시간 이수 의무화",
+          "kesg_code_hint": ""
+        },
+        {
+          "id": "F4",
+          "text": "개인보호구(PPE) 착용 의무를 전 공정으로 확대 적용",
+          "kesg_code_hint": ""
+        },
+        {
+          "id": "F5",
+          "text": "근로자 대표 건의에 따른 야간작업 조명 개선 조치를 2분기 내 완료하도록 결의",
+          "kesg_code_hint": ""
+        },
+        {
+          "id": "F6",
+          "text": "결사의 자유 보장 일환으로 노동조합 가입률 현황(62%) 공유",
+          "kesg_code_hint": ""
+        },
+        {
+          "id": "F7",
+          "text": "다음 위원회 회의 일정을 2025년 6월 15일",
+          "kesg_code_hint": ""
+        }
+      ],
+      "labeler1": "claude-code-passA",
+      "labeler2": "claude-code-passB (AI cross-validation, not human)",
+      "agreement": null,
+      "notes": "회의록: 정량(재해율 목표 0.3%, 노조 가입률 62%) + 정성 혼합 문서. 회사명: (주)대원전자부품.",
+      "agreement_ai": 0.8235,
+      "agreement_human": 0.8,
+      "labeler2_human": "장지민",
+      "facts_gold_human": [
+        "산업재해율 목표를 전년 0.41%대비 감축된 0.3% 이하로 설정",
+        "위험성 평가를 연 2회 이상 실시하도록 지정",
+        "신규 입사자에 대한 안전교육 8시간 이수 의무화",
+        "개인보호구(PPE) 착용 의무를 전 공정으로 확대 적용",
+        "근로자 대표 건의에 따른 야간작업 조명 개선 조치를 2분기 내 완료하도록 결의",
+        "결사의 자유 보장 일환으로 노동조합 가입률 현황(62%) 공유",
+        "다음 위원회 회의 일정을 2025년 6월 15일"
+      ],
+      "facts_gold_ai": [
         {
           "id": "F1",
           "text": "산업재해율 목표 0.3% 이하(전년 0.41% 대비 감축)",
@@ -593,22 +998,8 @@
           "kesg_code_hint": "S-4-1"
         }
       ],
-      "labeler1": "claude-code-passA",
-      "labeler2": "claude-code-passB (AI cross-validation, not human)",
-      "agreement": null,
-      "notes": "회의록: 정량(재해율 목표 0.3%, 노조 가입률 62%) + 정성 혼합 문서. 회사명: (주)대원전자부품.",
-      "agreement_ai": 0.8235,
-      "agreement_human": 0.6667,
-      "labeler2_human": "장지민",
-      "facts_gold_human": [
-        "산업재해율 목표를 전년 0.41%대비 감축된 0.3% 이하로 설정",
-        "위험성 평가를 연 2회 이상 실시하도록 지정",
-        "신규 입사자에 대한 안전교육 8시간 이수 의무화",
-        "개인보호구(PPE) 착용 의무를 전 공정으로 확대 적용",
-        "근로자 대표 건의에 따른 야간작업 조명 개선 조치를 2분기 내 완료하도록 결의",
-        "결사의 자유 보장 일환으로 노동조합 가입률 현황(62%) 공유",
-        "다음 위원회 회의 일정을 2025년 6월 15일"
-      ]
+      "gold_source": "human (장지민, 원문 PDF only)",
+      "agreement_human_source": "scripts/human_ai_agreement.py (결정적, 재현 가능)"
     },
     {
       "doc_id": "emergency_manual_2025",
@@ -618,6 +1009,59 @@
       "doc_type_gold": "emergency_manual",
       "metrics_gold": [],
       "facts_gold": [
+        {
+          "id": "F1",
+          "text": "화재・폭발・화학물질 누출・자연재해 등 비상상황 발생 시 신속한 대피 및 인명 피해 최소화 목적",
+          "kesg_code_hint": ""
+        },
+        {
+          "id": "F2",
+          "text": "비상 유형을 3개 등급으로 분류하고 등급별 행동 요령 정의",
+          "kesg_code_hint": ""
+        },
+        {
+          "id": "F3",
+          "text": "비상 집결지를 본관 앞 주차장 A구역(좌표: 37.12N, 127.08E)으로 지정",
+          "kesg_code_hint": ""
+        },
+        {
+          "id": "F4",
+          "text": "각 층별 최소 2개 이상의 대피 경로 확보 및 비상구 표시등 연 1회 점검 의무",
+          "kesg_code_hint": ""
+        },
+        {
+          "id": "F5",
+          "text": "전사 합동 소방훈련 연 2회 및 화학물질 누출 대응훈련 반기 1회 실시 필수",
+          "kesg_code_hint": ""
+        },
+        {
+          "id": "F6",
+          "text": "비상대응 훈련 결과 기록에 대한 3년간의 보존 의무",
+          "kesg_code_hint": ""
+        },
+        {
+          "id": "F7",
+          "text": "소방 및 안전 장비별 정기 점검 주기 지정 (소화기 월 1회/ 스프링클러 분기 1회/ 방독면 반기 1회)",
+          "kesg_code_hint": ""
+        }
+      ],
+      "labeler1": "claude-code-passA",
+      "labeler2": "claude-code-passB (AI cross-validation, not human)",
+      "agreement": null,
+      "notes": "synthetic=true. 정량 수치 없음.",
+      "agreement_ai": 0.5556,
+      "agreement_human": 0.6667,
+      "labeler2_human": "장지민",
+      "facts_gold_human": [
+        "화재・폭발・화학물질 누출・자연재해 등 비상상황 발생 시 신속한 대피 및 인명 피해 최소화 목적",
+        "비상 유형을 3개 등급으로 분류하고 등급별 행동 요령 정의",
+        "비상 집결지를 본관 앞 주차장 A구역(좌표: 37.12N, 127.08E)으로 지정",
+        "각 층별 최소 2개 이상의 대피 경로 확보 및 비상구 표시등 연 1회 점검 의무",
+        "전사 합동 소방훈련 연 2회 및 화학물질 누출 대응훈련 반기 1회 실시 필수",
+        "비상대응 훈련 결과 기록에 대한 3년간의 보존 의무",
+        "소방 및 안전 장비별 정기 점검 주기 지정 (소화기 월 1회/ 스프링클러 분기 1회/ 방독면 반기 1회)"
+      ],
+      "facts_gold_ai": [
         {
           "id": "F1",
           "text": "화재·폭발·화학물질 누출·자연재해 등 비상상황 대피 절차를 규정한다",
@@ -659,22 +1103,8 @@
           "kesg_code_hint": "S-4-1"
         }
       ],
-      "labeler1": "claude-code-passA",
-      "labeler2": "claude-code-passB (AI cross-validation, not human)",
-      "agreement": null,
-      "notes": "synthetic=true. 정량 수치 없음.",
-      "agreement_ai": 0.5556,
-      "agreement_human": 0.7778,
-      "labeler2_human": "장지민",
-      "facts_gold_human": [
-        "화재・폭발・화학물질 누출・자연재해 등 비상상황 발생 시 신속한 대피 및 인명 피해 최소화 목적",
-        "비상 유형을 3개 등급으로 분류하고 등급별 행동 요령 정의",
-        "비상 집결지를 본관 앞 주차장 A구역(좌표: 37.12N, 127.08E)으로 지정",
-        "각 층별 최소 2개 이상의 대피 경로 확보 및 비상구 표시등 연 1회 점검 의무",
-        "전사 합동 소방훈련 연 2회 및 화학물질 누출 대응훈련 반기 1회 실시 필수",
-        "비상대응 훈련 결과 기록에 대한 3년간의 보존 의무",
-        "소방 및 안전 장비별 정기 점검 주기 지정 (소화기 월 1회/ 스프링클러 분기 1회/ 방독면 반기 1회)"
-      ]
+      "gold_source": "human (장지민, 원문 PDF only)",
+      "agreement_human_source": "scripts/human_ai_agreement.py (결정적, 재현 가능)"
     },
     {
       "doc_id": "hr_policy_2025",
@@ -684,6 +1114,77 @@
       "doc_type_gold": "hr_policy",
       "metrics_gold": [],
       "facts_gold": [
+        {
+          "id": "F1",
+          "text": "UN 기업과 인권 이행원칙 및 RBA 행동규범 v8.0에 따라 모든 이해관계자의 인권 존중 및 보호 목적",
+          "kesg_code_hint": ""
+        },
+        {
+          "id": "F2",
+          "text": "모든 고용의 자발성 및 근로자의 여권·신분증 보관 금지, 합리적 통보 후 퇴직할 자유 보장",
+          "kesg_code_hint": ""
+        },
+        {
+          "id": "F3",
+          "text": "채용수수료의 회사 부담 의무 (근로자 전가 금지)",
+          "kesg_code_hint": ""
+        },
+        {
+          "id": "F4",
+          "text": "만 18세 미만 아동노동 금지 및 연소근로자(18~19세)의 야간·위험작업 배치 금지",
+          "kesg_code_hint": ""
+        },
+        {
+          "id": "F5",
+          "text": "성별·나이·국적·종교·장애·성적 지향에 따른 차별 금지 및 동일 업무에 대한 동일 임금 보장",
+          "kesg_code_hint": ""
+        },
+        {
+          "id": "F6",
+          "text": "근로자의 노동조합 가입 및 단체교섭권 보장 (노조 활동을 이유로 한 불이익 처분 금지)",
+          "kesg_code_hint": ""
+        },
+        {
+          "id": "F7",
+          "text": "노사협의회의 분기 1회 정기 개최 의무",
+          "kesg_code_hint": ""
+        },
+        {
+          "id": "F8",
+          "text": "익명 제보 핫라인(전화·이메일·앱) 운영 및 제보자에 대한 보복 금지 (위반 시 징계)",
+          "kesg_code_hint": ""
+        },
+        {
+          "id": "F9",
+          "text": "고충 제보 접수 시 14일 이내 조사 착수 및 30일 이내 결과 통보 기한 지정",
+          "kesg_code_hint": ""
+        },
+        {
+          "id": "F10",
+          "text": "연 1회 인권영향평가(HRIA) 실시 및 결과를 경영검토에 보고할 의무",
+          "kesg_code_hint": ""
+        }
+      ],
+      "labeler1": "claude-code-passA",
+      "labeler2": "claude-code-passB (AI cross-validation, not human)",
+      "agreement": null,
+      "notes": "synthetic=true. 정량 수치 없음. hr_policy 유형.",
+      "agreement_ai": 0.5455,
+      "agreement_human": 0.9,
+      "labeler2_human": "장지민",
+      "facts_gold_human": [
+        "UN 기업과 인권 이행원칙 및 RBA 행동규범 v8.0에 따라 모든 이해관계자의 인권 존중 및 보호 목적",
+        "모든 고용의 자발성 및 근로자의 여권·신분증 보관 금지, 합리적 통보 후 퇴직할 자유 보장",
+        "채용수수료의 회사 부담 의무 (근로자 전가 금지)",
+        "만 18세 미만 아동노동 금지 및 연소근로자(18~19세)의 야간·위험작업 배치 금지",
+        "성별·나이·국적·종교·장애·성적 지향에 따른 차별 금지 및 동일 업무에 대한 동일 임금 보장",
+        "근로자의 노동조합 가입 및 단체교섭권 보장 (노조 활동을 이유로 한 불이익 처분 금지)",
+        "노사협의회의 분기 1회 정기 개최 의무",
+        "익명 제보 핫라인(전화·이메일·앱) 운영 및 제보자에 대한 보복 금지 (위반 시 징계)",
+        "고충 제보 접수 시 14일 이내 조사 착수 및 30일 이내 결과 통보 기한 지정",
+        "연 1회 인권영향평가(HRIA) 실시 및 결과를 경영검토에 보고할 의무"
+      ],
+      "facts_gold_ai": [
         {
           "id": "F1",
           "text": "UN 기업과 인권 이행원칙 및 RBA v8.0에 따라 인권을 보호한다",
@@ -735,25 +1236,8 @@
           "kesg_code_hint": "S-5-1"
         }
       ],
-      "labeler1": "claude-code-passA",
-      "labeler2": "claude-code-passB (AI cross-validation, not human)",
-      "agreement": null,
-      "notes": "synthetic=true. 정량 수치 없음. hr_policy 유형.",
-      "agreement_ai": 0.5455,
-      "agreement_human": 0.9091,
-      "labeler2_human": "장지민",
-      "facts_gold_human": [
-        "UN 기업과 인권 이행원칙 및 RBA 행동규범 v8.0에 따라 모든 이해관계자의 인권 존중 및 보호 목적",
-        "모든 고용의 자발성 및 근로자의 여권·신분증 보관 금지, 합리적 통보 후 퇴직할 자유 보장",
-        "채용수수료의 회사 부담 의무 (근로자 전가 금지)",
-        "만 18세 미만 아동노동 금지 및 연소근로자(18~19세)의 야간·위험작업 배치 금지",
-        "성별·나이·국적·종교·장애·성적 지향에 따른 차별 금지 및 동일 업무에 대한 동일 임금 보장",
-        "근로자의 노동조합 가입 및 단체교섭권 보장 (노조 활동을 이유로 한 불이익 처분 금지)",
-        "노사협의회의 분기 1회 정기 개최 의무",
-        "익명 제보 핫라인(전화·이메일·앱) 운영 및 제보자에 대한 보복 금지 (위반 시 징계)",
-        "고충 제보 접수 시 14일 이내 조사 착수 및 30일 이내 결과 통보 기한 지정",
-        "연 1회 인권영향평가(HRIA) 실시 및 결과를 경영검토에 보고할 의무"
-      ]
+      "gold_source": "human (장지민, 원문 PDF only)",
+      "agreement_human_source": "scripts/human_ai_agreement.py (결정적, 재현 가능)"
     },
     {
       "doc_id": "work_hours_2025_scan",
@@ -763,6 +1247,52 @@
       "doc_type_gold": "policy_manual",
       "metrics_gold": [],
       "facts_gold": [
+        {
+          "id": "F1",
+          "text": "RBA 행동규범 v8.0 및 근로기준법 준수 기반 근로시간 관리",
+          "kesg_code_hint": ""
+        },
+        {
+          "id": "F2",
+          "text": "주간 총 근로시간은 연장근로 포함 60시간 초과 불가",
+          "kesg_code_hint": ""
+        },
+        {
+          "id": "F3",
+          "text": "법정 기준근로시간은 주 40시간 지정",
+          "kesg_code_hint": ""
+        },
+        {
+          "id": "F4",
+          "text": "연장근로는 주 12시간 초과 금지",
+          "kesg_code_hint": ""
+        },
+        {
+          "id": "F5",
+          "text": "7일 중 최소 1일의 휴일 보장 필수",
+          "kesg_code_hint": ""
+        },
+        {
+          "id": "F6",
+          "text": "모든 연장근로는 근로자의 자발적 서면 동의 필요",
+          "kesg_code_hint": ""
+        },
+        {
+          "id": "F7",
+          "text": "전자 출퇴근 시스템을 통해 일 단위 근로시간 기록 의무",
+          "kesg_code_hint": ""
+        },
+        {
+          "id": "F8",
+          "text": "주간 60시간 초과 경고 알림 시스템 시행",
+          "kesg_code_hint": ""
+        }
+      ],
+      "labeler1": "claude-code-passA",
+      "labeler2": null,
+      "agreement": null,
+      "notes": "scan variant of work_hours_2025 (동일 원문 기반 동일 gold)",
+      "facts_gold_ai": [
         {
           "id": "F1",
           "text": "RBA 행동규범 v8.0 및 근로기준법에 따라 근로시간을 관리한다",
@@ -804,10 +1334,19 @@
           "kesg_code_hint": "S-1-1"
         }
       ],
-      "labeler1": "claude-code-passA",
-      "labeler2": null,
-      "agreement": null,
-      "notes": "scan variant of work_hours_2025 (동일 원문 기반 동일 gold)"
+      "facts_gold_human": [
+        "RBA 행동규범 v8.0 및 근로기준법 준수 기반 근로시간 관리",
+        "주간 총 근로시간은 연장근로 포함 60시간 초과 불가",
+        "법정 기준근로시간은 주 40시간 지정",
+        "연장근로는 주 12시간 초과 금지",
+        "7일 중 최소 1일의 휴일 보장 필수",
+        "모든 연장근로는 근로자의 자발적 서면 동의 필요",
+        "전자 출퇴근 시스템을 통해 일 단위 근로시간 기록 의무",
+        "주간 60시간 초과 경고 알림 시스템 시행"
+      ],
+      "gold_source": "human (장지민, 원문 PDF only)",
+      "agreement_human": 1.0,
+      "agreement_human_source": "scripts/human_ai_agreement.py (결정적, 재현 가능)"
     },
     {
       "doc_id": "hazmat_2025_scan",
@@ -817,6 +1356,47 @@
       "doc_type_gold": "policy_manual",
       "metrics_gold": [],
       "facts_gold": [
+        {
+          "id": "F1",
+          "text": "모든 화학물질에 대한 MSDS 비치 의무 및 연 1회 최신본 갱신 여부 점검 실시",
+          "kesg_code_hint": ""
+        },
+        {
+          "id": "F2",
+          "text": "신규 화학물질 도입 시 EHS팀 사전 승인 필수",
+          "kesg_code_hint": ""
+        },
+        {
+          "id": "F3",
+          "text": "유해물질 보관구역 내 잠금·환기·누출방지턱 구비 의무",
+          "kesg_code_hint": ""
+        },
+        {
+          "id": "F4",
+          "text": "유해물질 취급 시 지정 보호구(내화학 장갑·고글·방독면) 착용 필수",
+          "kesg_code_hint": ""
+        },
+        {
+          "id": "F5",
+          "text": "혼합보관 금지 물질에 대한 별도 구획 보관 의무",
+          "kesg_code_hint": ""
+        },
+        {
+          "id": "F6",
+          "text": "유해폐기물의 전용 용기 밀봉 보관 및 허가 업체를 통한 위탁 처리 준수",
+          "kesg_code_hint": ""
+        },
+        {
+          "id": "F7",
+          "text": "유해폐기물 처리 이력에 대한 5년간의 보관 의무",
+          "kesg_code_hint": ""
+        }
+      ],
+      "labeler1": "claude-code-passA",
+      "labeler2": null,
+      "agreement": null,
+      "notes": "scan variant of hazmat_2025 (동일 원문 기반 동일 gold)",
+      "facts_gold_ai": [
         {
           "id": "F1",
           "text": "유해화학물질의 식별·표시·보관·취급·폐기 전 과정을 안전하게 관리한다",
@@ -858,10 +1438,18 @@
           "kesg_code_hint": "E-5-1"
         }
       ],
-      "labeler1": "claude-code-passA",
-      "labeler2": null,
-      "agreement": null,
-      "notes": "scan variant of hazmat_2025 (동일 원문 기반 동일 gold)"
+      "facts_gold_human": [
+        "모든 화학물질에 대한 MSDS 비치 의무 및 연 1회 최신본 갱신 여부 점검 실시",
+        "신규 화학물질 도입 시 EHS팀 사전 승인 필수",
+        "유해물질 보관구역 내 잠금·환기·누출방지턱 구비 의무",
+        "유해물질 취급 시 지정 보호구(내화학 장갑·고글·방독면) 착용 필수",
+        "혼합보관 금지 물질에 대한 별도 구획 보관 의무",
+        "유해폐기물의 전용 용기 밀봉 보관 및 허가 업체를 통한 위탁 처리 준수",
+        "유해폐기물 처리 이력에 대한 5년간의 보관 의무"
+      ],
+      "gold_source": "human (장지민, 원문 PDF only)",
+      "agreement_human": 0.6667,
+      "agreement_human_source": "scripts/human_ai_agreement.py (결정적, 재현 가능)"
     },
     {
       "doc_id": "responsible_minerals_2025_scan",
@@ -871,6 +1459,52 @@
       "doc_type_gold": "policy_manual",
       "metrics_gold": [],
       "facts_gold": [
+        {
+          "id": "F1",
+          "text": "탄탈럼 주석 텅스텐 금 및 코발트 공급망의 투명한 관리와 분쟁지역 인권침해 연루 방지 목적",
+          "kesg_code_hint": ""
+        },
+        {
+          "id": "F2",
+          "text": "OECD 분쟁광물 실사 지침, RBA 행동규범 v8.0 D-7, 고객사 CMRT를 적용 기준으로 지정",
+          "kesg_code_hint": ""
+        },
+        {
+          "id": "F3",
+          "text": "공급사에서 연 1회 CMRT 작성 및 제출 요청 의무",
+          "kesg_code_hint": ""
+        },
+        {
+          "id": "F4",
+          "text": "제련소의 RMAP 인증 여부 확인 수행",
+          "kesg_code_hint": ""
+        },
+        {
+          "id": "F5",
+          "text": "고위험 공급원 식별 시 시정 요구 또는 거래 재검토 실시",
+          "kesg_code_hint": ""
+        },
+        {
+          "id": "F6",
+          "text": "코발트 공급망에 대한 별도 실사(OECD 3단계 프레임워크) 수행 의무",
+          "kesg_code_hint": ""
+        },
+        {
+          "id": "F7",
+          "text": "연 1회 분쟁광물 실사보고서 공개 및 고객사 요청 시 30일 이내 CMRT 제출 의무",
+          "kesg_code_hint": ""
+        },
+        {
+          "id": "F8",
+          "text": "고의적 허위 보고 적발 시 거래 중단 조치 적용",
+          "kesg_code_hint": ""
+        }
+      ],
+      "labeler1": "claude-code-passA",
+      "labeler2": null,
+      "agreement": null,
+      "notes": "scan variant of responsible_minerals_2025 (동일 원문 기반 동일 gold)",
+      "facts_gold_ai": [
         {
           "id": "F1",
           "text": "3TG(탄탈럼·주석·텅스텐·금) 및 코발트의 공급망을 투명하게 관리한다",
@@ -907,10 +1541,19 @@
           "kesg_code_hint": "S-6-1"
         }
       ],
-      "labeler1": "claude-code-passA",
-      "labeler2": null,
-      "agreement": null,
-      "notes": "scan variant of responsible_minerals_2025 (동일 원문 기반 동일 gold)"
+      "facts_gold_human": [
+        "탄탈럼 주석 텅스텐 금 및 코발트 공급망의 투명한 관리와 분쟁지역 인권침해 연루 방지 목적",
+        "OECD 분쟁광물 실사 지침, RBA 행동규범 v8.0 D-7, 고객사 CMRT를 적용 기준으로 지정",
+        "공급사에서 연 1회 CMRT 작성 및 제출 요청 의무",
+        "제련소의 RMAP 인증 여부 확인 수행",
+        "고위험 공급원 식별 시 시정 요구 또는 거래 재검토 실시",
+        "코발트 공급망에 대한 별도 실사(OECD 3단계 프레임워크) 수행 의무",
+        "연 1회 분쟁광물 실사보고서 공개 및 고객사 요청 시 30일 이내 CMRT 제출 의무",
+        "고의적 허위 보고 적발 시 거래 중단 조치 적용"
+      ],
+      "gold_source": "human (장지민, 원문 PDF only)",
+      "agreement_human": 0.8,
+      "agreement_human_source": "scripts/human_ai_agreement.py (결정적, 재현 가능)"
     },
     {
       "doc_id": "safety_minutes_2025_scan",
@@ -933,6 +1576,47 @@
         }
       ],
       "facts_gold": [
+        {
+          "id": "F1",
+          "text": "산업재해율 목표를 전년 0.41%대비 감축된 0.3% 이하로 설정",
+          "kesg_code_hint": ""
+        },
+        {
+          "id": "F2",
+          "text": "위험성 평가를 연 2회 이상 실시하도록 지정",
+          "kesg_code_hint": ""
+        },
+        {
+          "id": "F3",
+          "text": "신규 입사자에 대한 안전교육 8시간 이수 의무화",
+          "kesg_code_hint": ""
+        },
+        {
+          "id": "F4",
+          "text": "개인보호구(PPE) 착용 의무를 전 공정으로 확대 적용",
+          "kesg_code_hint": ""
+        },
+        {
+          "id": "F5",
+          "text": "근로자 대표 건의에 따른 야간작업 조명 개선 조치를 2분기 내 완료하도록 결의",
+          "kesg_code_hint": ""
+        },
+        {
+          "id": "F6",
+          "text": "결사의 자유 보장 일환으로 노동조합 가입률 현황(62%) 공유",
+          "kesg_code_hint": ""
+        },
+        {
+          "id": "F7",
+          "text": "다음 위원회 회의 일정을 2025년 6월 15일",
+          "kesg_code_hint": ""
+        }
+      ],
+      "labeler1": "claude-code-passA",
+      "labeler2": null,
+      "agreement": null,
+      "notes": "scan variant of safety_minutes_2025 (동일 원문 기반 동일 gold)",
+      "facts_gold_ai": [
         {
           "id": "F1",
           "text": "산업재해율 목표 0.3% 이하(전년 0.41% 대비 감축)",
@@ -974,10 +1658,18 @@
           "kesg_code_hint": "S-4-1"
         }
       ],
-      "labeler1": "claude-code-passA",
-      "labeler2": null,
-      "agreement": null,
-      "notes": "scan variant of safety_minutes_2025 (동일 원문 기반 동일 gold)"
+      "facts_gold_human": [
+        "산업재해율 목표를 전년 0.41%대비 감축된 0.3% 이하로 설정",
+        "위험성 평가를 연 2회 이상 실시하도록 지정",
+        "신규 입사자에 대한 안전교육 8시간 이수 의무화",
+        "개인보호구(PPE) 착용 의무를 전 공정으로 확대 적용",
+        "근로자 대표 건의에 따른 야간작업 조명 개선 조치를 2분기 내 완료하도록 결의",
+        "결사의 자유 보장 일환으로 노동조합 가입률 현황(62%) 공유",
+        "다음 위원회 회의 일정을 2025년 6월 15일"
+      ],
+      "gold_source": "human (장지민, 원문 PDF only)",
+      "agreement_human": 0.8,
+      "agreement_human_source": "scripts/human_ai_agreement.py (결정적, 재현 가능)"
     }
   ],
   "meta": {
@@ -986,7 +1678,8 @@
     "passB_file": "data/benchmark_ocr/gold_passB.json",
     "overall_agreement_ai": 0.7797,
     "note": "AI 2-pass self-consistency is NOT a substitute for human inter-annotator agreement",
-    "agreement_human_overall": 0.7921,
-    "agreement_human_method": "human(장지민) vs AI gold, 의미 기준 수동 정합 (reconciliation_log.md)"
+    "agreement_human_overall": 0.8295,
+    "agreement_human_method": "scripts/human_ai_agreement.py — 사람(장지민) vs AI(passA), 접두어 토큰 Dice. 수기값 폐기, --write 없이 재현.",
+    "gold_authoring": "facts_gold = 사람(장지민) 원문 독립 라벨. 기존 AI 2패스 라벨은 facts_gold_ai / gold_passA.json에 보존."
   }
 }
