@@ -44,6 +44,16 @@ _PATH_BY_NOTE: list[tuple[str, str]] = [
 ]
 
 
+def _hint_of(node: Any) -> str:
+    """노드의 원 metric_hint 복원.
+
+    EvidenceNode는 hint를 별도 필드로 갖지 않는다. merge_ocr_extraction이
+    raw_text="{hint}={value}{unit} ({file})" 로 합쳐 저장하므로 첫 '=' 앞을 떼어낸다.
+    """
+    raw = str(getattr(node, "raw_text", "") or "")
+    return raw.split("=", 1)[0].strip() if "=" in raw else raw.strip()
+
+
 def classify_path(note: Any) -> str:
     text = str(note or "")
     for needle, label in _PATH_BY_NOTE:
@@ -97,9 +107,16 @@ def main() -> None:
         nodes = [n for n in graph.nodes.values() if n.metric == code]
         nodes.sort(key=lambda n: n.period)
 
-        ledger_pick = max(nodes, key=lambda n: (n.period, n.confidence)) if nodes else None
+        ledger_pick = (min(nodes, key=lambda n: (abs(n.period - ref_year), -n.period, -n.confidence))
+                       if nodes else None)
         d1_pick = (min(nodes, key=lambda n: (abs(n.period - ref_year), -n.period))
                    if nodes else None)
+
+        # 대표 노드와 같은 연도의 형제 노드 — 값이 흩어져 있으면 연도 규칙만으로는 못 고른다.
+        siblings = [n for n in nodes if ledger_pick and n.period == ledger_pick.period]
+        sibling_count = len(siblings)
+        sibling_min = min((n.value for n in siblings), default=None)
+        sibling_max = max((n.value for n in siblings), default=None)
         rows.append({
             "code": code,
             "name": item.name,
@@ -109,9 +126,12 @@ def main() -> None:
             "note": led.get("note"),
             "path": classify_path(led.get("note")),
             "dart_only_value": (dart_only.get(code) or {}).get("value"),
+            # EvidenceNode에는 metric_hint 필드가 없다 — 원 hint는 raw_text에
+            # "{hint}={value}{unit} (file)" 형태로 들어 있다(evidence_graph:352).
             "nodes": [
                 {"period": n.period, "value": n.value, "unit": n.unit,
-                 "hint": getattr(n, "metric_hint", "") or "",
+                 "raw_text": getattr(n, "raw_text", "") or "",
+                 "hint": _hint_of(n),
                  "origin": getattr(n, "origin", ""), "id": n.id}
                 for n in nodes
             ],
@@ -124,6 +144,11 @@ def main() -> None:
             "unit_mismatch": bool(
                 led.get("unit") and item.unit and str(led["unit"]).strip() != str(item.unit).strip()
             ),
+            # 대표값이 '연도'만으로 결정되지 않는 정도 — 같은 연도에 형제 노드가 몇 개인가.
+            # 사업장별·범주별 값이 한 코드에 뭉쳐 있으면 연도 규칙은 무력하다.
+            "sibling_count": sibling_count,
+            "sibling_min": sibling_min,
+            "sibling_max": sibling_max,
         })
 
     # ── 출력 ────────────────────────────────────────────────────────────────
@@ -150,9 +175,13 @@ def main() -> None:
             if n["id"] == r["d1_pick"]:
                 mark += " ←D1선택"
             print(f"  노드   : {n['period']}  {n['value']} {n['unit'] or ''}"
-                  f"  [{n['origin']}] {n['hint'][:40]}{mark}")
+                  f"  [{n['origin']}] {n['hint'][:48]}{mark}")
         if r["selector_split"]:
-            print("  ⚠ 선택 규칙 불일치 — 원장(max period) ≠ D1(report_year 최근접)")
+            print("  ⚠ 선택 규칙 불일치 — 원장 ≠ D1")
+        if r["sibling_count"] > 1:
+            print(f"  ⚠ 동일 코드·동일 연도 노드 {r['sibling_count']}개 "
+                  f"(값 범위 {r['sibling_min']} ~ {r['sibling_max']}) "
+                  f"— 연도만으로는 대표값이 결정되지 않는다")
 
     # 요약
     by_path: dict[str, int] = {}
