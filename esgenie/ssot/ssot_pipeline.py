@@ -146,37 +146,45 @@ def _merge_ssot_evidence(result: Any, graph: EvidenceGraph) -> None:
     """SSOT graph의 OCR/TextNode를 L1 결과에 병합."""
     from esgenie.dart_client import SOURCE_DART_REGEX
     from esgenie.knowledge.kesg_items import by_code as _by_code
+    from esgenie.ssot.node_select import normalize_to_item_unit, select_representative_node
 
     # v10 extract()는 DART 노드만 탐색하므로, OCR 출처(ocr_structured / ocr_unstructured)
     # 노드도 evidence_node_ids에 추가하고 'no_evidence' 플래그를 해소한다.
     ocr_by_metric: dict[str, list[str]] = {}
     # 코드별 대표 OCR 노드 — DART 미공시 코드를 승격할 때 표시값 출처.
     #
-    # 선택 규칙(2026-07-25 통일): '가장 최신 연도'가 아니라 **보고 연도 최근접**.
-    # 기존 max(period)는 D1의 G5(layer3_detect._score_d1_numeric — report_year 최근접)와
-    # 비대칭이라, 다연도 노드를 가진 코드에서 원장은 최신 노드를, D1은 보고연도 노드를 골라
-    # 데이터가 옳아도 claim ≠ node가 됐다(구조적 D1 오탐).
-    # graph.report_year가 없으면(단위 테스트의 얇은 그래프 등) 기존대로 최신 노드 폴백.
+    # 선택 규칙(2026-07-26): hint 기반 공용 규칙(node_select.select_representative_node).
+    # 연도는 이 규칙의 **최후 tie-breaker(7순위)로 강등**됐다. 2026-07-25에 넣은
+    # '보고 연도 최근접'만으로는 같은 연도 안에서 사실상 임의 선택이라, 정답 노드가 같은
+    # 풀에 있어도 파생값('온실가스 감축 효과')·부분값('국내(별도)')을 골랐다.
+    # 원문 표의 연도 열이 한 period로 뭉개져 period 신뢰도 자체가 낮은 것도 이유다.
+    #
+    # D1의 G5(layer3_detect._score_d1_numeric)가 **같은 함수를 호출한다**. 이 대칭이
+    # 깨지면 데이터가 옳아도 claim ≠ node가 되어 구조적 D1 오탐이 난다.
+    # 규칙이 전 후보를 배제하면 None → 해당 코드는 미공시(잘못된 값보다 미공시가 낫다).
     ref_year = getattr(graph, "report_year", None)
 
-    def _repr_key(n: EvidenceNode) -> tuple:
-        if ref_year is None:
-            return (n.period, n.confidence)          # 기존 동작(폴백)
-        # 연도 근접이 1순위, 동률이면 최신·고신뢰. min()으로 고르므로 부호를 뒤집는다.
-        return (abs(n.period - ref_year), -n.period, -n.confidence)
-
-    ocr_repr: dict[str, EvidenceNode] = {}
+    ocr_pool: dict[str, list[EvidenceNode]] = {}
     for node in graph.nodes.values():
         if node.origin in ("ocr_structured", "ocr_unstructured"):
             ocr_by_metric.setdefault(node.metric, []).append(node.id)
-            current = ocr_repr.get(node.metric)
-            if current is None:
-                ocr_repr[node.metric] = node
-            elif ref_year is None:
-                if (node.period, node.confidence) >= (current.period, current.confidence):
-                    ocr_repr[node.metric] = node
-            elif _repr_key(node) < _repr_key(current):
-                ocr_repr[node.metric] = node
+            ocr_pool.setdefault(node.metric, []).append(node)
+
+    ocr_repr: dict[str, EvidenceNode] = {}
+    for metric, pool in ocr_pool.items():
+        picked = select_representative_node(metric, pool, report_year=ref_year)
+        if picked is not None:
+            ocr_repr[metric] = picked
+        else:
+            # 전 후보가 파생·비실적/지표 충돌로 배제 — 값을 채우지 않고 플래그만 남긴다.
+            # 노드는 evidence_node_ids에 그대로 붙어 감사추적용으로 보존된다(폐기 아님).
+            flags = result.confidence_flags.get(metric, [])
+            if "no_representative_node" not in flags:
+                result.confidence_flags[metric] = flags + ["no_representative_node"]
+            result.notes.append(
+                f"[대표노드 없음] {metric}: 후보 {len(pool)}개 전부 파생·비실적 또는 "
+                f"지표 불일치로 배제 → 미공시 유지"
+            )
 
     # 정성 조항(TextNode)도 존재형 문항의 증빙 근거다. 규정집/회의록에서 매핑된
     # K-ESG 코드가 있으면 해당 항목의 evidence_node_ids에 편입한다.
@@ -207,8 +215,15 @@ def _merge_ssot_evidence(result: Any, graph: EvidenceGraph) -> None:
         if repr_node is not None and entry.get("source_tier") == SOURCE_DART_REGEX:
             item = _by_code(code)
             old_value, old_unit = entry.get("value"), entry.get("unit")
-            entry["value"] = repr_node.value
-            entry["unit"] = repr_node.unit or (item.unit if item else old_unit)
+            # 원장에는 항목 정의 단위로 환산해 저장(2026-07-26). ton→kg 1,000배·MWh→TJ 등.
+            new_value, new_unit, unit_flag = normalize_to_item_unit(
+                code, repr_node.value, repr_node.unit)
+            entry["value"] = new_value
+            entry["unit"] = new_unit or (item.unit if item else old_unit)
+            if unit_flag:
+                flags = result.confidence_flags.get(code, [])
+                if unit_flag not in flags:
+                    result.confidence_flags[code] = flags + [unit_flag]
             entry["note"] = (
                 f"OCR 증빙 노드로 대체 ({repr_node.source_file or repr_node.source}) — "
                 f"DART 정규식 값 {old_value}{old_unit or ''}은 무게이트 추출이라 강등"
@@ -244,10 +259,22 @@ def _merge_ssot_evidence(result: Any, graph: EvidenceGraph) -> None:
             ocr_ids = ocr_by_metric.get(code, [])
             text_ids = text_by_code.get(code, [])
             repr_node = ocr_repr.get(code)
+            # 대표 노드가 배제됐고 정성 근거도 없으면 승격 자체를 하지 않는다(2026-07-26).
+            # repr_node=None은 종전엔 'TextNode만 있는 존재형 문항'만 뜻했지만, 이제
+            # '전 후보가 파생·비실적으로 배제됨'도 뜻한다. 정량 항목에 '문서 조항 확인'을
+            # 채우면 미공시가 공시로 위장된다 — 잘못된 값보다 미공시가 낫다(라벨링 §3-1).
+            if repr_node is None and not text_ids:
+                continue
+            value: Any
             if repr_node is not None:
-                # 정량 OCR 노드 → 실제 수치로 채움
-                value: Any = repr_node.value
-                unit = repr_node.unit or (item.unit or "")
+                # 정량 OCR 노드 → 실제 수치로 채움. 항목 정의 단위로 환산해 저장(2026-07-26).
+                value, unit, unit_flag = normalize_to_item_unit(
+                    code, repr_node.value, repr_node.unit)
+                unit = unit or (item.unit or "")
+                if unit_flag:
+                    flags = result.confidence_flags.get(code, [])
+                    if unit_flag not in flags:
+                        result.confidence_flags[code] = flags + [unit_flag]
                 note = f"OCR 정량 증빙으로 자동 인식 ({repr_node.source_file or repr_node.source})"
                 tier = SOURCE_OCR_GATED
                 quant_added += 1

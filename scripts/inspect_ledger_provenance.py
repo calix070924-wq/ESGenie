@@ -9,8 +9,10 @@
 출력 3종:
   1. 코드별 원장 값/단위/note → note 문자열로 [A]/[B] 판정
   2. 같은 코드의 그래프 노드 전량(period·value·unit·hint·origin)
-  3. **선택 규칙 불일치**: 원장 대표노드(max period) vs D1 대표노드(report_year 최근접)가
-     다른 값을 고르는 코드 — 데이터가 옳아도 D1이 발화하는 구조적 오탐 후보
+  3. **선택 규칙 불일치**: 원장 대표노드 vs D1 대표노드가 다른 값을 고르는 코드 —
+     데이터가 옳아도 D1이 발화하는 구조적 오탐 후보.
+     2026-07-26부터 두 경로가 `node_select.select_representative_node` 하나를 공유하므로
+     이 항목은 항상 0개여야 한다(0이 아니면 대칭이 깨진 것 = 회귀).
 
 사용:
     python3 scripts/inspect_ledger_provenance.py                      # 현대모비스
@@ -80,6 +82,7 @@ def main() -> None:
     from esgenie.dart_client import load_report
     from esgenie.pipeline import _collect_ocr_extractions
     from esgenie.ssot import evidence_graph as ssot_evidence_graph
+    from esgenie.ssot.node_select import select_representative_node
     from esgenie.ssot.ssot_pipeline import extract_with_ssot
     from esgenie.knowledge.kesg_items import by_code
 
@@ -107,10 +110,11 @@ def main() -> None:
         nodes = [n for n in graph.nodes.values() if n.metric == code]
         nodes.sort(key=lambda n: n.period)
 
-        ledger_pick = (min(nodes, key=lambda n: (abs(n.period - ref_year), -n.period, -n.confidence))
-                       if nodes else None)
-        d1_pick = (min(nodes, key=lambda n: (abs(n.period - ref_year), -n.period))
-                   if nodes else None)
+        # 원장(ssot_pipeline)과 D1(layer3_detect G5)이 호출하는 **그 함수**를 여기서도 부른다
+        # (2026-07-26). 연도 규칙식을 스크립트에 복제해두면 규칙이 바뀐 뒤에도 옛 노드를
+        # '←원장선택'으로 찍어 관찰 자체가 거짓말이 된다.
+        ledger_pick = select_representative_node(code, nodes, report_year=ref_year)
+        d1_pick = select_representative_node(code, nodes, report_year=ref_year)
 
         # 대표 노드와 같은 연도의 형제 노드 — 값이 흩어져 있으면 연도 규칙만으로는 못 고른다.
         siblings = [n for n in nodes if ledger_pick and n.period == ledger_pick.period]

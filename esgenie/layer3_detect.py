@@ -389,6 +389,9 @@ def _score_d1_numeric(
         return AxisScore(score=0.0, evidence=[], detail="evidence_graph 없음 — 스킵")
 
     # G5. 노드 선택 기준 연도 — 그래프 report_year 우선, 없으면 후보 최신 연도 폴백.
+    # 원장과 동일한 선택 규칙을 쓰기 위한 공용 함수(대칭 보장 — 상세는 node_select 참조).
+    from .ssot.node_select import select_representative_node
+
     ref_year = getattr(evidence_graph, "report_year", None)
 
     worst_delta = 0.0
@@ -419,14 +422,13 @@ def _score_d1_numeric(
             compat = [n for n in nodes if units_compatible(claim_unit, getattr(n, "unit", None))]
             if not compat:
                 continue
-            # G5. '가장 최신'(max period)이 아니라 '보고 연도 최근접' 노드를 고른다.
-            # max(period)는 미래 전망 노드(2040 등)를 실적으로 골라 오탐을 냈다(네이버 사례).
-            # ref_year가 없으면(단위 테스트의 FakeGraph 등) 기존대로 최신 노드로 폴백.
-            if ref_year is not None:
-                node = min(compat, key=lambda n: (abs(n.period - ref_year), -n.period))
-            else:
-                node = max(compat, key=lambda n: n.period)
-            if node.value == 0:
+            # G5. 대표 노드 선택 — 원장(_merge_ssot_evidence)과 **같은 공용 함수**를 쓴다.
+            # 2026-07-26: 기존 '보고 연도 최근접'을 hint 기반 규칙으로 교체했다(연도는
+            # 그 규칙의 최후 tie-breaker로 강등). 원장과 D1이 다른 노드를 고르면 데이터가
+            # 옳아도 claim ≠ node가 되어 구조적 오탐이 나므로 이 대칭이 정확도의 전제다.
+            # 규칙이 전 후보를 배제(파생·비실적 hint 등)하면 None → 비교 자체를 건너뛴다.
+            node = select_representative_node(c, compat, report_year=ref_year)
+            if node is None or node.value == 0:
                 continue
             delta = abs(claim_val - node.value) / abs(node.value)
             if best is None or delta < best[0]:

@@ -228,13 +228,25 @@ def _backfill_kesg_codes(ext: OcrExtraction) -> None:
     하이브리드 1단계(결정적 사전)다. 사전이 못 잡으면 코드를 비워 두어 상위 LLM
     폴백/HITL이 처리하게 한다. fuzzy로만 걸린 건 confidence를 낮춰 검증 큐로 보낸다.
 
-    중복 가드: 이미 다른 metric이 점유한 코드(템플릿/본문확정 등 권위 있는 산출물)는
-    backfill이 다시 붙이지 않는다. 예) 보조수치 '지정폐기물'(template code=None)이
+    중복 가드: 이미 **다른 라벨의** metric이 점유한 코드(템플릿/본문확정 등 권위 있는
+    산출물)는 backfill이 다시 붙이지 않는다. 예) 보조수치 '지정폐기물'(template code=None)이
     E-6-1로 해소돼 본문확정 18.4t와 1000× 어긋난 유령 중복노드를 만드는 사례 차단.
-    """
-    from ..knowledge.kesg_items import resolve_kesg_code
 
-    taken_codes = {m.kesg_code_guess for m in ext.metrics if m.kesg_code_guess}
+    단, **같은 라벨**은 예외다(2026-07-26). 표의 다연도 열·다중 행은 같은 hint로 여러
+    metric이 되는데, 선착순 점유가 두 번째부터 코드를 못 받게 만들어 동일 hint가 연도마다
+    다른 코드로 흘렀다(현대모비스 'Scope 3 온실가스 배출량 연결(일부)' → 2022는 E-3-2,
+    2023·2024는 코드 미부여 후 evidence_graph의 _HINT_TO_KESG 폴백에서 '온실가스'에 걸려
+    E-3-1). Scope3 값이 Scope1+2 후보 풀을 오염시키는 직접 원인이라, 라벨이 같으면
+    점유 여부와 무관하게 같은 코드를 준다 — 동일 hint → 동일 코드(결정적).
+    """
+    from ..knowledge.kesg_items import _normalize_label, resolve_kesg_code
+
+    # 코드 → 그 코드를 점유한 라벨들(정규화). 같은 라벨의 재사용은 중복이 아니다.
+    taken_by_label: dict[str, set[str]] = {}
+    for m in ext.metrics:
+        if m.kesg_code_guess:
+            taken_by_label.setdefault(m.kesg_code_guess, set()).add(
+                _normalize_label(m.metric_hint))
     resolved: list[dict[str, Any]] = []
     for m in ext.metrics:
         if m.kesg_code_guess:
@@ -242,10 +254,12 @@ def _backfill_kesg_codes(ext: OcrExtraction) -> None:
         code, score, method = resolve_kesg_code(m.metric_hint)
         if not code:
             continue
-        if code in taken_codes:
-            continue  # 이미 점유된 코드 → 중복노드 방지(권위 산출물 우선)
+        label = _normalize_label(m.metric_hint)
+        holders = taken_by_label.get(code)
+        if holders and label not in holders:
+            continue  # 다른 라벨이 점유한 코드 → 중복노드 방지(권위 산출물 우선)
         m.kesg_code_guess = code
-        taken_codes.add(code)
+        taken_by_label.setdefault(code, set()).add(label)
         if method == "fuzzy":
             m.confidence = min(m.confidence, 0.5)  # 불확실 → HITL 검증 큐
         resolved.append({"metric_hint": m.metric_hint, "code": code,

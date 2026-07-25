@@ -5,7 +5,9 @@
 따로 놀아 PR #44(G1~G6) 이후에도 D1이 잔존한 문제를 세 지점에서 고정한다.
 
   작업1  우선순위 역전 — 무게이트 DART 정규식 값 < 게이트 통과 OCR 노드
-  작업2  대표노드 선택 — 원장도 D1(G5)과 같은 'report_year 최근접'
+  작업2  대표노드 선택 — 원장도 D1(G5)과 같은 노드를 고른다
+         (2026-07-26: 선택 기준이 'report_year 최근접' → hint 기반 공용 규칙으로 교체.
+          연도는 최후 tie-breaker로 강등 — tests/test_node_selection.py 참조)
   작업3  정규식 방어선 — 가드어휘 스킵 + 값 상식범위
 
 과차단 방지를 위해 각 항목에 음성 테스트(기존 동작 유지)를 둔다.
@@ -100,10 +102,19 @@ class TestPriorityInversion:
 # =====================================================================
 
 class TestRepresentativeNodeSelection:
-    """원장 대표노드 = report_year 최근접 (D1의 G5와 대칭)."""
+    """원장 대표노드 = D1(G5)과 같은 공용 규칙(node_select.select_representative_node).
+
+    2026-07-26 규칙 갱신: 'report_year 최근접'은 단일 기준에서 **최후 tie-breaker(7순위)로
+    강등**됐다. hint 기반 축(파생 배제 · 지표 정합 · 집계 · 단위)이 먼저 갈린다.
+    아래 테스트들은 hint가 없는 얇은 노드를 쓰므로 앞 축이 전부 동률 → 연도 기준이 작동한다.
+    상세 규칙 회귀는 tests/test_node_selection.py 참조.
+    """
 
     def test_picks_report_year_node_not_latest(self) -> None:
-        """네이버 계열 사례: max(period)는 미래 노드를 실적으로 골랐다."""
+        """네이버 계열 사례: max(period)는 미래 노드를 실적으로 골랐다.
+
+        hint가 없어 앞 축이 동률이므로 연도(최후 기준)로 갈린다.
+        """
         graph = _graph(
             2025,
             _node("E-6-2", 56.9, "%", 2025, nid="cur"),
@@ -113,7 +124,13 @@ class TestRepresentativeNodeSelection:
         assert entry["value"] == 56.9, "보고 연도 노드를 골라야 한다"
 
     def test_ledger_and_d1_pick_the_same_node(self) -> None:
-        """같은 그래프에서 원장 선택과 D1(G5) 선택이 일치해야 구조적 오탐이 사라진다."""
+        """같은 그래프에서 원장 선택과 D1(G5) 선택이 일치해야 구조적 오탐이 사라진다.
+
+        규칙이 바뀌어도 이 단언은 유지된다 — 두 경로가 **같은 공용 함수**를 호출하므로
+        선택식을 여기서 복제하지 않고 그 함수를 직접 부른다(중복 구현 시 대칭이 깨진다).
+        """
+        from esgenie.ssot.node_select import select_representative_node
+
         ref_year = 2025
         nodes = [
             _node("E-6-2", 56.9, "%", 2025, nid="a"),
@@ -123,8 +140,8 @@ class TestRepresentativeNodeSelection:
         graph = _graph(ref_year, *nodes)
 
         ledger_value = extract_with_ssot(_report(ref_year, {}), graph).mapped["E-6-2"]["value"]
-        # layer3_detect._score_d1_numeric의 G5와 동일한 선택식
-        d1_node = min(nodes, key=lambda n: (abs(n.period - ref_year), -n.period))
+        d1_node = select_representative_node("E-6-2", nodes, report_year=ref_year)
+        assert d1_node is not None
         assert ledger_value == d1_node.value
 
     def test_falls_back_to_latest_without_report_year(self) -> None:
