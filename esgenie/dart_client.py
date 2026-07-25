@@ -571,6 +571,15 @@ def _fetch_report_zip_text(rcept_no: str, max_chars: int = 800000) -> str:
         return ""
 
 
+# ── 값 공급 경로 티어 ───────────────────────────────────────────────────────
+# L1 원장(ExtractionResult.mapped)에서 "이 값이 어느 경로로 들어왔는가"를 남기기 위한 태그.
+# 2026-07-25 역추적(docs/역추적_claim오염_경로분리_2026-07-25.md): 아래 _regex_extract_kesg는
+# 수십만 자 합본 텍스트에서 re.search 첫 매치가 이기는 방식이라 연도·표구조·가드어휘 검증이
+# 전혀 없다. 반면 OCR 노드는 L0에서 G1~G6 게이트를 통과한다. 원장이 무게이트 값을 게이트
+# 통과 값보다 우선하는 역전을 막으려면 경로를 구분할 수 있어야 한다.
+# 태그가 없는 값(구조화 API·사외이사 재계산 등)은 강등 대상이 아니다 — 기본값은 기존 동작.
+SOURCE_DART_REGEX = "dart_regex_ungated"
+
 # K-ESG 핵심 수치 정규식 패턴 (사업보고서 + 지속가능경영보고서 다양한 표현 커버)
 # tuple: (kesg_code, unit, regex, scale)  scale: 실제 단위로 환산 배수 (예: 만톤→tCO2eq = 10000)
 _KESG_PATTERNS: list[tuple[str, str, str, float]] = [
@@ -614,6 +623,74 @@ _KESG_PATTERNS: list[tuple[str, str, str, float]] = [
     # ── G-6-1 지배구조 법규 위반 ───────────────────────────────────────────────
     ("G-6-1", "건",     r"(?:법규\s*위반|공정거래\s*위반|과징금\s*부과)[^\d]{0,60}(\d+)\s*건", 1.0),
 ]
+
+
+# ── 정규식 경로 최소 방어선 (2026-07-25) ────────────────────────────────────
+# 이 경로는 문서 전체에서 첫 매치가 이기고 표 구조·연도를 못 본다. L0의 G1(가드어휘)·
+# 값 상식범위 두 가지만 대칭 적용해 "총량 자리에 목표치·각주번호가 들어가는" 사고
+# (docs/라벨링_발견_수정목록_2026-07-19.md §2-1·§3-6·§3-7)를 막는다.
+# 전면 폐기가 아니라 방어선인 이유: 이 경로가 DART 커버리지의 상당분을 담당한다.
+
+# G1과 같은 어휘. 매치 구간(레이블~숫자 사이 슬랙 포함) 및 직전 30자에 있으면 건너뛴다.
+_REGEX_GUARD_TERMS: tuple[str, ...] = (
+    "목표", "감축량", "전망", "예상", "누적", "전환량", "집약도", "계획", "로드맵",
+)
+# 직전 문맥을 몇 자까지 볼지의 상한. 단, 숫자를 만나면 거기서 멈춘다(_guard_window 참조).
+_GUARD_LOOKBEHIND = 40
+
+# 값 상식 범위 (code, unit) → (min, max). 경계는 "이 값일 리 없다"만 걸리게 넉넉히 잡는다.
+# 비율은 0~100이 정의상 상한이고, 절대량은 각주번호(4)·축눈금 같은 극소값 배제가 목적.
+_KESG_SANITY: dict[tuple[str, str], tuple[float, float]] = {
+    ("E-3-1", "tCO2eq"): (100.0, 5e8),      # 상장사 Scope1+2가 4 tCO2eq일 수 없다(현대모비스 사례)
+    ("E-4-1", "kWh"):    (1_000.0, 1e12),
+    ("E-4-1", "TJ"):     (1.0, 1e6),
+    ("E-5-1", "m³"):     (100.0, 1e10),
+    ("E-5-1", "ton"):    (100.0, 1e10),
+    ("E-6-1", "ton"):    (1.0, 1e9),
+    ("S-3-1", "%"):      (0.0, 10.0),        # 재해율 — 10%를 넘으면 다른 지표를 집은 것
+    ("G-3-1", "일"):     (0.0, 3650.0),
+}
+# 단위만으로 결정되는 범위 (위 표에 없을 때 적용)
+_UNIT_SANITY: dict[str, tuple[float, float]] = {
+    "%": (0.0, 100.0),
+    "건": (0.0, 100_000.0),
+    "명": (0.0, 1e7),
+}
+
+
+def _guard_window(text: str, start: int, end: int) -> str:
+    """가드 어휘를 찾을 문맥 = 매치 구간 + '직전 숫자까지'의 앞부분.
+
+    직전 문맥이 필요한 이유: 레이블과 값 사이에 숫자가 끼면(예 '온실가스 목표 감축량
+    (Scope1+2) 114,884') 정규식 매치가 레이블을 지나 'Scope1+2'부터 시작해, 매치 구간만
+    봐서는 '목표'를 놓친다.
+
+    숫자에서 멈추는 이유: 앞쪽 숫자는 다른 셀·행의 값이므로, 그보다 더 앞의 어휘는
+    지금 집은 값의 레이블이 아니다. 고정 폭으로 되돌아보면 옆 행의 '목표'가 정상 실적
+    행까지 차단한다(용수 사용 절감 목표 5,000톤 · 용수 사용량 1,992,921톤 사례).
+    """
+    lo = max(0, start - _GUARD_LOOKBEHIND)
+    prefix = text[lo:start]
+    last_digit = max((i for i, ch in enumerate(prefix) if ch.isdigit()), default=-1)
+    return prefix[last_digit + 1:] + text[start:end]
+
+
+def _regex_guard_hit(text: str, start: int, end: int) -> str | None:
+    """매치 구간 + 직전 문맥에 가드 어휘가 있으면 그 어휘를 반환."""
+    window = _guard_window(text, start, end)
+    for term in _REGEX_GUARD_TERMS:
+        if term in window:
+            return term
+    return None
+
+
+def _sanity_ok(code: str, unit: str, value: float) -> bool:
+    """값이 항목 상식 범위 안이면 True. 범위 미정의면 통과(보수적)."""
+    lo_hi = _KESG_SANITY.get((code, unit)) or _UNIT_SANITY.get(unit)
+    if lo_hi is None:
+        return True
+    lo, hi = lo_hi
+    return lo <= value <= hi
 
 # 사외이사 비율(G-1-2) — 사업보고서의 다양한 표현(표준표/문장/역순) 방어적 처리
 # DART 표준표: "이사의 수  사외이사 수  사외이사 변동현황 …  5  3  - - -"
@@ -664,14 +741,25 @@ def _regex_extract_kesg(text: str) -> dict[str, dict]:
     for code, unit, pattern, scale in _KESG_PATTERNS:
         if code in result:
             continue
-        m = re.search(pattern, text, re.IGNORECASE)
-        if m:
+        # 첫 매치 무조건 채택 → 가드어휘·상식범위를 통과하는 첫 매치로 변경.
+        # 걸린 매치는 버리고 같은 패턴의 다음 출현을 계속 본다(패턴 자체는 유지).
+        for m in re.finditer(pattern, text, re.IGNORECASE):
             raw = m.group(1).replace(",", "")
             try:
                 value = float(raw) * scale
-                result[code] = {"value": value, "unit": unit, "note": "DART 원문 정규식 추출"}
             except ValueError:
-                pass
+                continue
+            guard = _regex_guard_hit(text, m.start(), m.end())
+            if guard:
+                logger.debug("[regex guard] %s 스킵 — 가드어휘 '%s' (값 %s)", code, guard, value)
+                continue
+            if not _sanity_ok(code, unit, value):
+                logger.debug("[regex sanity] %s 스킵 — 범위 밖 값 %s %s", code, value, unit)
+                continue
+            result[code] = {"value": value, "unit": unit,
+                            "note": "DART 원문 정규식 추출",
+                            "source_tier": SOURCE_DART_REGEX}
+            break
 
     # G-1-2 후처리: 사외이사 비율(%) 재계산. 계산 가능하면 확정, 아니면 잘못된 count 제거(→ insufficient).
     br = _extract_board_ratio(text)
