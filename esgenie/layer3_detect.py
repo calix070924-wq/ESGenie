@@ -388,6 +388,9 @@ def _score_d1_numeric(
     if evidence_graph is None:
         return AxisScore(score=0.0, evidence=[], detail="evidence_graph 없음 — 스킵")
 
+    # G5. 노드 선택 기준 연도 — 그래프 report_year 우선, 없으면 후보 최신 연도 폴백.
+    ref_year = getattr(evidence_graph, "report_year", None)
+
     worst_delta = 0.0
     hit_node_ids: list[str] = []
     details: list[str] = []
@@ -416,7 +419,13 @@ def _score_d1_numeric(
             compat = [n for n in nodes if units_compatible(claim_unit, getattr(n, "unit", None))]
             if not compat:
                 continue
-            node = max(compat, key=lambda n: n.period)  # 가장 최신 노드
+            # G5. '가장 최신'(max period)이 아니라 '보고 연도 최근접' 노드를 고른다.
+            # max(period)는 미래 전망 노드(2040 등)를 실적으로 골라 오탐을 냈다(네이버 사례).
+            # ref_year가 없으면(단위 테스트의 FakeGraph 등) 기존대로 최신 노드로 폴백.
+            if ref_year is not None:
+                node = min(compat, key=lambda n: (abs(n.period - ref_year), -n.period))
+            else:
+                node = max(compat, key=lambda n: n.period)
             if node.value == 0:
                 continue
             delta = abs(claim_val - node.value) / abs(node.value)
