@@ -231,6 +231,96 @@ class TestLedgerD1Symmetry:
         d1 = _score_d1_numeric("온실가스 배출량은 396,152 tCO2eq이다.", graph)
         assert d1.score == 0.0, f"D1도 같은 노드를 골라야 한다 — {d1.detail}"
 
+    def test_symmetry_holds_when_dart_node_is_in_the_pool(self) -> None:
+        """★ 공용 함수만으로는 대칭이 성립하지 않는다 — **두 호출부가 다른 풀을 넘긴다**.
+
+        원장 `_merge_ssot_evidence`는 `origin in (ocr_structured, ocr_unstructured)`만
+        후보로 쓴다(DART 값은 이미 report.kesg_data → mapped 경로로 들어와 있어
+        이중 처리를 피하려는 의도적 설계다). D1은 `graph.search_nodes(keywords=[c])`로
+        **DART 노드까지 포함한** 풀을 넘긴다.
+
+        실측 재현 구조: DART 노드가 '합계'(집계 1순위)를, OCR 노드가 '국내(별도)'(부분)를
+        가지면 같은 규칙이 서로 다른 노드를 가리킨다.
+          원장(OCR만)     →   623,648
+          D1(DART 포함)   → 1,992,921
+        현대모비스 E는 DART가 E 코드를 안 채워서 안 터졌을 뿐, 정규식이 채우는
+        E-3-1·E-4-1·E-5-1·E-6-1과 구조화 API가 채우는 G 코드에서는 재현된다.
+
+        해결은 풀 통일이 아니라 **원장의 결정을 그래프에 기록하고 D1이 그것을 따르는
+        것**이다(graph.representative_node_ids). 규칙을 두 번 돌리지 않으므로 풀이
+        달라도 구조적으로 어긋날 수 없다.
+        """
+        from esgenie.layer3_detect import _score_d1_numeric
+
+        ocr = _n("E-5-1", 623_648.0, "ton", 2024, "용수 사용량(취수량) 국내(별도) 2024년")
+        dart = EvidenceNode(
+            id="00164788_E-5-1_2024__dart", metric="E-5-1", value=1_992_921.0,
+            unit="ton", period=2024, source="dart/사업보고서",
+            raw_text="용수 사용량(취수량) 합계=1992921.0ton (dart)",
+            origin="dart", source_file="", confidence=1.0,
+        )
+        graph = _graph(ocr, dart)
+
+        ledger_value = extract_with_ssot(_empty_report(), graph).mapped["E-5-1"]["value"]
+        assert ledger_value == 623_648.0, "원장 풀은 OCR-only라는 기존 설계 확인"
+
+        # D1은 DART 노드가 섞인 풀을 받지만, 원장이 기록한 대표 노드를 따라야 한다.
+        d1_node = select_representative_node(
+            "E-5-1", graph.search_nodes(keywords=["E-5-1"]), report_year=REPORT_YEAR)
+        assert d1_node is not None
+        assert d1_node.value == 1_992_921.0, "풀 구성 차이 자체는 그대로 재현된다"
+
+        assert graph.representative_node_ids.get("E-5-1") == ocr.id, \
+            "원장이 고른 노드가 그래프에 기록돼야 한다"
+        d1 = _score_d1_numeric(f"용수 사용량은 {ledger_value:,.0f} 톤이다.", graph)
+        assert d1.score == 0.0, f"D1이 원장 대표노드를 쓰지 않았다 — {d1.detail}"
+
+    def test_d1_falls_back_when_ledger_has_no_representative(self) -> None:
+        """원장이 미공시(대표노드 None)인 코드 — D1은 폴백으로 정상 동작해야 한다.
+
+        기록이 없으면 예외 없이 기존 경로(공용 규칙 재실행)로 간다.
+        여기서는 전 후보가 파생 어휘라 규칙이 None을 돌리므로 D1도 비교를 건너뛴다.
+        """
+        from esgenie.layer3_detect import _score_d1_numeric
+
+        pool = [
+            _n("E-3-1", 1_161_214.0, "tCO2eq", 2025, "온실가스 감축 효과"),
+            _n("E-3-1", 1_493.0, "tCO2eq", 2025, "연간 온실가스 감축 예상량 (태양광 발전설비)"),
+        ]
+        graph = _graph(*pool)
+        result = extract_with_ssot(_empty_report(), graph)
+
+        assert "E-3-1" not in result.mapped
+        assert "E-3-1" not in graph.representative_node_ids, "미공시는 기록하지 않는다"
+
+        d1 = _score_d1_numeric("온실가스 배출량은 396,152 tCO2eq이다.", graph)
+        assert d1.score == 0.0, f"폴백 경로에서 오탐 — {d1.detail}"
+
+    def test_d1_falls_back_when_claim_unit_is_incompatible(self) -> None:
+        """원장 대표노드가 TJ인데 claim이 %면 환산군이 달라 그 노드로는 비교가 무의미하다.
+
+        원장은 항목 정의 단위로 정규화해 저장하지만 노드 자체는 원 단위다. 기록된
+        노드가 claim 단위 필터(compat)에서 걸러지면 기록을 쓰지 않고 **기존 폴백**
+        (공용 규칙 재실행)으로 가고, 그 사실을 detail에 남긴다 — 조용히 넘기면
+        D1이 왜 그 노드를 골랐는지 추적할 수 없다.
+
+        같은 코드에 % 노드가 함께 있어야 이 분기에 닿는다. 호환 노드가 아예 없으면
+        기존 '단위 불일치 스킵'이 먼저 걸린다.
+        """
+        from esgenie.layer3_detect import _score_d1_numeric
+
+        tj = _n("E-4-1", 7_497.0, "TJ", 2024, "전력 사용량")
+        pct = _n("E-4-1", 12.9, "%", 2024, "재생에너지 사용률")
+        graph = _graph(tj, pct)
+        extract_with_ssot(_empty_report(), graph)
+        assert graph.representative_node_ids.get("E-4-1") == tj.id, "원장은 TJ 노드를 채택"
+
+        d1 = _score_d1_numeric("에너지 사용량 비중은 12.9 %이다.", graph)
+        assert "단위 비호환 → 폴백" in d1.detail, f"폴백 사실이 기록되지 않았다 — {d1.detail}"
+        # 폴백은 기존 동작 그대로 — % claim은 % 노드와 비교된다(TJ 노드와 비교하지 않는다).
+        assert d1.score == 0.0, d1.detail
+        assert pct.id in d1.evidence
+
 
 # =====================================================================
 # 3. 음성 테스트 — 과차단 방지

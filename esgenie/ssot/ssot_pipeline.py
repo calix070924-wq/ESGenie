@@ -175,6 +175,10 @@ def _merge_ssot_evidence(result: Any, graph: EvidenceGraph) -> None:
         picked = select_representative_node(metric, pool, report_year=ref_year)
         if picked is not None:
             ocr_repr[metric] = picked
+            # D1이 따라 쓸 수 있도록 결정을 그래프에 남긴다(2026-07-26). 공용 함수를
+            # 공유해도 원장(OCR-only)과 D1(DART 포함)의 후보 풀이 달라 규칙을 각자
+            # 다시 돌리면 갈린다 — 결정 자체를 공유해야 대칭이 성립한다.
+            graph.representative_node_ids[metric] = picked.id
         else:
             # 전 후보가 파생·비실적/지표 충돌로 배제 — 값을 채우지 않고 플래그만 남긴다.
             # 노드는 evidence_node_ids에 그대로 붙어 감사추적용으로 보존된다(폐기 아님).

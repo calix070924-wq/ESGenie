@@ -370,6 +370,27 @@ def _sentence_topic_codes(sentence: str) -> set[str]:
     }
 
 
+def _repr_ids(evidence_graph: Any) -> dict[str, str]:
+    """원장이 기록한 코드→대표 노드 id. 없는 그래프(테스트 Fake 등)는 빈 dict."""
+    return getattr(evidence_graph, "representative_node_ids", None) or {}
+
+
+def _ledger_representative(evidence_graph: Any, code: str, compat: list[Any]) -> Any | None:
+    """원장이 채택한 대표 노드를 단위 호환 후보 안에서 찾는다. 없으면 None(폴백).
+
+    None을 돌리는 경우 두 가지 — 호출부가 구분한다.
+      · 기록 자체가 없다(미공시 코드, DART-only 경로, 원장 미실행)
+      · 기록은 있으나 claim 단위와 환산군이 달라 compat에서 걸러졌다
+    """
+    node_id = _repr_ids(evidence_graph).get(code)
+    if not node_id:
+        return None
+    for node in compat:
+        if getattr(node, "id", None) == node_id:
+            return node
+    return None
+
+
 def _score_d1_numeric(
     sentence: str,
     evidence_graph: Any | None,
@@ -389,7 +410,8 @@ def _score_d1_numeric(
         return AxisScore(score=0.0, evidence=[], detail="evidence_graph 없음 — 스킵")
 
     # G5. 노드 선택 기준 연도 — 그래프 report_year 우선, 없으면 후보 최신 연도 폴백.
-    # 원장과 동일한 선택 규칙을 쓰기 위한 공용 함수(대칭 보장 — 상세는 node_select 참조).
+    # 대표 노드는 원장이 그래프에 남긴 결정(representative_node_ids)을 우선 따르고,
+    # 기록이 없을 때만 이 공용 함수로 규칙을 재실행한다(상세는 node_select 참조).
     from .ssot.node_select import select_representative_node
 
     ref_year = getattr(evidence_graph, "report_year", None)
@@ -422,12 +444,20 @@ def _score_d1_numeric(
             compat = [n for n in nodes if units_compatible(claim_unit, getattr(n, "unit", None))]
             if not compat:
                 continue
-            # G5. 대표 노드 선택 — 원장(_merge_ssot_evidence)과 **같은 공용 함수**를 쓴다.
-            # 2026-07-26: 기존 '보고 연도 최근접'을 hint 기반 규칙으로 교체했다(연도는
-            # 그 규칙의 최후 tie-breaker로 강등). 원장과 D1이 다른 노드를 고르면 데이터가
-            # 옳아도 claim ≠ node가 되어 구조적 오탐이 나므로 이 대칭이 정확도의 전제다.
-            # 규칙이 전 후보를 배제(파생·비실적 hint 등)하면 None → 비교 자체를 건너뛴다.
-            node = select_representative_node(c, compat, report_year=ref_year)
+            # G5. 대표 노드 — **원장이 그래프에 기록한 결정을 그대로 따른다**(2026-07-26).
+            # 공용 함수(select_representative_node)를 공유하는 것만으로는 대칭이 성립하지
+            # 않는다: 원장은 origin이 ocr_*인 노드만, 여기 compat는 search_nodes()로
+            # DART 노드까지 포함한 풀이라 같은 규칙도 다른 노드를 가리킨다
+            # (실측: 원장 623,648 '국내(별도)' vs D1 1,992,921 DART '합계').
+            # 규칙을 두 번 돌리는 대신 결정을 공유하면 풀이 달라도 어긋날 수 없다.
+            node = _ledger_representative(evidence_graph, c, compat)
+            if node is None:
+                if _repr_ids(evidence_graph).get(c):
+                    # 기록은 있으나 claim과 환산군이 다르다 — 원장은 항목 정의 단위로
+                    # 정규화하지만 노드는 원 단위다. 비교 자체가 무의미하므로 폴백한다.
+                    details.append(f"{c}: 원장 대표노드와 단위 비호환 → 폴백")
+                # 기록이 없는 코드(미공시·DART-only 경로 등)는 기존대로 규칙을 재실행한다.
+                node = select_representative_node(c, compat, report_year=ref_year)
             if node is None or node.value == 0:
                 continue
             delta = abs(claim_val - node.value) / abs(node.value)

@@ -9,10 +9,13 @@
 출력 3종:
   1. 코드별 원장 값/단위/note → note 문자열로 [A]/[B] 판정
   2. 같은 코드의 그래프 노드 전량(period·value·unit·hint·origin)
-  3. **선택 규칙 불일치**: 원장 대표노드 vs D1 대표노드가 다른 값을 고르는 코드 —
-     데이터가 옳아도 D1이 발화하는 구조적 오탐 후보.
-     2026-07-26부터 두 경로가 `node_select.select_representative_node` 하나를 공유하므로
-     이 항목은 항상 0개여야 한다(0이 아니면 대칭이 깨진 것 = 회귀).
+  3. **풀 구성 차이로 갈리는 코드**: 원장(ocr_* 노드만)과 D1(search_nodes — DART 포함)이
+     같은 규칙을 각자 돌렸을 때 다른 노드를 고르는 코드. 두 호출부가 공용 함수를
+     공유해도 **넘기는 풀이 다르면** 갈린다 — 실측 재현 구조다.
+     2026-07-26(2차)부터 원장이 자기 결정을 `graph.representative_node_ids`에 남기고
+     D1이 그것을 따르므로, 이 항목이 0이 아니어도 실제 비교는 어긋나지 않는다.
+     여기서 0이 아닌 코드는 '기록 공유가 실제로 일하고 있는 지점'이다.
+     (`스크립트 재현 ≠ 실행 기록`이 0이 아니면 이 스크립트의 풀 재현이 틀린 것이다.)
 
 사용:
     python3 scripts/inspect_ledger_provenance.py                      # 현대모비스
@@ -110,11 +113,19 @@ def main() -> None:
         nodes = [n for n in graph.nodes.values() if n.metric == code]
         nodes.sort(key=lambda n: n.period)
 
-        # 원장(ssot_pipeline)과 D1(layer3_detect G5)이 호출하는 **그 함수**를 여기서도 부른다
-        # (2026-07-26). 연도 규칙식을 스크립트에 복제해두면 규칙이 바뀐 뒤에도 옛 노드를
-        # '←원장선택'으로 찍어 관찰 자체가 거짓말이 된다.
-        ledger_pick = select_representative_node(code, nodes, report_year=ref_year)
-        d1_pick = select_representative_node(code, nodes, report_year=ref_year)
+        # 두 경로의 **후보 풀 구성을 각각 흉내내서** 규칙을 돌린다(2026-07-26 2차).
+        # 같은 인자를 같은 함수에 두 번 넘기면 "불일치 0개"가 항상 참이라 아무것도
+        # 검증하지 않는다. 실제 갈림은 규칙이 아니라 풀에서 온다:
+        #   원장  _merge_ssot_evidence : origin이 ocr_* 인 노드 + metric 정확 일치
+        #   D1    _score_d1_numeric    : graph.search_nodes(keywords=[code]) — DART 포함,
+        #                                부분포함 매칭. (claim이 없어 단위 필터는 생략)
+        ledger_pool = [n for n in nodes
+                       if getattr(n, "origin", "") in ("ocr_structured", "ocr_unstructured")]
+        d1_pool = graph.search_nodes(keywords=[code])
+        ledger_pick = select_representative_node(code, ledger_pool, report_year=ref_year)
+        d1_pick = select_representative_node(code, d1_pool, report_year=ref_year)
+        # 원장이 실행 중에 실제로 남긴 결정 — D1이 따라 쓰는 값. 위 재현과 일치해야 한다.
+        recorded_id = getattr(graph, "representative_node_ids", {}).get(code)
 
         # 대표 노드와 같은 연도의 형제 노드 — 값이 흩어져 있으면 연도 규칙만으로는 못 고른다.
         siblings = [n for n in nodes if ledger_pick and n.period == ledger_pick.period]
@@ -139,12 +150,21 @@ def main() -> None:
                  "origin": getattr(n, "origin", ""), "id": n.id}
                 for n in nodes
             ],
+            # 풀 구성 차이로 두 경로가 다른 노드를 가리키는가. 이게 진짜 신호다 —
+            # 원장의 결정 기록(representative_node_ids)이 이 차이를 흡수해야 한다.
             "selector_split": bool(
                 ledger_pick is not None and d1_pick is not None
                 and ledger_pick.id != d1_pick.id
             ),
             "ledger_pick": ledger_pick.id if ledger_pick else None,
             "d1_pick": d1_pick.id if d1_pick else None,
+            "recorded_pick": recorded_id,
+            # 재현한 원장 선택과 실행 중 실제 기록이 다르면 스크립트 재현이 틀린 것이다.
+            "record_mismatch": bool(
+                (ledger_pick.id if ledger_pick else None) != recorded_id
+            ),
+            "ledger_pool_size": len(ledger_pool),
+            "d1_pool_size": len(d1_pool),
             "unit_mismatch": bool(
                 led.get("unit") and item.unit and str(led["unit"]).strip() != str(item.unit).strip()
             ),
@@ -175,13 +195,20 @@ def main() -> None:
         for n in r["nodes"]:
             mark = ""
             if n["id"] == r["ledger_pick"]:
-                mark += " ←원장선택"
+                mark += " ←원장풀선택"
             if n["id"] == r["d1_pick"]:
-                mark += " ←D1선택"
+                mark += " ←D1풀선택"
+            if n["id"] == r["recorded_pick"]:
+                mark += " ★원장기록"
             print(f"  노드   : {n['period']}  {n['value']} {n['unit'] or ''}"
                   f"  [{n['origin']}] {n['hint'][:48]}{mark}")
+        print(f"  풀     : 원장 {r['ledger_pool_size']}개(ocr_*만) · "
+              f"D1 {r['d1_pool_size']}개(search_nodes — DART 포함, 단위 필터 생략)")
         if r["selector_split"]:
-            print("  ⚠ 선택 규칙 불일치 — 원장 ≠ D1")
+            print("  ⚠ 풀 구성 차이로 갈림 — 원장풀 선택 ≠ D1풀 선택 "
+                  "(D1은 ★원장기록을 따라가므로 실제 비교는 어긋나지 않는다)")
+        if r["record_mismatch"]:
+            print("  ⚠ 스크립트 재현 ≠ 실행 중 기록 — 풀 재현 로직이 원장과 어긋났다")
         if r["sibling_count"] > 1:
             print(f"  ⚠ 동일 코드·동일 연도 노드 {r['sibling_count']}개 "
                   f"(값 범위 {r['sibling_min']} ~ {r['sibling_max']}) "
@@ -194,12 +221,16 @@ def main() -> None:
     splits = [r["code"] for r in rows if r["selector_split"]]
     units = [r["code"] for r in rows if r["unit_mismatch"]]
     orphan = [r["code"] for r in rows if not r["nodes"]]
+    unrecorded = [r["code"] for r in rows if r["nodes"] and not r["recorded_pick"]]
+    rec_bad = [r["code"] for r in rows if r["record_mismatch"]]
 
     print("\n" + "-" * 78)
     print("요약")
     for p, c in sorted(by_path.items()):
         print(f"  {p}: {c}개")
-    print(f"  선택 규칙 불일치(구조적 D1 오탐 후보): {len(splits)}개 {splits}")
+    print(f"  풀 구성 차이로 갈리는 코드: {len(splits)}개 {splits}")
+    print(f"  원장 대표노드 기록 없음(D1 폴백 경로): {len(unrecorded)}개 {unrecorded}")
+    print(f"  스크립트 재현 ≠ 실행 기록: {len(rec_bad)}개 {rec_bad}")
     print(f"  원장 단위 ≠ 항목 단위: {len(units)}개 {units}")
     print(f"  비교 노드 없음(claim만 존재): {len(orphan)}개 {orphan}")
     print("-" * 78)
