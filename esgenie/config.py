@@ -122,3 +122,12 @@ JUDGE_TRIGGER: float = float(os.getenv("JUDGE_TRIGGER", "0.25"))
 
 # 최종 점수 = JUDGE_RULE_WEIGHT * 룰점수 + (1 - JUDGE_RULE_WEIGHT) * LLM점수
 JUDGE_RULE_WEIGHT: float = float(os.getenv("JUDGE_RULE_WEIGHT", "0.4"))
+
+
+# ---- 책임있는 기권(Abstention) ------------------------------------------------
+# 근거로 검증 불가한 수치 주장(코드는 매핑됐으나 근거 노드가 없거나 단위 호환
+# 불가)을 고위험/안전으로 단정하지 않고 판정 보류(abstain)로 표시할지 여부.
+# 기본 False — 꺼져 있으면 기존 동작(0.9/0.0 등) 100% 그대로다. 켜져 있어도
+# score 산정 자체는 바뀌지 않고 AxisScore.abstain/abstain_reason 플래그만
+# 추가로 세팅된다(게이트·HITL 반영은 후속 배치).
+ABSTAIN_ENABLED: bool = os.getenv("ABSTAIN_ENABLED", "0") == "1"
