@@ -25,30 +25,72 @@ from .knowledge.greenwash_lexicon import vague_matches
 from .schemas import AxisScore, RiskVector
 
 # ---- 수치 주장 패턴 --------------------------------------------------------
+# lookbehind: 글자에 붙은 숫자는 수치 주장이 아니다 — "Scope3 배출량"에서 3+'배',
+# "RE100", "IFRS S2" 류가 가짜 claim으로 뽑히는 걸 막는다 (2026-07-27).
+# 배(?!출): '배출'의 '배'를 배수 단위로 오인하지 않는다.
 _NUMBER_PATTERN = re.compile(
+    r"(?<![0-9A-Za-z가-힣])"
     r"(?P<num>\d{1,3}(?:,\d{3})*(?:\.\d+)?)\s*"
-    r"(?P<unit>%|억원|조원|tCO2eq|만\s*tCO2eq|톤|ton|TJ|%p|건|명|배)",
+    r"(?P<unit>%|억원|조원|tCO2eq|만\s*tCO2eq|톤|ton|TJ|%p|건|명|배(?!출))",
 )
-_KEYWORD_MAP = {
-    "재생에너지": ["renewable", "E-4-2"],
-    "온실가스":   ["ghg", "E-3-1"],
-    "탄소":       ["ghg", "E-3-1"],
-    "Scope":      ["ghg", "E-3-1"],
-    "배출":       ["ghg", "E-3-1"],
-    "폐기물":     ["waste", "E-6-1"],
-    "재활용":     ["waste_recycle", "E-6-2"],
-    "용수":       ["water", "E-5-1"],
-    "여성 이사":  ["board_female", "G-1-4"],
-    "이사회 성별":["board_female", "G-1-4"],
-    "여성":       ["female", "S-3-1"],
-    "정규직":     ["regular", "S-2-2"],
-    "이직률":     ["turnover", "S-2-3"],
-    "재해율":     ["safety", "S-4-2"],
-    "사외이사":   ["outside_director", "G-1-2"],
-    "출석률":     ["attendance", "G-2-1"],
-    # 주의: "재생에너지"가 먼저 매칭되도록 "에너지"는 사전 끝에 둔다 (동순위 시 선순위 유지)
-    "에너지":     ["energy", "E-4-1"],
-}
+
+# ---- 토픽 인덱스 (kesg_items.search_terms 단일 출처) -------------------------
+# 2026-07-27: 손으로 관리하던 13개 _KEYWORD_MAP을 제거하고 항목 정의의
+# search_terms + name을 그대로 쓴다. 사전이 두 벌로 갈라지지 않고, E-2-1·E-2-2·
+# E-3-2·E-7-1·E-8-1처럼 옛 사전에 아예 없던 항목이 자동으로 커버된다.
+# (옛 사전은 13개 코드만 알았고 "Scope"→E-3-1 고정이라 Scope3를 Scope1+2로 보냈다.)
+
+# 단위성 용어 — 지표명으로 오인되면 안 되는 것들. "7,929 TJ" 앞에 TJ가 있다는
+# 이유로 E-4-1이 되면 안 되고(에너지 사용량이 근거여야 한다), "GHG"는 Scope1+2와
+# Scope3를 가르지 못한다. 2자 이하(SS·TJ·MJ 등)는 아래 길이 조건에서 함께 걸린다.
+_UNITISH_TERMS: frozenset[str] = frozenset({
+    "tco2eq", "tco2", "co2eq", "co2", "kwh", "mwh", "gwh", "mj", "tj",
+    "ghg", "re100", "nox", "sox", "bod", "cod", "ss", "전력량",
+})
+_TOPIC_MIN_LEN = 3   # 2자 이하 용어는 오매칭이 커 제외
+
+
+def _norm_topic_text(s: str) -> str:
+    """토픽 매칭용 정규화 — 공백 제거 + 소문자화. 텍스트·용어 양쪽에 같이 적용한다."""
+    return re.sub(r"\s+", "", s or "").lower()
+
+
+def _build_topic_terms() -> tuple[tuple[str, str, str], ...]:
+    """(정규화 용어, topic 라벨, K-ESG 코드) 목록. **모듈 로드 시 1회**만 만든다.
+
+    문장마다 재구축하면 D1이 문장 수 × 용어 수만큼 돌아 비용이 커진다.
+
+    한 용어가 두 코드에 걸리면(예: "이직률" → S-2-1·S-2-3) 항목명이 그 용어를
+    포함하는 쪽을 택한다(S-2-3 "자발적 이직률"). 그래도 안 갈리면 용어를 버린다
+    (예: "제3자 검증" → E-3-3·P-3-1) — 임의 배정보다 비교를 건너뛰는 게 낫다.
+    kesg_items._ALIAS_UNIQUE가 모호 별칭을 버리는 것과 같은 판단이다.
+    """
+    from .knowledge.kesg_items import ALL_ITEMS
+
+    by_term: dict[str, list[tuple[str, str]]] = {}
+    for item in ALL_ITEMS:
+        for raw in (*item.search_terms, item.name):
+            n = _norm_topic_text(raw)
+            if len(n) < _TOPIC_MIN_LEN or n in _UNITISH_TERMS:
+                continue
+            # topic 라벨은 항목명 — 새 라벨 체계를 만들지 않는다(NumericClaim.topic 표시용).
+            entry = (item.name, item.code)
+            if entry not in by_term.setdefault(n, []):
+                by_term[n].append(entry)
+
+    terms: list[tuple[str, str, str]] = []
+    for n, owners in by_term.items():
+        if len(owners) > 1:
+            narrowed = [o for o in owners if n in _norm_topic_text(o[0])]
+            if len(narrowed) != 1:
+                continue
+            owners = narrowed
+        name, code = owners[0]
+        terms.append((n, name, code))
+    return tuple(sorted(terms))
+
+
+_TOPIC_TERMS: tuple[tuple[str, str, str], ...] = _build_topic_terms()
 
 # 업종별 벤치마크 메트릭 키 → K-ESG 코드 대응
 # ---- 데이터클래스 -----------------------------------------------------------
@@ -102,36 +144,56 @@ def _normalize_number(num: str, unit: str) -> tuple[float, str]:
     return n, u
 
 
+def _topic_spans(window_text: str) -> list[tuple[int, int, str, str]]:
+    """창 안에서 겹치지 않는 토픽 스팬 목록 — (시작, 끝, topic, code).
+
+    **leftmost-longest**로 겹침을 해소한다: 시작이 앞선 것 우선, 같으면 긴 것.
+    최장 일치만 쓰면 안 되는 이유 — "재생에너지 사용 비율"에서 `재생에너지`(E-4-2)와
+    `에너지사용`(E-4-1)이 겹치되 포함관계가 아니다. 길이만 보면 `에너지사용`이
+    이겨 E-4-1로 잘못 간다. leftmost여야 E-4-2가 나온다(PR #44 G2와 같은 계열).
+    """
+    found: list[tuple[int, int, str, str]] = []
+    for term, topic, code in _TOPIC_TERMS:
+        start = 0
+        while True:
+            i = window_text.find(term, start)
+            if i < 0:
+                break
+            found.append((i, i + len(term), topic, code))
+            start = i + 1
+    found.sort(key=lambda sp: (sp[0], -(sp[1] - sp[0])))
+
+    kept: list[tuple[int, int, str, str]] = []
+    for sp in found:
+        if any(sp[0] < k[1] and sp[1] > k[0] for k in kept):
+            continue   # 이미 채택한 스팬과 겹친다 — 버린다
+        kept.append(sp)
+    return kept
+
+
 def _match_topic_near(sentence: str, span_start: int, span_end: int, window: int = 25) -> tuple[str | None, str | None]:
-    s = max(0, span_start - window)
-    e = min(len(sentence), span_end + window)
-    before = sentence[s:span_start]
-    after  = sentence[span_end:e]
+    """수치 주변 창에서 가장 가까운 지표 용어를 찾아 (topic, code)를 돌린다.
 
-    best_before: tuple[int, tuple[str | None, str | None]] | None = None
-    for kw, (topic, code) in _KEYWORD_MAP.items():
-        idx = before.rfind(kw)
-        if idx < 0:
-            continue
-        dist = len(before) - (idx + len(kw))
-        if best_before is None or dist < best_before[0]:
-            best_before = (dist, (topic, code))
-    if best_before:
-        return best_before[1]
+    before 창(수치 앞)을 먼저 보고 **끝이 가장 뒤**(= 수치에 가장 가까운) 스팬을 택한다.
+    before가 비면 after 창에서 가장 앞선 스팬을 택한다.
 
-    best_after: tuple[int, tuple[str | None, str | None]] | None = None
-    for kw, (topic, code) in _KEYWORD_MAP.items():
-        idx = after.find(kw)
-        if idx < 0:
-            continue
-        if best_after is None or idx < best_after[0]:
-            best_after = (idx, (topic, code))
-    if best_after:
-        return best_after[1]
+    2026-07-27: 창에 아무 용어도 없으면 **None을 돌린다.** 예전에는 문장 전체를 훑어
+    아무 키워드나 붙였는데(`kw in sentence`), 다지표 문장에서는 사실상 임의 배정이라
+    "원부자재 102,462톤"을 폐기물 노드 72,463과 비교하는 오탐을 만들었다.
+    호출부(`_score_d1_numeric`)는 code가 없으면 비교를 건너뛴다 — 정밀도 우선.
+    """
+    before = _norm_topic_text(sentence[max(0, span_start - window):span_start])
+    spans = _topic_spans(before)
+    if spans:
+        best = max(spans, key=lambda sp: sp[1])
+        return best[2], best[3]
 
-    for kw, (topic, code) in _KEYWORD_MAP.items():
-        if kw in sentence:
-            return topic, code
+    after = _norm_topic_text(sentence[span_end:span_end + window])
+    spans = _topic_spans(after)
+    if spans:
+        best = min(spans, key=lambda sp: sp[0])
+        return best[2], best[3]
+
     return None, None
 
 
@@ -363,11 +425,15 @@ def _is_target_context(sentence: str, start: int, end: int) -> bool:
 
 
 def _sentence_topic_codes(sentence: str) -> set[str]:
-    """문장에 등장하는 모든 토픽 키워드의 K-ESG 코드 집합."""
-    return {
-        code for kw, (_topic, code) in _KEYWORD_MAP.items()
-        if code and kw in sentence
-    }
+    """문장에 등장하는 모든 지표 용어의 K-ESG 코드 집합.
+
+    `_match_topic_near`와 **같은 인덱스**를 쓴다(2026-07-27). 여기가 D1 교차 비교
+    후보(`cand_codes`)를 만드는 곳이라, 인덱스가 갈리면 E-3-2 같은 신규 커버 코드의
+    노드가 후보에 안 들어와 최근접 매칭만 남는다.
+    여기는 문장 전체가 대상이므로 겹침 해소 없이 등장하는 용어를 모두 모은다.
+    """
+    text = _norm_topic_text(sentence)
+    return {code for term, _topic, code in _TOPIC_TERMS if term in text}
 
 
 def _repr_ids(evidence_graph: Any) -> dict[str, str]:
