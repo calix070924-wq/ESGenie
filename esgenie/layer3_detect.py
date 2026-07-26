@@ -16,7 +16,7 @@ from typing import Any
 import numpy as np
 
 from .config import (
-    D1_THRESHOLD, D2_THRESHOLD, D3_THRESHOLD, D5_THRESHOLD,
+    ABSTAIN_ENABLED, D1_THRESHOLD, D2_THRESHOLD, D3_THRESHOLD, D5_THRESHOLD,
     D_WEIGHTS, RISK_LEVEL_THRESHOLDS,
 )
 from .dart_client import CompanyReport
@@ -370,6 +370,28 @@ def _sentence_topic_codes(sentence: str) -> set[str]:
     }
 
 
+# ---- 책임있는 기권(abstain) 헬퍼 --------------------------------------------
+# ABSTAIN_ENABLED=0(기본)이면 아래 헬퍼는 호출되지 않아 기존 동작이 그대로다.
+
+def _abstain(reason: str, detail: str) -> AxisScore:
+    """판정 보류 AxisScore. score는 0.0 고정(위험도 미가산) + abstain 플래그로 구분."""
+    return AxisScore(
+        score=0.0, evidence=[], detail=f"ABSTAIN({reason}): {detail}",
+        abstain=True, abstain_reason=reason,
+    )
+
+
+def _retry_evidence(code: str, evidence_graph: Any) -> list[Any] | None:
+    """근거 부재 시 최종 기권 판정 전 보조 재검색 훅.
+
+    동의어/상위코드 확장·OCR 증빙 노드·RAG 청크 재조회 등 강화된 재검색은
+    아직 구현하지 않았다. 현재는 항상 None(추가 근거 없음)을 반환해 호출부가
+    초기 검색 결과 그대로 기권 여부를 판정하게 한다.
+    TODO: 강화된 재검색(후속 배치 후보).
+    """
+    return None
+
+
 def _score_d1_numeric(
     sentence: str,
     evidence_graph: Any | None,
@@ -395,6 +417,9 @@ def _score_d1_numeric(
     hit_node_ids: list[str] = []
     details: list[str] = []
     sentence_codes = _sentence_topic_codes(sentence)
+    # 기권 판정용: 코드가 매핑되고 실적 비교 대상인(목표/전망 제외) claim만 추적.
+    # ABSTAIN_ENABLED=0이면 아래 리스트는 채워져도 전혀 소비되지 않는다(동작 불변).
+    mapped_claims: list[dict[str, Any]] = []
 
     for m in _NUMBER_PATTERN.finditer(sentence):
         num_str, unit = m.group("num"), m.group("unit")
@@ -436,6 +461,7 @@ def _score_d1_numeric(
             if any_nodes:
                 details.append(
                     f"{code}: claim={claim_val}{claim_unit} — 단위 불일치(노드 단위와 비교 불가, 스킵)")
+            mapped_claims.append({"code": code, "verified": False, "any_nodes": any_nodes})
             continue
 
         delta, node, matched_code = best
@@ -443,6 +469,18 @@ def _score_d1_numeric(
             worst_delta = delta
         hit_node_ids.append(node.id)
         details.append(f"{matched_code}: claim={claim_val} vs node={node.value} (Δ={delta:.1%})")
+        mapped_claims.append({"code": code, "verified": True, "any_nodes": True})
+
+    # ---- 정밀 기권 판정 (ABSTAIN_ENABLED=1일 때만) --------------------------
+    # 조건: 코드가 매핑된 claim이 최소 1건 있고, 그중 단 하나도 검증(매칭)되지
+    # 못했을 때만 기권. 하나라도 검증됐으면(worst_delta 산정에 기여) 기권 아님 —
+    # 실제 위험(수치 불일치) 신호를 기권으로 숨기지 않기 위함.
+    if ABSTAIN_ENABLED and mapped_claims and not any(c["verified"] for c in mapped_claims):
+        unresolved_codes = {c["code"] for c in mapped_claims}
+        retried = any(_retry_evidence(c, evidence_graph) for c in unresolved_codes)
+        if not retried:
+            reason = "no_evidence" if any(not c["any_nodes"] for c in mapped_claims) else "unit_mismatch"
+            return _abstain(reason, "; ".join(details) if details else "수치 매칭 없음")
 
     score = min(1.0, worst_delta / max(D1_THRESHOLD, 1e-9))
     return AxisScore(
