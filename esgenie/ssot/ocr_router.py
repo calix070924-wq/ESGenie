@@ -17,7 +17,8 @@ from __future__ import annotations
 
 import os
 import re
-from dataclasses import dataclass, field, asdict
+import logging
+from dataclasses import dataclass, field, fields, asdict
 from enum import Enum
 from html.parser import HTMLParser
 from pathlib import Path
@@ -27,6 +28,9 @@ from typing import Any
 # 구버전 alias "document-parse"(=document-parse-250618 계열)는 2026-07-31 지원 종료 —
 # 신버전을 명시 pin하고, 롤백·비교 실험은 UPSTAGE_DP_MODEL 환경변수로 오버라이드한다.
 UPSTAGE_DP_MODEL: str = os.getenv("UPSTAGE_DP_MODEL", "document-parse-260630")
+
+# 모듈 로거 — 청크 JSON 파싱 실패 경고가 이미 참조하고 있었으나 정의가 없었다(NameError).
+logger = logging.getLogger(__name__)
 
 
 # ====================================================================
@@ -103,6 +107,34 @@ class OcrExtraction:
         d = asdict(self)
         d["channel"] = self.channel.value
         return d
+
+    @classmethod
+    def from_dict(cls, d: dict[str, Any]) -> "OcrExtraction":
+        """to_dict()의 역변환 — 중첩 dataclass(metric/clause/table/cell)까지 복원한다.
+
+        캐시(ocr_cache) 복원용. **모르는 키는 무시한다** — 스키마가 앞으로 늘어나도
+        구버전 필드만 채우고 조용히 지나가게(캐시가 예외를 던지면 안 된다).
+        """
+        def _pick(dc: type, raw: Any) -> dict[str, Any]:
+            names = {f.name for f in fields(dc)}
+            return {k: v for k, v in (raw or {}).items() if k in names}
+
+        tables: list[ExtractedTable] = []
+        for t in d.get("tables") or []:
+            kw = _pick(ExtractedTable, t)
+            kw["cells"] = [TableCell(**_pick(TableCell, c)) for c in (t.get("cells") or [])]
+            tables.append(ExtractedTable(**kw))
+
+        return cls(
+            source_file=str(d.get("source_file", "")),
+            channel=DocChannel(d.get("channel") or DocChannel.UNSTRUCTURED.value),
+            doc_type=str(d.get("doc_type", "")),
+            metrics=[ExtractedMetric(**_pick(ExtractedMetric, m)) for m in (d.get("metrics") or [])],
+            clauses=[ExtractedClause(**_pick(ExtractedClause, c)) for c in (d.get("clauses") or [])],
+            tables=tables,
+            raw_text=str(d.get("raw_text", "") or ""),
+            router_meta=dict(d.get("router_meta") or {}),
+        )
 
 
 # ====================================================================
@@ -1533,6 +1565,7 @@ def _extract_unstructured_text(
     4,000자 이하 문서는 기존과 동일하게 단일 호출.
     """
     import json as _json, re
+    from . import ocr_cache
     from ..llm import LLMClient
     from .prompts import VLM_EXTRACT_SYSTEM, VLM_EXTRACT_PROMPT
 
@@ -1540,22 +1573,58 @@ def _extract_unstructured_text(
     client = LLMClient()
     metrics: list = []
     clauses: list[ExtractedClause] = []
+
+    # 청크별 LLM 응답 캐시(2026-07-27). 키는 **실제 LLM 입력의 해시**다 —
+    # 전처리(_reconstruct_rows_from_dict 등)를 고치면 입력이 바뀌어 자동 무효화된다.
+    #
+    # 캐시가 담는 건 **LLM 원본 응답 JSON까지다.** _map_vlm_json(G6 각주 마커 배제 포함)은
+    # 히트에서도 항상 재실행된다 — 결정적 후처리를 캐시에 굳히면 G6를 손봤을 때 히트 청크가
+    # 옛 필터 결과를 돌려줘 수정이 무효가 된다(전처리 함정의 후처리판). 조항 보강과
+    # extract_document의 _backfill_kesg_codes도 마찬가지로 캐시 밖이다.
+    mode = ocr_cache.cache_mode()
+    cache_model = ocr_cache.model_name()
+    cache_prompt = VLM_EXTRACT_SYSTEM + "\n" + VLM_EXTRACT_PROMPT
+    hits = misses = 0
+
     for chunk in chunks:
         prompt = VLM_EXTRACT_PROMPT.format(doc_type=doc_type) + f"\n\n문서 텍스트:\n{chunk}"
-        resp = client.complete(
-            system=VLM_EXTRACT_SYSTEM,
-            user=prompt,
-            json_mode=True,
-            temperature=0.0,
-            mock_hint="ocr_unstructured",
-        )
-        m = re.search(r'\{.*\}', resp.content, re.DOTALL)
-        try:
-            data = _json.loads(m.group() if m else "{}")
-        except _json.JSONDecodeError:
-            # 청크 하나의 JSON이 깨져도 문서 전체를 버리지 않는다
-            logger.warning("비정형 청크 JSON 파싱 실패 — 건너뜀 [%s]", Path(file_path).name)
-            continue
+        key = ""
+        if mode != ocr_cache.MODE_DISABLED:
+            key = ocr_cache.make_key(
+                model=cache_model, prompt=cache_prompt,
+                doc_type=doc_type, llm_input=prompt,
+            )
+        data: dict | None = None
+        if mode == ocr_cache.MODE_ON and key:
+            data = ocr_cache.load_response(key)
+            if data is not None:
+                hits += 1
+
+        if data is None:
+            misses += 1
+            resp = client.complete(
+                system=VLM_EXTRACT_SYSTEM,
+                user=prompt,
+                json_mode=True,
+                temperature=0.0,
+                mock_hint="ocr_unstructured",
+            )
+            m = re.search(r'\{.*\}', resp.content, re.DOTALL)
+            try:
+                data = _json.loads(m.group() if m else "{}")
+            except _json.JSONDecodeError:
+                # 청크 하나의 JSON이 깨져도 문서 전체를 버리지 않는다.
+                # 깨진 응답은 캐시하지 않는다 — 재시도 여지를 남긴다.
+                logger.warning("비정형 청크 JSON 파싱 실패 — 건너뜀 [%s]", Path(file_path).name)
+                continue
+            if key and isinstance(data, dict):
+                ocr_cache.store_response(
+                    key, data,
+                    model=cache_model, prompt=cache_prompt, doc_type=doc_type,
+                    source_file=Path(file_path).name, llm_input=prompt,
+                )
+
+        # 히트·미스 공통 경로 — 결정적 후처리는 캐시에 굳히지 않는다(G6 등이 여기 있다).
         chunk_metrics, chunk_clauses = _map_vlm_json(data)
         metrics.extend(chunk_metrics)
         clauses.extend(chunk_clauses)
@@ -1567,12 +1636,28 @@ def _extract_unstructured_text(
         doc_type=doc_type,
     )
 
+    if mode != ocr_cache.MODE_DISABLED:
+        logger.info("[OCR] 캐시 %s — hit %d / miss %d [%s]",
+                    mode, hits, misses, Path(file_path).name)
+
+    # 히트/미스 라벨 — 부분 히트는 'miss'로 본다(한 청크라도 라이브 호출이 있었다는 뜻).
+    if mode == ocr_cache.MODE_DISABLED:
+        cache_state = "disabled"
+    elif mode == ocr_cache.MODE_REFRESH:
+        cache_state = "refresh"
+    else:
+        cache_state = "hit" if (hits and not misses) else "miss"
+
     meta: dict = {
         "engine": "gpt-4.1-mini-text",
         "vision": False,
         "raw_text_source": raw_text_source or "unknown",
         "raw_text_len": len(raw_text),
         "chunks": len(chunks),
+        # 캐시 히트를 감추지 않는다 — 원장 스크립트 헤더·pipeline 로그가 이걸 읽는다.
+        "ocr_cache": cache_state,
+        "ocr_cache_hits": hits,
+        "ocr_cache_misses": misses,
     }
     if upstage_error:
         meta["upstage_error"] = upstage_error

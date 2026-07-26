@@ -331,6 +331,13 @@ def run(
             survey_answers=survey_answers,
         )
 
+    # OCR LLM 캐시 적중 현황 — 캐시가 실제로 일했는지 실행 로그에서 바로 보이게 한다
+    # (같은 PDF 재실행이 캐시를 안 타면 추출이 흔들려 검증이 무의미해진다).
+    from esgenie.ssot import ocr_cache as _ocr_cache
+    _hits, _misses, _mode = _ocr_cache.summarize(extractions)
+    if _hits or _misses:
+        logger.info("[OCR] 캐시 hit %d / miss %d (mode=%s)", _hits, _misses, _mode)
+
     corp_code_final = corp_code or (report.corp_code if report is not None else "LOCAL")
     corp_name_final = corp_name or (report.corp_name if report is not None else corp_code_final)
     report_year_final = report_year or (report.report_year if report is not None else 2025)
