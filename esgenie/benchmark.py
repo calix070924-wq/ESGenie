@@ -71,6 +71,8 @@ class CaseResult:
     flagged: bool
     risk_score: float
     detail: str = ""
+    abstained: bool = False               # ★ 신설: 측정 전용 — 기권(deferred) 케이스 여부
+    abstain_reasons: list[str] = field(default_factory=list)  # ★ 신설: abstained 축들의 사유
 
     @property
     def correct(self) -> bool:
@@ -93,16 +95,37 @@ class DetectorReport:
         return tp, fp, fn, tn
 
     def metrics(self) -> dict[str, float]:
+        # ---- 기존 지표(전체 케이스 기준 — 기권 여부와 무관, 변경 없음) ----
         tp, fp, fn, tn = self._counts()
         precision = tp / (tp + fp) if (tp + fp) else 0.0
         recall = tp / (tp + fn) if (tp + fn) else 0.0
         f1 = 2 * precision * recall / (precision + recall) if (precision + recall) else 0.0
         accuracy = (tp + tn) / len(self.cases) if self.cases else 0.0
+
+        # ---- 신규: 기권(abstain) 기반 지표(assessed 기준) ----
+        # ABSTAIN_ENABLED=0이면 abstained 케이스가 없어 coverage=1.0,
+        # accuracy_on_assessed==accuracy, overall==accuracy(회귀 확인점).
+        abstained = [c for c in self.cases if c.abstained]
+        assessed = [c for c in self.cases if not c.abstained]
+        coverage = len(assessed) / len(self.cases) if self.cases else 0.0
+        accuracy_on_assessed = (
+            sum(1 for c in assessed if c.correct) / len(assessed) if assessed else 0.0
+        )
+        overall = accuracy_on_assessed * coverage
+        by_reason: dict[str, int] = {"no_evidence": 0, "unit_mismatch": 0, "low_confidence": 0}
+        for c in abstained:
+            for reason in c.abstain_reasons:
+                by_reason[reason] = by_reason.get(reason, 0) + 1
+
         return {
             "precision": round(precision, 3), "recall": round(recall, 3),
             "f1": round(f1, 3), "accuracy": round(accuracy, 3),
             "tp": tp, "fp": fp, "fn": fn, "tn": tn,
             "llm_calls": self.llm_calls,
+            "coverage": round(coverage, 3),
+            "accuracy_on_assessed": round(accuracy_on_assessed, 3),
+            "overall": round(overall, 3),
+            "abstains": {"total": len(abstained), "by_reason": by_reason},
         }
 
     def by_category(self) -> dict[str, dict[str, Any]]:
@@ -158,6 +181,21 @@ def _flagged(rv: RiskVector, threshold: float, axis_flag: float) -> tuple[bool, 
     return (score >= threshold or max_axis >= axis_flag), score
 
 
+def _case_abstain_info(rv: RiskVector, flagged: bool) -> tuple[bool, list[str]]:
+    """케이스 단위 기권 판정: abstain 축이 있고 + 다른 축이 위험을 안 잡았을 때만 기권.
+
+    abstain 축은 설계상 score=0.0로 고정돼 flagged 판정에 위험을 보태지
+    않으므로, `flagged`가 이미 "다른 축이 위험을 잡았는지"를 그대로 반영한다.
+    """
+    axes_map = {
+        "D1_numeric": rv.D1_numeric, "D2_modifier": rv.D2_modifier,
+        "D3_semantic": rv.D3_semantic, "D5_timeseries": rv.D5_timeseries,
+    }
+    abstained_names = rv.abstained_axes()
+    reasons = [axes_map[n].abstain_reason for n in abstained_names if axes_map[n].abstain_reason]
+    return (bool(abstained_names) and not flagged), reasons
+
+
 def _evidence_table(report: Any) -> str:
     """LLM-only 베이스라인에 제공할 실측 데이터 요약 (공정 비교 — 동일 정보 접근)."""
     rows = []
@@ -202,19 +240,23 @@ def run_benchmark(
 
         if "rule" in reports:
             flagged, score = _flagged(rule_rv, threshold, axis_flag)
+            abstained, reasons = _case_abstain_info(rule_rv, flagged)
             reports["rule"].cases.append(CaseResult(
                 case["id"], case["category"], label, flagged, score,
                 detail=rule_rv.aggregate.get("top_axis", ""),
+                abstained=abstained, abstain_reasons=reasons,
             ))
 
         if "hybrid" in reports:
             import copy
             hyb_rv = judge_risk_vector(sent, copy.deepcopy(rule_rv), llm=hybrid_llm)
             flagged, score = _flagged(hyb_rv, threshold, axis_flag)
+            abstained, reasons = _case_abstain_info(hyb_rv, flagged)
             j = hyb_rv.aggregate.get("judge", {})
             reports["hybrid"].cases.append(CaseResult(
                 case["id"], case["category"], label, flagged, score,
                 detail=str(j.get("verdicts", j.get("reason", ""))),
+                abstained=abstained, abstain_reasons=reasons,
             ))
 
         if "llm_only" in reports:
