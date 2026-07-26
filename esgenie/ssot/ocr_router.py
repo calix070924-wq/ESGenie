@@ -1576,8 +1576,11 @@ def _extract_unstructured_text(
 
     # 청크별 LLM 응답 캐시(2026-07-27). 키는 **실제 LLM 입력의 해시**다 —
     # 전처리(_reconstruct_rows_from_dict 등)를 고치면 입력이 바뀌어 자동 무효화된다.
-    # 캐시가 담는 건 이 루프의 산출물(metrics/clauses)까지다. 아래 조항 보강과
-    # extract_document의 _backfill_kesg_codes는 캐시 밖에서 항상 재실행된다.
+    #
+    # 캐시가 담는 건 **LLM 원본 응답 JSON까지다.** _map_vlm_json(G6 각주 마커 배제 포함)은
+    # 히트에서도 항상 재실행된다 — 결정적 후처리를 캐시에 굳히면 G6를 손봤을 때 히트 청크가
+    # 옛 필터 결과를 돌려줘 수정이 무효가 된다(전처리 함정의 후처리판). 조항 보강과
+    # extract_document의 _backfill_kesg_codes도 마찬가지로 캐시 밖이다.
     mode = ocr_cache.cache_mode()
     cache_model = ocr_cache.model_name()
     cache_prompt = VLM_EXTRACT_SYSTEM + "\n" + VLM_EXTRACT_PROMPT
@@ -1591,46 +1594,40 @@ def _extract_unstructured_text(
                 model=cache_model, prompt=cache_prompt,
                 doc_type=doc_type, llm_input=prompt,
             )
+        data: dict | None = None
         if mode == ocr_cache.MODE_ON and key:
-            cached = ocr_cache.load(key)
-            if cached is not None:
-                metrics.extend(cached.metrics)
-                clauses.extend(cached.clauses)
+            data = ocr_cache.load_response(key)
+            if data is not None:
                 hits += 1
+
+        if data is None:
+            misses += 1
+            resp = client.complete(
+                system=VLM_EXTRACT_SYSTEM,
+                user=prompt,
+                json_mode=True,
+                temperature=0.0,
+                mock_hint="ocr_unstructured",
+            )
+            m = re.search(r'\{.*\}', resp.content, re.DOTALL)
+            try:
+                data = _json.loads(m.group() if m else "{}")
+            except _json.JSONDecodeError:
+                # 청크 하나의 JSON이 깨져도 문서 전체를 버리지 않는다.
+                # 깨진 응답은 캐시하지 않는다 — 재시도 여지를 남긴다.
+                logger.warning("비정형 청크 JSON 파싱 실패 — 건너뜀 [%s]", Path(file_path).name)
                 continue
-        misses += 1
-        resp = client.complete(
-            system=VLM_EXTRACT_SYSTEM,
-            user=prompt,
-            json_mode=True,
-            temperature=0.0,
-            mock_hint="ocr_unstructured",
-        )
-        m = re.search(r'\{.*\}', resp.content, re.DOTALL)
-        try:
-            data = _json.loads(m.group() if m else "{}")
-        except _json.JSONDecodeError:
-            # 청크 하나의 JSON이 깨져도 문서 전체를 버리지 않는다.
-            # 깨진 응답은 캐시하지 않는다 — 재시도 여지를 남긴다.
-            logger.warning("비정형 청크 JSON 파싱 실패 — 건너뜀 [%s]", Path(file_path).name)
-            continue
+            if key and isinstance(data, dict):
+                ocr_cache.store_response(
+                    key, data,
+                    model=cache_model, prompt=cache_prompt, doc_type=doc_type,
+                    source_file=Path(file_path).name, llm_input=prompt,
+                )
+
+        # 히트·미스 공통 경로 — 결정적 후처리는 캐시에 굳히지 않는다(G6 등이 여기 있다).
         chunk_metrics, chunk_clauses = _map_vlm_json(data)
         metrics.extend(chunk_metrics)
         clauses.extend(chunk_clauses)
-        if key:
-            # 청크 단위 엔트리 — raw_text는 담지 않는다(전체 텍스트가 청크마다 중복 저장된다).
-            ocr_cache.store(
-                key,
-                OcrExtraction(
-                    source_file=Path(file_path).name,
-                    channel=DocChannel.UNSTRUCTURED,
-                    doc_type=doc_type,
-                    metrics=chunk_metrics,
-                    clauses=chunk_clauses,
-                ),
-                model=cache_model, prompt=cache_prompt, doc_type=doc_type,
-                source_file=Path(file_path).name, llm_input=prompt,
-            )
 
     # 존재형 조항 보강은 원래대로 전체 텍스트 기준 1회 — 청크별 수행 시 중복 발생
     clauses = _augment_unstructured_clauses(

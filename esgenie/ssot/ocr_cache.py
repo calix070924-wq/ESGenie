@@ -22,6 +22,12 @@
     ESGENIE_OCR_CACHE_DIR=...    캐시 디렉터리 오버라이드(테스트 격리용)
     ESGENIE_FORCE_MOCK=1         → 캐시를 읽지도 쓰지도 않는다(테스트 결정성은 mock이 담당)
 
+**캐시 경계 — LLM 원본 응답 JSON까지만 담는다(2026-07-27 수정).**
+`_map_vlm_json`(G6 각주 마커 배제 포함)·조항 보강·`_backfill_kesg_codes`는 히트에서도 **항상
+재실행**된다. 처음엔 `_map_vlm_json` 이후 결과를 담았는데, 그러면 G6를 손봤을 때 캐시 히트인
+청크가 옛 필터 결과를 그대로 돌려줘 수정이 무효가 된다 — 키 설계가 막으려던 함정이 방향만
+바뀌어(전처리→후처리) 되살아난 꼴이었다. **경계는 "비결정적인 것만 담는다"에 둔다.**
+
 깨진 파일·스키마 불일치는 **조용히 무시하고 재호출**한다(예외 전파 금지, 로그만 남긴다).
 캐시 미스일 때의 경로는 캐시 도입 이전과 100% 동일하다.
 """
@@ -38,7 +44,9 @@ from typing import Any
 logger = logging.getLogger(__name__)
 
 # 엔트리 스키마 버전 — 구조를 바꾸면 올린다(옛 파일은 스키마 불일치로 조용히 무시된다).
-SCHEMA_VERSION = 1
+#   1 → 2 (2026-07-27): 본문을 '_map_vlm_json 이후 OcrExtraction'에서 'LLM 원본 응답 JSON'으로
+#   교체. 옛 엔트리는 스키마 불일치로 자동 폐기된다(실사용 전이라 재생성 비용 없음).
+SCHEMA_VERSION = 2
 
 MODE_DISABLED = "disabled"   # 읽기·쓰기 없음 (캐시 OFF 또는 FORCE_MOCK)
 MODE_ON = "on"               # 읽고 없으면 쓴다
@@ -105,13 +113,12 @@ def _path_for(key: str) -> Path:
     return cache_dir() / f"{key}.json"
 
 
-def load(key: str) -> Any | None:
-    """캐시 히트면 OcrExtraction, 미스/손상이면 None.
+def load_response(key: str) -> dict[str, Any] | None:
+    """캐시 히트면 **LLM 원본 응답 JSON**(dict), 미스/손상이면 None.
 
-    깨진 JSON·스키마 불일치·복원 실패는 전부 None으로 떨어뜨린다(재호출).
+    깨진 JSON·스키마 불일치·본문 타입 불일치는 전부 None으로 떨어뜨린다(재호출).
+    돌려주는 건 파싱 전 원본이므로, 호출부는 히트든 미스든 `_map_vlm_json`을 똑같이 태운다.
     """
-    from .ocr_router import OcrExtraction
-
     path = _path_for(key)
     try:
         entry = json.loads(path.read_text(encoding="utf-8"))
@@ -124,20 +131,16 @@ def load(key: str) -> Any | None:
     if not isinstance(entry, dict) or entry.get("schema") != SCHEMA_VERSION:
         logger.warning("OCR 캐시 스키마 불일치 — 무시하고 재호출 [%s]", path.name)
         return None
-    payload = entry.get("extraction")
+    payload = entry.get("response")
     if not isinstance(payload, dict):
         logger.warning("OCR 캐시 본문 없음 — 무시하고 재호출 [%s]", path.name)
         return None
-    try:
-        return OcrExtraction.from_dict(payload)
-    except Exception as exc:  # 복원 실패도 미스로 취급 — 예외를 상위로 올리지 않는다
-        logger.warning("OCR 캐시 복원 실패 — 무시하고 재호출 [%s]: %s", path.name, exc)
-        return None
+    return payload
 
 
-def store(
+def store_response(
     key: str,
-    extraction: Any,
+    response: dict[str, Any],
     *,
     model: str,
     prompt: str,
@@ -145,7 +148,11 @@ def store(
     source_file: str,
     llm_input: str,
 ) -> None:
-    """추출 결과를 `{key}.json`으로 저장한다. 쓰기 실패는 무시한다(캐시는 보조 장치)."""
+    """LLM 원본 응답 JSON을 `{key}.json`으로 저장한다.
+
+    쓰기 실패는 무시한다(캐시는 보조 장치 — 실패해도 파이프라인은 정상 진행).
+    직렬화 불가한 응답도 무시한다(캐시 못 해도 이번 실행 결과는 그대로 쓰인다).
+    """
     entry = {
         "schema": SCHEMA_VERSION,
         "meta": {
@@ -159,13 +166,13 @@ def store(
             "prompt_sha256": hashlib.sha256(str(prompt).encode("utf-8")).hexdigest(),
             "input_chars": len(llm_input),
         },
-        "extraction": extraction.to_dict(),
+        "response": response,
     }
     path = _path_for(key)
     try:
         path.parent.mkdir(parents=True, exist_ok=True)
         path.write_text(json.dumps(entry, ensure_ascii=False, indent=1), encoding="utf-8")
-    except OSError as exc:
+    except (OSError, TypeError, ValueError) as exc:
         logger.warning("OCR 캐시 저장 실패 — 무시 [%s]: %s", path.name, exc)
 
 

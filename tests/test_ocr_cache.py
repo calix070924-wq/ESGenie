@@ -253,9 +253,14 @@ def test_corrupt_cache_is_ignored_without_raising(cache_on, counting_client):
     assert len(counting_client.calls) == 3
     assert ext.router_meta["ocr_cache"] == "miss"
 
-    # (c) 본문 없는 경우 — load()가 None을 돌려주기만 하면 된다
+    # (c) 본문 없는 경우 — load_response()가 None을 돌려주기만 하면 된다
     path.write_text(json.dumps({"schema": ocr_cache.SCHEMA_VERSION}), encoding="utf-8")
-    assert ocr_cache.load(path.stem) is None
+    assert ocr_cache.load_response(path.stem) is None
+
+    # (d) 본문이 dict가 아닌 경우도 미스로 떨어진다
+    path.write_text(json.dumps({"schema": ocr_cache.SCHEMA_VERSION, "response": "not-a-dict"}),
+                    encoding="utf-8")
+    assert ocr_cache.load_response(path.stem) is None
 
 
 # ---- 7. FORCE_MOCK 격리 ------------------------------------------------------
@@ -306,3 +311,46 @@ def test_preprocessing_change_invalidates_cache(cache_on, counting_client):
     k1 = ocr_cache.make_key(**{**_KEY_ARGS, "llm_input": "A\nB"})
     k2 = ocr_cache.make_key(**{**_KEY_ARGS, "llm_input": "A\nB\nC"})
     assert k1 != k2
+
+
+# ---- 9. 캐시 경계 — 결정적 후처리는 히트에서도 재실행된다 ---------------------
+
+def test_deterministic_postprocessing_reruns_on_cache_hit(cache_on, counting_client, monkeypatch):
+    """캐시는 **LLM 원본 응답까지만** 담는다. `_map_vlm_json`은 히트에서도 다시 돈다.
+
+    처음 구현은 `_map_vlm_json` 이후 결과를 담았다. 그러면 그 안의 G6(각주 마커 배제)를
+    손봤을 때 히트 청크가 옛 필터 결과를 그대로 돌려줘 **수정이 조용히 무효**가 된다 —
+    캐시 키가 막으려던 함정(전처리 변경 무시)이 방향만 바뀐 것이다.
+
+    검증: 캐시를 채운 뒤 G6 판정만 뒤집어도 히트 경로의 결과가 따라 바뀌어야 한다.
+    """
+    from esgenie.ssot import ocr_router
+
+    raw = "전력 사용량 | TJ | 7,497"
+
+    first = _extract_unstructured_text("mobis.pdf", doc_type="policy_manual", raw_text=raw)
+    assert len(counting_client.calls) == 1
+    assert [m.metric_hint for m in first.metrics] == ["전력 사용량 합계"]
+
+    # G6를 '전부 각주로 본다'로 뒤집는다 — 후처리가 재실행되면 metrics가 비어야 한다.
+    monkeypatch.setattr(ocr_router, "_is_footnote_marker_value", lambda hint, value: True)
+
+    second = _extract_unstructured_text("mobis.pdf", doc_type="policy_manual", raw_text=raw)
+    assert len(counting_client.calls) == 1, "히트여야 한다(LLM 재호출 없음)"
+    assert second.router_meta["ocr_cache"] == "hit"
+    assert second.metrics == [], (
+        "캐시 히트에서 _map_vlm_json이 재실행되지 않았다 — 결정적 후처리가 캐시에 굳었다"
+    )
+
+
+def test_cache_entry_holds_raw_llm_response_not_mapped_result(cache_on, counting_client):
+    """엔트리 본문이 LLM 원본 JSON인지 파일로 직접 확인한다(스키마 계약 고정)."""
+    _extract_unstructured_text("mobis.pdf", doc_type="policy_manual",
+                               raw_text="전력 사용량 | TJ | 7,497")
+    entry = json.loads(next(iter(cache_on.glob("*.json"))).read_text(encoding="utf-8"))
+
+    assert entry["schema"] == ocr_cache.SCHEMA_VERSION
+    assert "extraction" not in entry, "매핑 결과를 담으면 안 된다"
+    # 원본 응답은 LLM이 준 키(metric_hint/value/unit/period)를 그대로 갖는다.
+    assert set(entry["response"]) >= {"metrics", "clauses"}
+    assert entry["response"]["metrics"][0]["metric_hint"] == "전력 사용량 합계"
