@@ -92,6 +92,18 @@ class EvidenceGraph:
         # build_unified_graph/merge_ocr_extraction가 report_year로 세팅한다. None이면
         # 검출기가 후보 노드의 최신 연도로 폴백(기존 동작 보존).
         self.report_year: int | None = None
+        # 코드 → 원장(L1)이 대표로 채택한 노드 id. _merge_ssot_evidence가 쓰고
+        # D1(layer3_detect._score_d1_numeric)이 읽는다. report_year와 같은
+        # '레이어 간 합의' 슬롯이다.
+        #
+        # 왜 필요한가(2026-07-26): 두 경로가 node_select.select_representative_node를
+        # 공유해도 **넘기는 후보 풀이 다르다**. 원장은 origin이 ocr_*인 노드만(DART 값은
+        # 이미 report.kesg_data → mapped 경로로 들어와 이중 처리를 피한다), D1은
+        # search_nodes()로 DART 노드까지 포함한 풀을 넘긴다. 같은 규칙도 풀이 다르면
+        # 다른 노드를 가리킨다(실측: 원장 623,648 vs D1 1,992,921). 규칙을 두 번
+        # 돌리는 대신 원장의 결정을 여기 기록해 D1이 따르게 한다.
+        # 대표 노드가 없는(미공시) 코드는 기록하지 않는다.
+        self.representative_node_ids: dict[str, str] = {}
         self._nodes: dict[str, EvidenceNode] = {}
         self._text_nodes: dict[str, TextNode] = {}
         self._edges: list[EvidenceEdge] = []

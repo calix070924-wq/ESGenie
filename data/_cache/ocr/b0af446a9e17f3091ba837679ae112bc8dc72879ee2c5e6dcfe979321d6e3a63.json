@@ -1,0 +1,150 @@
+{
+ "schema": 2,
+ "meta": {
+  "key": "b0af446a9e17f3091ba837679ae112bc8dc72879ee2c5e6dcfe979321d6e3a63",
+  "created_at": "2026-07-26T11:27:12+00:00",
+  "model": "gpt-4.1-mini",
+  "doc_type": "ambiguous_fallback_vlm",
+  "source_file": "012330_mobis_2025.pdf",
+  "prompt_sha256": "910d98b903903a42bf1ea537d16996c031f6d5939dd94dd2ed028948f5825de4",
+  "input_chars": 4323
+ },
+ "response": {
+  "metrics": [
+   {
+    "metric_hint": "30세 미만 인원",
+    "value": 2720,
+    "unit": "명",
+    "period": "2024",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "30세 이상 ~ 50세 미만 인원",
+    "value": 2093,
+    "unit": "명",
+    "period": "2024",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "50세 이상 인원",
+    "value": 296,
+    "unit": "명",
+    "period": "2024",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "30세 미만 신규 채용 비율",
+    "value": 53.2,
+    "unit": "%",
+    "period": "2024",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "30세 이상 ~ 50세 미만 신규 채용 비율",
+    "value": 41.0,
+    "unit": "%",
+    "period": "2024",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "50세 이상 신규 채용 비율",
+    "value": 5.8,
+    "unit": "%",
+    "period": "2024",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "미래 신산업 분야 채용 인원",
+    "value": 175,
+    "unit": "명",
+    "period": "2024",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "미래 신산업 분야 채용 비율",
+    "value": 14.8,
+    "unit": "%",
+    "period": "2024",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "계약직 신규 채용 인원",
+    "value": 4010,
+    "unit": "명",
+    "period": "2024",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "채용 비용",
+    "value": 4719,
+    "unit": "백만 원",
+    "period": "2024",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "인당 평균 채용 비용",
+    "value": 517484,
+    "unit": "원",
+    "period": "2024",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "이직 및 퇴직자 수",
+    "value": 7860,
+    "unit": "명",
+    "period": "2022",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "이직률",
+    "value": 23.7,
+    "unit": "%",
+    "period": "2022",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "남성 이직 및 퇴직 비율",
+    "value": 17.8,
+    "unit": "%",
+    "period": "2022",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "여성 이직 및 퇴직 비율",
+    "value": 5.9,
+    "unit": "%",
+    "period": "2022",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "성별 미상 이직 및 퇴직 비율",
+    "value": 0.05,
+    "unit": "%",
+    "period": "2022",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "30세 미만 이직 및 퇴직자 수",
+    "value": 4612,
+    "unit": "명",
+    "period": "2022",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "30세 이상 ~ 50세 미만 이직 및 퇴직자 수",
+    "value": 2539,
+    "unit": "명",
+    "period": "2022",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "50세 이상 이직 및 퇴직자 수",
+    "value": 709,
+    "unit": "명",
+    "period": "2022",
+    "kesg_code": null
+   }
+  ],
+  "clauses": []
+ }
+}

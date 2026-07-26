@@ -1,0 +1,650 @@
+{
+ "schema": 2,
+ "meta": {
+  "key": "7e86ef90135a5ce2b14a1d282c0cb653b098a181c03583468173195531385207",
+  "created_at": "2026-07-26T11:15:42+00:00",
+  "model": "gpt-4.1-mini",
+  "doc_type": "ambiguous_fallback_vlm",
+  "source_file": "012330_mobis_2025.pdf",
+  "prompt_sha256": "910d98b903903a42bf1ea537d16996c031f6d5939dd94dd2ed028948f5825de4",
+  "input_chars": 4161
+ },
+ "response": {
+  "metrics": [
+   {
+    "metric_hint": "투자금액",
+    "value": 350000000000,
+    "unit": "원",
+    "period": "2023년",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "부지면적",
+    "value": 105700,
+    "unit": "㎡",
+    "period": "2023년",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "완공목표",
+    "value": 2025.5,
+    "unit": "년",
+    "period": "2025년 하반기",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "생산능력",
+    "value": 300000,
+    "unit": "대/년",
+    "period": "완공 후",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "투자금액_신규공장",
+    "value": 95000000000,
+    "unit": "원",
+    "period": "2023년",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "그린론_조달금액",
+    "value": 940000000,
+    "unit": "달러",
+    "period": "2023년 10월",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "그린론_인출금액",
+    "value": 804000000,
+    "unit": "달러",
+    "period": "2025년 3월 말",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "ESG채권_발행금액",
+    "value": 350000000000,
+    "unit": "원",
+    "period": "2021년 7월",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "ESG채권_주문액",
+    "value": 10800000000000,
+    "unit": "원",
+    "period": "2021년 7월",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "탄소중립_2030_달성률",
+    "value": 30,
+    "unit": "%",
+    "period": "2030년",
+    "kesg_code": "GHG"
+   },
+   {
+    "metric_hint": "탄소중립_2040_달성률",
+    "value": 80,
+    "unit": "%",
+    "period": "2040년",
+    "kesg_code": "GHG"
+   },
+   {
+    "metric_hint": "탄소중립_2045_달성률",
+    "value": 100,
+    "unit": "%",
+    "period": "2045년",
+    "kesg_code": "GHG"
+   },
+   {
+    "metric_hint": "사업장_탄소중립_2040_달성률",
+    "value": 100,
+    "unit": "%",
+    "period": "2040년",
+    "kesg_code": "GHG"
+   },
+   {
+    "metric_hint": "사업장_탄소중립_2045_달성률",
+    "value": 100,
+    "unit": "%",
+    "period": "2045년",
+    "kesg_code": "GHG"
+   },
+   {
+    "metric_hint": "온실가스_목표배출량_2030",
+    "value": 268062,
+    "unit": "tCO2eq",
+    "period": "2030년",
+    "kesg_code": "GHG"
+   },
+   {
+    "metric_hint": "온실가스_목표배출량_2040",
+    "value": 0,
+    "unit": "tCO2eq",
+    "period": "2040년",
+    "kesg_code": "GHG"
+   },
+   {
+    "metric_hint": "온실가스_목표배출량_2045",
+    "value": 0,
+    "unit": "tCO2eq",
+    "period": "2045년",
+    "kesg_code": "GHG"
+   },
+   {
+    "metric_hint": "온실가스_누적감축량_2030",
+    "value": 114884,
+    "unit": "tCO2eq",
+    "period": "2030년",
+    "kesg_code": "GHG"
+   },
+   {
+    "metric_hint": "온실가스_누적감축량_2040",
+    "value": 382946,
+    "unit": "tCO2eq",
+    "period": "2040년",
+    "kesg_code": "GHG"
+   },
+   {
+    "metric_hint": "온실가스_누적감축량_2045",
+    "value": 382946,
+    "unit": "tCO2eq",
+    "period": "2045년",
+    "kesg_code": "GHG"
+   },
+   {
+    "metric_hint": "매출_목표_2022",
+    "value": 84641,
+    "unit": "억 원",
+    "period": "2022년",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "매출_목표_2023",
+    "value": 114102,
+    "unit": "억 원",
+    "period": "2023년",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "매출_목표_2024",
+    "value": 107241,
+    "unit": "억 원",
+    "period": "2024년",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "매출_실적_2022",
+    "value": 96759,
+    "unit": "억 원",
+    "period": "2022년",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "매출_실적_2023",
+    "value": 122476,
+    "unit": "억 원",
+    "period": "2023년",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "매출_실적_2024",
+    "value": 66938,
+    "unit": "억 원",
+    "period": "2024년",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "전동화_제품_연평균_성장률",
+    "value": 15.5,
+    "unit": "%",
+    "period": "2024~2031년",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "재생에너지_사용량_2022",
+    "value": 404,
+    "unit": "TJ",
+    "period": "2022년",
+    "kesg_code": "RE"
+   },
+   {
+    "metric_hint": "재생에너지_사용량_2023",
+    "value": 557,
+    "unit": "TJ",
+    "period": "2023년",
+    "kesg_code": "RE"
+   },
+   {
+    "metric_hint": "재생에너지_사용량_2024",
+    "value": 954,
+    "unit": "TJ",
+    "period": "2024년",
+    "kesg_code": "RE"
+   },
+   {
+    "metric_hint": "재생에너지_사용량_MWh_2022",
+    "value": 42083,
+    "unit": "MWh",
+    "period": "2022년",
+    "kesg_code": "RE"
+   },
+   {
+    "metric_hint": "재생에너지_사용량_MWh_2023",
+    "value": 58039,
+    "unit": "MWh",
+    "period": "2023년",
+    "kesg_code": "RE"
+   },
+   {
+    "metric_hint": "재생에너지_사용량_MWh_2024",
+    "value": 99356,
+    "unit": "MWh",
+    "period": "2024년",
+    "kesg_code": "RE"
+   },
+   {
+    "metric_hint": "RE100_달성률_2022",
+    "value": 7.3,
+    "unit": "%",
+    "period": "2022년",
+    "kesg_code": "RE"
+   },
+   {
+    "metric_hint": "RE100_달성률_2023",
+    "value": 9.4,
+    "unit": "%",
+    "period": "2023년",
+    "kesg_code": "RE"
+   },
+   {
+    "metric_hint": "RE100_달성률_2024",
+    "value": 12.9,
+    "unit": "%",
+    "period": "2024년",
+    "kesg_code": "RE"
+   },
+   {
+    "metric_hint": "RE100_달성률_2030",
+    "value": 65,
+    "unit": "%",
+    "period": "2030년",
+    "kesg_code": "RE"
+   },
+   {
+    "metric_hint": "RE100_달성률_2040",
+    "value": 100,
+    "unit": "%",
+    "period": "2040년",
+    "kesg_code": "RE"
+   },
+   {
+    "metric_hint": "Scope1_배출량_2022_국내별도",
+    "value": 7395,
+    "unit": "tCO2eq",
+    "period": "2022년",
+    "kesg_code": "GHG"
+   },
+   {
+    "metric_hint": "Scope1_배출량_2022_국내자회사",
+    "value": 15824,
+    "unit": "tCO2eq",
+    "period": "2022년",
+    "kesg_code": "GHG"
+   },
+   {
+    "metric_hint": "Scope1_배출량_2022_해외자회사",
+    "value": 32338,
+    "unit": "tCO2eq",
+    "period": "2022년",
+    "kesg_code": "GHG"
+   },
+   {
+    "metric_hint": "Scope1_배출량_2022_합계",
+    "value": 55557,
+    "unit": "tCO2eq",
+    "period": "2022년",
+    "kesg_code": "GHG"
+   },
+   {
+    "metric_hint": "Scope1_배출량_2023_국내별도",
+    "value": 7434,
+    "unit": "tCO2eq",
+    "period": "2023년",
+    "kesg_code": "GHG"
+   },
+   {
+    "metric_hint": "Scope1_배출량_2023_국내자회사",
+    "value": 14850,
+    "unit": "tCO2eq",
+    "period": "2023년",
+    "kesg_code": "GHG"
+   },
+   {
+    "metric_hint": "Scope1_배출량_2023_해외자회사",
+    "value": 30511,
+    "unit": "tCO2eq",
+    "period": "2023년",
+    "kesg_code": "GHG"
+   },
+   {
+    "metric_hint": "Scope1_배출량_2023_합계",
+    "value": 52795,
+    "unit": "tCO2eq",
+    "period": "2023년",
+    "kesg_code": "GHG"
+   },
+   {
+    "metric_hint": "Scope1_배출량_2024_국내별도",
+    "value": 7817,
+    "unit": "tCO2eq",
+    "period": "2024년",
+    "kesg_code": "GHG"
+   },
+   {
+    "metric_hint": "Scope1_배출량_2024_국내자회사",
+    "value": 14687,
+    "unit": "tCO2eq",
+    "period": "2024년",
+    "kesg_code": "GHG"
+   },
+   {
+    "metric_hint": "Scope1_배출량_2024_해외자회사",
+    "value": 30487,
+    "unit": "tCO2eq",
+    "period": "2024년",
+    "kesg_code": "GHG"
+   },
+   {
+    "metric_hint": "Scope1_배출량_2024_합계",
+    "value": 52991,
+    "unit": "tCO2eq",
+    "period": "2024년",
+    "kesg_code": "GHG"
+   },
+   {
+    "metric_hint": "배출권거래_규제적용_2022_국내별도",
+    "value": 7395,
+    "unit": "tCO2eq",
+    "period": "2022년",
+    "kesg_code": "GHG"
+   },
+   {
+    "metric_hint": "배출권거래_규제적용_2022_국내자회사",
+    "value": 9301,
+    "unit": "tCO2eq",
+    "period": "2022년",
+    "kesg_code": "GHG"
+   },
+   {
+    "metric_hint": "배출권거래_규제적용_2022_합계",
+    "value": 16696,
+    "unit": "tCO2eq",
+    "period": "2022년",
+    "kesg_code": "GHG"
+   },
+   {
+    "metric_hint": "배출권거래_규제적용_2023_국내별도",
+    "value": 7434,
+    "unit": "tCO2eq",
+    "period": "2023년",
+    "kesg_code": "GHG"
+   },
+   {
+    "metric_hint": "배출권거래_규제적용_2023_국내자회사",
+    "value": 8409,
+    "unit": "tCO2eq",
+    "period": "2023년",
+    "kesg_code": "GHG"
+   },
+   {
+    "metric_hint": "배출권거래_규제적용_2023_합계",
+    "value": 15843,
+    "unit": "tCO2eq",
+    "period": "2023년",
+    "kesg_code": "GHG"
+   },
+   {
+    "metric_hint": "배출권거래_규제적용_2024_국내별도",
+    "value": 7817,
+    "unit": "tCO2eq",
+    "period": "2024년",
+    "kesg_code": "GHG"
+   },
+   {
+    "metric_hint": "배출권거래_규제적용_2024_국내자회사",
+    "value": 8322,
+    "unit": "tCO2eq",
+    "period": "2024년",
+    "kesg_code": "GHG"
+   },
+   {
+    "metric_hint": "배출권거래_규제적용_2024_합계",
+    "value": 16139,
+    "unit": "tCO2eq",
+    "period": "2024년",
+    "kesg_code": "GHG"
+   },
+   {
+    "metric_hint": "배출권거래_규제적용비율_2022_국내별도",
+    "value": 100,
+    "unit": "%",
+    "period": "2022년",
+    "kesg_code": "GHG"
+   },
+   {
+    "metric_hint": "배출권거래_규제적용비율_2022_국내자회사",
+    "value": 58.8,
+    "unit": "%",
+    "period": "2022년",
+    "kesg_code": "GHG"
+   },
+   {
+    "metric_hint": "배출권거래_규제적용비율_2022_합계",
+    "value": 30.1,
+    "unit": "%",
+    "period": "2022년",
+    "kesg_code": "GHG"
+   },
+   {
+    "metric_hint": "배출권거래_규제적용비율_2023_국내별도",
+    "value": 100,
+    "unit": "%",
+    "period": "2023년",
+    "kesg_code": "GHG"
+   },
+   {
+    "metric_hint": "배출권거래_규제적용비율_2023_국내자회사",
+    "value": 56.6,
+    "unit": "%",
+    "period": "2023년",
+    "kesg_code": "GHG"
+   },
+   {
+    "metric_hint": "배출권거래_규제적용비율_2023_합계",
+    "value": 30,
+    "unit": "%",
+    "period": "2023년",
+    "kesg_code": "GHG"
+   },
+   {
+    "metric_hint": "배출권거래_규제적용비율_2024_국내별도",
+    "value": 100,
+    "unit": "%",
+    "period": "2024년",
+    "kesg_code": "GHG"
+   },
+   {
+    "metric_hint": "배출권거래_규제적용비율_2024_국내자회사",
+    "value": 56.7,
+    "unit": "%",
+    "period": "2024년",
+    "kesg_code": "GHG"
+   },
+   {
+    "metric_hint": "배출권거래_규제적용비율_2024_합계",
+    "value": 30.5,
+    "unit": "%",
+    "period": "2024년",
+    "kesg_code": "GHG"
+   },
+   {
+    "metric_hint": "Scope2_배출량_2022_국내별도",
+    "value": 86468,
+    "unit": "tCO2eq",
+    "period": "2022년",
+    "kesg_code": "GHG"
+   },
+   {
+    "metric_hint": "Scope2_배출량_2022_국내자회사",
+    "value": 92046,
+    "unit": "tCO2eq",
+    "period": "2022년",
+    "kesg_code": "GHG"
+   },
+   {
+    "metric_hint": "Scope2_배출량_2022_해외자회사",
+    "value": 162081,
+    "unit": "tCO2eq",
+    "period": "2022년",
+    "kesg_code": "GHG"
+   },
+   {
+    "metric_hint": "Scope2_배출량_2022_합계",
+    "value": 340595,
+    "unit": "tCO2eq",
+    "period": "2022년",
+    "kesg_code": "GHG"
+   },
+   {
+    "metric_hint": "Scope2_배출량_2023_국내별도",
+    "value": 96800,
+    "unit": "tCO2eq",
+    "period": "2023년",
+    "kesg_code": "GHG"
+   },
+   {
+    "metric_hint": "Scope2_배출량_2023_국내자회사",
+    "value": 94180,
+    "unit": "tCO2eq",
+    "period": "2023년",
+    "kesg_code": "GHG"
+   },
+   {
+    "metric_hint": "Scope2_배출량_2023_해외자회사",
+    "value": 160330,
+    "unit": "tCO2eq",
+    "period": "2023년",
+    "kesg_code": "GHG"
+   },
+   {
+    "metric_hint": "Scope2_배출량_2023_합계",
+    "value": 351310,
+    "unit": "tCO2eq",
+    "period": "2023년",
+    "kesg_code": "GHG"
+   },
+   {
+    "metric_hint": "Scope2_배출량_2024_국내별도",
+    "value": 100628,
+    "unit": "tCO2eq",
+    "period": "2024년",
+    "kesg_code": "GHG"
+   },
+   {
+    "metric_hint": "Scope2_배출량_2024_국내자회사",
+    "value": 94429,
+    "unit": "tCO2eq",
+    "period": "2024년",
+    "kesg_code": "GHG"
+   },
+   {
+    "metric_hint": "Scope2_배출량_2024_해외자회사",
+    "value": 176002,
+    "unit": "tCO2eq",
+    "period": "2024년",
+    "kesg_code": "GHG"
+   },
+   {
+    "metric_hint": "Scope2_배출량_2024_합계",
+    "value": 371059,
+    "unit": "tCO2eq",
+    "period": "2024년",
+    "kesg_code": "GHG"
+   }
+  ],
+  "clauses": [
+   {
+    "section": "투자 및 생산 계획",
+    "text": "3,500억 원이 투입될 예정입니다. 약 10만 5,700㎡ 부지에 건설되며, 2025년 하반기 완공을 목표로 하고 있습니다. 완공 시 연간 약 30만 대 규모의 PE 시스템 생산 능력을 갖추게 됩니다. 기존 슬로바키아 질리나 공장 부지 내에 제동시스템 및 에어백 생산을 위한 신규 공장도 신설되며, 해당 시설에는 약 950억 원이 투자될 예정입니다.",
+    "kesg_code": null,
+    "page": 50
+   },
+   {
+    "section": "PE 시스템 정의",
+    "text": "PE(Power Electric): 전기모터와 인버터, 감속기가 통합된 전동화 구동 장치",
+    "kesg_code": null,
+    "page": 50
+   },
+   {
+    "section": "그린론 조달",
+    "text": "현대모비스 미국법인 Mobis America, Inc.는 2023년 10월 9억 4,000만 달러 규모로 10년 만기 해외 첫 그린론을 국제 금융단체인 LMA, LSTA, APLMA가 제정한 ‘지속 가능 대출 원칙’에 맞춰 조달하였습니다. 조달한 자금은 미국 조지아 서배너와 앨러바마의 배터리 시스템(BSA)과 PE 시스템 신규 공장 투자 등에 사용 예정입니다. 2025년 3월 말 기준 9억 4,000만 달러 한도 승인 금액 중 8억 400만 달러를 분할 인출하여 투자 진행 중입니다.",
+    "kesg_code": null,
+    "page": 50
+   },
+   {
+    "section": "ESG채권 발행",
+    "text": "현대모비스는 전동화 사업 관련 투자 목적으로 2021년 7월 3,500억 원 규모로 3년·5년·7년 만기의 첫 ESG채권(녹색채권)을 국제자본시장협회(ICMA) 제정 원칙에 맞춰 발행하였습니다. 이는 채권 모집액의 4배가 넘는 1.08조 원의 주문을 기록하며 성공적인 흥행을 거두었습니다. 해당 채권은 NICE신용평가로부터 녹색채권 인증 평가 최상위 인증 등급인 ‘Green1’을 부여받아 ICMA 및 환경부 녹색채권 가이드라인에 부합한 것으로 평가되고 있습니다. 회사채 발행 자금은 의왕 제2연구소의 R&D통합센터 연구동 신축, 전기차 전용 부품 생산을 위한 공장 증축과 라인 증설, 전동화 사업 관련 지분 투자를 위해 사용되었습니다.",
+    "kesg_code": null,
+    "page": 50
+   },
+   {
+    "section": "온실가스 관리 목표",
+    "text": "2045년 탄소중립 목표는 GHG프로토콜에 의거 산정된 2019년 배출량을 기준으로, 재생에너지 전환, 공급망 탄소배출 관리 등을 핵심 감축 방안으로 하여 지구 온도 상승을 1.5℃ 이내로 제한하는 시나리오에 상응하는 목표입니다. 이는 정부, 고객사 등 이해관계자와의 소통·요구 수렴에 따라 설정되었습니다.",
+    "kesg_code": "GHG",
+    "page": 50
+   },
+   {
+    "section": "탄소중립 목표 수치",
+    "text": "2030 목표 30%, 2040 목표 80%, 2045 목표 100% 탄소중립 달성률. 사업장 탄소중립 달성률(Scope 1+2)은 2040년과 2045년에 100% 달성 목표. 온실가스 목표 배출량(Scope 1+2)은 2030년 268,062 tCO2eq, 2040년과 2045년 0 tCO2eq. 누적 온실가스 목표 감축량(Scope 1+2)은 2030년 114,884 tCO2eq, 2040년과 2045년 382,946 tCO2eq.",
+    "kesg_code": "GHG",
+    "page": 50
+   },
+   {
+    "section": "매출 목표 및 실적",
+    "text": "2022년부터 2024년까지 국내(별도) 매출 목표 및 실적: 2022년 목표 84,641억 원, 실적 96,759억 원; 2023년 목표 114,102억 원, 실적 122,476억 원; 2024년 목표 107,241억 원, 실적 66,938억 원. 매출 목표 이행률은 2022년 114.3%, 2023년 107.3%, 2024년 62.4%. 전동화 제품 판매 목표는 2031년까지 연평균 15.5% 성장 목표(2024년 연간 추정 기준).",
+    "kesg_code": null,
+    "page": 50
+   },
+   {
+    "section": "에너지 관리 목표",
+    "text": "현대모비스는 사업장 사용 전력 에너지를 2040년까지 재생에너지로 100% 전환하는 ‘2040 RE100’ 목표를 수립하였습니다. 해당 목표는 각 사업장 소재 국가의 재생에너지 정책, 에너지 믹스 현황 및 향후 방향성을 고려하고, 고객사 등 외부 이해관계자와 소통·요구 수렴을 통해 설정되었습니다.",
+    "kesg_code": "RE",
+    "page": 50
+   },
+   {
+    "section": "재생에너지 사용 및 RE100 달성률",
+    "text": "재생에너지 사용량(TJ): 2022년 404, 2023년 557, 2024년 954. 재생에너지 사용량(MWh): 2022년 42,083, 2023년 58,039, 2024년 99,356. 2040년 RE100 달성률: 2022년 7.3%, 2023년 9.4%, 2024년 12.9%, 2030년 65%, 2040년 100%.",
+    "kesg_code": "RE",
+    "page": 50
+   },
+   {
+    "section": "Scope별 온실가스 배출량",
+    "text": "Scope 1 배출량(tCO2eq): 2022년 국내별도 7,395, 국내자회사 15,824, 해외자회사 32,338, 합계 55,557; 2023년 국내별도 7,434, 국내자회사 14,850, 해외자회사 30,511, 합계 52,795; 2024년 국내별도 7,817, 국내자회사 14,687, 해외자회사 30,487, 합계 52,991.",
+    "kesg_code": "GHG",
+    "page": 51
+   },
+   {
+    "section": "배출권 거래 규제 적용 대상 및 비율",
+    "text": "배출권 거래 규제 적용 대상(tCO2eq): 2022년 국내별도 7,395, 국내자회사 9,301, 합계 16,696; 2023년 국내별도 7,434, 국내자회사 8,409, 합계 15,843; 2024년 국내별도 7,817, 국내자회사 8,322, 합계 16,139. 배출권 거래 규제 적용 대상 비율(%): 2022년 국내별도 100, 국내자회사 58.8, 합계 30.1; 2023년 국내별도 100, 국내자회사 56.6, 합계 30.0; 2024년 국내별도 100, 국내자회사 56.7, 합계 30.5.",
+    "kesg_code": "GHG",
+    "page": 51
+   },
+   {
+    "section": "Scope 2 배출량(지역 기반)",
+    "text": "Scope 2 배출량(tCO2eq): 2022년 국내별도 86,468, 국내자회사 92,046, 해외자회사 162,081, 합계 340,595; 2023년 국내별도 96,800, 국내자회사 94,180, 해외자회사 160,330, 합계 351,310; 2024년 국내별도 100,628, 국내자회사 94,429, 해외자회사 176,002, 합계 371,059.",
+    "kesg_code": "GHG",
+    "page": 51
+   }
+  ]
+ }
+}

@@ -1,0 +1,873 @@
+{
+ "schema": 2,
+ "meta": {
+  "key": "aaf4a32a9211a67aa2d3e17ca879a9e9352fc5ada0b0738ea8bc9b53de4b817a",
+  "created_at": "2026-07-26T11:24:15+00:00",
+  "model": "gpt-4.1-mini",
+  "doc_type": "ambiguous_fallback_vlm",
+  "source_file": "012330_mobis_2025.pdf",
+  "prompt_sha256": "910d98b903903a42bf1ea537d16996c031f6d5939dd94dd2ed028948f5825de4",
+  "input_chars": 4277
+ },
+ "response": {
+  "metrics": [
+   {
+    "metric_hint": "2024년 전사 유소견자 상담률",
+    "value": 100,
+    "unit": "%",
+    "period": "2024년",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "총 인권 관련 고충 처리율 (국내(별도))",
+    "value": 100,
+    "unit": "%",
+    "period": "2022년",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "총 인권 관련 고충 처리율 (합계)",
+    "value": 100,
+    "unit": "%",
+    "period": "2022년",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "총 인권 관련 고충 처리율 (국내(별도))",
+    "value": 91.7,
+    "unit": "%",
+    "period": "2023년",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "총 인권 관련 고충 처리율 (국내 자회사)",
+    "value": 83.3,
+    "unit": "%",
+    "period": "2023년",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "총 인권 관련 고충 처리율 (해외 자회사)",
+    "value": 92.6,
+    "unit": "%",
+    "period": "2023년",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "총 인권 관련 고충 처리율 (합계)",
+    "value": 91.1,
+    "unit": "%",
+    "period": "2023년",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "총 인권 관련 고충 처리율 (국내(별도))",
+    "value": 100,
+    "unit": "%",
+    "period": "2024년",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "총 인권 관련 고충 처리율 (국내 자회사)",
+    "value": 100,
+    "unit": "%",
+    "period": "2024년",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "총 인권 관련 고충 처리율 (해외 자회사)",
+    "value": 99.2,
+    "unit": "%",
+    "period": "2024년",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "총 인권 관련 고충 처리율 (합계)",
+    "value": 99.3,
+    "unit": "%",
+    "period": "2024년",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "인권 고충 접수·위반 건 (국내(별도))",
+    "value": 14,
+    "unit": "건",
+    "period": "2022년",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "인권 고충 접수·위반 건 (합계)",
+    "value": 14,
+    "unit": "건",
+    "period": "2022년",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "인권 고충 접수·위반 건 (국내(별도))",
+    "value": 12,
+    "unit": "건",
+    "period": "2023년",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "인권 고충 접수·위반 건 (국내 자회사)",
+    "value": 6,
+    "unit": "건",
+    "period": "2023년",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "인권 고충 접수·위반 건 (해외 자회사)",
+    "value": 27,
+    "unit": "건",
+    "period": "2023년",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "인권 고충 접수·위반 건 (합계)",
+    "value": 45,
+    "unit": "건",
+    "period": "2023년",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "인권 고충 접수·위반 건 (국내(별도))",
+    "value": 14,
+    "unit": "건",
+    "period": "2024년",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "인권 고충 접수·위반 건 (국내 자회사)",
+    "value": 16,
+    "unit": "건",
+    "period": "2024년",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "인권 고충 접수·위반 건 (해외 자회사)",
+    "value": 123,
+    "unit": "건",
+    "period": "2024년",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "인권 고충 접수·위반 건 (합계)",
+    "value": 153,
+    "unit": "건",
+    "period": "2024년",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "인권 고충 처리·조치 건 (국내(별도))",
+    "value": 14,
+    "unit": "건",
+    "period": "2022년",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "인권 고충 처리·조치 건 (합계)",
+    "value": 14,
+    "unit": "건",
+    "period": "2022년",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "인권 고충 처리·조치 건 (국내(별도))",
+    "value": 11,
+    "unit": "건",
+    "period": "2023년",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "인권 고충 처리·조치 건 (국내 자회사)",
+    "value": 5,
+    "unit": "건",
+    "period": "2023년",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "인권 고충 처리·조치 건 (해외 자회사)",
+    "value": 25,
+    "unit": "건",
+    "period": "2023년",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "인권 고충 처리·조치 건 (합계)",
+    "value": 41,
+    "unit": "건",
+    "period": "2023년",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "인권 고충 처리·조치 건 (국내(별도))",
+    "value": 14,
+    "unit": "건",
+    "period": "2024년",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "인권 고충 처리·조치 건 (국내 자회사)",
+    "value": 16,
+    "unit": "건",
+    "period": "2024년",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "인권 고충 처리·조치 건 (해외 자회사)",
+    "value": 122,
+    "unit": "건",
+    "period": "2024년",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "인권 고충 처리·조치 건 (합계)",
+    "value": 152,
+    "unit": "건",
+    "period": "2024년",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "컴플라이언스 고충 처리율 (국내(별도))",
+    "value": 100,
+    "unit": "%",
+    "period": "2022년",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "컴플라이언스 고충 처리율 (합계)",
+    "value": 100,
+    "unit": "%",
+    "period": "2022년",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "컴플라이언스 고충 처리율 (국내(별도))",
+    "value": 92.5,
+    "unit": "%",
+    "period": "2023년",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "컴플라이언스 고충 처리율 (국내 자회사)",
+    "value": 83.3,
+    "unit": "%",
+    "period": "2023년",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "컴플라이언스 고충 처리율 (해외 자회사)",
+    "value": 90.3,
+    "unit": "%",
+    "period": "2023년",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "컴플라이언스 고충 처리율 (합계)",
+    "value": 90.5,
+    "unit": "%",
+    "period": "2023년",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "컴플라이언스 고충 처리율 (국내(별도))",
+    "value": 90.0,
+    "unit": "%",
+    "period": "2024년",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "컴플라이언스 고충 처리율 (국내 자회사)",
+    "value": 100,
+    "unit": "%",
+    "period": "2024년",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "컴플라이언스 고충 처리율 (해외 자회사)",
+    "value": 95.0,
+    "unit": "%",
+    "period": "2024년",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "컴플라이언스 고충 처리율 (합계)",
+    "value": 95.0,
+    "unit": "%",
+    "period": "2024년",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "컴플라이언스 고충 접수 건 (국내(별도))",
+    "value": 42,
+    "unit": "건",
+    "period": "2022년",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "컴플라이언스 고충 접수 건 (합계)",
+    "value": 42,
+    "unit": "건",
+    "period": "2022년",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "컴플라이언스 고충 접수 건 (국내(별도))",
+    "value": 40,
+    "unit": "건",
+    "period": "2023년",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "컴플라이언스 고충 접수 건 (국내 자회사)",
+    "value": 6,
+    "unit": "건",
+    "period": "2023년",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "컴플라이언스 고충 접수 건 (해외 자회사)",
+    "value": 207,
+    "unit": "건",
+    "period": "2023년",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "컴플라이언스 고충 접수 건 (합계)",
+    "value": 253,
+    "unit": "건",
+    "period": "2023년",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "컴플라이언스 고충 접수 건 (국내(별도))",
+    "value": 40,
+    "unit": "건",
+    "period": "2024년",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "컴플라이언스 고충 접수 건 (국내 자회사)",
+    "value": 45,
+    "unit": "건",
+    "period": "2024년",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "컴플라이언스 고충 접수 건 (해외 자회사)",
+    "value": 735,
+    "unit": "건",
+    "period": "2024년",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "컴플라이언스 고충 접수 건 (합계)",
+    "value": 820,
+    "unit": "건",
+    "period": "2024년",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "컴플라이언스 고충 처리 건 (국내(별도))",
+    "value": 42,
+    "unit": "건",
+    "period": "2022년",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "컴플라이언스 고충 처리 건 (합계)",
+    "value": 42,
+    "unit": "건",
+    "period": "2022년",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "컴플라이언스 고충 처리 건 (국내(별도))",
+    "value": 37,
+    "unit": "건",
+    "period": "2023년",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "컴플라이언스 고충 처리 건 (국내 자회사)",
+    "value": 5,
+    "unit": "건",
+    "period": "2023년",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "컴플라이언스 고충 처리 건 (해외 자회사)",
+    "value": 187,
+    "unit": "건",
+    "period": "2023년",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "컴플라이언스 고충 처리 건 (합계)",
+    "value": 229,
+    "unit": "건",
+    "period": "2023년",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "컴플라이언스 고충 처리 건 (국내(별도))",
+    "value": 36,
+    "unit": "건",
+    "period": "2024년",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "컴플라이언스 고충 처리 건 (국내 자회사)",
+    "value": 45,
+    "unit": "건",
+    "period": "2024년",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "컴플라이언스 고충 처리 건 (해외 자회사)",
+    "value": 698,
+    "unit": "건",
+    "period": "2024년",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "컴플라이언스 고충 처리 건 (합계)",
+    "value": 779,
+    "unit": "건",
+    "period": "2024년",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "임직원 인권 교육 이수 비율 (국내(별도))",
+    "value": 97.8,
+    "unit": "%",
+    "period": "2022년",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "임직원 인권 교육 이수 비율 (합계)",
+    "value": 97.8,
+    "unit": "%",
+    "period": "2022년",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "임직원 인권 교육 이수 비율 (국내(별도))",
+    "value": 98.7,
+    "unit": "%",
+    "period": "2023년",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "임직원 인권 교육 이수 비율 (국내 자회사)",
+    "value": 65.7,
+    "unit": "%",
+    "period": "2023년",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "임직원 인권 교육 이수 비율 (해외 자회사)",
+    "value": 61.3,
+    "unit": "%",
+    "period": "2023년",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "임직원 인권 교육 이수 비율 (합계)",
+    "value": 76.6,
+    "unit": "%",
+    "period": "2023년",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "임직원 인권 교육 이수 비율 (국내(별도))",
+    "value": 99.2,
+    "unit": "%",
+    "period": "2024년",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "임직원 인권 교육 이수 비율 (국내 자회사)",
+    "value": 100,
+    "unit": "%",
+    "period": "2024년",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "임직원 인권 교육 이수 비율 (해외 자회사)",
+    "value": 71.7,
+    "unit": "%",
+    "period": "2024년",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "임직원 인권 교육 이수 비율 (합계)",
+    "value": 89.9,
+    "unit": "%",
+    "period": "2024년",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "임직원 인권 교육 이수 인원 (국내(별도))",
+    "value": 9769,
+    "unit": "명",
+    "period": "2022년",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "임직원 인권 교육 이수 인원 (합계)",
+    "value": 9769,
+    "unit": "명",
+    "period": "2022년",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "임직원 인권 교육 이수 인원 (국내(별도))",
+    "value": 9581,
+    "unit": "명",
+    "period": "2023년",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "임직원 인권 교육 이수 인원 (국내 자회사)",
+    "value": 3456,
+    "unit": "명",
+    "period": "2023년",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "임직원 인권 교육 이수 인원 (해외 자회사)",
+    "value": 6277,
+    "unit": "명",
+    "period": "2023년",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "임직원 인권 교육 이수 인원 (합계)",
+    "value": 19314,
+    "unit": "명",
+    "period": "2023년",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "임직원 인권 교육 이수 인원 (국내(별도))",
+    "value": 9761,
+    "unit": "명",
+    "period": "2024년",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "임직원 인권 교육 이수 인원 (국내 자회사)",
+    "value": 5079,
+    "unit": "명",
+    "period": "2024년",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "임직원 인권 교육 이수 인원 (해외 자회사)",
+    "value": 5596,
+    "unit": "명",
+    "period": "2024년",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "임직원 인권 교육 이수 인원 (합계)",
+    "value": 20436,
+    "unit": "명",
+    "period": "2024년",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "서면 점검율 (국내(별도))",
+    "value": 100,
+    "unit": "%",
+    "period": "2022년",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "서면 점검율 (해외 자회사)",
+    "value": 100,
+    "unit": "%",
+    "period": "2022년",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "서면 점검율 (합계)",
+    "value": 100,
+    "unit": "%",
+    "period": "2022년",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "서면 점검율 (국내(별도))",
+    "value": 50,
+    "unit": "%",
+    "period": "2023년",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "서면 점검율 (해외 자회사)",
+    "value": 100,
+    "unit": "%",
+    "period": "2023년",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "서면 점검율 (합계)",
+    "value": 90,
+    "unit": "%",
+    "period": "2023년",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "서면 점검율 (국내(별도))",
+    "value": 100,
+    "unit": "%",
+    "period": "2024년",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "서면 점검율 (해외 자회사)",
+    "value": 84.6,
+    "unit": "%",
+    "period": "2024년",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "서면 점검율 (합계)",
+    "value": 92,
+    "unit": "%",
+    "period": "2024년",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "대상 사업장 개소 (국내(별도))",
+    "value": 4,
+    "unit": "개소",
+    "period": "2022년",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "대상 사업장 개소 (해외 자회사)",
+    "value": 15,
+    "unit": "개소",
+    "period": "2022년",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "대상 사업장 개소 (합계)",
+    "value": 19,
+    "unit": "개소",
+    "period": "2022년",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "대상 사업장 개소 (국내(별도))",
+    "value": 4,
+    "unit": "개소",
+    "period": "2023년",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "대상 사업장 개소 (해외 자회사)",
+    "value": 16,
+    "unit": "개소",
+    "period": "2023년",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "대상 사업장 개소 (합계)",
+    "value": 20,
+    "unit": "개소",
+    "period": "2023년",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "대상 사업장 개소 (국내(별도))",
+    "value": 21,
+    "unit": "개소",
+    "period": "2024년",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "대상 사업장 개소 (해외 자회사)",
+    "value": 29,
+    "unit": "개소",
+    "period": "2024년",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "대상 사업장 개소 (합계)",
+    "value": 50,
+    "unit": "개소",
+    "period": "2024년",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "점검 사업장 개소 (국내(별도))",
+    "value": 4,
+    "unit": "개소",
+    "period": "2022년",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "점검 사업장 개소 (해외 자회사)",
+    "value": 15,
+    "unit": "개소",
+    "period": "2022년",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "점검 사업장 개소 (합계)",
+    "value": 19,
+    "unit": "개소",
+    "period": "2022년",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "점검 사업장 개소 (국내(별도))",
+    "value": 2,
+    "unit": "개소",
+    "period": "2023년",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "점검 사업장 개소 (해외 자회사)",
+    "value": 16,
+    "unit": "개소",
+    "period": "2023년",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "점검 사업장 개소 (합계)",
+    "value": 18,
+    "unit": "개소",
+    "period": "2023년",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "점검 사업장 개소 (국내(별도))",
+    "value": 21,
+    "unit": "개소",
+    "period": "2024년",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "점검 사업장 개소 (해외 자회사)",
+    "value": 25,
+    "unit": "개소",
+    "period": "2024년",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "점검 사업장 개소 (합계)",
+    "value": 46,
+    "unit": "개소",
+    "period": "2024년",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "리스크 식별률 (국내(별도))",
+    "value": 0,
+    "unit": "%",
+    "period": "2022년",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "리스크 식별률 (해외 자회사)",
+    "value": 26.7,
+    "unit": "%",
+    "period": "2022년",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "리스크 식별률 (합계)",
+    "value": 21.1,
+    "unit": "%",
+    "period": "2022년",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "리스크 식별률 (국내(별도))",
+    "value": 50,
+    "unit": "%",
+    "period": "2023년",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "리스크 식별률 (해외 자회사)",
+    "value": 62.5,
+    "unit": "%",
+    "period": "2023년",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "리스크 식별률 (합계)",
+    "value": 61.1,
+    "unit": "%",
+    "period": "2023년",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "리스크 식별률 (국내(별도))",
+    "value": 23.8,
+    "unit": "%",
+    "period": "2024년",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "리스크 식별률 (해외 자회사)",
+    "value": 18.2,
+    "unit": "%",
+    "period": "2024년",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "리스크 식별률 (합계)",
+    "value": 20.9,
+    "unit": "%",
+    "period": "2024년",
+    "kesg_code": null
+   }
+  ],
+  "clauses": [
+   {
+    "section": "건강관리실·심리상담실 운영",
+    "text": "현대모비스는 전문 조직과 사업장별 건강관리실 운영 등 다양한 건강증진 활동을 통해 임직원의 건강한 회사 생활을 지원하고 있습니다. 임직원의 심리건강 증진을 위해 2014년부터 사내 심리 상담실 ‘힐링샘’을 온·오프라인으로 운영하고 있습니다. 전문 심리 상담사가 제공하는 상담과 치료뿐만 아니라, 온라인 자가 진단 서비스, 해외 주재원 대상 화상통화 상담, 매달 힐링레터 발간 등 다양한 프로그램을 운영 중입니다. 모든 개인 상담과 진료 내용은 ‘상담사 윤리강령’에 의거하여 비밀 보장의 원칙을 준수하고 있습니다. 또한 각 사업장에 배치된 건강관리실에는 의료인 간호사가 상주하고 있으며, 일반 의약품 지급, 외상소독 등 간단한 의료 행위와 일반 건강 상담 지원을 통한 질병 예방활동을 진행하고 있습니다. 아울러 임직원의 검진 결과 데이터를 기반으로 건강 위험군을 사전에 발굴하고 맞춤형 건강 관리 서비스를 제공하고 있습니다. 이와 함께 건강 관리 시스템의 임직원 누적 건강검진 데이터를 기반으로 보수적인 유소견자 대상자를 선정하여, 사후 관리를 실시함으로써 임직원의 건강을 지속적으로 관리하고 있습니다.",
+    "kesg_code": null,
+    "page": 1
+   },
+   {
+    "section": "유소견자 대상 건강증진 프로그램",
+    "text": "통증질환자: 운동치료, 3D 체형분석을 통한 근골격계질환 예방프로그램, 임직원 대상으로 높이 조절 가능한 인체공학적 책상 제공\n흡연자: 금연물품 지원 및 상담 프로그램 제공\n비만 및 만성질환 예방: 건강상담, 생활습관 개선 프로그램, 그룹 다이어트 및 모바일앱 활용 비대면 유산소 운동프로그램\n심혈관대사질환: 당화혈색소, 콜레스테롤 측정 장비 도입, 전사 임직원들의 건강한 생활습관 및 심혈관질환 예방을 위한 관리 프로그램 실시 (모비스 100만 걸음 챌린지)",
+    "kesg_code": null,
+    "page": 1
+   },
+   {
+    "section": "인권 경영 목표",
+    "text": "현대모비스는 차별, 근로조건, 보상, 인도적 대우, 직장 내 괴롭힘 금지, 결사/단체교섭, 아동노동, 강제노동, 인신매매, 착취, 생활임금 등 주요 관리 영역에 대하여 인권영향평가 정례화 및 도출 과제 이행 통한 인권 리스크 관리를 지속 강화하고자 합니다. 2025년에는 ESG 진단실사와 연계한 인권영향평가를 운영하고, 2026년에는 체크리스트 평가지표 업데이트 및 국내 사업장 대상 임직원 서베이를 도입할 예정입니다. 또한 2027년에는 해외 사업장 대상 임직원 서베이를 확대하며 사업장 인권경영 업무를 표준화할 계획입니다.",
+    "kesg_code": null,
+    "page": 1
+   },
+   {
+    "section": "인권 고충 처리",
+    "text": "컴플라이언스 헬프라인 및 Hello, 인사, 국내 자회사 및 해외 사업장별 고충처리채널 실적 기준에 따른 인권 고충 처리 현황을 포함합니다.",
+    "kesg_code": null,
+    "page": 1
+   },
+   {
+    "section": "컴플라이언스 고충 처리 채널",
+    "text": "컴플라이언스 헬프라인, 해외 사업장별 고충처리채널 실적 기준에 따른 컴플라이언스 고충 처리 현황을 포함합니다.",
+    "kesg_code": null,
+    "page": 1
+   },
+   {
+    "section": "인권 교육(컴플라이언스 교육)",
+    "text": "국내(별도) 현장직, 계약/파견직 제외한 임직원 인권 교육 이수 현황을 나타냅니다.",
+    "kesg_code": null,
+    "page": 1
+   }
+  ]
+ }
+}

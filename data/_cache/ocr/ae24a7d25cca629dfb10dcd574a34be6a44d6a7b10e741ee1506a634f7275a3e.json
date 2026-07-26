@@ -1,0 +1,143 @@
+{
+ "schema": 2,
+ "meta": {
+  "key": "ae24a7d25cca629dfb10dcd574a34be6a44d6a7b10e741ee1506a634f7275a3e",
+  "created_at": "2026-07-26T11:08:56+00:00",
+  "model": "gpt-4.1-mini",
+  "doc_type": "ambiguous_fallback_vlm",
+  "source_file": "012330_mobis_2025.pdf",
+  "prompt_sha256": "910d98b903903a42bf1ea537d16996c031f6d5939dd94dd2ed028948f5825de4",
+  "input_chars": 4332
+ },
+ "response": {
+  "metrics": [
+   {
+    "metric_hint": "현장 실사율 제조사업장 목표",
+    "value": 100,
+    "unit": "percent",
+    "period": "2025년까지",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "현장 실사율 부품사업장 목표",
+    "value": 100,
+    "unit": "percent",
+    "period": "2027년까지",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "핵심부품 매출 H/KIA : GLOBAL 비율 2023년",
+    "value": 90,
+    "unit": "percent",
+    "period": "2023년",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "핵심부품 매출 H/KIA : GLOBAL 비율 2027년",
+    "value": 80,
+    "unit": "percent",
+    "period": "2027년",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "핵심부품 매출 H/KIA : GLOBAL 비율 2033년",
+    "value": 60,
+    "unit": "percent",
+    "period": "2033년",
+    "kesg_code": null
+   }
+  ],
+  "clauses": [
+   {
+    "section": "안건",
+    "text": "현장 실사율은 제조사업장은 2025년까지, 부품사업장은 2027년까지 100%로 높일 예정입니다.",
+    "kesg_code": null,
+    "page": 11
+   },
+   {
+    "section": "안건",
+    "text": "CEO Investor Day에서는 기업 가치를 끌어올릴 수 있는 밸류업 4대 주요 전략이 발표되었으며, “선도 기술 경쟁력 확보”, “수익성 중심 사업 체질 개선”, “글로벌 고객 확대 본격화”, “ESG 경영 강화”의 4대 축으로 구성되어 있습니다.",
+    "kesg_code": null,
+    "page": 11
+   },
+   {
+    "section": "안건",
+    "text": "독자적인 기술 내재화: 전동화 - 시장 니즈 최적화 제품 개발 및 선제적 경쟁력 확보; 전장 - SDV 대응 HW/SW 통합 공급 및 Tier 0.5 역할 확장; 샤시안전 - SDV/전동화 연계 차세대 샤시안전 솔루션 선제적 개발; 미래 핵심 요소 기술 - 차량용 반도체: Fabless 중심 독자 차량용 반도체 설계역량 집중 육성; 융복합 기술: 핵심 기술 및 제품 융합으로 미래 모빌리티 시스템 개발",
+    "kesg_code": null,
+    "page": 11
+   },
+   {
+    "section": "안건",
+    "text": "주요 전략: Win with Winners - Top-Tier OEM 중심 사업 확대; Step Up Value - 고부가 제품 기반 매출/수익성 증진; Create New Partnership - 전략적 제휴 강화 → 기술 선도력 제고 및 부가가치 창출; Non-captive 매출 비중 전략적 제휴 및 투자 강화; Localization 가속화",
+    "kesg_code": null,
+    "page": 11
+   },
+   {
+    "section": "안건",
+    "text": "리소스 최적화: ① 사업 포트폴리오 최적화 - 성장사업(전동화/전장): 시장 확대 기반 외형 성장, 기술 확보 및 투자 집중; 안정화 사업(모듈/샤시안전/램프/서비스부품): 안정적 수익 확보, 운영 효율화/최적화 집중; Seeding 사업(추가 발굴 및 육성 예정): 차세대 사업 영역, 중장기적 성장 동력으로 육성; ② 제품 라인업 효율화 - 고부가 제품 중심 질적 성장을 위한 제품 단위 리소스 운영 최적화",
+    "kesg_code": null,
+    "page": 11
+   },
+   {
+    "section": "안건",
+    "text": "Green Value: Green Plant - 2040년까지 사업장, 2045년까지 공급망 포함 탄소중립 추진; Green Supply - Scope 3 감축을 위한 공급망 관리; Green Product - 산업구조 변화에 따른 탄소 저감제품 개발",
+    "kesg_code": null,
+    "page": 11
+   },
+   {
+    "section": "안건",
+    "text": "Societal Value: HRM - 직원 개인 경력 개발 지원 및 여성 인력 파이프라인 성장 지원; 지속가능한 사업장 - 책임 있는 비즈니스 연합(RBA) 가입; 지속가능한 공급망 - 글로벌 경쟁력 강화 지원(특허 공유 등); 지역 사회 - 걸즈 주니어 공학교실(독일), 어린이 안전 투명우산(중국) 등",
+    "kesg_code": null,
+    "page": 11
+   },
+   {
+    "section": "안건",
+    "text": "사업 운영 혁신: ① 글로벌 Operation 최적화 - Localization 가속화, 현지 영업조직 기능 강화, 권역센터 운영 강화; ② 제조혁신기술 적용 - 디지털 전환 가속화, 제조 혁신 기술 개발 및 생산 효율성 강화; ③ 수익성 사전 관리 프로세스 강화 - 라이프 사이클 전 과정에서 수익성 관리 강화; ④ 서비스부품 사업 운영 최적화 - 물류 거점 통합, 부품공급 체계 고도화",
+    "kesg_code": null,
+    "page": 11
+   },
+   {
+    "section": "안건",
+    "text": "샤시/모듈: 플랫폼 기반 중장기 공급계약, 현지 영업 조직 기능 강화, 고객의 요구에 신속한 대응 가능",
+    "kesg_code": null,
+    "page": 11
+   },
+   {
+    "section": "안건",
+    "text": "전장/반도체: 오픈 이노베이션 생태계 강화, 거점별 R&D 연구소(한국/미주/유럽/중국/인도), 현지 연구 인력을 통한 경쟁력 확보",
+    "kesg_code": null,
+    "page": 11
+   },
+   {
+    "section": "안건",
+    "text": "전동화: 적극적 Inorganic 성장 전략 추진",
+    "kesg_code": null,
+    "page": 11
+   },
+   {
+    "section": "안건",
+    "text": "SW 중심 기업으로의 전략적 전환: 플랫폼 기반 개발 전략 수립 및 글로벌 표준 체계 구축을 통해 글로벌 수준의 SW 개발 역량 확보; SW 전환(Transformation) 기반 강화를 위한 생태계 조성 및 전략적 투자 확대; 글로벌 경쟁력 강화를 위한 해외 R&D의 현지화 및 전략적 제휴 추진",
+    "kesg_code": null,
+    "page": 12
+   },
+   {
+    "section": "안건",
+    "text": "차별화된 제품 개발 전략: Global Leading 기업 수준의 기술 및 제품 경쟁력 확보를 목표로 선행 연구 수행; 세계 최초 제품 개발을 통한 Captive 및 Non-captive 시장 확대로 선순환 사업 구조 구축",
+    "kesg_code": null,
+    "page": 12
+   },
+   {
+    "section": "안건",
+    "text": "장기 신성장 사업 발굴: 기존 자동차 부품 영역을 넘어 새로운 장기적 성장 동력 발굴 및 신사업 육성",
+    "kesg_code": null,
+    "page": 12
+   },
+   {
+    "section": "안건",
+    "text": "지속가능한 기술 개발: MECA(Mobility, Electrification, Connectivity, Autonomous) 시대로의 전환에 따라 자동차 산업의 패러다임이 급변하고 있는 가운데, 현대모비스는 새롭게 재편되고 있는 부품산업 생태계 속에서 현대모비스만의 차별화된 가치를 창출하고 이를 제공하기 위해 지속가능한 기술 개발에 최선을 다하고 있습니다.",
+    "kesg_code": null,
+    "page": 12
+   }
+  ]
+ }
+}

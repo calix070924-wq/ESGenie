@@ -1,0 +1,160 @@
+{
+ "schema": 2,
+ "meta": {
+  "key": "3b9a2671734ebaa7cbe872564f2f5c5384165f5726277b0a06b4eeab0a0c2ee6",
+  "created_at": "2026-07-26T11:13:32+00:00",
+  "model": "gpt-4.1-mini",
+  "doc_type": "ambiguous_fallback_vlm",
+  "source_file": "012330_mobis_2025.pdf",
+  "prompt_sha256": "910d98b903903a42bf1ea537d16996c031f6d5939dd94dd2ed028948f5825de4",
+  "input_chars": 4330
+ },
+ "response": {
+  "metrics": [
+   {
+    "metric_hint": "벌금 총액 국내(별도) 합계",
+    "value": 1000000,
+    "unit": "원",
+    "period": "미상",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "벌금 총액 해외 자회사 합계",
+    "value": 0,
+    "unit": "원",
+    "period": "미상",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "벌금 총액 국내 자회사 합계",
+    "value": 0,
+    "unit": "원",
+    "period": "미상",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "벌금 총액 국내(별도) 2022년",
+    "value": 800000,
+    "unit": "원",
+    "period": "2022",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "환경교육 이수 비율 국내(별도) 2022년",
+    "value": 70.0,
+    "unit": "%",
+    "period": "2022",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "환경교육 이수 비율 국내(별도) 2023년",
+    "value": 55.0,
+    "unit": "%",
+    "period": "2023",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "환경교육 이수 비율 국내(별도) 2024년",
+    "value": 45.1,
+    "unit": "%",
+    "period": "2024",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "교육 대상 인원 국내(별도) 2022년",
+    "value": 10798,
+    "unit": "명",
+    "period": "2022",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "교육 대상 인원 국내(별도) 2023년",
+    "value": 11726,
+    "unit": "명",
+    "period": "2023",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "교육 대상 인원 국내(별도) 2024년",
+    "value": 11388,
+    "unit": "명",
+    "period": "2024",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "교육 이수 인원 국내(별도) 2022년",
+    "value": 7561,
+    "unit": "명",
+    "period": "2022",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "교육 이수 인원 국내(별도) 2023년",
+    "value": 6448,
+    "unit": "명",
+    "period": "2023",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "교육 이수 인원 국내(별도) 2024년",
+    "value": 5138,
+    "unit": "명",
+    "period": "2024",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "탄소중립 목표 감축율 2030년",
+    "value": 30,
+    "unit": "%",
+    "period": "2030",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "탄소중립 목표 감축율 2040년",
+    "value": 80,
+    "unit": "%",
+    "period": "2040",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "탄소중립 목표 감축율 2045년",
+    "value": 100,
+    "unit": "%",
+    "period": "2045",
+    "kesg_code": null
+   }
+  ],
+  "clauses": [
+   {
+    "section": "환경 교육",
+    "text": "환경교육 이수 비율과 교육 대상 및 이수 인원은 2022년부터 2024년까지 국내(별도) 기준으로 각각 감소 추세를 보이고 있다.",
+    "kesg_code": null,
+    "page": 40
+   },
+   {
+    "section": "기후변화 관리 체계",
+    "text": "현대모비스는 ESG경영추진실을 중심으로 2021년 중장기 탄소중립 목표와 RE100 달성 계획을 수립하였으며, 탄소중립추진팀을 신설하여 사업부 및 각 사업장 환경 성과 관리 조직과 협업하여 탄소중립 이행 전략을 실천하고 있다. 기후변화 관련 현안은 CEO 주관 ESG추진점검회의에서 매년 논의되고, 중요 의사결정 사항은 CRO를 거쳐 CEO 및 지속가능경영위원회에 보고된다. 2024년에는 재생에너지 전환 목표 및 실적이 지속가능경영위원회에 보고되었다. 재생에너지 전환과 온실가스 감축 실적을 부문 및 BU별 KPI로 설정하고 성과 평가 및 보상 체계와 연계하고 있다.",
+    "kesg_code": null,
+    "page": 40
+   },
+   {
+    "section": "탄소중립 추진 전략",
+    "text": "현대모비스는 ‘Green Transformation to 2045 Net-Zero’ 비전을 기반으로 2040년까지 사업장 운영 전반의 탄소중립 달성, 2045년까지 공급망(Scope 3) 전반의 탄소중립 완료를 목표로 4대 추진 전략과 8대 실행 과제를 수립하였다. 온실가스 고정 배출량이 높은 제품군의 친환경 전환을 통해 제품 포트폴리오 측면에서도 지속가능한 감축을 실현하고 있으며, 2021년 지속가능경영위원회에 보고된 이후 대외 선언 및 매년 세부 이행 현황 보고를 통해 관리·감독 중이다. 2021년 10월 국내 자동차 업계 최초로 SBTi에 가입하여 1.5℃ 시나리오에 부합하는 탄소중립 목표를 설정하고 2025년 상반기 기준 감축 목표 검증을 진행 중이다.",
+    "kesg_code": null,
+    "page": 41
+   },
+   {
+    "section": "탄소중립 로드맵",
+    "text": "2019년 기준 국내·해외 사업장(Scope 1, 2) 중심으로 재생에너지 전환 가속화, Scope 3 감축 가속화를 위한 공급망 감축관리 및 탄소저감 제품 확대를 추진한다. 2030년까지 30% 감축, 2040년까지 80% 감축, 2045년까지 100% 감축을 목표로 하며, Green Plant, Green Supply, Green Product, Green Partnership 4대 전략을 통해 탄소중립을 달성한다.",
+    "kesg_code": null,
+    "page": 41
+   },
+   {
+    "section": "영향, 위험 및 기회 관리 정책",
+    "text": "기후변화 완화 및 적응 정책은 ‘환경경영 정책 - 2. 기본원칙의 나. 에너지, 라.온실가스’에 명시되어 있으며, 국내외 사업장과 협력사 및 이해관계자에게도 적용 권장된다. 현대모비스는 파리협약에 의거 1.5°C 이상 기온 상승 제한 목표 달성을 위해 2045년 탄소중립을 추진하며, UNGC, SBTi, TCFD Supporter 등 다양한 이니셔티브에 참여하여 대외 협력을 강화하고 있다. 무역협회 등과 협력하여 산업 내 감축을 위한 의견과 실행 의지를 표명하고, ‘Business Ambition for 1.5℃’ 및 ‘Race to Zero’ 캠페인에 동참하며 CDP를 통한 투명 공시도 강화하고 있다.",
+    "kesg_code": null,
+    "page": 42
+   }
+  ]
+ }
+}

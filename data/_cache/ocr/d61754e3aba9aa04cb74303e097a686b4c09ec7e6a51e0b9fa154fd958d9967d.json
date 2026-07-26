@@ -1,0 +1,463 @@
+{
+ "schema": 2,
+ "meta": {
+  "key": "d61754e3aba9aa04cb74303e097a686b4c09ec7e6a51e0b9fa154fd958d9967d",
+  "created_at": "2026-07-26T11:27:34+00:00",
+  "model": "gpt-4.1-mini",
+  "doc_type": "ambiguous_fallback_vlm",
+  "source_file": "012330_mobis_2025.pdf",
+  "prompt_sha256": "910d98b903903a42bf1ea537d16996c031f6d5939dd94dd2ed028948f5825de4",
+  "input_chars": 4332
+ },
+ "response": {
+  "metrics": [
+   {
+    "metric_hint": "30세 미만 이직 및 퇴직 비율 국내(별도)",
+    "value": 2.9,
+    "unit": "%",
+    "period": "2022~2024",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "30세 미만 이직 및 퇴직 비율 해외 자회사",
+    "value": 19.9,
+    "unit": "%",
+    "period": "2022~2024",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "30세 미만 이직 및 퇴직 비율 합계",
+    "value": 13.9,
+    "unit": "%",
+    "period": "2022~2024",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "30세 이상 ~ 50세 미만 이직 및 퇴직 비율 국내(별도)",
+    "value": 1.8,
+    "unit": "%",
+    "period": "2022~2024",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "30세 이상 ~ 50세 미만 이직 및 퇴직 비율 해외 자회사",
+    "value": 10.8,
+    "unit": "%",
+    "period": "2022~2024",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "30세 이상 ~ 50세 미만 이직 및 퇴직 비율 합계",
+    "value": 7.7,
+    "unit": "%",
+    "period": "2022~2024",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "50세 이상 이직 및 퇴직 비율 국내(별도)",
+    "value": 3.0,
+    "unit": "%",
+    "period": "2022~2024",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "50세 이상 이직 및 퇴직 비율 해외 자회사",
+    "value": 1.7,
+    "unit": "%",
+    "period": "2022~2024",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "50세 이상 이직 및 퇴직 비율 합계",
+    "value": 2.1,
+    "unit": "%",
+    "period": "2022~2024",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "자발적 이직 및 퇴직자 국내(별도)",
+    "value": 280,
+    "unit": "명",
+    "period": "2022~2024",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "자발적 이직 및 퇴직자 해외 자회사",
+    "value": 3605,
+    "unit": "명",
+    "period": "2022~2024",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "자발적 이직 및 퇴직자 합계",
+    "value": 3885,
+    "unit": "명",
+    "period": "2022~2024",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "자발적 이직률 국내(별도)",
+    "value": 2.4,
+    "unit": "%",
+    "period": "2022~2024",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "자발적 이직률 해외 자회사",
+    "value": 16.8,
+    "unit": "%",
+    "period": "2022~2024",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "자발적 이직률 합계",
+    "value": 11.7,
+    "unit": "%",
+    "period": "2022~2024",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "성별 남성 자발적 이직 및 퇴직자 국내(별도)",
+    "value": 212,
+    "unit": "명",
+    "period": "2022~2024",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "성별 남성 자발적 이직 및 퇴직자 해외 자회사",
+    "value": 2259,
+    "unit": "명",
+    "period": "2022~2024",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "성별 남성 자발적 이직 및 퇴직자 합계",
+    "value": 2471,
+    "unit": "명",
+    "period": "2022~2024",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "성별 여성 자발적 이직 및 퇴직자 국내(별도)",
+    "value": 68,
+    "unit": "명",
+    "period": "2022~2024",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "성별 여성 자발적 이직 및 퇴직자 해외 자회사",
+    "value": 1344,
+    "unit": "명",
+    "period": "2022~2024",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "성별 여성 자발적 이직 및 퇴직자 합계",
+    "value": 1412,
+    "unit": "명",
+    "period": "2022~2024",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "남성 이직 및 퇴직 비율 국내(별도)",
+    "value": 1.8,
+    "unit": "%",
+    "period": "2022~2024",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "남성 이직 및 퇴직 비율 해외 자회사",
+    "value": 10.5,
+    "unit": "%",
+    "period": "2022~2024",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "남성 이직 및 퇴직 비율 합계",
+    "value": 7.5,
+    "unit": "%",
+    "period": "2022~2024",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "여성 이직 및 퇴직 비율 국내(별도)",
+    "value": 0.6,
+    "unit": "%",
+    "period": "2022~2024",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "여성 이직 및 퇴직 비율 해외 자회사",
+    "value": 6.3,
+    "unit": "%",
+    "period": "2022~2024",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "여성 이직 및 퇴직 비율 합계",
+    "value": 4.3,
+    "unit": "%",
+    "period": "2022~2024",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "성별 미상 이직 및 퇴직 비율 해외 자회사",
+    "value": 0.01,
+    "unit": "%",
+    "period": "2022~2024",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "연령별 30세 미만 자발적 이직 및 퇴직자 국내(별도)",
+    "value": 159,
+    "unit": "명",
+    "period": "2022~2024",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "연령별 30세 미만 자발적 이직 및 퇴직자 해외 자회사",
+    "value": 1923,
+    "unit": "명",
+    "period": "2022~2024",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "연령별 30세 미만 자발적 이직 및 퇴직자 합계",
+    "value": 2082,
+    "unit": "명",
+    "period": "2022~2024",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "연령별 30세 이상 ~ 50세 미만 자발적 이직 및 퇴직자 국내(별도)",
+    "value": 109,
+    "unit": "명",
+    "period": "2022~2024",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "연령별 30세 이상 ~ 50세 미만 자발적 이직 및 퇴직자 해외 자회사",
+    "value": 1448,
+    "unit": "명",
+    "period": "2022~2024",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "연령별 30세 이상 ~ 50세 미만 자발적 이직 및 퇴직자 합계",
+    "value": 1557,
+    "unit": "명",
+    "period": "2022~2024",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "연령별 50세 이상 자발적 이직 및 퇴직자 국내(별도)",
+    "value": 12,
+    "unit": "명",
+    "period": "2022~2024",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "연령별 50세 이상 자발적 이직 및 퇴직자 해외 자회사",
+    "value": 234,
+    "unit": "명",
+    "period": "2022~2024",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "연령별 50세 이상 자발적 이직 및 퇴직자 합계",
+    "value": 246,
+    "unit": "명",
+    "period": "2022~2024",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "자격증 취득 실적 국내(별도)",
+    "value": 284,
+    "unit": "건",
+    "period": "2022",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "자격증 취득 실적 국내(별도)",
+    "value": 200,
+    "unit": "건",
+    "period": "2023",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "자격증 취득 실적 국내(별도)",
+    "value": 195,
+    "unit": "건",
+    "period": "2024",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "학습동아리 국내(별도)",
+    "value": 1218,
+    "unit": "명",
+    "period": "2022",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "학습동아리 국내(별도)",
+    "value": 1531,
+    "unit": "명",
+    "period": "2023",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "학습동아리 국내(별도)",
+    "value": 1912,
+    "unit": "명",
+    "period": "2024",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "멘토링 국내(별도)",
+    "value": 1043,
+    "unit": "명",
+    "period": "2022",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "멘토링 국내(별도)",
+    "value": 1317,
+    "unit": "명",
+    "period": "2023",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "멘토링 국내(별도)",
+    "value": 710,
+    "unit": "명",
+    "period": "2024",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "Knowledge(상시학습컨텐츠) 국내(별도)",
+    "value": 31184,
+    "unit": "명",
+    "period": "2022",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "Knowledge(상시학습컨텐츠) 국내(별도)",
+    "value": 59569,
+    "unit": "명",
+    "period": "2023",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "Knowledge(상시학습컨텐츠) 국내(별도)",
+    "value": 47897,
+    "unit": "명",
+    "period": "2024",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "SW 아카데미 국내(별도)",
+    "value": 2101,
+    "unit": "명",
+    "period": "2022",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "SW 아카데미 국내(별도)",
+    "value": 2521,
+    "unit": "명",
+    "period": "2023",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "SW 아카데미 국내(별도)",
+    "value": 2289,
+    "unit": "명",
+    "period": "2024",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "Mobility SW 학습 플랫폼 국내(별도)",
+    "value": 2490,
+    "unit": "명",
+    "period": "2022",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "Mobility SW 학습 플랫폼 국내(별도)",
+    "value": 1926,
+    "unit": "명",
+    "period": "2023",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "Mobility SW 학습 플랫폼 국내(별도)",
+    "value": 1272,
+    "unit": "명",
+    "period": "2024",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "퇴직 예정자 교육 대상 인원 국내(별도)",
+    "value": 321,
+    "unit": "명",
+    "period": "2022",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "퇴직 예정자 교육 대상 인원 국내(별도)",
+    "value": 312,
+    "unit": "명",
+    "period": "2023",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "퇴직 예정자 교육 대상 인원 국내(별도)",
+    "value": 324,
+    "unit": "명",
+    "period": "2024",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "퇴직 예정자 교육 실적 인원 국내(별도)",
+    "value": 248,
+    "unit": "명",
+    "period": "2022",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "퇴직 예정자 교육 실적 인원 국내(별도)",
+    "value": 246,
+    "unit": "명",
+    "period": "2023",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "퇴직 예정자 교육 실적 인원 국내(별도)",
+    "value": 240,
+    "unit": "명",
+    "period": "2024",
+    "kesg_code": null
+   }
+  ],
+  "clauses": [
+   {
+    "section": "이직률 정의",
+    "text": "1) 이직률=(이직자 수)/(전체 임직원 수)×100, 기간제 근로자(계약직, 연수생 등) 계약만료에 따른 퇴직 포함",
+    "kesg_code": null,
+    "page": 102
+   },
+   {
+    "section": "자발적 이직률 정의",
+    "text": "2) 자발적 이직률=(전체 이직자 수-(희망)퇴직-권고사직 등)/전체 임직원 수, 정년·사망·해고·그룹전출·계약만료 제외",
+    "kesg_code": null,
+    "page": 102
+   },
+   {
+    "section": "교육 및 역량 개발 - 교육 현황",
+    "text": "1) 국내(별도) 데이터 중복 인원 제거\n2) 2022년의 국내(별도) 데이터는 국내 자회사 데이터 포함 실적, 2023년부터 국내 자회사 분리 공시\n3) 2023년부터 산정 기준 변경(총 교육 시간/총 임직원 수)\n4) 일부 해외 자회사 성별 교육 실적 미구분으로 ‘성별 미상’에 데이터 포함\n5) 2022년, 2023년: (관리직) 관리/연구직, (비관리직) 계약직, 별정직, 현장직 등\n2024년부터 관리직 재정의: (관리직) 책임급 이상, (비관리직) 책임급 미만\n6) 2023년부터 산정 기준 변경(총 교육훈련비/총 임직원 수)\n1) 생애설계, 재무설계 등 퇴직 예정자 은퇴 준비 교육(정년퇴직 당해연도 및 전년도 대상자)",
+    "kesg_code": null,
+    "page": 102
+   }
+  ]
+ }
+}

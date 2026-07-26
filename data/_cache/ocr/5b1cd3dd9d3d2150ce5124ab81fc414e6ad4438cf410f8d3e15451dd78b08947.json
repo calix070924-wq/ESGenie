@@ -1,0 +1,837 @@
+{
+ "schema": 2,
+ "meta": {
+  "key": "5b1cd3dd9d3d2150ce5124ab81fc414e6ad4438cf410f8d3e15451dd78b08947",
+  "created_at": "2026-07-26T11:11:21+00:00",
+  "model": "gpt-4.1-mini",
+  "doc_type": "ambiguous_fallback_vlm",
+  "source_file": "012330_mobis_2025.pdf",
+  "prompt_sha256": "910d98b903903a42bf1ea537d16996c031f6d5939dd94dd2ed028948f5825de4",
+  "input_chars": 4295
+ },
+ "response": {
+  "metrics": [
+   {
+    "metric_hint": "주당 배당",
+    "value": 4000,
+    "unit": "원",
+    "period": "2022",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "주당 배당",
+    "value": 4500,
+    "unit": "원",
+    "period": "2023",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "주당 배당",
+    "value": 6000,
+    "unit": "원",
+    "period": "2024",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "배당금",
+    "value": 3671,
+    "unit": "억 원",
+    "period": "2022",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "배당금",
+    "value": 4073,
+    "unit": "억 원",
+    "period": "2023",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "배당금",
+    "value": 5395,
+    "unit": "억 원",
+    "period": "2024",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "배당금 합계",
+    "value": 13181,
+    "unit": "억 원",
+    "period": "2022-2024",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "배당성향",
+    "value": 23.2,
+    "unit": "%",
+    "period": "2022",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "배당성향",
+    "value": 20.3,
+    "unit": "%",
+    "period": "2023",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "배당성향",
+    "value": 20.1,
+    "unit": "%",
+    "period": "2024",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "배당성향 평균",
+    "value": 21.0,
+    "unit": "%",
+    "period": "2022-2024",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "자기주식 매입액",
+    "value": 3132,
+    "unit": "억 원",
+    "period": "2022",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "자기주식 매입액",
+    "value": 1465,
+    "unit": "억 원",
+    "period": "2023",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "자기주식 매입액",
+    "value": 1630,
+    "unit": "억 원",
+    "period": "2024",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "자기주식 매입액 합계",
+    "value": 6227,
+    "unit": "억 원",
+    "period": "2022-2024",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "자기주식 소각액",
+    "value": 625,
+    "unit": "억 원",
+    "period": "2022",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "자기주식 소각액",
+    "value": 1465,
+    "unit": "억 원",
+    "period": "2023",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "자기주식 소각액",
+    "value": 1630,
+    "unit": "억 원",
+    "period": "2024",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "자기주식 소각액 합계",
+    "value": 3720,
+    "unit": "억 원",
+    "period": "2022-2024",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "자산",
+    "value": 55406698,
+    "unit": "백만 원",
+    "period": "2022",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "자산",
+    "value": 58585845,
+    "unit": "백만 원",
+    "period": "2023",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "자산",
+    "value": 66596905,
+    "unit": "백만 원",
+    "period": "2024",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "부채",
+    "value": 17599066,
+    "unit": "백만 원",
+    "period": "2022",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "부채",
+    "value": 17930546,
+    "unit": "백만 원",
+    "period": "2023",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "부채",
+    "value": 20478673,
+    "unit": "백만 원",
+    "period": "2024",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "자본",
+    "value": 37807632,
+    "unit": "백만 원",
+    "period": "2022",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "자본",
+    "value": 40655299,
+    "unit": "백만 원",
+    "period": "2023",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "자본",
+    "value": 46118232,
+    "unit": "백만 원",
+    "period": "2024",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "매출액",
+    "value": 51906293,
+    "unit": "백만 원",
+    "period": "2022",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "매출액",
+    "value": 59254361,
+    "unit": "백만 원",
+    "period": "2023",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "매출액",
+    "value": 57236995,
+    "unit": "백만 원",
+    "period": "2024",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "전동화부품 매출 비율",
+    "value": 18.6,
+    "unit": "%",
+    "period": "2022",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "전동화부품 매출 비율",
+    "value": 20.7,
+    "unit": "%",
+    "period": "2023",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "전동화부품 매출 비율",
+    "value": 11.7,
+    "unit": "%",
+    "period": "2024",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "매출총이익",
+    "value": 5987154,
+    "unit": "백만 원",
+    "period": "2022",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "매출총이익",
+    "value": 6762174,
+    "unit": "백만 원",
+    "period": "2023",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "매출총이익",
+    "value": 8062628,
+    "unit": "백만 원",
+    "period": "2024",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "영업비용",
+    "value": 49879762,
+    "unit": "백만 원",
+    "period": "2022",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "영업비용",
+    "value": 56959077,
+    "unit": "백만 원",
+    "period": "2023",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "영업비용",
+    "value": 54163539,
+    "unit": "백만 원",
+    "period": "2024",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "영업이익",
+    "value": 2026531,
+    "unit": "백만 원",
+    "period": "2022",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "영업이익",
+    "value": 2295284,
+    "unit": "백만 원",
+    "period": "2023",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "영업이익",
+    "value": 3073456,
+    "unit": "백만 원",
+    "period": "2024",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "세전이익",
+    "value": 3362612,
+    "unit": "백만 원",
+    "period": "2022",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "세전이익",
+    "value": 4444854,
+    "unit": "백만 원",
+    "period": "2023",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "세전이익",
+    "value": 5264476,
+    "unit": "백만 원",
+    "period": "2024",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "당기순이익",
+    "value": 2487244,
+    "unit": "백만 원",
+    "period": "2022",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "당기순이익",
+    "value": 3423309,
+    "unit": "백만 원",
+    "period": "2023",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "당기순이익",
+    "value": 4060161,
+    "unit": "백만 원",
+    "period": "2024",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "법인세",
+    "value": 875368,
+    "unit": "백만 원",
+    "period": "2022",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "법인세",
+    "value": 1021545,
+    "unit": "백만 원",
+    "period": "2023",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "법인세",
+    "value": 1204315,
+    "unit": "백만 원",
+    "period": "2024",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "주주배당금",
+    "value": 367094,
+    "unit": "백만 원",
+    "period": "2022",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "주주배당금",
+    "value": 407320,
+    "unit": "백만 원",
+    "period": "2023",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "주주배당금",
+    "value": 539545,
+    "unit": "백만 원",
+    "period": "2024",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "이자비용",
+    "value": 75646,
+    "unit": "백만 원",
+    "period": "2022",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "이자비용",
+    "value": 150110,
+    "unit": "백만 원",
+    "period": "2023",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "이자비용",
+    "value": 129284,
+    "unit": "백만 원",
+    "period": "2024",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "감사위원회 사외이사 평균 참석률",
+    "value": 100,
+    "unit": "%",
+    "period": "2022",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "감사위원회 사외이사 평균 참석률",
+    "value": 100,
+    "unit": "%",
+    "period": "2023",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "감사위원회 사외이사 평균 참석률",
+    "value": 100,
+    "unit": "%",
+    "period": "2024",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "감사위원회 대상 전문기관의 감사 관련 교육 시간",
+    "value": 7.5,
+    "unit": "시간",
+    "period": "2022",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "감사위원회 대상 전문기관의 감사 관련 교육 시간",
+    "value": 7.5,
+    "unit": "시간",
+    "period": "2023",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "감사위원회 대상 전문기관의 감사 관련 교육 시간",
+    "value": 9.0,
+    "unit": "시간",
+    "period": "2024",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "감사용역보수",
+    "value": 2200,
+    "unit": "백만 원",
+    "period": "2022",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "감사용역보수",
+    "value": 2610,
+    "unit": "백만 원",
+    "period": "2023",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "감사용역보수",
+    "value": 2666,
+    "unit": "백만 원",
+    "period": "2024",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "비감사용역보수",
+    "value": 68,
+    "unit": "백만 원",
+    "period": "2022",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "비감사용역보수",
+    "value": 54,
+    "unit": "백만 원",
+    "period": "2023",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "비감사용역보수",
+    "value": 85,
+    "unit": "백만 원",
+    "period": "2024",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "감사용역보수 대비 비감사용역보수 비율",
+    "value": 3.1,
+    "unit": "%",
+    "period": "2022",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "감사용역보수 대비 비감사용역보수 비율",
+    "value": 2.1,
+    "unit": "%",
+    "period": "2023",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "감사용역보수 대비 비감사용역보수 비율",
+    "value": 3.2,
+    "unit": "%",
+    "period": "2024",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "최고연봉자 연간 보수 총액",
+    "value": 3625,
+    "unit": "백만 원",
+    "period": "2022",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "최고연봉자 연간 보수 총액",
+    "value": 4000,
+    "unit": "백만 원",
+    "period": "2023",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "최고연봉자 연간 보수 총액",
+    "value": 4431,
+    "unit": "백만 원",
+    "period": "2024",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "직원 보수 중앙값 대비 최고연봉자 보수 비율",
+    "value": 32.2,
+    "unit": "배",
+    "period": "2022",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "직원 보수 중앙값 대비 최고연봉자 보수 비율",
+    "value": 31.1,
+    "unit": "배",
+    "period": "2023",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "직원 보수 중앙값 대비 최고연봉자 보수 비율",
+    "value": 31.2,
+    "unit": "배",
+    "period": "2024",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "최고연봉자의 연간 보수 총액 증가율",
+    "value": 10.3,
+    "unit": "%",
+    "period": "2023",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "최고연봉자의 연간 보수 총액 증가율",
+    "value": 10.8,
+    "unit": "%",
+    "period": "2024",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "직원 보수 중앙값 증가율",
+    "value": 12.5,
+    "unit": "%",
+    "period": "2022",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "직원 보수 중앙값 증가율",
+    "value": 14.5,
+    "unit": "%",
+    "period": "2023",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "직원 보수 중앙값 증가율",
+    "value": 10.4,
+    "unit": "%",
+    "period": "2024",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "직원 보수 중앙값 증가율 대비 최고연봉자 보수 증가율 비율",
+    "value": 71.3,
+    "unit": "%",
+    "period": "2023",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "직원 보수 중앙값 증가율 대비 최고연봉자 보수 증가율 비율",
+    "value": 103.4,
+    "unit": "%",
+    "period": "2024",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "CEO 연간 보수 총액",
+    "value": 1471,
+    "unit": "백만 원",
+    "period": "2022",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "CEO 연간 보수 총액",
+    "value": 1624,
+    "unit": "백만 원",
+    "period": "2023",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "CEO 연간 보수 총액",
+    "value": 1797,
+    "unit": "백만 원",
+    "period": "2024",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "CEO 제외 직원 보수 평균값",
+    "value": 108,
+    "unit": "백만 원",
+    "period": "2022",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "CEO 제외 직원 보수 평균값",
+    "value": 123,
+    "unit": "백만 원",
+    "period": "2023",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "CEO 제외 직원 보수 평균값",
+    "value": 136,
+    "unit": "백만 원",
+    "period": "2024",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "직원 보수 평균값 대비 CEO 보수의 비율",
+    "value": 13.6,
+    "unit": "배",
+    "period": "2022",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "직원 보수 평균값 대비 CEO 보수의 비율",
+    "value": 13.2,
+    "unit": "배",
+    "period": "2023",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "직원 보수 평균값 대비 CEO 보수의 비율",
+    "value": 13.2,
+    "unit": "배",
+    "period": "2024",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "CEO 제외 직원 보수 중앙값",
+    "value": 112,
+    "unit": "백만 원",
+    "period": "2022",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "CEO 제외 직원 보수 중앙값",
+    "value": 129,
+    "unit": "백만 원",
+    "period": "2023",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "CEO 제외 직원 보수 중앙값",
+    "value": 142,
+    "unit": "백만 원",
+    "period": "2024",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "직원 보수 중앙값 대비 CEO 보수의 비율",
+    "value": 13.1,
+    "unit": "배",
+    "period": "2022",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "직원 보수 중앙값 대비 CEO 보수의 비율",
+    "value": 12.6,
+    "unit": "배",
+    "period": "2023",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "직원 보수 중앙값 대비 CEO 보수의 비율",
+    "value": 12.6,
+    "unit": "배",
+    "period": "2024",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "발행주식",
+    "value": 94289068,
+    "unit": "주",
+    "period": "2022",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "발행주식",
+    "value": 93659068,
+    "unit": "주",
+    "period": "2023",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "발행주식",
+    "value": 92999068,
+    "unit": "주",
+    "period": "2024",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "보통주",
+    "value": 92010164,
+    "unit": "주",
+    "period": "2022",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "보통주",
+    "value": 90668643,
+    "unit": "주",
+    "period": "2023",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "보통주",
+    "value": 90490640,
+    "unit": "주",
+    "period": "2024",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "우선주",
+    "value": 3974,
+    "unit": "주",
+    "period": "2022-2024",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "자기주식",
+    "value": 2274930,
+    "unit": "주",
+    "period": "2022",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "자기주식",
+    "value": 2986451,
+    "unit": "주",
+    "period": "2023",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "자기주식",
+    "value": 2504454,
+    "unit": "주",
+    "period": "2024",
+    "kesg_code": null
+   }
+  ],
+  "clauses": [
+   {
+    "section": "주주환원 정책",
+    "text": "현대모비스는 2025년 1월 24일 발표한 차기 주주환원 정책인 ‘2025년 주주가치 제고 정책’에 따라, TSR 30%+ 목표를 충실히 이행하고, 분기배당을 지속적으로 운영할 계획입니다.",
+    "kesg_code": null,
+    "page": 23
+   },
+   {
+    "section": "주주환원 정책 - 배당 정책",
+    "text": "2019년~2021년: 잉여현금(FCF)의 20%~40% 이내 배당, 3년간 총 FCF의 34% 배당 실시, 주당 3,500원 → 4,000원 상향, 총 배당금 1조 1,101억 원, 중간배당 시행(2019년 상반기~1,000원/주). 2022년~2024년: 배당성향 20%~30% 기준, 중간배당(1,000원/주), 주주환원 규모 확대 및 중장기 정책 시행, TSR 30%+(지분법 이익 포함), 중간배당 시행. 2025년~2027년: 중간배당 시행.",
+    "kesg_code": null,
+    "page": 23
+   },
+   {
+    "section": "주주환원 정책 - 자기주식 매입 및 소각",
+    "text": "2019년~2021년: 3년간 총 약 1조 원 규모 자기주식 매입. 2022년~2024년: 3년간 총 약 0.6조 원 규모 자기주식 매입, 2023년부터 대규모 투자로 매입규모 축소, 전략적 주주환원 운영 - 현금 배당과 자기주식 매입/소각 탄력적 운영. 자기주식 소각: 기 보유 자기주식 소각(4,600억 원 상당), 매입분 중 약 1,875억 원 소각(625억 원 상당/년), 3년간 기 보유 자기주식 전량 소각, 2023년부터 주주의견을 반영하여 매입분 전량 소각.",
+    "kesg_code": null,
+    "page": 23
+   },
+   {
+    "section": "감사위원회",
+    "text": "감사위원회 사외이사 평균 참석률은 2022년부터 2024년까지 100%이며, 감사위원회 대상 전문기관의 감사 관련 교육 시간은 2022년과 2023년 7.5시간, 2024년 9.0시간입니다.",
+    "kesg_code": null,
+    "page": 23
+   },
+   {
+    "section": "외부감사",
+    "text": "감사용역보수는 2022년 2,200백만 원, 2023년 2,610백만 원, 2024년 2,666백만 원이며, 비감사용역보수는 2022년 68백만 원, 2023년 54백만 원, 2024년 85백만 원입니다. 감사용역보수 대비 비감사용역보수 비율은 2022년 3.1%, 2023년 2.1%, 2024년 3.2%입니다.",
+    "kesg_code": null,
+    "page": 23
+   },
+   {
+    "section": "기업지배구조 - 직원 보수 및 CEO 보수",
+    "text": "최고연봉자 연간 보수 총액은 2022년 3,625백만 원, 2023년 4,000백만 원, 2024년 4,431백만 원입니다. 직원 보수 중앙값 대비 최고연봉자 보수의 비율은 2022년 32.2배, 2023년 31.1배, 2024년 31.2배입니다. 최고연봉자의 연간 보수 총액 증가율은 2023년 10.3%, 2024년 10.8%입니다. 직원 보수 중앙값 증가율은 2022년 12.5%, 2023년 14.5%, 2024년 10.4%이며, 직원 보수 중앙값 증가율 대비 최고연봉자 보수 증가율 비율은 2023년 71.3%, 2024년 103.4%입니다. CEO 연간 보수 총액은 2022년 1,471백만 원, 2023년 1,624백만 원, 2024년 1,797백만 원입니다. CEO 제외 직원 보수 평균값은 2022년 108백만 원, 2023년 123백만 원, 2024년 136백만 원이며, 직원 보수 평균값 대비 CEO 보수의 비율은 2022년 13.6배, 2023년 13.2배, 2024년 13.2배입니다. CEO 제외 직원 보수 중앙값은 2022년 112백만 원, 2023년 129백만 원, 2024년 142백만 원이며, 직원 보수 중앙값 대비 CEO 보수의 비율은 2022년 13.1배, 2023년 12.6배, 2024년 12.6배입니다.",
+    "kesg_code": null,
+    "page": 24
+   },
+   {
+    "section": "주주가치 제고 - 발행주식 및 자기주식",
+    "text": "발행주식 수는 2022년 94,289,068주, 2023년 93,659,068주, 2024년 92,999,068주입니다. 보통주는 2022년 92,010,164주, 2023년 90,668,643주, 2024년 90,490,640주이며, 우선주는 3,974주로 변동 없습니다. 자기주식 수는 2022년 2,274,930주, 2023년 2,986,451주, 2024년 2,504,454주입니다.",
+    "kesg_code": null,
+    "page": 24
+   }
+  ]
+ }
+}

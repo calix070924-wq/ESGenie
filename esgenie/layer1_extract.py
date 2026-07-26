@@ -97,6 +97,8 @@ def extract(
             "value":             entry.get("value"),
             "unit":              entry.get("unit"),
             "note":              entry.get("note"),
+            # 값 공급 경로 태그(dart_client.SOURCE_*). 없으면 "" — 강등 대상 아님.
+            "source_tier":       entry.get("source_tier", ""),
             "evidence_node_ids": node_ids,
             "beyond_profile":    not in_profile,
         }
