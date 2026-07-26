@@ -100,7 +100,8 @@ def capture(bench_path: Path = BENCH_PATH, cache_path: Path = CACHE_PATH) -> dic
         for n in _AXES:
             a = axes_obj[n]
             entry: dict[str, Any] = {"rule_score": a.score, "detail": a.detail,
-                                     "judgeable": n in triggered}
+                                     "judgeable": n in triggered,
+                                     "abstain": a.abstain, "abstain_reason": a.abstain_reason}
             if n in triggered and n in verdicts:
                 v = verdicts[n]
                 entry["verdict"] = v.get("verdict")
@@ -122,7 +123,12 @@ def capture(bench_path: Path = BENCH_PATH, cache_path: Path = CACHE_PATH) -> dic
 # ====================================================================
 
 def _simulate_vector(rec: dict[str, Any], *, trigger: float, rule_weight: float) -> RiskVector:
-    """한 케이스를 (trigger, rule_weight) 조합으로 재합성한 RiskVector."""
+    """한 케이스를 (trigger, rule_weight) 조합으로 재합성한 RiskVector.
+
+    abstain/abstain_reason은 trigger·rule_weight 스윕과 무관한 룰 단계의
+    속성이므로 블렌딩 여부와 상관없이 캐시값을 그대로 복원한다(캐시에 없으면
+    구버전 judge_cache.json과의 하위 호환을 위해 기본값 False/None).
+    """
     axes: dict[str, AxisScore] = {}
     for n in _AXES:
         a = rec["axes"][n]
@@ -136,7 +142,11 @@ def _simulate_vector(rec: dict[str, Any], *, trigger: float, rule_weight: float)
                 blended = round(rule_weight * rule + (1.0 - rule_weight) * llm_s, 4)
         else:
             blended = rule
-        axes[n] = AxisScore(score=blended, evidence=[], detail="")
+        axes[n] = AxisScore(
+            score=blended, evidence=[], detail="",
+            abstain=bool(a.get("abstain", False)),
+            abstain_reason=a.get("abstain_reason"),
+        )
     return _rebuild_vector(axes)
 
 

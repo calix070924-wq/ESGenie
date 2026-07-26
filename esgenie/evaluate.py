@@ -31,16 +31,74 @@ from .calibrate import CACHE_PATH, BASELINE, _simulate_vector, _flagged
 # ====================================================================
 
 def _case_rows(records: list[dict[str, Any]], cfg: dict[str, float]) -> list[dict[str, Any]]:
-    """각 케이스를 평가용 행으로: risk_score(=P예측), 정답, flagged 여부."""
+    """각 케이스를 평가용 행으로: risk_score(=P예측), 정답, flagged 여부.
+
+    abstained/abstain_reasons: 측정 전용 필드(하위 호환 — 기존 필드는 그대로).
+    케이스 단위 기권 판정 규칙: abstain=True인 축이 있고, 그 케이스가 flagged
+    되지 않았을 때만(=다른 축이 위험을 못 잡았을 때만) "기권"으로 센다.
+    abstain 축은 설계상 score=0.0로 고정돼 flagged 판정에 위험을 보태지
+    않으므로, `pred`(=_flagged 결과)가 이미 "다른 축이 위험을 잡았는지"를
+    그대로 반영한다 — 별도 재계산이 필요 없다.
+    """
     rows = []
     for rec in records:
         rv = _simulate_vector(rec, trigger=cfg["trigger"], rule_weight=cfg["rule_weight"])
         p = rv.risk_score
         pred = _flagged(rv, cfg["threshold"], cfg["axis_flag"])
         y = 1 if rec["label"] == "greenwash" else 0
+        abstained_axis_names = rv.abstained_axes()
+        axes_map = {
+            "D1_numeric": rv.D1_numeric, "D2_modifier": rv.D2_modifier,
+            "D3_semantic": rv.D3_semantic, "D5_timeseries": rv.D5_timeseries,
+        }
+        abstain_reasons = [
+            axes_map[name].abstain_reason for name in abstained_axis_names
+            if axes_map[name].abstain_reason
+        ]
+        abstained = bool(abstained_axis_names) and not pred
         rows.append({"id": rec["id"], "category": rec["category"],
-                     "p": p, "y": y, "pred": int(pred), "correct": int(int(pred) == y)})
+                     "p": p, "y": y, "pred": int(pred), "correct": int(int(pred) == y),
+                     "abstained": abstained, "abstain_reasons": abstain_reasons})
     return rows
+
+
+# ====================================================================
+# 3-b) abstain 기반 Coverage / Accuracy(assessed) / Overall
+# ====================================================================
+
+_ABSTAIN_REASONS = ("no_evidence", "unit_mismatch", "low_confidence")
+
+
+def abstain_coverage(rows: list[dict[str, Any]]) -> dict[str, Any]:
+    """기권(deferred) 케이스를 제외한 Coverage/Accuracy/Overall + 사유별 분해.
+
+    rows는 _case_rows()의 반환값(각 행에 'abstained'/'abstain_reasons' 포함)이어야
+    한다. ABSTAIN_ENABLED=0로 캡처된 records라면 abstained가 전부 False이므로
+    coverage=1.0, accuracy_on_assessed==전체 accuracy, overall==accuracy가 된다
+    (회귀 확인점).
+    """
+    n = len(rows)
+    assessed = [r for r in rows if not r.get("abstained")]
+    abstained_rows = [r for r in rows if r.get("abstained")]
+
+    coverage = len(assessed) / n if n else 0.0
+    accuracy_on_assessed = (
+        sum(r["correct"] for r in assessed) / len(assessed) if assessed else 0.0
+    )
+    overall = accuracy_on_assessed * coverage
+
+    by_reason: dict[str, int] = {r: 0 for r in _ABSTAIN_REASONS}
+    for r in abstained_rows:
+        for reason in r.get("abstain_reasons") or []:
+            by_reason[reason] = by_reason.get(reason, 0) + 1
+
+    return {
+        "n": n,
+        "coverage": round(coverage, 4),
+        "accuracy_on_assessed": round(accuracy_on_assessed, 4),
+        "overall": round(overall, 4),
+        "abstains": {"total": len(abstained_rows), "by_reason": by_reason},
+    }
 
 
 def _prf(rows: list[dict[str, Any]]) -> dict[str, float]:
@@ -184,6 +242,22 @@ def evaluate(cache_path: Path = CACHE_PATH, cfg: dict[str, float] | None = None)
         "> 해석: coverage를 낮출수록(=사람 위임↑) 자동판정 정확도가 오르면,",
         "> '자신 없을 때 넘기는' 설계가 작동하는 것. 목표 정확도에 맞는 위임 비율을 고른다.",
     ]
+
+    abstain_cov = abstain_coverage(rows)
+    lines += [
+        "",
+        "## 4. 기권(abstain) 기반 Coverage / Accuracy / Overall",
+        "",
+        f"- Coverage(판정 비율)          = {abstain_cov['coverage']*100:.1f}%",
+        f"- Accuracy(assessed, 기권 제외) = {abstain_cov['accuracy_on_assessed']:.3f}",
+        f"- Overall(Accuracy×Coverage)   = {abstain_cov['overall']:.3f}",
+        f"- 기권 수 = {abstain_cov['abstains']['total']}"
+        f" (no_evidence={abstain_cov['abstains']['by_reason'].get('no_evidence', 0)}, "
+        f"unit_mismatch={abstain_cov['abstains']['by_reason'].get('unit_mismatch', 0)}, "
+        f"low_confidence={abstain_cov['abstains']['by_reason'].get('low_confidence', 0)})",
+        "",
+        "> ABSTAIN_ENABLED=0으로 캡처된 캐시라면 Coverage=100%가 나와야 정상(회귀 확인점).",
+    ]
     report = "\n".join(lines)
 
     out_dir = Path(cache_path).parent
@@ -192,7 +266,7 @@ def evaluate(cache_path: Path = CACHE_PATH, cfg: dict[str, float] | None = None)
     print(report)
     print(f"\n저장: {md_path}")
     return {"prf": prf, "ci": {"f1": f1, "precision": pr, "recall": rc},
-            "calibration": cal, "risk_coverage": cov}
+            "calibration": cal, "risk_coverage": cov, "abstain_coverage": abstain_cov}
 
 
 def _cli() -> None:
