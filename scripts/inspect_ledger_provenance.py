@@ -92,6 +92,9 @@ def main() -> None:
     report = load_report(corp_code)
     extractions = _collect_ocr_extractions({pdf.name: str(pdf)})
 
+    from esgenie.ssot import ocr_cache as _ocr_cache
+    cache_hits, cache_misses, cache_mode = _ocr_cache.summarize(extractions)
+
     # 원장이 DART 정규식만으로 어떤 값을 갖고 있었는지 = 그래프 병합 이전 스냅샷.
     dart_only = {c: dict(e) for c, e in (report.kesg_data or {}).items()}
 
@@ -179,6 +182,15 @@ def main() -> None:
     print("\n" + "=" * 78)
     print(f"L1 원장 출처 점검 — {report.corp_name} ({corp_code}) · report_year={ref_year}")
     print(f"영역 {'·'.join(args.areas)} · 항목 {len(rows)}개 · 그래프 노드 {len(graph.nodes)}개")
+    # 캐시 히트를 감추지 않는다 — 이 실행이 라이브 추출인지 캐시 리플레이인지가
+    # 결과 해석을 완전히 바꾼다(miss면 노드/hint가 지난 실행과 다를 수 있다).
+    if cache_misses:
+        cache_note = "   ← 라이브 추출 포함 (다음 실행부터 재현)"
+    elif cache_hits:
+        cache_note = "   ← 전량 캐시 리플레이 (추출 고정)"
+    else:
+        cache_note = "   ← 캐시 경로 미사용 (mock/구조화 채널)"
+    print(f"OCR 캐시 : hit {cache_hits} / miss {cache_misses}  (mode={cache_mode})" + cache_note)
     print("=" * 78)
 
     for r in rows:
@@ -240,7 +252,11 @@ def main() -> None:
         out.parent.mkdir(parents=True, exist_ok=True)
         out.write_text(json.dumps(
             {"corp_code": corp_code, "corp_name": report.corp_name,
-             "report_year": ref_year, "rows": rows},
+             "report_year": ref_year,
+             # 이 스냅샷이 라이브 추출인지 캐시 리플레이인지 — ocr_diff.py로 두 파일을
+             # 비교할 때 '왜 달라졌는가'의 1차 판정 근거다.
+             "ocr_cache": {"mode": cache_mode, "hits": cache_hits, "misses": cache_misses},
+             "rows": rows},
             ensure_ascii=False, indent=2), encoding="utf-8")
         print(f"저장: {out}")
 
