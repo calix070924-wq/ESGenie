@@ -1486,6 +1486,8 @@ def extract_unstructured(file_path: str, *, doc_type: str) -> OcrExtraction:
 
     # 1) 디지털 PDF 텍스트
     raw_text = _extract_text_pymupdf(file_path, max_pages=_UNSTRUCTURED_MAX_PAGES)
+    raw_text_source = "pymupdf" if raw_text.strip() else None
+    upstage_error = None
 
     # 2) 스캔본 → Upstage Document Parse OCR로 텍스트화
     if not raw_text.strip():
@@ -1493,17 +1495,23 @@ def extract_unstructured(file_path: str, *, doc_type: str) -> OcrExtraction:
             try:
                 tokens = _call_upstage_dp(file_path, ocr_mode="force")
                 raw_text = "\n".join(t["text"] for t in tokens)
-            except Exception:
+                raw_text_source = "upstage"
+            except Exception as e:
+                upstage_error = str(e)
                 raw_text = ""
 
     if not raw_text.strip():
         return _mock_unstructured(file_path, doc_type)
 
-    return _extract_unstructured_text(file_path, doc_type=doc_type, raw_text=raw_text)
+    return _extract_unstructured_text(
+        file_path, doc_type=doc_type, raw_text=raw_text,
+        raw_text_source=raw_text_source, upstage_error=upstage_error,
+    )
 
 
 def _extract_unstructured_text(
-    file_path: str, *, doc_type: str, raw_text: str
+    file_path: str, *, doc_type: str, raw_text: str,
+    raw_text_source: str | None = None, upstage_error: str | None = None,
 ) -> OcrExtraction:
     """텍스트 비정형 문서 → LLM(gpt-4.1-mini via Azure)으로 정량·정성 추출.
 
@@ -1545,6 +1553,16 @@ def _extract_unstructured_text(
         doc_type=doc_type,
     )
 
+    meta: dict = {
+        "engine": "gpt-4.1-mini-text",
+        "vision": False,
+        "raw_text_source": raw_text_source or "unknown",
+        "raw_text_len": len(raw_text),
+        "chunks": len(chunks),
+    }
+    if upstage_error:
+        meta["upstage_error"] = upstage_error
+
     return OcrExtraction(
         source_file=Path(file_path).name,
         channel=DocChannel.UNSTRUCTURED,
@@ -1552,11 +1570,7 @@ def _extract_unstructured_text(
         metrics=metrics,
         clauses=clauses,
         raw_text=raw_text,
-        router_meta={
-            "engine": "gpt-4.1-mini-text",
-            "vision": False,
-            "chunks": len(chunks),
-        },
+        router_meta=meta,
     )
 
 
@@ -1708,6 +1722,7 @@ def _augment_unstructured_clauses(
 def _mock_unstructured(file_path: str, doc_type: str) -> OcrExtraction:
     """API 키 없을 때 데모용 Mock 반환."""
     source_file = Path(file_path).name
+    _mock_meta: dict = {"mock": True, "raw_text_source": "mock", "raw_text_len": 0}
 
     _MOCK_BY_TYPE: dict[str, OcrExtraction] = {
         "safety_minutes": OcrExtraction(
@@ -1731,7 +1746,7 @@ def _mock_unstructured(file_path: str, doc_type: str) -> OcrExtraction:
                 ),
             ],
             raw_text="[MOCK] 안전보건위원회 회의록 데모 데이터",
-            router_meta={"mock": True},
+            router_meta=_mock_meta,
         ),
         "policy_manual": OcrExtraction(
             source_file=source_file,
@@ -1760,7 +1775,7 @@ def _mock_unstructured(file_path: str, doc_type: str) -> OcrExtraction:
                 ),
             ],
             raw_text="[MOCK] 사내 규정집 데모 데이터",
-            router_meta={"mock": True},
+            router_meta=_mock_meta,
         ),
     }
 
@@ -1779,7 +1794,7 @@ def _mock_unstructured(file_path: str, doc_type: str) -> OcrExtraction:
                 )
             ],
             raw_text=f"[MOCK] {doc_type} 데모",
-            router_meta={"mock": True},
+            router_meta=_mock_meta,
         ),
     )
 
