@@ -1166,19 +1166,232 @@ def _pymupdf_line_tokens(file_path: str, max_pages: int = 5) -> list[dict[str, A
     return out
 
 
+# 같은 행(row)으로 묶을 span y좌표 근접 임계값(pt).
+# 실측(모비스 p.52·53 표): 표 데이터 행 높이 8.4~9.0pt, 행 간격 13~15pt.
+# 3pt면 같은 행 span(오차 <1pt)은 묶고 다음 행(간격 13pt+)과는 분리된다.
+# bake-off(scripts/table_extract_bakeoff.py)에서 이 값으로 8/9 검증됨.
+_ROW_Y_TOLERANCE_PT = 3.0
+
+
 def _extract_text_pymupdf(file_path: str, max_pages: int = 5) -> str:
-    """pymupdf로 PDF 임베딩 텍스트 추출. 없으면 빈 문자열."""
+    """pymupdf로 PDF 임베딩 텍스트 추출 — 좌표 기반 행 복원(표 구조 보존).
+
+    현행 page.get_text()는 표 셀을 각각 독립 line으로 취급해 세로로 평탄화한다
+    ("용수 재이용률 / % / 2.72 / 3.48 / 7.90"). 레이블-값 연결이 소실돼 하위
+    gpt-4.1-mini가 어느 숫자가 어느 지표인지 알 수 없다(L0 오염의 근본 원인).
+
+    대신 span(+bbox)을 모아 y좌표 근접 span을 같은 행으로 묶고 x순 정렬 후 ' | '로
+    조인해 표의 행 구조를 복원한다. 산문은 원래 한 line이 한 span으로 나오므로
+    영향이 거의 없다(실측 라인내 최대 gap <2pt).
+
+    예외 시 기존 page.get_text()로 폴백 — 회귀 안전장치.
+    """
     try:
         import fitz
         doc = fitz.open(file_path)
-        pages_text = []
+    except Exception:
+        return ""
+    try:
+        pages_text: list[str] = []
         for i, page in enumerate(doc):
             if i >= max_pages:
                 break
-            pages_text.append(page.get_text())
+            try:
+                pages_text.append(_reconstruct_rows_from_dict(page))
+            except Exception:
+                # 페이지 단위 폴백 — 한 페이지 파싱 실패가 전체를 버리지 않게.
+                pages_text.append(page.get_text())
         return "\n".join(pages_text)
     except Exception:
-        return ""
+        # 전체 폴백(구버전 pymupdf 등) — 최소한 평탄화 텍스트라도 반환.
+        try:
+            return "\n".join(
+                page.get_text() for i, page in enumerate(doc) if i < max_pages
+            )
+        except Exception:
+            return ""
+
+
+def _reconstruct_rows_from_dict(page: Any) -> str:
+    """page.get_text("dict")의 span을 y좌표로 행 재구성해 ' | ' 조인 텍스트로 반환.
+
+    구현:
+      1) 블록(block)별로 span을 모아 y좌표 근접(_ROW_Y_TOLERANCE_PT) span을 같은 행으로
+         묶는다. **블록 단위로 묶는 이유**: 2단 편집 레이아웃(회사 소개 등)에서 좌/우 단이
+         같은 y에 있어 전역으로 묶으면 좌우 문장이 ' | '로 뒤섞인다(실측 p.6). 블록은
+         보통 단을 분리하므로 블록 내부에서만 행을 재구성하면 산문 읽기 순서가 보존된다.
+         표는 대개 한 블록이라 표 행 복원 효과는 그대로다(bake-off 동일 점수 확인).
+      2) 폰트가 큰 문서에서 행이 뭉치지 않도록, 행 대표 높이가 임계값보다 작으면 동적으로
+         좁힌다(min(고정, 높이*0.5)) — 큰 제목 span이 아래 본문을 흡수하는 것 방지.
+      3) 행 내부 x중심 순 정렬 후 ' | '로 조인. 블록 순서대로 이어 붙인다(문서 순서 보존).
+    작업2(헤더 행 상속)·작업3(컬럼 헤더 매핑) 후처리를 전체 행 목록에 순서대로 적용한다.
+    """
+    d = page.get_text("dict")
+    rows: list[list[tuple[float, str]]] = []   # 행별 [(x중심, text), ...]  블록·y 순
+    for block in d.get("blocks", []):
+        spans: list[tuple[float, float, float, str]] = []  # (y0, x중심, height, text)
+        for line in block.get("lines", []):
+            for span in line.get("spans", []):
+                txt = str(span.get("text", "")).strip()
+                if not txt:
+                    continue
+                x0, y0, x1, y1 = span["bbox"]
+                # x중심 사용: 값이 우측정렬이라 x0(좌변)는 컬럼 헤더 매칭이 한 칸씩
+                # 밀린다(실측). 중심끼리 최근접이면 12/12 정확(작업3).
+                spans.append((round(y0, 1), round((x0 + x1) / 2, 1), round(y1 - y0, 1), txt))
+        if not spans:
+            continue
+        spans.sort()
+        cur_y: float | None = None
+        cur_tol: float = _ROW_Y_TOLERANCE_PT
+        for y, x, height, txt in spans:
+            tol = min(_ROW_Y_TOLERANCE_PT, height * 0.5) if height else _ROW_Y_TOLERANCE_PT
+            if cur_y is None or abs(y - cur_y) > cur_tol:
+                rows.append([])
+                cur_y = y
+                cur_tol = tol
+            rows[-1].append((x, txt))
+
+    if not rows:
+        return page.get_text()
+
+    for r in rows:
+        r.sort()
+
+    rows = _inherit_label_rows(rows)       # 작업2: 별도 레이블 행을 인접 값 행에 상속
+    rows = _attach_column_headers(rows)    # 작업3: 다중 컬럼 표에 헤더 라벨 부착
+    return "\n".join(" | ".join(t for _x, t in r) for r in rows)
+
+
+# 표 셀에서 숫자 값을 식별하는 정규식(천단위 콤마·소수·음수 허용). '~'(빈칸 표기)는 값 아님.
+_TABLE_NUM_RE = __import__("re").compile(r"^-?[\d,]+(?:\.\d+)?$")
+# 행 선두가 단위 셀인지 판정(레이블이 별도 행에 있는 표 감지용). 예: 'TJ | 1,918 | ...'
+_UNIT_LEAD_RE = __import__("re").compile(
+    r"^(TJ|GJ|MJ|MWh|kWh|GWh|kW|MW|t?CO2eq?|ton|t|kg|m3|㎥|ML|L|원|%|명|건|억\s*원|백만\s*원)$",
+    __import__("re").IGNORECASE,
+)
+# 각주 마커 셀('4)', '1)' 등) — 컬럼 헤더/값에서 제외.
+_FOOTNOTE_MARK_RE = __import__("re").compile(r"^\d+\)$")
+# 컬럼 헤더 행으로 인식할 라벨 키워드(연도는 4자리 숫자로 별도 판정).
+_COL_HEADER_KEYWORDS = ("합계", "전사", "국내", "해외", "자회사", "별도", "본사", "연결")
+# 레이블 상속이 건너뛸 수 있는 최대 행 수(과잉 상속 방지).
+_LABEL_INHERIT_MAX_SPAN = 2
+
+
+def _is_number_cell(text: str) -> bool:
+    return bool(_TABLE_NUM_RE.match(text.strip()))
+
+
+def _inherit_label_rows(rows: list[list[tuple[float, str]]]) -> list[list[tuple[float, str]]]:
+    """지표명이 별도 행에 있는 표에서, 레이블 행을 인접 값 행에 접두로 상속한다.
+
+    실측(모비스 p.52): 지표명 '에너지 사용량'이 값 행들(TJ|…|9,075 / MWh|…) *사이*에
+    단독 셀로 놓인다(rowspan 중앙배치). 값 행은 단위(TJ·MWh 등)로 시작하고 지표명이
+    없어, 행 복원만으로는 어느 지표의 값인지 알 수 없다(PRESENT).
+
+    규칙:
+      · '레이블 행' = 셀 1개, 숫자 없음, 단위도 아님(예: '에너지 사용량').
+      · '단위 선두 값 행' = 첫 셀이 단위이고 숫자 셀을 포함(예: 'TJ | 1,918 | …').
+      · 레이블 행을 기준으로 위·아래 _LABEL_INHERIT_MAX_SPAN 행 내의 '단위 선두 값 행'에
+        `[레이블]`을 접두 상속. (rowspan 레이블이 값 행들 사이에 오는 구조 대응)
+    과잉 상속 방지:
+      · 상속 대상은 '단위 선두 값 행'으로 한정(일반 텍스트·다른 레이블 행 제외).
+      · 새 레이블 행을 만나면 그 행이 기준이 되어 자연히 갱신된다(각 레이블은 자기 주변만).
+    부작용 억제: 이미 지표명이 붙은 값 행(첫 셀이 단위가 아닌 행)은 건드리지 않는다.
+    """
+    def is_label_row(cells: list[str]) -> bool:
+        if len(cells) != 1:
+            return False
+        c = cells[0].strip()
+        if not c or _is_number_cell(c) or _UNIT_LEAD_RE.match(c) or _FOOTNOTE_MARK_RE.match(c):
+            return False
+        return True
+
+    def is_unit_led_value_row(cells: list[str]) -> bool:
+        if len(cells) < 2:
+            return False
+        if not _UNIT_LEAD_RE.match(cells[0].strip()):
+            return False
+        return any(_is_number_cell(c) for c in cells[1:])
+
+    texts = [[t for _x, t in r] for r in rows]
+    prefixes: list[str | None] = [None] * len(rows)
+    for i, cells in enumerate(texts):
+        if not is_label_row(cells):
+            continue
+        label = cells[0].strip()
+        # 위·아래로 근접한 '단위 선두 값 행'에 상속(레이블 행 자체는 원본 유지).
+        for j in range(max(0, i - _LABEL_INHERIT_MAX_SPAN), min(len(rows), i + _LABEL_INHERIT_MAX_SPAN + 1)):
+            if j == i:
+                continue
+            if is_unit_led_value_row(texts[j]) and prefixes[j] is None:
+                prefixes[j] = label
+
+    out: list[list[tuple[float, str]]] = []
+    for i, r in enumerate(rows):
+        if prefixes[i] is not None and r:
+            # 레이블을 첫 셀 x좌표 바로 앞(-1)에 삽입 — 정렬·컬럼 매핑에 영향 없게.
+            out.append([(r[0][0] - 1.0, f"[{prefixes[i]}]")] + r)
+        else:
+            out.append(r)
+    return out
+
+
+def _attach_column_headers(rows: list[list[tuple[float, str]]]) -> list[list[tuple[float, str]]]:
+    """다중 컬럼 표에서 각 값에 컬럼 헤더 라벨을 부착한다(전사/합계 식별).
+
+    실측(모비스 p.53): '재생에너지 사용·전환율 | 1) | % | 0.2 | … | 12.9'는 법인별 12컬럼.
+    행은 복원되나 12개 중 어느 것이 전사(합계)인지 알 수 없어 35.0/12.9 오염이 났다.
+    헤더 행('… 합계 | 국내(별도) | …')의 각 셀 x중심과 값의 x중심을 최근접 매칭해
+    값 뒤에 `(합계)` 등 컬럼 라벨을 붙인다 → mini가 전사 값을 식별할 수 있다.
+
+    실측 검증: 값이 우측정렬이라 헤더보다 ~15pt 우측이나, 컬럼 피치(~46pt)가 훨씬 커
+    최근접 중심 매칭이 12/12 정확(12.9→합계).
+
+    안전장치(틀린 라벨 부착 방지):
+      · 헤더 행을 못 찾으면 그 표 구간은 원본 유지(부착 생략).
+      · 헤더가 값보다 위 행에 있어야 하고, 값 셀 수가 헤더 컬럼 수를 넘으면 부착 생략.
+      · 매칭 거리가 컬럼 간격의 절반을 넘으면 그 값은 부착 생략(경계 밖).
+    """
+    import re
+
+    def is_header_row(cells: list[str]) -> bool:
+        kw = sum(1 for c in cells if any(k in c for k in _COL_HEADER_KEYWORDS))
+        yr = sum(1 for c in cells if re.fullmatch(r"20\d{2}", c.strip()))
+        return (kw + yr) >= 2  # 컬럼 라벨/연도가 2개 이상이면 헤더 행
+
+    # 헤더 컬럼: (x중심, 라벨). 각주 마커·빈 셀 제외.
+    def header_cols(row: list[tuple[float, str]]) -> list[tuple[float, str]]:
+        cols = [(x, t.strip()) for x, t in row
+                if t.strip() and not _FOOTNOTE_MARK_RE.match(t.strip())
+                and any(k in t for k in _COL_HEADER_KEYWORDS)]
+        return cols
+
+    out = [list(r) for r in rows]
+    cur_cols: list[tuple[float, str]] = []
+    col_pitch = 0.0
+    for i, r in enumerate(rows):
+        cells = [t for _x, t in r]
+        if is_header_row(cells):
+            cur_cols = header_cols(r)
+            if len(cur_cols) >= 2:
+                diffs = [cur_cols[k + 1][0] - cur_cols[k][0] for k in range(len(cur_cols) - 1)]
+                col_pitch = min(d for d in diffs if d > 0) if any(d > 0 for d in diffs) else 0.0
+            continue
+        if not cur_cols or col_pitch <= 0:
+            continue
+        # 값 셀만 골라 최근접 헤더 컬럼 라벨 부착
+        val_idxs = [k for k, (_x, t) in enumerate(r) if _is_number_cell(t.strip())]
+        if len(val_idxs) > len(cur_cols):
+            continue  # 값이 헤더 컬럼 수보다 많음 → 정렬 신뢰 불가, 부착 생략
+        new_row = list(r)
+        for k in val_idxs:
+            vx, vt = r[k]
+            best = min(cur_cols, key=lambda h: abs(h[0] - vx))
+            if abs(best[0] - vx) <= col_pitch * 0.5:
+                new_row[k] = (vx, f"{vt}({best[1]})")
+        out[i] = new_row
+    return out
 
 
 def _mock_structured(file_path: str, doc_type: str) -> OcrExtraction:
@@ -1234,6 +1447,30 @@ def _mock_structured(file_path: str, doc_type: str) -> OcrExtraction:
 # 채널 B — 비정형: VLM 우선   (STUB)
 # ====================================================================
 
+# 비정형 텍스트 처리 상한 — 지속가능경영보고서(100p+) 전량 처리를 위해 상향.
+# 기존 max_pages=10 + 프롬프트 4,000자 컷으로는 대형 보고서의 내용 대부분이 유실됐다
+# (2026-07-15 실보고서 배치 검증에서 발견 — 삼성전기 130p 중 앞 10p만 처리).
+_UNSTRUCTURED_MAX_PAGES = 300
+# 청크당 글자 수 — 기존 단일 호출의 프롬프트 예산(4,000자)을 그대로 청크 단위로 유지.
+_UNSTRUCTURED_CHUNK_CHARS = 4000
+
+
+def _split_text_chunks(text: str, chunk_chars: int) -> list[str]:
+    """줄 경계를 지키며 chunk_chars 이하 청크로 분할한다."""
+    chunks: list[str] = []
+    buf: list[str] = []
+    size = 0
+    for line in text.splitlines():
+        if size + len(line) + 1 > chunk_chars and buf:
+            chunks.append("\n".join(buf))
+            buf, size = [], 0
+        buf.append(line)
+        size += len(line) + 1
+    if buf:
+        chunks.append("\n".join(buf))
+    return chunks or [text]
+
+
 def extract_unstructured(file_path: str, *, doc_type: str) -> OcrExtraction:
     """비정형 문서 채널 — 텍스트 추출 후 LLM(gpt-4.1-mini)로 정량·정성 동시 추출.
 
@@ -1248,7 +1485,7 @@ def extract_unstructured(file_path: str, *, doc_type: str) -> OcrExtraction:
         return _mock_unstructured(file_path, doc_type)
 
     # 1) 디지털 PDF 텍스트
-    raw_text = _extract_text_pymupdf(file_path, max_pages=10)
+    raw_text = _extract_text_pymupdf(file_path, max_pages=_UNSTRUCTURED_MAX_PAGES)
     raw_text_source = "pymupdf" if raw_text.strip() else None
     upstage_error = None
 
@@ -1276,22 +1513,40 @@ def _extract_unstructured_text(
     file_path: str, *, doc_type: str, raw_text: str,
     raw_text_source: str | None = None, upstage_error: str | None = None,
 ) -> OcrExtraction:
-    """텍스트 비정형 문서 → LLM(gpt-4.1-mini via Azure)으로 정량·정성 추출."""
+    """텍스트 비정형 문서 → LLM(gpt-4.1-mini via Azure)으로 정량·정성 추출.
+
+    대형 문서(지속가능경영보고서 등)는 청크로 나눠 전량 순회한다.
+    4,000자 이하 문서는 기존과 동일하게 단일 호출.
+    """
     import json as _json, re
     from ..llm import LLMClient
     from .prompts import VLM_EXTRACT_SYSTEM, VLM_EXTRACT_PROMPT
 
-    prompt = VLM_EXTRACT_PROMPT.format(doc_type=doc_type) + f"\n\n문서 텍스트:\n{raw_text[:4000]}"
-    resp = LLMClient().complete(
-        system=VLM_EXTRACT_SYSTEM,
-        user=prompt,
-        json_mode=True,
-        temperature=0.0,
-        mock_hint="ocr_unstructured",
-    )
-    m = re.search(r'\{.*\}', resp.content, re.DOTALL)
-    data = _json.loads(m.group() if m else "{}")
-    metrics, clauses = _map_vlm_json(data)
+    chunks = _split_text_chunks(raw_text, _UNSTRUCTURED_CHUNK_CHARS)
+    client = LLMClient()
+    metrics: list = []
+    clauses: list[ExtractedClause] = []
+    for chunk in chunks:
+        prompt = VLM_EXTRACT_PROMPT.format(doc_type=doc_type) + f"\n\n문서 텍스트:\n{chunk}"
+        resp = client.complete(
+            system=VLM_EXTRACT_SYSTEM,
+            user=prompt,
+            json_mode=True,
+            temperature=0.0,
+            mock_hint="ocr_unstructured",
+        )
+        m = re.search(r'\{.*\}', resp.content, re.DOTALL)
+        try:
+            data = _json.loads(m.group() if m else "{}")
+        except _json.JSONDecodeError:
+            # 청크 하나의 JSON이 깨져도 문서 전체를 버리지 않는다
+            logger.warning("비정형 청크 JSON 파싱 실패 — 건너뜀 [%s]", Path(file_path).name)
+            continue
+        chunk_metrics, chunk_clauses = _map_vlm_json(data)
+        metrics.extend(chunk_metrics)
+        clauses.extend(chunk_clauses)
+
+    # 존재형 조항 보강은 원래대로 전체 텍스트 기준 1회 — 청크별 수행 시 중복 발생
     clauses = _augment_unstructured_clauses(
         clauses,
         raw_text=raw_text,
@@ -1303,6 +1558,7 @@ def _extract_unstructured_text(
         "vision": False,
         "raw_text_source": raw_text_source or "unknown",
         "raw_text_len": len(raw_text),
+        "chunks": len(chunks),
     }
     if upstage_error:
         meta["upstage_error"] = upstage_error
@@ -1365,6 +1621,25 @@ def _render_pages_b64(file_path: str, max_pages: int = 10) -> list[str]:
         return []
 
 
+# G6. 각주 마커 정규식 — 지표명 말미의 'N)' (예: '재해율 4)', '도수율6)').
+_FOOTNOTE_MARK_TAIL_RE = re.compile(r"(\d+)\s*\)\s*$")
+
+
+def _is_footnote_marker_value(metric_hint: str, value: float) -> bool:
+    """지표명이 각주 마커 'N)'로 끝나고 값이 그 마커 숫자와 같으면 True(오파싱).
+
+    표에서 '재해율 4)' 같은 각주 마커의 번호(4)를 지표 값(4.0)으로 잘못 읽는 사례를
+    배제한다(삼성전기 재해율 4.0 오염 — 실제 0.033%). 마커 번호와 값이 다르면(정상값이
+    우연히 각주 붙은 항목) 건드리지 않는다 — 오검출보다 미검출 리스크를 최소화."""
+    m = _FOOTNOTE_MARK_TAIL_RE.search(metric_hint or "")
+    if not m:
+        return False
+    try:
+        return float(m.group(1)) == float(value)
+    except (TypeError, ValueError):
+        return False
+
+
 def _map_vlm_json(data: dict[str, Any], *, page_no: int = 1) -> tuple[list[ExtractedMetric], list[ExtractedClause]]:
     """VLM 응답 JSON → ExtractedMetric[] + ExtractedClause[]."""
     metrics: list[ExtractedMetric] = []
@@ -1372,9 +1647,13 @@ def _map_vlm_json(data: dict[str, Any], *, page_no: int = 1) -> tuple[list[Extra
 
     for m in data.get("metrics", []):
         try:
+            hint = str(m.get("metric_hint", ""))
+            value = float(m.get("value", 0))
+            if _is_footnote_marker_value(hint, value):
+                continue  # G6: 각주 마커('재해율 4)')를 값(4.0)으로 오파싱한 노드 배제
             metrics.append(ExtractedMetric(
-                metric_hint=str(m.get("metric_hint", "")),
-                value=float(m.get("value", 0)),
+                metric_hint=hint,
+                value=value,
                 unit=str(m.get("unit", "")),
                 period=str(m.get("period", "")),
                 kesg_code_guess=m.get("kesg_code") or None,

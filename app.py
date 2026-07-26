@@ -622,7 +622,11 @@ if (
     and bool((st.session_state.last_run_inputs or {}).get("use_dart"))
     and getattr(getattr(result, "report", None), "source", "") != "dart_api"
 ):
-    st.warning("⚠️ DART 실시간 조회에 실패해 대체 데이터로 분석되었습니다. 네트워크·DART_API_KEY를 확인하세요.")
+    _fallback_msg = "⚠️ DART 실시간 조회에 실패해 대체 데이터로 분석되었습니다. 네트워크·DART_API_KEY를 확인하세요."
+    _fetch_error = getattr(getattr(result, "report", None), "fetch_error", None)
+    if _fetch_error:
+        _fallback_msg += f" (원인: {_fetch_error})"
+    st.warning(_fallback_msg)
 
 if run_btn:
     render_pipeline_loading("L0~L5 파이프라인 실행 중 — 서류 읽기 → 데이터 통합 → 보고서 생성 → 그린워싱 검증 → 규정 점검 → 제출 서류 생성")

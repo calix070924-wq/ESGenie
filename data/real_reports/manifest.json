@@ -1,0 +1,37 @@
+[
+  {
+    "ticker": "009150",
+    "name": "삼성전기",
+    "sector": "전자부품",
+    "pdf": "data/real_reports/009150_samsungsem_2025.pdf",
+    "corp_code": "00126371"
+  },
+  {
+    "ticker": "012330",
+    "name": "현대모비스",
+    "sector": "자동차부품",
+    "pdf": "data/real_reports/012330_mobis_2025.pdf",
+    "corp_code": "00164788"
+  },
+  {
+    "ticker": "051910",
+    "name": "LG화학",
+    "sector": "화학",
+    "pdf": "data/real_reports/051910_lgchem_2025.pdf",
+    "corp_code": "00356361"
+  },
+  {
+    "ticker": "055550",
+    "name": "신한지주",
+    "sector": "금융",
+    "pdf": "data/real_reports/055550_shinhan_2025.pdf",
+    "corp_code": "00382199"
+  },
+  {
+    "ticker": "035420",
+    "name": "NAVER",
+    "sector": "IT",
+    "pdf": "data/real_reports/035420_naver_2025.pdf",
+    "corp_code": "00266961"
+  }
+]

@@ -9,11 +9,21 @@ Mock 응답은 실제 파이프라인(추출 → 생성 → 탐지 → 검증)�
 from __future__ import annotations
 
 import json
+import logging
+import random
 import re
+import time
 from dataclasses import dataclass
 from typing import Any
 
 from .config import SETTINGS
+
+logger = logging.getLogger(__name__)
+
+# 앱 레벨 재시도 설정. SDK 클라이언트는 max_retries=0으로 생성해 이중 재시도를 막고,
+# 이 상수들이 유일한 재시도/백오프 소스가 되도록 한다.
+LLM_MAX_ATTEMPTS = 3
+LLM_BACKOFF_BASE = 1.0
 
 
 class LLMUnavailableError(RuntimeError):
@@ -22,6 +32,19 @@ class LLMUnavailableError(RuntimeError):
     평가/운영 모드(ESGENIE_STRICT=1)에서는 조용한 mock fallback을 금지하고
     이 예외로 실패를 명시적으로 노출한다.
     """
+
+
+def _is_retryable(exc: Exception) -> bool:
+    """일시적 오류(429/5xx/타임아웃/커넥션) 여부.
+
+    특정 SDK의 예외 클래스를 직접 import하지 않는다 — SDK 미설치 환경에서도
+    안전하게 동작해야 하므로 status_code 속성과 예외 클래스명만으로 판별한다.
+    """
+    status = getattr(exc, "status_code", None) or getattr(exc, "status", None)
+    if isinstance(status, int) and (status == 429 or 500 <= status <= 599):
+        return True
+    name = type(exc).__name__
+    return any(kw in name for kw in ("Timeout", "Connection", "RateLimit", "InternalServer"))
 
 
 @dataclass
@@ -46,22 +69,24 @@ class LLMClient:
                             self._openai_client = OpenAI(
                                 api_key=SETTINGS.openai_api_key,
                                 base_url=f"{ep}/models/",
+                                max_retries=0,
                             )
                         else:
                             self._openai_client = AzureOpenAI(
                                 api_key=SETTINGS.openai_api_key,
                                 api_version=SETTINGS.azure_api_version,
                                 azure_endpoint=SETTINGS.azure_openai_endpoint,
+                                max_retries=0,
                             )
                     else:
                         from openai import OpenAI  # type: ignore
-                        self._openai_client = OpenAI(api_key=SETTINGS.openai_api_key)
+                        self._openai_client = OpenAI(api_key=SETTINGS.openai_api_key, max_retries=0)
                 except Exception:
                     self._openai_client = None
             if self._openai_client is None and SETTINGS.anthropic_api_key:
                 try:
                     import anthropic  # type: ignore
-                    self._anthropic_client = anthropic.Anthropic(api_key=SETTINGS.anthropic_api_key)
+                    self._anthropic_client = anthropic.Anthropic(api_key=SETTINGS.anthropic_api_key, max_retries=0)
                 except Exception:
                     self._anthropic_client = None
 
@@ -83,59 +108,87 @@ class LLMClient:
             "greenwash"   — 시연용 과장 초안 (Layer 3/4 시연에 사용)
         """
         if self._openai_client is not None:
-            try:
-                if SETTINGS.pii_mask:
-                    from .pii import mask_pii as _mask_pii
-                    _sys, _usr = _mask_pii(system), _mask_pii(user)
-                else:
-                    _sys, _usr = system, user
-                kwargs: dict[str, Any] = {
-                    "model": SETTINGS.openai_model,
-                    "temperature": temperature,
-                    "messages": [
-                        {"role": "system", "content": _sys},
-                        {"role": "user", "content": _usr},
-                    ],
-                }
-                if json_mode:
-                    kwargs["response_format"] = {"type": "json_object"}
-                resp = self._openai_client.chat.completions.create(**kwargs)
-                text = resp.choices[0].message.content or ""
-                return LLMResponse(content=text, used_mock=False,
-                                   meta={"model": SETTINGS.openai_model, "provider": "openai"})
-            except Exception as exc:
-                if SETTINGS.strict_llm:
-                    raise LLMUnavailableError(f"OpenAI 호출 실패 (strict): {exc}") from exc
-                return self._mock_complete(system, user, mock_hint, json_mode,
-                                           variant=mock_variant, error=str(exc))
+            if SETTINGS.pii_mask:
+                from .pii import mask_pii as _mask_pii
+                _sys, _usr = _mask_pii(system), _mask_pii(user)
+            else:
+                _sys, _usr = system, user
+            kwargs: dict[str, Any] = {
+                "model": SETTINGS.openai_model,
+                "temperature": temperature,
+                "messages": [
+                    {"role": "system", "content": _sys},
+                    {"role": "user", "content": _usr},
+                ],
+            }
+            if json_mode:
+                kwargs["response_format"] = {"type": "json_object"}
+            exc: Exception | None = None
+            attempt = 0
+            for attempt in range(1, LLM_MAX_ATTEMPTS + 1):
+                try:
+                    resp = self._openai_client.chat.completions.create(**kwargs)
+                    text = resp.choices[0].message.content or ""
+                    return LLMResponse(content=text, used_mock=False,
+                                       meta={"model": SETTINGS.openai_model, "provider": "openai"})
+                except Exception as call_exc:
+                    exc = call_exc
+                    if attempt < LLM_MAX_ATTEMPTS and _is_retryable(exc):
+                        delay = LLM_BACKOFF_BASE * (2 ** (attempt - 1)) + random.uniform(0, 0.1)
+                        logger.warning(
+                            "OpenAI 호출 일시 오류, 재시도 %d/%d: %s", attempt, LLM_MAX_ATTEMPTS, exc,
+                        )
+                        time.sleep(delay)
+                        continue
+                    break
+            if SETTINGS.strict_llm:
+                logger.warning("OpenAI 호출 실패 (strict, attempts=%d): %s", attempt, exc)
+                raise LLMUnavailableError(f"OpenAI 호출 실패 (strict): {exc}") from exc
+            logger.warning("OpenAI 호출 실패 → mock 폴백 (attempts=%d): %s", attempt, exc)
+            return self._mock_complete(system, user, mock_hint, json_mode,
+                                       variant=mock_variant, error=str(exc))
 
         if self._anthropic_client is not None:
-            try:
-                if SETTINGS.pii_mask:
-                    from .pii import mask_pii as _mask_pii
-                    _sys, _usr = _mask_pii(system), _mask_pii(user)
-                else:
-                    _sys, _usr = system, user
-                sys_prompt = _sys
-                if json_mode:
-                    sys_prompt += "\n\n응답은 반드시 유효한 JSON 객체 하나로만 출력하라. 코드블록·설명 금지."
-                resp = self._anthropic_client.messages.create(
-                    model=SETTINGS.anthropic_model,
-                    max_tokens=2048,
-                    temperature=temperature,
-                    system=sys_prompt,
-                    messages=[{"role": "user", "content": _usr}],
-                )
-                text = "".join(
-                    block.text for block in resp.content if getattr(block, "type", "") == "text"
-                )
-                return LLMResponse(content=text, used_mock=False,
-                                   meta={"model": SETTINGS.anthropic_model, "provider": "anthropic"})
-            except Exception as exc:
-                if SETTINGS.strict_llm:
-                    raise LLMUnavailableError(f"Anthropic 호출 실패 (strict): {exc}") from exc
-                return self._mock_complete(system, user, mock_hint, json_mode,
-                                           variant=mock_variant, error=str(exc))
+            if SETTINGS.pii_mask:
+                from .pii import mask_pii as _mask_pii
+                _sys, _usr = _mask_pii(system), _mask_pii(user)
+            else:
+                _sys, _usr = system, user
+            sys_prompt = _sys
+            if json_mode:
+                sys_prompt += "\n\n응답은 반드시 유효한 JSON 객체 하나로만 출력하라. 코드블록·설명 금지."
+            exc: Exception | None = None
+            attempt = 0
+            for attempt in range(1, LLM_MAX_ATTEMPTS + 1):
+                try:
+                    resp = self._anthropic_client.messages.create(
+                        model=SETTINGS.anthropic_model,
+                        max_tokens=2048,
+                        temperature=temperature,
+                        system=sys_prompt,
+                        messages=[{"role": "user", "content": _usr}],
+                    )
+                    text = "".join(
+                        block.text for block in resp.content if getattr(block, "type", "") == "text"
+                    )
+                    return LLMResponse(content=text, used_mock=False,
+                                       meta={"model": SETTINGS.anthropic_model, "provider": "anthropic"})
+                except Exception as call_exc:
+                    exc = call_exc
+                    if attempt < LLM_MAX_ATTEMPTS and _is_retryable(exc):
+                        delay = LLM_BACKOFF_BASE * (2 ** (attempt - 1)) + random.uniform(0, 0.1)
+                        logger.warning(
+                            "Anthropic 호출 일시 오류, 재시도 %d/%d: %s", attempt, LLM_MAX_ATTEMPTS, exc,
+                        )
+                        time.sleep(delay)
+                        continue
+                    break
+            if SETTINGS.strict_llm:
+                logger.warning("Anthropic 호출 실패 (strict, attempts=%d): %s", attempt, exc)
+                raise LLMUnavailableError(f"Anthropic 호출 실패 (strict): {exc}") from exc
+            logger.warning("Anthropic 호출 실패 → mock 폴백 (attempts=%d): %s", attempt, exc)
+            return self._mock_complete(system, user, mock_hint, json_mode,
+                                       variant=mock_variant, error=str(exc))
 
         if SETTINGS.strict_llm:
             raise LLMUnavailableError(

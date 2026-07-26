@@ -10,3 +10,8 @@ requires-python = ">=3.10"
 [tool.setuptools.packages.find]
 where = ["."]
 include = ["esgenie*"]
+
+[tool.pytest.ini_options]
+markers = [
+    "slow: 실보고서 PDF를 여는 느린 테스트(표 구조 복원 등). 실행: pytest -m slow",
+]
