@@ -335,10 +335,14 @@ def _rebuild_vector(axes: dict[str, AxisScore]) -> RiskVector:
     else:
         level = "high"
     top_axis = max(axes, key=lambda k: axes[k].score)
+    abstained_axes = [name for name, ax in axes.items() if ax.abstain]
     return RiskVector(
         D1_numeric=axes["D1_numeric"],
         D2_modifier=axes["D2_modifier"],
         D3_semantic=axes["D3_semantic"],
         D5_timeseries=axes["D5_timeseries"],
-        aggregate={"risk_score": risk_score, "level": level, "top_axis": top_axis},
+        aggregate={
+            "risk_score": risk_score, "level": level, "top_axis": top_axis,
+            "abstained_axes": abstained_axes,
+        },
     )

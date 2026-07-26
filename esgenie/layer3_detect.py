@@ -586,6 +586,7 @@ def _build_risk_vector(
         level = "high"
 
     top_axis = max(axes, key=lambda k: axes[k].score)
+    abstained_axes = [name for name, ax in axes.items() if ax.abstain]
 
     return RiskVector(
         D1_numeric=d1, D2_modifier=d2, D3_semantic=d3,
@@ -594,6 +595,7 @@ def _build_risk_vector(
             "risk_score": risk_score,
             "level":      level,
             "top_axis":   top_axis,
+            "abstained_axes": abstained_axes,
         },
     )
 
