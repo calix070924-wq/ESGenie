@@ -1,0 +1,570 @@
+{
+ "schema": 2,
+ "meta": {
+  "key": "1f71d98cee030a9c9d9d30fbfb52ac37427feeb238960ad73869a18ed7044999",
+  "created_at": "2026-07-26T11:24:59+00:00",
+  "model": "gpt-4.1-mini",
+  "doc_type": "ambiguous_fallback_vlm",
+  "source_file": "012330_mobis_2025.pdf",
+  "prompt_sha256": "910d98b903903a42bf1ea537d16996c031f6d5939dd94dd2ed028948f5825de4",
+  "input_chars": 4245
+ },
+ "response": {
+  "metrics": [
+   {
+    "metric_hint": "여성 계약직 수",
+    "value": 1000,
+    "unit": "명",
+    "period": "2022",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "여성 계약직 수",
+    "value": 1174,
+    "unit": "명",
+    "period": "2023",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "여성 계약직 수",
+    "value": 986,
+    "unit": "명",
+    "period": "2024",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "성별 미상 계약직 수",
+    "value": 14,
+    "unit": "명",
+    "period": "2022",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "성별 미상 계약직 수",
+    "value": 0,
+    "unit": "명",
+    "period": "2023",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "성별 미상 계약직 수",
+    "value": 112,
+    "unit": "명",
+    "period": "2024",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "계약직 임직원 비율",
+    "value": 11.1,
+    "unit": "%",
+    "period": "2022",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "계약직 임직원 비율",
+    "value": 13.7,
+    "unit": "%",
+    "period": "2023",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "계약직 임직원 비율",
+    "value": 9.7,
+    "unit": "%",
+    "period": "2024",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "근무시간 비보장 임직원 수",
+    "value": 252,
+    "unit": "명",
+    "period": "2023",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "근무시간 비보장 임직원 수",
+    "value": 53,
+    "unit": "명",
+    "period": "2024",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "남성 근무시간 비보장 임직원 수",
+    "value": 170,
+    "unit": "명",
+    "period": "2023",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "남성 근무시간 비보장 임직원 수",
+    "value": 16,
+    "unit": "명",
+    "period": "2024",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "여성 근무시간 비보장 임직원 수",
+    "value": 68,
+    "unit": "명",
+    "period": "2023",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "여성 근무시간 비보장 임직원 수",
+    "value": 37,
+    "unit": "명",
+    "period": "2024",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "성별 미상 근무시간 비보장 임직원 수",
+    "value": 14,
+    "unit": "명",
+    "period": "2023",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "국내(별도) 한국인 임직원 수",
+    "value": 11604,
+    "unit": "명",
+    "period": "2022",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "국내(별도) 한국인 임직원 수",
+    "value": 12078,
+    "unit": "명",
+    "period": "2023",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "국내(별도) 한국인 임직원 수",
+    "value": 12287,
+    "unit": "명",
+    "period": "2024",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "중국인 임직원 수",
+    "value": 3900,
+    "unit": "명",
+    "period": "2022",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "중국인 임직원 수",
+    "value": 3588,
+    "unit": "명",
+    "period": "2023",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "중국인 임직원 수",
+    "value": 3404,
+    "unit": "명",
+    "period": "2024",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "미국인 임직원 수",
+    "value": 3002,
+    "unit": "명",
+    "period": "2022",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "미국인 임직원 수",
+    "value": 3536,
+    "unit": "명",
+    "period": "2023",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "미국인 임직원 수",
+    "value": 3277,
+    "unit": "명",
+    "period": "2024",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "인도인 임직원 수",
+    "value": 3128,
+    "unit": "명",
+    "period": "2022",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "인도인 임직원 수",
+    "value": 5302,
+    "unit": "명",
+    "period": "2023",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "인도인 임직원 수",
+    "value": 3413,
+    "unit": "명",
+    "period": "2024",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "체코인 임직원 수",
+    "value": 2034,
+    "unit": "명",
+    "period": "2022",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "체코인 임직원 수",
+    "value": 2586,
+    "unit": "명",
+    "period": "2023",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "체코인 임직원 수",
+    "value": 2550,
+    "unit": "명",
+    "period": "2024",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "슬로바키아인 임직원 수",
+    "value": 2112,
+    "unit": "명",
+    "period": "2023",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "슬로바키아인 임직원 수",
+    "value": 2358,
+    "unit": "명",
+    "period": "2024",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "독일인 임직원 수",
+    "value": 389,
+    "unit": "명",
+    "period": "2023",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "독일인 임직원 수",
+    "value": 288,
+    "unit": "명",
+    "period": "2024",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "멕시코인 임직원 수",
+    "value": 2597,
+    "unit": "명",
+    "period": "2023",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "멕시코인 임직원 수",
+    "value": 4282,
+    "unit": "명",
+    "period": "2024",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "기타 국적 임직원 수",
+    "value": 8960,
+    "unit": "명",
+    "period": "2022",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "기타 국적 임직원 수",
+    "value": 2324,
+    "unit": "명",
+    "period": "2023",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "기타 국적 임직원 수",
+    "value": 3506,
+    "unit": "명",
+    "period": "2024",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "국적 미상 임직원 수",
+    "value": 4,
+    "unit": "명",
+    "period": "2022",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "국적 미상 임직원 수",
+    "value": 1457,
+    "unit": "명",
+    "period": "2023",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "국적 미상 임직원 수",
+    "value": 781,
+    "unit": "명",
+    "period": "2024",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "국내(별도) 임직원 수",
+    "value": 11635,
+    "unit": "명",
+    "period": "2022",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "국내 자회사 임직원 수",
+    "value": 9459,
+    "unit": "명",
+    "period": "2022",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "합계 임직원 수",
+    "value": 21094,
+    "unit": "명",
+    "period": "2022",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "국내(별도) 임직원 수",
+    "value": 12104,
+    "unit": "명",
+    "period": "2023",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "국내 자회사 임직원 수",
+    "value": 9920,
+    "unit": "명",
+    "period": "2023",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "합계 임직원 수",
+    "value": 22024,
+    "unit": "명",
+    "period": "2023",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "국내(별도) 임직원 수",
+    "value": 12313,
+    "unit": "명",
+    "period": "2024",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "국내 자회사 임직원 수",
+    "value": 10424,
+    "unit": "명",
+    "period": "2024",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "합계 임직원 수",
+    "value": 22737,
+    "unit": "명",
+    "period": "2024",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "남성 임직원 수",
+    "value": 10090,
+    "unit": "명",
+    "period": "2022",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "남성 임직원 수",
+    "value": 8826,
+    "unit": "명",
+    "period": "2022",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "남성 임직원 수",
+    "value": 18916,
+    "unit": "명",
+    "period": "2022",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "남성 임직원 수",
+    "value": 10464,
+    "unit": "명",
+    "period": "2023",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "남성 임직원 수",
+    "value": 9238,
+    "unit": "명",
+    "period": "2023",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "남성 임직원 수",
+    "value": 19702,
+    "unit": "명",
+    "period": "2023",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "남성 임직원 수",
+    "value": 10637,
+    "unit": "명",
+    "period": "2024",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "남성 임직원 수",
+    "value": 9740,
+    "unit": "명",
+    "period": "2024",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "남성 임직원 수",
+    "value": 20377,
+    "unit": "명",
+    "period": "2024",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "여성 임직원 수",
+    "value": 1545,
+    "unit": "명",
+    "period": "2022",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "여성 임직원 수",
+    "value": 633,
+    "unit": "명",
+    "period": "2022",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "여성 임직원 수",
+    "value": 2178,
+    "unit": "명",
+    "period": "2022",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "여성 임직원 수",
+    "value": 1640,
+    "unit": "명",
+    "period": "2023",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "여성 임직원 수",
+    "value": 682,
+    "unit": "명",
+    "period": "2023",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "여성 임직원 수",
+    "value": 2322,
+    "unit": "명",
+    "period": "2023",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "여성 임직원 수",
+    "value": 1676,
+    "unit": "명",
+    "period": "2024",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "여성 임직원 수",
+    "value": 684,
+    "unit": "명",
+    "period": "2024",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "여성 임직원 수",
+    "value": 2360,
+    "unit": "명",
+    "period": "2024",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "중국인 임직원 수",
+    "value": 3938,
+    "unit": "명",
+    "period": "2022",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "중국인 임직원 수",
+    "value": 3590,
+    "unit": "명",
+    "period": "2023",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "중국인 임직원 수",
+    "value": 3409,
+    "unit": "명",
+    "period": "2024",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "중국인 남성 임직원 수",
+    "value": 2872,
+    "unit": "명",
+    "period": "2022",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "중국인 남성 임직원 수",
+    "value": 2553,
+    "unit": "명",
+    "period": "2023",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "중국인 남성 임직원 수",
+    "value": 2423,
+    "unit": "명",
+    "period": "2024",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "중국인 여성 임직원 수",
+    "value": 1066,
+    "unit": "명",
+    "period": "2022",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "중국인 여성 임직원 수",
+    "value": 1037,
+    "unit": "명",
+    "period": "2023",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "중국인 여성 임직원 수",
+    "value": 986,
+    "unit": "명",
+    "period": "2024",
+    "kesg_code": null
+   }
+  ],
+  "clauses": []
+ }
+}

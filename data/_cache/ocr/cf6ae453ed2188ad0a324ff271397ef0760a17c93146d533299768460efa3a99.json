@@ -1,0 +1,478 @@
+{
+ "schema": 2,
+ "meta": {
+  "key": "cf6ae453ed2188ad0a324ff271397ef0760a17c93146d533299768460efa3a99",
+  "created_at": "2026-07-26T11:16:12+00:00",
+  "model": "gpt-4.1-mini",
+  "doc_type": "ambiguous_fallback_vlm",
+  "source_file": "012330_mobis_2025.pdf",
+  "prompt_sha256": "910d98b903903a42bf1ea537d16996c031f6d5939dd94dd2ed028948f5825de4",
+  "input_chars": 4306
+ },
+ "response": {
+  "metrics": [
+   {
+    "metric_hint": "Scope 2 배출량(시장 기반) 합계",
+    "value": 334377,
+    "unit": "tCO2 eq",
+    "period": "미상",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "Scope 2 배출량(시장 기반) 국내(별도)",
+    "value": 86468,
+    "unit": "tCO2 eq",
+    "period": "미상",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "Scope 2 배출량(시장 기반) 국내 자회사",
+    "value": 92046,
+    "unit": "tCO2 eq",
+    "period": "미상",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "Scope 2 배출량(시장 기반) 해외 자회사",
+    "value": 155862,
+    "unit": "tCO2 eq",
+    "period": "미상",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "국가별 온실가스 배출량 합계(한국)",
+    "value": 206322,
+    "unit": "tCO2 eq",
+    "period": "미상",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "국가별 온실가스 배출량 합계(중국)",
+    "value": 52235,
+    "unit": "tCO2 eq",
+    "period": "미상",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "국가별 온실가스 배출량 합계(미국)",
+    "value": 45746,
+    "unit": "tCO2 eq",
+    "period": "미상",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "국가별 온실가스 배출량 합계(인도)",
+    "value": 21547,
+    "unit": "tCO2 eq",
+    "period": "미상",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "국가별 온실가스 배출량 합계(체코)",
+    "value": 16157,
+    "unit": "tCO2 eq",
+    "period": "미상",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "국가별 온실가스 배출량 합계(기타)",
+    "value": 44238,
+    "unit": "tCO2 eq",
+    "period": "미상",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "온실가스 배출량 (Scope 1 + 지역 기반 Scope 2) 합계",
+    "value": 396152,
+    "unit": "tCO2 eq",
+    "period": "미상",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "온실가스 배출량 (Scope 1 + 시장 기반 Scope 2) 합계",
+    "value": 389933,
+    "unit": "tCO2 eq",
+    "period": "미상",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "전체 온실가스 배출량 집약도 (Scope 1+2) 합계",
+    "value": 0.75,
+    "unit": "tCO2 eq/억 원",
+    "period": "미상",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "Scope 3 온실가스 배출량 연결(일부)",
+    "value": 3077693,
+    "unit": "tCO2 eq",
+    "period": "2022",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "Scope 3 온실가스 배출량 연결(일부)",
+    "value": 3344082,
+    "unit": "tCO2 eq",
+    "period": "2023",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "Scope 3 온실가스 배출량 연결(일부)",
+    "value": 3136024,
+    "unit": "tCO2 eq",
+    "period": "2024",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "업스트림 1. 구매한 제품 및 서비스",
+    "value": 714647,
+    "unit": "tCO2 eq",
+    "period": "2022",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "업스트림 1. 구매한 제품 및 서비스",
+    "value": 820377,
+    "unit": "tCO2 eq",
+    "period": "2023",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "업스트림 1. 구매한 제품 및 서비스",
+    "value": 794951,
+    "unit": "tCO2 eq",
+    "period": "2024",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "업스트림 2. 자본재",
+    "value": 18413,
+    "unit": "tCO2 eq",
+    "period": "2022",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "업스트림 2. 자본재",
+    "value": 22712,
+    "unit": "tCO2 eq",
+    "period": "2023",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "업스트림 2. 자본재",
+    "value": 18405,
+    "unit": "tCO2 eq",
+    "period": "2024",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "업스트림 3. 기타 연료·에너지 관련 활동",
+    "value": 65824,
+    "unit": "tCO2 eq",
+    "period": "2022",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "업스트림 3. 기타 연료·에너지 관련 활동",
+    "value": 67087,
+    "unit": "tCO2 eq",
+    "period": "2023",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "업스트림 3. 기타 연료·에너지 관련 활동",
+    "value": 70044,
+    "unit": "tCO2 eq",
+    "period": "2024",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "업스트림 4. 업스트림 물류",
+    "value": 319206,
+    "unit": "tCO2 eq",
+    "period": "2022",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "업스트림 4. 업스트림 물류",
+    "value": 230570,
+    "unit": "tCO2 eq",
+    "period": "2023",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "업스트림 4. 업스트림 물류",
+    "value": 267683,
+    "unit": "tCO2 eq",
+    "period": "2024",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "업스트림 5. 사업장 폐기물",
+    "value": 7246,
+    "unit": "tCO2 eq",
+    "period": "2022",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "업스트림 5. 사업장 폐기물",
+    "value": 4819,
+    "unit": "tCO2 eq",
+    "period": "2023",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "업스트림 5. 사업장 폐기물",
+    "value": 12063,
+    "unit": "tCO2 eq",
+    "period": "2024",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "업스트림 6. 임직원 출장",
+    "value": 8457,
+    "unit": "tCO2 eq",
+    "period": "2022",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "업스트림 6. 임직원 출장",
+    "value": 11990,
+    "unit": "tCO2 eq",
+    "period": "2023",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "업스트림 6. 임직원 출장",
+    "value": 13505,
+    "unit": "tCO2 eq",
+    "period": "2024",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "업스트림 7. 임직원 통근",
+    "value": 1752,
+    "unit": "tCO2 eq",
+    "period": "2022",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "업스트림 7. 임직원 통근",
+    "value": 1934,
+    "unit": "tCO2 eq",
+    "period": "2023",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "업스트림 7. 임직원 통근",
+    "value": 2085,
+    "unit": "tCO2 eq",
+    "period": "2024",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "업스트림 8. 업스트림 임차자산",
+    "value": 178,
+    "unit": "tCO2 eq",
+    "period": "2022",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "업스트림 8. 업스트림 임차자산",
+    "value": 151,
+    "unit": "tCO2 eq",
+    "period": "2023",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "업스트림 8. 업스트림 임차자산",
+    "value": 139,
+    "unit": "tCO2 eq",
+    "period": "2024",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "다운스트림 9. 다운스트림 물류",
+    "value": 155673,
+    "unit": "tCO2 eq",
+    "period": "2022",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "다운스트림 9. 다운스트림 물류",
+    "value": 121856,
+    "unit": "tCO2 eq",
+    "period": "2023",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "다운스트림 9. 다운스트림 물류",
+    "value": 104733,
+    "unit": "tCO2 eq",
+    "period": "2024",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "다운스트림 10. 판매된 제품의 가공",
+    "value": 58075,
+    "unit": "tCO2 eq",
+    "period": "2022",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "다운스트림 10. 판매된 제품의 가공",
+    "value": 56748,
+    "unit": "tCO2 eq",
+    "period": "2023",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "다운스트림 10. 판매된 제품의 가공",
+    "value": 54274,
+    "unit": "tCO2 eq",
+    "period": "2024",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "다운스트림 11. 판매된 제품의 사용",
+    "value": 1423679,
+    "unit": "tCO2 eq",
+    "period": "2022",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "다운스트림 11. 판매된 제품의 사용",
+    "value": 1676190,
+    "unit": "tCO2 eq",
+    "period": "2023",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "다운스트림 11. 판매된 제품의 사용",
+    "value": 1480277,
+    "unit": "tCO2 eq",
+    "period": "2024",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "다운스트림 12. 판매된 제품의 폐기",
+    "value": 221823,
+    "unit": "tCO2 eq",
+    "period": "2022",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "다운스트림 12. 판매된 제품의 폐기",
+    "value": 245123,
+    "unit": "tCO2 eq",
+    "period": "2023",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "다운스트림 12. 판매된 제품의 폐기",
+    "value": 232659,
+    "unit": "tCO2 eq",
+    "period": "2024",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "다운스트림 15. 투자",
+    "value": 82720,
+    "unit": "tCO2 eq",
+    "period": "2022",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "다운스트림 15. 투자",
+    "value": 84525,
+    "unit": "tCO2 eq",
+    "period": "2023",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "다운스트림 15. 투자",
+    "value": 85206,
+    "unit": "tCO2 eq",
+    "period": "2024",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "총 온실가스 배출량(Scope 1+2+3) – 지역기반",
+    "value": 3473845,
+    "unit": "tCO2 eq",
+    "period": "2022",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "총 온실가스 배출량(Scope 1+2+3) – 지역기반",
+    "value": 3748186,
+    "unit": "tCO2 eq",
+    "period": "2023",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "총 온실가스 배출량(Scope 1+2+3) – 지역기반",
+    "value": 3560074,
+    "unit": "tCO2 eq",
+    "period": "2024",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "총 온실가스 배출량(Scope 1+2+3) – 시장기반",
+    "value": 3467626,
+    "unit": "tCO2 eq",
+    "period": "2022",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "총 온실가스 배출량(Scope 1+2+3) – 시장기반",
+    "value": 3730328,
+    "unit": "tCO2 eq",
+    "period": "2023",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "총 온실가스 배출량(Scope 1+2+3) – 시장기반",
+    "value": 3537526,
+    "unit": "tCO2 eq",
+    "period": "2024",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "전체 온실가스 배출량 집약도(Scope 1+2+3) – 시장기반",
+    "value": 6.68,
+    "unit": "tCO2 eq/억 원",
+    "period": "2022",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "전체 온실가스 배출량 집약도(Scope 1+2+3) – 시장기반",
+    "value": 6.3,
+    "unit": "tCO2 eq/억 원",
+    "period": "2023",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "전체 온실가스 배출량 집약도(Scope 1+2+3) – 시장기반",
+    "value": 6.18,
+    "unit": "tCO2 eq/억 원",
+    "period": "2024",
+    "kesg_code": null
+   }
+  ],
+  "clauses": [
+   {
+    "section": "온실가스 관리",
+    "text": "1) 국내 및 해외 자회사의 Scope 2 배출량(지역, 시장 기반) 수정으로 인한 합계 데이터 정정 공시\n2) 국내 및 해외 자회사의 Scope 1, Scope 2 배출량(지역, 시장 기반), 국가별 배출량(한국, 미국, 인도, 체코, 기타) 수정으로 인한 합계 데이터 정정 공시\n3) 국내(별도): Scope 1 및 Scope 2 온실가스 배출량/별도매출액, 합계: Scope 1 및 Scope 2 온실가스 배출량/연결매출액(총 매출액)",
+    "kesg_code": null,
+    "page": 2
+   },
+   {
+    "section": "온실가스 배출량(Scope 3)",
+    "text": "1) GHG 프로토콜의 Corporate Value Chain(Scope 3) Accounting and Reporting Standard에 따라 배출량을 산정하였으며, 카테고리별 산정방법론 또는 커버리지가 변경된 항목에 대해서는 과거연도 배출량까지 소급하여 산정(국내 자회사 미포함)\n2) 2024년 실제 활동에 의한 1차 데이터(Primary data)를 사용하여 산출된 Scope 3 배출량 비율: 94%(1차 데이터 사용 산출 Scope 3 배출량/총 Scope 3 배출량×100)\n3) 데이터 산정 범위 확대로 과거연도 데이터 수정: 기존 본사 운영구도 1차 협력사 및 위탁생산공장 외 해외법인 1차 협력사 포함\n4) Scope 3 배출량 산정 카테고리 확대(자본재, 기타 연료·에너지 관련 활동, 업스트림 물류, 다운스트림 물류, 판매된 제품의 가공, 투자)\n5) 데이터 산정 범위 확대로 과거연도 데이터 수정: 2022년 및 2023년(국내 자회사 2개사 포함), 2024년(국내 자회사 4개사 포함)",
+    "kesg_code": null,
+    "page": 2
+   }
+  ]
+ }
+}

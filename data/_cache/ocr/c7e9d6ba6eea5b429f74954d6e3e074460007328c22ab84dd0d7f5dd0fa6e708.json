@@ -1,0 +1,501 @@
+{
+ "schema": 2,
+ "meta": {
+  "key": "c7e9d6ba6eea5b429f74954d6e3e074460007328c22ab84dd0d7f5dd0fa6e708",
+  "created_at": "2026-07-26T11:30:51+00:00",
+  "model": "gpt-4.1-mini",
+  "doc_type": "ambiguous_fallback_vlm",
+  "source_file": "012330_mobis_2025.pdf",
+  "prompt_sha256": "910d98b903903a42bf1ea537d16996c031f6d5939dd94dd2ed028948f5825de4",
+  "input_chars": 4318
+ },
+ "response": {
+  "metrics": [
+   {
+    "metric_hint": "지역사회 기관 결연 개소 수",
+    "value": 50,
+    "unit": "개소",
+    "period": "2023년",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "지역사회 기관 결연 개소 수",
+    "value": 69,
+    "unit": "개소",
+    "period": "2024년",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "지역사회 기관 결연 개소 수",
+    "value": 135,
+    "unit": "개소",
+    "period": "2030년 목표",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "자선활동 기부 금액",
+    "value": 15648,
+    "unit": "백만 원",
+    "period": "2022년 국내(별도)",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "자선활동 기부 금액",
+    "value": 22,
+    "unit": "백만 원",
+    "period": "2022년 국내 자회사",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "자선활동 기부 금액",
+    "value": 3057,
+    "unit": "백만 원",
+    "period": "2022년 해외 자회사",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "자선활동 기부 금액",
+    "value": 18727,
+    "unit": "백만 원",
+    "period": "2022년 합계",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "자선활동 기부 금액",
+    "value": 21970,
+    "unit": "백만 원",
+    "period": "2023년 국내(별도)",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "자선활동 기부 금액",
+    "value": 27,
+    "unit": "백만 원",
+    "period": "2023년 국내 자회사",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "자선활동 기부 금액",
+    "value": 3715,
+    "unit": "백만 원",
+    "period": "2023년 해외 자회사",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "자선활동 기부 금액",
+    "value": 25712,
+    "unit": "백만 원",
+    "period": "2023년 합계",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "자선활동 기부 금액",
+    "value": 27911,
+    "unit": "백만 원",
+    "period": "2024년 국내(별도)",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "자선활동 기부 금액",
+    "value": 271,
+    "unit": "백만 원",
+    "period": "2024년 국내 자회사",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "자선활동 기부 금액",
+    "value": 5122,
+    "unit": "백만 원",
+    "period": "2024년 해외 자회사",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "자선활동 기부 금액",
+    "value": 33305,
+    "unit": "백만 원",
+    "period": "2024년 합계",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "협회 및 비과세 단체 기부 금액",
+    "value": 1230,
+    "unit": "백만 원",
+    "period": "2022년 국내(별도)",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "협회 및 비과세 단체 기부 금액",
+    "value": 1230,
+    "unit": "백만 원",
+    "period": "2022년 합계",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "협회 및 비과세 단체 기부 금액",
+    "value": 514,
+    "unit": "백만 원",
+    "period": "2023년 국내(별도)",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "협회 및 비과세 단체 기부 금액",
+    "value": 514,
+    "unit": "백만 원",
+    "period": "2023년 합계",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "협회 및 비과세 단체 기부 금액",
+    "value": 531,
+    "unit": "백만 원",
+    "period": "2024년 국내(별도)",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "협회 및 비과세 단체 기부 금액",
+    "value": 531,
+    "unit": "백만 원",
+    "period": "2024년 합계",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "매출액 대비 사회공헌 투입 비용 비율",
+    "value": 0.05,
+    "unit": "%",
+    "period": "2022년 국내(별도)",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "매출액 대비 사회공헌 투입 비용 비율",
+    "value": 0.04,
+    "unit": "%",
+    "period": "2022년 합계",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "매출액 대비 사회공헌 투입 비용 비율",
+    "value": 0.06,
+    "unit": "%",
+    "period": "2023년 국내(별도)",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "매출액 대비 사회공헌 투입 비용 비율",
+    "value": 0.04,
+    "unit": "%",
+    "period": "2023년 합계",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "매출액 대비 사회공헌 투입 비용 비율",
+    "value": 0.08,
+    "unit": "%",
+    "period": "2024년 국내(별도)",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "매출액 대비 사회공헌 투입 비용 비율",
+    "value": 0.06,
+    "unit": "%",
+    "period": "2024년 합계",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "봉사기부(상당액)",
+    "value": 624,
+    "unit": "백만 원",
+    "period": "2022년 국내(별도)",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "봉사기부(상당액)",
+    "value": 624,
+    "unit": "백만 원",
+    "period": "2022년 합계",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "봉사기부(상당액)",
+    "value": 770,
+    "unit": "백만 원",
+    "period": "2023년 국내(별도)",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "봉사기부(상당액)",
+    "value": 770,
+    "unit": "백만 원",
+    "period": "2023년 합계",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "봉사기부(상당액)",
+    "value": 620,
+    "unit": "백만 원",
+    "period": "2024년 국내(별도)",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "봉사기부(상당액)",
+    "value": 620,
+    "unit": "백만 원",
+    "period": "2024년 합계",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "봉사활동 시간",
+    "value": 8710,
+    "unit": "시간",
+    "period": "2022년 국내(별도)",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "봉사활동 시간",
+    "value": 2649,
+    "unit": "시간",
+    "period": "2022년 해외 자회사",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "봉사활동 시간",
+    "value": 11359,
+    "unit": "시간",
+    "period": "2022년 합계",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "봉사활동 시간",
+    "value": 13249,
+    "unit": "시간",
+    "period": "2023년 국내(별도)",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "봉사활동 시간",
+    "value": 1795,
+    "unit": "시간",
+    "period": "2023년 해외 자회사",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "봉사활동 시간",
+    "value": 15044,
+    "unit": "시간",
+    "period": "2023년 합계",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "봉사활동 시간",
+    "value": 9237,
+    "unit": "시간",
+    "period": "2024년 국내(별도)",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "봉사활동 시간",
+    "value": 435,
+    "unit": "시간",
+    "period": "2024년 국내 자회사",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "봉사활동 시간",
+    "value": 2671,
+    "unit": "시간",
+    "period": "2024년 해외 자회사",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "봉사활동 시간",
+    "value": 12343,
+    "unit": "시간",
+    "period": "2024년 합계",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "봉사활동 참여 인원",
+    "value": 3858,
+    "unit": "명",
+    "period": "2022년 국내(별도)",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "봉사활동 참여 인원",
+    "value": 966,
+    "unit": "명",
+    "period": "2022년 해외 자회사",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "봉사활동 참여 인원",
+    "value": 4824,
+    "unit": "명",
+    "period": "2022년 합계",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "봉사활동 참여 인원",
+    "value": 4066,
+    "unit": "명",
+    "period": "2023년 국내(별도)",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "봉사활동 참여 인원",
+    "value": 710,
+    "unit": "명",
+    "period": "2023년 해외 자회사",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "봉사활동 참여 인원",
+    "value": 4776,
+    "unit": "명",
+    "period": "2023년 합계",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "봉사활동 참여 인원",
+    "value": 2011,
+    "unit": "명",
+    "period": "2024년 국내(별도)",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "봉사활동 참여 인원",
+    "value": 178,
+    "unit": "명",
+    "period": "2024년 국내 자회사",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "봉사활동 참여 인원",
+    "value": 766,
+    "unit": "명",
+    "period": "2024년 해외 자회사",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "봉사활동 참여 인원",
+    "value": 2955,
+    "unit": "명",
+    "period": "2024년 합계",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "1인당 봉사 참여 시간",
+    "value": 0.75,
+    "unit": "시간/명",
+    "period": "2022년 국내(별도)",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "1인당 봉사 참여 시간",
+    "value": 0.12,
+    "unit": "시간/명",
+    "period": "2022년 해외 자회사",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "1인당 봉사 참여 시간",
+    "value": 0.34,
+    "unit": "시간/명",
+    "period": "2022년 합계",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "1인당 봉사 참여 시간",
+    "value": 1.09,
+    "unit": "시간/명",
+    "period": "2023년 국내(별도)",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "1인당 봉사 참여 시간",
+    "value": 0.07,
+    "unit": "시간/명",
+    "period": "2023년 해외 자회사",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "1인당 봉사 참여 시간",
+    "value": 0.33,
+    "unit": "시간/명",
+    "period": "2023년 합계",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "1인당 봉사 참여 시간",
+    "value": 0.75,
+    "unit": "시간/명",
+    "period": "2024년 국내(별도)",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "1인당 봉사 참여 시간",
+    "value": 0.04,
+    "unit": "시간/명",
+    "period": "2024년 국내 자회사",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "1인당 봉사 참여 시간",
+    "value": 0.22,
+    "unit": "시간/명",
+    "period": "2024년 해외 자회사",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "1인당 봉사 참여 시간",
+    "value": 1.0,
+    "unit": "시간/명",
+    "period": "2024년 합계",
+    "kesg_code": null
+   }
+  ],
+  "clauses": [
+   {
+    "section": "사회공헌 프로그램",
+    "text": "현대모비스는 2024년 연말 ‘Science Olympic’ 캠프를 신규 도입하였으며, 정규 주니어 공학교실 참가 학생 및 희망 학생들에게 모빌리티 키트 제작과 코딩, 체육 활동 등으로 구성된 Hands-On 형태의 체험형 STEAM 캠프 프로그램을 제공하고 있습니다.",
+    "kesg_code": null,
+    "page": 123
+   },
+   {
+    "section": "우수 아이디어",
+    "text": "(대상) 자동화 침수 탈출 시스템 | 차량 침수 시 자동으로 탑승자가 탈출할 수 있는 시스템 제안\n(우수상) 빛나는 버스정류장 | QR코드와 HD램프 사인으로 버스 탑승객의 향상된 승차 대기 경험을 제공",
+    "kesg_code": null,
+    "page": 123
+   },
+   {
+    "section": "참여 학생 및 지역",
+    "text": "2024년 주니어 공학교실 초등학교 20개교, 지역아동센터 10개소, 총 918명, 서울, 원주, 부산 3개 지역 초등학생 263명 참여",
+    "kesg_code": null,
+    "page": 123
+   },
+   {
+    "section": "글로벌 사회공헌 활동",
+    "text": "사회공헌 대표 프로그램인 투명우산 나눔활동과 주니어 공학교실을 해외법인에도 수평 전개하여 연속성 있는 지역사회공헌 활동 확대를 추진했습니다. 당사 글로벌 사업장 중 희망하는 17개 글로벌 사업장을 대상으로 활동을 시행하였으며, 총 22,180명의 초등학생이 참여하였습니다. 활동 참여 법인에서는 지역사회 관심도와 학생들의 만족도가 높았다는 반응과 함께 지속 참여 의향을 전했습니다.",
+    "kesg_code": null,
+    "page": 123
+   },
+   {
+    "section": "헌혈문화 확산 MOU 체결",
+    "text": "현대모비스는 한마음혈액원과 2023년 ‘헌혈을 통한 ESG 사회공헌 실현’ 업무 협약을 체결하였으며, 이를 통해 헌혈문화를 확산하고 사회적 가치를 실현하고자 합니다. 헌혈뱅크 운영을 통해 사내 헌혈증서 기부 문화 조성 효과를 기대하고 있으며, 임직원들은 정기적인 헌혈 운동 참여를 통해 혈액수급 안정화에 기여하게 됩니다. 이처럼 생명 나눔 실천을 통한 기업의 사회적 책임 이행에 최선을 다하고 있습니다.",
+    "kesg_code": null,
+    "page": 123
+   },
+   {
+    "section": "지역사회공헌 인정 및 수상",
+    "text": "현대모비스는 지역사회 문제 해결에 기여한 공로를 인정받아 보건복지부와 한국사회복지협의회가 공동 주관하는 ‘2024 지역사회공헌 인정제(CSR in the Community)’ 인정기업으로 3년 연속 선정되었습니다. 환경, 사회적 책임, 투명경영 등 사회공헌 활동 전반에 대한 평가를 통해 선정되는 지역사회공헌 우수기업 심사에서 전 부문 최고 등급(Level 5)을 받았으며, 현대모비스가 지역사회에 기여한 공로를 인정받아 ‘우수 인정기업’으로 선정되어 보건복지부장관상과 생명보험사회공헌재단 특별상을 수상하였습니다. 또한, 지역사회 참여와 사내 자원봉사 참여문화 조성을 기반으로 환경보전, 안전문제, 소외계층 지원, 문화유산 보존 등 임직원 자원봉사를 통한 사회문제 해결에 기여한 공로가 인정되어 ‘2024 대한민국 자원봉사대상’에서 행정안전부장관 표창을 수상하였습니다. 향후에도 현대모비스는 지역사회의 균형적인 발전에 기여할 수 있는 사회공헌 활동을 지속적으로 확대해 갈 계획입니다.",
+    "kesg_code": null,
+    "page": 123
+   },
+   {
+    "section": "지역사회 결연 목표",
+    "text": "현대모비스는 지역 기반의 사회공헌 활동을 강화하고 지역사회의 안정과 번영에 기여하기 위해 보고연도 대비 지역사회 결연기관 66개소 확대를 목표로 하고 있습니다. 이는 본사, 연구소, 생산사업장, A/S부품 사업장 등 각 사업장 주관의 검토를 통해 설정되었으며, 다양한 채널을 통해 지역사회의 요구를 수렴하고 있습니다.",
+    "kesg_code": null,
+    "page": 124
+   }
+  ]
+ }
+}

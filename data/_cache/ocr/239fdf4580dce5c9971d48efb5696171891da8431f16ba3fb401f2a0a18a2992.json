@@ -1,0 +1,206 @@
+{
+ "schema": 2,
+ "meta": {
+  "key": "239fdf4580dce5c9971d48efb5696171891da8431f16ba3fb401f2a0a18a2992",
+  "created_at": "2026-07-26T11:25:07+00:00",
+  "model": "gpt-4.1-mini",
+  "doc_type": "ambiguous_fallback_vlm",
+  "source_file": "012330_mobis_2025.pdf",
+  "prompt_sha256": "910d98b903903a42bf1ea537d16996c031f6d5939dd94dd2ed028948f5825de4",
+  "input_chars": 4310
+ },
+ "response": {
+  "metrics": [
+   {
+    "metric_hint": "미주 임직원 수 합계 2024",
+    "value": 9448,
+    "unit": "명",
+    "period": "2024",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "미주 남성 임직원 수 합계 2024",
+    "value": 5955,
+    "unit": "명",
+    "period": "2024",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "미주 여성 임직원 수 합계 2024",
+    "value": 3381,
+    "unit": "명",
+    "period": "2024",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "미주 성별 미상 임직원 수 합계 2024",
+    "value": 112,
+    "unit": "명",
+    "period": "2024",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "유럽 임직원 수 합계 2024",
+    "value": 7901,
+    "unit": "명",
+    "period": "2024",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "유럽 남성 임직원 수 합계 2024",
+    "value": 4978,
+    "unit": "명",
+    "period": "2024",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "유럽 여성 임직원 수 합계 2024",
+    "value": 2923,
+    "unit": "명",
+    "period": "2024",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "유럽 성별 미상 임직원 수 합계 2024",
+    "value": 0,
+    "unit": "명",
+    "period": "2024",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "아태/기타 임직원 수 합계 2024",
+    "value": 3452,
+    "unit": "명",
+    "period": "2024",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "아태/기타 남성 임직원 수 합계 2024",
+    "value": 3056,
+    "unit": "명",
+    "period": "2024",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "아태/기타 여성 임직원 수 합계 2024",
+    "value": 396,
+    "unit": "명",
+    "period": "2024",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "아태/기타 성별 미상 임직원 수 합계 2024",
+    "value": 0,
+    "unit": "명",
+    "period": "2024",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "임원 합계 2024",
+    "value": 106,
+    "unit": "명",
+    "period": "2024",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "임원 남성 합계 2024",
+    "value": 106,
+    "unit": "명",
+    "period": "2024",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "임원 여성 합계 2024",
+    "value": 0,
+    "unit": "명",
+    "period": "2024",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "여성 임원 비율 합계 2024",
+    "value": 0,
+    "unit": "%",
+    "period": "2024",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "관리직 합계 2024",
+    "value": 9590,
+    "unit": "명",
+    "period": "2024",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "관리직 남성 합계 2024",
+    "value": 8620,
+    "unit": "명",
+    "period": "2024",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "관리직 여성 합계 2024",
+    "value": 970,
+    "unit": "명",
+    "period": "2024",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "관리직 성별 미상 합계 2024",
+    "value": 0,
+    "unit": "명",
+    "period": "2024",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "여성 관리직 비율 합계 2024",
+    "value": 10.1,
+    "unit": "%",
+    "period": "2024",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "시니어 관리직 합계 2024",
+    "value": 1500,
+    "unit": "명",
+    "period": "2024",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "시니어 관리직 남성 합계 2024",
+    "value": 1369,
+    "unit": "명",
+    "period": "2024",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "시니어 관리직 여성 합계 2024",
+    "value": 131,
+    "unit": "명",
+    "period": "2024",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "시니어 관리직 성별 미상 합계 2024",
+    "value": 0,
+    "unit": "명",
+    "period": "2024",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "여성 시니어 관리직 비율 합계 2024",
+    "value": 8.7,
+    "unit": "%",
+    "period": "2024",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "주니어 관리직 합계 2024",
+    "value": 8090,
+    "unit": "명",
+    "period": "2024",
+    "kesg_code": null
+   }
+  ],
+  "clauses": []
+ }
+}

@@ -1,0 +1,1550 @@
+{
+ "schema": 2,
+ "meta": {
+  "key": "d7f16ef401535b4d66504c347b0dd4748c100e77dd9a6d2935a4fc90053f7ea8",
+  "created_at": "2026-07-26T11:26:17+00:00",
+  "model": "gpt-4.1-mini",
+  "doc_type": "ambiguous_fallback_vlm",
+  "source_file": "012330_mobis_2025.pdf",
+  "prompt_sha256": "910d98b903903a42bf1ea537d16996c031f6d5939dd94dd2ed028948f5825de4",
+  "input_chars": 4297
+ },
+ "response": {
+  "metrics": [
+   {
+    "metric_hint": "남성 인원수 2022년 국내(별도)",
+    "value": 2755,
+    "unit": "명",
+    "period": "2022",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "남성 인원수 2022년 해외 자회사",
+    "value": 3699,
+    "unit": "명",
+    "period": "2022",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "남성 인원수 2022년 합계",
+    "value": 6454,
+    "unit": "명",
+    "period": "2022",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "남성 인원수 2023년 국내(별도)",
+    "value": 2748,
+    "unit": "명",
+    "period": "2023",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "남성 인원수 2023년 국내 자회사",
+    "value": 493,
+    "unit": "명",
+    "period": "2023",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "남성 인원수 2023년 해외 자회사",
+    "value": 2724,
+    "unit": "명",
+    "period": "2023",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "남성 인원수 2023년 합계",
+    "value": 5965,
+    "unit": "명",
+    "period": "2023",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "남성 인원수 2024년 국내(별도)",
+    "value": 5221,
+    "unit": "명",
+    "period": "2024",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "남성 인원수 2024년 국내 자회사",
+    "value": 615,
+    "unit": "명",
+    "period": "2024",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "남성 인원수 2024년 해외 자회사",
+    "value": 1415,
+    "unit": "명",
+    "period": "2024",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "남성 인원수 2024년 합계",
+    "value": 7251,
+    "unit": "명",
+    "period": "2024",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "여성 인원수 2022년 국내(별도)",
+    "value": 735,
+    "unit": "명",
+    "period": "2022",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "여성 인원수 2022년 해외 자회사",
+    "value": 1203,
+    "unit": "명",
+    "period": "2022",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "여성 인원수 2022년 합계",
+    "value": 1938,
+    "unit": "명",
+    "period": "2022",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "여성 인원수 2023년 국내(별도)",
+    "value": 776,
+    "unit": "명",
+    "period": "2023",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "여성 인원수 2023년 국내 자회사",
+    "value": 132,
+    "unit": "명",
+    "period": "2023",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "여성 인원수 2023년 해외 자회사",
+    "value": 1245,
+    "unit": "명",
+    "period": "2023",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "여성 인원수 2023년 합계",
+    "value": 2153,
+    "unit": "명",
+    "period": "2023",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "여성 인원수 2024년 국내(별도)",
+    "value": 317,
+    "unit": "명",
+    "period": "2024",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "여성 인원수 2024년 국내 자회사",
+    "value": 22,
+    "unit": "명",
+    "period": "2024",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "여성 인원수 2024년 해외 자회사",
+    "value": 500,
+    "unit": "명",
+    "period": "2024",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "여성 인원수 2024년 합계",
+    "value": 839,
+    "unit": "명",
+    "period": "2024",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "성별 미상 인원수 2022년 국내(별도)",
+    "value": 0,
+    "unit": "명",
+    "period": "2022",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "성별 미상 인원수 2022년 해외 자회사",
+    "value": 1,
+    "unit": "명",
+    "period": "2022",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "성별 미상 인원수 2022년 합계",
+    "value": 1,
+    "unit": "명",
+    "period": "2022",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "성별 미상 인원수 2023년 국내(별도)",
+    "value": 0,
+    "unit": "명",
+    "period": "2023",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "성별 미상 인원수 2023년 국내 자회사",
+    "value": 0,
+    "unit": "명",
+    "period": "2023",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "성별 미상 인원수 2023년 해외 자회사",
+    "value": 3,
+    "unit": "명",
+    "period": "2023",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "성별 미상 인원수 2023년 합계",
+    "value": 3,
+    "unit": "명",
+    "period": "2023",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "성별 미상 인원수 2024년 국내(별도)",
+    "value": 0,
+    "unit": "명",
+    "period": "2024",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "성별 미상 인원수 2024년 국내 자회사",
+    "value": 0,
+    "unit": "명",
+    "period": "2024",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "성별 미상 인원수 2024년 해외 자회사",
+    "value": 0,
+    "unit": "명",
+    "period": "2024",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "성별 미상 인원수 2024년 합계",
+    "value": 0,
+    "unit": "명",
+    "period": "2024",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "여성 주니어 관리직 비율 2022년 국내(별도)",
+    "value": 21.1,
+    "unit": "%",
+    "period": "2022",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "여성 주니어 관리직 비율 2022년 해외 자회사",
+    "value": 24.5,
+    "unit": "%",
+    "period": "2022",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "여성 주니어 관리직 비율 2022년 합계",
+    "value": 23.1,
+    "unit": "%",
+    "period": "2022",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "여성 주니어 관리직 비율 2023년 국내(별도)",
+    "value": 22.0,
+    "unit": "%",
+    "period": "2023",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "여성 주니어 관리직 비율 2023년 국내 자회사",
+    "value": 21.1,
+    "unit": "%",
+    "period": "2023",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "여성 주니어 관리직 비율 2023년 해외 자회사",
+    "value": 31.3,
+    "unit": "%",
+    "period": "2023",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "여성 주니어 관리직 비율 2023년 합계",
+    "value": 26.5,
+    "unit": "%",
+    "period": "2023",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "여성 주니어 관리직 비율 2024년 국내(별도)",
+    "value": 5.7,
+    "unit": "%",
+    "period": "2024",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "여성 주니어 관리직 비율 2024년 국내 자회사",
+    "value": 3.5,
+    "unit": "%",
+    "period": "2024",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "여성 주니어 관리직 비율 2024년 해외 자회사",
+    "value": 26.1,
+    "unit": "%",
+    "period": "2024",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "여성 주니어 관리직 비율 2024년 합계",
+    "value": 10.4,
+    "unit": "%",
+    "period": "2024",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "비관리직 인원수 2022년 국내(별도)",
+    "value": 2695,
+    "unit": "명",
+    "period": "2022",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "비관리직 인원수 2022년 국내 자회사",
+    "value": 8141,
+    "unit": "명",
+    "period": "2022",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "비관리직 인원수 2022년 해외 자회사",
+    "value": 14766,
+    "unit": "명",
+    "period": "2022",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "비관리직 인원수 2022년 합계",
+    "value": 25602,
+    "unit": "명",
+    "period": "2022",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "비관리직 인원수 2023년 국내(별도)",
+    "value": 2665,
+    "unit": "명",
+    "period": "2023",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "비관리직 인원수 2023년 국내 자회사",
+    "value": 8508,
+    "unit": "명",
+    "period": "2023",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "비관리직 인원수 2023년 해외 자회사",
+    "value": 18337,
+    "unit": "명",
+    "period": "2023",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "비관리직 인원수 2023년 합계",
+    "value": 29510,
+    "unit": "명",
+    "period": "2023",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "비관리직 인원수 2024년 국내(별도)",
+    "value": 6137,
+    "unit": "명",
+    "period": "2024",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "비관리직 인원수 2024년 국내 자회사",
+    "value": 9599,
+    "unit": "명",
+    "period": "2024",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "비관리직 인원수 2024년 해외 자회사",
+    "value": 21515,
+    "unit": "명",
+    "period": "2024",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "비관리직 인원수 2024년 합계",
+    "value": 37251,
+    "unit": "명",
+    "period": "2024",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "비관리직 남성 인원수 2022년 국내(별도)",
+    "value": 2113,
+    "unit": "명",
+    "period": "2022",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "비관리직 남성 인원수 2022년 국내 자회사",
+    "value": 7650,
+    "unit": "명",
+    "period": "2022",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "비관리직 남성 인원수 2022년 해외 자회사",
+    "value": 9876,
+    "unit": "명",
+    "period": "2022",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "비관리직 남성 인원수 2022년 합계",
+    "value": 19639,
+    "unit": "명",
+    "period": "2022",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "비관리직 남성 인원수 2023년 국내(별도)",
+    "value": 2077,
+    "unit": "명",
+    "period": "2023",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "비관리직 남성 인원수 2023년 국내 자회사",
+    "value": 7978,
+    "unit": "명",
+    "period": "2023",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "비관리직 남성 인원수 2023년 해외 자회사",
+    "value": 12938,
+    "unit": "명",
+    "period": "2023",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "비관리직 남성 인원수 2023년 합계",
+    "value": 22993,
+    "unit": "명",
+    "period": "2023",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "비관리직 남성 인원수 2024년 국내(별도)",
+    "value": 4787,
+    "unit": "명",
+    "period": "2024",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "비관리직 남성 인원수 2024년 국내 자회사",
+    "value": 8936,
+    "unit": "명",
+    "period": "2024",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "비관리직 남성 인원수 2024년 해외 자회사",
+    "value": 14340,
+    "unit": "명",
+    "period": "2024",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "비관리직 남성 인원수 2024년 합계",
+    "value": 28063,
+    "unit": "명",
+    "period": "2024",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "비관리직 여성 인원수 2022년 국내(별도)",
+    "value": 582,
+    "unit": "명",
+    "period": "2022",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "비관리직 여성 인원수 2022년 국내 자회사",
+    "value": 491,
+    "unit": "명",
+    "period": "2022",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "비관리직 여성 인원수 2022년 해외 자회사",
+    "value": 4876,
+    "unit": "명",
+    "period": "2022",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "비관리직 여성 인원수 2022년 합계",
+    "value": 5949,
+    "unit": "명",
+    "period": "2022",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "비관리직 여성 인원수 2023년 국내(별도)",
+    "value": 588,
+    "unit": "명",
+    "period": "2023",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "비관리직 여성 인원수 2023년 국내 자회사",
+    "value": 530,
+    "unit": "명",
+    "period": "2023",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "비관리직 여성 인원수 2023년 해외 자회사",
+    "value": 5384,
+    "unit": "명",
+    "period": "2023",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "비관리직 여성 인원수 2023년 합계",
+    "value": 6502,
+    "unit": "명",
+    "period": "2023",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "비관리직 여성 인원수 2024년 국내(별도)",
+    "value": 1350,
+    "unit": "명",
+    "period": "2024",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "비관리직 여성 인원수 2024년 국내 자회사",
+    "value": 663,
+    "unit": "명",
+    "period": "2024",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "비관리직 여성 인원수 2024년 해외 자회사",
+    "value": 7063,
+    "unit": "명",
+    "period": "2024",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "비관리직 여성 인원수 2024년 합계",
+    "value": 9076,
+    "unit": "명",
+    "period": "2024",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "비관리직 성별 미상 인원수 2022년 국내(별도)",
+    "value": 0,
+    "unit": "명",
+    "period": "2022",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "비관리직 성별 미상 인원수 2022년 국내 자회사",
+    "value": 0,
+    "unit": "명",
+    "period": "2022",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "비관리직 성별 미상 인원수 2022년 해외 자회사",
+    "value": 14,
+    "unit": "명",
+    "period": "2022",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "비관리직 성별 미상 인원수 2022년 합계",
+    "value": 14,
+    "unit": "명",
+    "period": "2022",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "비관리직 성별 미상 인원수 2023년 국내(별도)",
+    "value": 0,
+    "unit": "명",
+    "period": "2023",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "비관리직 성별 미상 인원수 2023년 국내 자회사",
+    "value": 0,
+    "unit": "명",
+    "period": "2023",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "비관리직 성별 미상 인원수 2023년 해외 자회사",
+    "value": 15,
+    "unit": "명",
+    "period": "2023",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "비관리직 성별 미상 인원수 2023년 합계",
+    "value": 15,
+    "unit": "명",
+    "period": "2023",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "비관리직 성별 미상 인원수 2024년 국내(별도)",
+    "value": 0,
+    "unit": "명",
+    "period": "2024",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "비관리직 성별 미상 인원수 2024년 국내 자회사",
+    "value": 0,
+    "unit": "명",
+    "period": "2024",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "비관리직 성별 미상 인원수 2024년 해외 자회사",
+    "value": 112,
+    "unit": "명",
+    "period": "2024",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "비관리직 성별 미상 인원수 2024년 합계",
+    "value": 112,
+    "unit": "명",
+    "period": "2024",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "여성 비관리직 비율 2022년 국내(별도)",
+    "value": 21.6,
+    "unit": "%",
+    "period": "2022",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "여성 비관리직 비율 2022년 국내 자회사",
+    "value": 6.0,
+    "unit": "%",
+    "period": "2022",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "여성 비관리직 비율 2022년 해외 자회사",
+    "value": 33.0,
+    "unit": "%",
+    "period": "2022",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "여성 비관리직 비율 2022년 합계",
+    "value": 23.2,
+    "unit": "%",
+    "period": "2022",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "여성 비관리직 비율 2023년 국내(별도)",
+    "value": 22.1,
+    "unit": "%",
+    "period": "2023",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "여성 비관리직 비율 2023년 국내 자회사",
+    "value": 6.2,
+    "unit": "%",
+    "period": "2023",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "여성 비관리직 비율 2023년 해외 자회사",
+    "value": 29.4,
+    "unit": "%",
+    "period": "2023",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "여성 비관리직 비율 2023년 합계",
+    "value": 22.0,
+    "unit": "%",
+    "period": "2023",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "여성 비관리직 비율 2024년 국내(별도)",
+    "value": 22.0,
+    "unit": "%",
+    "period": "2024",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "여성 비관리직 비율 2024년 국내 자회사",
+    "value": 6.9,
+    "unit": "%",
+    "period": "2024",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "여성 비관리직 비율 2024년 해외 자회사",
+    "value": 32.8,
+    "unit": "%",
+    "period": "2024",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "여성 비관리직 비율 2024년 합계",
+    "value": 24.4,
+    "unit": "%",
+    "period": "2024",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "30세 미만 인원수 2022년 국내(별도)",
+    "value": 1968,
+    "unit": "명",
+    "period": "2022",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "30세 미만 인원수 2022년 해외 자회사",
+    "value": 6523,
+    "unit": "명",
+    "period": "2022",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "30세 미만 인원수 2022년 합계",
+    "value": 8491,
+    "unit": "명",
+    "period": "2022",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "30세 미만 인원수 2023년 국내(별도)",
+    "value": 2127,
+    "unit": "명",
+    "period": "2023",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "30세 미만 인원수 2023년 국내 자회사",
+    "value": 1989,
+    "unit": "명",
+    "period": "2023",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "30세 미만 인원수 2023년 해외 자회사",
+    "value": 8166,
+    "unit": "명",
+    "period": "2023",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "30세 미만 인원수 2023년 합계",
+    "value": 12282,
+    "unit": "명",
+    "period": "2023",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "30세 미만 인원수 2024년 국내(별도)",
+    "value": 2199,
+    "unit": "명",
+    "period": "2024",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "30세 미만 인원수 2024년 국내 자회사",
+    "value": 1957,
+    "unit": "명",
+    "period": "2024",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "30세 미만 인원수 2024년 해외 자회사",
+    "value": 6830,
+    "unit": "명",
+    "period": "2024",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "30세 미만 인원수 2024년 합계",
+    "value": 10986,
+    "unit": "명",
+    "period": "2024",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "30세 이상 ~ 50세 미만 인원수 2022년 국내(별도)",
+    "value": 7085,
+    "unit": "명",
+    "period": "2022",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "30세 이상 ~ 50세 미만 인원수 2022년 해외 자회사",
+    "value": 12561,
+    "unit": "명",
+    "period": "2022",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "30세 이상 ~ 50세 미만 인원수 2022년 합계",
+    "value": 19646,
+    "unit": "명",
+    "period": "2022",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "30세 이상 ~ 50세 미만 인원수 2023년 국내(별도)",
+    "value": 7340,
+    "unit": "명",
+    "period": "2023",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "30세 이상 ~ 50세 미만 인원수 2023년 국내 자회사",
+    "value": 7106,
+    "unit": "명",
+    "period": "2023",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "30세 이상 ~ 50세 미만 인원수 2023년 해외 자회사",
+    "value": 13111,
+    "unit": "명",
+    "period": "2023",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "30세 이상 ~ 50세 미만 인원수 2023년 합계",
+    "value": 27557,
+    "unit": "명",
+    "period": "2023",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "30세 이상 ~ 50세 미만 인원수 2024년 국내(별도)",
+    "value": 7334,
+    "unit": "명",
+    "period": "2024",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "30세 이상 ~ 50세 미만 인원수 2024년 국내 자회사",
+    "value": 7519,
+    "unit": "명",
+    "period": "2024",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "30세 이상 ~ 50세 미만 인원수 2024년 해외 자회사",
+    "value": 14230,
+    "unit": "명",
+    "period": "2024",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "30세 이상 ~ 50세 미만 인원수 2024년 합계",
+    "value": 29083,
+    "unit": "명",
+    "period": "2024",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "50세 이상 인원수 2022년 국내(별도)",
+    "value": 2582,
+    "unit": "명",
+    "period": "2022",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "50세 이상 인원수 2022년 해외 자회사",
+    "value": 2406,
+    "unit": "명",
+    "period": "2022",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "50세 이상 인원수 2022년 합계",
+    "value": 4988,
+    "unit": "명",
+    "period": "2022",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "50세 이상 인원수 2023년 국내(별도)",
+    "value": 2637,
+    "unit": "명",
+    "period": "2023",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "50세 이상 인원수 2023년 국내 자회사",
+    "value": 825,
+    "unit": "명",
+    "period": "2023",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "50세 이상 인원수 2023년 해외 자회사",
+    "value": 2805,
+    "unit": "명",
+    "period": "2023",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "50세 이상 인원수 2023년 합계",
+    "value": 6267,
+    "unit": "명",
+    "period": "2023",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "50세 이상 인원수 2024년 국내(별도)",
+    "value": 2780,
+    "unit": "명",
+    "period": "2024",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "50세 이상 인원수 2024년 국내 자회사",
+    "value": 956,
+    "unit": "명",
+    "period": "2024",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "50세 이상 인원수 2024년 해외 자회사",
+    "value": 2998,
+    "unit": "명",
+    "period": "2024",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "50세 이상 인원수 2024년 합계",
+    "value": 6734,
+    "unit": "명",
+    "period": "2024",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "나이 미상 인원수 2022년 국내(별도)",
+    "value": 0,
+    "unit": "명",
+    "period": "2022",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "나이 미상 인원수 2022년 해외 자회사",
+    "value": 0,
+    "unit": "명",
+    "period": "2022",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "나이 미상 인원수 2022년 합계",
+    "value": 0,
+    "unit": "명",
+    "period": "2022",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "나이 미상 인원수 2023년 국내(별도)",
+    "value": 0,
+    "unit": "명",
+    "period": "2023",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "나이 미상 인원수 2023년 국내 자회사",
+    "value": 0,
+    "unit": "명",
+    "period": "2023",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "나이 미상 인원수 2023년 해외 자회사",
+    "value": 77,
+    "unit": "명",
+    "period": "2023",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "나이 미상 인원수 2023년 합계",
+    "value": 77,
+    "unit": "명",
+    "period": "2023",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "나이 미상 인원수 2024년 국내(별도)",
+    "value": 0,
+    "unit": "명",
+    "period": "2024",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "나이 미상 인원수 2024년 국내 자회사",
+    "value": 0,
+    "unit": "명",
+    "period": "2024",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "나이 미상 인원수 2024년 해외 자회사",
+    "value": 144,
+    "unit": "명",
+    "period": "2024",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "나이 미상 인원수 2024년 합계",
+    "value": 144,
+    "unit": "명",
+    "period": "2024",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "30세 미만 비율 2022년 국내(별도)",
+    "value": 16.9,
+    "unit": "%",
+    "period": "2022",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "30세 미만 비율 2022년 해외 자회사",
+    "value": 30.4,
+    "unit": "%",
+    "period": "2022",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "30세 미만 비율 2022년 합계",
+    "value": 25.6,
+    "unit": "%",
+    "period": "2022",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "30세 미만 비율 2023년 국내(별도)",
+    "value": 17.6,
+    "unit": "%",
+    "period": "2023",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "30세 미만 비율 2023년 국내 자회사",
+    "value": 20.1,
+    "unit": "%",
+    "period": "2023",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "30세 미만 비율 2023년 해외 자회사",
+    "value": 33.8,
+    "unit": "%",
+    "period": "2023",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "30세 미만 비율 2023년 합계",
+    "value": 26.6,
+    "unit": "%",
+    "period": "2023",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "30세 미만 비율 2024년 국내(별도)",
+    "value": 17.9,
+    "unit": "%",
+    "period": "2024",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "30세 미만 비율 2024년 국내 자회사",
+    "value": 18.8,
+    "unit": "%",
+    "period": "2024",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "30세 미만 비율 2024년 해외 자회사",
+    "value": 28.2,
+    "unit": "%",
+    "period": "2024",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "30세 미만 비율 2024년 합계",
+    "value": 23.4,
+    "unit": "%",
+    "period": "2024",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "30세 이상 ~ 50세 미만 비율 2022년 국내(별도)",
+    "value": 60.9,
+    "unit": "%",
+    "period": "2022",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "30세 이상 ~ 50세 미만 비율 2022년 해외 자회사",
+    "value": 58.5,
+    "unit": "%",
+    "period": "2022",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "30세 이상 ~ 50세 미만 비율 2022년 합계",
+    "value": 59.3,
+    "unit": "%",
+    "period": "2022",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "30세 이상 ~ 50세 미만 비율 2023년 국내(별도)",
+    "value": 60.6,
+    "unit": "%",
+    "period": "2023",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "30세 이상 ~ 50세 미만 비율 2023년 국내 자회사",
+    "value": 71.6,
+    "unit": "%",
+    "period": "2023",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "30세 이상 ~ 50세 미만 비율 2023년 해외 자회사",
+    "value": 54.3,
+    "unit": "%",
+    "period": "2023",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "30세 이상 ~ 50세 미만 비율 2023년 합계",
+    "value": 59.7,
+    "unit": "%",
+    "period": "2023",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "30세 이상 ~ 50세 미만 비율 2024년 국내(별도)",
+    "value": 59.6,
+    "unit": "%",
+    "period": "2024",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "30세 이상 ~ 50세 미만 비율 2024년 국내 자회사",
+    "value": 72.1,
+    "unit": "%",
+    "period": "2024",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "30세 이상 ~ 50세 미만 비율 2024년 해외 자회사",
+    "value": 58.8,
+    "unit": "%",
+    "period": "2024",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "30세 이상 ~ 50세 미만 비율 2024년 합계",
+    "value": 61.9,
+    "unit": "%",
+    "period": "2024",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "50세 이상 비율 2022년 국내(별도)",
+    "value": 22.2,
+    "unit": "%",
+    "period": "2022",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "50세 이상 비율 2022년 해외 자회사",
+    "value": 11.2,
+    "unit": "%",
+    "period": "2022",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "50세 이상 비율 2022년 합계",
+    "value": 15.1,
+    "unit": "%",
+    "period": "2022",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "50세 이상 비율 2023년 국내(별도)",
+    "value": 21.8,
+    "unit": "%",
+    "period": "2023",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "50세 이상 비율 2023년 국내 자회사",
+    "value": 8.3,
+    "unit": "%",
+    "period": "2023",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "50세 이상 비율 2023년 해외 자회사",
+    "value": 11.6,
+    "unit": "%",
+    "period": "2023",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "50세 이상 비율 2023년 합계",
+    "value": 13.6,
+    "unit": "%",
+    "period": "2023",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "50세 이상 비율 2024년 국내(별도)",
+    "value": 22.6,
+    "unit": "%",
+    "period": "2024",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "50세 이상 비율 2024년 국내 자회사",
+    "value": 9.2,
+    "unit": "%",
+    "period": "2024",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "50세 이상 비율 2024년 해외 자회사",
+    "value": 12.4,
+    "unit": "%",
+    "period": "2024",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "50세 이상 비율 2024년 합계",
+    "value": 14.3,
+    "unit": "%",
+    "period": "2024",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "나이 미상 비율 2023년 해외 자회사",
+    "value": 0.3,
+    "unit": "%",
+    "period": "2023",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "나이 미상 비율 2023년 합계",
+    "value": 0.2,
+    "unit": "%",
+    "period": "2023",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "나이 미상 비율 2024년 해외 자회사",
+    "value": 0.6,
+    "unit": "%",
+    "period": "2024",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "나이 미상 비율 2024년 합계",
+    "value": 0.3,
+    "unit": "%",
+    "period": "2024",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "STEM 직군(연구소 정규직) 인원수 2022년 국내(별도)",
+    "value": 4117,
+    "unit": "명",
+    "period": "2022",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "STEM 직군(연구소 정규직) 인원수 2022년 해외 자회사",
+    "value": 1311,
+    "unit": "명",
+    "period": "2022",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "STEM 직군(연구소 정규직) 인원수 2022년 합계",
+    "value": 5428,
+    "unit": "명",
+    "period": "2022",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "STEM 직군(연구소 정규직) 인원수 2023년 국내(별도)",
+    "value": 4499,
+    "unit": "명",
+    "period": "2023",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "STEM 직군(연구소 정규직) 인원수 2023년 국내 자회사",
+    "value": 150,
+    "unit": "명",
+    "period": "2023",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "STEM 직군(연구소 정규직) 인원수 2023년 해외 자회사",
+    "value": 1466,
+    "unit": "명",
+    "period": "2023",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "STEM 직군(연구소 정규직) 인원수 2023년 합계",
+    "value": 6115,
+    "unit": "명",
+    "period": "2023",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "STEM 직군(연구소 정규직) 인원수 2024년 국내(별도)",
+    "value": 4592,
+    "unit": "명",
+    "period": "2024",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "STEM 직군(연구소 정규직) 인원수 2024년 국내 자회사",
+    "value": 148,
+    "unit": "명",
+    "period": "2024",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "STEM 직군(연구소 정규직) 인원수 2024년 해외 자회사",
+    "value": 531,
+    "unit": "명",
+    "period": "2024",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "STEM 직군(연구소 정규직) 인원수 2024년 합계",
+    "value": 5271,
+    "unit": "명",
+    "period": "2024",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "STEM 직군 남성 인원수 2022년 국내(별도)",
+    "value": 3606,
+    "unit": "명",
+    "period": "2022",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "STEM 직군 남성 인원수 2022년 해외 자회사",
+    "value": 964,
+    "unit": "명",
+    "period": "2022",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "STEM 직군 남성 인원수 2022년 합계",
+    "value": 4570,
+    "unit": "명",
+    "period": "2022",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "STEM 직군 남성 인원수 2023년 국내(별도)",
+    "value": 3925,
+    "unit": "명",
+    "period": "2023",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "STEM 직군 남성 인원수 2023년 국내 자회사",
+    "value": 122,
+    "unit": "명",
+    "period": "2023",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "STEM 직군 남성 인원수 2023년 해외 자회사",
+    "value": 1082,
+    "unit": "명",
+    "period": "2023",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "STEM 직군 남성 인원수 2023년 합계",
+    "value": 5129,
+    "unit": "명",
+    "period": "2023",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "STEM 직군 남성 인원수 2024년 국내(별도)",
+    "value": 3990,
+    "unit": "명",
+    "period": "2024",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "STEM 직군 남성 인원수 2024년 국내 자회사",
+    "value": 119,
+    "unit": "명",
+    "period": "2024",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "STEM 직군 남성 인원수 2024년 해외 자회사",
+    "value": 437,
+    "unit": "명",
+    "period": "2024",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "STEM 직군 남성 인원수 2024년 합계",
+    "value": 4546,
+    "unit": "명",
+    "period": "2024",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "STEM 직군 여성 인원수 2022년 국내(별도)",
+    "value": 511,
+    "unit": "명",
+    "period": "2022",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "STEM 직군 여성 인원수 2022년 해외 자회사",
+    "value": 347,
+    "unit": "명",
+    "period": "2022",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "STEM 직군 여성 인원수 2022년 합계",
+    "value": 858,
+    "unit": "명",
+    "period": "2022",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "STEM 직군 여성 인원수 2023년 국내(별도)",
+    "value": 574,
+    "unit": "명",
+    "period": "2023",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "STEM 직군 여성 인원수 2023년 국내 자회사",
+    "value": 28,
+    "unit": "명",
+    "period": "2023",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "STEM 직군 여성 인원수 2023년 해외 자회사",
+    "value": 382,
+    "unit": "명",
+    "period": "2023",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "STEM 직군 여성 인원수 2023년 합계",
+    "value": 984,
+    "unit": "명",
+    "period": "2023",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "STEM 직군 여성 인원수 2024년 국내(별도)",
+    "value": 602,
+    "unit": "명",
+    "period": "2024",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "STEM 직군 여성 인원수 2024년 국내 자회사",
+    "value": 29,
+    "unit": "명",
+    "period": "2024",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "STEM 직군 여성 인원수 2024년 해외 자회사",
+    "value": 94,
+    "unit": "명",
+    "period": "2024",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "STEM 직군 여성 인원수 2024년 합계",
+    "value": 725,
+    "unit": "명",
+    "period": "2024",
+    "kesg_code": null
+   }
+  ],
+  "clauses": [
+   {
+    "section": "데이터 정정 및 관리직 정의",
+    "text": "1) 2022년 데이터 관리직 내 임원 제외(별도 구분)로 데이터 정정\n2022년, 2023년: (관리직) 관리/연구직, (시니어 관리직) 총 관리사무직 중 책임급 이상, (주니어 관리직) 총 관리사무직 중 책임급 미만, (비관리직) 계약직, 별정직, 현장직 등\n2024년부터 관리직 재정의: (시니어 관리직) 직책자 이상, (주니어 관리직) 책임급 이상, (비관리직) 책임급 미만",
+    "kesg_code": null,
+    "page": 99
+   }
+  ]
+ }
+}

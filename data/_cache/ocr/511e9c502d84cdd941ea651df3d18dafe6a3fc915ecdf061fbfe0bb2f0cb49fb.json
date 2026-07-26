@@ -1,0 +1,228 @@
+{
+ "schema": 2,
+ "meta": {
+  "key": "511e9c502d84cdd941ea651df3d18dafe6a3fc915ecdf061fbfe0bb2f0cb49fb",
+  "created_at": "2026-07-26T11:35:08+00:00",
+  "model": "gpt-4.1-mini",
+  "doc_type": "ambiguous_fallback_vlm",
+  "source_file": "012330_mobis_2025.pdf",
+  "prompt_sha256": "910d98b903903a42bf1ea537d16996c031f6d5939dd94dd2ed028948f5825de4",
+  "input_chars": 4253
+ },
+ "response": {
+  "metrics": [
+   {
+    "metric_hint": "유니투스 온실가스 배출량 Scope 1 (지역기반)",
+    "value": 8322,
+    "unit": "tCO2eq",
+    "period": "2024년 1월 1일 ~ 2024년 12월 31일",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "유니투스 온실가스 배출량 Scope 2 (지역기반)",
+    "value": 60392,
+    "unit": "tCO2eq",
+    "period": "2024년 1월 1일 ~ 2024년 12월 31일",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "유니투스 온실가스 배출량 총계 (지역기반)",
+    "value": 68714,
+    "unit": "tCO2eq",
+    "period": "2024년 1월 1일 ~ 2024년 12월 31일",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "모트라스 온실가스 배출량 Scope 1 (지역기반)",
+    "value": 5600,
+    "unit": "tCO2eq",
+    "period": "2024년 1월 1일 ~ 2024년 12월 31일",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "모트라스 온실가스 배출량 Scope 2 (지역기반)",
+    "value": 14064,
+    "unit": "tCO2eq",
+    "period": "2024년 1월 1일 ~ 2024년 12월 31일",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "모트라스 온실가스 배출량 총계 (지역기반)",
+    "value": 19663,
+    "unit": "tCO2eq",
+    "period": "2024년 1월 1일 ~ 2024년 12월 31일",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "현대아이에이치엘 온실가스 배출량 Scope 1 (지역기반)",
+    "value": 530,
+    "unit": "tCO2eq",
+    "period": "2024년 1월 1일 ~ 2024년 12월 31일",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "현대아이에이치엘 온실가스 배출량 Scope 2 (지역기반)",
+    "value": 8773,
+    "unit": "tCO2eq",
+    "period": "2024년 1월 1일 ~ 2024년 12월 31일",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "현대아이에이치엘 온실가스 배출량 총계 (지역기반)",
+    "value": 9303,
+    "unit": "tCO2eq",
+    "period": "2024년 1월 1일 ~ 2024년 12월 31일",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "에이치그린파워 온실가스 배출량 Scope 1 (지역기반)",
+    "value": 179,
+    "unit": "tCO2eq",
+    "period": "2024년 1월 1일 ~ 2024년 12월 31일",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "에이치그린파워 온실가스 배출량 Scope 2 (지역기반)",
+    "value": 10722,
+    "unit": "tCO2eq",
+    "period": "2024년 1월 1일 ~ 2024년 12월 31일",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "에이치그린파워 온실가스 배출량 총계 (지역기반)",
+    "value": 10901,
+    "unit": "tCO2eq",
+    "period": "2024년 1월 1일 ~ 2024년 12월 31일",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "지아이티 온실가스 배출량 Scope 1 (지역기반)",
+    "value": 57,
+    "unit": "tCO2eq",
+    "period": "2024년 1월 1일 ~ 2024년 12월 31일",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "지아이티 온실가스 배출량 Scope 2 (지역기반)",
+    "value": 478,
+    "unit": "tCO2eq",
+    "period": "2024년 1월 1일 ~ 2024년 12월 31일",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "지아이티 온실가스 배출량 총계 (지역기반)",
+    "value": 535,
+    "unit": "tCO2eq",
+    "period": "2024년 1월 1일 ~ 2024년 12월 31일",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "현대모비스 해외 사업장 온실가스 배출량 Scope 1 (지역기반)",
+    "value": 30487,
+    "unit": "tCO2eq",
+    "period": "2024년 1월 1일 ~ 2024년 12월 31일",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "현대모비스 해외 사업장 온실가스 배출량 Scope 2 (지역기반)",
+    "value": 176002,
+    "unit": "tCO2eq",
+    "period": "2024년 1월 1일 ~ 2024년 12월 31일",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "현대모비스 해외 사업장 온실가스 배출량 총계 (지역기반)",
+    "value": 206489,
+    "unit": "tCO2eq",
+    "period": "2024년 1월 1일 ~ 2024년 12월 31일",
+    "kesg_code": null
+   }
+  ],
+  "clauses": [
+   {
+    "section": "검증 대상",
+    "text": "(재)한국품질재단은 현대모비스(주) 국내 자회사(유니투스(주), 모트라스(주), 현대아이에이치엘(주), 에이치그린파워(주), 지아이티(주))의 2024년 Scope 1, 2 온실가스 배출량에 대한 검증을 수행하였습니다.",
+    "kesg_code": null,
+    "page": 160
+   },
+   {
+    "section": "검증 목적",
+    "text": "자발적 온실가스 배출량 인벤토리에 대한 신뢰성 확보를 목적으로 합니다.",
+    "kesg_code": null,
+    "page": 160
+   },
+   {
+    "section": "검증 범위",
+    "text": "2024년 기준 86개 사업장의 운영통제 하에 있는 모든 온실가스 배출시설을 대상으로 하였습니다.",
+    "kesg_code": null,
+    "page": 160
+   },
+   {
+    "section": "검증 기준",
+    "text": "[온실가스 배출권거래제의 배출량 보고 및 인증에 관한 지침(환경부고시 제 2025-28호)], [2006 IPCC Guidelines for National Greenhouse Gas Inventories], [ISO 14064-1]를 기준으로 하였습니다.",
+    "kesg_code": null,
+    "page": 160
+   },
+   {
+    "section": "보증 수준",
+    "text": "검증은 ISO 14064-3에 규정된 절차에 따라 계획 및 수행되었고, 검증의 보증 수준은 제한적 보증 수준을 만족하도록 수행되었습니다. 또한 검증 전 과정에 대한 절차가 효과적 수행되었는지 내부심의를 통해 확인하였습니다.",
+    "kesg_code": null,
+    "page": 160
+   },
+   {
+    "section": "검증 한계",
+    "text": "검증은 기준 및 방법 등을 적용하는 과정에서 발생될 수 있는 고유의 한계를 내포하고 있습니다.",
+    "kesg_code": null,
+    "page": 160
+   },
+   {
+    "section": "검증 결론",
+    "text": "온실가스 배출량 보고서에 수록되어 있는 온실가스 배출량 데이터에 대해 아래와 같은 결론을 제시합니다. 1) 온실가스 배출량은 검증기준에 따라 적절하게 산정되었습니다. 2) 온실가스 배출량 산정에 사용된 데이터와 정보는 적절하고 합리적이며, 검증의견에 영향을 줄 수 있는 중대한 오류 및 누락은 발견되지 않았습니다. 온실가스 배출량에 대한 중요성평가 결과 합의된 5% 기준 미만을 만족하고 있습니다. 3) 따라서 다음의 2024년 온실가스 배출량에 대해 “적정” 의견을 제시합니다.",
+    "kesg_code": null,
+    "page": 160
+   },
+   {
+    "section": "검증 대상",
+    "text": "(재)한국품질재단은 제3자 검증기관으로서 현대모비스(주)의 2024년 Scope 3 온실가스 배출량에 대한 독립된 검증을 수행하였습니다.",
+    "kesg_code": null,
+    "page": 161
+   },
+   {
+    "section": "검증 목적",
+    "text": "자발적 온실가스 배출량 인벤토리에 대한 독립된 검증 의견을 제시하는 것을 목적으로 합니다.",
+    "kesg_code": null,
+    "page": 161
+   },
+   {
+    "section": "검증 범위",
+    "text": "2024년 기준 회사가 자체적으로 선정한 13개 카테고리(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 15)를 대상으로 하였습니다.",
+    "kesg_code": null,
+    "page": 161
+   },
+   {
+    "section": "검증 기준",
+    "text": "회사의 요청에 따라 다음의 기준 및 계수가 적용되었습니다. 기준: ISO 14064-1:2018, ISO 14064-3:2019, 2006 IPCC Guidelines for National Greenhouse Gas Inventories, GHG Protocol Corporate Standard, 온실가스 배출권거래제의 배출량 보고 및 인증에 관한 지침(환경부고시 제 2025-28호). 배출계수: Environmental Product Declaration evaluation coefficient(2021), GREET2(2022).",
+    "kesg_code": null,
+    "page": 161
+   },
+   {
+    "section": "보증 수준",
+    "text": "본 검증은 ‘ISO 14064-3:2019’의 검증 원칙과 기준에 따라 제한적 보증수준 하에서 수행되었습니다.",
+    "kesg_code": null,
+    "page": 161
+   },
+   {
+    "section": "검증 한계",
+    "text": "본 검증은 조직의 데이터 특성, 계산 및 추정, 샘플링 방식 등 제한된 요소에 의해 발생할 수 있는 고유의 한계를 포함하고 있습니다. 또한, 회사가 제공한 원본 데이터의 정확성에 대한 책임이 포함되어 있지 않습니다.",
+    "kesg_code": null,
+    "page": 161
+   },
+   {
+    "section": "검증 결론",
+    "text": "상기 명시한 기준 및 지침에 따라 검증을 수행한 결과, KFQ의 의견은 다음과 같습니다. 1) 온실가스 배출량 산정에 사용된 데이터와 정보는 제공된 자료에 한하여 적절하며, 검증 의견에 영향을 줄 수 있는 중대한 오류 및 누락은 발견되지 않았습니다. 2) 온실가스 배출량 산정 시 자체적으로 설정한 가정 및 추정사항은 잠재적인 오해를 방지하기 위하여 회사의 내부 인벤토리 산정 문서에 투명하게 설명되어 있습니다. 3) 따라서 다음의 2024년 온실가스 배출량에 대해 “적정” 의견을 제시합니다.",
+    "kesg_code": null,
+    "page": 161
+   }
+  ]
+ }
+}

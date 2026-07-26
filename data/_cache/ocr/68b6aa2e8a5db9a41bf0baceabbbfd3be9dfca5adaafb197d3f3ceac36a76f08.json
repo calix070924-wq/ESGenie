@@ -1,0 +1,211 @@
+{
+ "schema": 2,
+ "meta": {
+  "key": "68b6aa2e8a5db9a41bf0baceabbbfd3be9dfca5adaafb197d3f3ceac36a76f08",
+  "created_at": "2026-07-26T11:29:15+00:00",
+  "model": "gpt-4.1-mini",
+  "doc_type": "ambiguous_fallback_vlm",
+  "source_file": "012330_mobis_2025.pdf",
+  "prompt_sha256": "910d98b903903a42bf1ea537d16996c031f6d5939dd94dd2ed028948f5825de4",
+  "input_chars": 4254
+ },
+ "response": {
+  "metrics": [
+   {
+    "metric_hint": "진단 대상 협력사 개사",
+    "value": 399,
+    "unit": "개사",
+    "period": "2022",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "1차 최초 개사",
+    "value": 395,
+    "unit": "개사",
+    "period": "2022",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "최종 대상 협력사 개사",
+    "value": 373,
+    "unit": "개사",
+    "period": "2022",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "2차 최초 개사",
+    "value": 44,
+    "unit": "개사",
+    "period": "2022",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "최종 대상 협력사 2차 개사",
+    "value": 26,
+    "unit": "개사",
+    "period": "2022",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "점검 완료 협력사 개사",
+    "value": 367,
+    "unit": "개사",
+    "period": "2022",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "1차 평가된 협력사 개사",
+    "value": 342,
+    "unit": "개사",
+    "period": "2022",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "1차 평가된 협력사 비율",
+    "value": 91.7,
+    "unit": "%",
+    "period": "2022",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "2차 평가된 협력사 개사",
+    "value": 25,
+    "unit": "개사",
+    "period": "2022",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "2차 평가된 협력사 비율",
+    "value": 96.2,
+    "unit": "%",
+    "period": "2022",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "식별 고위험 협력사 개사",
+    "value": 12,
+    "unit": "개사",
+    "period": "2022",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "고위험 협력사 비율",
+    "value": 3.3,
+    "unit": "%",
+    "period": "2022",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "1차 고위험 협력사 개사",
+    "value": 10,
+    "unit": "개사",
+    "period": "2022",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "1차 고위험 협력사 비율",
+    "value": 2.9,
+    "unit": "%",
+    "period": "2022",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "2차 고위험 협력사 개사",
+    "value": 2,
+    "unit": "개사",
+    "period": "2022",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "2차 고위험 협력사 비율",
+    "value": 8.0,
+    "unit": "%",
+    "period": "2022",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "협력사 ESG 자가진단 결과 고위험 협력사에 대한 현장 평가 완료율",
+    "value": 100,
+    "unit": "%",
+    "period": "2022",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "시정조치 계획서 접수율",
+    "value": 100,
+    "unit": "%",
+    "period": "2022",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "협력사 ESG 실사율(현장진단)",
+    "value": 100,
+    "unit": "%",
+    "period": "2022",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "1차 실사 협력사 개사",
+    "value": 10,
+    "unit": "개사",
+    "period": "2022",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "1차 실사 협력사 비율",
+    "value": 100,
+    "unit": "%",
+    "period": "2022",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "2차 실사 협력사 개사",
+    "value": 2,
+    "unit": "개사",
+    "period": "2022",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "2차 실사 협력사 비율",
+    "value": 100,
+    "unit": "%",
+    "period": "2022",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "시정조치 협력사 개사",
+    "value": 12,
+    "unit": "개사",
+    "period": "2022",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "권고조치 협력사 개사",
+    "value": 0,
+    "unit": "개사",
+    "period": "2022",
+    "kesg_code": null
+   }
+  ],
+  "clauses": [
+   {
+    "section": "점검 및 조치 현황",
+    "text": "1) 미발생이며 100%로 표기함",
+    "kesg_code": null,
+    "page": 117
+   },
+   {
+    "section": "협력사 ESG 자가진단 결과 ‘고위험 협력사’에 대한 현장 평가 완료율",
+    "text": "협력사 ESG 자가진단 결과 ‘고위험 협력사’에 대한 현장 평가 완료율 및 시정조치 계획서 접수율, 행동강령 미준수로 언론에 공표된 이슈 발생 협력사에 대한 제재 심의 완료는 모두 100%로 표기됨.",
+    "kesg_code": null,
+    "page": 117
+   },
+   {
+    "section": "주석",
+    "text": "1) 국내(별도) 운영구도 전체 협력사\n2) 국내(별도) 운영구도 협력사 중 거래 없음, 대리점 등을 제외한 평가 대상사\n3) 핵심사업군, 직개발(10억 원 이상), 개별 계약 1차사의 전체 2차사\n4) 핵심 2차 협력사 중 거래 없음, 폐업 등을 제외한 평가 대상사\n5) 점검 완료 협력사 중 고위험으로 식별된 협력사 수의 비율\n6) 슬로바키아(MSK), 체코(MCZ, MCZ-OS)법인 협력사 대상",
+    "kesg_code": null,
+    "page": 117
+   }
+  ]
+ }
+}

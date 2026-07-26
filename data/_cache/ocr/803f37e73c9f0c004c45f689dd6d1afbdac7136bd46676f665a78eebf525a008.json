@@ -1,0 +1,1126 @@
+{
+ "schema": 2,
+ "meta": {
+  "key": "803f37e73c9f0c004c45f689dd6d1afbdac7136bd46676f665a78eebf525a008",
+  "created_at": "2026-07-26T11:17:02+00:00",
+  "model": "gpt-4.1-mini",
+  "doc_type": "ambiguous_fallback_vlm",
+  "source_file": "012330_mobis_2025.pdf",
+  "prompt_sha256": "910d98b903903a42bf1ea537d16996c031f6d5939dd94dd2ed028948f5825de4",
+  "input_chars": 4303
+ },
+ "response": {
+  "metrics": [
+   {
+    "metric_hint": "운영지출(OpEx) 보고연도(당기) 국내(별도)",
+    "value": 981,
+    "unit": "백만 원",
+    "period": "2023",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "운영지출(OpEx) 보고연도(당기) 해외 자회사",
+    "value": 1053,
+    "unit": "백만 원",
+    "period": "2023",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "운영지출(OpEx) 보고연도(당기) 합계",
+    "value": 2034,
+    "unit": "백만 원",
+    "period": "2023",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "운영지출(OpEx) 보고연도(당기) 국내(별도)",
+    "value": 992,
+    "unit": "백만 원",
+    "period": "2024",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "운영지출(OpEx) 보고연도(당기) 해외 자회사",
+    "value": 1376,
+    "unit": "백만 원",
+    "period": "2024",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "운영지출(OpEx) 보고연도(당기) 합계",
+    "value": 2368,
+    "unit": "백만 원",
+    "period": "2024",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "운영지출(OpEx) 보고연도 이후(미래) 국내(별도)",
+    "value": 865,
+    "unit": "백만 원",
+    "period": "2023",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "운영지출(OpEx) 보고연도 이후(미래) 합계",
+    "value": 865,
+    "unit": "백만 원",
+    "period": "2023",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "운영지출(OpEx) 보고연도 이후(미래) 국내(별도)",
+    "value": 2889,
+    "unit": "백만 원",
+    "period": "2024",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "운영지출(OpEx) 보고연도 이후(미래) 해외 자회사",
+    "value": 2791,
+    "unit": "백만 원",
+    "period": "2024",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "운영지출(OpEx) 보고연도 이후(미래) 합계",
+    "value": 5680,
+    "unit": "백만 원",
+    "period": "2024",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "자본지출(CapEx) 보고연도(당기) 국내(별도)",
+    "value": 1287,
+    "unit": "백만 원",
+    "period": "2023",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "자본지출(CapEx) 보고연도(당기) 해외 자회사",
+    "value": 834,
+    "unit": "백만 원",
+    "period": "2023",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "자본지출(CapEx) 보고연도(당기) 합계",
+    "value": 2121,
+    "unit": "백만 원",
+    "period": "2023",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "자본지출(CapEx) 보고연도(당기) 국내(별도)",
+    "value": 655,
+    "unit": "백만 원",
+    "period": "2024",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "자본지출(CapEx) 보고연도(당기) 해외 자회사",
+    "value": 750,
+    "unit": "백만 원",
+    "period": "2024",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "자본지출(CapEx) 보고연도(당기) 합계",
+    "value": 1405,
+    "unit": "백만 원",
+    "period": "2024",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "자본지출(CapEx) 보고연도 이후(미래) 국내(별도)",
+    "value": 1656,
+    "unit": "백만 원",
+    "period": "2023",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "자본지출(CapEx) 보고연도 이후(미래) 합계",
+    "value": 1656,
+    "unit": "백만 원",
+    "period": "2023",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "자본지출(CapEx) 보고연도 이후(미래) 국내(별도)",
+    "value": 12,
+    "unit": "백만 원",
+    "period": "2024",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "자본지출(CapEx) 보고연도 이후(미래) 해외 자회사",
+    "value": 1480,
+    "unit": "백만 원",
+    "period": "2024",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "자본지출(CapEx) 보고연도 이후(미래) 합계",
+    "value": 1492,
+    "unit": "백만 원",
+    "period": "2024",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "비재생에너지 사용량 TJ 국내(별도)",
+    "value": 1917,
+    "unit": "TJ",
+    "period": "2022",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "비재생에너지 사용량 TJ 국내 자회사",
+    "value": 2234,
+    "unit": "TJ",
+    "period": "2022",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "비재생에너지 사용량 TJ 해외 자회사",
+    "value": 3828,
+    "unit": "TJ",
+    "period": "2022",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "비재생에너지 사용량 TJ 합계",
+    "value": 7978,
+    "unit": "TJ",
+    "period": "2022",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "비재생에너지 사용량 TJ 국내(별도)",
+    "value": 2082,
+    "unit": "TJ",
+    "period": "2023",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "비재생에너지 사용량 TJ 국내 자회사",
+    "value": 2188,
+    "unit": "TJ",
+    "period": "2023",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "비재생에너지 사용량 TJ 해외 자회사",
+    "value": 3662,
+    "unit": "TJ",
+    "period": "2023",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "비재생에너지 사용량 TJ 합계",
+    "value": 7932,
+    "unit": "TJ",
+    "period": "2023",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "비재생에너지 사용량 TJ 국내(별도)",
+    "value": 2162,
+    "unit": "TJ",
+    "period": "2024",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "비재생에너지 사용량 TJ 국내 자회사",
+    "value": 2209,
+    "unit": "TJ",
+    "period": "2024",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "비재생에너지 사용량 TJ 해외 자회사",
+    "value": 3698,
+    "unit": "TJ",
+    "period": "2024",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "비재생에너지 사용량 TJ 합계",
+    "value": 8070,
+    "unit": "TJ",
+    "period": "2024",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "비재생에너지 사용량 MWh 국내(별도)",
+    "value": 218668,
+    "unit": "MWh",
+    "period": "2022",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "비재생에너지 사용량 MWh 국내 자회사",
+    "value": 286517,
+    "unit": "MWh",
+    "period": "2022",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "비재생에너지 사용량 MWh 해외 자회사",
+    "value": 504831,
+    "unit": "MWh",
+    "period": "2022",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "비재생에너지 사용량 MWh 합계",
+    "value": 1010016,
+    "unit": "MWh",
+    "period": "2022",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "비재생에너지 사용량 MWh 국내(별도)",
+    "value": 241104,
+    "unit": "MWh",
+    "period": "2023",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "비재생에너지 사용량 MWh 국내 자회사",
+    "value": 279009,
+    "unit": "MWh",
+    "period": "2023",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "비재생에너지 사용량 MWh 해외 자회사",
+    "value": 480076,
+    "unit": "MWh",
+    "period": "2023",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "비재생에너지 사용량 MWh 합계",
+    "value": 1000190,
+    "unit": "MWh",
+    "period": "2023",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "비재생에너지 사용량 MWh 국내(별도)",
+    "value": 250734,
+    "unit": "MWh",
+    "period": "2024",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "비재생에너지 사용량 MWh 국내 자회사",
+    "value": 280225,
+    "unit": "MWh",
+    "period": "2024",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "비재생에너지 사용량 MWh 해외 자회사",
+    "value": 484227,
+    "unit": "MWh",
+    "period": "2024",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "비재생에너지 사용량 MWh 합계",
+    "value": 1015187,
+    "unit": "MWh",
+    "period": "2024",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "비재생에너지 사용률 % 국내(별도)",
+    "value": 99.9,
+    "unit": "%",
+    "period": "2022",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "비재생에너지 사용률 % 국내 자회사",
+    "value": 100,
+    "unit": "%",
+    "period": "2022",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "비재생에너지 사용률 % 해외 자회사",
+    "value": 90.7,
+    "unit": "%",
+    "period": "2022",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "비재생에너지 사용률 % 합계",
+    "value": 95.3,
+    "unit": "%",
+    "period": "2022",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "비재생에너지 사용률 % 국내(별도)",
+    "value": 96.1,
+    "unit": "%",
+    "period": "2023",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "비재생에너지 사용률 % 국내 자회사",
+    "value": 96.8,
+    "unit": "%",
+    "period": "2023",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "비재생에너지 사용률 % 해외 자회사",
+    "value": 87.4,
+    "unit": "%",
+    "period": "2023",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "비재생에너지 사용률 % 합계",
+    "value": 92.1,
+    "unit": "%",
+    "period": "2023",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "비재생에너지 사용률 % 국내(별도)",
+    "value": 96.7,
+    "unit": "%",
+    "period": "2024",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "비재생에너지 사용률 % 국내 자회사",
+    "value": 97.7,
+    "unit": "%",
+    "period": "2024",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "비재생에너지 사용률 % 해외 자회사",
+    "value": 80.8,
+    "unit": "%",
+    "period": "2024",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "비재생에너지 사용률 % 합계",
+    "value": 88.9,
+    "unit": "%",
+    "period": "2024",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "화석에너지 사용량 TJ 국내(별도)",
+    "value": 110,
+    "unit": "TJ",
+    "period": "2022",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "화석에너지 사용량 TJ 국내 자회사",
+    "value": 310,
+    "unit": "TJ",
+    "period": "2022",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "화석에너지 사용량 TJ 해외 자회사",
+    "value": 606,
+    "unit": "TJ",
+    "period": "2022",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "화석에너지 사용량 TJ 합계",
+    "value": 1025,
+    "unit": "TJ",
+    "period": "2022",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "화석에너지 사용량 TJ 국내(별도)",
+    "value": 139,
+    "unit": "TJ",
+    "period": "2023",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "화석에너지 사용량 TJ 국내 자회사",
+    "value": 290,
+    "unit": "TJ",
+    "period": "2023",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "화석에너지 사용량 TJ 해외 자회사",
+    "value": 567,
+    "unit": "TJ",
+    "period": "2023",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "화석에너지 사용량 TJ 합계",
+    "value": 997,
+    "unit": "TJ",
+    "period": "2023",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "화석에너지 사용량 TJ 국내(별도)",
+    "value": 147,
+    "unit": "TJ",
+    "period": "2024",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "화석에너지 사용량 TJ 국내 자회사",
+    "value": 285,
+    "unit": "TJ",
+    "period": "2024",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "화석에너지 사용량 TJ 해외 자회사",
+    "value": 567,
+    "unit": "TJ",
+    "period": "2024",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "화석에너지 사용량 TJ 합계",
+    "value": 998,
+    "unit": "TJ",
+    "period": "2024",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "화석에너지 사용량 MWh 국내(별도)",
+    "value": 30451,
+    "unit": "MWh",
+    "period": "2022",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "화석에너지 사용량 MWh 국내 자회사",
+    "value": 86149,
+    "unit": "MWh",
+    "period": "2022",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "화석에너지 사용량 MWh 해외 자회사",
+    "value": 168202,
+    "unit": "MWh",
+    "period": "2022",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "화석에너지 사용량 MWh 합계",
+    "value": 284802,
+    "unit": "MWh",
+    "period": "2022",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "화석에너지 사용량 MWh 국내(별도)",
+    "value": 38600,
+    "unit": "MWh",
+    "period": "2023",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "화석에너지 사용량 MWh 국내 자회사",
+    "value": 80688,
+    "unit": "MWh",
+    "period": "2023",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "화석에너지 사용량 MWh 해외 자회사",
+    "value": 157548,
+    "unit": "MWh",
+    "period": "2023",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "화석에너지 사용량 MWh 합계",
+    "value": 276835,
+    "unit": "MWh",
+    "period": "2023",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "화석에너지 사용량 MWh 국내(별도)",
+    "value": 40791,
+    "unit": "MWh",
+    "period": "2024",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "화석에너지 사용량 MWh 국내 자회사",
+    "value": 79092,
+    "unit": "MWh",
+    "period": "2024",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "화석에너지 사용량 MWh 해외 자회사",
+    "value": 157443,
+    "unit": "MWh",
+    "period": "2024",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "화석에너지 사용량 MWh 합계",
+    "value": 277326,
+    "unit": "MWh",
+    "period": "2024",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "화석에너지 사용 비율 % 국내 자회사",
+    "value": 12.8,
+    "unit": "%",
+    "period": "2023",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "화석에너지 사용 비율 % 해외 자회사",
+    "value": 13.4,
+    "unit": "%",
+    "period": "2023",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "화석에너지 사용 비율 % 합계",
+    "value": 11.5,
+    "unit": "%",
+    "period": "2023",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "화석에너지 사용 비율 % 국내(별도)",
+    "value": 6.6,
+    "unit": "%",
+    "period": "2024",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "화석에너지 사용 비율 % 국내 자회사",
+    "value": 12.6,
+    "unit": "%",
+    "period": "2024",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "화석에너지 사용 비율 % 해외 자회사",
+    "value": 12.4,
+    "unit": "%",
+    "period": "2024",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "화석에너지 사용 비율 % 합계",
+    "value": 11.0,
+    "unit": "%",
+    "period": "2024",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "석탄 및 석탄제품 연료 소비 TJ 국내(별도)",
+    "value": 0,
+    "unit": "TJ",
+    "period": "2023",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "석탄 및 석탄제품 연료 소비 TJ 국내 자회사",
+    "value": 0,
+    "unit": "TJ",
+    "period": "2023",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "석탄 및 석탄제품 연료 소비 TJ 해외 자회사",
+    "value": 0,
+    "unit": "TJ",
+    "period": "2023",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "석탄 및 석탄제품 연료 소비 TJ 합계",
+    "value": 0,
+    "unit": "TJ",
+    "period": "2023",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "석탄 및 석탄제품 연료 소비 TJ 국내(별도)",
+    "value": 0,
+    "unit": "TJ",
+    "period": "2024",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "석탄 및 석탄제품 연료 소비 TJ 국내 자회사",
+    "value": 0,
+    "unit": "TJ",
+    "period": "2024",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "석탄 및 석탄제품 연료 소비 TJ 해외 자회사",
+    "value": 0,
+    "unit": "TJ",
+    "period": "2024",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "석탄 및 석탄제품 연료 소비 TJ 합계",
+    "value": 0,
+    "unit": "TJ",
+    "period": "2024",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "원유 및 석유제품 연료 소비 TJ 국내 자회사",
+    "value": 5,
+    "unit": "TJ",
+    "period": "2023",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "원유 및 석유제품 연료 소비 TJ 해외 자회사",
+    "value": 78,
+    "unit": "TJ",
+    "period": "2023",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "원유 및 석유제품 연료 소비 TJ 합계",
+    "value": 102,
+    "unit": "TJ",
+    "period": "2023",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "원유 및 석유제품 연료 소비 TJ 국내(별도)",
+    "value": 19,
+    "unit": "TJ",
+    "period": "2024",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "원유 및 석유제품 연료 소비 TJ 국내 자회사",
+    "value": 11,
+    "unit": "TJ",
+    "period": "2024",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "원유 및 석유제품 연료 소비 TJ 해외 자회사",
+    "value": 76,
+    "unit": "TJ",
+    "period": "2024",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "원유 및 석유제품 연료 소비 TJ 합계",
+    "value": 106,
+    "unit": "TJ",
+    "period": "2024",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "원유 및 석유제품 연료 소비 MWh 국내 자회사",
+    "value": 1272,
+    "unit": "MWh",
+    "period": "2023",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "원유 및 석유제품 연료 소비 MWh 해외 자회사",
+    "value": 21579,
+    "unit": "MWh",
+    "period": "2023",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "원유 및 석유제품 연료 소비 MWh 합계",
+    "value": 28445,
+    "unit": "MWh",
+    "period": "2023",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "원유 및 석유제품 연료 소비 MWh 국내(별도)",
+    "value": 5328,
+    "unit": "MWh",
+    "period": "2024",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "원유 및 석유제품 연료 소비 MWh 국내 자회사",
+    "value": 3047,
+    "unit": "MWh",
+    "period": "2024",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "원유 및 석유제품 연료 소비 MWh 해외 자회사",
+    "value": 21021,
+    "unit": "MWh",
+    "period": "2024",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "원유 및 석유제품 연료 소비 MWh 합계",
+    "value": 29396,
+    "unit": "MWh",
+    "period": "2024",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "원유 및 석유제품 연료 소비 TJ 국내 자회사",
+    "value": 119,
+    "unit": "TJ",
+    "period": "2023",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "원유 및 석유제품 연료 소비 TJ 해외 자회사",
+    "value": 286,
+    "unit": "TJ",
+    "period": "2023",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "원유 및 석유제품 연료 소비 TJ 합계",
+    "value": 489,
+    "unit": "TJ",
+    "period": "2023",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "원유 및 석유제품 연료 소비 TJ 국내(별도)",
+    "value": 128,
+    "unit": "TJ",
+    "period": "2024",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "원유 및 석유제품 연료 소비 TJ 국내 자회사",
+    "value": 274,
+    "unit": "TJ",
+    "period": "2024",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "원유 및 석유제품 연료 소비 TJ 해외 자회사",
+    "value": 491,
+    "unit": "TJ",
+    "period": "2024",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "원유 및 석유제품 연료 소비 TJ 합계",
+    "value": 893,
+    "unit": "TJ",
+    "period": "2024",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "천연가스 및 기타 연료 소비 MWh 국내 자회사",
+    "value": 33006,
+    "unit": "MWh",
+    "period": "2023",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "천연가스 및 기타 연료 소비 MWh 국내 자회사",
+    "value": 79416,
+    "unit": "MWh",
+    "period": "2023",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "천연가스 및 기타 연료 소비 MWh 해외 자회사",
+    "value": 135968,
+    "unit": "MWh",
+    "period": "2023",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "천연가스 및 기타 연료 소비 MWh 합계",
+    "value": 248390,
+    "unit": "MWh",
+    "period": "2023",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "천연가스 및 기타 연료 소비 MWh 국내(별도)",
+    "value": 35463,
+    "unit": "MWh",
+    "period": "2024",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "천연가스 및 기타 연료 소비 MWh 국내 자회사",
+    "value": 76044,
+    "unit": "MWh",
+    "period": "2024",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "천연가스 및 기타 연료 소비 MWh 해외 자회사",
+    "value": 136422,
+    "unit": "MWh",
+    "period": "2024",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "천연가스 및 기타 연료 소비 MWh 합계",
+    "value": 247930,
+    "unit": "MWh",
+    "period": "2024",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "원자력에너지 사용량 MWh 국내(별도)",
+    "value": 0,
+    "unit": "MWh",
+    "period": "2023",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "원자력에너지 사용량 MWh 국내 자회사",
+    "value": 0,
+    "unit": "MWh",
+    "period": "2023",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "원자력에너지 사용량 MWh 해외 자회사",
+    "value": 0,
+    "unit": "MWh",
+    "period": "2023",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "원자력에너지 사용량 MWh 합계",
+    "value": 0,
+    "unit": "MWh",
+    "period": "2023",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "원자력에너지 사용량 MWh 국내(별도)",
+    "value": 0,
+    "unit": "MWh",
+    "period": "2024",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "원자력에너지 사용량 MWh 국내 자회사",
+    "value": 0,
+    "unit": "MWh",
+    "period": "2024",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "원자력에너지 사용량 MWh 해외 자회사",
+    "value": 0,
+    "unit": "MWh",
+    "period": "2024",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "원자력에너지 사용량 MWh 합계",
+    "value": 0,
+    "unit": "MWh",
+    "period": "2024",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "원자력에너지 사용 비율 % 국내(별도)",
+    "value": 0,
+    "unit": "%",
+    "period": "2023",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "원자력에너지 사용 비율 % 국내 자회사",
+    "value": 0,
+    "unit": "%",
+    "period": "2023",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "원자력에너지 사용 비율 % 해외 자회사",
+    "value": 0,
+    "unit": "%",
+    "period": "2023",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "원자력에너지 사용 비율 % 합계",
+    "value": 0,
+    "unit": "%",
+    "period": "2023",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "원자력에너지 사용 비율 % 국내(별도)",
+    "value": 0,
+    "unit": "%",
+    "period": "2024",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "원자력에너지 사용 비율 % 국내 자회사",
+    "value": 0,
+    "unit": "%",
+    "period": "2024",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "원자력에너지 사용 비율 % 해외 자회사",
+    "value": 0,
+    "unit": "%",
+    "period": "2024",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "원자력에너지 사용 비율 % 합계",
+    "value": 0,
+    "unit": "%",
+    "period": "2024",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "에너지원을 알 수 없는 에너지 사용량 TJ 국내(별도)",
+    "value": 1807,
+    "unit": "TJ",
+    "period": "2022",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "에너지원을 알 수 없는 에너지 사용량 TJ 국내 자회사",
+    "value": 1924,
+    "unit": "TJ",
+    "period": "2022",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "에너지원을 알 수 없는 에너지 사용량 TJ 해외 자회사",
+    "value": 3222,
+    "unit": "TJ",
+    "period": "2022",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "에너지원을 알 수 없는 에너지 사용량 TJ 합계",
+    "value": 6953,
+    "unit": "TJ",
+    "period": "2022",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "에너지원을 알 수 없는 에너지 사용량 TJ 국내(별도)",
+    "value": 1943,
+    "unit": "TJ",
+    "period": "2023",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "에너지원을 알 수 없는 에너지 사용량 TJ 국내 자회사",
+    "value": 1898,
+    "unit": "TJ",
+    "period": "2023",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "에너지원을 알 수 없는 에너지 사용량 TJ 해외 자회사",
+    "value": 3095,
+    "unit": "TJ",
+    "period": "2023",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "에너지원을 알 수 없는 에너지 사용량 TJ 합계",
+    "value": 6936,
+    "unit": "TJ",
+    "period": "2023",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "에너지원을 알 수 없는 에너지 사용량 TJ 국내(별도)",
+    "value": 2015,
+    "unit": "TJ",
+    "period": "2024",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "에너지원을 알 수 없는 에너지 사용량 TJ 국내 자회사",
+    "value": 1925,
+    "unit": "TJ",
+    "period": "2024",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "에너지원을 알 수 없는 에너지 사용량 TJ 해외 자회사",
+    "value": 3131,
+    "unit": "TJ",
+    "period": "2024",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "에너지원을 알 수 없는 에너지 사용량 TJ 합계",
+    "value": 7071,
+    "unit": "TJ",
+    "period": "2024",
+    "kesg_code": null
+   }
+  ],
+  "clauses": [
+   {
+    "section": "배출량 산정 기준",
+    "text": "국내·해외 출장 기준으로, 수송수단별(자차, 버스, 기차, 국내외 항공) 배출량 산정, 자차 관련 배출계수 수정으로 과거연도 데이터 수정",
+    "kesg_code": null,
+    "page": 53
+   },
+   {
+    "section": "통근버스 기준 및 데이터 산정 범위",
+    "text": "통근버스 기준이며, 데이터 산정 범위 확대로 과거연도 데이터 수정: 2022년 및 2023년(기존 마북·진천·서산·창원 외 의왕 사업장 포함)",
+    "kesg_code": null,
+    "page": 53
+   },
+   {
+    "section": "국내 영업팀 사업장 기준",
+    "text": "국내 영업팀 중 완성차 부지 임차 사업장 기준",
+    "kesg_code": null,
+    "page": 53
+   },
+   {
+    "section": "제품 사용·폐기 관련 배출량 산정",
+    "text": "판매된 제품의 사용·폐기 관련 카테고리는 완성차 운행·폐기 과정에서의 배출량 중 당사 부품 비율 반영하여 산정, 산정 방법론 내 부품 비율 변경으로 과거연도 데이터 수정",
+    "kesg_code": null,
+    "page": 53
+   },
+   {
+    "section": "온실가스 관리 비용 데이터 정정",
+    "text": "2023년 국내(별도) 데이터 전년도 산정 오류로 데이터 정정",
+    "kesg_code": null,
+    "page": 53
+   }
+  ]
+ }
+}

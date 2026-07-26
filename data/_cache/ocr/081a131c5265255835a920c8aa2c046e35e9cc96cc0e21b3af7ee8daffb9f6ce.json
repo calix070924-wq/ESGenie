@@ -1,0 +1,107 @@
+{
+ "schema": 2,
+ "meta": {
+  "key": "081a131c5265255835a920c8aa2c046e35e9cc96cc0e21b3af7ee8daffb9f6ce",
+  "created_at": "2026-07-26T11:34:32+00:00",
+  "model": "gpt-4.1-mini",
+  "doc_type": "ambiguous_fallback_vlm",
+  "source_file": "012330_mobis_2025.pdf",
+  "prompt_sha256": "910d98b903903a42bf1ea537d16996c031f6d5939dd94dd2ed028948f5825de4",
+  "input_chars": 4212
+ },
+ "response": {
+  "metrics": [],
+  "clauses": [
+   {
+    "section": "주요 활동",
+    "text": "아동 교통사고 저감 노력 및 투명우산 나눔 활동, 임직원 건강, 웰빙 증진을 위한 의료비 지원 및 건강관리실 운영",
+    "kesg_code": null,
+    "page": 155
+   },
+   {
+    "section": "Goal 4. Quality Education",
+    "text": "아동·청소년 대상 공학 교육 및 일자리 연계 교육 제공, 다양성·포용성에 대한 인식 교육 확대, 청소년 공학리더 프로그램 및 주니어 공학교실 운영, 청년 대상 임팩트 아이디어 챌린지 운영, 채용 연계형 SW 아카데미, 계약학과 운영, 장애 인식 개선 동화책 발간 및 무료 배포",
+    "kesg_code": null,
+    "page": 155
+   },
+   {
+    "section": "Goal 5. Gender Equality",
+    "text": "여성 역량 강화 및 리더 육성, 젠더 다양성 확대를 위한 계획 수립 및 이행, 임직원 다양성 프로그램(ERG) 운영",
+    "kesg_code": null,
+    "page": 155
+   },
+   {
+    "section": "Goal 6. Clean Water and Sanitation",
+    "text": "수자원 오염 저감 및 물 관련 생태계 보호·복원, 수질오염물질 관리, 국내외 사업장별 물 스트레스 분석, 진천 미호강 지역 생물다양성 프로그램 운영",
+    "kesg_code": null,
+    "page": 155
+   },
+   {
+    "section": "Goal 7. Affordable and Clean Energy",
+    "text": "재생에너지 비율 증대 및 에너지 효율 향상, 2040 RE100 추진, 에너지 관리 시스템 구축 및 운영, 사업장 내 지속적인 에너지 효율 개선 노력",
+    "kesg_code": null,
+    "page": 155
+   },
+   {
+    "section": "Goal 8. Decent Work and Economic Growth",
+    "text": "양질의 일자리 창출 및 강제·아동 노동 근절, 스타트업 육성 프로그램 참여(그룹 주관), 사업장 실사 이행(노동, SHE, 윤리, 공급망 영역)",
+    "kesg_code": null,
+    "page": 155
+   },
+   {
+    "section": "Goal 9. Industry, Innovation and Infrastructure",
+    "text": "연구 강화를 통한 산업 기술역량 향상, 연구개발 투자 및 인력 확대",
+    "kesg_code": null,
+    "page": 155
+   },
+   {
+    "section": "Goal 10. Reduced Inequalities",
+    "text": "동등 권리 보장 및 불평등 감소, 다양성과 포용(D&I) 정책 제정, 동일 직군 동일 급여 체계 운영",
+    "kesg_code": null,
+    "page": 155
+   },
+   {
+    "section": "Goal 12. Responsible Consumption and Production",
+    "text": "재활용/재사용을 통한 폐기물 감축 노력 및 지속가능한 기업 활동 내재화, 유해화학물질 관리, 2025 사업장 폐기물 매립 Zero 추진, ESG 거버넌스 확보 및 전략 추진, 지속가능성 보고서 발간을 통한 관련 활동 공개",
+    "kesg_code": null,
+    "page": 155
+   },
+   {
+    "section": "Goal 13. Climate Action",
+    "text": "기후변화 대응, 2045 Net-Zero 달성 추진, 전과정평가 통한 제품 환경영향(탄소) 분석, 임직원 환경 교육 진행, 환경 이니셔티브 활동(CDP, TCFD)",
+    "kesg_code": null,
+    "page": 155
+   },
+   {
+    "section": "Goal 15. Life on Land",
+    "text": "복원·조림을 통한 지속가능한 산림 관리, 생물다양성 보호, 국내외 사업장별 생물다양성 리스크 분석, 진천 미호강 지역 생물다양성 프로그램 운영",
+    "kesg_code": null,
+    "page": 155
+   },
+   {
+    "section": "Goal 16. Peace, Justice and Strong Institutions",
+    "text": "모든 형태의 부정부패 저감, 임직원·협력사 행동강령 보유, 신고채널 및 컴플라이언스 프로그램 운영",
+    "kesg_code": null,
+    "page": 155
+   },
+   {
+    "section": "Goal 17. Partnerships for the Goals",
+    "text": "파트너십 활성화를 통한 지식, 기술, 전문성 공유 확대, 지속가능경영 이니셔티브 참여",
+    "kesg_code": null,
+    "page": 155
+   },
+   {
+    "section": "인증 현황",
+    "text": "국내 생산거점별 인증 현황: 본사, 진천, 창원, 울산 전동화, 대구 전동화, 부품사업장, 자회사(모트라스, 유니투스, 에이치그린파워, 현대아이에이치엘), 해외 생산거점별 인증 현황: 중국(MBJ, MJS, MWX, MTJ, MCJ, MCQ), 미국(MAL, MAL-GA, MAL-SV, MNA, MUSe, MNAe, MUA), 브라질(MBR), 멕시코(MMX), 유럽(MSK, MCZ, MCZ-OS), 러시아(MRU), 스페인(MSPe), 헝가리(MHU), 인도(MIN, MIA), 튀르키예(MTR), 인도네시아(HEI)",
+    "kesg_code": null,
+    "page": 156
+   },
+   {
+    "section": "인증 세부사항",
+    "text": "ISO 14001 & ISO 45001(29개소): 본사, 물류센터(5개소), 부품사업소(22개소), 천안비축창고; ISO 9001(27개소): 본사(1개소), 부품사업소(22개소), 물류센터(4개소); 모트라스: ISO 14001 & ISO 45001(12개), IATF 16949(2개); 유니투스: ISO 14001 & ISO 45001(5개), IATF 16949(5개); 에이치그린파워: ISO 14001 & ISO 45001 & IATF 16949(1개); 현대아이에이치엘: ISO 14001 & ISO 45001 & IATF 16949(1개); 지아이티: 대상 사업장 없음; 해외 인증서 기준 사업장 개소 및 상태 상세 설명",
+    "kesg_code": null,
+    "page": 156
+   }
+  ]
+ }
+}

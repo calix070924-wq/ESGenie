@@ -1,0 +1,416 @@
+{
+ "schema": 2,
+ "meta": {
+  "key": "dd2f90b25d8de09d08e88cc03845d8a26701d208cdda5a5ba02012eca438a58b",
+  "created_at": "2026-07-26T11:20:53+00:00",
+  "model": "gpt-4.1-mini",
+  "doc_type": "ambiguous_fallback_vlm",
+  "source_file": "012330_mobis_2025.pdf",
+  "prompt_sha256": "910d98b903903a42bf1ea537d16996c031f6d5939dd94dd2ed028948f5825de4",
+  "input_chars": 4328
+ },
+ "response": {
+  "metrics": [
+   {
+    "metric_hint": "일반 폐기물 국내(별도) 2022년",
+    "value": 5570,
+    "unit": "ton",
+    "period": "2022",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "일반 폐기물 국내 자회사 2022년",
+    "value": 5640,
+    "unit": "ton",
+    "period": "2022",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "일반 폐기물 해외 자회사 2022년",
+    "value": 40263,
+    "unit": "ton",
+    "period": "2022",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "일반 폐기물 합계 2022년",
+    "value": 51473,
+    "unit": "ton",
+    "period": "2022",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "일반 폐기물 국내(별도) 2023년",
+    "value": 6562,
+    "unit": "ton",
+    "period": "2023",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "일반 폐기물 국내 자회사 2023년",
+    "value": 3464,
+    "unit": "ton",
+    "period": "2023",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "일반 폐기물 해외 자회사 2023년",
+    "value": 35464,
+    "unit": "ton",
+    "period": "2023",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "일반 폐기물 합계 2023년",
+    "value": 45491,
+    "unit": "ton",
+    "period": "2023",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "일반 폐기물 국내(별도) 2024년",
+    "value": 6314,
+    "unit": "ton",
+    "period": "2024",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "일반 폐기물 국내 자회사 2024년",
+    "value": 2595,
+    "unit": "ton",
+    "period": "2024",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "일반 폐기물 해외 자회사 2024년",
+    "value": 32320,
+    "unit": "ton",
+    "period": "2024",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "일반 폐기물 합계 2024년",
+    "value": 41229,
+    "unit": "ton",
+    "period": "2024",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "재활용/재사용 국내(별도) 2022년",
+    "value": 5570,
+    "unit": "ton",
+    "period": "2022",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "재활용/재사용 국내 자회사 2022년",
+    "value": 5640,
+    "unit": "ton",
+    "period": "2022",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "재활용/재사용 해외 자회사 2022년",
+    "value": 40263,
+    "unit": "ton",
+    "period": "2022",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "재활용/재사용 합계 2022년",
+    "value": 51473,
+    "unit": "ton",
+    "period": "2022",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "재활용/재사용 국내(별도) 2023년",
+    "value": 6562,
+    "unit": "ton",
+    "period": "2023",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "재활용/재사용 국내 자회사 2023년",
+    "value": 3341,
+    "unit": "ton",
+    "period": "2023",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "재활용/재사용 해외 자회사 2023년",
+    "value": 35464,
+    "unit": "ton",
+    "period": "2023",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "재활용/재사용 합계 2023년",
+    "value": 45367,
+    "unit": "ton",
+    "period": "2023",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "재활용/재사용 국내(별도) 2024년",
+    "value": 6314,
+    "unit": "ton",
+    "period": "2024",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "재활용/재사용 국내 자회사 2024년",
+    "value": 2595,
+    "unit": "ton",
+    "period": "2024",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "재활용/재사용 해외 자회사 2024년",
+    "value": 32320,
+    "unit": "ton",
+    "period": "2024",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "재활용/재사용 합계 2024년",
+    "value": 41229,
+    "unit": "ton",
+    "period": "2024",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "기타 재생이용 처리 국내 자회사 2023년",
+    "value": 123,
+    "unit": "ton",
+    "period": "2023",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "기타 재생이용 처리 합계 2023년",
+    "value": 123,
+    "unit": "ton",
+    "period": "2023",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "방법별 총 재활용/재사용 국내(별도) 2022년",
+    "value": 5710,
+    "unit": "ton",
+    "period": "2022",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "방법별 총 재활용/재사용 국내 자회사 2022년",
+    "value": 5886,
+    "unit": "ton",
+    "period": "2022",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "방법별 총 재활용/재사용 해외 자회사 2022년",
+    "value": 41210,
+    "unit": "ton",
+    "period": "2022",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "방법별 총 재활용/재사용 합계 2022년",
+    "value": 52806,
+    "unit": "ton",
+    "period": "2022",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "방법별 총 재활용/재사용 국내(별도) 2023년",
+    "value": 6599,
+    "unit": "ton",
+    "period": "2023",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "방법별 총 재활용/재사용 국내 자회사 2023년",
+    "value": 3627,
+    "unit": "ton",
+    "period": "2023",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "방법별 총 재활용/재사용 해외 자회사 2023년",
+    "value": 45397,
+    "unit": "ton",
+    "period": "2023",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "방법별 총 재활용/재사용 합계 2023년",
+    "value": 55623,
+    "unit": "ton",
+    "period": "2023",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "방법별 총 재활용/재사용 국내(별도) 2024년",
+    "value": 6587,
+    "unit": "ton",
+    "period": "2024",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "방법별 총 재활용/재사용 국내 자회사 2024년",
+    "value": 2657,
+    "unit": "ton",
+    "period": "2024",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "방법별 총 재활용/재사용 해외 자회사 2024년",
+    "value": 43866,
+    "unit": "ton",
+    "period": "2024",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "방법별 총 재활용/재사용 합계 2024년",
+    "value": 53110,
+    "unit": "ton",
+    "period": "2024",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "재활용/재사용 비율 국내(별도) 2022년",
+    "value": 77.1,
+    "unit": "%",
+    "period": "2022",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "재활용/재사용 비율 국내 자회사 2022년",
+    "value": 74.1,
+    "unit": "%",
+    "period": "2022",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "재활용/재사용 비율 해외 자회사 2022년",
+    "value": 74.7,
+    "unit": "%",
+    "period": "2022",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "재활용/재사용 비율 합계 2022년",
+    "value": 74.9,
+    "unit": "%",
+    "period": "2022",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "재활용/재사용 비율 국내(별도) 2023년",
+    "value": 84.5,
+    "unit": "%",
+    "period": "2023",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "재활용/재사용 비율 국내 자회사 2023년",
+    "value": 54.7,
+    "unit": "%",
+    "period": "2023",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "재활용/재사용 비율 해외 자회사 2023년",
+    "value": 78.0,
+    "unit": "%",
+    "period": "2023",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "재활용/재사용 비율 합계 2023년",
+    "value": 76.5,
+    "unit": "%",
+    "period": "2023",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "재활용/재사용 비율 국내(별도) 2024년",
+    "value": 92.9,
+    "unit": "%",
+    "period": "2024",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "재활용/재사용 비율 국내 자회사 2024년",
+    "value": 42.1,
+    "unit": "%",
+    "period": "2024",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "재활용/재사용 비율 해외 자회사 2024년",
+    "value": 74.3,
+    "unit": "%",
+    "period": "2024",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "재활용/재사용 비율 합계 2024년",
+    "value": 73.3,
+    "unit": "%",
+    "period": "2024",
+    "kesg_code": null
+   }
+  ],
+  "clauses": [
+   {
+    "section": "폐기물 처리",
+    "text": "1) 2022년은 국내 자회사 2개사(유니투스, 모트라스) 기준, 2023년부터 국내 자회사 전체 5개사 기준\n2) 2022년 해외 자회사 지정 폐기물, 합계 방법별 재활용/재사용 비율 데이터 정정\n3) 2023년 해외 자회사 지정 폐기물, 일반 폐기물, 일반 폐기물 합계 데이터 일부 정정",
+    "kesg_code": null,
+    "page": 72
+   },
+   {
+    "section": "임직원",
+    "text": "현대모비스는 지속가능경영 비전의 일환으로 임직원들이 가장 일하고 싶은 회사를 지향합니다. 유연하고 자유로운 기업문화를 바탕으로 임직원들이 행복하게 일할 수 있는 회사를 만들기 위해 노력하고 있습니다. 공정한 평가와 보상을 통해 구성원들의 노력을 인정하며, 역량 개발을 지원하여 임직원의 성장을 도모합니다. 또한, 작업자의 안전을 최우선으로 보장하고, 일과 삶의 균형을 보장하기 위한 다양한 제도를 시행하고 있습니다. 특히, 매해 진행되는 임직원 설문조사를 통해 임직원 의견을 정기적으로 수렴하여 조치를 취하며, 이에 대한 효과성을 측정하고 있습니다. 뿐만 아니라 유엔 글로벌 콤팩트(United Nations Global Compact) 10대 원칙 등 임직원 관련 인권, 노동 기준 및 환경에 관련한 지속가능 목표 준수를 위해 노력하고 있습니다.",
+    "kesg_code": null,
+    "page": 73
+   },
+   {
+    "section": "전략",
+    "text": "이해관계자 의견\n현대모비스는 매년 전사 임직원을 대상으로 조직문화 진단(Culture Survey)을 실시하여 임직원들의 의견을 듣고 있습니다. 각 부문의 임직원 중 선발된 기업문화 개선 전담 인원인 Culture Agent(CA)들은 조직문화 진단 결과를 분석하여, 해당 결과를 바탕으로 활동 계획을 수립합니다. 2024년에는 회사의 비전/방향성 확립, 일하는 방식 개선 등의 의견이 있었으며, 이를 통해 CA들은 해당 의견을 반영한 기업문화 개선 활동을 진행하고 있습니다.",
+    "kesg_code": null,
+    "page": 73
+   },
+   {
+    "section": "중요 영향, 위험 및 기회와 전략·사업 모형과의 상호작용",
+    "text": "중대성 평가 결과 ‘인적자원 관리’, ‘신뢰받는 노사관계’, ‘다양성 및 포용성’과 ‘산업 안전보건 강화’가 중요 주제로 선정되었습니다. 중대성 평가 시 현대모비스 사업장 내 근무하는 임직원에 미치는 영향과 이로 인한 재무적 위험과 기회를 식별 및 평가하여 관리하고 있습니다. 상세 내용은 Appendix ‘중요 영향, 위험 및 기회 요인’을 참고해 주시기 바랍니다.",
+    "kesg_code": null,
+    "page": 73
+   },
+   {
+    "section": "영향, 위험 및 기회 관리",
+    "text": "정책\n인권 관리 체계\n현대모비스는 임직원의 인권 침해를 예방하고 보호하기 위해 잠재적 리스크를 파악하고 이를 완화하기 위한 내부 관리 체계를 구축하여 운영하고 있습니다. 최고의사결정권자와 주요 부서의 의사결정권자가 참여하는 위원회 및 경영회의를 통해 인권경영 추진 현황을 관리·감독합니다. 위원회, 경영회의 및 실무회의에서는 인권경영 정책의 제·개정 검토, 인사제도 및 취업규칙 개정에 대한 의견 제시, 인권 리스크 평가 및 조치사항 권고, 인권침해 사례 조사 및 구제방안 심의 등을 주제로 논의하고 있습니다. 아울러 인권경영 담당 조직인 준법경영팀을 중심으로 신의성실의 원칙에 따라 인권 관리를 시행하는 동시에 인권 관리 절차와 방법을 주기적으로 검토하며, 사회적 변화를 적극 반영하여 관리 체계를 지속 개선하고 있습니다. 세부 관리 영역으로는 인권경영 정책의 제·개정, 실행계획 수립, 인권실사 수행을 포함한 인권 리스크 평가·관리, 고충처리 절차 운영, 내부교육 진행, 대내외 커뮤니케이션 관련 사항이 있습니다.",
+    "kesg_code": null,
+    "page": 74
+   },
+   {
+    "section": "인권정책",
+    "text": "현대모비스는 세계인권선언, UN 기업과 인권 이행원칙, 국제노동기구(ILO) 헌장, OECD 다국적기업 가이드라인 등 국제 인권·노동 기준에 부합하는 가이드라인을 준수하며 경영 활동을 전개해 나가고 있습니다. 인권경영을 적극적으로 이행함과 동시에 사업 운영에 따른 인권 침해를 예방하고 관련 리스크를 완화하기 위해 인권정책을 제정하였으며, 해당 정책의 적용범위는 임직원, 공급망 및 파트너, 합작투자사 등 모든 이해관계자입니다.",
+    "kesg_code": null,
+    "page": 74
+   },
+   {
+    "section": "노사정책",
+    "text": "현대모비스는 사업을 영위하는 모든 국가에서 해당 지역의 노동 관련 법규를 준수하는 노사정책을 운영하고 있으며, 임직원의 고용 및 해고, 근무시간 및 초과근로수당, 휴식/휴가 제공 의무를 보장하고, 모든 직원에게 자유 의지에 따라 근무할 권리를 부여하고 있습니다. 또한, 직원들의 결사의 자유, 단체교섭권을 보장하며, 노동조합 가입과 결성, 활동을 이유로 부당한 처우를 하는 것을 엄격히 금지합니다. 나아가 직원들의 고용안정을 위해 중요한 운영상의 변화에 대해 절차 및 기간 등을 단체협약에 규정하고 있으며, 노동조합과 충분히 협의하고 있습니다.",
+    "kesg_code": null,
+    "page": 74
+   },
+   {
+    "section": "다양성 및 포용정책",
+    "text": "현대모비스는 다양한 인재가 창의적이고 도전적인 사고를 겸비할 수 있는 조직문화를 조성하고 포용적인 사회로의 전환에 기여하고자 다양성 및 포용(D&I, Diverse & Inclusion) 정책을 제정하였습니다. 해당 정책은 고용, 인력 계획 등에서 다양성을 고려하여 차별 없이 평등한 기회를 제공하는 것을 포함하고 있습니다.",
+    "kesg_code": null,
+    "page": 74
+   }
+  ]
+ }
+}

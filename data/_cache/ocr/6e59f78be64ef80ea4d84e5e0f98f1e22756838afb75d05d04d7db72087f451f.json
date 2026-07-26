@@ -1,0 +1,153 @@
+{
+ "schema": 2,
+ "meta": {
+  "key": "6e59f78be64ef80ea4d84e5e0f98f1e22756838afb75d05d04d7db72087f451f",
+  "created_at": "2026-07-26T11:28:02+00:00",
+  "model": "gpt-4.1-mini",
+  "doc_type": "ambiguous_fallback_vlm",
+  "source_file": "012330_mobis_2025.pdf",
+  "prompt_sha256": "910d98b903903a42bf1ea537d16996c031f6d5939dd94dd2ed028948f5825de4",
+  "input_chars": 4331
+ },
+ "response": {
+  "metrics": [
+   {
+    "metric_hint": "업무 관련 부상 사망자 합계",
+    "value": 1,
+    "unit": "명",
+    "period": "2024년",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "재해율 (LTIFR) 합계",
+    "value": 0.722,
+    "unit": "건/백만 시간",
+    "period": "2024년",
+    "kesg_code": "S"
+   },
+   {
+    "metric_hint": "재해율 (LTIFR) 합계",
+    "value": 2.629,
+    "unit": "건/20만 시간",
+    "period": "2024년",
+    "kesg_code": "S"
+   },
+   {
+    "metric_hint": "근로손실 재해 건 합계",
+    "value": 192,
+    "unit": "건",
+    "period": "2024년",
+    "kesg_code": "S"
+   },
+   {
+    "metric_hint": "근로손실 재해 일 합계",
+    "value": 6533,
+    "unit": "일",
+    "period": "2024년",
+    "kesg_code": "S"
+   },
+   {
+    "metric_hint": "업무 관련 질병 사망자 합계",
+    "value": 0,
+    "unit": "명",
+    "period": "2024년",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "질병 발병률 (OIFR) 합계",
+    "value": 0.05,
+    "unit": "건/백만 시간",
+    "period": "2024년",
+    "kesg_code": "S"
+   },
+   {
+    "metric_hint": "기록 질병 건 합계",
+    "value": 5,
+    "unit": "건",
+    "period": "2024년",
+    "kesg_code": "S"
+   },
+   {
+    "metric_hint": "소속 외 근로자 합계",
+    "value": 8966,
+    "unit": "명",
+    "period": "2024년",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "소속 외 근로자 업무 관련 부상 사망자 합계",
+    "value": 0,
+    "unit": "명",
+    "period": "2024년",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "소속 외 근로자 재해율 (LTIFR) 합계",
+    "value": 1.169,
+    "unit": "건/백만 시간",
+    "period": "2024년",
+    "kesg_code": "S"
+   },
+   {
+    "metric_hint": "소속 외 근로자 재해율 (LTIFR) 합계",
+    "value": 0.234,
+    "unit": "건/20만 시간",
+    "period": "2024년",
+    "kesg_code": "S"
+   },
+   {
+    "metric_hint": "소속 외 근로자 근로손실 재해 건 합계",
+    "value": 19,
+    "unit": "건",
+    "period": "2024년",
+    "kesg_code": "S"
+   },
+   {
+    "metric_hint": "소속 외 근로자 업무 관련 질병 사망자 합계",
+    "value": 0,
+    "unit": "명",
+    "period": "2024년",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "소속 외 근로자 기록 질병 건 합계",
+    "value": 0,
+    "unit": "건",
+    "period": "2024년",
+    "kesg_code": "S"
+   }
+  ],
+  "clauses": [
+   {
+    "section": "안건",
+    "text": "업무 관련 부상 및 사망자 현황과 재해율(LTIFR), 근로손실 재해 건 및 일, 업무 관련 질병 사망자 및 질병 발병률(OIFR), 기록 질병 건 현황을 2022년부터 2024년까지 국내(별도), 국내 자회사, 해외 자회사 및 합계로 구분하여 보고함.",
+    "kesg_code": "S",
+    "page": 106
+   },
+   {
+    "section": "안건",
+    "text": "소속 외 근로자 현황 및 안전보건 현황을 2022년부터 2024년까지 국내(별도), 국내 자회사, 해외 자회사 및 합계로 구분하여 보고함. 2024년부터 국내 자회사 취합 대상 확대에 따른 인원수 증가가 있음.",
+    "kesg_code": "S",
+    "page": 106
+   },
+   {
+    "section": "책임",
+    "text": "현대모비스는 협력사의 지속가능성 수준 제고를 위해 협력사 행동강령 내 협력사 관리 정책을 시행하며, 윤리, 환경, 노동·인권, 안전·보건, 경영시스템, 공급망 실사의 6대 핵심 영역을 포함하여 행동강령 준수를 요구함.",
+    "kesg_code": "G",
+    "page": 107
+   },
+   {
+    "section": "절차",
+    "text": "협력사 의견 청취를 위한 PARTNERS DAY 운영, 업종별 간담회, 대리점 세미나 등을 통해 상생협력 문화를 확산하고 정책 방향과 중점 추진 사항을 공유함.",
+    "kesg_code": "S",
+    "page": 107
+   },
+   {
+    "section": "정책",
+    "text": "협력사 행동강령은 Drive Sustainability의 지속가능성 실무지침과 책임감 있는 비즈니스연합(RBA)의 행동강령을 참조하여 운영되며, 국내 및 해외 협력사에 계약서 내 행동강령 준수 조항을 포함하여 관리함.",
+    "kesg_code": "G",
+    "page": 107
+   }
+  ]
+ }
+}

@@ -1,0 +1,16 @@
+{
+ "schema": 2,
+ "meta": {
+  "key": "866316aee29950939fcf7eeb2121868c51b75d9a1646edcbcfb359169c8d4a66",
+  "created_at": "2026-07-26T11:35:37+00:00",
+  "model": "gpt-4.1-mini",
+  "doc_type": "ambiguous_fallback_vlm",
+  "source_file": "012330_mobis_2025.pdf",
+  "prompt_sha256": "910d98b903903a42bf1ea537d16996c031f6d5939dd94dd2ed028948f5825de4",
+  "input_chars": 672
+ },
+ "response": {
+  "metrics": [],
+  "clauses": []
+ }
+}

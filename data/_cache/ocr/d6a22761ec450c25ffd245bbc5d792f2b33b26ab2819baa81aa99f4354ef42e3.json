@@ -1,0 +1,173 @@
+{
+ "schema": 2,
+ "meta": {
+  "key": "d6a22761ec450c25ffd245bbc5d792f2b33b26ab2819baa81aa99f4354ef42e3",
+  "created_at": "2026-07-26T11:19:32+00:00",
+  "model": "gpt-4.1-mini",
+  "doc_type": "ambiguous_fallback_vlm",
+  "source_file": "012330_mobis_2025.pdf",
+  "prompt_sha256": "910d98b903903a42bf1ea537d16996c031f6d5939dd94dd2ed028948f5825de4",
+  "input_chars": 4297
+ },
+ "response": {
+  "metrics": [
+   {
+    "metric_hint": "센터 램프 1개당 전과정 온실가스 배출량(탄소발자국)",
+    "value": null,
+    "unit": "ton CO2eq",
+    "period": "2023",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "원소재 비율",
+    "value": 63.3,
+    "unit": "%",
+    "period": "Cradle-to-Grave",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "제품 생산 비율",
+    "value": 31.5,
+    "unit": "%",
+    "period": "Cradle-to-Grave",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "수송 비율",
+    "value": 4.9,
+    "unit": "%",
+    "period": "Cradle-to-Grave",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "부품 생산 비율",
+    "value": 0.2,
+    "unit": "%",
+    "period": "Cradle-to-Grave",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "원소재 비율",
+    "value": 28.2,
+    "unit": "%",
+    "period": "Cradle-to-Gate",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "부품 생산 비율",
+    "value": 0.1,
+    "unit": "%",
+    "period": "Cradle-to-Gate",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "제품 생산 비율",
+    "value": 14.1,
+    "unit": "%",
+    "period": "Cradle-to-Gate",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "수송 비율",
+    "value": 2.2,
+    "unit": "%",
+    "period": "Cradle-to-Gate",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "사용 비율",
+    "value": 55.4,
+    "unit": "%",
+    "period": "Cradle-to-Gate",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "저탄소 알루미늄 확보량",
+    "value": 15000,
+    "unit": "ton",
+    "period": "2024",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "저탄소 알루미늄 구매 규모",
+    "value": 62000000000,
+    "unit": "KRW",
+    "period": "2024",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "알루미늄 1톤당 기존 온실가스 배출량",
+    "value": 16.5,
+    "unit": "ton CO2eq",
+    "period": "2023",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "알루미늄 1톤당 저탄소 온실가스 배출량",
+    "value": 4,
+    "unit": "ton CO2eq",
+    "period": "2023",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "폐기물 재활용률",
+    "value": 92.9,
+    "unit": "%",
+    "period": "2024",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "진천공장 폐기물 재활용률",
+    "value": 100,
+    "unit": "%",
+    "period": "2023",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "연간 폐기물 감축량",
+    "value": 190,
+    "unit": "ton",
+    "period": "2024",
+    "kesg_code": null
+   }
+  ],
+  "clauses": [
+   {
+    "section": "센터 램프 전과정평가 결과",
+    "text": "현대모비스는 센터 램프를 주요 파일럿 제품으로 선정하여 전과정평가를 수행하였으며, 환경 영향 범주로 지구 온난화를 채택하고 온실가스 3종(CO2, CH4, N2O)의 배출량을 산출하였다. 단계별 Primary, Secondary 데이터를 수집하여 센터 램프 1개당 전과정 온실가스 배출량(탄소발자국)을 도출하였다. 미국 아르곤 국가연구소에서 개발한 GREET Model을 사용하였다.",
+    "kesg_code": null,
+    "page": 67
+   },
+   {
+    "section": "활동 및 자원 - 원소재 채굴 및 생산: 환경 친화적 소재 개발",
+    "text": "현대모비스는 탄소배출 저감을 위해 저탄소 소재 활용도를 높이기 위한 전략을 수립하고 있으며, 저탄소 금속과 저탄소 고분자 소재로 구분한다. 저탄소 고분자 소재는 리싸이클과 바이오 소재가 포함되며, 저탄소 알루미늄 소재는 CBAM 규제가 시행되는 유럽향 샤시 부품부터 확대 적용 중이다. 자원순환 강화를 위한 리사이클 전략을 운영하며 폐차 스틸 스크랩, 재활용 알루미늄, 재활용 플라스틱 확대 적용을 추진하고 있다. 니켈 저함량 연자성 소재 및 중희토 저감 신소재 개발도 진행 중이다.",
+    "kesg_code": null,
+    "page": 67
+   },
+   {
+    "section": "친환경 부품 공급 관리",
+    "text": "현대모비스는 부품공급계약서 내 친환경부품공급협정서를 마련하여 협력사의 친환경 활동을 장려하며, 4대 중금속(납, 수은, 카드뮴, 6가크로뮴) 사용을 금지하고 있다. 이를 통해 공급 부품이 환경 친화적으로 설계, 생산, 포장, 운송될 수 있도록 협력사의 의지와 친환경 시스템 구축을 강조한다.",
+    "kesg_code": null,
+    "page": 67
+   },
+   {
+    "section": "폐기물 저감 및 재활용",
+    "text": "현대모비스는 제품 생산 전 과정에서 원부자재 사용 절감과 폐기물 발생 최소화를 위해 발생원을 세분화하여 관리한다. 플라스틱 재생 원료 사용 비율을 높이고 납 대체품 도입으로 지정 폐기물 발생량을 저감하며, 금속 스크랩과 폐부품을 재활용한다. 폐기물 처리방법 변경을 통해 재활용률을 향상시켰으며, 2024년 국내 사업장 기준 폐기물 재활용률 92.9%를 달성하였다. 폐기물 전 과정은 온라인 폐기물 적법처리 시스템을 통해 정부에 보고하며, 폐기물 처리 업체 적격성 평가를 실시한다.",
+    "kesg_code": null,
+    "page": 67
+   },
+   {
+    "section": "폐기물 매립 제로화 추진",
+    "text": "현대모비스는 국내 자동차 업계 최초로 국제 인증기관 UL의 ‘폐기물 매립 제로(ZWTL)’ 인증을 추진하며 자원순환 기반 친환경 생산체계 구축에 앞장서고 있다. 창원공장은 2022년 Gold 등급, 2024년 Platinum 등급을 획득하였고, 진천공장은 2023년 폐기물 재활용률 100% 달성 및 2024년 ZWTL Gold 등급을 취득하였다. 폐합성수지와 폐지를 환경부로부터 순환자원으로 인정받아 연간 190톤 이상의 폐기물 감축과 원료 재사용을 통해 자원 활용 효율을 극대화하고 있다.",
+    "kesg_code": null,
+    "page": 67
+   },
+   {
+    "section": "수송: 친환경 포장재 확대 및 재활용",
+    "text": "현대모비스는 2014년 12월 한국 포장재 재활용사업 공제조합에 가입하여 합성수지 포장재와 윤활유에 대해 생산자 책임 재활용 제도를 이행하고 있다. 매분기 분담금을 납부하고 재활용 의무이행 계획서 및 출고·수입 실적을 제출하며, 재활용 의무비율 달성 시 재활용 부과금을 면제받는다. 제조 및 수입 과정에서 환경 영향을 줄이는 활동을 지속하고 있다.",
+    "kesg_code": null,
+    "page": 67
+   }
+  ]
+ }
+}
