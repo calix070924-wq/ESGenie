@@ -16,6 +16,7 @@ from pathlib import Path
 
 from esgenie.knowledge.kesg_items import ALL_ITEMS
 from esgenie.pipeline import POLICY_CODES
+from esgenie.ssot import audit_trace, detector_5axis
 from esgenie.ssot.prompts import POLICY_CHECKLISTS
 
 _NAME_BY_CODE = {item.code: item.name for item in ALL_ITEMS}
@@ -58,6 +59,38 @@ def test_checklist_comment_matches_kesg_item_name() -> None:
         "체크리스트 주석과 실제 K-ESG 항목명 불일치 — "
         "체크리스트가 다른 항목을 검사 중일 가능성이 높다: " + repr(mismatched)
     )
+
+
+def test_prompt_kesg_name_matches_kesg_item_name() -> None:
+    """P축 LLM 프롬프트에 들어가는 항목명 == KESGItem.name.
+
+    주석만 맞춰도 통과하는 위 테스트와 달리, 실제로 LLM에게 전달되는 이름을 본다.
+    이 경로가 어긋나면 "S-4-1 정보보호 정책" 항목명 아래 안전보건 체크리스트를
+    대조하라고 지시하게 되어 판정 자체가 오염된다(2026-07-28 실측 10/11 불일치).
+    """
+    mismatched = {
+        code: (detector_5axis._kesg_name(code), _NAME_BY_CODE[code])
+        for code in POLICY_CHECKLISTS
+        if detector_5axis._kesg_name(code) != _NAME_BY_CODE[code]
+    }
+    assert not mismatched, (
+        "POLICY_AUDIT_PROMPT의 kesg_name이 실제 항목명과 불일치 — "
+        "LLM이 엉뚱한 항목명으로 체크리스트를 대조한다: " + repr(mismatched)
+    )
+
+
+def test_kesg_name_has_single_source() -> None:
+    """항목명 조회는 kesg_items 한 곳에서만 나온다.
+
+    하드코딩 표가 두 벌(detector_5axis·audit_trace) 있던 탓에 한쪽만 고쳐도
+    다른 쪽이 낡은 이름을 계속 내보냈다. 전 코드에 대해 두 경로가 일치해야 한다.
+    """
+    for item in ALL_ITEMS:
+        assert detector_5axis._kesg_name(item.code) == item.name, item.code
+        assert audit_trace._kesg_name(item.code) == item.name, item.code
+    for unknown in ("X-9-9", ""):
+        assert detector_5axis._kesg_name(unknown) == unknown
+        assert audit_trace._kesg_name(unknown) == unknown
 
 
 def test_policy_codes_exist_in_kesg_items() -> None:

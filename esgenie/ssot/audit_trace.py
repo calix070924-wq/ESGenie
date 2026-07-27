@@ -206,9 +206,6 @@ def _kesg_name(code: str) -> str:
     하드코딩 표를 쓰던 시절 S-3-1을 '안전보건 추진체계'로 적어(실제로는
     '여성 구성원 비율') 엑셀 데이터시트에 자기모순 행이 찍혔다. 2026-07-28 정정.
     """
-    from ..knowledge.kesg_items import ALL_ITEMS
+    from ..knowledge.kesg_items import kesg_name as _canonical
 
-    for item in ALL_ITEMS:
-        if item.code == code:
-            return item.name
-    return code
+    return _canonical(code)
