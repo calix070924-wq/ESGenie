@@ -40,7 +40,7 @@ logger = logging.getLogger(__name__)
 
 POLICY_CODES = [
     "P-1-1",
-    "E-1-1", "E-1-2", "E-3-3",
+    "E-1-1", "E-1-2", "E-3-3", "E-8-1",
     "S-1-1", "S-2-6", "S-4-1", "S-5-1", "S-6-1", "S-7-1", "S-8-1",
     "G-1-1", "G-3-1", "G-4-1", "G-5-1",
 ]
@@ -219,9 +219,13 @@ def _audit_policy_documents(
     corp_name: str,
     industry: str,
 ) -> tuple[list[Any], dict[str, str]]:
+    # 규정 문서가 하나도 없어도 최소 2건은 검증 결과를 보인다(데모 하한).
+    # S-4-1 = 안전보건 추진체계 / E-1-1 = 환경경영 목표 수립.
+    # (2026-07-28: 기존 "S-3-1"은 여성 구성원 비율이라 산업안전 체크리스트가
+    #  엉뚱한 항목에 붙어 나갔다 — POLICY_CHECKLISTS 재매핑과 함께 정정)
     active_codes = list({
         *[code for code in POLICY_CODES if graph.text_nodes_by_code(code) or graph.nodes_by_metric(code)],
-        "S-3-1", "E-1-1",
+        "S-4-1", "E-1-1",
     })
 
     results: list[Any] = []
