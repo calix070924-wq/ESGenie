@@ -37,6 +37,19 @@ def _area_terms() -> dict[str, tuple[str, ...]]:
             terms.update(t for t in item.search_terms if len(t) >= 2)
         out[area] = tuple(sorted(terms))
     return out
+
+
+@lru_cache(maxsize=1)
+def _qualitative_codes() -> frozenset[str]:
+    """단위가 없는 K-ESG 항목 = 정성 지표.
+
+    '환경경영 추진체계', '대표이사·이사회 의장 분리'처럼 수치가 존재하지 않는 것이
+    정상인 항목들이다. 이들에 수치 증빙을 hard fail로 요구하면 구조적으로 통과가
+    불가능해 섹션이 항상 빈다(005380 E·G 실측).
+    """
+    from ..knowledge.kesg_items import ALL_ITEMS
+
+    return frozenset(it.code for it in ALL_ITEMS if not (it.unit or "").strip())
 _YEAR_RE = re.compile(r"(19|20)\d{2}년?|\b(19|20)\d{2}\b")
 _NUMBER_RE = re.compile(r"\d")
 _TOKEN_RE = re.compile(r"[0-9A-Za-z가-힣]+")
@@ -94,7 +107,10 @@ def evaluate_retrieval(
         hard_fails.append("R3_area_keyword_missing")
     if query and not field_coverage["query"]:
         hard_fails.append("R3_query_keyword_missing")
-    if not field_coverage["value"]:
+    # 정성 항목은 수치가 없는 것이 정상이므로 hard fail 대상에서 제외한다.
+    # field_coverage["value"]는 사실 그대로 False로 남겨 추적 가능성을 유지한다.
+    top_is_qualitative = str(top_doc.meta.get("code") or "") in _qualitative_codes()
+    if not field_coverage["value"] and not top_is_qualitative:
         hard_fails.append("R3_numeric_evidence_missing")
     if not field_coverage["period"]:
         soft_flags.append("R3_period_missing")
