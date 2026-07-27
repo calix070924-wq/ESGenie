@@ -334,7 +334,8 @@ def _rebuild_vector(axes: dict[str, AxisScore]) -> RiskVector:
         level = "medium"
     else:
         level = "high"
-    top_axis = max(axes, key=lambda k: axes[k].score)
+    # 전 축이 0이면 빈 문자열 — layer3_detect와 같은 규칙(깨끗한 문장이 D1로 찍히는 문제).
+    top_axis = max(axes, key=lambda k: axes[k].score) if any(a.score > 0 for a in axes.values()) else ""
     return RiskVector(
         D1_numeric=axes["D1_numeric"],
         D2_modifier=axes["D2_modifier"],
