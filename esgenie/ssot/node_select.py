@@ -29,6 +29,19 @@ L0가 hint를 서술적으로 잘 뽑아준다(`용수 사용량(취수량) 합�
 
 8번이 중요하다: **잘못된 값보다 미공시가 낫다**(라벨링 §3-1 원칙).
 
+1단계(hard 배제)는 **후보가 1개여도 적용된다**(2026-07-28). 종전에는 과차단 방지로
+유일 후보를 무조건 채택했는데, 그 우회로 LG화학 E-5-1 '일평균 산업용수 공급량'
+540,000 ton이 연간 사용량 자리에 실렸다(365배). 3~7단계는 후보 1개면 결과가 같다.
+
+## 총량 후보가 없는 풀 — 값은 싣고 부분값임을 표기한다 (2026-07-28)
+
+5단계는 **후순위 축이지 배제가 아니다.** 후보가 전부 부분값이면 그중 하나가 이긴다
+(LG화학 E-4-1은 36노드에 '합계/총계'가 0개, NAVER E-3-2는 노드 1개가 Scope 3 카테고리 1).
+미공시로 버리지 않는다 — 커버리지가 이미 5~7항목/17이고, 값 자체는 실제 공시값이다.
+대신 `is_partial_aggregate`로 조회해 `partial_value` 플래그 → 원장 표 '·부분값'까지
+노출한다. **D1은 이 오류를 못 잡는다**(원장·노드가 같은 값이라 Δ=0) — 표기가 유일한
+방어선이다.
+
 ## 두 호출부가 반드시 이 함수를 쓴다
 
   · `ssot_pipeline._merge_ssot_evidence` — 원장 표시값
@@ -52,10 +65,14 @@ from typing import Any, Iterable
 # 걸러 노드를 metric_hint로 보존하지만, 이미 코드가 붙은 노드는 여기서 다시 걸러야 한다.
 # 실측 근거: '온실가스 감축 효과'(E-3-1 오선택 주범), '2023년 대비 에너지 사용량 증감',
 #            '알루미늄 1톤당 …', '폐기물 매립 제로화(재활용률)', '… 회수량'
+# 시간 원단위(일평균·월평균)는 2026-07-28 5개사 실측에서 추가됐다. LG화학 E-5-1이
+# '일평균 산업용수 공급량' 540,000 ton을 연간 사용량 자리에 올렸다(365배 오류).
+# '평균' 단독은 넣지 않는다 — '평균 근속연수'처럼 정상 지표가 걸린다.
 _DERIVED_TERMS: tuple[str, ...] = (
     "감축", "효과", "예상", "증감", "원단위", "1톤당", "톤당",
     "제로화", "목표", "전환량", "절감", "누적", "집약도", "intensity",
     "전망", "계획", "예정", "로드맵", "선언", "회수량", "대비",
+    "일평균", "일 평균", "월평균", "월 평균", "1일당", "1일 당", "1개월당",
 )
 
 # (2) 집계-총량 어휘 — 전사/총량 표지. 실측: '합계' 50건 · '총계' 9건 · '총 ' 6건.
@@ -68,6 +85,15 @@ _PARTIAL_TERMS: tuple[str, ...] = (
     "국내(별도)", "국내 (별도)", "별도", "국내 자회사", "해외 자회사", "자회사",
     "국내 사업장", "해외 사업장", "사업장", "국가별", "공장", "연결(일부)",
 )
+
+# (3b) 단독 지역어 — 2026-07-28 5개사 실측 보강. LG화학 E-4-1이
+# '비재생 전력 소비량 **해외** 2025' 5,104 TJ를 전사 총량 자리에 올렸다. 사전에
+# '해외 자회사'·'해외 사업장'만 있어 조직어 없는 단독 지역어는 안 걸렸다.
+_REGION_PARTIAL_TERMS: tuple[str, ...] = ("해외", "국내")
+
+# 단독 지역어의 예외 — '국내외'는 전 범위를 뜻하므로 부분값이 아니다.
+# '국내'가 부분문자열로 걸리는 것을 막는다(과차단 방지).
+_REGION_WHOLE_TERMS: tuple[str, ...] = ("국내외", "국내 및 해외", "국내·해외", "국내 해외")
 
 # (4) 코드별 negative keyword — 지표 정합 축. 충돌하면 후보에서 제외.
 # 실측 근거는 docs/집계어휘_실태_2026-07-26.md 참조.
@@ -119,6 +145,10 @@ _BREAKDOWN_TERMS: tuple[str, ...] = (
     "일반 폐기물", "지정 폐기물", "방사성",
     # 지리적 부분집합 — '물 위험/스트레스 지역'은 전사 취수량의 부분이다.
     "물 위험", "스트레스 지역", "플라스틱", "알루미늄",
+    # Scope 3 카테고리별(E-3-2) — 2026-07-28 5개사 실측 보강. GHG Protocol 15개
+    # 카테고리는 Scope 3 총합의 하위 분해다. NAVER E-3-2가 카테고리 1 하나
+    # ('Upstream 구매 제품 및 서비스' 71,385)를 Scope 3 총합 자리에 올렸다.
+    "upstream", "downstream", "category", "카테고리",
 )
 
 
@@ -173,13 +203,59 @@ def _breakdown_rank(hint: str) -> int:
     return 1 if _has_any(hint, _BREAKDOWN_TERMS) else 0
 
 
+def _has_region_partial(hint: str) -> bool:
+    """단독 지역어('해외'·'국내')로 범위가 한정됐는가 — 2026-07-28 보강.
+
+    '국내외'·'국내 및 해외'처럼 전 범위를 뜻하는 표현은 제외한다('국내'가
+    부분문자열로 걸려 정상 총량이 부분값으로 강등되는 것을 막는다).
+    '국내(별도)'·'해외 자회사'는 이미 _PARTIAL_TERMS가 잡으므로 중복 판정은 무해하다.
+    """
+    if _has_any(hint, _REGION_WHOLE_TERMS):
+        return False
+    return _has_any(hint, _REGION_PARTIAL_TERMS)
+
+
 def _aggregation_rank(hint: str) -> int:
-    """집계 순위 — 우선순위 5단계. 0=총량 어휘, 1=구분어 없음, 2=부분 어휘."""
+    """집계 순위 — 우선순위 5단계. 0=총량 어휘, 1=구분어 없음, 2=부분 어휘.
+
+    총량 어휘를 먼저 본다 — '해외 사업장 … 총계'처럼 둘이 겹치면 종전대로 총량으로
+    취급한다(기존 실측 선택 불변).
+    """
     if _has_any(hint, _TOTAL_TERMS):
         return 0
-    if _has_any(hint, _PARTIAL_TERMS):
+    if _has_any(hint, _PARTIAL_TERMS) or _has_region_partial(hint):
         return 2
     return 1
+
+
+def is_partial_aggregate(node: Any) -> bool:
+    """선택된 노드가 **전사 총량이 아닌 부분값**인가 — 원장 표기용 조회 함수.
+
+    2026-07-28 5개사 일반화에서 드러난 결함 (a): `_PARTIAL_TERMS`는 후순위 축이지
+    배제가 아니라, 후보가 전부 부분값이면 그중 하나가 이긴다. 총량 후보가 아예
+    없는 풀이 실제로 있었다:
+
+      · LG화학 E-4-1 — 36노드에 '합계/총계' 어휘가 0개('비재생 전력 소비량 해외')
+      · NAVER  E-3-2 — 노드 1개, 그게 Scope 3 카테고리 1('구매 제품 및 서비스')
+
+    **값은 버리지 않고 싣되 부분값임을 표기한다**(2026-07-28 사용자 확정). 배제하면
+    커버리지가 더 떨어지고(이미 5~7항목/17), D1은 이 오류를 못 잡는다(원장·노드가
+    같은 값이라 Δ=0). 표기가 유일한 방어선이므로 원장 표까지 노출된다.
+
+    판정 축은 선택 규칙의 두 축을 그대로 쓴다 — 둘 다 코드와 무관하므로 인자는 노드뿐이다.
+      · 4단계 세부 분해(`_BREAKDOWN_TERMS`) — 조달방식·처리경로·Scope 3 카테고리별
+      · 5단계 집계 부분(`_PARTIAL_TERMS` + 단독 지역어)
+
+    예외 — '… 포함'은 범위 **확대**다. 실측 오표기: LG화학 E-6-2 '폐기물 재활용률
+    (열회수소각 포함)' 91%가 `_BREAKDOWN_TERMS`의 '소각'에 걸려 부분값으로 표기됐다.
+    랭킹 축(4단계)은 그대로 두고 표기만 예외 처리한다 — 우선순위 구조는 건드리지 않는다.
+    """
+    if node is None:
+        return False
+    hint = _node_hint(node)
+    if "포함" in hint:
+        return False
+    return _breakdown_rank(hint) == 1 or _aggregation_rank(hint) == 2
 
 
 def _unit_rank(node_unit: str | None, expected_unit: str | None) -> int:
@@ -194,9 +270,12 @@ def _unit_rank(node_unit: str | None, expected_unit: str | None) -> int:
 
     na, nb = normalize_unit(str(node_unit or "")), normalize_unit(str(expected_unit))
     if na is None or nb is None:
-        # 정규화 사전에 없는 단위는 문자열 비교로 최선 판정(공백·대소문자 무시).
-        a = _norm(node_unit).replace(" ", "")
-        b = _norm(expected_unit).replace(" ", "")
+        # 정규화 사전에 없는 단위는 문자열 비교로 최선 판정. 2026-07-28: 아래
+        # normalize_to_item_unit과 같은 판정을 써야 한다 — 선택 축과 저장 축이 'ton CO2 eq'를
+        # 다르게 보면 랭킹은 2(그 외)인데 저장은 동일 단위로 통일되는 모순이 생긴다.
+        from ..layer1_extract import _relaxed_unit
+
+        a, b = _relaxed_unit(str(node_unit or "")), _relaxed_unit(str(expected_unit))
         if a and a == b:
             return 0
         return 2
@@ -234,13 +313,14 @@ def select_representative_node(
     Notes
     -----
     모든 후보가 1·2단계에서 배제되면 None을 돌린다(잘못된 값보다 미공시).
-    후보가 1개면 규칙과 무관하게 그것을 돌린다(과차단 방지).
+    **후보가 1개여도 hard 배제는 적용된다**(2026-07-28 변경). 종전에는 과차단 방지를
+    위해 유일 후보를 무조건 채택했지만, 그 우회로 LG화학 E-5-1의 '일평균 산업용수
+    공급량' 540,000 ton이 연간 사용량 자리에 실렸다(노드 1개 → 규칙 미개입, 365배 오류).
+    3~7단계(순위 축)는 후보가 1개면 결과가 같으므로 우회를 없애도 순위 판정은 불변이다.
     """
     pool = [n for n in nodes if n is not None]
     if not pool:
         return None
-    if len(pool) == 1:
-        return pool[0]
 
     base_code = code.split("__", 1)[0]
     expected = _expected_unit(base_code)
@@ -253,6 +333,8 @@ def select_representative_node(
     ]
     if not survivors:
         return None
+    if len(survivors) == 1:
+        return survivors[0]
 
     def sort_key(node: Any) -> tuple:
         hint = _node_hint(node)
@@ -301,8 +383,13 @@ def normalize_to_item_unit(
 
     na, nb = normalize_unit(str(unit)), normalize_unit(str(expected))
     if na is None or nb is None:
-        # 정규화 사전 미등재 단위 — 문자열 정규화로 표기 차이만 판정.
-        if _norm(unit).replace(" ", "") == _norm(expected).replace(" ", ""):
+        # 정규화 사전 미등재 단위 — 표기 차이만 판정. 2026-07-28: 종전엔 공백·대소문자만
+        # 지웠기 때문에 신한 실측 'ton CO2 eq'가 'tCO2eq'와 다르다고 판정돼 값이 맞는데도
+        # unit_suspect가 붙었다('tCO2 eq'는 사전에 있어 통과). layer1_extract._relaxed_unit이
+        # 이미 ton→t 별칭 축약을 갖고 있으므로 중복 구현하지 않고 그것을 쓴다.
+        from ..layer1_extract import _relaxed_unit
+
+        if _relaxed_unit(str(unit)) == _relaxed_unit(str(expected)):
             return (value, expected, None)
         return (value, unit, "unit_suspect")
     if na == nb:
@@ -316,5 +403,6 @@ def normalize_to_item_unit(
 __all__ = [
     "select_representative_node",
     "is_derived_hint",
+    "is_partial_aggregate",
     "normalize_to_item_unit",
 ]

@@ -455,8 +455,13 @@ def _area_item_rows(
             status = "공시(증빙연결)"  # ISSB 갭 표와 동일 어휘 (Phase 2)
         else:
             status = "공시(자기기재)"
-        if "unit_suspect" in conf_flags.get(code, []):
+        flags = conf_flags.get(code, [])
+        if "unit_suspect" in flags:
             status += "·단위확인"
+        # 부분값 표기(2026-07-28) — 총량 후보가 없어 부분값이 대표로 뽑힌 항목.
+        # D1은 이 오류를 못 잡으므로(원장·노드가 같은 값이라 Δ=0) 이 표기가 유일한 방어선이다.
+        if "partial_value" in flags:
+            status += "·부분값"
         covered.append({
             "code": code,
             "name": entry.get("name") or code,

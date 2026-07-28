@@ -146,7 +146,11 @@ def _merge_ssot_evidence(result: Any, graph: EvidenceGraph) -> None:
     """SSOT graph의 OCR/TextNode를 L1 결과에 병합."""
     from esgenie.dart_client import SOURCE_DART_REGEX
     from esgenie.knowledge.kesg_items import by_code as _by_code
-    from esgenie.ssot.node_select import normalize_to_item_unit, select_representative_node
+    from esgenie.ssot.node_select import (
+        is_partial_aggregate,
+        normalize_to_item_unit,
+        select_representative_node,
+    )
 
     # v10 extract()는 DART 노드만 탐색하므로, OCR 출처(ocr_structured / ocr_unstructured)
     # 노드도 evidence_node_ids에 추가하고 'no_evidence' 플래그를 해소한다.
@@ -169,6 +173,42 @@ def _merge_ssot_evidence(result: Any, graph: EvidenceGraph) -> None:
         if node.origin in ("ocr_structured", "ocr_unstructured"):
             ocr_by_metric.setdefault(node.metric, []).append(node.id)
             ocr_pool.setdefault(node.metric, []).append(node)
+
+    def _is_qualitative(code: str, entry: dict[str, Any]) -> bool:
+        """정성(존재형) 항목인가 — OCR 정량 노드 승격을 막는 판정(2026-07-28 결함 (c)).
+
+        entry에 이미 담긴 data_type을 우선 쓰고(mapped entry가 kesg_items에서 복사한다),
+        없으면 항목 정의로 폴백한다. '혼합'은 정량값이 정상이므로 대상이 아니다.
+        """
+        dt = entry.get("data_type")
+        if not dt:
+            item = _by_code(code)
+            dt = item.data_type if item else ""
+        return dt == "정성"
+
+    def _add_flag(code: str, flag: str) -> None:
+        flags = result.confidence_flags.get(code, [])
+        if flag not in flags:
+            result.confidence_flags[code] = flags + [flag]
+
+    def _flag_partial(code: str, node: EvidenceNode) -> None:
+        """대표 노드가 부분값이면 'partial_value'를 남긴다 — 2026-07-28 결함 (a).
+
+        총량 후보가 아예 없는 풀에서는 부분값 하나가 이긴다(LG화학 E-4-1 '비재생 전력
+        소비량 해외', NAVER E-3-2 'Scope 3 - Upstream 구매 제품 및 서비스'). 값을 버리면
+        커버리지가 더 떨어지므로 싣되, 전사 총량이 아니라는 사실을 산출물에 드러낸다.
+        D1은 이 오류를 못 잡는다(원장·노드가 같은 값이라 Δ=0) — 표기가 유일한 방어선이다.
+        layer2_rag._area_item_rows가 이 플래그를 원장 표 상태에 '·부분값'으로 붙인다.
+        """
+        if not is_partial_aggregate(node):
+            return
+        _add_flag(code, "partial_value")
+        raw = str(getattr(node, "raw_text", "") or "")
+        hint = raw.split("=", 1)[0].strip() if "=" in raw else raw.strip()
+        result.notes.append(
+            f"[부분값] {code}: 대표 노드가 전사 총량이 아니다 — "
+            f"{hint or node.id} (총량 후보 없음)"
+        )
 
     ocr_repr: dict[str, EvidenceNode] = {}
     for metric, pool in ocr_pool.items():
@@ -216,6 +256,11 @@ def _merge_ssot_evidence(result: Any, graph: EvidenceGraph) -> None:
         # 태그가 붙은 값(SOURCE_DART_REGEX)만 강등하며, 구조화 API·사외이사 재계산 등
         # 태그 없는 값은 종전대로 유지된다.
         repr_node = ocr_repr.get(code)
+        # 정성 항목에는 OCR 정량값을 싣지 않는다(2026-07-28 결함 (c)). E-1-2 '환경경영
+        # 추진체계'는 존재형 항목인데 'ESG위원회 정기회의 횟수' 2회(삼성전기)·'1차 개최
+        # 출석률' 5명(LG화학)이 실렸다. 숫자가 들어갈 자리가 아니다.
+        if repr_node is not None and _is_qualitative(code, entry):
+            repr_node = None
         if repr_node is not None and entry.get("source_tier") == SOURCE_DART_REGEX:
             item = _by_code(code)
             old_value, old_unit = entry.get("value"), entry.get("unit")
@@ -225,9 +270,8 @@ def _merge_ssot_evidence(result: Any, graph: EvidenceGraph) -> None:
             entry["value"] = new_value
             entry["unit"] = new_unit or (item.unit if item else old_unit)
             if unit_flag:
-                flags = result.confidence_flags.get(code, [])
-                if unit_flag not in flags:
-                    result.confidence_flags[code] = flags + [unit_flag]
+                _add_flag(code, unit_flag)
+            _flag_partial(code, repr_node)
             entry["note"] = (
                 f"OCR 증빙 노드로 대체 ({repr_node.source_file or repr_node.source}) — "
                 f"DART 정규식 값 {old_value}{old_unit or ''}은 무게이트 추출이라 강등"
@@ -263,6 +307,10 @@ def _merge_ssot_evidence(result: Any, graph: EvidenceGraph) -> None:
             ocr_ids = ocr_by_metric.get(code, [])
             text_ids = text_by_code.get(code, [])
             repr_node = ocr_repr.get(code)
+            # 정성 항목은 정량 승격 대상이 아니다(2026-07-28 결함 (c)). TextNode가 있으면
+            # 아래 '문서 조항 확인' 경로로 정상 승격되고, 없으면 미공시로 남는다.
+            if repr_node is not None and item.data_type == "정성":
+                repr_node = None
             # 대표 노드가 배제됐고 정성 근거도 없으면 승격 자체를 하지 않는다(2026-07-26).
             # repr_node=None은 종전엔 'TextNode만 있는 존재형 문항'만 뜻했지만, 이제
             # '전 후보가 파생·비실적으로 배제됨'도 뜻한다. 정량 항목에 '문서 조항 확인'을
@@ -276,9 +324,8 @@ def _merge_ssot_evidence(result: Any, graph: EvidenceGraph) -> None:
                     code, repr_node.value, repr_node.unit)
                 unit = unit or (item.unit or "")
                 if unit_flag:
-                    flags = result.confidence_flags.get(code, [])
-                    if unit_flag not in flags:
-                        result.confidence_flags[code] = flags + [unit_flag]
+                    _add_flag(code, unit_flag)
+                _flag_partial(code, repr_node)
                 note = f"OCR 정량 증빙으로 자동 인식 ({repr_node.source_file or repr_node.source})"
                 tier = SOURCE_OCR_GATED
                 quant_added += 1
