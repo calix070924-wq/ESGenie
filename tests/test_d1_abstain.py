@@ -115,8 +115,20 @@ class TestLayer3DetectAbstain:
         assert axis.abstain_reason is None
         assert axis.score == 0.0
 
-    def test_unit_mismatch_abstains_when_enabled(self, monkeypatch):
+    def test_unit_mismatch_does_not_abstain_by_default_even_when_enabled(self, monkeypatch):
+        """2026-07-28 실키 A/B: unit_mismatch 기권이 test held-out 지표를 하락시켜
+        ABSTAIN_UNIT_MISMATCH 기본값을 False로 바꿨다 — ABSTAIN_ENABLED만으로는
+        더 이상 unit_mismatch가 기권되지 않는다(기존 동작인 score 0.0 유지)."""
         monkeypatch.setattr("esgenie.layer3_detect.ABSTAIN_ENABLED", True)
+        monkeypatch.setattr("esgenie.layer3_detect.ABSTAIN_UNIT_MISMATCH", False)
+        axis = _score_d1_numeric("재생에너지 사용 비율은 31.0%였다.", _UnitMismatchGraph())
+        assert axis.abstain is False
+        assert axis.abstain_reason is None
+        assert axis.score == 0.0
+
+    def test_unit_mismatch_abstains_when_both_flags_enabled(self, monkeypatch):
+        monkeypatch.setattr("esgenie.layer3_detect.ABSTAIN_ENABLED", True)
+        monkeypatch.setattr("esgenie.layer3_detect.ABSTAIN_UNIT_MISMATCH", True)
         axis = _score_d1_numeric("재생에너지 사용 비율은 31.0%였다.", _UnitMismatchGraph())
         assert axis.abstain is True
         assert axis.abstain_reason == "unit_mismatch"
@@ -125,6 +137,14 @@ class TestLayer3DetectAbstain:
         axis = _score_d1_numeric("재생에너지 사용 비율은 31.0%였다.", _UnitMismatchGraph())
         assert axis.abstain is False
         assert axis.score == 0.0
+
+    def test_no_evidence_still_abstains_with_unit_mismatch_flag_off(self, monkeypatch):
+        """주 타깃(no_evidence)은 ABSTAIN_UNIT_MISMATCH와 무관하게 계속 기권한다."""
+        monkeypatch.setattr("esgenie.layer3_detect.ABSTAIN_ENABLED", True)
+        monkeypatch.setattr("esgenie.layer3_detect.ABSTAIN_UNIT_MISMATCH", False)
+        axis = _score_d1_numeric("재생에너지 사용 비율은 31.0%였다.", _NoNodeGraph())
+        assert axis.abstain is True
+        assert axis.abstain_reason == "no_evidence"
 
     def test_verified_claim_never_abstains(self, monkeypatch):
         monkeypatch.setattr("esgenie.layer3_detect.ABSTAIN_ENABLED", True)
