@@ -1,7 +1,92 @@
 # 기권(Abstain) A/B 측정 결과 — Coverage / Accuracy(assessed) / Overall
 
-> 브랜치: `feature/abstention` · 최신 갱신: 2026-07-28(실키 결과 반영 + unit_mismatch 제외 조치)
+> 브랜치: `feature/abstention` · 최신 갱신: 2026-07-28(하네스 결정성 수정 B0)
 > 이 배치는 "측정 + 결과에 따른 최소 조정"만 한다 — 게이트·HITL 라우팅(Step 4)은 **여전히 보류**한다.
+
+## B0. 하네스 결정성 수정 (2026-07-28, 최신)
+
+### 문제
+
+배치 4에서 recall 하락의 실제 원인을 규명한 결과(2절), `scripts/abstain_ab_eval.py`의
+구조적 결함이 드러났다: OFF/ON을 **각각 별도 `capture()` 호출**(=별개의 LLM/judge
+실행)로 비교했다. abstain(특히 주 타깃 `no_evidence`)은 룰 레이어의 rule_score를
+바꾸지 않으므로(미검증 시 OFF/ON 모두 score 0.0, ON은 여기에 `abstain=True` 플래그만
+더함) rule_score·judgeable·다른 축·judge 대상은 OFF/ON에서 **원리상 동일**해야
+하는데, 별도 실행이라 judge(LLM) 결과가 실행마다 재현되지 않아 abstain과 무관한
+축까지 A/B 결과를 오염시켰다.
+
+### 착수 전 재확인한 3가지 사실
+
+1. `esgenie/calibrate.py`의 `capture()`는 케이스마다 룰(`detect_risk_vector`) →
+   judge(LLM)를 실행하고, 축별 `rule_score/detail/judgeable/abstain/abstain_reason/
+   verdict/llm_score`를 캐시한다 — 코드 확인.
+2. 기존 `scripts/abstain_ab_eval.py`의 `_run_one()`이 `_set_abstain(on/off)` 후
+   `capture()`를 호출 — OFF/ON이 서로 다른 실행, 캐시 파일도 분리(`_abstain_{off,on}_
+   judge_cache.json`) — 코드 확인.
+3. **핵심**: `esgenie.layer3_detect.detect_risk_vector`를 `ABSTAIN_ENABLED=False`와
+   `True`로 각각 호출해 직접 비교한 결과, **D1의 rule_score가 완전히 동일**했고
+   (`0.0 == 0.0`), D2/D3/D5는 AxisScore 객체 자체가 동일했다. 유일한 차이는
+   `abstain`/`abstain_reason`/`detail` 문자열뿐이었다. 또한 `_is_judgeable()`(LLM
+   판정 대상 여부)도 no_evidence·unit_mismatch 두 시나리오 모두에서 abstain 래핑과
+   무관하게 동일한 값을 냈다("정확성 주의"에서 우려한 "abstained 축이 judge 처리에서
+   달라질 가능성"은 실측으로 **기각** — 보정 불필요, `tests/test_abstain_ab_determinism.py::
+   test_abstain_flag_does_not_change_rule_score_or_judgeable`로 회귀 가드).
+
+→ 파이프라인을 **한 번만 실행**하고, 그 동일한 캐시에서 OFF/ON 지표를 **둘 다 유도**하면
+실행 변동이 0이 되어 abstain의 순수 효과만 남는다는 게 실측으로 확인됐다.
+
+### 구현
+
+- `esgenie/evaluate.py::with_abstain_ignored(rows)` 신설 — `_case_rows()`가 만든
+  rows(캐시 1회 실행분)에서 abstain 플래그만 무시한 목록을 만든다(재판정 없음,
+  `pred`/`y`/`correct`는 원본과 100% 동일하게 유지). ON은 원본 rows(`abstain_coverage`
+  그대로), OFF는 `with_abstain_ignored(rows)`를 `abstain_coverage`에 넣어 유도한다.
+- `scripts/abstain_ab_eval.py`를 스플릿당 **capture 1회**로 재작성. 총 LLM 호출이
+  이전(이중-capture) 대비 **정확히 절반**으로 줄었다(로그로 확인 — 아래 참조).
+- `ABSTAIN_ENABLED=True`로 1회 캡처(현행 `ABSTAIN_UNIT_MISMATCH` 기본값은 그대로 둠)해
+  캐시에 abstain 플래그가 기록되게 하고, 그 위에서 두 해석을 유도한다.
+
+### LLM 호출 수 확인 (mock 재실행 로그)
+
+```
+- 스플릿당 capture 1회(=LLM 호출 1세트)만 실행 — 총 LLM 호출 320건 (이전 이중-capture 방식 대비 절반)
+## DEV — n=50 · ... · LLM 호출 50건(1회)
+## TEST — n=270 · ... · LLM 호출 270건(1회)
+```
+이전 버전은 dev(50)+test(270)를 OFF/ON 각각 실행해 640건을 호출했다. 이번 버전은
+320건(50+270) — 정확히 절반.
+
+### 수용 기준 결과 — `tests/test_abstain_ab_determinism.py`(6건, 전부 통과)
+
+- **비-abstain 케이스는 OFF/ON pred가 100% 동일** — 합성 픽스처(4건 중 2건 비-abstain)로
+  `pred`/`y`/`correct` 리스트 완전 일치 + `_prf()` 결과 완전 일치까지 확인
+  (`test_off_and_on_pred_identical_for_every_case`). 배치 4에서 깨졌던 바로 그 속성이
+  이제 **구조적으로**(같은 rows에서 유도되므로) 보장된다 — 실행에 의존하지 않는다.
+- abstained 케이스(D1 abstain 축 있음 + 다른 축이 flag 안 함)만 ON에서 assessed 제외,
+  OFF에선 포함 확인(`test_only_abstained_and_unflagged_case_is_excluded_in_on`) — D2가
+  flag하는 케이스는 abstain 축이 있어도 기권 아님이라는 기존 판정 규칙도 함께 재확인.
+- Coverage = (전체−기권)/전체, Overall = Accuracy(assessed)×Coverage 산식을 단일
+  캐시 기준으로 검증(`test_coverage_and_overall_formula_from_single_cache`).
+- 기본값(`ABSTAIN_UNIT_MISMATCH=False`)에서는 기권 0건 → rows 리스트 자체가 OFF==ON으로
+  완전히 같음을 확인(`test_no_abstain_records_give_off_equals_on`).
+- `calibrate._simulate_vector()` 캐시 왕복 경유 배관까지 포함한 end-to-end 확인
+  (`test_with_abstain_ignored_after_simulate_vector_roundtrip`).
+
+### 재측정 결과 (mock, deterministic 하네스)
+
+dev(n=50)·test(n=270) 모두 OFF==ON 완전 동일(현행 기본값에서 기권 0건이므로 — 4절과
+동일한 수치). 다만 이번엔 **같은 실행에서 유도된 값**이라는 점이 다르다 — 이전 버전은
+"우연히 같았다"였다면, 이번은 "구조적으로 같을 수밖에 없다."
+
+### 의의
+
+배치 4에서 "추가 확인 필요"로 남겼던 recall 하락 메커니즘(judge 레이어 실행 간
+비재현성)은 이 수정으로 **구조적으로 제거됐다** — 정확한 내부 메커니즘을 규명하지
+않고도, 애초에 그 메커니즘이 작동할 여지 자체를 없앴다(judge를 한 번만 부른다).
+앞으로 `no_evidence` 실측 평가셋(배치 B)으로 A/B를 돌릴 때도 이 결정적 하네스를
+그대로 재사용하면 된다.
+
+---
 
 ## 실행 커맨드 / 재현법
 
@@ -26,10 +111,12 @@ ESGENIE_FORCE_MOCK=1 python scripts/abstain_ab_eval.py
 
 ---
 
-## 1. 실키(REAL-KEY, strict) A/B 결과 — 확정
+## 1. 실키(REAL-KEY, strict) A/B 결과 — 확정 (구 이중-capture 하네스)
 
 실행: `ESGENIE_STRICT=1 python scripts/abstain_ab_eval.py` · 모드: **REAL-KEY (strict)** · cfg=BASELINE(trig=0.25 w=0.4 thr=0.25 axf=0.8).
-(이번 조치 — Part 2 — 이전, `ABSTAIN_UNIT_MISMATCH` 신설 전 상태의 결과다.)
+(이번 조치 — Part 2 — 이전, `ABSTAIN_UNIT_MISMATCH` 신설 전 + B0 결정성 수정 전, **구 이중-capture
+하네스**로 얻은 결과다. 이 결과 자체와 결론 1~3은 여전히 유효하지만, "왜 이렇게 나왔는지"의
+메커니즘 설명은 B0 절이 갱신·대체한다.)
 
 ### DEV — n=50
 
