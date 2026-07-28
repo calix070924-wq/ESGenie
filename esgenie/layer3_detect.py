@@ -16,8 +16,8 @@ from typing import Any
 import numpy as np
 
 from .config import (
-    ABSTAIN_ENABLED, D1_THRESHOLD, D2_THRESHOLD, D3_THRESHOLD, D5_THRESHOLD,
-    D_WEIGHTS, RISK_LEVEL_THRESHOLDS,
+    ABSTAIN_ENABLED, ABSTAIN_UNIT_MISMATCH, D1_THRESHOLD, D2_THRESHOLD, D3_THRESHOLD,
+    D5_THRESHOLD, D_WEIGHTS, RISK_LEVEL_THRESHOLDS,
 )
 from .dart_client import CompanyReport
 from .embeddings import VectorIndex
@@ -480,7 +480,13 @@ def _score_d1_numeric(
         retried = any(_retry_evidence(c, evidence_graph) for c in unresolved_codes)
         if not retried:
             reason = "no_evidence" if any(not c["any_nodes"] for c in mapped_claims) else "unit_mismatch"
-            return _abstain(reason, "; ".join(details) if details else "수치 매칭 없음")
+            # 2026-07-28 실키 A/B: unit_mismatch 기권이 test held-out에서 Overall·recall을
+            # 하락시켰다(주 타깃 no_evidence는 0건 관측 — docs/abstention_metrics_result.md).
+            # 근거 자체가 없는 no_evidence만 기본적으로 기권시키고, unit_mismatch는
+            # ABSTAIN_UNIT_MISMATCH가 명시적으로 켜졌을 때만 기권시킨다(기본 False —
+            # 꺼져 있으면 기존 동작인 score 계산으로 흘려보낸다).
+            if reason == "no_evidence" or ABSTAIN_UNIT_MISMATCH:
+                return _abstain(reason, "; ".join(details) if details else "수치 매칭 없음")
 
     score = min(1.0, worst_delta / max(D1_THRESHOLD, 1e-9))
     return AxisScore(

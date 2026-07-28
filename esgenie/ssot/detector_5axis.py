@@ -60,6 +60,13 @@ _NUM_RE = re.compile(r"([0-9][0-9,\.]*)\s*(만|억|천)?\s*(tCO2eq|tCO2|kWh|MJ|t
 # 코드를 호출 전에 걸러내므로, 아래 두 분기(코드 없음/근거 없음)는 사실상
 # 프로덕션 경로가 아니라 직접 호출(테스트 등)에서만 도달한다. 그럼에도 D1의
 # 두 구현이 "근거 없음"에 대해 같은 의미(기권)를 내도록 정합화한다.
+#
+# 2026-07-28 추가 정합화: layer3_detect._score_d1_numeric은 ABSTAIN_UNIT_MISMATCH
+# (기본 False)로 unit_mismatch 기권을 별도 제어한다(실키 A/B에서 unit_mismatch
+# 기권이 test held-out 지표를 하락시켜 기본 비활성화). 이 함수(ssot)는 애초에
+# unit_mismatch를 기권으로 전환하는 분기가 없다(L99 미일치는 그대로 위험 점수로
+# 유지 — 아래 참조) — 두 경로 모두 "기본적으로 no_evidence만 기권"이라는 점에서
+# 이미 정합화돼 있다.
 
 def _abstain(reason: str, detail: str) -> AxisScore:
     return AxisScore(
