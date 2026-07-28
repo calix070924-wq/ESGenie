@@ -131,3 +131,12 @@ JUDGE_RULE_WEIGHT: float = float(os.getenv("JUDGE_RULE_WEIGHT", "0.4"))
 # score 산정 자체는 바뀌지 않고 AxisScore.abstain/abstain_reason 플래그만
 # 추가로 세팅된다(게이트·HITL 반영은 후속 배치).
 ABSTAIN_ENABLED: bool = os.getenv("ABSTAIN_ENABLED", "0") == "1"
+
+# 2026-07-28 실키 A/B(scripts/abstain_ab_eval.py) 결과: test held-out에서
+# 기권 7건이 전부 unit_mismatch였고 Overall/recall이 하락했다(no_evidence는
+# 0건 — 단일 그래프로 여러 회사 문장을 검증하는 현 벤치 구조상 "근거 노드
+# 자체가 없음"이 사실상 발생하지 않기 때문. docs/abstention_metrics_result.md
+# 참조). 그 결과 unit_mismatch는 기본적으로 기권시키지 않는다 — 세분 스위치로
+# 되돌릴 수 있게 남겨둔다(주 타깃인 no_evidence 기권 자체는 ABSTAIN_ENABLED로
+# 계속 켤 수 있음). 기본 False.
+ABSTAIN_UNIT_MISMATCH: bool = os.getenv("ABSTAIN_UNIT_MISMATCH", "0") == "1"
