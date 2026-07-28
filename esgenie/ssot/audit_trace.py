@@ -201,10 +201,11 @@ def _verification_label(node: EvidenceNode, d1_risk: float) -> str:
 
 
 def _kesg_name(code: str) -> str:
-    return {
-        "E-3-1": "온실가스 배출량(Scope1+2)",
-        "E-4-1": "에너지 사용량",
-        "E-5-1": "용수 사용량",
-        "E-6-1": "폐기물 배출량",
-        "S-3-1": "안전보건 추진체계",
-    }.get(code, code)
+    """K-ESG 코드 → 항목명. kesg_items 단일 출처에서 가져온다.
+
+    하드코딩 표를 쓰던 시절 S-3-1을 '안전보건 추진체계'로 적어(실제로는
+    '여성 구성원 비율') 엑셀 데이터시트에 자기모순 행이 찍혔다. 2026-07-28 정정.
+    """
+    from ..knowledge.kesg_items import kesg_name as _canonical
+
+    return _canonical(code)
