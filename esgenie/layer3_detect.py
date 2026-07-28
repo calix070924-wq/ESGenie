@@ -555,8 +555,14 @@ def _score_d1_numeric(
 def _score_d2_modifier(sentence: str, industry_module=None) -> AxisScore:
     """greenwash_lexicon 모호어/최상급 밀도. industry_module이 있으면 업종 패턴 포함."""
     hits = vague_matches(sentence, industry_module)
-    # 문장당 밀도: 히트 수 / threshold 정규화
-    density = len(hits) / max(D2_THRESHOLD * 4, 1)   # 4개 = 만점 기준
+    # 분모는 `D2_THRESHOLD=0.25` 하에서 항상 1.0으로 접힌다 → **히트 1개면 만점**이다.
+    # 옛 주석은 "4개 = 만점"이라 코드와 어긋났는데, 실측 결과 **코드가 맞고 주석이 틀렸다**:
+    # 분모를 4로 올리면 held-out test 룰 단독 F1이 0.532 → 0.255로 반토막 난다
+    # (test 양성 83건 중 41건이 모호어 1~2개 → axis_flag 0.80을 못 넘어 통째로 미탐).
+    # `axis_flag=0.80`이 이 분포 위에서 캘리브레이션돼 있다.
+    # 바꾸려면 docs/D2_영향조사_2026-07-29.md §5의 착수 조건(held-out 실키 전건 재측정)을
+    # 먼저 충족할 것. tests/test_d2_precision.py::TestDenominatorUnchanged가 이 값을 고정한다.
+    density = len(hits) / max(D2_THRESHOLD * 4, 1)
     score = min(1.0, density)
     return AxisScore(
         score=round(score, 4),
