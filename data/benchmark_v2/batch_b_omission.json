@@ -1,0 +1,33 @@
+{
+  "name": "batch_b_omission_pilot",
+  "purpose": "배치 B 파일럿 — '기업이 공시하지 않은 지표를 주장하는' 실데이터 미공시 평가셋. 저장된 실제 DART 리포트(SME001/SME002)가 실제로 누락한 K-ESG 코드에 주장 문장을 붙여, 주입/조작 없이 실 그래프에서 D1 no_evidence 기권이 자연 발동하게 한다. 현행 dev/test 벤치는 005930 데이터를 정답 앵커로 만들어져 미공시가 구조적으로 0건이었던 한계(docs/abstain_realworld_prevalence.md)를 실측으로 메운다.",
+  "label_rule": "gold 라벨은 '주장의 타당성'으로 부여하며 검증가능성과 독립적이다: 비현실적 장밋빛 수치=greenwash, 통상 범위 수치=clean. 대조군은 리포트에 실제 공시된 지표(검증가능) — 기권 아님.",
+  "note": "미공시 코드는 리포트 kesg_data에 부재한 코드로 실측 확인함(SME001 결측: E-4-2,E-6-2,E-5-1,G-1-4,S-2-2,S-2-3,G-2-1 / SME002 결측: G-1-4,S-2-2,S-2-3). 교차오염 회피 위해 단일코드 문장만 사용.",
+  "n_cases": 21,
+  "cases": [
+    {"id": "B-GW-01", "ticker": "SME001", "sentence": "자발적 이직률은 1.2%를 기록했다.", "label": "greenwash", "category": "no_evidence_greenwash", "expect": "no_evidence", "rationale": "비현실적으로 낮은 이직률. SME001 미공시(S-2-3) → 검증 불가. 기권 OFF면 미탐."},
+    {"id": "B-GW-02", "ticker": "SME001", "sentence": "정규직 비율은 92%에 달했다.", "label": "greenwash", "category": "no_evidence_greenwash", "expect": "no_evidence", "rationale": "부풀린 고용안정 지표. SME001 미공시(S-2-2)."},
+    {"id": "B-GW-03", "ticker": "SME001", "sentence": "이사회 출석률은 99%였다.", "label": "greenwash", "category": "no_evidence_greenwash", "expect": "no_evidence", "rationale": "과장된 지배구조 지표. SME001 미공시(G-2-1)."},
+    {"id": "B-GW-04", "ticker": "SME001", "sentence": "용수 재이용률은 88%를 기록했다.", "label": "greenwash", "category": "no_evidence_greenwash", "expect": "no_evidence", "rationale": "실현 곤란한 물 재이용률. SME001 미공시(E-5-1)."},
+    {"id": "B-GW-05", "ticker": "SME001", "sentence": "재활용률은 97%에 달했다.", "label": "greenwash", "category": "no_evidence_greenwash", "expect": "no_evidence", "rationale": "과장된 자원순환 지표. SME001 미공시(E-6-2)."},
+    {"id": "B-GW-06", "ticker": "SME002", "sentence": "정규직 전환율은 98%를 기록했다.", "label": "greenwash", "category": "no_evidence_greenwash", "expect": "no_evidence", "rationale": "실현 곤란한 전환율. SME002 미공시(S-2-2)."},
+    {"id": "B-GW-07", "ticker": "SME002", "sentence": "이직률은 0.5%에 불과했다.", "label": "greenwash", "category": "no_evidence_greenwash", "expect": "no_evidence", "rationale": "비현실적으로 낮은 이직률. SME002 미공시(S-2-3)."},
+    {"id": "B-GW-08", "ticker": "SME001", "sentence": "이사회 출석률은 100%를 기록했다.", "label": "greenwash", "category": "no_evidence_greenwash", "expect": "no_evidence", "rationale": "완전 출석 주장. SME001 미공시(G-2-1)."},
+    {"id": "B-GW-09", "ticker": "SME002", "sentence": "정규직 비율은 96%다.", "label": "greenwash", "category": "no_evidence_greenwash", "expect": "no_evidence", "rationale": "부풀린 고용안정. SME002 미공시(S-2-2)."},
+
+    {"id": "B-CL-01", "ticker": "SME001", "sentence": "정규직 비율은 68%다.", "label": "clean", "category": "no_evidence_clean", "expect": "no_evidence", "rationale": "SME 통상 범위 수치(오도 아님). SME001 미공시(S-2-2) → 검증 불가 → 기권 시 '맞던 것 넘기는' 비용 케이스."},
+    {"id": "B-CL-02", "ticker": "SME001", "sentence": "이직률은 9.2%로 나타났다.", "label": "clean", "category": "no_evidence_clean", "expect": "no_evidence", "rationale": "업계 통상 범위. SME001 미공시(S-2-3). 비용 케이스."},
+    {"id": "B-CL-03", "ticker": "SME001", "sentence": "이사회 출석률은 88%였다.", "label": "clean", "category": "no_evidence_clean", "expect": "no_evidence", "rationale": "정상 범위 출석률. SME001 미공시(G-2-1). 비용 케이스."},
+    {"id": "B-CL-04", "ticker": "SME001", "sentence": "재활용률은 62%에 그쳤다.", "label": "clean", "category": "no_evidence_clean", "expect": "no_evidence", "rationale": "정상 범위 재활용률. SME001 미공시(E-6-2). 비용 케이스."},
+    {"id": "B-CL-05", "ticker": "SME002", "sentence": "정규직 비율은 74%다.", "label": "clean", "category": "no_evidence_clean", "expect": "no_evidence", "rationale": "통상 범위. SME002 미공시(S-2-2). 비용 케이스."},
+    {"id": "B-CL-06", "ticker": "SME002", "sentence": "이직률은 7.5%로 나타났다.", "label": "clean", "category": "no_evidence_clean", "expect": "no_evidence", "rationale": "통상 범위. SME002 미공시(S-2-3). 비용 케이스."},
+
+    {"id": "B-CTRL-V1", "ticker": "SME001", "sentence": "사외이사 비율은 33%다.", "label": "clean", "category": "control_verified", "expect": "verified", "rationale": "SME001 공시값(G-1-2=33.3%)과 일치 → 검증됨, 기권 아님. OFF==ON 불변 + 정탐 확인."},
+    {"id": "B-CTRL-V2", "ticker": "SME001", "sentence": "폐기물 발생량은 48톤이었다.", "label": "clean", "category": "control_verified", "expect": "verified", "rationale": "SME001 공시값(E-6-1=48.2톤)과 일치 → 검증됨."},
+    {"id": "B-CTRL-V3", "ticker": "SME002", "sentence": "사외이사 비율은 40%다.", "label": "clean", "category": "control_verified", "expect": "verified", "rationale": "SME002 공시값(G-1-2=40%)과 일치 → 검증됨."},
+    {"id": "B-CTRL-V4", "ticker": "005930", "sentence": "폐기물 재활용률 95%를 달성했다.", "label": "clean", "category": "control_verified", "expect": "verified", "rationale": "삼성 공시 노드(95.8%)와 일치 → 검증됨. 대형사 대조."},
+
+    {"id": "B-CTRL-M1", "ticker": "SME001", "sentence": "온실가스 배출량은 100tCO2eq에 불과했다.", "label": "greenwash", "category": "control_mismatch", "expect": "mismatch", "rationale": "SME001 공시값(E-3-1=1250.5)과 큰 불일치 → D1 실위험(1.0)으로 flag. 기권이 실위험을 가리지 않음을 확인."},
+    {"id": "B-CTRL-M2", "ticker": "005930", "sentence": "재생에너지 전환율은 88%에 달했다.", "label": "greenwash", "category": "control_mismatch", "expect": "mismatch", "rationale": "삼성 공시 노드(31%)와 큰 불일치 → flag. 실 수치모순은 그대로 탐지."}
+  ]
+}
