@@ -22,6 +22,7 @@ from __future__ import annotations
 from esgenie.dart_client import CompanyReport
 from esgenie.ssot.evidence_graph import EvidenceGraph, EvidenceNode
 from esgenie.ssot.node_select import (
+    is_partial_aggregate,
     normalize_to_item_unit,
     select_representative_node,
 )
@@ -354,11 +355,17 @@ class TestNoOverBlocking:
         # '제로화'는 파생 어휘로 배제, 자재별(플라스틱)보다 폐기물 재활용률이 우선.
         assert picked.value == 92.9
 
-    def test_single_candidate_wins_regardless_of_rules(self) -> None:
-        """후보가 1개면 규칙과 무관하게 그것을 쓴다 — 유일 증빙을 버리지 않는다."""
-        only = _n("E-3-1", 1_161_214.0, "tCO2eq", 2025, "온실가스 감축 효과")
-        picked = select_representative_node("E-3-1", [only], report_year=REPORT_YEAR)
-        assert picked is only, "유일 후보는 파생 hint라도 선택된다(폐기 아님)"
+    def test_single_candidate_wins_when_it_survives_hard_exclusion(self) -> None:
+        """후보가 1개면 순위 축(3~7단계)과 무관하게 그것을 쓴다 — 유일 증빙을 버리지 않는다.
+
+        2026-07-28 계약 변경: 종전에는 hard 배제(1·2단계)까지 우회해 파생 hint여도
+        채택했다. 그 우회가 LG화학 E-5-1 '일평균 산업용수 공급량'을 통과시켰으므로
+        **hard 배제는 후보 1개에도 적용된다**(아래 TestTimeUnitDerived). 순위 축만
+        우회 대상이다 — 부분값·분해값 하나뿐이면 여전히 채택된다.
+        """
+        only = _n("E-4-1", 5_104.0, "TJ", 2025, "비재생 전력 소비량 해외 2025")
+        picked = select_representative_node("E-4-1", [only], report_year=REPORT_YEAR)
+        assert picked is only, "부분값 하나뿐이면 순위 축을 우회해 채택된다(폐기 아님)"
 
     def test_hintless_pool_falls_back_to_year_proximity(self) -> None:
         """hint가 없는 얇은 노드(정형 채널 등)는 최후 기준인 연도로 갈린다."""
@@ -449,6 +456,252 @@ class TestUnitNormalization:
         entry = _ledger_pick(node)
         assert entry["unit"] == "kg"
         assert entry["value"] == 150_670.0
+
+
+# =====================================================================
+# 7. 총량 후보가 없는 풀 — 값은 싣고 부분값 표기 (결함 (a), 2026-07-28)
+# =====================================================================
+
+class TestPartialValueFlagging:
+    """`_PARTIAL_TERMS`는 후순위 축이지 배제가 아니다 — 전부 부분값이면 하나가 이긴다.
+
+    실측(5개사 일반화):
+      · LG화학 E-4-1 — 36노드에 '합계/총계'가 0개 → '비재생 전력 소비량 해외 2025' 5,104 TJ
+      · NAVER  E-3-2 — 노드 1개 → 'Scope 3 - Upstream 구매 제품 및 서비스' 71,385
+        (docs/라벨링_발견_수정목록_2026-07-19.md §1에서 Scope3 Category 1로 지목된 값)
+
+    결정(2026-07-28 사용자 확정): 미공시로 버리지 않고 `partial_value` 표기.
+    커버리지가 이미 5~7항목/17이라 배제는 더 나쁘고, D1은 이 오류를 못 잡는다
+    (원장·노드가 같은 값이라 Δ=0) — 표기가 유일한 방어선이다.
+    """
+
+    def test_all_partial_pool_still_yields_value_with_flag(self) -> None:
+        """★ (a) 전부 부분값 — 값이 뽑히고 partial_value가 붙는다. 미공시가 되면 안 된다."""
+        pool = [
+            _n("E-4-1", 21_374.0, "TJ", 2025, "비재생 전력 소비량 글로벌 2025"),
+            _n("E-4-1", 16_270.0, "TJ", 2025, "비재생 전력 소비량 국내 2025"),
+            _n("E-4-1", 5_104.0, "TJ", 2025, "비재생 전력 소비량 해외 2025"),
+        ]
+        picked = select_representative_node("E-4-1", pool, report_year=REPORT_YEAR)
+        assert picked is not None, "총량 후보가 없다고 미공시가 되면 안 된다(결정 ㄴ)"
+        assert is_partial_aggregate(picked), "부분값임이 조회 가능해야 한다"
+
+        result = extract_with_ssot(_empty_report(), _graph(*pool))
+        assert result.mapped["E-4-1"]["value"] is not None, "값이 실려야 한다"
+        assert "partial_value" in result.confidence_flags.get("E-4-1", [])
+
+    def test_naver_scope3_category_is_flagged_partial(self) -> None:
+        """NAVER E-3-2 실측 — 노드 1개(카테고리 1)여도 부분값 표기가 붙는다."""
+        only = _n("E-3-2", 71_385.0, "tCO2 eq", 2025,
+                  "Scope 3 온실가스 배출량 - Upstream 구매 제품 및 서비스")
+        result = extract_with_ssot(_empty_report(), _graph(only))
+
+        assert result.mapped["E-3-2"]["value"] == 71_385.0, "유일 증빙을 버리지 않는다"
+        assert "partial_value" in result.confidence_flags.get("E-3-2", [])
+
+    def test_total_candidate_present_means_no_flag(self) -> None:
+        """★ (a) 총량이 있으면 그걸 고르고 플래그가 안 붙는다 — 과표기 방지."""
+        pool = [
+            _n("E-4-1", 24_506.0, "TJ", 2025, "전력 소비량 합계 2025"),
+            _n("E-4-1", 5_104.0, "TJ", 2025, "비재생 전력 소비량 해외 2025"),
+        ]
+        picked = select_representative_node("E-4-1", pool, report_year=REPORT_YEAR)
+        assert picked is not None and picked.value == 24_506.0
+        assert not is_partial_aggregate(picked)
+
+        result = extract_with_ssot(_empty_report(), _graph(*pool))
+        assert "partial_value" not in result.confidence_flags.get("E-4-1", [])
+
+    def test_flag_reaches_ledger_table_status_string(self) -> None:
+        """★ 완료 기준 1 — 플래그가 원장 표 상태 문자열('·부분값')까지 노출된다.
+
+        `unit_suspect` → '·단위확인'과 같은 자리다(Phase 2 표기 관행).
+        플래그만 달고 끝내면 산출물에는 아무것도 드러나지 않는다.
+        """
+        from esgenie.layer2_rag import _area_item_rows
+
+        only = _n("E-3-2", 71_385.0, "tCO2 eq", 2025,
+                  "Scope 3 온실가스 배출량 - Upstream 구매 제품 및 서비스")
+        result = extract_with_ssot(_empty_report(), _graph(only))
+        covered, _ = _area_item_rows(result, "E")
+
+        row = next(r for r in covered if r["code"] == "E-3-2")
+        assert "·부분값" in row["status"], f"원장 표에 부분값 표기가 없다 — {row['status']}"
+
+    def test_region_alone_loses_to_plain_metric(self) -> None:
+        """★ (a-2) `해외` 단독 — 조직어 없는 지역어도 부분값으로 후순위여야 한다.
+
+        사전에 '해외 자회사'·'해외 사업장'만 있어 LG 실측 hint는 안 걸렸다.
+        """
+        pool = [
+            _n("E-4-1", 5_104.0, "TJ", 2025, "비재생 전력 소비량 해외"),
+            _n("E-4-1", 24_506.0, "TJ", 2025, "전력 사용량"),
+        ]
+        picked = select_representative_node("E-4-1", pool, report_year=REPORT_YEAR)
+        assert picked is not None
+        assert picked.value == 24_506.0, "단독 지역어가 후순위로 안 밀렸다"
+
+    def test_region_reinforcement_does_not_block_whole_scope(self) -> None:
+        """음성 — `국내` 보강이 정상 항목을 막지 않는가.
+
+        두 방향으로 고정한다:
+          ① '국내외'는 전 범위 → 부분값이 아니다('국내'가 부분문자열로 걸리면 안 된다)
+          ② '국내(별도)'는 종전대로 부분값 (기존 계약 유지)
+          ③ 지역어가 붙은 부분값 하나뿐인 풀은 여전히 값이 뽑힌다(배제 아님)
+        """
+        whole = _n("E-5-1", 1_992_921.0, "ton", 2025, "국내외 용수 사용량(취수량)")
+        part = _n("E-5-1", 623_648.0, "ton", 2025, "용수 사용량(취수량) 국내(별도)")
+        assert not is_partial_aggregate(whole), "'국내외'가 부분값으로 오판정됐다"
+        assert is_partial_aggregate(part)
+
+        picked = select_representative_node("E-5-1", [part, whole], report_year=REPORT_YEAR)
+        assert picked is whole
+
+        # 부분값만 있어도 값은 나온다 — (a)는 표기이지 배제가 아니다.
+        alone = select_representative_node("E-5-1", [part], report_year=REPORT_YEAR)
+        assert alone is part
+
+    def test_scope_expanding_suffix_is_not_partial(self) -> None:
+        """음성 — '… 포함'은 범위 확대다.
+
+        실측 오표기: LG화학 E-6-2 '폐기물 재활용률(열회수소각 포함)' 91%가
+        `_BREAKDOWN_TERMS`의 '소각'에 걸려 부분값으로 표기됐다.
+        """
+        node = _n("E-6-2", 91.0, "%", 2025, "폐기물 재활용률 (열회수소각 포함)")
+        assert not is_partial_aggregate(node)
+
+
+# =====================================================================
+# 8. 정성 항목에 정량값 차단 (결함 (c), 2026-07-28)
+# =====================================================================
+
+class TestQualitativeItemNoQuantitativeValue:
+    """`E-1-2 환경경영 추진체계`는 정성(존재형) 항목 — 숫자가 들어갈 자리가 아니다.
+
+    실측: 삼성전기 2.0 회 'ESG위원회 정기회의 횟수' · LG화학 5.0 명 '1차 개최 출석률'.
+    """
+
+    def test_qualitative_code_rejects_ocr_quantitative_node(self) -> None:
+        """★ (c) data_type='정성' 코드는 OCR 정량 노드가 있어도 값이 안 실린다."""
+        from esgenie.knowledge.kesg_items import by_code
+
+        assert by_code("E-1-2").data_type == "정성", "전제 확인 — 항목 정의가 정성이다"
+
+        pool = [
+            _n("E-1-2", 2.0, "회", 2025, "ESG위원회 정기회의 횟수"),
+            _n("E-1-2", 5.0, "명", 2025, "2025년 ESG위원회 1차 개최 출석률"),
+        ]
+        result = extract_with_ssot(_empty_report(), _graph(*pool))
+        assert "E-1-2" not in result.mapped, "정성 항목에 정량값이 실렸다"
+
+    def test_text_node_path_still_fills_clause_marker(self) -> None:
+        """음성 — TextNode(존재형 증빙) 경로의 '문서 조항 확인'은 그대로 들어간다.
+
+        정성 항목의 정상 동작이다. OCR 정량 노드가 같이 있어도 이 경로가 이긴다.
+        """
+        from esgenie.ssot.evidence_graph import TextNode
+
+        graph = _graph(_n("E-1-2", 2.0, "회", 2025, "ESG위원회 정기회의 횟수"))
+        graph.add_text_node(TextNode(
+            id="t_e12", section="환경경영", kesg_code="E-1-2",
+            text="환경경영 추진체계는 ESG위원회 산하 환경분과가 총괄한다.",
+            source_file="규정집.pdf",
+        ))
+        result = extract_with_ssot(_empty_report(), graph)
+
+        assert result.mapped["E-1-2"]["value"] == "문서 조항 확인"
+
+
+# =====================================================================
+# 9. 시간 원단위 배제 (결함 (d), 2026-07-28)
+# =====================================================================
+
+class TestTimeUnitDerived:
+    """`일평균`은 연간 사용량이 아니다 — 365배 차이.
+
+    실측: LG화학 E-5-1 '일평균 산업용수 공급량' 540,000 ton. 노드가 1개뿐이라
+    '후보 1개면 무조건 채택' 우회에 걸려 규칙이 개입하지 못했다.
+    """
+
+    def test_daily_average_alone_yields_undisclosed(self) -> None:
+        """★ (d) 유일 후보여도 hard 배제가 적용돼 미공시가 된다.
+
+        365배 틀린 값보다 미공시가 낫다(라벨링 §3-1).
+        """
+        only = _n("E-5-1", 540_000.0, "톤", 2025, "일평균 산업용수 공급량")
+        assert select_representative_node("E-5-1", [only], report_year=REPORT_YEAR) is None
+
+        result = extract_with_ssot(_empty_report(), _graph(only))
+        assert "E-5-1" not in result.mapped
+        assert "no_representative_node" in result.confidence_flags.get("E-5-1", [])
+
+    def test_annual_total_beats_daily_average_in_mixed_pool(self) -> None:
+        """섞인 풀에서는 연간 총량이 이긴다(hard 배제 → 후보에서 빠진다)."""
+        pool = [
+            _n("E-5-1", 540_000.0, "톤", 2025, "일평균 산업용수 공급량"),
+            _n("E-5-1", 1_992_921.0, "톤", 2025, "용수 사용량(취수량) 합계"),
+        ]
+        picked = select_representative_node("E-5-1", pool, report_year=REPORT_YEAR)
+        assert picked is not None and picked.value == 1_992_921.0
+
+    def test_plain_average_metrics_are_not_excluded(self) -> None:
+        """음성 — '평균' 단독은 배제하지 않는다. 시간 원단위 표현만 잡는다.
+
+        '평균 근속연수'(S-3-3 계열)처럼 '평균'이 정상인 지표가 있다.
+        """
+        from esgenie.ssot.node_select import is_derived_hint
+
+        assert not is_derived_hint("평균 근속연수")
+        assert not is_derived_hint("1인 평균 교육시간")
+        assert is_derived_hint("일평균 산업용수 공급량")
+        assert is_derived_hint("월평균 폐기물 발생량")
+        assert is_derived_hint("1일당 용수 취수량")
+
+
+# =====================================================================
+# 10. 단위 표기 변종 (결함 (b), 2026-07-28)
+# =====================================================================
+
+class TestUnitNotationVariants:
+    """`tCO2 eq`(공백 1개)는 되는데 `ton CO2 eq`는 안 됐다 — 신한 2건.
+
+    값은 맞고 표기만 다른데 `unit_suspect`가 붙어 '단위 불일치 0' 지표를 오염시켰다.
+    원인: `normalize_to_item_unit`의 문자열 폴백이 `_norm`(소문자·공백제거)만 썼다.
+    `layer1_extract._relaxed_unit`이 이미 `ton→t` 축약을 갖고 있어 그걸 재사용한다.
+    """
+
+    def test_ton_co2_eq_variants_all_normalize(self) -> None:
+        """★ (b) 3종 변종 전부 unit_suspect 없이 tCO2eq로."""
+        for raw in ("ton CO2 eq", "ton CO2eq", "tCO2 eq", "톤 CO2eq"):
+            assert normalize_to_item_unit("E-3-1", 89_861.0, raw) == (
+                89_861.0, "tCO2eq", None), f"{raw!r}에 unit_suspect가 붙었다"
+
+    def test_shinhan_ledger_has_no_unit_suspect(self) -> None:
+        """신한 실측 2건 — 원장 저장 시점에 플래그가 안 남는다."""
+        e31 = _n("E-3-1", 89_861.0, "ton CO2 eq", 2025,
+                 "온실가스 배출량 - 총 배출량 국내(지역 기반)")
+        result = extract_with_ssot(_empty_report(), _graph(e31))
+        assert result.mapped["E-3-1"]["unit"] == "tCO2eq"
+        assert "unit_suspect" not in result.confidence_flags.get("E-3-1", [])
+
+    def test_genuinely_different_unit_still_suspect(self) -> None:
+        """음성 — 진짜 다른 단위는 여전히 unit_suspect. 표기 요동만 흡수한다."""
+        value, unit, flag = normalize_to_item_unit("E-4-1", 12.0, "명")
+        assert (value, unit, flag) == (12.0, "명", "unit_suspect")
+        assert normalize_to_item_unit("E-3-1", 5.0, "건")[2] == "unit_suspect"
+
+    def test_relaxed_unit_is_reused_not_reimplemented(self) -> None:
+        """★ 완료 기준 2 — `_relaxed_unit` 재사용(중복 구현 없음)을 구조로 고정.
+
+        node_select가 자체 별칭표를 다시 만들면 layer1과 판정이 갈린다.
+        패치해서 실제로 호출되는지 확인한다.
+        """
+        from unittest.mock import patch
+
+        with patch("esgenie.layer1_extract._relaxed_unit", side_effect=lambda u: u) as m:
+            # 항등 함수로 바꾸면 'ton CO2 eq' != 'tCO2eq'가 되어 판정이 뒤집힌다.
+            assert normalize_to_item_unit("E-3-1", 1.0, "ton CO2 eq")[2] == "unit_suspect"
+        assert m.called, "node_select가 _relaxed_unit을 쓰지 않는다(중복 구현 의심)"
 
 
 # =====================================================================
