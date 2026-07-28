@@ -683,7 +683,11 @@ def _build_risk_vector(
     else:
         level = "high"
 
-    top_axis = max(axes, key=lambda k: axes[k].score)
+    # 전 축이 0이면 top_axis는 빈 문자열이다. max()는 동점에서 첫 키를 돌려주므로
+    # 깨끗한 문장이 늘 'D1_numeric'으로 찍혔고, L5 summary의 high_risk_axes가 그걸
+    # 최빈값으로 집계해 **위험이 0인 섹션을 '고위험 축 D1'으로 보고**했다
+    # (2026-07-27 현대모비스 E: 전 문장 D1=0인데 high_risk_axes=['D1_numeric', ...]).
+    top_axis = max(axes, key=lambda k: axes[k].score) if any(a.score > 0 for a in axes.values()) else ""
 
     return RiskVector(
         D1_numeric=d1, D2_modifier=d2, D3_semantic=d3,

@@ -217,3 +217,50 @@ def test_sentence_topic_codes_uses_same_index():
     codes = _sentence_topic_codes(LIVE_SENTENCE)
     assert {"E-2-1", "E-2-2", "E-3-1", "E-3-2", "E-4-1", "E-4-2",
             "E-5-1", "E-6-1", "E-6-2", "E-8-1"} <= codes, sorted(codes)
+
+
+# ---- top_axis / high_risk_axes — 위험 0인 문장이 '고위험 축'으로 보고되면 안 된다 ----
+
+def test_top_axis_is_empty_when_all_axes_are_zero():
+    """전 축 0 → top_axis="".
+
+    max()는 동점에서 첫 키를 돌려주므로 깨끗한 문장이 늘 'D1_numeric'으로 찍혔고,
+    L5 summary의 high_risk_axes가 그걸 최빈값으로 집계해 **위험 0인 섹션을
+    '고위험 축 D1'으로 보고**했다(2026-07-27 현대모비스 E 라이브: 전 문장 D1=0인데
+    high_risk_axes=['D1_numeric', 'D2_modifier']). D1을 0으로 만든 작업의 결과가
+    산출물에서 안 보이던 원인이다.
+    """
+    from esgenie.layer3_detect import _build_risk_vector
+    from esgenie.schemas import AxisScore
+
+    zero = lambda: AxisScore(score=0.0, evidence=[], detail="")
+    rv = _build_risk_vector(zero(), zero(), zero(), zero())
+
+    assert rv.risk_score == 0.0
+    assert rv.top_axis == "", f"위험 0인데 top_axis가 '{rv.top_axis}'로 찍혔다"
+
+
+def test_top_axis_still_reports_the_real_axis_when_nonzero():
+    """과차단 방지 — 실제 위험이 있으면 그 축을 정확히 지목해야 한다."""
+    from esgenie.layer3_detect import _build_risk_vector
+    from esgenie.schemas import AxisScore
+
+    zero = lambda: AxisScore(score=0.0, evidence=[], detail="")
+    hot = AxisScore(score=1.0, evidence=[], detail="모호어")
+    rv = _build_risk_vector(zero(), hot, zero(), zero())
+    assert rv.top_axis == "D2_modifier"
+
+
+def test_high_risk_axes_excludes_clean_sentences():
+    """L5 집계 — 깨끗한 문장만 있으면 high_risk_axes가 빈 목록이어야 한다."""
+    from esgenie.schemas import AxisScore, RiskVector
+
+    zero = lambda: AxisScore(score=0.0, evidence=[], detail="")
+    clean = RiskVector(D1_numeric=zero(), D2_modifier=zero(),
+                       D3_semantic=zero(), D5_timeseries=zero(),
+                       aggregate={"risk_score": 0.0, "level": "low", "top_axis": ""})
+    from collections import Counter
+    counter: Counter[str] = Counter()
+    for _ in range(4):
+        counter[clean.top_axis] += 1
+    assert [ax for ax, _ in counter.most_common(3) if ax] == []
