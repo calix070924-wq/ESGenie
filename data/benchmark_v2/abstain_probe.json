@@ -1,0 +1,103 @@
+{
+  "ticker": "005930",
+  "purpose": "no_evidence 기권(abstain)의 순수 효과를 격리 측정하기 위한 통제 probe 셋. 각 케이스는 '해당 회사가 그 지표를 공시하지 않음'을 그래프에서 omit_codes 코드를 제거해 재현한다(→ D1 no_evidence 기권 발동). label은 주장 자체의 진위(오도 여부)로 부여하며 검증가능성과 독립적이다. controls는 omit 없음 → 기권 아님 → OFF==ON 불변 확인용.",
+  "n_cases": 12,
+  "cases": [
+    {
+      "id": "P-GW-01",
+      "sentence": "자발적 이직률은 1.2%를 기록했다.",
+      "label": "greenwash",
+      "category": "no_evidence_greenwash",
+      "omit_codes": ["S-2-3"],
+      "rationale": "비현실적으로 낮은 이직률을 근거 없이 제시(오도). 리포트에 이직률 노드 부재 → 검증 불가. abstain OFF면 D1 0.0으로 흘려 '정상'으로 미탐되는 대표 케이스."
+    },
+    {
+      "id": "P-GW-02",
+      "sentence": "사외이사 비율은 88%였다.",
+      "label": "greenwash",
+      "category": "no_evidence_greenwash",
+      "omit_codes": ["G-1-2"],
+      "rationale": "과장된 지배구조 지표. 공시 부재로 검증 불가. OFF면 미탐."
+    },
+    {
+      "id": "P-GW-03",
+      "sentence": "정규직 전환율은 99%를 기록했다.",
+      "label": "greenwash",
+      "category": "no_evidence_greenwash",
+      "omit_codes": ["S-2-2"],
+      "rationale": "실현 불가능에 가까운 전환율을 근거 없이 제시. 공시 부재. OFF면 미탐."
+    },
+    {
+      "id": "P-GW-04",
+      "sentence": "재생에너지 사용 비율은 100%를 달성했다.",
+      "label": "greenwash",
+      "category": "no_evidence_greenwash",
+      "omit_codes": ["E-4-1", "E-4-2"],
+      "rationale": "100% 재생에너지 달성 주장을 뒷받침 데이터 없이 제시(전형적 그린워싱). 공시 부재. OFF면 미탐."
+    },
+    {
+      "id": "P-GW-05",
+      "sentence": "여성 근로자 비율은 52%에 이르렀다.",
+      "label": "greenwash",
+      "category": "no_evidence_greenwash",
+      "omit_codes": ["S-3-1"],
+      "rationale": "부풀린 다양성 지표를 근거 없이 제시. 공시 부재. OFF면 미탐."
+    },
+    {
+      "id": "P-GW-06",
+      "sentence": "이직률은 0.3%에 불과했다.",
+      "label": "greenwash",
+      "category": "no_evidence_greenwash",
+      "omit_codes": ["S-2-3"],
+      "rationale": "비현실적으로 낮은 수치. 공시 부재. OFF면 미탐."
+    },
+    {
+      "id": "P-CL-01",
+      "sentence": "이사회 출석률은 96%를 기록했다.",
+      "label": "clean",
+      "category": "no_evidence_clean",
+      "omit_codes": ["G-2-1"],
+      "rationale": "그럴듯한 정상 범위 수치(오도 아님). 다만 공시 부재로 검증 불가 → 기권 시 '맞던 것을 사람에게 넘기는' 비용 케이스."
+    },
+    {
+      "id": "P-CL-02",
+      "sentence": "정규직 비율은 83%다.",
+      "label": "clean",
+      "category": "no_evidence_clean",
+      "omit_codes": ["S-2-2"],
+      "rationale": "정상 범위 수치. 검증 불가. 기권 비용 케이스."
+    },
+    {
+      "id": "P-CL-03",
+      "sentence": "이직률은 8.5%로 나타났다.",
+      "label": "clean",
+      "category": "no_evidence_clean",
+      "omit_codes": ["S-2-3"],
+      "rationale": "업계 통상 범위 수치. 검증 불가. 기권 비용 케이스."
+    },
+    {
+      "id": "P-CL-04",
+      "sentence": "여성 근로자 비율은 24%다.",
+      "label": "clean",
+      "category": "no_evidence_clean",
+      "omit_codes": ["S-3-1"],
+      "rationale": "정상 범위 수치. 검증 불가. 기권 비용 케이스."
+    },
+    {
+      "id": "P-CTRL-01",
+      "sentence": "폐기물 재활용률 95%를 달성했다.",
+      "label": "clean",
+      "category": "control_verified",
+      "omit_codes": [],
+      "rationale": "리포트 노드(95.8%)와 일치 → 검증됨, 기권 아님. OFF==ON 불변 + 정탐 확인용."
+    },
+    {
+      "id": "P-CTRL-02",
+      "sentence": "재생에너지 전환율은 88%에 달했다.",
+      "label": "greenwash",
+      "category": "control_mismatch",
+      "omit_codes": [],
+      "rationale": "리포트 노드(31%)와 큰 불일치 → D1 실위험 신호(score 1.0)로 flag. 기권이 실위험을 가리지 않음을 확인(abstain은 no_evidence만, 수치 불일치는 그대로 탐지)."
+    }
+  ]
+}
