@@ -101,6 +101,20 @@ def abstain_coverage(rows: list[dict[str, Any]]) -> dict[str, Any]:
     }
 
 
+def with_abstain_ignored(rows: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    """단일 capture 캐시에서 "OFF 해석"을 유도한다 — 재실행(재판정) 없음.
+
+    abstain(특히 no_evidence)은 룰 레이어의 rule_score를 바꾸지 않으므로
+    (미검증 시 OFF/ON 모두 score 0.0), `pred`/`correct`/`p`/`y`는 이 함수
+    호출 전후로 완전히 동일하게 유지된다 — 이 함수는 abstained 플래그만
+    무시해 "abstain 기능이 아예 없었다면"에 해당하는 coverage 해석을
+    만든다. 즉 ON과 OFF는 **같은 rows에서 유도된 두 가지 해석**일 뿐,
+    서로 다른 LLM/judge 실행 결과가 아니다(배치 4에서 문제였던 실행 간
+    비재현성이 구조적으로 제거된다).
+    """
+    return [{**r, "abstained": False, "abstain_reasons": []} for r in rows]
+
+
 def _prf(rows: list[dict[str, Any]]) -> dict[str, float]:
     tp = sum(1 for r in rows if r["y"] == 1 and r["pred"] == 1)
     fp = sum(1 for r in rows if r["y"] == 0 and r["pred"] == 1)
