@@ -413,6 +413,10 @@ def select_representative_node(
     def _period(node: Any) -> int:
         return getattr(node, "period", 0) or 0
 
+    def _inferred(node: Any) -> int:
+        """period가 폴백값이면 1(후순위). 필드 없는 노드는 0 — 기존 동작 보존."""
+        return 1 if getattr(node, "period_inferred", False) else 0
+
     # 3~7단계 — 순위 축을 단계별로 좁힌다. 사전식 비교와 동치이지만(_keep_min 주석),
     # 8단계가 '그 시점의 생존 집합'을 봐야 해서 정렬 키 한 방으로는 안 된다.
     survivors = _keep_min(survivors, lambda n: _family_rank(base_code, _node_hint(n)))
@@ -425,10 +429,15 @@ def select_representative_node(
     #    report_year가 없으면 최신 연도로 좁혀 같은 불변식을 지킨다 — 종전 정렬 키의
     #    `-period` 항과 동치이고(그 항이 연도 다음이었다), 그 자리를 8단계보다 앞으로
     #    끌어올리지 않으면 report_year=None 경로만 정체 효과에 노출된다.
+    #    period_inferred(2026-07-29)는 **같은 순위 안에서만** 후순위다(튜플 2번째 항).
+    #    원문에서 연도를 못 읽어 report_year로 채운 노드는 근접도가 0으로 나와 확정 노드와
+    #    동률이 되는데, 그 동률을 근거 없이 이기면 안 된다. 축 순서는 그대로다 — 연도는
+    #    여전히 8단계(값 최빈)보다 앞이다.
     if report_year is not None:
-        survivors = _keep_min(survivors, lambda n: abs(_period(n) - report_year))
+        survivors = _keep_min(
+            survivors, lambda n: (abs(_period(n) - report_year), _inferred(n)))
     else:
-        survivors = _keep_min(survivors, lambda n: -_period(n))
+        survivors = _keep_min(survivors, lambda n: (-_period(n), _inferred(n)))
 
     # 8) 값 최빈 — 최빈값이 유일할 때만 좁힌다. 동률이면 무개입.
     survivors = _keep_value_mode(survivors)

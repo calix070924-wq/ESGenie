@@ -43,6 +43,14 @@ class EvidenceNode:
     bbox: list[float] | None = None  # ★ 신규: 원문 내 위치(0~1 정규화)
     page: int | None = None          # ★ 신규: 0-기준 페이지 인덱스
     confidence: float = 1.0          # ★ 신규: OCR/추출 신뢰도 (DART=1.0)
+    # 원문에서 연도를 못 읽어 report_year로 채운 값인가(_normalize_period 폴백).
+    # 기본값 False라 기존 노드·DART 경로는 동작이 바뀌지 않는다.
+    #
+    # 왜 필요한가(2026-07-29): period == report_year가 '진짜 report_year 실적'과
+    # '연도 미상'을 구분하지 못했다. 실측 478노드 중 폴백은 15건(3.1%)뿐이지만,
+    # 그 15건은 사용자에게 2025 실적으로 보인다(근거: docs/연도미상_원인조사_2026-07-29.md).
+    # 소비 지점 3곳 — G4 projection 판정(아래) · node_select 연도 축 · confidence_flags.
+    period_inferred: bool = False
 
     def to_dict(self) -> dict[str, Any]:
         return asdict(self)
@@ -331,7 +339,7 @@ def merge_ocr_extraction(
 
     for idx, m in enumerate(extraction.metrics):
         code = _resolve_kesg_code(m)
-        period = _normalize_period(m.period, fallback=report_year)
+        period, period_inferred = _normalize_period(m.period, fallback=report_year)
         confidence = m.confidence
         # G4. 미래 기간 분리 — 보고 연도보다 '충분히' 미래(2030/2035/2040 목표·전망 등)인
         # 확정 코드 노드는 실적 코드에서 떼어내 '{code}__projection'으로 보존. search_nodes
@@ -342,8 +350,13 @@ def merge_ocr_extraction(
         # 명세 등)은 DART 공시연도보다 1년 앞설 수 있어(예: 2024 보고서 + 2025-12 고지서),
         # +1까지 미래로 보면 정상 최신 증빙까지 projection으로 오분류된다. 목표·전망 곡선의
         # 축 연도(2030+)는 +2 이상이라 이 임계값으로 정확히 걸러진다.
+        #
+        # period_inferred면 판정하지 않는다(2026-07-29): 폴백 연도는 report_year와 같아
+        # 임계값을 넘지 않으므로 지금도 projection이 되지 않는다. 조건을 명시해 두는 이유는
+        # 폴백 기준값이 report_year가 아니게 바뀌어도(예: 문서 연도) 추론값으로 '미래 전망'을
+        # 판정하지 않도록 못박기 위한 것이다 — 근거 없는 분리는 D1 비교 대상을 잘못 줄인다.
         metric = code or m.metric_hint
-        if code and period - report_year >= _PROJECTION_YEAR_GAP:
+        if code and not period_inferred and period - report_year >= _PROJECTION_YEAR_GAP:
             metric = f"{code}__projection"
             confidence = round(confidence * 0.3, 4)
         node = EvidenceNode(
@@ -367,6 +380,7 @@ def merge_ocr_extraction(
             bbox=m.bbox,
             page=m.page,
             confidence=confidence,
+            period_inferred=period_inferred,
         )
         graph.add_node(node)
         _link_cross_check(graph, node)
@@ -483,11 +497,19 @@ def _resolve_kesg_code(m: ExtractedMetric) -> str | None:
     return code
 
 
-def _normalize_period(period_raw: str, *, fallback: int) -> int:
-    """'2025-12' / '2025년' / '' → 연도 정수."""
+def _normalize_period(period_raw: str, *, fallback: int) -> tuple[int, bool]:
+    """'2025-12' / '2025년' / '' → (연도 정수, 추론여부).
+
+    두 번째 값이 True면 원문에 연도가 없어 `fallback`(=report_year)으로 채운 것이다.
+    호출부가 이 사실을 노드에 남겨야 한다(EvidenceNode.period_inferred) — 값만 돌려주면
+    '진짜 report_year'와 '연도 미상'이 구분되지 않는다(실측: 모비스 '미상' 13건이
+    2025 실적으로 보였다).
+    """
     import re
     m = re.search(r"(20\d{2})", period_raw or "")
-    return int(m.group(1)) if m else fallback
+    if m:
+        return int(m.group(1)), False
+    return fallback, True
 
 
 def _link_cross_check(graph: EvidenceGraph, node: EvidenceNode) -> None:
@@ -547,6 +569,8 @@ def _emit_derived_emission(
         origin=node.origin,
         source_file=node.source_file,
         confidence=node.confidence * 0.95,   # 환산 불확실성 반영
+        # 파생 노드는 원 노드의 period를 그대로 쓰므로 추론여부도 함께 물려받는다.
+        period_inferred=node.period_inferred,
     )
     graph.add_node(derived)
 
