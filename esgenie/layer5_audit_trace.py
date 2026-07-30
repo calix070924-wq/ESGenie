@@ -51,6 +51,12 @@ def build_audit_trace(
     # RAG 청크 → retrieved_chunks 형식
     chunks = _gen_to_chunks(gen)
     chunk_map = {chunk["id"]: chunk for chunk in chunks}
+    chunk_word_sets = {
+        chunk["id"]: set(chunk.get("text", "").split()) for chunk in chunks
+    }
+    # 모든 문장이 같은 RAG 근거를 사용하므로 D3 인덱스도 감사 추적당 한 번만 만든다.
+    # 문장 루프 안에서 만들면 문장 수만큼 전체 청크를 다시 임베딩하게 된다.
+    d3_index = _build_d3_index(chunks)
 
     # K-ESG 코드 → sentence 텍스트 역매핑 (간단 키워드 기반)
     sentence_texts = [entry.clean_text for entry in parsed_sentences]
@@ -58,23 +64,24 @@ def build_audit_trace(
 
     audit_sentences: list[AuditSentence] = []
     now_iso = _now_iso()
+    model_versions = _model_versions()
 
     for idx, sent in enumerate(parsed_sentences):
         sent_text = sent.clean_text
         sent_id = f"{report.corp_code}_{area}_{idx:03d}"
+        guessed_codes = _guess_kesg_codes(sent_text, extraction)
 
         # evidence_node_ids
         ev_node_ids: list[str] = []
         if evidence_graph is not None:
-            codes = _guess_kesg_codes(sent_text, extraction)
-            for code in codes:
+            for code in guessed_codes:
                 nodes = evidence_graph.search_nodes(keywords=[code], period=report.report_year)
                 ev_node_ids.extend(n.id for n in nodes)
 
         # retrieved_chunk_ids: citation 우선, 없으면 키워드 매칭 폴백
         chunk_ids = [cid for cid in sent.cited_chunk_ids if cid in chunk_map]
         if not chunk_ids:
-            chunk_ids = _match_chunk_ids(sent_text, chunks)
+            chunk_ids = _match_chunk_ids(sent_text, chunks, chunk_word_sets=chunk_word_sets)
         retrieval_scores = [
             float(chunk_map[cid]["score"])
             for cid in chunk_ids
@@ -87,7 +94,9 @@ def build_audit_trace(
         # risk_vector (문장 단위) — llm_judge=True면 룰+LLM 하이브리드
         rv: RiskVector | None = None
         if evidence_graph is not None or chunks:
-            related_codes = list(dict.fromkeys(([kesg_item_id] if kesg_item_id else []) + _guess_kesg_codes(sent_text, extraction)))
+            related_codes = list(dict.fromkeys(
+                ([kesg_item_id] if kesg_item_id else []) + guessed_codes
+            ))
             if llm_judge:
                 from .layer3_judge import detect_risk_vector_hybrid as _detect
                 rv = _detect(
@@ -95,6 +104,7 @@ def build_audit_trace(
                     evidence_graph=evidence_graph,
                     retrieved_chunks=chunks or None,
                     industry_stats=industry_stats,
+                    _d3_index=d3_index,
                     kesg_codes=related_codes or None,
                 )
             else:
@@ -103,6 +113,7 @@ def build_audit_trace(
                     evidence_graph=evidence_graph,
                     retrieved_chunks=chunks or None,
                     industry_stats=industry_stats,
+                    _d3_index=d3_index,
                 )
 
         # refinement_attempts (해당 문장에 영향을 준 시도 목록)
@@ -128,7 +139,7 @@ def build_audit_trace(
             refinement_attempts=ref_attempts,
             hitl_status=hitl_status,
             timestamps={"created": now_iso, "finalized": now_iso},
-            model_versions=_model_versions(),
+            model_versions=model_versions.copy(),
         ))
 
     # 요약 통계
@@ -228,12 +239,38 @@ def _gen_to_chunks(gen: GenerationResult) -> list[dict[str, Any]]:
     return chunks
 
 
-def _match_chunk_ids(sentence: str, chunks: list[dict[str, Any]], top_k: int = 3) -> list[str]:
+def _build_d3_index(chunks: list[dict[str, Any]]) -> Any | None:
+    """감사 추적의 모든 문장이 공유할 D3 벡터 인덱스를 한 번만 구축한다."""
+    if not chunks:
+        return None
+
+    from .embeddings import IndexedDoc, VectorIndex
+
+    index = VectorIndex()
+    index.build([
+        IndexedDoc(text=chunk.get("text", ""), meta={"id": chunk.get("id", "")})
+        for chunk in chunks
+    ])
+    return index
+
+
+def _match_chunk_ids(
+    sentence: str,
+    chunks: list[dict[str, Any]],
+    top_k: int = 3,
+    *,
+    chunk_word_sets: dict[str, set[str]] | None = None,
+) -> list[str]:
     """간단 키워드 겹침으로 연관 청크 ID 추출."""
     sentence_words = set(sentence.split())
     scored: list[tuple[int, str]] = []
     for c in chunks:
-        overlap = len(sentence_words & set(c["text"].split()))
+        chunk_words = (
+            chunk_word_sets.get(c["id"], set())
+            if chunk_word_sets is not None
+            else set(c["text"].split())
+        )
+        overlap = len(sentence_words & chunk_words)
         if overlap > 0:
             scored.append((overlap, c["id"]))
     scored.sort(reverse=True)

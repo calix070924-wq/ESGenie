@@ -104,6 +104,62 @@ def test_audit_trace_prefers_explicit_citations() -> None:
     assert verification.final_text == "온실가스 배출량은 120입니다"
 
 
+def test_audit_trace_builds_d3_index_once_for_all_sentences(monkeypatch) -> None:
+    """같은 RAG 청크를 문장마다 다시 임베딩하지 않는다."""
+    import esgenie.embeddings as embeddings
+
+    monkeypatch.setattr(embeddings, "_get_st_model", lambda _name: None)
+    monkeypatch.setattr(embeddings, "_get_faiss", lambda: None)
+
+    build_calls = 0
+    original_build = embeddings.VectorIndex.build
+
+    def counted_build(index, docs):
+        nonlocal build_calls
+        build_calls += 1
+        return original_build(index, docs)
+
+    monkeypatch.setattr(embeddings.VectorIndex, "build", counted_build)
+
+    docs = [
+        IndexedDoc(text="온실가스 배출량 120", meta={"id": "corp_1"}, chunk_id="corp_1"),
+        IndexedDoc(text="재생에너지 비율 31", meta={"id": "corp_2"}, chunk_id="corp_2"),
+    ]
+    context = RAGContext(
+        kesg_hits=[], industry_hits=[], corp_hits=[(docs[0], 0.91), (docs[1], 0.82)])
+    generation = GenerationResult(
+        area="E",
+        text="온실가스 배출량은 120톤입니다.\n재생에너지 비율은 31%입니다.",
+        context=context,
+        used_mock_llm=True,
+    )
+    detection = DetectionResult(
+        text=generation.text,
+        sentences=[],
+        numeric_claims=[],
+        claim_checks=[],
+        vague_phrases=[],
+        semantic_similarity=1.0,
+        risk_score=0.0,
+    )
+    step = VerificationStep(
+        iteration=0, generation=generation, detection=detection,
+        grounding=None, instruction="",
+    )
+    verification = VerificationResult(area="E", steps=[step], final=step, converged=True)
+    extraction = SimpleNamespace(mapped={
+        "E-3-1": {"name": "온실가스 배출량", "note": "온실가스 배출량"},
+        "E-4-2": {"name": "재생에너지 비율", "note": "재생에너지 비율"},
+    })
+    report = SimpleNamespace(corp_code="TEST", corp_name="테스트", report_year=2024)
+
+    trace = build_audit_trace(report, "E", verification, extraction)
+
+    assert len(trace.sentences) == 2
+    assert all(sentence.risk_vector is not None for sentence in trace.sentences)
+    assert build_calls == 1
+
+
 def test_retrieval_gate_accepts_supported_corp_hits() -> None:
     corp_hits = [
         (IndexedDoc(text="온실가스 배출량 120 tCO2eq 2024년", meta={"source": "dart_raw"}, chunk_id="corp_1"), 0.91),
