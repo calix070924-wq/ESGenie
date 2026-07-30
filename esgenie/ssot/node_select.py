@@ -10,11 +10,41 @@ L0가 hint를 서술적으로 잘 뽑아준다(`용수 사용량(취수량) 합�
 
 **오염이 아니라 선택 실패다.** 그래서 이 모듈은 값이 아니라 hint 위에 규칙을 세운다.
 
-## period를 믿지 않는다
+## period를 믿지 않는다 — 단, 값 최빈보다는 믿는다
 
 원문 표의 연도 열이 한 period로 뭉개져 있다(동일 hint · 값만 다른 노드가 E-6-1에서
-51건 초과). 연도는 **최후 tie-breaker**로만 쓴다. 표 파싱 교정은 L0 소관이므로
-여기서는 "연도에 의존하지 않는다"만 보장한다.
+51건 초과). 그래서 연도는 **후순위 tie-breaker**로만 쓴다. 표 파싱 교정은 L0 소관이므로
+여기서는 "연도에 hint 축을 양보하지 않는다"만 보장한다.
+
+다만 **최빈 축(8)보다는 앞이다**(2026-07-29). period 폴백이 v3에서 48%→9%로 줄었고,
+아래 시계열 정체 효과 때문에 최빈은 연도보다 덜 믿을 만하다는 게 실측 결론이다.
+
+## 값 최빈 — 반복 언급을 세되, 연도를 먼저 좁힌다 (2026-07-29)
+
+같은 지표는 보고서 여러 곳(표·본문·요약)에서 반복 언급돼 같은 값이 여러 번 추출된다.
+전 축이 동률이면 종전에는 `-period → -confidence → str(id)`로 떨어져 **id 문자열
+순서가 답을 정했다** — 현대모비스 E-4-2가 12.9%(3회 등장, 정답) 대신 10.0%(1회)를
+골랐다.
+
+**연도를 먼저 좁힌 뒤 그 안에서만 세는 것이 핵심이다.** 저장된 5개사 덤프로 세 형태를
+전부 돌린 실측(docs/동률해소_결과_2026-07-29.md):
+
+  ㄱ) 정렬 키에 전역 빈도 `-freq[value]`  → 값이 연도를 넘어 우연히 반복되면 옛 값이 이긴다
+  ㄴ) 동률 그룹 안에서만 최빈              → 삼성전기 E-6-2가 99.0 → 97.0으로 회귀
+  ㄷ) 연도를 먼저 좁힌 뒤 그 안에서만 최빈  → 목표 1건만 수정, 나머지 35개 항목 불변 ✅
+
+ㄴ)이 깨지는 이유가 **시계열 정체 효과**다. 삼성전기 E-6-2 풀에는 같은 hint
+(`폐기물 재활용률`)로 서로 다른 두 시계열이 섞여 있다:
+
+  계열 A: 2021 84 → 2022 89 → 2023 96 → 2024 99 → 2025 99   (상승)
+  계열 B: 2021 93 → 2022 97 → 2023 97 → 2024 97 → 2025 97   (정체)
+
+연도 구분 없이 세면 97.0이 4회로 이긴다 — 값이 반복 언급돼서가 아니라 **값이 안
+변해서**다. 최빈이 '반복 언급'이 아니라 '정체'를 집는다. 연도를 먼저 좁히면 사라진다.
+그래서 축 순서는 반드시 **연도(7) → 최빈(8)**이다. 뒤집지 마라.
+
+또한 최빈은 **최빈값이 유일할 때만** 개입한다. 빈도가 동률인데 답을 바꾸면 근거 없는
+변경이므로, 그때는 아무것도 하지 않고 9단계(최신 → 고신뢰 → id)에 맡긴다.
 
 ## 우선순위 (앞 단계에서 후보가 갈리면 뒤는 안 본다)
 
@@ -25,9 +55,11 @@ L0가 hint를 서술적으로 잘 뽑아준다(`용수 사용량(취수량) 합�
   5) 집계        — '합계·총계·전사·Total' > 구분어 없음 > '국내(별도)·자회사·국가명·공장'
   6) 단위 정합   — kesg_items.unit과 동일 > 환산 가능 > 그 외 (E-4-1은 TJ 우선)
   7) 연도        — 여기까지 동률일 때만 report_year 근접
-  8) 그래도 동률 / 후보 0 → None (원장은 미공시 + confidence_flag)
+  8) 값 최빈     — 같은 연도 안에서 여러 번 추출된 값 우선(최빈값이 유일할 때만)
+  9) 최신 → 고신뢰 → str(id)  — 완전 결정성 보장
+  후보 0 / 1·2단계 전멸 → None (원장은 미공시 + confidence_flag)
 
-8번이 중요하다: **잘못된 값보다 미공시가 낫다**(라벨링 §3-1 원칙).
+미공시 폴백이 중요하다: **잘못된 값보다 미공시가 낫다**(라벨링 §3-1 원칙).
 
 1단계(hard 배제)는 **후보가 1개여도 적용된다**(2026-07-28). 종전에는 과차단 방지로
 유일 후보를 무조건 채택했는데, 그 우회로 LG화학 E-5-1 '일평균 산업용수 공급량'
@@ -292,6 +324,45 @@ def _expected_unit(code: str) -> str | None:
     return item.unit if item else None
 
 
+def _keep_min(candidates: list[Any], rank: Any) -> list[Any]:
+    """rank가 최소인 후보만 남긴다 — 단계별 필터의 단위 연산.
+
+    사전식 비교(`min(key=...)`)와 동치다: 상위 축에서 최소가 아닌 후보는 어떤 하위 축
+    값을 가져도 이길 수 없으므로 미리 떨어뜨려도 결과가 같다. 단계별로 쪼개는 이유는
+    8단계(값 최빈)가 **그 시점의 생존 집합**을 봐야 하기 때문이다 — 정렬 키에 넣으면
+    집합을 볼 수 없다(§값 최빈의 ㄱ 형태가 이 실패다).
+    """
+    best = min(rank(c) for c in candidates)
+    return [c for c in candidates if rank(c) == best]
+
+
+def _keep_value_mode(candidates: list[Any]) -> list[Any]:
+    """값 최빈 필터 — 우선순위 8단계. **최빈값이 유일할 때만** 좁힌다.
+
+    호출 시점이 중요하다: 7단계(연도)까지 이미 좁혀진 집합에만 적용된다. 연도를 먼저
+    좁히지 않으면 시계열 정체를 최빈으로 오독한다(모듈 docstring §값 최빈).
+
+    빈도 1위가 둘 이상이면 **아무것도 하지 않는다** — 근거 없이 답을 바꾸지 않고
+    9단계(최신 → 고신뢰 → id)에 맡긴다.
+    """
+    freq: dict[Any, int] = {}
+    for c in candidates:
+        value = getattr(c, "value", None)
+        if isinstance(value, (int, float)) and not isinstance(value, bool):
+            freq[float(value)] = freq.get(float(value), 0) + 1
+    if not freq:
+        return candidates
+    top = max(freq.values())
+    winners = [v for v, n in freq.items() if n == top]
+    if len(winners) != 1:
+        return candidates                        # 빈도 동률 → 무개입
+    mode = winners[0]
+    narrowed = [c for c in candidates
+                if isinstance(getattr(c, "value", None), (int, float))
+                and float(c.value) == mode]
+    return narrowed or candidates
+
+
 def select_representative_node(
     code: str,
     nodes: Iterable[Any],
@@ -304,7 +375,7 @@ def select_representative_node(
     ----------
     code        : K-ESG 코드("E-3-1"). '{code}__projection'도 받아 기본 코드로 해석한다.
     nodes       : 같은 코드의 EvidenceNode들(원장·D1 양쪽에서 같은 풀을 넘긴다).
-    report_year : 최후 tie-breaker 기준 연도. None이면 최신 연도 폴백.
+    report_year : 7단계(연도 근접) 기준 연도. None이면 이 축을 건너뛴다(최신 우선 폴백).
 
     Returns
     -------
@@ -312,11 +383,14 @@ def select_representative_node(
 
     Notes
     -----
+    축 순서는 모듈 docstring §우선순위 그대로다 — 계열(3) → 분해(4) → 집계(5) →
+    단위(6) → **연도(7) → 값 최빈(8)** → 최신·고신뢰·id(9).
+
     모든 후보가 1·2단계에서 배제되면 None을 돌린다(잘못된 값보다 미공시).
     **후보가 1개여도 hard 배제는 적용된다**(2026-07-28 변경). 종전에는 과차단 방지를
     위해 유일 후보를 무조건 채택했지만, 그 우회로 LG화학 E-5-1의 '일평균 산업용수
     공급량' 540,000 ton이 연간 사용량 자리에 실렸다(노드 1개 → 규칙 미개입, 365배 오류).
-    3~7단계(순위 축)는 후보가 1개면 결과가 같으므로 우회를 없애도 순위 판정은 불변이다.
+    3~9단계(순위 축)는 후보가 1개면 결과가 같으므로 우회를 없애도 순위 판정은 불변이다.
     """
     pool = [n for n in nodes if n is not None]
     if not pool:
@@ -336,23 +410,35 @@ def select_representative_node(
     if len(survivors) == 1:
         return survivors[0]
 
-    def sort_key(node: Any) -> tuple:
-        hint = _node_hint(node)
-        period = getattr(node, "period", 0) or 0
-        # 7단계(연도)는 여기까지 동률일 때만 작동한다. report_year가 없으면 최신 우선.
-        year_rank = abs(period - report_year) if report_year is not None else 0
-        return (
-            _family_rank(base_code, hint),                     # 3) 지표 계열
-            _breakdown_rank(hint),                             # 4) 세부 분해
-            _aggregation_rank(hint),                           # 5) 집계
-            _unit_rank(getattr(node, "unit", None), expected),  # 6) 단위 정합
-            year_rank,                                         # 7) 연도(최후)
-            -period,                                           # 동률 시 최신
-            -(getattr(node, "confidence", 0.0) or 0.0),         # 동률 시 고신뢰
-            str(getattr(node, "id", "")),                       # 완전 결정성 보장
-        )
+    def _period(node: Any) -> int:
+        return getattr(node, "period", 0) or 0
 
-    return min(survivors, key=sort_key)
+    # 3~7단계 — 순위 축을 단계별로 좁힌다. 사전식 비교와 동치이지만(_keep_min 주석),
+    # 8단계가 '그 시점의 생존 집합'을 봐야 해서 정렬 키 한 방으로는 안 된다.
+    survivors = _keep_min(survivors, lambda n: _family_rank(base_code, _node_hint(n)))
+    survivors = _keep_min(survivors, lambda n: _breakdown_rank(_node_hint(n)))
+    survivors = _keep_min(survivors, lambda n: _aggregation_rank(_node_hint(n)))
+    survivors = _keep_min(survivors, lambda n: _unit_rank(getattr(n, "unit", None), expected))
+    # 7) 연도 — **최빈보다 앞이어야 한다**: 연도를 먼저 좁히지 않으면 최빈이
+    #    '반복 언급'이 아니라 '시계열 정체'를 집는다(모듈 docstring §값 최빈의
+    #    삼성전기 E-6-2 두 계열). 되돌리면 회귀가 난다.
+    #    report_year가 없으면 최신 연도로 좁혀 같은 불변식을 지킨다 — 종전 정렬 키의
+    #    `-period` 항과 동치이고(그 항이 연도 다음이었다), 그 자리를 8단계보다 앞으로
+    #    끌어올리지 않으면 report_year=None 경로만 정체 효과에 노출된다.
+    if report_year is not None:
+        survivors = _keep_min(survivors, lambda n: abs(_period(n) - report_year))
+    else:
+        survivors = _keep_min(survivors, lambda n: -_period(n))
+
+    # 8) 값 최빈 — 최빈값이 유일할 때만 좁힌다. 동률이면 무개입.
+    survivors = _keep_value_mode(survivors)
+
+    # 9) 최신 → 고신뢰 → str(id). 마지막 항이 완전 결정성 장치다 — 제거하지 마라.
+    return min(survivors, key=lambda n: (
+        -_period(n),
+        -(getattr(n, "confidence", 0.0) or 0.0),
+        str(getattr(n, "id", "")),
+    ))
 
 
 def normalize_to_item_unit(
