@@ -52,6 +52,23 @@ def _n(code: str, value: float, unit: str, period: int, hint: str) -> EvidenceNo
     )
 
 
+def _nid(code: str, value: float, unit: str, period: int, hint: str,
+         node_id: str, corp: str = "00164788") -> EvidenceNode:
+    """`_n`과 같지만 **id를 실측 덤프 그대로** 넣는다.
+
+    `_n`은 id를 `hash()`로 만들어 프로세스마다 값이 달라진다(PYTHONHASHSEED).
+    최후 tie-breaker가 `str(id)`이므로, '규칙 없으면 id 문자열로 갈린다'를 재현하는
+    테스트는 실측 id가 필요하다 — 그러지 않으면 구현 전 실패가 우연히 통과한다.
+    """
+    return EvidenceNode(
+        id=node_id, metric=code, value=value, unit=unit, period=period,
+        source="ocr/esg_report",
+        raw_text=f"{hint}={value}{unit} (esg_report.pdf)",
+        origin="ocr_unstructured", source_file="esg_report.pdf",
+        confidence=1.0,
+    )
+
+
 def _graph(*nodes: EvidenceNode, report_year: int | None = REPORT_YEAR) -> EvidenceGraph:
     g = EvidenceGraph(corp_code="00164788", corp_name="현대모비스(주)")
     g.report_year = report_year
@@ -702,6 +719,178 @@ class TestUnitNotationVariants:
             # 항등 함수로 바꾸면 'ton CO2 eq' != 'tCO2eq'가 되어 판정이 뒤집힌다.
             assert normalize_to_item_unit("E-3-1", 1.0, "ton CO2 eq")[2] == "unit_suspect"
         assert m.called, "node_select가 _relaxed_unit을 쓰지 않는다(중복 구현 의심)"
+
+
+# =====================================================================
+# 11. 값 최빈 tie-breaker — 전 축 동률에서 id 문자열로 답이 정해지던 구멍
+#     (2026-07-29, feature/node-select-mode)
+# =====================================================================
+
+class TestValueModeTieBreaker:
+    """같은 지표는 보고서 여러 곳(표·본문·요약)에서 반복돼 같은 값이 여러 번 추출된다.
+
+    전 축(1~7단계)이 동률이면 종전에는 `-period → -confidence → str(id)`로 떨어져
+    **id 문자열 순서가 답을 정했다**. 실측: 현대모비스 E-4-2가 10.0%를 골랐고
+    정답은 12.9%다(라벨링 §3-5: p.1646·p.2032 RE100 로드맵 12.9→65→100·p.2406 표).
+
+    다만 최빈은 **연도 축 뒤에** 와야 한다 — 연도 구분 없이 세면 최빈이 '반복 언급'이
+    아니라 '시계열 정체'를 집는다(아래 삼성전기 회귀 가드). 그리고 **최빈값이 유일할
+    때만** 개입한다 — 빈도가 동률인데 답을 바꾸면 근거 없는 변경이다.
+    """
+
+    def test_e4_2_picks_repeated_value_not_id_order(self) -> None:
+        """★ 실측 재현 — 현대모비스 E-4-2 2024 후보 5개에서 12.9%가 뽑히는가.
+
+        축별 점수(파생·충돌·계열·분해·집계·단위 전부 동률, 연도도 전부 2024):
+
+          12.9  재생에너지 사용전환율
+           1.1  재생에너지 사용 비율
+          10.0  재생에너지 전환 비율                        ← 종전 선택(id 최소)
+          12.9  재생에너지 사용·전환율
+          12.9  사업장 재생에너지 사용·전환률 (FY2019 기준)  ← '사업장'은 5단계에서 후순위
+
+        id는 실측 덤프(ledger_provenance_012330_v3.json) 그대로다 — 최후 tie-breaker가
+        `str(id)`이므로 id를 바꾸면 '종전엔 10.0이 이겼다'가 재현되지 않는다.
+        """
+        pool = [
+            _nid("E-4-2", 12.9, "%", 2024, "사업장 재생에너지 사용·전환률 (FY2019 기준)",
+                 "00164788_E-4-2_2024__ocr_unstructured__671f7dcf5f"),
+            _nid("E-4-2", 12.9, "%", 2024, "재생에너지 사용전환율",
+                 "00164788_E-4-2_2024__ocr_unstructured__bfdc8fe1f0"),
+            _nid("E-4-2", 1.1, "%", 2024, "재생에너지 사용 비율",
+                 "00164788_E-4-2_2024__ocr_unstructured__c50ab6477c"),
+            _nid("E-4-2", 10.0, "%", 2024, "재생에너지 전환 비율",
+                 "00164788_E-4-2_2024__ocr_unstructured__88e0e65572"),
+            _nid("E-4-2", 12.9, "%", 2024, "재생에너지 사용·전환율",
+                 "00164788_E-4-2_2024__ocr_unstructured__f6b3e90503"),
+        ]
+        picked = select_representative_node("E-4-2", pool, report_year=REPORT_YEAR)
+        assert picked is not None
+        assert picked.value == 12.9, "반복 언급된 값이 아니라 id 최소 노드가 뽑혔다"
+
+    def test_samsung_e6_2_timeseries_stagnation_does_not_win(self) -> None:
+        """★ 회귀 가드 — 삼성전기 E-6-2는 99.0%로 유지돼야 한다.
+
+        풀에 **같은 hint(`폐기물 재활용률`)로 서로 다른 두 시계열**이 섞여 있다:
+
+          계열 A: 2021 84 → 2022 89 → 2023 96 → 2024 99 → 2025 99   (상승)
+          계열 B: 2021 93 → 2022 97 → 2023 97 → 2024 97 → 2025 97   (정체)
+
+        연도 구분 없이 최빈을 세면 97.0이 4회로 이긴다 — 값이 여러 번 언급돼서가
+        아니라 **값이 안 변해서**다. 연도 축을 최빈보다 먼저 적용하면 2025만 남아
+        99.0 vs 97.0 각 1회(동률 → 무개입)가 되고 종전 결과가 보존된다.
+
+        이 테스트가 깨지면 최빈을 연도보다 앞에 두거나 동률에도 개입한 것이다.
+        """
+        pool = [
+            _nid("E-6-2", 84.0, "%", 2021, "폐기물 재활용률",
+                 "00126371_E-6-2_2021__ocr_unstructured__9cfa668d52", corp="00126371"),
+            _nid("E-6-2", 93.0, "%", 2021, "폐기물 재활용률",
+                 "00126371_E-6-2_2021__ocr_unstructured__fe5aa56e90", corp="00126371"),
+            _nid("E-6-2", 89.0, "%", 2022, "폐기물 재활용률",
+                 "00126371_E-6-2_2022__ocr_unstructured__35542eb73c", corp="00126371"),
+            _nid("E-6-2", 97.0, "%", 2022, "폐기물 재활용률",
+                 "00126371_E-6-2_2022__ocr_unstructured__2f414cfc62", corp="00126371"),
+            _nid("E-6-2", 96.0, "%", 2023, "폐기물 재활용률",
+                 "00126371_E-6-2_2023__ocr_unstructured__6e3f80ecf1", corp="00126371"),
+            _nid("E-6-2", 97.0, "%", 2023, "폐기물 재활용률",
+                 "00126371_E-6-2_2023__ocr_unstructured__8ef247508f", corp="00126371"),
+            _nid("E-6-2", 99.0, "%", 2024, "폐기물 재활용률",
+                 "00126371_E-6-2_2024__ocr_unstructured__a33221ccda", corp="00126371"),
+            _nid("E-6-2", 97.0, "%", 2024, "폐기물 재활용률",
+                 "00126371_E-6-2_2024__ocr_unstructured__acb1deb250", corp="00126371"),
+            _nid("E-6-2", 99.0, "%", 2025, "폐기물 재활용률",
+                 "00126371_E-6-2_2025__ocr_unstructured__03588c242b", corp="00126371"),
+            _nid("E-6-2", 97.0, "%", 2025, "폐기물 재활용률",
+                 "00126371_E-6-2_2025__ocr_unstructured__d95e73da80", corp="00126371"),
+        ]
+        picked = select_representative_node("E-6-2", pool, report_year=REPORT_YEAR)
+        assert picked is not None
+        assert picked.value == 99.0, (
+            "시계열 정체(97.0 ×4)가 최빈으로 이겼다 — 연도 축이 최빈보다 뒤에 있다")
+
+    def test_mode_cannot_override_higher_axis(self) -> None:
+        """★ 상위 축 불가침 — 부분값이 3회 반복돼도 1회뿐인 합계가 이긴다.
+
+        최빈은 8단계다. 5단계(집계)에서 이미 갈리면 최빈은 개입할 자리가 없다.
+        """
+        pool = [
+            _nid("E-5-1", 623_648.0, "ton", 2024, "용수 사용량(취수량) 국내(별도)", "z_part_1"),
+            _nid("E-5-1", 623_648.0, "ton", 2024, "용수 사용량(취수량) 국내(별도) 표", "z_part_2"),
+            _nid("E-5-1", 623_648.0, "ton", 2024, "용수 사용량(취수량) 국내(별도) 요약", "z_part_3"),
+            _nid("E-5-1", 1_992_921.0, "ton", 2024, "용수 사용량(취수량) 합계", "z_total_1"),
+        ]
+        picked = select_representative_node("E-5-1", pool, report_year=2024)
+        assert picked is not None
+        assert picked.value == 1_992_921.0, "최빈 부분값이 상위 축(집계)을 뒤집었다"
+
+    def test_mode_tie_leaves_existing_order_untouched(self) -> None:
+        """★ 최빈 동률이면 무개입 — 기존 순서(최신 → 고신뢰 → id)가 그대로 유지된다.
+
+        50.0 ×2 vs 70.0 ×2로 빈도가 같다. 개입해서 답이 바뀌면 근거 없는 변경이다.
+        """
+        pool = [
+            _nid("E-6-2", 50.0, "%", 2024, "폐기물 재활용률", "z_low_1"),
+            _nid("E-6-2", 50.0, "%", 2024, "폐기물 재활용률", "z_low_2"),
+            _nid("E-6-2", 70.0, "%", 2024, "폐기물 재활용률", "a_high_1"),
+            _nid("E-6-2", 70.0, "%", 2024, "폐기물 재활용률", "a_high_2"),
+        ]
+        picked = select_representative_node("E-6-2", pool, report_year=2024)
+        assert picked is not None
+        assert picked.id == "a_high_1", "빈도 동률인데 기존 id 순서가 바뀌었다"
+
+    def test_selection_is_fully_deterministic(self) -> None:
+        """★ 완전 결정성 — 같은 입력 10회 반복에 같은 노드.
+
+        `str(id)` 최종 장치가 살아 있는지까지 본다(최빈만으로는 값이 같은 두 노드가
+        남아 여전히 id로 갈려야 한다).
+        """
+        pool = [
+            _nid("E-4-2", 12.9, "%", 2024, "재생에너지 사용전환율", "b_mode_1"),
+            _nid("E-4-2", 12.9, "%", 2024, "재생에너지 사용·전환율", "c_mode_2"),
+            _nid("E-4-2", 10.0, "%", 2024, "재생에너지 전환 비율", "a_single"),
+        ]
+        picked = [select_representative_node("E-4-2", pool, report_year=REPORT_YEAR)
+                  for _ in range(10)]
+        assert all(p is not None for p in picked)
+        assert len({p.id for p in picked}) == 1, f"같은 입력에 결과가 흔들렸다 — {picked}"
+        assert picked[0].id == "b_mode_1"
+
+    def test_stagnation_guard_holds_without_report_year(self) -> None:
+        """report_year=None 경로도 정체 효과에 노출되지 않는가.
+
+        연도 축은 report_year가 있어야 작동하는데, 없을 때 그냥 건너뛰면 최빈이 전
+        연도를 세어 정체값을 집는다. 이 경로에서는 **최신 연도로 좁힌 뒤** 최빈을
+        적용해 같은 불변식을 지킨다(종전 정렬 키의 `-period` 항과 동치).
+
+        위 삼성전기 풀과 같은 구조 — 정체 계열 97.0이 4회, 최신 연도 값은 99.0.
+        """
+        pool = [
+            _nid("E-6-2", 84.0, "%", 2021, "폐기물 재활용률", "n1"),
+            _nid("E-6-2", 97.0, "%", 2021, "폐기물 재활용률", "n2"),
+            _nid("E-6-2", 89.0, "%", 2022, "폐기물 재활용률", "n3"),
+            _nid("E-6-2", 97.0, "%", 2022, "폐기물 재활용률", "n4"),
+            _nid("E-6-2", 96.0, "%", 2023, "폐기물 재활용률", "n5"),
+            _nid("E-6-2", 97.0, "%", 2023, "폐기물 재활용률", "n6"),
+            _nid("E-6-2", 99.0, "%", 2024, "폐기물 재활용률", "n7"),
+            _nid("E-6-2", 97.0, "%", 2024, "폐기물 재활용률", "n8"),
+        ]
+        picked = select_representative_node("E-6-2", pool, report_year=None)
+        assert picked is not None
+        assert picked.period == 2024, "report_year가 없으면 최신 연도로 좁혀야 한다"
+        assert picked.value == 99.0, "report_year=None 경로가 정체값 97.0을 집었다"
+
+    def test_existing_four_real_cases_unchanged(self) -> None:
+        """★ 기존 실측 4사례 불변 — 최빈 축 도입이 §1을 건드리지 않는가.
+
+        §1(TestRealWorldCases)을 그대로 재실행한다. 축을 재구성(정렬 키 한 방 →
+        단계별 필터)했으므로 사전식 비교와 동치인지를 이 4건으로 확인한다.
+        """
+        cases = TestRealWorldCases()
+        cases.test_e3_1_picks_scope1_plus_2_total_not_reduction_effect()
+        cases.test_e5_1_picks_total_not_domestic_separate()
+        cases.test_e6_1_picks_generation_total_not_disposal_partial()
+        cases.test_e4_1_prefers_item_unit_tj_over_mwh_breakdown()
 
 
 # =====================================================================
