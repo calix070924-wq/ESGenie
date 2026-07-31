@@ -1,0 +1,374 @@
+{
+ "schema": 2,
+ "meta": {
+  "key": "2397192a0345acb787aeb051bd0b0fef1a93c78634e9aff27a3dae10d2ced694",
+  "created_at": "2026-07-26T11:17:19+00:00",
+  "model": "gpt-4.1-mini",
+  "doc_type": "ambiguous_fallback_vlm",
+  "source_file": "012330_mobis_2025.pdf",
+  "prompt_sha256": "910d98b903903a42bf1ea537d16996c031f6d5939dd94dd2ed028948f5825de4",
+  "input_chars": 4217
+ },
+ "response": {
+  "metrics": [
+   {
+    "metric_hint": "에너지원을 알 수 없는 에너지 사용량",
+    "value": 725214,
+    "unit": "MWh",
+    "period": "2022",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "에너지원을 알 수 없는 에너지 사용량",
+    "value": 723354,
+    "unit": "MWh",
+    "period": "2023",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "에너지원을 알 수 없는 에너지 사용량",
+    "value": 737861,
+    "unit": "MWh",
+    "period": "2024",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "에너지원을 알 수 없는 에너지 사용량",
+    "value": 6802,
+    "unit": "TJ",
+    "period": "2022",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "에너지원을 알 수 없는 에너지 사용량",
+    "value": 6785,
+    "unit": "TJ",
+    "period": "2023",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "에너지원을 알 수 없는 에너지 사용량",
+    "value": 6924,
+    "unit": "TJ",
+    "period": "2024",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "구매한 전력량",
+    "value": 708511,
+    "unit": "MWh",
+    "period": "2022",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "구매한 전력량",
+    "value": 706763,
+    "unit": "MWh",
+    "period": "2023",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "구매한 전력량",
+    "value": 721222,
+    "unit": "MWh",
+    "period": "2024",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "구매한 전력량",
+    "value": 151,
+    "unit": "TJ",
+    "period": "2022",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "구매한 전력량",
+    "value": 151,
+    "unit": "TJ",
+    "period": "2023",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "구매한 전력량",
+    "value": 148,
+    "unit": "TJ",
+    "period": "2024",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "스팀",
+    "value": 16703,
+    "unit": "MWh",
+    "period": "2022",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "스팀",
+    "value": 16591,
+    "unit": "MWh",
+    "period": "2023",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "스팀",
+    "value": 16639,
+    "unit": "MWh",
+    "period": "2024",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "에너지 사용량",
+    "value": 8371,
+    "unit": "TJ",
+    "period": "2022",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "에너지 사용량",
+    "value": 8644,
+    "unit": "TJ",
+    "period": "2023",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "에너지 사용량",
+    "value": 9075,
+    "unit": "TJ",
+    "period": "2024",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "에너지 사용량",
+    "value": 1051252,
+    "unit": "MWh",
+    "period": "2022",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "에너지 사용량",
+    "value": 1076398,
+    "unit": "MWh",
+    "period": "2023",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "에너지 사용량",
+    "value": 1121932,
+    "unit": "MWh",
+    "period": "2024",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "에너지 사용량 집약도",
+    "value": 0.02,
+    "unit": "TJ/억 원",
+    "period": "2022",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "에너지 사용량 집약도",
+    "value": 0.01,
+    "unit": "TJ/억 원",
+    "period": "2023",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "에너지 사용량 집약도",
+    "value": 0.02,
+    "unit": "TJ/억 원",
+    "period": "2024",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "재생에너지 사용·전환량",
+    "value": 392,
+    "unit": "TJ",
+    "period": "2022",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "재생에너지 사용·전환량",
+    "value": 712,
+    "unit": "TJ",
+    "period": "2023",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "재생에너지 사용·전환량",
+    "value": 1005,
+    "unit": "TJ",
+    "period": "2024",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "재생에너지 사용·전환량",
+    "value": 41236,
+    "unit": "MWh",
+    "period": "2022",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "재생에너지 사용·전환량",
+    "value": 76209,
+    "unit": "MWh",
+    "period": "2023",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "재생에너지 사용·전환량",
+    "value": 106745,
+    "unit": "MWh",
+    "period": "2024",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "재생에너지 사용·전환율",
+    "value": 5.5,
+    "unit": "%",
+    "period": "2022",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "재생에너지 사용·전환율",
+    "value": 9.7,
+    "unit": "%",
+    "period": "2023",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "재생에너지 사용·전환율",
+    "value": 12.9,
+    "unit": "%",
+    "period": "2024",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "재생에너지 사용량",
+    "value": 610,
+    "unit": "MWh",
+    "period": "2022",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "재생에너지 사용량",
+    "value": 8074,
+    "unit": "MWh",
+    "period": "2023",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "재생에너지 사용량",
+    "value": 11940,
+    "unit": "MWh",
+    "period": "2024",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "재생에너지 사용량",
+    "value": 2,
+    "unit": "TJ",
+    "period": "2022",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "재생에너지 사용량",
+    "value": 13,
+    "unit": "TJ",
+    "period": "2023",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "재생에너지 사용량",
+    "value": 21,
+    "unit": "TJ",
+    "period": "2024",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "자가 발전",
+    "value": 610,
+    "unit": "MWh",
+    "period": "2022",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "자가 발전",
+    "value": 3420,
+    "unit": "MWh",
+    "period": "2023",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "자가 발전",
+    "value": 4203,
+    "unit": "MWh",
+    "period": "2024",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "자가 발전",
+    "value": 0,
+    "unit": "TJ",
+    "period": "2022",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "자가 발전",
+    "value": 0,
+    "unit": "TJ",
+    "period": "2023",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "자가 발전",
+    "value": 0,
+    "unit": "TJ",
+    "period": "2024",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "전력구매계약(On-site PPA)",
+    "value": 0,
+    "unit": "MWh",
+    "period": "2022",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "전력구매계약(On-site PPA)",
+    "value": 0,
+    "unit": "MWh",
+    "period": "2023",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "전력구매계약(On-site PPA)",
+    "value": 0,
+    "unit": "MWh",
+    "period": "2024",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "전력구매계약(On-site PPA)",
+    "value": 0,
+    "unit": "TJ",
+    "period": "2022",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "전력구매계약(On-site PPA)",
+    "value": 45,
+    "unit": "TJ",
+    "period": "2023",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "전력구매계약(On-site PPA)",
+    "value": 74,
+    "unit": "TJ",
+    "period": "2024",
+    "kesg_code": null
+   }
+  ],
+  "clauses": []
+ }
+}

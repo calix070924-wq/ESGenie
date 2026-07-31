@@ -27,7 +27,7 @@ from .schemas import RetrievalDecision
 WEIGHTS = {"kesg": 0.40, "industry": 0.30, "corp": 0.30}
 
 # 영역별 쿼리 확장에 쓸 SearchTerm 상한 (쿼리 과팽창 방지)
-_QUERY_EXPANSION_MAX_TERMS = 12
+_QUERY_EXPANSION_TERMS_PER_ITEM = 2
 
 # KESG/Industry 인덱스는 고정 데이터 — 프로세스 생존 동안 한 번만 빌드
 _RAG_SINGLETON: "HybridRAG | None" = None
@@ -59,24 +59,32 @@ def get_hybrid_rag() -> "HybridRAG":
 def _expand_query_with_search_terms(query: str, area: str) -> str:
     """기존 큐레이션 쿼리에 해당 영역 지표들의 SearchTerm을 덧붙인다.
 
-    중복·과팽창을 막기 위해 새 키워드만 골라 상한까지만 추가한다.
+    항목을 라운드로빈으로 돌며 항목당 `_QUERY_EXPANSION_TERMS_PER_ITEM`개씩 채운다.
+    이전에는 항목 순서대로 총 12개에서 끊었는데, 그러면 앞쪽 두세 항목의 용어만
+    들어가고 영역 뒷부분은 한 번도 등장하지 못했다. 실측에서 S영역 확장어가
+    S-1·S-2(사회책임 목표·신규 채용…)로만 채워져 산업재해(S-4-2)까지 도달하지
+    못했고, 재해율 청크가 R3_query_keyword_missing으로 오차단됐다.
+
+    항목당 2개인 이유: S-4-2의 첫 용어 '산업재해율'은 "산업재해 현황 — 재해율"과
+    연속 일치하지 않고, 두 번째 용어 '재해율'에서 비로소 걸린다. 1개면 되살림 1/3,
+    2개면 3/3이고 무관 청크 오통과는 두 경우 모두 0이었다.
+
     kesg_items 임포트는 순환 회피 위해 함수 내부에서 수행.
     """
     from .knowledge.kesg_items import by_area
 
-    have = query
+    items = list(by_area(area))  # type: ignore[arg-type]
     extra: list[str] = []
     seen: set[str] = set()
-    for item in by_area(area):  # type: ignore[arg-type]
-        for term in item.search_terms:
-            if term in seen or term in have:
+    for depth in range(_QUERY_EXPANSION_TERMS_PER_ITEM):
+        for item in items:
+            if depth >= len(item.search_terms):
+                continue
+            term = item.search_terms[depth]
+            if term in seen or term in query:
                 continue
             seen.add(term)
             extra.append(term)
-            if len(extra) >= _QUERY_EXPANSION_MAX_TERMS:
-                break
-        if len(extra) >= _QUERY_EXPANSION_MAX_TERMS:
-            break
     if not extra:
         return query
     return f"{query}, " + ", ".join(extra)
@@ -447,8 +455,13 @@ def _area_item_rows(
             status = "공시(증빙연결)"  # ISSB 갭 표와 동일 어휘 (Phase 2)
         else:
             status = "공시(자기기재)"
-        if "unit_suspect" in conf_flags.get(code, []):
+        flags = conf_flags.get(code, [])
+        if "unit_suspect" in flags:
             status += "·단위확인"
+        # 부분값 표기(2026-07-28) — 총량 후보가 없어 부분값이 대표로 뽑힌 항목.
+        # D1은 이 오류를 못 잡으므로(원장·노드가 같은 값이라 Δ=0) 이 표기가 유일한 방어선이다.
+        if "partial_value" in flags:
+            status += "·부분값"
         covered.append({
             "code": code,
             "name": entry.get("name") or code,

@@ -1,0 +1,374 @@
+{
+ "schema": 2,
+ "meta": {
+  "key": "08a2eb95d10e2379c2bb762a5c55106cebd362a9b954ba20c14473d70ceaef87",
+  "created_at": "2026-07-26T11:24:41+00:00",
+  "model": "gpt-4.1-mini",
+  "doc_type": "ambiguous_fallback_vlm",
+  "source_file": "012330_mobis_2025.pdf",
+  "prompt_sha256": "910d98b903903a42bf1ea537d16996c031f6d5939dd94dd2ed028948f5825de4",
+  "input_chars": 4205
+ },
+ "response": {
+  "metrics": [
+   {
+    "metric_hint": "육아휴직 사용 총 임직원",
+    "value": 1218,
+    "unit": "명",
+    "period": "2022",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "육아휴직 사용 총 임직원",
+    "value": 1750,
+    "unit": "명",
+    "period": "2023",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "육아휴직 사용 총 임직원",
+    "value": 1677,
+    "unit": "명",
+    "period": "2024",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "육아휴직 사용 총 임직원 비율",
+    "value": 22.4,
+    "unit": "%",
+    "period": "2022",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "육아휴직 사용 총 임직원 비율",
+    "value": 22.4,
+    "unit": "%",
+    "period": "2023",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "육아휴직 사용 총 임직원 비율",
+    "value": 10.0,
+    "unit": "%",
+    "period": "2024",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "사용 남성 임직원 비율",
+    "value": 61.7,
+    "unit": "%",
+    "period": "2022",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "사용 남성 임직원 비율",
+    "value": 67.9,
+    "unit": "%",
+    "period": "2023",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "사용 남성 임직원 비율",
+    "value": 68.5,
+    "unit": "%",
+    "period": "2024",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "사용 여성 임직원 비율",
+    "value": 38.3,
+    "unit": "%",
+    "period": "2022",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "사용 여성 임직원 비율",
+    "value": 32.1,
+    "unit": "%",
+    "period": "2023",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "사용 여성 임직원 비율",
+    "value": 31.5,
+    "unit": "%",
+    "period": "2024",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "육아휴직 사용 임직원 복귀율",
+    "value": 96.4,
+    "unit": "%",
+    "period": "2024",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "복귀 남성 임직원 비율",
+    "value": 97.3,
+    "unit": "%",
+    "period": "2024",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "복귀 여성 임직원 비율",
+    "value": 90.5,
+    "unit": "%",
+    "period": "2024",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "육아휴직 복귀 후 12개월 고용 유지율",
+    "value": 94.8,
+    "unit": "%",
+    "period": "2024",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "12개월 고용 유지 남성 임직원 비율",
+    "value": 96.0,
+    "unit": "%",
+    "period": "2024",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "12개월 고용 유지 여성 임직원 비율",
+    "value": 89.1,
+    "unit": "%",
+    "period": "2024",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "총 임직원",
+    "value": 42584,
+    "unit": "명",
+    "period": "2022",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "총 임직원",
+    "value": 46183,
+    "unit": "명",
+    "period": "2023",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "총 임직원",
+    "value": 46947,
+    "unit": "명",
+    "period": "2024",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "남성 임직원",
+    "value": 34020,
+    "unit": "명",
+    "period": "2022",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "남성 임직원",
+    "value": 36840,
+    "unit": "명",
+    "period": "2023",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "남성 임직원",
+    "value": 36789,
+    "unit": "명",
+    "period": "2024",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "여성 임직원",
+    "value": 8546,
+    "unit": "명",
+    "period": "2022",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "여성 임직원",
+    "value": 9322,
+    "unit": "명",
+    "period": "2023",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "여성 임직원",
+    "value": 10046,
+    "unit": "명",
+    "period": "2024",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "성별 미상 임직원",
+    "value": 18,
+    "unit": "명",
+    "period": "2022",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "성별 미상 임직원",
+    "value": 21,
+    "unit": "명",
+    "period": "2023",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "성별 미상 임직원",
+    "value": 112,
+    "unit": "명",
+    "period": "2024",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "여성 임직원 비율",
+    "value": 20.1,
+    "unit": "%",
+    "period": "2022",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "여성 임직원 비율",
+    "value": 20.2,
+    "unit": "%",
+    "period": "2023",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "여성 임직원 비율",
+    "value": 21.4,
+    "unit": "%",
+    "period": "2024",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "정규직 임직원",
+    "value": 37872,
+    "unit": "명",
+    "period": "2022",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "정규직 임직원",
+    "value": 39627,
+    "unit": "명",
+    "period": "2023",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "정규직 임직원",
+    "value": 42340,
+    "unit": "명",
+    "period": "2024",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "남성 정규직",
+    "value": 30322,
+    "unit": "명",
+    "period": "2022",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "남성 정규직",
+    "value": 31540,
+    "unit": "명",
+    "period": "2023",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "남성 정규직",
+    "value": 33318,
+    "unit": "명",
+    "period": "2024",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "여성 정규직",
+    "value": 7546,
+    "unit": "명",
+    "period": "2022",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "여성 정규직",
+    "value": 8080,
+    "unit": "명",
+    "period": "2023",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "여성 정규직",
+    "value": 9022,
+    "unit": "명",
+    "period": "2024",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "성별 미상 정규직",
+    "value": 4,
+    "unit": "명",
+    "period": "2022",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "성별 미상 정규직",
+    "value": 7,
+    "unit": "명",
+    "period": "2023",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "성별 미상 정규직",
+    "value": 0,
+    "unit": "명",
+    "period": "2024",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "계약직 임직원",
+    "value": 4712,
+    "unit": "명",
+    "period": "2022",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "계약직 임직원",
+    "value": 6304,
+    "unit": "명",
+    "period": "2023",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "계약직 임직원",
+    "value": 4554,
+    "unit": "명",
+    "period": "2024",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "남성 계약직",
+    "value": 3698,
+    "unit": "명",
+    "period": "2022",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "남성 계약직",
+    "value": 5130,
+    "unit": "명",
+    "period": "2023",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "남성 계약직",
+    "value": 3456,
+    "unit": "명",
+    "period": "2024",
+    "kesg_code": null
+   }
+  ],
+  "clauses": []
+ }
+}

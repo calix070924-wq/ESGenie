@@ -1,0 +1,191 @@
+{
+ "schema": 2,
+ "meta": {
+  "key": "2194f953aa661a78449966372c7659d13356b220bfcd4e15960c88045f5672dc",
+  "created_at": "2026-07-26T11:27:44+00:00",
+  "model": "gpt-4.1-mini",
+  "doc_type": "ambiguous_fallback_vlm",
+  "source_file": "012330_mobis_2025.pdf",
+  "prompt_sha256": "910d98b903903a42bf1ea537d16996c031f6d5939dd94dd2ed028948f5825de4",
+  "input_chars": 4303
+ },
+ "response": {
+  "metrics": [
+   {
+    "metric_hint": "교육 이수 인원 합계",
+    "value": 32648,
+    "unit": "명",
+    "period": "2022",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "연간 총 교육 시간 합계",
+    "value": 1069835,
+    "unit": "시간",
+    "period": "2022",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "인당 평균 교육 시간 합계",
+    "value": 32.8,
+    "unit": "시간/인",
+    "period": "2022",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "남성 교육 시간 합계",
+    "value": 890196,
+    "unit": "시간",
+    "period": "2022",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "여성 교육 시간 합계",
+    "value": 179639,
+    "unit": "시간",
+    "period": "2022",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "성별 미상 교육 시간 합계",
+    "value": 0,
+    "unit": "시간",
+    "period": "2022",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "남성 인당 평균 교육 시간 합계",
+    "value": 35.3,
+    "unit": "시간/인",
+    "period": "2022",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "여성 인당 평균 교육 시간 합계",
+    "value": 22.7,
+    "unit": "시간/인",
+    "period": "2022",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "관리직(책임 이상) 교육 시간 합계",
+    "value": 485043,
+    "unit": "시간",
+    "period": "2022",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "비관리직(책임 미만) 교육 시간 합계",
+    "value": 584792,
+    "unit": "시간",
+    "period": "2022",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "온라인 교육 시간 합계",
+    "value": 642726,
+    "unit": "시간",
+    "period": "2022",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "오프라인 교육 시간 합계",
+    "value": 427109,
+    "unit": "시간",
+    "period": "2022",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "교육 훈련비 합계",
+    "value": 17042,
+    "unit": "백만 원",
+    "period": "2022",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "인당 평균 교육 훈련비용 합계",
+    "value": 521979,
+    "unit": "원/인",
+    "period": "2022",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "다면평가 대상 인원 합계",
+    "value": 9016,
+    "unit": "명",
+    "period": "2022",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "다면평가 시행 인원 합계",
+    "value": 9016,
+    "unit": "명",
+    "period": "2022",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "다면평가 시행 비율 합계",
+    "value": 100,
+    "unit": "%",
+    "period": "2022",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "다면평가 대상 인원 합계",
+    "value": 10372,
+    "unit": "명",
+    "period": "2023",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "다면평가 시행 인원 합계",
+    "value": 10310,
+    "unit": "명",
+    "period": "2023",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "다면평가 시행 비율 합계",
+    "value": 99.4,
+    "unit": "%",
+    "period": "2023",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "다면평가 대상 인원 합계",
+    "value": 10963,
+    "unit": "명",
+    "period": "2024",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "다면평가 시행 인원 합계",
+    "value": 10953,
+    "unit": "명",
+    "period": "2024",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "다면평가 시행 비율 합계",
+    "value": 99.9,
+    "unit": "%",
+    "period": "2024",
+    "kesg_code": null
+   }
+  ],
+  "clauses": [
+   {
+    "section": "평가 및 보수 - 정기 성과 평가",
+    "text": "1) 목표 기반(MBO) 평가\n2) 국내: 임원+관리사무직/계약직/주재원 포함, 현장직 해당 없음(관리사무직 책임급 이상의 인원에 대해 평가 결과에 따라 보상 연동 적용)\n해외: 각 법인 기준 기반",
+    "kesg_code": null,
+    "page": 103
+   },
+   {
+    "section": "평가 및 보수 - 다면 평가",
+    "text": "1) 360도 평가 등\n2) 국내: 임원/관리사무직/주재원 포함, 계약직/현장직/파견직/농구단 해당 없음\n해외: 각 법인 기준 기반\n3) 2023년 해외 자회사 데이터 오류(대상 범위)로 정정",
+    "kesg_code": null,
+    "page": 103
+   }
+  ]
+ }
+}

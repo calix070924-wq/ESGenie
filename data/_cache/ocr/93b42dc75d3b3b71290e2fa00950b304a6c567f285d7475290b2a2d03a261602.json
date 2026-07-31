@@ -1,0 +1,234 @@
+{
+ "schema": 2,
+ "meta": {
+  "key": "93b42dc75d3b3b71290e2fa00950b304a6c567f285d7475290b2a2d03a261602",
+  "created_at": "2026-07-26T11:17:32+00:00",
+  "model": "gpt-4.1-mini",
+  "doc_type": "ambiguous_fallback_vlm",
+  "source_file": "012330_mobis_2025.pdf",
+  "prompt_sha256": "910d98b903903a42bf1ea537d16996c031f6d5939dd94dd2ed028948f5825de4",
+  "input_chars": 4252
+ },
+ "response": {
+  "metrics": [
+   {
+    "metric_hint": "전력구매계약(On-site PPA)",
+    "value": 4654,
+    "unit": "MWh",
+    "period": "합계",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "전력구매계약(On-site PPA)",
+    "value": 390,
+    "unit": "TJ",
+    "period": "합계",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "재생에너지 전환량",
+    "value": 40627,
+    "unit": "MWh",
+    "period": "합계",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "재생에너지 전환량",
+    "value": 363,
+    "unit": "TJ",
+    "period": "합계",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "인증서 구매",
+    "value": 37785,
+    "unit": "MWh",
+    "period": "해외 자회사",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "인증서 구매",
+    "value": 19,
+    "unit": "TJ",
+    "period": "합계",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "가상 전력구매계약(vPPA)",
+    "value": 2005,
+    "unit": "MWh",
+    "period": "합계",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "가상 전력구매계약(vPPA)",
+    "value": 27,
+    "unit": "TJ",
+    "period": "합계",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "녹색요금제(녹색전력상품)",
+    "value": 2841,
+    "unit": "MWh",
+    "period": "합계",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "재생에너지 사용·전환량 집약도",
+    "value": 0.001,
+    "unit": "TJ/억 원",
+    "period": "합계",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "전력 사용량",
+    "value": 7194,
+    "unit": "TJ",
+    "period": "2022 합계",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "전력 사용량",
+    "value": 7497,
+    "unit": "TJ",
+    "period": "2023 합계",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "전력 사용량",
+    "value": 7929,
+    "unit": "TJ",
+    "period": "2024 합계",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "전력 사용량",
+    "value": 749747,
+    "unit": "MWh",
+    "period": "2022 합계",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "전력 사용량",
+    "value": 782971,
+    "unit": "MWh",
+    "period": "2023 합계",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "전력 사용량",
+    "value": 827967,
+    "unit": "MWh",
+    "period": "2024 합계",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "비재생 전력",
+    "value": 708511,
+    "unit": "MWh",
+    "period": "2022 합계",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "비재생 전력",
+    "value": 706763,
+    "unit": "MWh",
+    "period": "2023 합계",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "비재생 전력",
+    "value": 721222,
+    "unit": "MWh",
+    "period": "2024 합계",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "비재생 전력",
+    "value": 392,
+    "unit": "TJ",
+    "period": "2022 합계",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "비재생 전력",
+    "value": 712,
+    "unit": "TJ",
+    "period": "2023 합계",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "비재생 전력",
+    "value": 1005,
+    "unit": "TJ",
+    "period": "2024 합계",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "재생 전력",
+    "value": 41236,
+    "unit": "MWh",
+    "period": "2022 합계",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "재생 전력",
+    "value": 76209,
+    "unit": "MWh",
+    "period": "2023 합계",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "재생 전력",
+    "value": 106745,
+    "unit": "MWh",
+    "period": "2024 합계",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "에너지 직접 생산량",
+    "value": 2,
+    "unit": "TJ",
+    "period": "2022 합계",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "에너지 직접 생산량",
+    "value": 13,
+    "unit": "TJ",
+    "period": "2023 합계",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "에너지 직접 생산량",
+    "value": 21,
+    "unit": "TJ",
+    "period": "2024 합계",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "에너지 직접 생산량",
+    "value": 610,
+    "unit": "MWh",
+    "period": "2022 합계",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "에너지 직접 생산량",
+    "value": 3420,
+    "unit": "MWh",
+    "period": "2023 합계",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "에너지 직접 생산량",
+    "value": 4203,
+    "unit": "MWh",
+    "period": "2024 합계",
+    "kesg_code": null
+   }
+  ],
+  "clauses": []
+ }
+}

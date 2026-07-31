@@ -1,0 +1,318 @@
+{
+ "schema": 2,
+ "meta": {
+  "key": "37bc6730113417e841f2a422d85c1c168c43a6e34968707a5def55a311019d65",
+  "created_at": "2026-07-26T11:20:15+00:00",
+  "model": "gpt-4.1-mini",
+  "doc_type": "ambiguous_fallback_vlm",
+  "source_file": "012330_mobis_2025.pdf",
+  "prompt_sha256": "910d98b903903a42bf1ea537d16996c031f6d5939dd94dd2ed028948f5825de4",
+  "input_chars": 4213
+ },
+ "response": {
+  "metrics": [
+   {
+    "metric_hint": "폐기물 처리량(매립, 소각 등) 국내(별도)",
+    "value": 1693,
+    "unit": "ton",
+    "period": "미상",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "폐기물 처리량(매립, 소각 등) 국내 자회사",
+    "value": 2052,
+    "unit": "ton",
+    "period": "미상",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "폐기물 처리량(매립, 소각 등) 해외 자회사",
+    "value": 13949,
+    "unit": "ton",
+    "period": "미상",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "폐기물 처리량(매립, 소각 등) 합계",
+    "value": 17694,
+    "unit": "ton",
+    "period": "미상",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "폐기물 처리 비율 국내(별도)",
+    "value": 22.9,
+    "unit": "%",
+    "period": "미상",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "폐기물 처리 비율 국내 자회사",
+    "value": 25.9,
+    "unit": "%",
+    "period": "미상",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "폐기물 처리 비율 해외 자회사",
+    "value": 25.3,
+    "unit": "%",
+    "period": "미상",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "폐기물 처리 비율 합계",
+    "value": 25.1,
+    "unit": "%",
+    "period": "미상",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "지정 폐기물 국내(별도)",
+    "value": 286,
+    "unit": "ton",
+    "period": "미상",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "지정 폐기물 국내 자회사",
+    "value": 584,
+    "unit": "ton",
+    "period": "미상",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "지정 폐기물 해외 자회사",
+    "value": 4003,
+    "unit": "ton",
+    "period": "미상",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "지정 폐기물 합계",
+    "value": 4873,
+    "unit": "ton",
+    "period": "미상",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "소각(에너지 회수 없음) 국내(별도)",
+    "value": 275,
+    "unit": "ton",
+    "period": "미상",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "소각(에너지 회수 없음) 국내 자회사",
+    "value": 584,
+    "unit": "ton",
+    "period": "미상",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "소각(에너지 회수) 국내(별도)",
+    "value": 0,
+    "unit": "ton",
+    "period": "미상",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "소각(에너지 회수) 국내 자회사",
+    "value": 0,
+    "unit": "ton",
+    "period": "미상",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "매립 국내(별도)",
+    "value": 11,
+    "unit": "ton",
+    "period": "미상",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "매립 해외 자회사",
+    "value": 1030,
+    "unit": "ton",
+    "period": "미상",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "일반 폐기물 국내(별도)",
+    "value": 1406,
+    "unit": "ton",
+    "period": "미상",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "일반 폐기물 국내 자회사",
+    "value": 1469,
+    "unit": "ton",
+    "period": "미상",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "일반 폐기물 해외 자회사",
+    "value": 10197,
+    "unit": "ton",
+    "period": "미상",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "일반 폐기물 합계",
+    "value": 13072,
+    "unit": "ton",
+    "period": "미상",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "총 소각 국내(별도)",
+    "value": 1670,
+    "unit": "ton",
+    "period": "미상",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "총 소각 국내 자회사",
+    "value": 1847,
+    "unit": "ton",
+    "period": "미상",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "총 소각 해외 자회사",
+    "value": 3753,
+    "unit": "ton",
+    "period": "미상",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "총 소각 합계",
+    "value": 7271,
+    "unit": "ton",
+    "period": "미상",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "에너지 회수 없음 국내(별도)",
+    "value": 1670,
+    "unit": "ton",
+    "period": "미상",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "에너지 회수 없음 국내 자회사",
+    "value": 1847,
+    "unit": "ton",
+    "period": "미상",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "에너지 회수 없음 해외 자회사",
+    "value": 3753,
+    "unit": "ton",
+    "period": "미상",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "에너지 회수 없음 합계",
+    "value": 7271,
+    "unit": "ton",
+    "period": "미상",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "에너지 회수 국내(별도)",
+    "value": 0,
+    "unit": "ton",
+    "period": "미상",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "총 매립 국내(별도)",
+    "value": 22,
+    "unit": "ton",
+    "period": "미상",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "총 매립 국내 자회사",
+    "value": 205,
+    "unit": "ton",
+    "period": "미상",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "총 매립 해외 자회사",
+    "value": 10196,
+    "unit": "ton",
+    "period": "미상",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "총 매립 합계",
+    "value": 10423,
+    "unit": "ton",
+    "period": "미상",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "폐기물 미폐기 처리량(재활용, 재사용) 국내(별도)",
+    "value": 5710,
+    "unit": "ton",
+    "period": "미상",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "폐기물 미폐기 처리량(재활용, 재사용) 국내 자회사",
+    "value": 5886,
+    "unit": "ton",
+    "period": "미상",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "폐기물 미폐기 처리량(재활용, 재사용) 해외 자회사",
+    "value": 41210,
+    "unit": "ton",
+    "period": "미상",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "폐기물 미폐기 처리량(재활용, 재사용) 합계",
+    "value": 52806,
+    "unit": "ton",
+    "period": "미상",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "폐기물 미폐기 처리(재활용, 재사용) 비율 국내(별도)",
+    "value": 77.1,
+    "unit": "%",
+    "period": "미상",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "폐기물 미폐기 처리(재활용, 재사용) 비율 국내 자회사",
+    "value": 74.1,
+    "unit": "%",
+    "period": "미상",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "폐기물 미폐기 처리(재활용, 재사용) 비율 해외 자회사",
+    "value": 74.7,
+    "unit": "%",
+    "period": "미상",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "폐기물 미폐기 처리(재활용, 재사용) 비율 합계",
+    "value": 74.9,
+    "unit": "%",
+    "period": "미상",
+    "kesg_code": null
+   }
+  ],
+  "clauses": []
+ }
+}

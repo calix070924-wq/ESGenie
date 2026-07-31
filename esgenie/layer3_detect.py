@@ -25,30 +25,72 @@ from .knowledge.greenwash_lexicon import vague_matches
 from .schemas import AxisScore, RiskVector
 
 # ---- 수치 주장 패턴 --------------------------------------------------------
+# lookbehind: 글자에 붙은 숫자는 수치 주장이 아니다 — "Scope3 배출량"에서 3+'배',
+# "RE100", "IFRS S2" 류가 가짜 claim으로 뽑히는 걸 막는다 (2026-07-27).
+# 배(?!출): '배출'의 '배'를 배수 단위로 오인하지 않는다.
 _NUMBER_PATTERN = re.compile(
+    r"(?<![0-9A-Za-z가-힣])"
     r"(?P<num>\d{1,3}(?:,\d{3})*(?:\.\d+)?)\s*"
-    r"(?P<unit>%|억원|조원|tCO2eq|만\s*tCO2eq|톤|ton|TJ|%p|건|명|배)",
+    r"(?P<unit>%|억원|조원|tCO2eq|만\s*tCO2eq|톤|ton|TJ|%p|건|명|배(?!출))",
 )
-_KEYWORD_MAP = {
-    "재생에너지": ["renewable", "E-4-2"],
-    "온실가스":   ["ghg", "E-3-1"],
-    "탄소":       ["ghg", "E-3-1"],
-    "Scope":      ["ghg", "E-3-1"],
-    "배출":       ["ghg", "E-3-1"],
-    "폐기물":     ["waste", "E-6-1"],
-    "재활용":     ["waste_recycle", "E-6-2"],
-    "용수":       ["water", "E-5-1"],
-    "여성 이사":  ["board_female", "G-1-4"],
-    "이사회 성별":["board_female", "G-1-4"],
-    "여성":       ["female", "S-3-1"],
-    "정규직":     ["regular", "S-2-2"],
-    "이직률":     ["turnover", "S-2-3"],
-    "재해율":     ["safety", "S-4-2"],
-    "사외이사":   ["outside_director", "G-1-2"],
-    "출석률":     ["attendance", "G-2-1"],
-    # 주의: "재생에너지"가 먼저 매칭되도록 "에너지"는 사전 끝에 둔다 (동순위 시 선순위 유지)
-    "에너지":     ["energy", "E-4-1"],
-}
+
+# ---- 토픽 인덱스 (kesg_items.search_terms 단일 출처) -------------------------
+# 2026-07-27: 손으로 관리하던 13개 _KEYWORD_MAP을 제거하고 항목 정의의
+# search_terms + name을 그대로 쓴다. 사전이 두 벌로 갈라지지 않고, E-2-1·E-2-2·
+# E-3-2·E-7-1·E-8-1처럼 옛 사전에 아예 없던 항목이 자동으로 커버된다.
+# (옛 사전은 13개 코드만 알았고 "Scope"→E-3-1 고정이라 Scope3를 Scope1+2로 보냈다.)
+
+# 단위성 용어 — 지표명으로 오인되면 안 되는 것들. "7,929 TJ" 앞에 TJ가 있다는
+# 이유로 E-4-1이 되면 안 되고(에너지 사용량이 근거여야 한다), "GHG"는 Scope1+2와
+# Scope3를 가르지 못한다. 2자 이하(SS·TJ·MJ 등)는 아래 길이 조건에서 함께 걸린다.
+_UNITISH_TERMS: frozenset[str] = frozenset({
+    "tco2eq", "tco2", "co2eq", "co2", "kwh", "mwh", "gwh", "mj", "tj",
+    "ghg", "re100", "nox", "sox", "bod", "cod", "ss", "전력량",
+})
+_TOPIC_MIN_LEN = 3   # 2자 이하 용어는 오매칭이 커 제외
+
+
+def _norm_topic_text(s: str) -> str:
+    """토픽 매칭용 정규화 — 공백 제거 + 소문자화. 텍스트·용어 양쪽에 같이 적용한다."""
+    return re.sub(r"\s+", "", s or "").lower()
+
+
+def _build_topic_terms() -> tuple[tuple[str, str, str], ...]:
+    """(정규화 용어, topic 라벨, K-ESG 코드) 목록. **모듈 로드 시 1회**만 만든다.
+
+    문장마다 재구축하면 D1이 문장 수 × 용어 수만큼 돌아 비용이 커진다.
+
+    한 용어가 두 코드에 걸리면(예: "이직률" → S-2-1·S-2-3) 항목명이 그 용어를
+    포함하는 쪽을 택한다(S-2-3 "자발적 이직률"). 그래도 안 갈리면 용어를 버린다
+    (예: "제3자 검증" → E-3-3·P-3-1) — 임의 배정보다 비교를 건너뛰는 게 낫다.
+    kesg_items._ALIAS_UNIQUE가 모호 별칭을 버리는 것과 같은 판단이다.
+    """
+    from .knowledge.kesg_items import ALL_ITEMS
+
+    by_term: dict[str, list[tuple[str, str]]] = {}
+    for item in ALL_ITEMS:
+        for raw in (*item.search_terms, item.name):
+            n = _norm_topic_text(raw)
+            if len(n) < _TOPIC_MIN_LEN or n in _UNITISH_TERMS:
+                continue
+            # topic 라벨은 항목명 — 새 라벨 체계를 만들지 않는다(NumericClaim.topic 표시용).
+            entry = (item.name, item.code)
+            if entry not in by_term.setdefault(n, []):
+                by_term[n].append(entry)
+
+    terms: list[tuple[str, str, str]] = []
+    for n, owners in by_term.items():
+        if len(owners) > 1:
+            narrowed = [o for o in owners if n in _norm_topic_text(o[0])]
+            if len(narrowed) != 1:
+                continue
+            owners = narrowed
+        name, code = owners[0]
+        terms.append((n, name, code))
+    return tuple(sorted(terms))
+
+
+_TOPIC_TERMS: tuple[tuple[str, str, str], ...] = _build_topic_terms()
 
 # 업종별 벤치마크 메트릭 키 → K-ESG 코드 대응
 # ---- 데이터클래스 -----------------------------------------------------------
@@ -102,36 +144,56 @@ def _normalize_number(num: str, unit: str) -> tuple[float, str]:
     return n, u
 
 
+def _topic_spans(window_text: str) -> list[tuple[int, int, str, str]]:
+    """창 안에서 겹치지 않는 토픽 스팬 목록 — (시작, 끝, topic, code).
+
+    **leftmost-longest**로 겹침을 해소한다: 시작이 앞선 것 우선, 같으면 긴 것.
+    최장 일치만 쓰면 안 되는 이유 — "재생에너지 사용 비율"에서 `재생에너지`(E-4-2)와
+    `에너지사용`(E-4-1)이 겹치되 포함관계가 아니다. 길이만 보면 `에너지사용`이
+    이겨 E-4-1로 잘못 간다. leftmost여야 E-4-2가 나온다(PR #44 G2와 같은 계열).
+    """
+    found: list[tuple[int, int, str, str]] = []
+    for term, topic, code in _TOPIC_TERMS:
+        start = 0
+        while True:
+            i = window_text.find(term, start)
+            if i < 0:
+                break
+            found.append((i, i + len(term), topic, code))
+            start = i + 1
+    found.sort(key=lambda sp: (sp[0], -(sp[1] - sp[0])))
+
+    kept: list[tuple[int, int, str, str]] = []
+    for sp in found:
+        if any(sp[0] < k[1] and sp[1] > k[0] for k in kept):
+            continue   # 이미 채택한 스팬과 겹친다 — 버린다
+        kept.append(sp)
+    return kept
+
+
 def _match_topic_near(sentence: str, span_start: int, span_end: int, window: int = 25) -> tuple[str | None, str | None]:
-    s = max(0, span_start - window)
-    e = min(len(sentence), span_end + window)
-    before = sentence[s:span_start]
-    after  = sentence[span_end:e]
+    """수치 주변 창에서 가장 가까운 지표 용어를 찾아 (topic, code)를 돌린다.
 
-    best_before: tuple[int, tuple[str | None, str | None]] | None = None
-    for kw, (topic, code) in _KEYWORD_MAP.items():
-        idx = before.rfind(kw)
-        if idx < 0:
-            continue
-        dist = len(before) - (idx + len(kw))
-        if best_before is None or dist < best_before[0]:
-            best_before = (dist, (topic, code))
-    if best_before:
-        return best_before[1]
+    before 창(수치 앞)을 먼저 보고 **끝이 가장 뒤**(= 수치에 가장 가까운) 스팬을 택한다.
+    before가 비면 after 창에서 가장 앞선 스팬을 택한다.
 
-    best_after: tuple[int, tuple[str | None, str | None]] | None = None
-    for kw, (topic, code) in _KEYWORD_MAP.items():
-        idx = after.find(kw)
-        if idx < 0:
-            continue
-        if best_after is None or idx < best_after[0]:
-            best_after = (idx, (topic, code))
-    if best_after:
-        return best_after[1]
+    2026-07-27: 창에 아무 용어도 없으면 **None을 돌린다.** 예전에는 문장 전체를 훑어
+    아무 키워드나 붙였는데(`kw in sentence`), 다지표 문장에서는 사실상 임의 배정이라
+    "원부자재 102,462톤"을 폐기물 노드 72,463과 비교하는 오탐을 만들었다.
+    호출부(`_score_d1_numeric`)는 code가 없으면 비교를 건너뛴다 — 정밀도 우선.
+    """
+    before = _norm_topic_text(sentence[max(0, span_start - window):span_start])
+    spans = _topic_spans(before)
+    if spans:
+        best = max(spans, key=lambda sp: sp[1])
+        return best[2], best[3]
 
-    for kw, (topic, code) in _KEYWORD_MAP.items():
-        if kw in sentence:
-            return topic, code
+    after = _norm_topic_text(sentence[span_end:span_end + window])
+    spans = _topic_spans(after)
+    if spans:
+        best = min(spans, key=lambda sp: sp[0])
+        return best[2], best[3]
+
     return None, None
 
 
@@ -363,11 +425,36 @@ def _is_target_context(sentence: str, start: int, end: int) -> bool:
 
 
 def _sentence_topic_codes(sentence: str) -> set[str]:
-    """문장에 등장하는 모든 토픽 키워드의 K-ESG 코드 집합."""
-    return {
-        code for kw, (_topic, code) in _KEYWORD_MAP.items()
-        if code and kw in sentence
-    }
+    """문장에 등장하는 모든 지표 용어의 K-ESG 코드 집합.
+
+    `_match_topic_near`와 **같은 인덱스**를 쓴다(2026-07-27). 여기가 D1 교차 비교
+    후보(`cand_codes`)를 만드는 곳이라, 인덱스가 갈리면 E-3-2 같은 신규 커버 코드의
+    노드가 후보에 안 들어와 최근접 매칭만 남는다.
+    여기는 문장 전체가 대상이므로 겹침 해소 없이 등장하는 용어를 모두 모은다.
+    """
+    text = _norm_topic_text(sentence)
+    return {code for term, _topic, code in _TOPIC_TERMS if term in text}
+
+
+def _repr_ids(evidence_graph: Any) -> dict[str, str]:
+    """원장이 기록한 코드→대표 노드 id. 없는 그래프(테스트 Fake 등)는 빈 dict."""
+    return getattr(evidence_graph, "representative_node_ids", None) or {}
+
+
+def _ledger_representative(evidence_graph: Any, code: str, compat: list[Any]) -> Any | None:
+    """원장이 채택한 대표 노드를 단위 호환 후보 안에서 찾는다. 없으면 None(폴백).
+
+    None을 돌리는 경우 두 가지 — 호출부가 구분한다.
+      · 기록 자체가 없다(미공시 코드, DART-only 경로, 원장 미실행)
+      · 기록은 있으나 claim 단위와 환산군이 달라 compat에서 걸러졌다
+    """
+    node_id = _repr_ids(evidence_graph).get(code)
+    if not node_id:
+        return None
+    for node in compat:
+        if getattr(node, "id", None) == node_id:
+            return node
+    return None
 
 
 # ---- 책임있는 기권(abstain) 헬퍼 --------------------------------------------
@@ -411,6 +498,10 @@ def _score_d1_numeric(
         return AxisScore(score=0.0, evidence=[], detail="evidence_graph 없음 — 스킵")
 
     # G5. 노드 선택 기준 연도 — 그래프 report_year 우선, 없으면 후보 최신 연도 폴백.
+    # 대표 노드는 원장이 그래프에 남긴 결정(representative_node_ids)을 우선 따르고,
+    # 기록이 없을 때만 이 공용 함수로 규칙을 재실행한다(상세는 node_select 참조).
+    from .ssot.node_select import select_representative_node
+
     ref_year = getattr(evidence_graph, "report_year", None)
 
     worst_delta = 0.0
@@ -448,14 +539,21 @@ def _score_d1_numeric(
             compat = [n for n in nodes if units_compatible(claim_unit, getattr(n, "unit", None))]
             if not compat:
                 continue
-            # G5. '가장 최신'(max period)이 아니라 '보고 연도 최근접' 노드를 고른다.
-            # max(period)는 미래 전망 노드(2040 등)를 실적으로 골라 오탐을 냈다(네이버 사례).
-            # ref_year가 없으면(단위 테스트의 FakeGraph 등) 기존대로 최신 노드로 폴백.
-            if ref_year is not None:
-                node = min(compat, key=lambda n: (abs(n.period - ref_year), -n.period))
-            else:
-                node = max(compat, key=lambda n: n.period)
-            if node.value == 0:
+            # G5. 대표 노드 — **원장이 그래프에 기록한 결정을 그대로 따른다**(2026-07-26).
+            # 공용 함수(select_representative_node)를 공유하는 것만으로는 대칭이 성립하지
+            # 않는다: 원장은 origin이 ocr_*인 노드만, 여기 compat는 search_nodes()로
+            # DART 노드까지 포함한 풀이라 같은 규칙도 다른 노드를 가리킨다
+            # (실측: 원장 623,648 '국내(별도)' vs D1 1,992,921 DART '합계').
+            # 규칙을 두 번 돌리는 대신 결정을 공유하면 풀이 달라도 어긋날 수 없다.
+            node = _ledger_representative(evidence_graph, c, compat)
+            if node is None:
+                if _repr_ids(evidence_graph).get(c):
+                    # 기록은 있으나 claim과 환산군이 다르다 — 원장은 항목 정의 단위로
+                    # 정규화하지만 노드는 원 단위다. 비교 자체가 무의미하므로 폴백한다.
+                    details.append(f"{c}: 원장 대표노드와 단위 비호환 → 폴백")
+                # 기록이 없는 코드(미공시·DART-only 경로 등)는 기존대로 규칙을 재실행한다.
+                node = select_representative_node(c, compat, report_year=ref_year)
+            if node is None or node.value == 0:
                 continue
             delta = abs(claim_val - node.value) / abs(node.value)
             if best is None or delta < best[0]:
@@ -507,8 +605,14 @@ def _score_d1_numeric(
 def _score_d2_modifier(sentence: str, industry_module=None) -> AxisScore:
     """greenwash_lexicon 모호어/최상급 밀도. industry_module이 있으면 업종 패턴 포함."""
     hits = vague_matches(sentence, industry_module)
-    # 문장당 밀도: 히트 수 / threshold 정규화
-    density = len(hits) / max(D2_THRESHOLD * 4, 1)   # 4개 = 만점 기준
+    # 분모는 `D2_THRESHOLD=0.25` 하에서 항상 1.0으로 접힌다 → **히트 1개면 만점**이다.
+    # 옛 주석은 "4개 = 만점"이라 코드와 어긋났는데, 실측 결과 **코드가 맞고 주석이 틀렸다**:
+    # 분모를 4로 올리면 held-out test 룰 단독 F1이 0.532 → 0.255로 반토막 난다
+    # (test 양성 83건 중 41건이 모호어 1~2개 → axis_flag 0.80을 못 넘어 통째로 미탐).
+    # `axis_flag=0.80`이 이 분포 위에서 캘리브레이션돼 있다.
+    # 바꾸려면 docs/D2_영향조사_2026-07-29.md §5의 착수 조건(held-out 실키 전건 재측정)을
+    # 먼저 충족할 것. tests/test_d2_precision.py::TestDenominatorUnchanged가 이 값을 고정한다.
+    density = len(hits) / max(D2_THRESHOLD * 4, 1)
     score = min(1.0, density)
     return AxisScore(
         score=round(score, 4),
@@ -635,7 +739,11 @@ def _build_risk_vector(
     else:
         level = "high"
 
-    top_axis = max(axes, key=lambda k: axes[k].score)
+    # 전 축이 0이면 top_axis는 빈 문자열이다. max()는 동점에서 첫 키를 돌려주므로
+    # 깨끗한 문장이 늘 'D1_numeric'으로 찍혔고, L5 summary의 high_risk_axes가 그걸
+    # 최빈값으로 집계해 **위험이 0인 섹션을 '고위험 축 D1'으로 보고**했다
+    # (2026-07-27 현대모비스 E: 전 문장 D1=0인데 high_risk_axes=['D1_numeric', ...]).
+    top_axis = max(axes, key=lambda k: axes[k].score) if any(a.score > 0 for a in axes.values()) else ""
     abstained_axes = [name for name, ax in axes.items() if ax.abstain]
 
     return RiskVector(

@@ -40,7 +40,7 @@ logger = logging.getLogger(__name__)
 
 POLICY_CODES = [
     "P-1-1",
-    "E-1-1", "E-1-2", "E-3-3",
+    "E-1-1", "E-1-2", "E-3-3", "E-8-1",
     "S-1-1", "S-2-6", "S-4-1", "S-5-1", "S-6-1", "S-7-1", "S-8-1",
     "G-1-1", "G-3-1", "G-4-1", "G-5-1",
 ]
@@ -219,9 +219,13 @@ def _audit_policy_documents(
     corp_name: str,
     industry: str,
 ) -> tuple[list[Any], dict[str, str]]:
+    # 규정 문서가 하나도 없어도 최소 2건은 검증 결과를 보인다(데모 하한).
+    # S-4-1 = 안전보건 추진체계 / E-1-1 = 환경경영 목표 수립.
+    # (2026-07-28: 기존 "S-3-1"은 여성 구성원 비율이라 산업안전 체크리스트가
+    #  엉뚱한 항목에 붙어 나갔다 — POLICY_CHECKLISTS 재매핑과 함께 정정)
     active_codes = list({
         *[code for code in POLICY_CODES if graph.text_nodes_by_code(code) or graph.nodes_by_metric(code)],
-        "S-3-1", "E-1-1",
+        "S-4-1", "E-1-1",
     })
 
     results: list[Any] = []
@@ -330,6 +334,13 @@ def run(
             evidence_files,
             survey_answers=survey_answers,
         )
+
+    # OCR LLM 캐시 적중 현황 — 캐시가 실제로 일했는지 실행 로그에서 바로 보이게 한다
+    # (같은 PDF 재실행이 캐시를 안 타면 추출이 흔들려 검증이 무의미해진다).
+    from esgenie.ssot import ocr_cache as _ocr_cache
+    _hits, _misses, _mode = _ocr_cache.summarize(extractions)
+    if _hits or _misses:
+        logger.info("[OCR] 캐시 hit %d / miss %d (mode=%s)", _hits, _misses, _mode)
 
     corp_code_final = corp_code or (report.corp_code if report is not None else "LOCAL")
     corp_name_final = corp_name or (report.corp_name if report is not None else corp_code_final)

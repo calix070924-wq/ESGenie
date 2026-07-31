@@ -1,0 +1,165 @@
+{
+ "schema": 2,
+ "meta": {
+  "key": "4a2fa0391153d6ff46569d6eb8772f8240c9c30ffcc9af70b4b23ec9f3da6dc7",
+  "created_at": "2026-07-26T11:27:53+00:00",
+  "model": "gpt-4.1-mini",
+  "doc_type": "ambiguous_fallback_vlm",
+  "source_file": "012330_mobis_2025.pdf",
+  "prompt_sha256": "910d98b903903a42bf1ea537d16996c031f6d5939dd94dd2ed028948f5825de4",
+  "input_chars": 4236
+ },
+ "response": {
+  "metrics": [
+   {
+    "metric_hint": "성과평가 대상 인원 합계",
+    "value": 23091,
+    "unit": "명",
+    "period": "2023",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "성과평가 시행 인원 합계",
+    "value": 23643,
+    "unit": "명",
+    "period": "2024",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "성과평가 시행 비율 합계",
+    "value": 99.2,
+    "unit": "%",
+    "period": "2024",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "임직원 총 급여액",
+    "value": 1633709,
+    "unit": "백만 원",
+    "period": "2024",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "남성 임직원 급여 총액",
+    "value": 1460102,
+    "unit": "백만 원",
+    "period": "2024",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "여성 임직원 급여 총액",
+    "value": 173606,
+    "unit": "백만 원",
+    "period": "2024",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "평균 임금 격차 비율(남/여)",
+    "value": 26.4,
+    "unit": "%",
+    "period": "2024",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "남성 임원 평균 기본급",
+    "value": 374,
+    "unit": "백만 원",
+    "period": "2024",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "남성 임원 평균 연봉 총액",
+    "value": 507,
+    "unit": "백만 원",
+    "period": "2024",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "남성 관리직 평균 기본급",
+    "value": 98,
+    "unit": "백만 원",
+    "period": "2024",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "여성 관리직 평균 기본급",
+    "value": 91,
+    "unit": "백만 원",
+    "period": "2024",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "남성 관리직 평균 연봉 총액",
+    "value": 164,
+    "unit": "백만 원",
+    "period": "2024",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "여성 관리직 평균 연봉 총액",
+    "value": 141,
+    "unit": "백만 원",
+    "period": "2024",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "남성 비관리직 평균 기본급",
+    "value": 60,
+    "unit": "백만 원",
+    "period": "2024",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "여성 비관리직 평균 기본급",
+    "value": 54,
+    "unit": "백만 원",
+    "period": "2024",
+    "kesg_code": null
+   }
+  ],
+  "clauses": [
+   {
+    "section": "성과평가 대상 인원",
+    "text": "성과평가 대상 인원은 국내(별도) 10,042명, 국내 자회사 1,126명, 해외 자회사 12,660명으로 합계 23,828명이다.",
+    "kesg_code": null,
+    "page": 104
+   },
+   {
+    "section": "성과평가 시행 인원",
+    "text": "성과평가 시행 인원은 국내(별도) 10,042명, 국내 자회사 1,126명, 해외 자회사 12,475명으로 합계 23,643명이다.",
+    "kesg_code": null,
+    "page": 104
+   },
+   {
+    "section": "성과평가 시행 비율",
+    "text": "성과평가 시행 비율은 국내(별도) 100%, 국내 자회사 100%, 해외 자회사 98.5%로 합계 99.2%이다.",
+    "kesg_code": null,
+    "page": 104
+   },
+   {
+    "section": "임직원 급여",
+    "text": "2024년 임직원 총 급여액은 국내(별도) 기준 1,633,709백만 원이며, 남성 임직원 급여 총액은 1,460,102백만 원, 여성 임직원 급여 총액은 173,606백만 원이다. 평균 임금 격차 비율(남/여)은 26.4%이다.",
+    "kesg_code": null,
+    "page": 104
+   },
+   {
+    "section": "직군별 임금 현황",
+    "text": "2024년 남성 임원 평균 기본급은 374백만 원, 평균 연봉 총액은 507백만 원이다. 여성 임원은 0이다. 남성 관리직 평균 기본급은 98백만 원, 여성 관리직은 91백만 원이다. 남성 관리직 평균 연봉 총액은 164백만 원, 여성 관리직은 141백만 원이다. 남성 비관리직 평균 기본급은 60백만 원, 여성 비관리직은 54백만 원이다.",
+    "kesg_code": null,
+    "page": 104
+   },
+   {
+    "section": "안전 관리 목표",
+    "text": "현대모비스는 ‘모든 임직원이 안심하고 일할 수 있는 안전하고 건강한 일터 구현’이라는 비전을 토대로, 안전보건 경영 최우선 원칙을 준수하고 있다. 중대재해 Zero, 재해율 감축(사고 5%, 부재율 10%), 사고성 화재/감전 Zero라는 목표를 수립하여, 모든 구성원의 생명과 건강 보호를 위해 다양한 안전보건 활동을 수행하고 있다.",
+    "kesg_code": null,
+    "page": 105
+   },
+   {
+    "section": "MSRS 진단",
+    "text": "MSRS(Mobis Safety Rating System)는 자체 안전 시스템·문화 평가기법으로, 국내외 생산사업장을 대상으로 2023년 Lv.6, 2024년 Lv.7을 목표로 한다.",
+    "kesg_code": null,
+    "page": 105
+   }
+  ]
+ }
+}

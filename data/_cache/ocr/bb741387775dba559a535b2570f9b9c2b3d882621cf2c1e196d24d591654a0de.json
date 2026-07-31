@@ -1,0 +1,219 @@
+{
+ "schema": 2,
+ "meta": {
+  "key": "bb741387775dba559a535b2570f9b9c2b3d882621cf2c1e196d24d591654a0de",
+  "created_at": "2026-07-26T11:18:21+00:00",
+  "model": "gpt-4.1-mini",
+  "doc_type": "ambiguous_fallback_vlm",
+  "source_file": "012330_mobis_2025.pdf",
+  "prompt_sha256": "910d98b903903a42bf1ea537d16996c031f6d5939dd94dd2ed028948f5825de4",
+  "input_chars": 4304
+ },
+ "response": {
+  "metrics": [
+   {
+    "metric_hint": "화학적산소요구량(COD) 합계",
+    "value": 320.211,
+    "unit": "ton",
+    "period": "~",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "유기용제(TOC) 합계",
+    "value": 81.737,
+    "unit": "ton",
+    "period": "~",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "질소(TN) 합계",
+    "value": 24.882,
+    "unit": "ton",
+    "period": "~",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "노말헥산(N-H) 합계",
+    "value": 0.534,
+    "unit": "ton",
+    "period": "~",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "인(T-P) 합계",
+    "value": 3.659,
+    "unit": "ton",
+    "period": "~",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "부유물질(SS) 합계",
+    "value": 60.331,
+    "unit": "ton",
+    "period": "~",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "수질오염물질 배출량 집약도 합계",
+    "value": 0.01,
+    "unit": "ton/십억 원",
+    "period": "~",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "오염 관련 비용 운영지출(OpEx) 2023 합계",
+    "value": 11418,
+    "unit": "백만 원",
+    "period": "2023",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "오염 관련 비용 운영지출(OpEx) 2022 합계",
+    "value": 8292,
+    "unit": "백만 원",
+    "period": "2022",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "오염 관련 비용 자본지출(CapEx) 2023 합계",
+    "value": 910,
+    "unit": "백만 원",
+    "period": "2023",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "오염 관련 비용 자본지출(CapEx) 2022 합계",
+    "value": 4231,
+    "unit": "백만 원",
+    "period": "2022",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "오염 관련 비용 운영지출(OpEx) 보고연도 이후(미래) 2023 국내(별도)",
+    "value": 6793,
+    "unit": "백만 원",
+    "period": "2023 이후",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "오염 관련 비용 운영지출(OpEx) 보고연도 이후(미래) 2024 국내(별도)",
+    "value": 6871,
+    "unit": "백만 원",
+    "period": "2024 이후",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "오염 관련 비용 자본지출(CapEx) 보고연도 이후(미래) 2023 국내(별도)",
+    "value": 486,
+    "unit": "백만 원",
+    "period": "2023 이후",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "오염 관련 비용 자본지출(CapEx) 보고연도 이후(미래) 2024 국내(별도)",
+    "value": 397,
+    "unit": "백만 원",
+    "period": "2024 이후",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "오염 사고 관련 비용 운영지출(OpEx) 2023 연결",
+    "value": 449,
+    "unit": "백만 원",
+    "period": "2023",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "오염 사고 관련 비용 자본지출(CapEx) 2023 연결",
+    "value": 125,
+    "unit": "백만 원",
+    "period": "2023 이후",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "구매(조달) 부품에 의한 유해화학물질 유입량 2023 연결(일부)",
+    "value": 146,
+    "unit": "ton",
+    "period": "2023",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "구매(조달) 부품에 의한 유해화학물질 유입량 2024 연결(일부)",
+    "value": 266,
+    "unit": "ton",
+    "period": "2024",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "사업장 화학물질 유입(취급)량 2022 국내(별도)",
+    "value": 2378.63,
+    "unit": "ton",
+    "period": "2022",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "사업장 화학물질 유입(취급)량 2023 국내(별도)",
+    "value": 2786.91,
+    "unit": "ton",
+    "period": "2023",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "사업장 화학물질 유입(취급)량 2024 합계",
+    "value": 2079.38,
+    "unit": "ton",
+    "period": "2024",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "사업장 화학물질 배출·이동량 2022 합계",
+    "value": 693.85,
+    "unit": "ton",
+    "period": "2022",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "사업장 화학물질 배출·이동량 2023 합계",
+    "value": 246.16,
+    "unit": "ton",
+    "period": "2023",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "사업장 화학물질 배출·이동량 2024 합계",
+    "value": 175.55,
+    "unit": "ton",
+    "period": "2024",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "사업장 우려물질 유입(취급)량 2023 합계",
+    "value": 7.5,
+    "unit": "ton",
+    "period": "2023",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "사업장 우려물질 유입(취급)량 2024 합계",
+    "value": 23.04,
+    "unit": "ton",
+    "period": "2024",
+    "kesg_code": null
+   }
+  ],
+  "clauses": [
+   {
+    "section": "제품 화학물질 관리 목표",
+    "text": "현대모비스는 제품 유해화학물질 사용과 관련하여 정기적인 규제 및 이해관계자 요구 모니터링을 통해 유기적으로 관리 목표를 수립하고 있습니다. 2025년까지 북미향 차량용 브레이크 마찰재 내 구리 및 구리 화합물을 0.5% 이내로, 2030년까지 EU에 수출하는 제품 내 UV-328 물질을 0.0001% 이내로 제한할 것입니다. ※ UV-328: 고분자, 코팅, 필름, 접착제 등에 사용 중인 광 안정제",
+    "kesg_code": null,
+    "page": 60
+   },
+   {
+    "section": "제품 우려물질",
+    "text": "부품 구매에 의해 제품으로 유입되는 주요 우려물질은 전장제품류에 포함되는 납(Lead) 등입니다. 2024년은 데이터 취합 대상 법인 확대 영향으로 전년대비 유입량이 증가하였습니다.",
+    "kesg_code": null,
+    "page": 60
+   }
+  ]
+ }
+}

@@ -37,11 +37,11 @@
     },
     {
       "id": "P-GW-05",
-      "sentence": "여성 근로자 비율은 52%에 이르렀다.",
+      "sentence": "여성 인력 비율은 52%에 이르렀다.",
       "label": "greenwash",
       "category": "no_evidence_greenwash",
       "omit_codes": ["S-3-1"],
-      "rationale": "부풀린 다양성 지표를 근거 없이 제시. 공시 부재. OFF면 미탐."
+      "rationale": "부풀린 다양성 지표를 근거 없이 제시. 공시 부재. OFF면 미탐. (2026-07-30: main 토픽인덱스 병합 후 '여성 근로자 비율'이 S-3-1 search_terms와 매칭 안 돼 '여성 인력 비율'로 문구 조정 — kesg_items.search_terms=('여성 구성원','여성 비율','여성 인력'))"
     },
     {
       "id": "P-GW-06",
@@ -77,11 +77,11 @@
     },
     {
       "id": "P-CL-04",
-      "sentence": "여성 근로자 비율은 24%다.",
+      "sentence": "여성 인력 비율은 24%다.",
       "label": "clean",
       "category": "no_evidence_clean",
       "omit_codes": ["S-3-1"],
-      "rationale": "정상 범위 수치. 검증 불가. 기권 비용 케이스."
+      "rationale": "정상 범위 수치. 검증 불가. 기권 비용 케이스. (2026-07-30: P-GW-05와 동일 사유로 문구 조정)"
     },
     {
       "id": "P-CTRL-01",

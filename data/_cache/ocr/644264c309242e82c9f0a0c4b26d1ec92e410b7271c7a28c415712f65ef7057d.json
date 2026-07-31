@@ -1,0 +1,160 @@
+{
+ "schema": 2,
+ "meta": {
+  "key": "644264c309242e82c9f0a0c4b26d1ec92e410b7271c7a28c415712f65ef7057d",
+  "created_at": "2026-07-26T11:34:10+00:00",
+  "model": "gpt-4.1-mini",
+  "doc_type": "ambiguous_fallback_vlm",
+  "source_file": "012330_mobis_2025.pdf",
+  "prompt_sha256": "910d98b903903a42bf1ea537d16996c031f6d5939dd94dd2ed028948f5825de4",
+  "input_chars": 4291
+ },
+ "response": {
+  "metrics": [
+   {
+    "metric_hint": "다양성 지표",
+    "value": 98,
+    "unit": "점",
+    "period": "2024년",
+    "kesg_code": "S1-9"
+   },
+   {
+    "metric_hint": "사회적 보호",
+    "value": 81,
+    "unit": "점",
+    "period": "2024년",
+    "kesg_code": "S1-11"
+   },
+   {
+    "metric_hint": "장애인",
+    "value": 99,
+    "unit": "점",
+    "period": "2024년",
+    "kesg_code": "S1-12"
+   },
+   {
+    "metric_hint": "교육 및 역량개발 지표",
+    "value": 102,
+    "unit": "점",
+    "period": "2024년",
+    "kesg_code": "S1-13"
+   },
+   {
+    "metric_hint": "안전보건 지표",
+    "value": 105,
+    "unit": "점",
+    "period": "2024년",
+    "kesg_code": "S1-14"
+   },
+   {
+    "metric_hint": "안전보건 지표",
+    "value": 106,
+    "unit": "점",
+    "period": "2024년",
+    "kesg_code": "S1-14"
+   },
+   {
+    "metric_hint": "일과 삶의 균형 지표",
+    "value": 95,
+    "unit": "점",
+    "period": "2024년",
+    "kesg_code": "S1-15"
+   },
+   {
+    "metric_hint": "보수 지표(임금 격차 및 보수총액)",
+    "value": 104,
+    "unit": "점",
+    "period": "2024년",
+    "kesg_code": "S1-16"
+   },
+   {
+    "metric_hint": "사건, 불만사항 및 심각한 인권 영향",
+    "value": 92,
+    "unit": "점",
+    "period": "2024년",
+    "kesg_code": "S1-17"
+   },
+   {
+    "metric_hint": "사건, 불만사항 및 심각한 인권 영향",
+    "value": 93,
+    "unit": "점",
+    "period": "2024년",
+    "kesg_code": "S1-17"
+   }
+  ],
+  "clauses": [
+   {
+    "section": "중요 영향, 위험 및 기회 요인",
+    "text": "중요 영향, 위험 및 기회 요인 · 지속가능성 인덱스 · GRI Standards 2021 · WEF IBC Stakeholder Capitalism Metrics · UN SDGs · 인증 현황 · 가입 현황 · 온실가스 검증의견서 · 제3자 검증의견서 · About This Report",
+    "kesg_code": null,
+    "page": 148
+   },
+   {
+    "section": "ESRS S2 ‐ Workers in the value chain",
+    "text": "Disclosure Requirement | 보고 | 보고 위치 및 비고 | ISSB | SASB | TCFD SBM-2 | 이해관계자의 관심과 견해 | SR | 107 중요 영향, 위험 및 기회와 SBM-3 | SR | 107, 145 전략·비즈니스 모델과의 상호 작용 S2-1 | 가치사슬 근로자 관련 정책 | SR | 107, 109 영향에 대해 가치사슬 근로자와 S2-2 | SR | 110 소통하는 프로세스 부정 영향 해소 프로세스 및 S2-3 | SR | 110 가치사슬 근로자 고충처리채널 가치사슬 근로자 관련 중요 영향, S2-4 | 위험 관리 및 기회 활용에 대한 | SR | 111~114 조치 및 조치 효율성 중요 부정 영향, 위험 및 기회 관리, S2-5 | SR | 116 긍정 영향 확대를 위한 목표",
+    "kesg_code": "ESRS S2",
+    "page": 148
+   },
+   {
+    "section": "ESRS S4 ‐ Consumers and end-users",
+    "text": "Disclosure Requirement | 보고 | 보고 위치 및 비고 | ISSB | SASB | TCFD SBM-2 | 이해관계자의 관심과 견해 | SR | 125 중요 영향, 위험 및 기회와 SBM-3 | SR | 125, 145 전략·비즈니스 모델과의 상호 작용 S4-1 | 소비자 및 고객 관련 정책 | SR | 126 영향에 대해 소비자 및 S4-2 | SR | 127 고객과 소통하는 프로세스 부정 영향 해소 프로세스, S4-3 | SR | 128 소비자 및 고객 고충처리채널 소비자 및 고객 관련 중요 영향, S4-4 | 위험 관리 및 기회 활용에 대한 | SR | 128~131 조치 및 조치 효율성 중요 부정 영향, 위험 및 기회 관리, S4-5 | SR | 132 긍정 영향 확대를 위한 목표",
+    "kesg_code": "ESRS S4",
+    "page": 148
+   },
+   {
+    "section": "ESRS G1 ‐ Business conduct",
+    "text": "Disclosure Requirement | 보고 | 보고 위치 및 비고 | ISSB | SASB | TCFD GOV-1 | 행정, 관리 및 감독 기관의 역할 | SR | 134 중요 영향, 위험 및 IRO-1 | SR | 134 기회를 식별하고 평가하는 프로세스 G1-1 | 행동강령 및 기업문화 | SR | 134~135 G1-2 | 공급망 관리 | SR | 107~114 G1-3 | 부패 및 뇌물 수수 예방 및 적발 | SR | 134~136 G1-4 | 부패 또는 뇌물수수 사건 | SR | 137 | TR-AP-520a.1 G1-5 | 정치적 영향력 및 로비 활동 | SR | 138 G1-6 | 지급 관행 | SR | 138",
+    "kesg_code": "ESRS G1",
+    "page": 149
+   },
+   {
+    "section": "GRI 2: 보고 조직에 대한 공개",
+    "text": "서술 개요 | 현대모비스는 2024년 1월 1일부터 12월 31일까지의 ESG 경영 성과를 GRI Standards에 부합(in accordance with)하는 방식으로 본 지속가능성보고서에 공시하고 있습니다. 사용된 GRI 1 | GRI 1: Foundation 2021 적용된 GRI 섹터 기준 | Automotive 산업의 기준서는 2025년 6월 현재 사용이 불가능합니다.",
+    "kesg_code": "GRI 2",
+    "page": 149
+   },
+   {
+    "section": "거버넌스",
+    "text": "GRI 2-16 | 중대한 관심사에 대한 의사소통 | SR | 19, 27 GRI 2-17 | 최고 거버넌스 기구의 집단지식 | SR | 20 GRI 2-18 | 최고 거버넌스 기구의 성과평가 | SR | 19 GRI 2-19 | 보수 정책 | SR | 20 GRI 2-20 | 보수결정 프로세스 | SR | 20 GRI 2-21 | 연간 총 보상비율 | SR | 20, 24",
+    "kesg_code": "GRI 2",
+    "page": 149
+   },
+   {
+    "section": "전략, 정책 및 관행",
+    "text": "GRI 2-22 | 지속가능발전 전략에 관한 진술 | SR | 3, 28 GRI 2-23 | 정책적 약속 | SR | 74~75, 134 GRI 2-24 | 정책적 약속을 통합 | SR | 77~91, 134~136 GRI 2-25 | 부정적 영향을 구제하기 위한 프로세스 | SR | 77, 112, 128~129 GRI 2-26 | 조언을 구하고 우려를 제기하는 매커니즘 | SR | 76, 110, 128, 135 GRI 2-27 | 법률 및 규제 준수 | BR/SR | 353(제재 현황)/39 GRI 2-28 | 가입 협회 | SR | 138, 156",
+    "kesg_code": "GRI 2",
+    "page": 149
+   },
+   {
+    "section": "이해관계자 참여",
+    "text": "GRI 2-29 | 이해관계자 관여에 대한 접근방식 | SR | 29~30, 32 GRI 2-30 | 단체협약 | SR | 75, 94",
+    "kesg_code": "GRI 2",
+    "page": 149
+   },
+   {
+    "section": "조직 및 보고 관행",
+    "text": "GRI 2-1 | 조직의 세부정보 | SR | 5~6, 21 GRI 2-2 | 조직의 지속가능성보고에 포함된 기업 | AR/SR | 15~16(종속기업 현황)/165 GRI 2-3 | 보고기간과 빈도, 그리고 연락처 | SR | 165~166 GRI 2-4 | 정보의 재기술 | SR | 필요시 각주 처리 GRI 2-5 | 외부 인증 | SR | 157~164",
+    "kesg_code": "GRI 2",
+    "page": 149
+   },
+   {
+    "section": "활동 및 근로자",
+    "text": "GRI 2-6 | 활동과 가치사슬, 그리고 기타 비즈니스관계 | SR | 7~9, 29~30 GRI 2-7 | 근로자 | SR | 96~99 GRI 2-8 | 근로자가 아닌 노동자 | SR | 106",
+    "kesg_code": "GRI 2",
+    "page": 149
+   },
+   {
+    "section": "거버넌스",
+    "text": "GRI 2-9 | 거버넌스 구조 및 구성 | SR | 16~18 GRI 2-10 | 거버넌스 기구의 임명 및 선정 | SR | 16~17 GRI 2-11 | 최고 거버넌스 기구의 의장 | SR | 17 GRI 2-12 | 영향관리를 감독하는 최고 거버넌스 기구의 역할 | SR | 18~19, 27 GRI 2-13 | 영향관리에 대한 책임의 위임 | SR | 18, 27 GRI 2-14 | 지속가능성 보고에서 최고 거버넌스 기구의 역할 | SR | 27 GRI 2-15 | 이해충돌 | SR | 16~17, 21",
+    "kesg_code": "GRI 2",
+    "page": 149
+   },
+   {
+    "section": "중요 주제",
+    "text": "GRI 3-1 | 중요 주제를 결정하는 프로세스 | SR | 31~32 GRI 3-2 | 중요 주제 목록 | SR | 32 GRI 3-3 | 중요 주제의 관리 | SR | 33~34, 143~145",
+    "kesg_code": "GRI 3",
+    "page": 149
+   }
+  ]
+ }
+}

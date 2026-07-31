@@ -1,0 +1,1452 @@
+{
+ "schema": 2,
+ "meta": {
+  "key": "f98ab32b3cccaa7543b7fb9c953d98fa040e8ac6103ef0581d0df90422013c1f",
+  "created_at": "2026-07-26T11:27:06+00:00",
+  "model": "gpt-4.1-mini",
+  "doc_type": "ambiguous_fallback_vlm",
+  "source_file": "012330_mobis_2025.pdf",
+  "prompt_sha256": "910d98b903903a42bf1ea537d16996c031f6d5939dd94dd2ed028948f5825de4",
+  "input_chars": 4310
+ },
+ "response": {
+  "metrics": [
+   {
+    "metric_hint": "여성 STEM 직군 임직원 비율 국내(별도)",
+    "value": 12.4,
+    "unit": "%",
+    "period": "2022",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "여성 STEM 직군 임직원 비율 해외 자회사",
+    "value": 26.5,
+    "unit": "%",
+    "period": "2022",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "여성 STEM 직군 임직원 비율 합계",
+    "value": 15.8,
+    "unit": "%",
+    "period": "2022",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "여성 STEM 직군 임직원 비율 국내(별도)",
+    "value": 12.8,
+    "unit": "%",
+    "period": "2023",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "여성 STEM 직군 임직원 비율 국내 자회사",
+    "value": 18.7,
+    "unit": "%",
+    "period": "2023",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "여성 STEM 직군 임직원 비율 해외 자회사",
+    "value": 26.1,
+    "unit": "%",
+    "period": "2023",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "여성 STEM 직군 임직원 비율 합계",
+    "value": 16.1,
+    "unit": "%",
+    "period": "2023",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "여성 STEM 직군 임직원 비율 국내(별도)",
+    "value": 13.1,
+    "unit": "%",
+    "period": "2024",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "여성 STEM 직군 임직원 비율 국내 자회사",
+    "value": 19.6,
+    "unit": "%",
+    "period": "2024",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "여성 STEM 직군 임직원 비율 해외 자회사",
+    "value": 17.7,
+    "unit": "%",
+    "period": "2024",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "여성 STEM 직군 임직원 비율 합계",
+    "value": 13.8,
+    "unit": "%",
+    "period": "2024",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "수익 창출 직군(관리직 대상) 국내(별도)",
+    "value": 1216,
+    "unit": "명",
+    "period": "2022",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "수익 창출 직군(관리직 대상) 해외 자회사",
+    "value": 2881,
+    "unit": "명",
+    "period": "2022",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "수익 창출 직군(관리직 대상) 합계",
+    "value": 4097,
+    "unit": "명",
+    "period": "2022",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "수익 창출 직군(관리직 대상) 국내(별도)",
+    "value": 1254,
+    "unit": "명",
+    "period": "2023",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "수익 창출 직군(관리직 대상) 국내 자회사",
+    "value": 19,
+    "unit": "명",
+    "period": "2023",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "수익 창출 직군(관리직 대상) 해외 자회사",
+    "value": 4703,
+    "unit": "명",
+    "period": "2023",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "수익 창출 직군(관리직 대상) 합계",
+    "value": 5976,
+    "unit": "명",
+    "period": "2023",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "수익 창출 직군(관리직 대상) 국내(별도)",
+    "value": 1298,
+    "unit": "명",
+    "period": "2024",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "수익 창출 직군(관리직 대상) 국내 자회사",
+    "value": 262,
+    "unit": "명",
+    "period": "2024",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "수익 창출 직군(관리직 대상) 해외 자회사",
+    "value": 1726,
+    "unit": "명",
+    "period": "2024",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "수익 창출 직군(관리직 대상) 합계",
+    "value": 3286,
+    "unit": "명",
+    "period": "2024",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "남성 수익 창출 직군 국내(별도)",
+    "value": 1079,
+    "unit": "명",
+    "period": "2022",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "남성 수익 창출 직군 해외 자회사",
+    "value": 1962,
+    "unit": "명",
+    "period": "2022",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "남성 수익 창출 직군 합계",
+    "value": 3041,
+    "unit": "명",
+    "period": "2022",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "남성 수익 창출 직군 국내(별도)",
+    "value": 1109,
+    "unit": "명",
+    "period": "2023",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "남성 수익 창출 직군 국내 자회사",
+    "value": 15,
+    "unit": "명",
+    "period": "2023",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "남성 수익 창출 직군 해외 자회사",
+    "value": 3333,
+    "unit": "명",
+    "period": "2023",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "남성 수익 창출 직군 합계",
+    "value": 4457,
+    "unit": "명",
+    "period": "2023",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "남성 수익 창출 직군 국내(별도)",
+    "value": 1137,
+    "unit": "명",
+    "period": "2024",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "남성 수익 창출 직군 국내 자회사",
+    "value": 208,
+    "unit": "명",
+    "period": "2024",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "남성 수익 창출 직군 해외 자회사",
+    "value": 1184,
+    "unit": "명",
+    "period": "2024",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "남성 수익 창출 직군 합계",
+    "value": 2529,
+    "unit": "명",
+    "period": "2024",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "여성 수익 창출 직군 국내(별도)",
+    "value": 137,
+    "unit": "명",
+    "period": "2022",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "여성 수익 창출 직군 해외 자회사",
+    "value": 905,
+    "unit": "명",
+    "period": "2022",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "여성 수익 창출 직군 합계",
+    "value": 1042,
+    "unit": "명",
+    "period": "2022",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "여성 수익 창출 직군 국내(별도)",
+    "value": 145,
+    "unit": "명",
+    "period": "2023",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "여성 수익 창출 직군 국내 자회사",
+    "value": 4,
+    "unit": "명",
+    "period": "2023",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "여성 수익 창출 직군 해외 자회사",
+    "value": 1364,
+    "unit": "명",
+    "period": "2023",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "여성 수익 창출 직군 합계",
+    "value": 1513,
+    "unit": "명",
+    "period": "2023",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "여성 수익 창출 직군 국내(별도)",
+    "value": 161,
+    "unit": "명",
+    "period": "2024",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "여성 수익 창출 직군 국내 자회사",
+    "value": 54,
+    "unit": "명",
+    "period": "2024",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "여성 수익 창출 직군 해외 자회사",
+    "value": 542,
+    "unit": "명",
+    "period": "2024",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "여성 수익 창출 직군 합계",
+    "value": 757,
+    "unit": "명",
+    "period": "2024",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "여성 수익 창출 직군 비율 국내(별도)",
+    "value": 11.3,
+    "unit": "%",
+    "period": "2022",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "여성 수익 창출 직군 비율 해외 자회사",
+    "value": 31.4,
+    "unit": "%",
+    "period": "2022",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "여성 수익 창출 직군 비율 합계",
+    "value": 25.4,
+    "unit": "%",
+    "period": "2022",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "여성 수익 창출 직군 비율 국내(별도)",
+    "value": 11.6,
+    "unit": "%",
+    "period": "2023",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "여성 수익 창출 직군 비율 국내 자회사",
+    "value": 21.1,
+    "unit": "%",
+    "period": "2023",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "여성 수익 창출 직군 비율 해외 자회사",
+    "value": 29.0,
+    "unit": "%",
+    "period": "2023",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "여성 수익 창출 직군 비율 합계",
+    "value": 25.3,
+    "unit": "%",
+    "period": "2023",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "여성 수익 창출 직군 비율 국내(별도)",
+    "value": 12.4,
+    "unit": "%",
+    "period": "2024",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "여성 수익 창출 직군 비율 국내 자회사",
+    "value": 20.6,
+    "unit": "%",
+    "period": "2024",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "여성 수익 창출 직군 비율 해외 자회사",
+    "value": 31.4,
+    "unit": "%",
+    "period": "2024",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "여성 수익 창출 직군 비율 합계",
+    "value": 23.0,
+    "unit": "%",
+    "period": "2024",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "총 장애인 임직원 수 국내(별도)",
+    "value": 148,
+    "unit": "명",
+    "period": "2022",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "총 장애인 임직원 수 해외 자회사",
+    "value": 160,
+    "unit": "명",
+    "period": "2022",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "총 장애인 임직원 수 합계",
+    "value": 308,
+    "unit": "명",
+    "period": "2022",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "총 장애인 임직원 수 국내(별도)",
+    "value": 128,
+    "unit": "명",
+    "period": "2023",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "총 장애인 임직원 수 국내 자회사",
+    "value": 250,
+    "unit": "명",
+    "period": "2023",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "총 장애인 임직원 수 해외 자회사",
+    "value": 159,
+    "unit": "명",
+    "period": "2023",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "총 장애인 임직원 수 합계",
+    "value": 537,
+    "unit": "명",
+    "period": "2023",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "총 장애인 임직원 수 국내(별도)",
+    "value": 117,
+    "unit": "명",
+    "period": "2024",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "총 장애인 임직원 수 국내 자회사",
+    "value": 250,
+    "unit": "명",
+    "period": "2024",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "총 장애인 임직원 수 해외 자회사",
+    "value": 206,
+    "unit": "명",
+    "period": "2024",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "총 장애인 임직원 수 합계",
+    "value": 573,
+    "unit": "명",
+    "period": "2024",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "남성 장애인 임직원 국내(별도)",
+    "value": 108,
+    "unit": "명",
+    "period": "2024",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "남성 장애인 임직원 국내 자회사",
+    "value": 244,
+    "unit": "명",
+    "period": "2024",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "남성 장애인 임직원 해외 자회사",
+    "value": 143,
+    "unit": "명",
+    "period": "2024",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "남성 장애인 임직원 합계",
+    "value": 495,
+    "unit": "명",
+    "period": "2024",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "여성 장애인 임직원 국내(별도)",
+    "value": 9,
+    "unit": "명",
+    "period": "2024",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "여성 장애인 임직원 국내 자회사",
+    "value": 6,
+    "unit": "명",
+    "period": "2024",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "여성 장애인 임직원 해외 자회사",
+    "value": 62,
+    "unit": "명",
+    "period": "2024",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "여성 장애인 임직원 합계",
+    "value": 77,
+    "unit": "명",
+    "period": "2024",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "성별 미상 장애인 임직원 국내(별도)",
+    "value": 0,
+    "unit": "명",
+    "period": "2024",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "성별 미상 장애인 임직원 국내 자회사",
+    "value": 0,
+    "unit": "명",
+    "period": "2024",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "성별 미상 장애인 임직원 해외 자회사",
+    "value": 1,
+    "unit": "명",
+    "period": "2024",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "성별 미상 장애인 임직원 합계",
+    "value": 1,
+    "unit": "명",
+    "period": "2024",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "남성 장애인 임직원 비율 국내(별도)",
+    "value": 0.9,
+    "unit": "%",
+    "period": "2024",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "남성 장애인 임직원 비율 국내 자회사",
+    "value": 2.3,
+    "unit": "%",
+    "period": "2024",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "남성 장애인 임직원 비율 해외 자회사",
+    "value": 0.6,
+    "unit": "%",
+    "period": "2024",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "남성 장애인 임직원 비율 합계",
+    "value": 1.1,
+    "unit": "%",
+    "period": "2024",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "여성 장애인 임직원 비율 국내(별도)",
+    "value": 0.1,
+    "unit": "%",
+    "period": "2024",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "여성 장애인 임직원 비율 국내 자회사",
+    "value": 0.1,
+    "unit": "%",
+    "period": "2024",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "여성 장애인 임직원 비율 해외 자회사",
+    "value": 0.3,
+    "unit": "%",
+    "period": "2024",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "여성 장애인 임직원 비율 합계",
+    "value": 0.2,
+    "unit": "%",
+    "period": "2024",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "장애인 임직원 비율 국내(별도)",
+    "value": 1.3,
+    "unit": "%",
+    "period": "2022",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "장애인 임직원 비율 해외 자회사",
+    "value": 0.7,
+    "unit": "%",
+    "period": "2022",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "장애인 임직원 비율 합계",
+    "value": 0.9,
+    "unit": "%",
+    "period": "2022",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "장애인 임직원 비율 국내(별도)",
+    "value": 1.1,
+    "unit": "%",
+    "period": "2023",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "장애인 임직원 비율 국내 자회사",
+    "value": 2.5,
+    "unit": "%",
+    "period": "2023",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "장애인 임직원 비율 해외 자회사",
+    "value": 0.7,
+    "unit": "%",
+    "period": "2023",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "장애인 임직원 비율 합계",
+    "value": 1.2,
+    "unit": "%",
+    "period": "2023",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "장애인 임직원 비율 국내(별도)",
+    "value": 1.0,
+    "unit": "%",
+    "period": "2024",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "장애인 임직원 비율 국내 자회사",
+    "value": 2.4,
+    "unit": "%",
+    "period": "2024",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "장애인 임직원 비율 해외 자회사",
+    "value": 0.9,
+    "unit": "%",
+    "period": "2024",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "장애인 임직원 비율 합계",
+    "value": 1.2,
+    "unit": "%",
+    "period": "2024",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "공개 포지션을 통한 충원 국내(별도)",
+    "value": 56,
+    "unit": "명",
+    "period": "2022",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "공개 포지션을 통한 충원 해외 자회사",
+    "value": 369,
+    "unit": "명",
+    "period": "2022",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "공개 포지션을 통한 충원 합계",
+    "value": 425,
+    "unit": "명",
+    "period": "2022",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "공개 포지션을 통한 충원 국내(별도)",
+    "value": 18,
+    "unit": "명",
+    "period": "2023",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "공개 포지션을 통한 충원 국내 자회사",
+    "value": 10,
+    "unit": "명",
+    "period": "2023",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "공개 포지션을 통한 충원 해외 자회사",
+    "value": 153,
+    "unit": "명",
+    "period": "2023",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "공개 포지션을 통한 충원 합계",
+    "value": 181,
+    "unit": "명",
+    "period": "2023",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "공개 포지션을 통한 충원 국내(별도)",
+    "value": 26,
+    "unit": "명",
+    "period": "2024",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "공개 포지션을 통한 충원 국내 자회사",
+    "value": 31,
+    "unit": "명",
+    "period": "2024",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "공개 포지션을 통한 충원 해외 자회사",
+    "value": 344,
+    "unit": "명",
+    "period": "2024",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "공개 포지션을 통한 충원 합계",
+    "value": 401,
+    "unit": "명",
+    "period": "2024",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "공개 포지션을 통한 충원 비율 국내(별도)",
+    "value": 4.5,
+    "unit": "%",
+    "period": "2022",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "공개 포지션을 통한 충원 비율 해외 자회사",
+    "value": 8.6,
+    "unit": "%",
+    "period": "2022",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "공개 포지션을 통한 충원 비율 합계",
+    "value": 7.7,
+    "unit": "%",
+    "period": "2022",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "공개 포지션을 통한 충원 비율 국내(별도)",
+    "value": 2.4,
+    "unit": "%",
+    "period": "2023",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "공개 포지션을 통한 충원 비율 국내 자회사",
+    "value": 1.2,
+    "unit": "%",
+    "period": "2023",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "공개 포지션을 통한 충원 비율 해외 자회사",
+    "value": 6.1,
+    "unit": "%",
+    "period": "2023",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "공개 포지션을 통한 충원 비율 합계",
+    "value": 4.4,
+    "unit": "%",
+    "period": "2023",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "공개 포지션을 통한 충원 비율 국내(별도)",
+    "value": 4.6,
+    "unit": "%",
+    "period": "2024",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "공개 포지션을 통한 충원 비율 국내 자회사",
+    "value": 17.5,
+    "unit": "%",
+    "period": "2024",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "공개 포지션을 통한 충원 비율 해외 자회사",
+    "value": 4.8,
+    "unit": "%",
+    "period": "2024",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "공개 포지션을 통한 충원 비율 합계",
+    "value": 5.0,
+    "unit": "%",
+    "period": "2024",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "정규직(직접일자리) 신규 채용 국내(별도)",
+    "value": 1181,
+    "unit": "명",
+    "period": "2022",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "정규직(직접일자리) 신규 채용 해외 자회사",
+    "value": 3928,
+    "unit": "명",
+    "period": "2022",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "정규직(직접일자리) 신규 채용 합계",
+    "value": 5109,
+    "unit": "명",
+    "period": "2022",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "정규직(직접일자리) 신규 채용 국내(별도)",
+    "value": 732,
+    "unit": "명",
+    "period": "2023",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "정규직(직접일자리) 신규 채용 국내 자회사",
+    "value": 800,
+    "unit": "명",
+    "period": "2023",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "정규직(직접일자리) 신규 채용 해외 자회사",
+    "value": 2368,
+    "unit": "명",
+    "period": "2023",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "정규직(직접일자리) 신규 채용 합계",
+    "value": 3900,
+    "unit": "명",
+    "period": "2023",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "정규직(직접일자리) 신규 채용 국내(별도)",
+    "value": 536,
+    "unit": "명",
+    "period": "2024",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "정규직(직접일자리) 신규 채용 국내 자회사",
+    "value": 146,
+    "unit": "명",
+    "period": "2024",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "정규직(직접일자리) 신규 채용 해외 자회사",
+    "value": 6865,
+    "unit": "명",
+    "period": "2024",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "정규직(직접일자리) 신규 채용 합계",
+    "value": 7547,
+    "unit": "명",
+    "period": "2024",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "신규 채용 비율 국내(별도)",
+    "value": 10.2,
+    "unit": "%",
+    "period": "2022",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "신규 채용 비율 해외 자회사",
+    "value": 18.3,
+    "unit": "%",
+    "period": "2022",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "신규 채용 비율 합계",
+    "value": 12.0,
+    "unit": "%",
+    "period": "2022",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "신규 채용 비율 국내(별도)",
+    "value": 6.0,
+    "unit": "%",
+    "period": "2023",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "신규 채용 비율 국내 자회사",
+    "value": 8.1,
+    "unit": "%",
+    "period": "2023",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "신규 채용 비율 해외 자회사",
+    "value": 9.8,
+    "unit": "%",
+    "period": "2023",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "신규 채용 비율 합계",
+    "value": 8.4,
+    "unit": "%",
+    "period": "2023",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "신규 채용 비율 국내(별도)",
+    "value": 4.4,
+    "unit": "%",
+    "period": "2024",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "신규 채용 비율 국내 자회사",
+    "value": 1.4,
+    "unit": "%",
+    "period": "2024",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "신규 채용 비율 해외 자회사",
+    "value": 28.4,
+    "unit": "%",
+    "period": "2024",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "신규 채용 비율 합계",
+    "value": 16.1,
+    "unit": "%",
+    "period": "2024",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "남성 신규 채용 수 국내(별도)",
+    "value": 938,
+    "unit": "명",
+    "period": "2022",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "남성 신규 채용 수 해외 자회사",
+    "value": 2284,
+    "unit": "명",
+    "period": "2022",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "남성 신규 채용 수 합계",
+    "value": 3222,
+    "unit": "명",
+    "period": "2022",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "남성 신규 채용 수 국내(별도)",
+    "value": 614,
+    "unit": "명",
+    "period": "2023",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "남성 신규 채용 수 국내 자회사",
+    "value": 755,
+    "unit": "명",
+    "period": "2023",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "남성 신규 채용 수 해외 자회사",
+    "value": 1547,
+    "unit": "명",
+    "period": "2023",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "남성 신규 채용 수 합계",
+    "value": 2916,
+    "unit": "명",
+    "period": "2023",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "남성 신규 채용 수 국내(별도)",
+    "value": 450,
+    "unit": "명",
+    "period": "2024",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "남성 신규 채용 수 국내 자회사",
+    "value": 136,
+    "unit": "명",
+    "period": "2024",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "남성 신규 채용 수 해외 자회사",
+    "value": 4187,
+    "unit": "명",
+    "period": "2024",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "남성 신규 채용 수 합계",
+    "value": 4773,
+    "unit": "명",
+    "period": "2024",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "여성 신규 채용 수 국내(별도)",
+    "value": 243,
+    "unit": "명",
+    "period": "2022",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "여성 신규 채용 수 해외 자회사",
+    "value": 1625,
+    "unit": "명",
+    "period": "2022",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "여성 신규 채용 수 합계",
+    "value": 1868,
+    "unit": "명",
+    "period": "2022",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "여성 신규 채용 수 국내(별도)",
+    "value": 118,
+    "unit": "명",
+    "period": "2023",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "여성 신규 채용 수 국내 자회사",
+    "value": 45,
+    "unit": "명",
+    "period": "2023",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "여성 신규 채용 수 해외 자회사",
+    "value": 819,
+    "unit": "명",
+    "period": "2023",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "여성 신규 채용 수 합계",
+    "value": 982,
+    "unit": "명",
+    "period": "2023",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "여성 신규 채용 수 국내(별도)",
+    "value": 86,
+    "unit": "명",
+    "period": "2024",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "여성 신규 채용 수 국내 자회사",
+    "value": 10,
+    "unit": "명",
+    "period": "2024",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "여성 신규 채용 수 해외 자회사",
+    "value": 2678,
+    "unit": "명",
+    "period": "2024",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "여성 신규 채용 수 합계",
+    "value": 2774,
+    "unit": "명",
+    "period": "2024",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "성별 미상 신규 채용 수 국내(별도)",
+    "value": 0,
+    "unit": "명",
+    "period": "2022",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "성별 미상 신규 채용 수 해외 자회사",
+    "value": 19,
+    "unit": "명",
+    "period": "2022",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "성별 미상 신규 채용 수 합계",
+    "value": 19,
+    "unit": "명",
+    "period": "2022",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "성별 미상 신규 채용 수 국내(별도)",
+    "value": 0,
+    "unit": "명",
+    "period": "2023",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "성별 미상 신규 채용 수 해외 자회사",
+    "value": 2,
+    "unit": "명",
+    "period": "2023",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "성별 미상 신규 채용 수 합계",
+    "value": 2,
+    "unit": "명",
+    "period": "2023",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "성별 미상 신규 채용 수 국내(별도)",
+    "value": 0,
+    "unit": "명",
+    "period": "2024",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "성별 미상 신규 채용 수 국내 자회사",
+    "value": 0,
+    "unit": "명",
+    "period": "2024",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "성별 미상 신규 채용 수 해외 자회사",
+    "value": 0,
+    "unit": "명",
+    "period": "2024",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "성별 미상 신규 채용 수 합계",
+    "value": 0,
+    "unit": "명",
+    "period": "2024",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "남성 신규 채용 비율 국내(별도)",
+    "value": 79.4,
+    "unit": "%",
+    "period": "2022",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "남성 신규 채용 비율 해외 자회사",
+    "value": 58.1,
+    "unit": "%",
+    "period": "2022",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "남성 신규 채용 비율 합계",
+    "value": 63.1,
+    "unit": "%",
+    "period": "2022",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "남성 신규 채용 비율 국내(별도)",
+    "value": 83.9,
+    "unit": "%",
+    "period": "2023",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "남성 신규 채용 비율 국내 자회사",
+    "value": 94.4,
+    "unit": "%",
+    "period": "2023",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "남성 신규 채용 비율 해외 자회사",
+    "value": 65.3,
+    "unit": "%",
+    "period": "2023",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "남성 신규 채용 비율 합계",
+    "value": 74.8,
+    "unit": "%",
+    "period": "2023",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "남성 신규 채용 비율 국내(별도)",
+    "value": 84.0,
+    "unit": "%",
+    "period": "2024",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "남성 신규 채용 비율 국내 자회사",
+    "value": 93.2,
+    "unit": "%",
+    "period": "2024",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "남성 신규 채용 비율 해외 자회사",
+    "value": 61.0,
+    "unit": "%",
+    "period": "2024",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "남성 신규 채용 비율 합계",
+    "value": 63.2,
+    "unit": "%",
+    "period": "2024",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "여성 신규 채용 비율 국내(별도)",
+    "value": 20.6,
+    "unit": "%",
+    "period": "2022",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "여성 신규 채용 비율 해외 자회사",
+    "value": 41.4,
+    "unit": "%",
+    "period": "2022",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "여성 신규 채용 비율 합계",
+    "value": 36.6,
+    "unit": "%",
+    "period": "2022",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "여성 신규 채용 비율 국내(별도)",
+    "value": 16.1,
+    "unit": "%",
+    "period": "2023",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "여성 신규 채용 비율 국내 자회사",
+    "value": 5.6,
+    "unit": "%",
+    "period": "2023",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "여성 신규 채용 비율 해외 자회사",
+    "value": 34.6,
+    "unit": "%",
+    "period": "2023",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "여성 신규 채용 비율 합계",
+    "value": 25.2,
+    "unit": "%",
+    "period": "2023",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "여성 신규 채용 비율 국내(별도)",
+    "value": 16.0,
+    "unit": "%",
+    "period": "2024",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "여성 신규 채용 비율 국내 자회사",
+    "value": 6.8,
+    "unit": "%",
+    "period": "2024",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "여성 신규 채용 비율 해외 자회사",
+    "value": 39.0,
+    "unit": "%",
+    "period": "2024",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "여성 신규 채용 비율 합계",
+    "value": 36.8,
+    "unit": "%",
+    "period": "2024",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "성별 미상 신규 채용 비율 국내(별도)",
+    "value": 0,
+    "unit": "%",
+    "period": "2022",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "성별 미상 신규 채용 비율 해외 자회사",
+    "value": 0.5,
+    "unit": "%",
+    "period": "2022",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "성별 미상 신규 채용 비율 합계",
+    "value": 0.4,
+    "unit": "%",
+    "period": "2022",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "성별 미상 신규 채용 비율 국내(별도)",
+    "value": 0,
+    "unit": "%",
+    "period": "2023",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "성별 미상 신규 채용 비율 해외 자회사",
+    "value": 0.08,
+    "unit": "%",
+    "period": "2023",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "성별 미상 신규 채용 비율 합계",
+    "value": 0.05,
+    "unit": "%",
+    "period": "2023",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "성별 미상 신규 채용 비율 국내(별도)",
+    "value": 0,
+    "unit": "%",
+    "period": "2024",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "성별 미상 신규 채용 비율 국내 자회사",
+    "value": 0,
+    "unit": "%",
+    "period": "2024",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "성별 미상 신규 채용 비율 해외 자회사",
+    "value": 0,
+    "unit": "%",
+    "period": "2024",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "성별 미상 신규 채용 비율 합계",
+    "value": 0,
+    "unit": "%",
+    "period": "2024",
+    "kesg_code": null
+   }
+  ],
+  "clauses": []
+ }
+}

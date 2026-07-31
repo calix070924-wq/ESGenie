@@ -1,0 +1,158 @@
+{
+ "schema": 2,
+ "meta": {
+  "key": "ced9d832819939173f031d9bec31e2aacacfb79cc979a29787615755e922bc56",
+  "created_at": "2026-07-26T11:35:23+00:00",
+  "model": "gpt-4.1-mini",
+  "doc_type": "ambiguous_fallback_vlm",
+  "source_file": "012330_mobis_2025.pdf",
+  "prompt_sha256": "910d98b903903a42bf1ea537d16996c031f6d5939dd94dd2ed028948f5825de4",
+  "input_chars": 4328
+ },
+ "response": {
+  "metrics": [
+   {
+    "metric_hint": "Scope 3 배출량 - 구매한 제품 & 서비스",
+    "value": 794951,
+    "unit": "tCO2 eq",
+    "period": "2024년 1월 1일 ~ 2024년 12월 31일",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "Scope 3 배출량 - 자본재",
+    "value": 18405,
+    "unit": "tCO2 eq",
+    "period": "2024년 1월 1일 ~ 2024년 12월 31일",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "Scope 3 배출량 - Scope 1이나 2에 포함되지 않는 연료 및 에너지 관련 활동",
+    "value": 70044,
+    "unit": "tCO2 eq",
+    "period": "2024년 1월 1일 ~ 2024년 12월 31일",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "Scope 3 배출량 - 업스트림 운송 & 물류",
+    "value": 267683,
+    "unit": "tCO2 eq",
+    "period": "2024년 1월 1일 ~ 2024년 12월 31일",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "Scope 3 배출량 - 운영과정에서 발생된 폐기물",
+    "value": 12063,
+    "unit": "tCO2 eq",
+    "period": "2024년 1월 1일 ~ 2024년 12월 31일",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "Scope 3 배출량 - 출장",
+    "value": 13505,
+    "unit": "tCO2 eq",
+    "period": "2024년 1월 1일 ~ 2024년 12월 31일",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "Scope 3 배출량 - 직원 통근",
+    "value": 2085,
+    "unit": "tCO2 eq",
+    "period": "2024년 1월 1일 ~ 2024년 12월 31일",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "Scope 3 배출량 - 업스트림 임대 자산",
+    "value": 139,
+    "unit": "tCO2 eq",
+    "period": "2024년 1월 1일 ~ 2024년 12월 31일",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "Scope 3 배출량 - 다운스트림 운송 & 물류",
+    "value": 104733,
+    "unit": "tCO2 eq",
+    "period": "2024년 1월 1일 ~ 2024년 12월 31일",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "Scope 3 배출량 - 판매된 제품의 가공",
+    "value": 54274,
+    "unit": "tCO2 eq",
+    "period": "2024년 1월 1일 ~ 2024년 12월 31일",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "Scope 3 배출량 - 판매된 제품의 사용",
+    "value": 1480277,
+    "unit": "tCO2 eq",
+    "period": "2024년 1월 1일 ~ 2024년 12월 31일",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "Scope 3 배출량 - 판매된 제품의 폐기",
+    "value": 232659,
+    "unit": "tCO2 eq",
+    "period": "2024년 1월 1일 ~ 2024년 12월 31일",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "Scope 3 배출량 - 투자",
+    "value": 85206,
+    "unit": "tCO2 eq",
+    "period": "2024년 1월 1일 ~ 2024년 12월 31일",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "Scope 3 배출량 - 합계",
+    "value": 3136024,
+    "unit": "tCO2 eq",
+    "period": "2024년 1월 1일 ~ 2024년 12월 31일",
+    "kesg_code": null
+   }
+  ],
+  "clauses": [
+   {
+    "section": "인증결론",
+    "text": "우리는 주식회사 현대모비스(이하 “회사”)의 2024년 12월 31일로 종료하는 사업연도에 대한 지속가능성 보고서(이하 “보고서”)의 다음 정보에 대해서 제한적 확신업무를 수행하였습니다. 우리가 수행한 절차와 입수한 증거에 근거할 때, 회사의 2024년 12월 31일로 종료하는 사업연도에 대한 인증대상정보가 중요성의 관점에서 준거기준에 따라 작성되지 않았다고 믿을 만한 사항이 발견되지 아니하였습니다.",
+    "kesg_code": null,
+    "page": 163
+   },
+   {
+    "section": "인증결론근거",
+    "text": "우리는 국제감사인증기준위원회(International Auditing and Assurance Standards Board (IAASB))에서 제정한 International Standard on Assurance Engagements (ISAE) 3000 (Revised) ‘Assurance Engagements Other Than Audits or Reviews of Historical Financial Information’에 따라 제한적 확신 업무를 수행하였습니다. 이 기준에 따른 우리의 책임이 인증보고서의 인증인의 책임 단락에 기술되어 있습니다. 우리는 국제윤리기준위원회(International Ethics Standards Board for Accountants (IESBA))의 공인회계사윤리기준(International Code of Ethics for Professional Accountants (including International Independence Standards))의 독립성 요구사항과 기타 윤리적 요규사항을 준수합니다. 우리는 IAASB에서 제정한 품질관리기준서 1(International Standard on Quality Management (ISQM) 1 ‘Quality Management for Firms that Perform Audits or Reviews of Financial Statements, or Other Assurance or Related Services Engagements’을 적용합니다. 이 기준서는 윤리적 요구사항, 전문가 기준, 관련 법규의 준수에 관한 정책과 절차를 포함한 품질관리시스템을 설계, 이행 그리고 운영하도록 요구합니다. 우리는 입수한 증거가 인증결론을 위한 근거로서 충분하고 적합하다고 우리는 믿습니다.",
+    "kesg_code": null,
+    "page": 163
+   },
+   {
+    "section": "특정 목적/이용 또는 배포 제한",
+    "text": "본 인증보고서는 2025년 지속가능성보고서에 포함된 지속가능정보에 대한 인증결론을 회사 및 경영진에게 제공할 목적으로 작성되었습니다. 따라서, 이 인증보고서는 지정된 당사자 이외의 제3자에 의해서 사용될 의도가 없으며, 사용되어서도 안 됩니다. 본 사안은 우리의 인증결론에 영향을 미치지 않습니다.",
+    "kesg_code": null,
+    "page": 163
+   },
+   {
+    "section": "인증대상정보에 대한 책임",
+    "text": "회사의 경영진의 책임은 다음과 같습니다. • 부정이나 오류로 인한 중요한 왜곡표시 없이 인증대상정보를 작성하기 위한 내부통제를 설계, 이행 및 유지함 • 인증대상정보를 작성하기 위한 적합한 준거기준을 선택 또는 확립하고 사용한 준거기준을 적절하게 설명함 • 인증대상정보를 준거 기준에 따라 작성함",
+    "kesg_code": null,
+    "page": 163
+   },
+   {
+    "section": "인증대상정보 작성의 고유 한계",
+    "text": "지속가능성 정보의 작성에는 경영진이 준거 기준을 수립하거나 해석하고, 포함될 정보의 관련성에 대해 판단하며, 보고되는 정보에 영향을 미치는 추정과 가정을 수립해야 합니다. 기업들 간에 서로 다르지만 허용 가능한 해석, 판단, 추정을 할 수 있습니다. 지속가능성 정보에는 회사의 환경, 사회, 지배구조(ESG) 이니셔티브와 목표, 이미 발생했거나 발생할 것으로 예상되는 사건의 미래 영향에 대한 고려, 약속 및 불확실성에 관한 정보가 포함됩니다. 실제 결과는 경영진이 현재 평가한 정보와 실질적으로 다를 수 있으며, 이는 사건과 상황이 자주 예상과 다르게 전개되기 때문입니다.",
+    "kesg_code": null,
+    "page": 163
+   },
+   {
+    "section": "인증인의 책임",
+    "text": "우리는 다음과 같은 책임이 있습니다. • 인증대상정보에 부정이나 오류로 인한 중요한 왜곡표시가 없는지에 대해 제한적 확신을 얻을 수 있도록 업무를 계획하고 수행함 • 우리가 수행한 절차와 입수한 증거를 바탕으로 독립적인 결론을 형성함 • 우리의 결론을 회사의 경영진에 보고함",
+    "kesg_code": null,
+    "page": 164
+   },
+   {
+    "section": "인증결론의 근거로서 수행한 절차의 요약",
+    "text": "우리는 인증의 전 과정에 걸쳐 전문가적 판단을 수행하고 전문가적 의구심을 유지하였습니다. 우리는 인증결론의 근거를 위해 인증대상정보에 대해 충분하고 적합한 인증 증거를 입수할 수 있도록 절차를 설계하고 수행하였습니다. 우리는 인증대상정보에 대한 우리의 이해와 기타 업무의 상황 그리고 중요한 왜곡표시가 발생할 수 있는 영역을 고려하여 다음 절차를 수행하였습니다. • 회사의 지속가능성 정보를 관리하고 보고하는 시스템과 프로세스의 이해 • 위험평가 프로세스 및 중대성 평가와 관련된 문서 검토 및 담당자 인터뷰 • 중요이슈에 대한 지속가능성정보를 관리하고 데이터를 기록하고 있는 담당자 인터뷰, 중요이슈 관련 지속가능성정보의 기초 데이터 검토 • 인증대상정보에 대한 질문과 분석적 절차 • 인증대상정보와 관련된 데이터의 제한적 검증 • 보고서에 수록된 재무정보가 회계감사를 받은 회사의 재무정보와 일치하는지 확인 • 보고서에 제시된 정보가 회사의 지속가능성 성과에 대해 우리가 보유한 전반적인 지식 및",
+    "kesg_code": null,
+    "page": 164
+   }
+  ]
+ }
+}

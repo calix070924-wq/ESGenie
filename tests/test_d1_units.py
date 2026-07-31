@@ -107,8 +107,11 @@ class TestCoreD1Units:
 
     def test_ton_alias_compatible(self):
         """'톤' 주장 vs 'ton' 노드 — 별칭 정규화로 비교 가능."""
-        # "배출"이 E-3-1로 먼저 매칭되므로 "발생량"으로 표현 (키워드맵 특성)
+        # 2026-07-27: 옛 _KEYWORD_MAP은 "배출"을 E-3-1로 먼저 잡아서 이 케이스를
+        # "발생량"으로 우회해야 했다. 토픽 인덱스가 search_terms 기반이 된 뒤로는
+        # "폐기물 배출량"이 그대로 E-6-1이고, 사전에 없는 "폐기물 발생량"은
+        # (폴백 제거로) 귀속되지 않는다 — 항목명 표기로 바꾼다.
         g = _graph(2_190_000, "ton", metric="E-6-1")
-        r = _score_d1_numeric("폐기물 발생량은 2,190,000톤입니다.", g)
+        r = _score_d1_numeric("폐기물 배출량은 2,190,000톤입니다.", g)
         assert r.score == 0.0   # 값 일치 + 단위 호환
         assert "Δ=0.0%" in r.detail

@@ -2,16 +2,54 @@
 from __future__ import annotations
 
 import re
+from functools import lru_cache
 from typing import Any
 
 from ..config import RAG_MAX_TIER, RAG_R1_MIN, RAG_R2_MIN, RAG_R4_MIN
 from ..schemas import GateDecision, RetrievalDecision
 
-_AREA_TERMS: dict[str, tuple[str, ...]] = {
+# 손으로 유지하던 최소 어휘. kesg_items의 search_terms와 합집합으로 쓴다(아래 _area_terms).
+_AREA_SEED_TERMS: dict[str, tuple[str, ...]] = {
     "E": ("온실가스", "배출", "재생에너지", "폐기물", "용수", "환경", "에너지", "scope", "scope1", "scope2"),
     "S": ("정규직", "이직률", "여성", "산업재해", "재해율", "정보보호", "안전"),
     "G": ("사외이사", "이사회", "출석률", "윤리", "감사", "지배구조", "배당", "배당성향", "현금배당", "주주환원"),
 }
+
+
+@lru_cache(maxsize=1)
+def _area_terms() -> dict[str, tuple[str, ...]]:
+    """영역 어휘를 kesg_items의 search_terms에서 파생해 단일 출처로 통일한다.
+
+    하드코딩 10여 개만 쓰던 탓에 "중장기 탄소중립 로드맵 … 2050 넷제로, RE100"처럼
+    명백한 E 내용이 R3_area_keyword_missing으로 오차단됐다(005930 E 실측).
+    `탄소중립 목표`·`넷제로`·`RE100`은 이미 search_terms에 있으므로, 어휘를 새로 만드는
+    것이 아니라 이미 있는 출처를 게이트가 참조하게 하는 정합성 수정이다.
+
+    변별력 확인: search_terms는 E/S/G 간 중복 용어가 0건이라 합쳐도 영역 구분이 흐려지지 않는다.
+    임포트는 순환 회피를 위해 함수 내부에서 수행한다.
+    """
+    from ..knowledge.kesg_items import by_area
+
+    out: dict[str, tuple[str, ...]] = {}
+    for area, seed in _AREA_SEED_TERMS.items():
+        terms = {t for t in seed if len(t) >= 2}
+        for item in by_area(area):  # type: ignore[arg-type]
+            terms.update(t for t in item.search_terms if len(t) >= 2)
+        out[area] = tuple(sorted(terms))
+    return out
+
+
+@lru_cache(maxsize=1)
+def _qualitative_codes() -> frozenset[str]:
+    """단위가 없는 K-ESG 항목 = 정성 지표.
+
+    '환경경영 추진체계', '대표이사·이사회 의장 분리'처럼 수치가 존재하지 않는 것이
+    정상인 항목들이다. 이들에 수치 증빙을 hard fail로 요구하면 구조적으로 통과가
+    불가능해 섹션이 항상 빈다(005380 E·G 실측).
+    """
+    from ..knowledge.kesg_items import ALL_ITEMS
+
+    return frozenset(it.code for it in ALL_ITEMS if not (it.unit or "").strip())
 _YEAR_RE = re.compile(r"(19|20)\d{2}년?|\b(19|20)\d{2}\b")
 _NUMBER_RE = re.compile(r"\d")
 _TOKEN_RE = re.compile(r"[0-9A-Za-z가-힣]+")
@@ -69,7 +107,10 @@ def evaluate_retrieval(
         hard_fails.append("R3_area_keyword_missing")
     if query and not field_coverage["query"]:
         hard_fails.append("R3_query_keyword_missing")
-    if not field_coverage["value"]:
+    # 정성 항목은 수치가 없는 것이 정상이므로 hard fail 대상에서 제외한다.
+    # field_coverage["value"]는 사실 그대로 False로 남겨 추적 가능성을 유지한다.
+    top_is_qualitative = str(top_doc.meta.get("code") or "") in _qualitative_codes()
+    if not field_coverage["value"] and not top_is_qualitative:
         hard_fails.append("R3_numeric_evidence_missing")
     if not field_coverage["period"]:
         soft_flags.append("R3_period_missing")
@@ -105,7 +146,7 @@ def evaluate_retrieval(
 
 def _contains_area_term(area: str, text: str) -> bool:
     lowered = text.lower()
-    return any(term.lower() in lowered for term in _AREA_TERMS.get(area, ()))
+    return any(term.lower() in lowered for term in _area_terms().get(area, ()))
 
 
 def _contains_query_term(query: str, text: str) -> bool:

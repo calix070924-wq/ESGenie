@@ -1,0 +1,274 @@
+{
+ "schema": 2,
+ "meta": {
+  "key": "caba3b8f9954be879e9187fdb8de52e620d7391352bbc1ecdf4362d4c2f01bff",
+  "created_at": "2026-07-26T11:20:03+00:00",
+  "model": "gpt-4.1-mini",
+  "doc_type": "ambiguous_fallback_vlm",
+  "source_file": "012330_mobis_2025.pdf",
+  "prompt_sha256": "910d98b903903a42bf1ea537d16996c031f6d5939dd94dd2ed028948f5825de4",
+  "input_chars": 4304
+ },
+ "response": {
+  "metrics": [
+   {
+    "metric_hint": "주요 원자재 사용량",
+    "value": 42152,
+    "unit": "ton",
+    "period": "2022 국내(별도)",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "주요 원자재 사용량 합계",
+    "value": 86229,
+    "unit": "ton",
+    "period": "2022 합계",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "플라스틱류 사용량",
+    "value": 11023,
+    "unit": "ton",
+    "period": "2022 국내(별도)",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "플라스틱류 사용량 합계",
+    "value": 51080,
+    "unit": "ton",
+    "period": "2023 합계",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "금속류 사용량",
+    "value": 31129,
+    "unit": "ton",
+    "period": "2022 국내(별도)",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "금속류 사용량 합계",
+    "value": 37113,
+    "unit": "ton",
+    "period": "2024 합계",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "포장재 사용량",
+    "value": 5312,
+    "unit": "ton",
+    "period": "2022 국내(별도)",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "포장재 사용량 합계",
+    "value": 11371,
+    "unit": "ton",
+    "period": "2024 합계",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "재생 원부자재 사용(구매)량",
+    "value": 955,
+    "unit": "ton",
+    "period": "2022 국내(별도)",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "재생 원부자재 사용(구매)량 합계",
+    "value": 2891,
+    "unit": "ton",
+    "period": "2024 합계",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "재생 원자재 사용량",
+    "value": 0,
+    "unit": "ton",
+    "period": "2022~2024 합계",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "재생 포장재 사용량",
+    "value": 955,
+    "unit": "ton",
+    "period": "2022 국내(별도)",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "재생 포장재 사용량 합계",
+    "value": 2891,
+    "unit": "ton",
+    "period": "2024 합계",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "재생 원부자재 사용(구매) 비율",
+    "value": 2.0,
+    "unit": "%",
+    "period": "2022 국내(별도)",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "재생 원부자재 사용(구매) 비율 합계",
+    "value": 2.8,
+    "unit": "%",
+    "period": "2024 합계",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "제품 재제조 실적",
+    "value": 32127,
+    "unit": "대",
+    "period": "2022 합계",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "제품 재제조 실적",
+    "value": 34251,
+    "unit": "대",
+    "period": "2023 합계",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "제품 재제조 실적",
+    "value": 39694,
+    "unit": "대",
+    "period": "2024 합계",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "폐기물 매립 제로화(재활용률)",
+    "value": 77.1,
+    "unit": "%",
+    "period": "2022 국내(별도)",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "폐기물 매립 제로화(재활용률)",
+    "value": 84.5,
+    "unit": "%",
+    "period": "2023 국내(별도)",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "폐기물 매립 제로화(재활용률)",
+    "value": 92.9,
+    "unit": "%",
+    "period": "2024 국내(별도)",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "폐기물 매립 제로화 목표 재활용률",
+    "value": 90,
+    "unit": "%",
+    "period": "2030 국내(별도)",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "폐기물 발생량",
+    "value": 70500,
+    "unit": "ton",
+    "period": "2022 합계",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "폐기물 발생량",
+    "value": 72875,
+    "unit": "ton",
+    "period": "2023 합계",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "폐기물 발생량",
+    "value": 72463,
+    "unit": "ton",
+    "period": "2024 합계",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "지정 폐기물 발생량",
+    "value": 6066,
+    "unit": "ton",
+    "period": "2022 합계",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "지정 폐기물 발생량",
+    "value": 13775,
+    "unit": "ton",
+    "period": "2023 합계",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "지정 폐기물 발생량",
+    "value": 14744,
+    "unit": "ton",
+    "period": "2024 합계",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "방사성 폐기물 발생량",
+    "value": 0,
+    "unit": "ton",
+    "period": "2023~2024 합계",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "일반 폐기물 발생량",
+    "value": 64435,
+    "unit": "ton",
+    "period": "2022 합계",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "일반 폐기물 발생량",
+    "value": 59099,
+    "unit": "ton",
+    "period": "2023 합계",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "일반 폐기물 발생량",
+    "value": 57719,
+    "unit": "ton",
+    "period": "2024 합계",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "폐기물 발생량 집약도",
+    "value": 0.02,
+    "unit": "ton/억 원",
+    "period": "2022 국내(별도)",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "폐기물 발생량 집약도",
+    "value": 0.13,
+    "unit": "ton/억 원",
+    "period": "2024 합계",
+    "kesg_code": null
+   }
+  ],
+  "clauses": [
+   {
+    "section": "자원 사용 관리 - 원자재 재활용·다원화 목표",
+    "text": "현대모비스는 램프 하우징 및 렌즈, 범퍼 커버, BMA 커버 등 고분자 소재에 대한 재활용, 소재 다원화 목표를 수립하였습니다. 물리적 재활용, 화학적 재활용, Bio-Mass 소재로의 순차적 적용 확대를 통해 대상 품목 소재에 대해 2030년까지 50%의 소재 전환을 이행해 나가고자 합니다.",
+    "kesg_code": null,
+    "page": 70
+   },
+   {
+    "section": "제품 재제조",
+    "text": "MRC(멀티미디어 재제조 센터) 운영 실적",
+    "kesg_code": null,
+    "page": 70
+   },
+   {
+    "section": "폐기물 관리 - 폐기물 관리 목표",
+    "text": "현대모비스는 2030년까지 전 생산거점에 대한 폐기물 매립 제로(ZWTL) 인증 획득을 목표로 하고 있습니다. 목표 달성을 위해 전체 사업장을 대상으로 폐기물 사전 조사를 진행하고 있으며, 이를 바탕으로 대상 사업장과 목표 등급을 선정하여 단계별로 폐기물 매립 제로화를 진행할 계획입니다.",
+    "kesg_code": null,
+    "page": 70
+   }
+  ]
+ }
+}

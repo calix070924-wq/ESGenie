@@ -1,0 +1,47 @@
+{
+ "schema": 2,
+ "meta": {
+  "key": "20795d17a31a4e468da3ad3ae0252866033b81abb1542c158b77fd519ff429d8",
+  "created_at": "2026-07-26T11:33:53+00:00",
+  "model": "gpt-4.1-mini",
+  "doc_type": "ambiguous_fallback_vlm",
+  "source_file": "012330_mobis_2025.pdf",
+  "prompt_sha256": "910d98b903903a42bf1ea537d16996c031f6d5939dd94dd2ed028948f5825de4",
+  "input_chars": 4320
+ },
+ "response": {
+  "metrics": [],
+  "clauses": [
+   {
+    "section": "지속가능성 인덱스",
+    "text": "ESRS 2 및 주제별(Topical Standards) 공개 요구사항에 대한 보고 위치를 기재하였습니다. 단, 중요한 주제로 선정되지 않은 E2, E3, E4 및 S3의 공개 요구사항 표는 생략하였습니다.",
+    "kesg_code": null,
+    "page": 146
+   },
+   {
+    "section": "ESRS 2 General disclosures",
+    "text": "Disclosure Requirement | 보고 | 보고 위치 및 비고 | ISSB | SASB | TCFD 지속가능성보고서 작성을 위한 일반 기초, 특정 상황과 관련된 공개, 행정, 관리 및 감독 기관의 역할, 지속가능성 관련 사항(matters)의 보고 및 감독, 지속가능성 관련 성과 인센티브, 지속가능성 실사, 지속가능성 보고에 대한 위험 관리 및 내부 통제, 전략, 비즈니스 모델 및 밸류체인, 이해관계자의 관심과 견해, 중요 영향, 위험 및 기회와 전략·비즈니스모델과의 상호 작용, 중요 영향, 위험 및 기회를 식별하고 평가하는 프로세스, 지속가능성보고서에서 다루는 ESRS의 공개 요구사항",
+    "kesg_code": null,
+    "page": 146
+   },
+   {
+    "section": "ESRS E1 ‐ Climate change",
+    "text": "Disclosure Requirement | 보고 | 보고 위치 및 비고 | ISSB | SASB | TCFD 지속가능성 관련 성과 인센티브, 기후변화 완화를 위한 전환 계획, 중요 영향, 위험 및 기회와 전략·비즈니스 모델과의 상호 작용, 기후 관련 중요 영향, 위험 및 기회를 식별하고 평가하는 프로세스, 기후변화 완화 및 적응 관련 정책, 기후변화 정책 관련 조치 및 자원, 기후변화 완화 및 적응 관련 목표, 에너지 소비 및 에너지 믹스(mix), Scope 1, 2, 3 및 총 온실가스 배출량, 탄소 배출권을 통해 자금을 조달하는 온실가스 제거 및 완화 프로젝트, 내부 탄소 가격, 중요 물리/전환 리스크 및 잠재적인 기후 관련 기회로부터 예상되는 재무영향",
+    "kesg_code": null,
+    "page": 146
+   },
+   {
+    "section": "ESRS E5 ‐ Resource use and circular economy",
+    "text": "Disclosure Requirement | 보고 | 보고 위치 및 비고 | ISSB | SASB | TCFD 자원 및 순환 경제 관련 중요 영향, 위험 및 기회를 식별하고 평가하는 프로세스, 자원 사용 및 순환 경제 관련 정책, 자원 사용 및 순환 경제 관련 조치 및 자원, 자원 사용 및 순환 경제 관련 목표, 자원 유입, 자원 유출, 자원 사용 및 순환 경제 관련 중요 위험 및 기회 인해 예상되는 재무영향",
+    "kesg_code": null,
+    "page": 147
+   },
+   {
+    "section": "ESRS S1 ‐ Own workforce",
+    "text": "Disclosure Requirement | 보고 | 보고 위치 및 비고 | ISSB | SASB | TCFD 이해관계자의 관심과 견해, 중요 영향, 위험 및 기회와 전략·비즈니스 모델과의 상호 작용, 자체 근로자 관련 정책, 영향에 대해 자체 근로자 및 근로자 대표와 소통하는 프로세스, 부정 영향 해소 프로세스 및 자체 근로자 고충처리채널, 자체 근로자 관련 중요 영향, 위험 관리 및 기회 활용에 대한 조치 및 조치 효율성, 중요 부정 영향, 위험 및 기회 관리, 긍정 영향 확대를 위한 목표, 자체 근로자 특성, 자체 근로자 중 소속 외 근로자의 특성, 단체교섭 범위 및 사회적 대화",
+    "kesg_code": null,
+    "page": 147
+   }
+  ]
+ }
+}

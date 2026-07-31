@@ -1,0 +1,318 @@
+{
+ "schema": 2,
+ "meta": {
+  "key": "db49a575280e3abe24dc2c0adaceae6dad25c791ef900e591da42abf9fcbcf3e",
+  "created_at": "2026-07-26T11:32:17+00:00",
+  "model": "gpt-4.1-mini",
+  "doc_type": "ambiguous_fallback_vlm",
+  "source_file": "012330_mobis_2025.pdf",
+  "prompt_sha256": "910d98b903903a42bf1ea537d16996c031f6d5939dd94dd2ed028948f5825de4",
+  "input_chars": 4309
+ },
+ "response": {
+  "metrics": [
+   {
+    "metric_hint": "리콜 차량 수",
+    "value": 1044483,
+    "unit": "대",
+    "period": "2022",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "리콜 차량 수",
+    "value": 19020,
+    "unit": "대",
+    "period": "2023",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "리콜 차량 수",
+    "value": 374384,
+    "unit": "대",
+    "period": "2024",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "자발적 리콜 차량 수",
+    "value": 1044483,
+    "unit": "대",
+    "period": "2022",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "자발적 리콜 차량 수",
+    "value": 19020,
+    "unit": "대",
+    "period": "2023",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "자발적 리콜 차량 수",
+    "value": 374384,
+    "unit": "대",
+    "period": "2024",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "비자발적 리콜 차량 수",
+    "value": 0,
+    "unit": "대",
+    "period": "2022",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "비자발적 리콜 차량 수",
+    "value": 0,
+    "unit": "대",
+    "period": "2023",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "비자발적 리콜 차량 수",
+    "value": 0,
+    "unit": "대",
+    "period": "2024",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "리콜 비용",
+    "value": 428,
+    "unit": "억 원",
+    "period": "2022",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "리콜 비용",
+    "value": 96,
+    "unit": "억 원",
+    "period": "2023",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "리콜 비용",
+    "value": 44,
+    "unit": "억 원",
+    "period": "2024",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "매출 대비 리콜 비용 비율",
+    "value": 0.08,
+    "unit": "%",
+    "period": "2022",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "매출 대비 리콜 비용 비율",
+    "value": 0.02,
+    "unit": "%",
+    "period": "2023",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "매출 대비 리콜 비용 비율",
+    "value": 0.01,
+    "unit": "%",
+    "period": "2024",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "당기초에 설정한 판매보증충당금",
+    "value": 1217987,
+    "unit": "백만 원",
+    "period": "2022",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "당기초에 설정한 판매보증충당금",
+    "value": 1174541,
+    "unit": "백만 원",
+    "period": "2023",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "당기초에 설정한 판매보증충당금",
+    "value": 1578207,
+    "unit": "백만 원",
+    "period": "2024",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "해당 기간 동안 발생된 판매보증 지출(비용)",
+    "value": 343342,
+    "unit": "백만 원",
+    "period": "2022",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "해당 기간 동안 발생된 판매보증 지출(비용)",
+    "value": 254089,
+    "unit": "백만 원",
+    "period": "2023",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "해당 기간 동안 발생된 판매보증 지출(비용)",
+    "value": 348723,
+    "unit": "백만 원",
+    "period": "2024",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "연간 매출 대비 판매보증 비용 비율",
+    "value": 0.7,
+    "unit": "%",
+    "period": "2022",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "연간 매출 대비 판매보증 비용 비율",
+    "value": 0.4,
+    "unit": "%",
+    "period": "2023",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "연간 매출 대비 판매보증 비용 비율",
+    "value": 0.6,
+    "unit": "%",
+    "period": "2024",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "고객불만사항(VOC) 접수 건수 합계",
+    "value": 115960,
+    "unit": "건",
+    "period": "2022",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "고객불만사항(VOC) 접수 건수 합계",
+    "value": 117084,
+    "unit": "건",
+    "period": "2023",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "고객불만사항(VOC) 접수 건수 합계",
+    "value": 1112249,
+    "unit": "건",
+    "period": "2024",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "고객불만사항(VOC) 처리 완료 건수 합계",
+    "value": 115347,
+    "unit": "건",
+    "period": "2022",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "고객불만사항(VOC) 처리 완료 건수 합계",
+    "value": 115410,
+    "unit": "건",
+    "period": "2023",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "고객불만사항(VOC) 처리 완료 건수 합계",
+    "value": 1107925,
+    "unit": "건",
+    "period": "2024",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "고객불만사항(VOC) 처리 진행 중 건수 합계",
+    "value": 288,
+    "unit": "건",
+    "period": "2022",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "고객불만사항(VOC) 처리 진행 중 건수 합계",
+    "value": 924,
+    "unit": "건",
+    "period": "2023",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "고객불만사항(VOC) 처리 진행 중 건수 합계",
+    "value": 2632,
+    "unit": "건",
+    "period": "2024",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "고객불만사항(VOC) 반송 건수 합계",
+    "value": 325,
+    "unit": "건",
+    "period": "2022",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "고객불만사항(VOC) 반송 건수 합계",
+    "value": 749,
+    "unit": "건",
+    "period": "2023",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "고객불만사항(VOC) 반송 건수 합계",
+    "value": 1691,
+    "unit": "건",
+    "period": "2024",
+    "kesg_code": null
+   }
+  ],
+  "clauses": [
+   {
+    "section": "안건",
+    "text": "현대모비스는 컴플라이언스 경영을 지속가능경영 실현의 필수적인 기반으로 인식하고 임직원, 고객, 협력사 등 모든 이해관계자와의 관계에서 준법·윤리경영 실천을 위한 체계를 구축하여 운영하고 있습니다. 이사회는 준법지원인 및 자율준수 관리자 선임을 심의·감독하고, 준법지원활동의 결과를 보고받으며 행동강령 제·개정 시 최종 검토·승인의 역할을 수행하고 있습니다. 이사회 산하 지속가능경영위원회는 윤리경영 관련 주요 정책 점검, 공정거래 자율준수프로그램의 이행 점검, 공정거래법 및 상법에서 규정하는 특수관계인 간 거래, 윤리강령 등 윤리규범 제·개정 및 이행 실태 평가를 통해 윤리적 기업 문화 조성을 위한 역할을 수행합니다. 더불어 ‘Tone at the Top’ 원칙을 실현하기 위해 각 부문장 및 BU장, CP관리자로 구성된 ‘컴플라이언스위원회’를 설치하고, 관련 리스크 관리, 준법 점검 결과 및 개선 과제 공유, 기타 컴플라이언스 관련 주요 이슈를 논의하고 있습니다. ‘컴플라이언스 파트너’ 제도를 도입하고 안전, 노무, 정보보호 등 13개 컴플라이언스 주요 영역에 대한 주관팀을 지정하여 각 사업 운영 영역에서 컴플라이언스 활동을 수행하고 있습니다.",
+    "kesg_code": null,
+    "page": 134
+   },
+   {
+    "section": "안건",
+    "text": "현대모비스는 반부패, 공정거래, 안전환경, 인권, 개인정보 등 주요 컴플라이언스 영역에서 영향과 위험을 관리하고 있습니다. 컴플라이언스 관련 주요 정책 및 입법 동향을 파악하여 규제 변화를 모니터링하며, 전사 컴플라이언스 서베이와 신고/제보 채널을 통해 위험을 식별하고 예방하기 위한 교육을 시행하고 있습니다.",
+    "kesg_code": null,
+    "page": 134
+   },
+   {
+    "section": "절차",
+    "text": "현대모비스 행동강령(Code of Conduct)은 모든 임직원(해외법인, 자회사 포함) 대상의 윤리·준법경영 실천을 위한 구체적이고 명문화된 컴플라이언스 규정입니다. 행동강령은 2019년 최초 제정 후 변화된 대외 요구 수준을 반영하여 2024년 1월에 1차 개정되었습니다. 준법통제기준은 컴플라이언스 경영 체계의 근거로 두고 있으며, 운영 실무를 위한 근거로 ‘컴플라이언스 업무 규정’을 두고 있습니다.",
+    "kesg_code": null,
+    "page": 134
+   },
+   {
+    "section": "절차",
+    "text": "컴플라이언스 관리 시스템은 법무/계약시스템, 계열사 거래 적정성 검토 프로세스, 협력사 자료요청 시스템, 정보보안 조기경보, 리스크 관리 시스템, 컴플라이언스 진단, 컴플라이언스 헬프라인, 사이버감사실(홈페이지), 협력사 고충 제보센터(협력사시스템), 고충처리제도, 성희롱 및 괴롭힘 상담센터(힐링샘) 등으로 구성되어 있습니다.",
+    "kesg_code": null,
+    "page": 134
+   },
+   {
+    "section": "절차",
+    "text": "컴플라이언스 프로그램은 사전예방(법규 동향 파악, 규제 제/개정, 매뉴얼, 가이드 수립, 임직원 교육, 캠페인, 자율 점검), 모니터링(현장 모니터링, 이슈대응 및 현황 관리, 제보 및 위험관리), 사후관리(이슈대응 결과 분석, 평가, 개선대책 수립, 이행여부 확인)로 구성되어 있습니다.",
+    "kesg_code": null,
+    "page": 134
+   },
+   {
+    "section": "책임",
+    "text": "이사회는 준법지원인 및 자율준수 관리자 선임을 심의·감독하고, 준법지원활동 결과를 보고받으며 행동강령 제·개정 시 최종 검토·승인 역할을 수행합니다. 지속가능경영위원회는 윤리경영 관련 주요 정책 점검, 공정거래 자율준수프로그램 이행 점검, 특수관계인 간 거래 및 윤리규범 제·개정 및 이행 실태 평가를 통해 윤리적 기업 문화 조성 역할을 수행합니다. 컴플라이언스위원회는 리스크 관리, 준법 점검 결과 및 개선 과제 공유, 주요 이슈 논의를 담당합니다.",
+    "kesg_code": null,
+    "page": 134
+   },
+   {
+    "section": "책임",
+    "text": "‘컴플라이언스 파트너’ 제도를 도입하여 안전, 노무, 정보보호 등 13개 컴플라이언스 주요 영역에 대한 주관팀을 지정하고 각 사업 운영 영역에서 컴플라이언스 활동을 수행합니다.",
+    "kesg_code": null,
+    "page": 134
+   },
+   {
+    "section": "책임",
+    "text": "사이버감사실 및 내부점검을 통한 윤리 위반행위 조사·처리: 행동강령과 임직원 윤리규범에 따라 모든 사업영역에서 이해관계자에게 부정한 금전적 이익 요구 또는 수령 행위를 금지하며, 금품, 경조금, 향응 접대, 편의 제공과 직무 공정성 저해 부정 이익과 청탁을 포함합니다. 금품 수수 시 무관용 원칙 적용하여 중징계 이상으로 엄중 처벌합니다. 제보 및 내부 점검으로 발견된 위반 사례는 전담 부서가 자체 조사하여 징계합니다.",
+    "kesg_code": null,
+    "page": 135
+   }
+  ]
+ }
+}

@@ -1,0 +1,213 @@
+{
+ "schema": 2,
+ "meta": {
+  "key": "f801f43fed909013ffd8222c2ca2ec8c30092b3df66d82b8e44c6e1e9eb8fc42",
+  "created_at": "2026-07-26T11:29:04+00:00",
+  "model": "gpt-4.1-mini",
+  "doc_type": "ambiguous_fallback_vlm",
+  "source_file": "012330_mobis_2025.pdf",
+  "prompt_sha256": "910d98b903903a42bf1ea537d16996c031f6d5939dd94dd2ed028948f5825de4",
+  "input_chars": 4271
+ },
+ "response": {
+  "metrics": [
+   {
+    "metric_hint": "기타 에너지진단, 탄소저감 설비 구축, ESG 개선 활동, ESG 컨설팅 지원",
+    "value": 7.96,
+    "unit": "억 원",
+    "period": "",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "총 협력사 수 (2022년 국내(별도))",
+    "value": 2997,
+    "unit": "개사",
+    "period": "2022",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "총 협력사 수 (2022년 해외 자회사)",
+    "value": 685,
+    "unit": "개사",
+    "period": "2022",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "총 협력사 수 (2022년 합계)",
+    "value": 3682,
+    "unit": "개사",
+    "period": "2022",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "총 협력사 수 (2023년 국내(별도))",
+    "value": 3280,
+    "unit": "개사",
+    "period": "2023",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "총 협력사 수 (2023년 해외 자회사)",
+    "value": 748,
+    "unit": "개사",
+    "period": "2023",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "총 협력사 수 (2023년 합계)",
+    "value": 4028,
+    "unit": "개사",
+    "period": "2023",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "총 협력사 수 (2024년 국내(별도))",
+    "value": 3332,
+    "unit": "개사",
+    "period": "2024",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "총 협력사 수 (2024년 해외 자회사)",
+    "value": 776,
+    "unit": "개사",
+    "period": "2024",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "총 협력사 수 (2024년 합계)",
+    "value": 4108,
+    "unit": "개사",
+    "period": "2024",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "총 구매금액 (2022년 국내(별도))",
+    "value": 283092,
+    "unit": "억 원",
+    "period": "2022",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "총 구매금액 (2022년 해외 자회사)",
+    "value": 176864,
+    "unit": "억 원",
+    "period": "2022",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "총 구매금액 (2022년 합계)",
+    "value": 459956,
+    "unit": "억 원",
+    "period": "2022",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "총 구매금액 (2023년 국내(별도))",
+    "value": 332968,
+    "unit": "억 원",
+    "period": "2023",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "총 구매금액 (2023년 해외 자회사)",
+    "value": 187791,
+    "unit": "억 원",
+    "period": "2023",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "총 구매금액 (2023년 합계)",
+    "value": 520759,
+    "unit": "억 원",
+    "period": "2023",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "총 구매금액 (2024년 국내(별도))",
+    "value": 291918,
+    "unit": "억 원",
+    "period": "2024",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "총 구매금액 (2024년 해외 자회사)",
+    "value": 217606,
+    "unit": "억 원",
+    "period": "2024",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "총 구매금액 (2024년 합계)",
+    "value": 509524,
+    "unit": "억 원",
+    "period": "2024",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "협력사 ESG 진단율(자가진단) (2022년 국내(별도))",
+    "value": 92.0,
+    "unit": "%",
+    "period": "2022",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "협력사 ESG 진단율(자가진단) (2022년 합계)",
+    "value": 92.0,
+    "unit": "%",
+    "period": "2022",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "협력사 ESG 진단율(자가진단) (2023년 국내(별도))",
+    "value": 92.9,
+    "unit": "%",
+    "period": "2023",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "협력사 ESG 진단율(자가진단) (2023년 해외 자회사)",
+    "value": 75.3,
+    "unit": "%",
+    "period": "2023",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "협력사 ESG 진단율(자가진단) (2023년 합계)",
+    "value": 89.9,
+    "unit": "%",
+    "period": "2023",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "협력사 ESG 진단율(자가진단) (2024년 국내(별도))",
+    "value": 100,
+    "unit": "%",
+    "period": "2024",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "협력사 ESG 진단율(자가진단) (2024년 해외 자회사)",
+    "value": 100,
+    "unit": "%",
+    "period": "2024",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "협력사 ESG 진단율(자가진단) (2024년 합계)",
+    "value": 100,
+    "unit": "%",
+    "period": "2024",
+    "kesg_code": null
+   }
+  ],
+  "clauses": [
+   {
+    "section": "협력사 지속가능성 리스크 관리",
+    "text": "현대모비스는 지속가능한 공급망 구축을 위해 협력사 ESG 진단과 관련된 주요 관리 항목(KPI) 및 목표를 설정하여 관리하고 있습니다. 해당 목표는 기존 평가 결과 및 대상 협력사 현황 등을 고려하여 설정되었으며, 각 항목의 실적과 목표를 공개함으로써 협력사가 지속적으로 인지하고 이해할 수 있도록 소통하고 있습니다.",
+    "kesg_code": null,
+    "page": 116
+   }
+  ]
+ }
+}

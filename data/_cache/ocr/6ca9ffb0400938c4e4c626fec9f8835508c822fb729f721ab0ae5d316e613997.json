@@ -1,0 +1,197 @@
+{
+ "schema": 2,
+ "meta": {
+  "key": "6ca9ffb0400938c4e4c626fec9f8835508c822fb729f721ab0ae5d316e613997",
+  "created_at": "2026-07-26T11:24:25+00:00",
+  "model": "gpt-4.1-mini",
+  "doc_type": "ambiguous_fallback_vlm",
+  "source_file": "012330_mobis_2025.pdf",
+  "prompt_sha256": "910d98b903903a42bf1ea537d16996c031f6d5939dd94dd2ed028948f5825de4",
+  "input_chars": 4285
+ },
+ "response": {
+  "metrics": [
+   {
+    "metric_hint": "리스크 식별 사업장 개소 합계",
+    "value": 11,
+    "unit": "개소",
+    "period": "2022",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "리스크 식별 사업장 개소 합계",
+    "value": 4,
+    "unit": "개소",
+    "period": "2023",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "리스크 식별 사업장 개소 합계",
+    "value": 9,
+    "unit": "개소",
+    "period": "2024",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "실사율 합계",
+    "value": 72.7,
+    "unit": "%",
+    "period": "2022",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "실사율 합계",
+    "value": 100,
+    "unit": "%",
+    "period": "2023",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "실사율 합계",
+    "value": 100,
+    "unit": "%",
+    "period": "2024",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "실사 수행 사업장 개소 합계",
+    "value": 8,
+    "unit": "개소",
+    "period": "2023",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "실사 수행 사업장 개소 합계",
+    "value": 9,
+    "unit": "개소",
+    "period": "2024",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "리스크 조치율 합계",
+    "value": 84.7,
+    "unit": "%",
+    "period": "2024",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "식별된 리스크 개 합계",
+    "value": 111,
+    "unit": "개",
+    "period": "2024",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "심각한 인권 위반 건 합계",
+    "value": 0,
+    "unit": "건",
+    "period": "2024",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "조치 완료된 리스크 개 합계",
+    "value": 94,
+    "unit": "개",
+    "period": "2024",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "노동조합 가입 비율 합계",
+    "value": 73.1,
+    "unit": "%",
+    "period": "2024",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "단체협약을 적용 받는 임직원 비율 합계",
+    "value": 100,
+    "unit": "%",
+    "period": "2024",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "대상 임직원 합계",
+    "value": 33807,
+    "unit": "명",
+    "period": "2024",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "적용 임직원 합계",
+    "value": 33807,
+    "unit": "명",
+    "period": "2024",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "노사협의 회 합계",
+    "value": 279,
+    "unit": "회",
+    "period": "2024",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "단체 교섭 회 합계",
+    "value": 130,
+    "unit": "회",
+    "period": "2024",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "노사 협의 회 합계",
+    "value": 149,
+    "unit": "회",
+    "period": "2024",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "조직문화 진단 점수 합계",
+    "value": 82.8,
+    "unit": "%",
+    "period": "2024",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "육아휴직 대상 총 임직원 합계",
+    "value": 16774,
+    "unit": "명",
+    "period": "2024",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "육아휴직 대상 남성 임직원 비율 합계",
+    "value": 71.1,
+    "unit": "%",
+    "period": "2024",
+    "kesg_code": null
+   },
+   {
+    "metric_hint": "육아휴직 대상 여성 임직원 비율 합계",
+    "value": 28.9,
+    "unit": "%",
+    "period": "2024",
+    "kesg_code": null
+   }
+  ],
+  "clauses": [
+   {
+    "section": "고충 처리 및 인권 영향",
+    "text": "인권 리스크 관리\n1) 생산사업장 기준, 미가동(양산 전, 생산 중단 등) 거점 대상 제외\n2) 점검 사업장 중 리스크가 식별된 사업장 수의 비율\n3) 강제노동, 아동노동 등 심각한 수준의 인권 침해 건",
+    "kesg_code": null,
+    "page": 94
+   },
+   {
+    "section": "노무 관리(단체교섭)",
+    "text": "1) 가입 가능 대상(책임 미만 등) 중 노동조합 가입 비율\n2) 일부 제도는 직군/직급에 따라 세부 적용 범위가 상이\n3) 근로조건 유지, 개선 등에 관한 노사 간 소통",
+    "kesg_code": null,
+    "page": 94
+   },
+   {
+    "section": "일과 삶의 균형",
+    "text": "기업문화\n1) 2023년부터 진단 문항 변경, 국내 자회사 동일하게 진단 시행하나 결과 미공개\n2) 진단 변경에 따른 단위 변경: 2021-2022년 긍정응답률(%), 2023년 평균점수(점)",
+    "kesg_code": null,
+    "page": 95
+   }
+  ]
+ }
+}
