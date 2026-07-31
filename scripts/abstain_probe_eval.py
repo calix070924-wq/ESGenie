@@ -27,6 +27,17 @@ Overall = Accuracy(assessed) x Coverage = (assessed 중 정답 수) / N.
 ----
   ESGENIE_FORCE_MOCK=1 python scripts/abstain_probe_eval.py   # 결정적(수치 유의미: 룰 기반)
   # 실키 불필요 — probe 케이스는 조용한 수치주장이라 D1 룰/기권만으로 판정된다.
+
+라이브(룰+LLM) 모드
+-------------------
+  ESGENIE_ABSTAIN_LIVE=1 ESGENIE_STRICT=1 python scripts/abstain_probe_eval.py
+케이스마다 룰(detect_risk_vector)과 하이브리드(detect_risk_vector_hybrid, 실
+LLM 호출)를 **둘 다** 실행해 abstain 결정이 LLM 단계에서 보존되는지 검증한다.
+전 축 룰점수가 JUDGE_TRIGGER 미만이면 LLM 자체가 트리거 안 되므로(judge
+used=False), abstain 케이스는 구조적으로 LLM이 안 불린다 — control_mismatch
+(D1=1.0, 값 불일치 대조군)만 실 호출된다. rule↔hybrid 판정이 하나라도 갈리면
+그 케이스를 출력하고 비정상 종료(exit 1)한다. 비-라이브(기본) 경로는 이
+플래그와 무관하게 기존과 완전히 동일하다.
 """
 from __future__ import annotations
 
@@ -48,6 +59,7 @@ from esgenie.dart_client import load_report
 from esgenie.evaluate import abstain_coverage, with_abstain_ignored
 from esgenie.layer0_evidence_graph import build_evidence_graph
 from esgenie.layer3_detect import detect_risk_vector
+from esgenie.layer3_judge import detect_risk_vector_hybrid
 
 ROOT = Path(__file__).resolve().parents[1]
 PROBE_PATH = ROOT / "data" / "benchmark_v2" / "abstain_probe.json"
@@ -68,6 +80,24 @@ def _rv_with_omission(graph: Any, sentence: str, omit_codes: list[str]) -> Any:
         graph.search_nodes = patched
     try:
         return detect_risk_vector(sentence, evidence_graph=graph)
+    finally:
+        graph.search_nodes = orig
+
+
+def _rv_pair_with_omission(graph: Any, sentence: str, omit_codes: list[str]) -> tuple[Any, Any]:
+    """라이브 모드 전용: 동일 omission 패치 아래 rule/hybrid 두 경로를 모두
+    실행해 (rv_rule, rv_hybrid)를 반환한다. 검색 함수를 1회만 패치/원복한다."""
+    orig = graph.search_nodes
+    if omit_codes:
+        def patched(keywords=None, **kw):
+            if keywords and any(c in keywords for c in omit_codes):
+                return []
+            return orig(keywords=keywords, **kw)
+        graph.search_nodes = patched
+    try:
+        rv_rule = detect_risk_vector(sentence, evidence_graph=graph)
+        rv_hyb = detect_risk_vector_hybrid(sentence, evidence_graph=graph)
+        return rv_rule, rv_hyb
     finally:
         graph.search_nodes = orig
 
@@ -110,16 +140,35 @@ def main() -> None:
     _detector_5axis.ABSTAIN_ENABLED = True
     cfg = BASELINE
     mock = os.getenv("ESGENIE_FORCE_MOCK") == "1"
+    live = os.getenv("ESGENIE_ABSTAIN_LIVE") == "1"
 
     probe = json.loads(PROBE_PATH.read_text(encoding="utf-8"))
     report = load_report(probe.get("ticker", "005930"))
     graph = build_evidence_graph(report)
 
     rows: list[dict[str, Any]] = []
+    llm_used = 0
+    mismatches: list[str] = []
     try:
         for case in probe["cases"]:
-            rv = _rv_with_omission(graph, case["sentence"], case.get("omit_codes") or [])
-            rows.append(_case_row(case, rv, cfg))
+            omit_codes = case.get("omit_codes") or []
+            if live:
+                rv_rule, rv = _rv_pair_with_omission(graph, case["sentence"], omit_codes)
+                if bool(rv.aggregate.get("judge", {}).get("used")):
+                    llm_used += 1
+                row_rule = _case_row(case, rv_rule, cfg)
+                row = _case_row(case, rv, cfg)
+                if (row_rule["abstained"], row_rule["pred"], rv_rule.abstained_axes()) \
+                        != (row["abstained"], row["pred"], rv.abstained_axes()):
+                    mismatches.append(
+                        f"{case['id']}: rule(pred={row_rule['pred']}, abstained={row_rule['abstained']}, "
+                        f"axes={rv_rule.abstained_axes()}) != hybrid(pred={row['pred']}, "
+                        f"abstained={row['abstained']}, axes={rv.abstained_axes()})"
+                    )
+            else:
+                rv = _rv_with_omission(graph, case["sentence"], omit_codes)
+                row = _case_row(case, rv, cfg)
+            rows.append(row)
     finally:
         _layer3_detect.ABSTAIN_ENABLED = False
         _detector_5axis.ABSTAIN_ENABLED = False
@@ -137,7 +186,7 @@ def main() -> None:
         "# no_evidence 기권 순수 효과 — 통제 probe 결과",
         "",
         f"> probe: `data/benchmark_v2/abstain_probe.json` (n={on['n']}) · "
-        f"모드: {'MOCK(룰 기반, 결정적)' if mock else 'AUTO'} · 임계값 BASELINE 고정",
+        f"모드: {'LIVE(룰+LLM 하이브리드)' if live else ('MOCK(룰 기반, 결정적)' if mock else 'AUTO')} · 임계값 BASELINE 고정",
         "> 각 케이스는 omit_codes 코드를 그래프에서 제거해 '해당 지표 미공시'를 재현 → no_evidence 기권 발동.",
         "",
         "## 1. 전역 지표 (OFF vs ON)",
@@ -176,16 +225,34 @@ def main() -> None:
         _next_gate(brk),
         "",
     ]
+    if live:
+        lines += [
+            "## 6. 라이브(룰+LLM) 검증",
+            "",
+            f"- LLM 호출: {llm_used}/{len(rows)}건 "
+            "(전 축 룰점수 < JUDGE_TRIGGER면 judge 자체가 트리거 안 됨 — "
+            "abstain 케이스는 구조적으로 미호출, control_mismatch만 실 호출 기대)",
+            f"- rule↔hybrid abstain 판정 불일치: {len(mismatches)}건"
+            + ("" if not mismatches else "\n" + "\n".join(f"  - {m}" for m in mismatches)),
+            "",
+        ]
     out = "\n".join(lines)
     print("\n" + "="*72)
     print(f"OFF : {fmt(off)}")
     print(f"ON  : {fmt(on)}")
     print(f"기권 정밀도 p={brk['deferral_precision']:.3f}  "
           f"(save={brk['saves']}, waste={brk['wastes']}, 손익분기 B/R>{brk['breakeven_benefit_cost_ratio']})")
+    if live:
+        print(f"LIVE: LLM 호출 {llm_used}/{len(rows)}건, rule↔hybrid 불일치 {len(mismatches)}건")
+        for m in mismatches:
+            print(f"  ⚠ {m}")
     print("="*72 + "\n")
     OUT_DOC.parent.mkdir(parents=True, exist_ok=True)
     OUT_DOC.write_text(out, encoding="utf-8")
     print(f"결과 문서 저장: {OUT_DOC}")
+
+    if live and mismatches:
+        raise SystemExit(1)
 
 
 def _projection(brk: dict[str, Any], *, base_n: int, base_acc: float) -> str:

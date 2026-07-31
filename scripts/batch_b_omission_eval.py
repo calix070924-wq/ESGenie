@@ -12,6 +12,15 @@ probe(abstain_probe_eval.py)와의 차이: probe는 005930 그래프 하나에 o
 실행:
   ESGENIE_FORCE_MOCK=1 PYTHONPATH=. python scripts/batch_b_omission_eval.py
   # 실키도 결과 동일(detect_risk_vector 룰 전용, LLM 미호출) — 구조적 결정성.
+
+라이브(룰+LLM) 모드:
+  ESGENIE_ABSTAIN_LIVE=1 ESGENIE_STRICT=1 PYTHONPATH=. python scripts/batch_b_omission_eval.py
+케이스마다 룰(detect_risk_vector)과 하이브리드(detect_risk_vector_hybrid, 실
+LLM 호출)를 둘 다 실행해 abstain 결정이 LLM 단계에서 보존되는지 검증한다.
+전 축 룰점수가 JUDGE_TRIGGER 미만이면 judge 자체가 트리거 안 되므로 abstain
+케이스는 구조적으로 LLM이 안 불린다 — control_mismatch(값 불일치 대조군)만
+실 호출된다. rule↔hybrid 판정이 하나라도 갈리면 비정상 종료(exit 1)한다.
+비-라이브(기본) 경로는 이 플래그와 무관하게 기존과 완전히 동일하다.
 """
 from __future__ import annotations
 
@@ -33,6 +42,7 @@ from esgenie.dart_client import load_report
 from esgenie.evaluate import abstain_coverage, with_abstain_ignored
 from esgenie.layer0_evidence_graph import build_evidence_graph
 from esgenie.layer3_detect import detect_risk_vector
+from esgenie.layer3_judge import detect_risk_vector_hybrid
 
 ROOT = Path(__file__).resolve().parents[1]
 BENCH_PATH = ROOT / "data" / "benchmark_v2" / "batch_b_omission.json"
@@ -89,17 +99,37 @@ def main() -> None:
     _detector_5axis.ABSTAIN_ENABLED = True
     cfg = BASELINE
     mock = os.getenv("ESGENIE_FORCE_MOCK") == "1"
+    live = os.getenv("ESGENIE_ABSTAIN_LIVE") == "1"
 
     bench = json.loads(BENCH_PATH.read_text(encoding="utf-8"))
     graph_cache: dict[str, Any] = {}
     rows: list[dict[str, Any]] = []
+    llm_used = 0
+    mismatches: list[str] = []
     try:
         for case in bench["cases"]:
             t = case["ticker"]
             if t not in graph_cache:
                 graph_cache[t] = build_evidence_graph(load_report(t))
-            rv = detect_risk_vector(case["sentence"], evidence_graph=graph_cache[t])
-            rows.append(_case_row(case, rv, cfg))
+            graph = graph_cache[t]
+            if live:
+                rv_rule = detect_risk_vector(case["sentence"], evidence_graph=graph)
+                rv = detect_risk_vector_hybrid(case["sentence"], evidence_graph=graph)
+                if bool(rv.aggregate.get("judge", {}).get("used")):
+                    llm_used += 1
+                row_rule = _case_row(case, rv_rule, cfg)
+                row = _case_row(case, rv, cfg)
+                if (row_rule["abstained"], row_rule["pred"], rv_rule.abstained_axes()) \
+                        != (row["abstained"], row["pred"], rv.abstained_axes()):
+                    mismatches.append(
+                        f"{case['id']}: rule(pred={row_rule['pred']}, abstained={row_rule['abstained']}, "
+                        f"axes={rv_rule.abstained_axes()}) != hybrid(pred={row['pred']}, "
+                        f"abstained={row['abstained']}, axes={rv.abstained_axes()})"
+                    )
+            else:
+                rv = detect_risk_vector(case["sentence"], evidence_graph=graph)
+                row = _case_row(case, rv, cfg)
+            rows.append(row)
     finally:
         _layer3_detect.ABSTAIN_ENABLED = False
         _detector_5axis.ABSTAIN_ENABLED = False
@@ -116,7 +146,7 @@ def main() -> None:
         "# 배치 B — 실데이터 미공시 평가셋 결과 (멀티티커, 주입 없음)",
         "",
         f"> bench: `data/benchmark_v2/batch_b_omission.json` (n={on['n']}, 회사={tickers}) · "
-        f"모드: {'MOCK(룰 기반, 결정적)' if mock else 'AUTO'} · 임계값 BASELINE 고정",
+        f"모드: {'LIVE(룰+LLM 하이브리드)' if live else ('MOCK(룰 기반, 결정적)' if mock else 'AUTO')} · 임계값 BASELINE 고정",
         "> 각 케이스는 해당 회사가 **실제로 공시하지 않은** 지표에 대한 주장 → 주입 없이 실 그래프에서 no_evidence 자연 발동.",
         "",
         "## 0. 데이터 무결성 감사 (expect 대비 실제)",
@@ -156,6 +186,17 @@ def main() -> None:
         _verdict(off, on, brk, ne, len(rows)),
         "",
     ]
+    if live:
+        L += [
+            "## 5. 라이브(룰+LLM) 검증",
+            "",
+            f"- LLM 호출: {llm_used}/{len(rows)}건 "
+            "(전 축 룰점수 < JUDGE_TRIGGER면 judge 자체가 트리거 안 됨 — "
+            "abstain 케이스는 구조적으로 미호출, control_mismatch만 실 호출 기대)",
+            f"- rule↔hybrid abstain 판정 불일치: {len(mismatches)}건"
+            + ("" if not mismatches else "\n" + "\n".join(f"  - {m}" for m in mismatches)),
+            "",
+        ]
     OUT_DOC.parent.mkdir(parents=True, exist_ok=True)
     OUT_DOC.write_text("\n".join(L), encoding="utf-8")
     print("="*72)
@@ -165,8 +206,15 @@ def main() -> None:
     print(f"기권정밀도 p={brk['deferral_precision']:.3f} (save={brk['saves']} waste={brk['wastes']}) 손익분기 B/R>{brk['breakeven_benefit_cost_ratio']}")
     if problems:
         print("⚠ 무결성:", *problems, sep="\n  ")
+    if live:
+        print(f"LIVE: LLM 호출 {llm_used}/{len(rows)}건, rule↔hybrid 불일치 {len(mismatches)}건")
+        for m in mismatches:
+            print(f"  ⚠ {m}")
     print("="*72)
     print(f"결과 문서: {OUT_DOC}")
+
+    if live and mismatches:
+        raise SystemExit(1)
 
 
 def _vs_probe(brk: dict[str, Any]) -> str:

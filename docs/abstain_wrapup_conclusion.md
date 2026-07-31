@@ -1,6 +1,6 @@
 # 책임있는 기권(Responsible Abstention) — 마무리 결론
 
-> 최종 갱신: 2026-07-28 · 브랜치 `feature/abstention` · **코드 무변경(문서화)**
+> 최종 갱신: 2026-07-30 · 브랜치 `feature/abstention`
 > 이 문서는 기권 라인의 조사·검증을 종결하고, 채택 근거·알려진 한계·향후 옵션을 고정한다.
 
 ## 0. 한 줄 결론
@@ -21,6 +21,33 @@ no_evidence 기권은 **메커니즘이 검증됐고, 실데이터에서 순이�
   Accuracy(assessed) 0.571→1.000, 기권 정밀도 p=0.60. 단 p는 파일럿 라벨 구성을 반영한 값.
 - **현행 dev/test의 한계 규명**: dev/test(n=320)는 005930 데이터를 정답 앵커로 만들어져
   no_evidence를 **구조적으로 0건** 관측 → 배치 B가 이 공백을 실데이터로 메움. (`c9ba9ad`)
+
+## 1-b. 라이브(룰+LLM) 검증 — 실 LLM으로 재확인 (2026-07-30)
+
+리뷰어(허정만) 지적: 기존 하네스는 `detect_risk_vector`(룰 전용)만 써서 "mock=실키 동일"이었다
+— abstain 판정이 룰 레이어에서만 나기 때문이지, 파이프라인 전체를 실 LLM으로 검증한 건 아니었다.
+`ESGENIE_ABSTAIN_LIVE=1`을 두 하네스에 추가해, 케이스마다 룰(`detect_risk_vector`)과 하이브리드
+(`detect_risk_vector_hybrid`, 실 LLM 호출)를 **둘 다** 돌려 abstain 결정이 LLM 단계에서 보존되는지
+직접 실증했다.
+
+**구조**: `judge_risk_vector`(esgenie/layer3_judge.py:123)는 전 축 룰점수가 `JUDGE_TRIGGER`(기본
+0.25) 미만이면 LLM 호출 자체를 생략한다. abstain 축은 설계상 score=0.0으로 고정되므로 이 트리거를
+넘을 수 없다 — **abstain 케이스는 구조적으로 LLM이 안 불린다.** 값이 실제로 어긋나는
+`control_mismatch` 대조군(D1=1.0)만 트리거돼 실 호출된다.
+
+**실측(ESGENIE_STRICT=1, `.env`의 실제 OPENAI_API_KEY, 2026-07-30)**:
+
+| 하네스 | n | LLM 호출 | rule↔hybrid abstain 불일치 |
+|---|---|---|---|
+| `scripts/batch_b_omission_eval.py` | 21 | 2/21건(B-CTRL-M1, B-CTRL-M2 — 둘 다 값 불일치 대조군) | 0건 |
+| `scripts/abstain_probe_eval.py` | 12 | 1/12건(P-CTRL-M2 — 값 불일치 대조군) | 0건 |
+
+두 하네스 모두 Coverage/Accuracy(assessed)/Overall/기권 정밀도 p 수치가 룰-전용 실행과
+**완전히 동일**했다(hybrid 경로로 지표를 계산해도 abstain된 케이스는 애초에 LLM을 안 타므로
+값이 바뀔 수가 없다). 즉 "abstain 판정을 LLM이 뒤집는 사례는 실측 33건(21+12) 중 0건"이며,
+이는 우연이 아니라 트리거 구조상 **abstain과 LLM 호출이 상호 배타적**이기 때문임을 확인했다
+(비-abstain 위험 신호가 있는 케이스만 LLM 검토를 받고, LLM이 검토한 축은 애초에 abstain
+후보가 아니었던 축이다). 비-라이브(기본) 경로 수치는 이 변경 전후로 완전히 동일 — 회귀 없음.
 
 ## 2. 이번 마무리에서 새로 밝힌 것
 
