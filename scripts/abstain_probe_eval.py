@@ -51,7 +51,9 @@ from esgenie.layer3_detect import detect_risk_vector
 
 ROOT = Path(__file__).resolve().parents[1]
 PROBE_PATH = ROOT / "data" / "benchmark_v2" / "abstain_probe.json"
-OUT_DOC = ROOT / "docs" / "abstain_probe_result.md"
+# 생성물은 gitignored outputs/ 아래로 (docs/의 추적 파일을 덮어써 워킹트리를
+# 더럽히지 않도록 — 코드리뷰 개선. docs/의 결과 스냅샷은 수동 큐레이션 유지).
+OUT_DOC = ROOT / "outputs" / "benchmark" / "abstain_probe_result.md"
 
 
 def _rv_with_omission(graph: Any, sentence: str, omit_codes: list[str]) -> Any:
@@ -181,6 +183,7 @@ def main() -> None:
     print(f"기권 정밀도 p={brk['deferral_precision']:.3f}  "
           f"(save={brk['saves']}, waste={brk['wastes']}, 손익분기 B/R>{brk['breakeven_benefit_cost_ratio']})")
     print("="*72 + "\n")
+    OUT_DOC.parent.mkdir(parents=True, exist_ok=True)
     OUT_DOC.write_text(out, encoding="utf-8")
     print(f"결과 문서 저장: {OUT_DOC}")
 

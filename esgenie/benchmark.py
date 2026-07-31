@@ -112,10 +112,11 @@ class DetectorReport:
             sum(1 for c in assessed if c.correct) / len(assessed) if assessed else 0.0
         )
         overall = accuracy_on_assessed * coverage
+        # 직접 인덱싱: 미등록(오타) 사유는 KeyError로 드러나게 한다(코드리뷰 개선).
         by_reason: dict[str, int] = {"no_evidence": 0, "unit_mismatch": 0, "low_confidence": 0}
         for c in abstained:
             for reason in c.abstain_reasons:
-                by_reason[reason] = by_reason.get(reason, 0) + 1
+                by_reason[reason] += 1
 
         return {
             "precision": round(precision, 3), "recall": round(recall, 3),

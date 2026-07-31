@@ -63,7 +63,8 @@ def _case_rows(records: list[dict[str, Any]], cfg: dict[str, float]) -> list[dic
 
 
 # ====================================================================
-# 3-b) abstain 기반 Coverage / Accuracy(assessed) / Overall
+# 3-b) no_evidence 근거 기반 abstain Coverage / Accuracy(assessed) / Overall
+#      (아래 §3 risk_coverage 곡선과 구분 — 이쪽은 축의 abstain 플래그 기반)
 # ====================================================================
 
 _ABSTAIN_REASONS = ("no_evidence", "unit_mismatch", "low_confidence")
@@ -87,10 +88,12 @@ def abstain_coverage(rows: list[dict[str, Any]]) -> dict[str, Any]:
     )
     overall = accuracy_on_assessed * coverage
 
+    # 사전 초기화 + 직접 인덱싱: 미등록(오타) 사유는 KeyError로 드러나게 한다
+    # (.get(reason, 0) 폴백은 두 방어를 서로 무력화하므로 제거 — 코드리뷰 개선).
     by_reason: dict[str, int] = {r: 0 for r in _ABSTAIN_REASONS}
     for r in abstained_rows:
         for reason in r.get("abstain_reasons") or []:
-            by_reason[reason] = by_reason.get(reason, 0) + 1
+            by_reason[reason] += 1
 
     return {
         "n": n,

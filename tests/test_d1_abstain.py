@@ -74,6 +74,25 @@ class _PartialGraph:
         return out
 
 
+class _CodeSpecificGraph:
+    """지정 코드에만 노드를 반환하는 그래프(코드별 검색) — 혼합 문장 시나리오용.
+    기본: E-4-2에 단위 불일치(tCO2eq) 노드만, S-2-3(이직률)엔 노드 없음."""
+
+    report_year = 2025
+
+    def __init__(self, nodes=None):
+        self._nodes = nodes or {
+            "E-4-2": SimpleNamespace(id="n_re", value=100.0, unit="tCO2eq", period=2025),
+            "E-4-1": SimpleNamespace(id="n_en", value=100.0, unit="tCO2eq", period=2025),
+        }
+
+    def search_nodes(self, keywords, period=None):
+        return [self._nodes[k] for k in keywords if k in self._nodes]
+
+    def nodes_by_metric(self, metric):
+        return [self._nodes[metric]] if metric in self._nodes else []
+
+
 # ============================================================================
 # layer3_detect._score_d1_numeric (주 타깃)
 # ============================================================================
@@ -108,8 +127,10 @@ class TestLayer3DetectAbstain:
         assert axis.abstain_reason == "no_evidence"
         assert axis.score == 0.0  # 점수 산정 자체는 불변 — 표식만 추가
 
-    def test_no_evidence_stays_score_zero_when_disabled(self):
-        # ABSTAIN_ENABLED 기본값(False) — 회귀 없음 확인
+    def test_no_evidence_stays_score_zero_when_disabled(self, monkeypatch):
+        # 비활성(False) 시 회귀 없음 확인 — env(ABSTAIN_ENABLED=1) 오염에도 안전하도록 명시.
+        monkeypatch.setattr("esgenie.layer3_detect.ABSTAIN_ENABLED", False)
+        monkeypatch.setattr("esgenie.layer3_detect.ABSTAIN_UNIT_MISMATCH", False)
         axis = _score_d1_numeric("재생에너지 사용 비율은 31.0%였다.", _NoNodeGraph())
         assert axis.abstain is False
         assert axis.abstain_reason is None
@@ -133,7 +154,9 @@ class TestLayer3DetectAbstain:
         assert axis.abstain is True
         assert axis.abstain_reason == "unit_mismatch"
 
-    def test_unit_mismatch_stays_score_zero_when_disabled(self):
+    def test_unit_mismatch_stays_score_zero_when_disabled(self, monkeypatch):
+        monkeypatch.setattr("esgenie.layer3_detect.ABSTAIN_ENABLED", False)
+        monkeypatch.setattr("esgenie.layer3_detect.ABSTAIN_UNIT_MISMATCH", False)
         axis = _score_d1_numeric("재생에너지 사용 비율은 31.0%였다.", _UnitMismatchGraph())
         assert axis.abstain is False
         assert axis.score == 0.0
@@ -158,6 +181,18 @@ class TestLayer3DetectAbstain:
         s = "에너지 사용량은 500%이며 용수 사용량은 120%였다."
         axis = _score_d1_numeric(s, _PartialGraph())
         assert axis.abstain is False
+
+    def test_mixed_sentence_no_evidence_not_masked_by_neighbor_node(self, monkeypatch):
+        """코드리뷰 must-fix 2 회귀: 혼합 문장에서 옆 지표(재생에너지, 단위불일치 노드
+        존재) 때문에 자기 코드(이직률, 근거 전무)의 no_evidence가 unit_mismatch로
+        오분류돼 조용히 통과하던 버그. no_evidence는 자기 코드 근거 유무로 판정되어야
+        하며, no_evidence가 하나라도 있으면 우선한다."""
+        monkeypatch.setattr("esgenie.layer3_detect.ABSTAIN_ENABLED", True)
+        monkeypatch.setattr("esgenie.layer3_detect.ABSTAIN_UNIT_MISMATCH", False)
+        s = "재생에너지 비율은 31.0%이며 이직률은 1.2%였다."
+        axis = _score_d1_numeric(s, _CodeSpecificGraph())
+        assert axis.abstain is True
+        assert axis.abstain_reason == "no_evidence"
 
     def test_mismatch_risk_not_turned_into_abstain(self, monkeypatch):
         """실제 위험(수치 불일치)은 기권으로 가리지 않는다 — 근거는 있고 값만 다른 경우."""
@@ -184,7 +219,8 @@ class TestSsotDetectorAbstain:
         assert axis.abstain is True
         assert axis.abstain_reason == "no_evidence"
 
-    def test_no_kesg_code_stays_legacy_when_disabled(self):
+    def test_no_kesg_code_stays_legacy_when_disabled(self, monkeypatch):
+        monkeypatch.setattr("esgenie.ssot.detector_5axis.ABSTAIN_ENABLED", False)
         axis = detect_d1_numeric("사용량은 128,400 kWh였습니다.", None, _NoNodeGraph())
         assert axis.abstain is False
         assert axis.score == 0.6
@@ -195,7 +231,8 @@ class TestSsotDetectorAbstain:
         assert axis.abstain is True
         assert axis.abstain_reason == "no_evidence"
 
-    def test_no_evidence_node_stays_legacy_when_disabled(self):
+    def test_no_evidence_node_stays_legacy_when_disabled(self, monkeypatch):
+        monkeypatch.setattr("esgenie.ssot.detector_5axis.ABSTAIN_ENABLED", False)
         axis = detect_d1_numeric("사용량은 128,400 kWh였습니다.", "E-4-1", _NoNodeGraph())
         assert axis.abstain is False
         assert axis.score == 0.9

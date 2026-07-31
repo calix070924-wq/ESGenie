@@ -127,9 +127,17 @@ JUDGE_RULE_WEIGHT: float = float(os.getenv("JUDGE_RULE_WEIGHT", "0.4"))
 # ---- 책임있는 기권(Abstention) ------------------------------------------------
 # 근거로 검증 불가한 수치 주장(코드는 매핑됐으나 근거 노드가 없거나 단위 호환
 # 불가)을 고위험/안전으로 단정하지 않고 판정 보류(abstain)로 표시할지 여부.
-# 기본 False — 꺼져 있으면 기존 동작(0.9/0.0 등) 100% 그대로다. 켜져 있어도
-# score 산정 자체는 바뀌지 않고 AxisScore.abstain/abstain_reason 플래그만
-# 추가로 세팅된다(게이트·HITL 반영은 후속 배치).
+# 기본 False — 꺼져 있으면 기존 동작 100% 그대로다.
+#
+# score 영향(경로별로 다름 — 정확히 기록):
+#   - layer3_detect._score_d1_numeric(주 생성문 경로): 미검증 시 score는 원래도
+#     0.0이라, 기권을 켜도 score는 불변이고 abstain/abstain_reason 플래그만 추가된다.
+#   - ssot.detector_5axis.detect_d1_numeric(정합화 경로): 기존 legacy 반환값
+#     0.6(코드 매핑 없음)/0.9(근거 노드 없음)를 abstain 시 score=0.0으로 **교체**한다.
+#     즉 이 경로에서는 score가 바뀐다. 프로덕션 호출부(pipeline._build_risk_rows의
+#     `if not nodes: continue`)는 이 분기에 닿지 않아 회귀는 없지만, 이는 설계된
+#     안전이 아니라 우연한 안전이므로 활성화 전 검토가 필요하다.
+# (게이트·HITL 반영은 후속 배치.)
 ABSTAIN_ENABLED: bool = os.getenv("ABSTAIN_ENABLED", "0") == "1"
 
 # 2026-07-28 실키 A/B(scripts/abstain_ab_eval.py) 결과: test held-out에서

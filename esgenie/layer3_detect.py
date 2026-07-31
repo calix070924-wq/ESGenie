@@ -433,6 +433,10 @@ def _score_d1_numeric(
 
         # 후보: 최근접 코드 우선 + 문장 내 나머지 토픽 코드 (교차 오탐 방지)
         cand_codes = [code] + sorted(sentence_codes - {code})
+        # 기권 사유 판정용 근거 유무는 **claim 자기 코드** 기준으로만 본다.
+        # (혼합 문장에서 옆 지표 노드 때문에 no_evidence가 unit_mismatch로 오분류돼
+        #  조용히 통과하던 버그 방지 — 코드리뷰 must-fix 2.)
+        own_has_nodes = bool(evidence_graph.search_nodes(keywords=[code]))
         best: tuple[float, Any, str] | None = None  # (delta, node, code)
         any_nodes = False
         for c in cand_codes:
@@ -458,10 +462,12 @@ def _score_d1_numeric(
                 best = (delta, node, c)
 
         if best is None:
-            if any_nodes:
+            if own_has_nodes:
                 details.append(
                     f"{code}: claim={claim_val}{claim_unit} — 단위 불일치(노드 단위와 비교 불가, 스킵)")
-            mapped_claims.append({"code": code, "verified": False, "any_nodes": any_nodes})
+            else:
+                details.append(f"{code}: claim={claim_val}{claim_unit} — 근거 노드 없음")
+            mapped_claims.append({"code": code, "verified": False, "any_nodes": own_has_nodes})
             continue
 
         delta, node, matched_code = best

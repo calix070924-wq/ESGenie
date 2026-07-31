@@ -204,6 +204,11 @@ def judge_risk_vector(
                 f"rule={ax.score:.2f}→final={blended:.2f}: {v.get('rationale', '')}"
                 f"{extra_note}"
             ),
+            # 기권 플래그 보존 — 현재는 기권 축(score=0.0<JUDGE_TRIGGER)이 이 분기에
+            # 닿지 않아 우연히 안전하지만, trigger 조정·향후 사유(low_confidence) 시
+            # 유실되지 않도록 명시 복사한다(코드리뷰 개선).
+            abstain=ax.abstain,
+            abstain_reason=ax.abstain_reason,
         )
 
     out = _rebuild_vector(new_axes)

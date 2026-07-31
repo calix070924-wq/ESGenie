@@ -33,7 +33,8 @@ from esgenie.layer3_detect import (
 
 ROOT = Path(__file__).resolve().parents[1]
 SPLIT_DIR = ROOT / "data" / "benchmark_v2"
-OUT_DOC = ROOT / "docs" / "abstain_realworld_prevalence.md"
+# 생성물은 gitignored outputs/ 아래로 (docs/ 추적 파일 덮어쓰기 방지 — 코드리뷰 개선).
+OUT_DOC = ROOT / "outputs" / "benchmark" / "abstain_realworld_prevalence.md"
 SPLITS = ["dev", "test"]
 TICKER = "005930"
 
@@ -198,6 +199,7 @@ def main() -> None:
         "",
     ]
     out = "\n".join(lines)
+    OUT_DOC.parent.mkdir(parents=True, exist_ok=True)
     OUT_DOC.write_text(out, encoding="utf-8")
     print(out)
     print(f"\n저장: {OUT_DOC}")

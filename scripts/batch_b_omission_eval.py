@@ -36,7 +36,8 @@ from esgenie.layer3_detect import detect_risk_vector
 
 ROOT = Path(__file__).resolve().parents[1]
 BENCH_PATH = ROOT / "data" / "benchmark_v2" / "batch_b_omission.json"
-OUT_DOC = ROOT / "docs" / "batch_b_omission_result.md"
+# 생성물은 gitignored outputs/ 아래로 (docs/ 추적 파일 덮어쓰기 방지 — 코드리뷰 개선).
+OUT_DOC = ROOT / "outputs" / "benchmark" / "batch_b_omission_result.md"
 
 
 def _case_row(case: dict[str, Any], rv: Any, cfg: dict[str, float]) -> dict[str, Any]:
@@ -155,6 +156,7 @@ def main() -> None:
         _verdict(off, on, brk, ne, len(rows)),
         "",
     ]
+    OUT_DOC.parent.mkdir(parents=True, exist_ok=True)
     OUT_DOC.write_text("\n".join(L), encoding="utf-8")
     print("="*72)
     print(f"회사={tickers}  n={on['n']}  no_evidence 자연발동={ne}건  무결성 문제={len(problems)}")

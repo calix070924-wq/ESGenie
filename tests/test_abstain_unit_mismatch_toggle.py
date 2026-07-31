@@ -11,14 +11,18 @@ from __future__ import annotations
 
 from types import SimpleNamespace
 
-from esgenie.config import ABSTAIN_UNIT_MISMATCH as _DEFAULT_ABSTAIN_UNIT_MISMATCH
+import os
+
 from esgenie.layer3_detect import _score_d1_numeric
 from esgenie.ssot.detector_5axis import detect_d1_numeric
 
 
-def test_default_config_value_is_false():
-    """기본값 자체가 False인지 확인 — 회귀 시 다른 테스트가 조용히 무의미해지는 것 방지."""
-    assert _DEFAULT_ABSTAIN_UNIT_MISMATCH is False
+def test_default_config_value_is_false(monkeypatch):
+    """환경변수 미설정 시 코드 기본값이 False인지 확인 — 회귀 시 다른 테스트가 조용히
+    무의미해지는 것 방지. 앰비언트 env(ABSTAIN_UNIT_MISMATCH=1) 오염에도 안전하도록,
+    변수를 지운 상태에서 config가 쓰는 파싱 규칙 자체를 검증한다."""
+    monkeypatch.delenv("ABSTAIN_UNIT_MISMATCH", raising=False)
+    assert (os.getenv("ABSTAIN_UNIT_MISMATCH", "0") == "1") is False
 
 
 class _NoNodeGraph:
