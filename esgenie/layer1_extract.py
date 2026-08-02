@@ -195,6 +195,8 @@ def _relaxed_unit(u: str) -> str:
     s = re.sub(r"\s+", "", str(u)).lower()
     s = s.replace("co₂", "co2").replace("톤", "t")
     s = re.sub(r"^tons?(?=co2|$)", "t", s)
+    # 보고서 표기의 tCO2e와 원장 정의의 tCO2eq는 같은 CO2 환산톤이다.
+    s = re.sub(r"^tco2e$", "tco2eq", s)
     return s
 
 

@@ -85,9 +85,10 @@ def main() -> None:
     from esgenie.dart_client import load_report
     from esgenie.pipeline import _collect_ocr_extractions
     from esgenie.ssot import evidence_graph as ssot_evidence_graph
-    from esgenie.ssot.node_select import select_representative_node
+    from esgenie.ssot.node_select import classify_value_role, select_representative_node
     from esgenie.ssot.ssot_pipeline import extract_with_ssot
     from esgenie.knowledge.kesg_items import by_code
+    from esgenie.layer3_disclosure import detect_selective_disclosure
 
     report = load_report(corp_code)
     extractions = _collect_ocr_extractions({pdf.name: str(pdf)})
@@ -104,6 +105,7 @@ def main() -> None:
         report_year=report.report_year,
     )
     extraction = extract_with_ssot(report, graph)
+    disclosure = detect_selective_disclosure(extraction)
 
     ref_year = getattr(graph, "report_year", None) or report.report_year
 
@@ -141,6 +143,7 @@ def main() -> None:
             "expected_unit": item.unit,
             "ledger_value": led.get("value"),
             "ledger_unit": led.get("unit"),
+            "ledger_value_role": led.get("value_role", "total"),
             "note": led.get("note"),
             "path": classify_path(led.get("note")),
             "dart_only_value": (dart_only.get(code) or {}).get("value"),
@@ -153,6 +156,7 @@ def main() -> None:
                  # 원문에 연도가 없어 report_year로 채운 값인가(2026-07-29). 이 표시가
                  # 없으면 '2025 실적'과 '연도 미상'이 출력에서 구분되지 않는다.
                  "period_inferred": bool(getattr(n, "period_inferred", False)),
+                 "value_role": classify_value_role(code, n, report_year=ref_year),
                  "origin": getattr(n, "origin", ""), "id": n.id}
                 for n in nodes
             ],
@@ -205,6 +209,7 @@ def main() -> None:
         print(f"  원장   : {r['ledger_value']} {r['ledger_unit'] or ''}"
               f"   (항목 단위 {r['expected_unit']})"
               + ("   ⚠단위불일치" if r["unit_mismatch"] else ""))
+        print(f"  역할   : {r['ledger_value_role']}")
         print(f"  경로   : {r['path']}")
         print(f"  note   : {r['note']}")
         if r["dart_only_value"] is not None:
@@ -266,6 +271,9 @@ def main() -> None:
     pct = (100.0 * inferred_nodes / ocr_nodes) if ocr_nodes else 0.0
     print(f"  연도 추론 노드(period_inferred): {inferred_nodes}/{ocr_nodes} OCR노드 ({pct:.1f}%)")
     print(f"  대표 노드가 추론 연도인 코드: {len(inferred_codes)}개 {inferred_codes}")
+    print(f"  D6 신호A: {disclosure.asymmetry.get('signal_a', 0.0):.4f} "
+          f"· 점수 {disclosure.score:.4f} · 레벨 {disclosure.level}")
+    print(f"  D6 3상태: {disclosure.asymmetry.get('disclosure_states', {})}")
     print("-" * 78)
 
     if args.json_out:
@@ -274,6 +282,9 @@ def main() -> None:
         out.write_text(json.dumps(
             {"corp_code": corp_code, "corp_name": report.corp_name,
              "report_year": ref_year,
+             "missing": extraction.missing,
+             "confidence_flags": extraction.confidence_flags,
+             "d6": disclosure.to_dict(),
              # 이 스냅샷이 라이브 추출인지 캐시 리플레이인지 — ocr_diff.py로 두 파일을
              # 비교할 때 '왜 달라졌는가'의 1차 판정 근거다.
              "ocr_cache": {"mode": cache_mode, "hits": cache_hits, "misses": cache_misses},

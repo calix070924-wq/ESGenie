@@ -13,7 +13,6 @@ import pytest
 
 from esgenie.ssot.evidence_graph import (
     EvidenceGraph,
-    _HINT_TO_KESG,
     _resolve_kesg_code,
     merge_ocr_extraction,
 )
@@ -168,14 +167,16 @@ class TestNoOverBlocking:
         got = _resolve_kesg_code(_m(hint, unit, guess=expected))
         assert got == expected, f"{hint!r} 과차단 — {got} (기대 {expected})"
 
-    def test_all_hint_keys_still_match_without_guess(self):
-        """_HINT_TO_KESG의 모든 정상 키가 LLM 추정 없이도 여전히 매칭되는지 전수 검증.
+    def test_assignment_dictionary_has_single_source(self):
+        """손관리 _HINT_TO_KESG 없이 kesg_items alias만 배정 출처로 쓴다."""
+        from esgenie.ssot import evidence_graph
 
-        단, 단위를 항목 정의와 맞춰 G3에 걸리지 않게 한다(코드 확정 경로만 검증)."""
-        from esgenie.knowledge.kesg_items import by_code
-        for key, code in _HINT_TO_KESG.items():
-            item = by_code(code)
-            unit = item.unit if item else ""
-            got = _resolve_kesg_code(_m(key, unit))
-            # 가드 어휘를 포함한 사전 키는 없어야 정상(있다면 설계 위반) — 전부 매칭돼야.
-            assert got is not None, f"정상 키 {key!r}({code}) 과차단됨"
+        assert not hasattr(evidence_graph, "_HINT_TO_KESG")
+        cases = (
+            ("사용전력량", "kWh", "E-4-1"),
+            ("용수 재이용률", "%", "E-5-2"),
+            ("폐기물 재활용률", "%", "E-6-2"),
+            ("Scope 3 배출량", "tCO2eq", "E-3-2"),
+        )
+        for hint, unit, expected in cases:
+            assert _resolve_kesg_code(_m(hint, unit)) == expected

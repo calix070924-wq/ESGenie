@@ -147,6 +147,7 @@ def _merge_ssot_evidence(result: Any, graph: EvidenceGraph) -> None:
     from esgenie.dart_client import SOURCE_DART_REGEX
     from esgenie.knowledge.kesg_items import by_code as _by_code
     from esgenie.ssot.node_select import (
+        classify_value_role,
         is_partial_aggregate,
         normalize_to_item_unit,
         select_representative_node,
@@ -200,7 +201,9 @@ def _merge_ssot_evidence(result: Any, graph: EvidenceGraph) -> None:
         D1은 이 오류를 못 잡는다(원장·노드가 같은 값이라 Δ=0) — 표기가 유일한 방어선이다.
         layer2_rag._area_item_rows가 이 플래그를 원장 표 상태에 '·부분값'으로 붙인다.
         """
-        if not is_partial_aggregate(node):
+        role = classify_value_role(code, node, report_year=ref_year)
+        node.value_role = role
+        if not is_partial_aggregate(node, code, report_year=ref_year):
             return
         _add_flag(code, "partial_value")
         raw = str(getattr(node, "raw_text", "") or "")
@@ -287,6 +290,8 @@ def _merge_ssot_evidence(result: Any, graph: EvidenceGraph) -> None:
                 code, repr_node.value, repr_node.unit)
             entry["value"] = new_value
             entry["unit"] = new_unit or (item.unit if item else old_unit)
+            entry["value_role"] = classify_value_role(
+                code, repr_node, report_year=ref_year)
             if unit_flag:
                 _add_flag(code, unit_flag)
             _flag_partial(code, repr_node)
@@ -348,6 +353,7 @@ def _merge_ssot_evidence(result: Any, graph: EvidenceGraph) -> None:
                 _flag_period_inferred(code, repr_node)
                 note = f"OCR 정량 증빙으로 자동 인식 ({repr_node.source_file or repr_node.source})"
                 tier = SOURCE_OCR_GATED
+                value_role = classify_value_role(code, repr_node, report_year=ref_year)
                 quant_added += 1
             else:
                 # 정성 TextNode만 있는 존재형 문항 → 문서 조항 확인
@@ -355,6 +361,7 @@ def _merge_ssot_evidence(result: Any, graph: EvidenceGraph) -> None:
                 unit = ""
                 note = "OCR 정성 증빙으로 자동 인식"
                 tier = SOURCE_OCR_GATED
+                value_role = "total"
                 text_added += 1
             in_profile = code in profile_codes
             result.mapped[code] = {
@@ -367,6 +374,7 @@ def _merge_ssot_evidence(result: Any, graph: EvidenceGraph) -> None:
                 "unit": unit,
                 "note": note,
                 "source_tier": tier,
+                "value_role": value_role,
                 "evidence_node_ids": list(dict.fromkeys(ocr_ids + text_ids)),
                 "beyond_profile": not in_profile,
             }

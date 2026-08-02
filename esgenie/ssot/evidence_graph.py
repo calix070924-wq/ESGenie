@@ -23,6 +23,7 @@ from typing import Any, Literal
 from .ocr_router import OcrExtraction, ExtractedMetric, ExtractedClause, DocChannel
 
 Origin = Literal["dart", "ocr_structured", "ocr_unstructured"]
+ValueRole = Literal["total", "component", "target", "unknown"]
 
 
 # ====================================================================
@@ -51,6 +52,8 @@ class EvidenceNode:
     # 그 15건은 사용자에게 2025 실적으로 보인다(근거: docs/연도미상_원인조사_2026-07-29.md).
     # 소비 지점 3곳 — G4 projection 판정(아래) · node_select 연도 축 · confidence_flags.
     period_inferred: bool = False
+    # 코드 배정(근거 보존)과 대표값 자격을 분리한다. unknown은 구버전 노드 호환 기본값.
+    value_role: ValueRole = "unknown"
 
     def to_dict(self) -> dict[str, Any]:
         return asdict(self)
@@ -258,60 +261,6 @@ def build_from_dart(report: Any) -> EvidenceGraph:
 # 빌더 2 — OCR 증빙 → 노드 편입  ★ 신규 핵심
 # ====================================================================
 
-# OCR metric_hint → K-ESG 코드 매핑 사전 (LLM 추정 보정용 화이트리스트)
-_HINT_TO_KESG: dict[str, str] = {
-    # ── 환경 E ──
-    "사용전력량": "E-4-1",   # 에너지 사용량
-    "전력": "E-4-1",
-    "도시가스": "E-4-1",
-    "가스사용량": "E-4-1",
-    "재생에너지": "E-4-2",
-    "용수": "E-5-1",
-    "수도": "E-5-1",
-    # 재사용/재이용률(%)은 용수 사용량(E-5-1, ton)이 아니라 E-5-2. 최장 일치(G2)로
-    # '용수'보다 먼저 잡혀 올바른 코드로 정정된다(LG화학 2.72% 오매핑 차단).
-    "용수재이용률": "E-5-2",
-    "용수재활용률": "E-5-2",
-    "재사용용수비율": "E-5-2",
-    "폐기물": "E-6-1",
-    # 지정폐기물은 하위 분류 → 보조수치(None). E-6-1 총량에 중복으로 들어가지 않게 hint 제외.
-    # E-6-2는 재활용 '비율(%)' 전용. '재활용량(톤)'은 부분문자열 "재활용"에 걸려
-    # E-6-1 총량 대신 비율 칸을 덮어쓰던 버그가 있어, 비율 키워드로만 한정한다.
-    # (재활용량은 코드 None으로 남겨 보조수치로만 다룬다 → 비율은 별도 추출/파생)
-    "재활용비율": "E-6-2",
-    "순환이용률": "E-6-2",
-    "재활용률": "E-6-2",
-    # Scope 3는 일반 '온실가스'보다 구체적이다. 공백 제거 hint에 맞춰 키도 scope3로 둔다.
-    # kesg_items alias와 이 손관리 사전은 아직 별개이며, 통합은 이번 범위 밖이다.
-    "scope3": "E-3-2",
-    "온실가스": "E-3-1",
-    "scope1": "E-3-1",
-    "scope2": "E-3-1",
-    # ── 사회 S ──
-    "신규채용": "S-2-1",
-    "채용인원": "S-2-1",
-    "정규직비율": "S-2-2",
-    "정규직전환율": "S-2-2",
-    "비정규직비율": "S-2-2",
-    "이직률": "S-2-3",
-    "퇴사율": "S-2-3",
-    "교육훈련비": "S-2-4",
-    "1인당교육훈련비": "S-2-4",
-    "복리후생비": "S-2-5",
-    "1인당복리후생비": "S-2-5",
-    "노조가입률": "S-2-6",
-    "여성비율": "S-3-1",
-    "여성임직원비율": "S-3-1",
-    "여성급여비율": "S-3-2",
-    "장애인고용률": "S-3-3",
-    "재해율": "S-4-2",
-    "사망만인율": "S-4-2",
-    "ltifr": "S-4-2",
-    "봉사참여율": "S-7-2",
-    "개인정보유출": "S-8-2",
-    "법규위반건수": "S-9-1",
-}
-
 # 단위 환산 → 탄소/에너지 표준화 (예시 계수, 실제는 환경부/한전 배출계수 사용)
 _EMISSION_FACTORS = {
     "kWh_to_tco2": 0.4781 / 1000,   # 전력 tCO2eq/kWh (2025 국가 전력배출계수 예시)
@@ -342,7 +291,8 @@ def merge_ocr_extraction(
 
     for idx, m in enumerate(extraction.metrics):
         code = _resolve_kesg_code(m)
-        period, period_inferred = _normalize_period(m.period, fallback=report_year)
+        period, period_inferred = _normalize_period(
+            m.period, fallback=report_year, hint=m.metric_hint)
         confidence = m.confidence
         # G4. 미래 기간 분리 — 보고 연도보다 '충분히' 미래(2030/2035/2040 목표·전망 등)인
         # 확정 코드 노드는 실적 코드에서 떼어내 '{code}__projection'으로 보존. search_nodes
@@ -385,6 +335,12 @@ def merge_ocr_extraction(
             confidence=confidence,
             period_inferred=period_inferred,
         )
+        # 역할은 노드에 영속화하되 선택 시에도 재계산한다. 구버전 덤프를 리플레이해도
+        # 같은 규칙을 적용하고, 신규 산출물은 역할을 감사할 수 있게 하기 위함이다.
+        from .node_select import classify_value_role
+
+        node.value_role = classify_value_role(
+            code or metric, m.metric_hint, report_year=report_year)
         graph.add_node(node)
         _link_cross_check(graph, node)
         _emit_derived_emission(
@@ -467,19 +423,26 @@ _GUARD_TERMS: tuple[str, ...] = (
 _PROJECTION_YEAR_GAP: int = 2
 
 
-def _resolve_kesg_code(m: ExtractedMetric) -> str | None:
-    """LLM 추정 코드 + 화이트리스트 사전으로 K-ESG 코드 확정 (매칭 정합성 게이트 적용).
+def _resolve_kesg_code(
+    m: ExtractedMetric, *, allow_fuzzy: bool = False
+) -> str | None:
+    """단일 alias 사전 + LLM 보조 추정으로 K-ESG 코드 확정.
 
     게이트 순서(하나라도 걸리면 코드 None → 노드는 metric_hint로 보존, 폐기 아님):
+      0. ``kesg_items.resolve_kesg_code``로 후보 탐색(exact 우선, fuzzy 기본 거부).
       G1. 가드 어휘 — hint에 목표/전망/감축량/집약도 등이 있으면 실적 총량이 아님.
-      G2. 최장 일치 — _HINT_TO_KESG를 긴 키 우선으로 순회(부분문자열 선착순 오매칭 방지).
+      G2. 최장 일치 — alias 해소기의 가장 긴 고유 별칭을 채택한다.
       G3. 단위 정합성 — 확정 코드의 kesg_items.unit과 m.unit이 명백히 다르면 기각.
-    LLM 추정 코드(kesg_code_guess)도 G1·G3 검증을 거친다(무검증 통과 제거).
+    exact alias가 없을 때만 LLM 추정 코드를 보조 후보로 쓰며, 이 역시 G1·G3를 거친다.
+    ``allow_fuzzy``는 오프라인 비교 측정 전용이고 생산 기본값은 False다.
     """
-    from ..knowledge.kesg_items import by_code
+    from ..knowledge.kesg_items import by_code, resolve_kesg_code
     from ..layer1_extract import _unit_suspect
 
     hint = m.metric_hint.lower().replace(" ", "")
+    alias_code, _alias_score, alias_method = resolve_kesg_code(m.metric_hint)
+    code = alias_code if alias_method == "exact" or allow_fuzzy else None
+
     if getattr(m, "_kesg_backfill_blocked", False):
         return None
     # 하위·보조 수치는 어떤 추정코드가 와도 총량 코드로 잡지 않는다(중복 노드 방지).
@@ -493,33 +456,36 @@ def _resolve_kesg_code(m: ExtractedMetric) -> str | None:
     def _conflicts(code: str) -> bool:
         return any(term in hint for term in _ASSIGNMENT_NEGATIVE_KEYWORDS.get(code, ()))
 
-    # 후보 코드 결정: LLM 추정 우선. 단, 코드별 충돌 어휘가 있으면 그 추정을 버리고
-    # 사전 최장 일치로 다시 찾는다(Scope 3를 E-3-1 풀에 넣지 않는 배정 단계 방어).
-    code = m.kesg_code_guess
-    # 모비스 Scope 3 캐시는 코드 대신 표 머리글 숫자("2")를 guess에 넣었다. 그 정확한
-    # 오응답만 버리고 아래 사전으로 다시 해소한다. 모든 비표준 문자열을 일반화해 버리면
-    # 기존 4개사의 후보 풀이 불필요하게 넓어진다.
+    # exact alias가 LLM 추정보다 우선한다. 삼성전기 '총 Scope 3 배출량'에 붙어 있던
+    # E-3-1 오추정도 여기서 E-3-2로 교정된다.
+    if not code:
+        code = m.kesg_code_guess
+    # 모비스 Scope 3 캐시는 코드 대신 표 머리글 숫자("2")를 guess에 넣었다.
     if code and "scope3" in hint and str(code) == "2":
         code = None
     if code and _conflicts(code):
         code = None
-    if not code:
-        for key, mapped in sorted(_HINT_TO_KESG.items(), key=lambda kv: -len(kv[0])):
-            if key.lower() in hint and not _conflicts(mapped):
-                code = mapped
-                break
+    # GRI 번호·표 머리글 등 비 K-ESG 문자열은 후보 코드가 아니다.
+    if code and by_code(str(code)) is None:
+        code = None
     if not code:
         return None
 
     # G3. 단위 정합성 — 항목 정의 단위와 명백히 다르면 기각(표기용 _unit_suspect 승격).
-    item = by_code(code)
-    if item and item.unit and _unit_suspect(m.unit, item.unit):
+    item = by_code(str(code))
+    # 용수는 보고서에서 부피(m³), K-ESG 정의에서 질량(ton)으로 병용한다. 이 동치는
+    # E-5-1/E-5-2 계열에만 한정해 폐기물 등 다른 ton 지표의 m³ 오결합은 계속 차단한다.
+    raw_unit = str(m.unit or "").lower().replace(" ", "")
+    water_volume = code in {"E-5-1", "E-5-2"} and raw_unit in {"m3", "m³", "㎥", "m^3"}
+    if item and item.unit and not water_volume and _unit_suspect(m.unit, item.unit):
         return None
 
     return code
 
 
-def _normalize_period(period_raw: str, *, fallback: int) -> tuple[int, bool]:
+def _normalize_period(
+    period_raw: str, *, fallback: int, hint: str = "",
+) -> tuple[int, bool]:
     """'2025-12' / '2025년' / '' → (연도 정수, 추론여부).
 
     두 번째 값이 True면 원문에 연도가 없어 `fallback`(=report_year)으로 채운 것이다.
@@ -529,6 +495,11 @@ def _normalize_period(period_raw: str, *, fallback: int) -> tuple[int, bool]:
     """
     import re
     m = re.search(r"(20\d{2})", period_raw or "")
+    if m:
+        return int(m.group(1)), False
+    # period가 비었거나 '미상'이면 hint의 연도를 폴백보다 먼저 쓴다. 특히
+    # '2040년 RE100 달성률'을 보고연도 실적으로 둔갑시키지 않고 G4 projection으로 보낸다.
+    m = re.search(r"(20\d{2})", hint or "")
     if m:
         return int(m.group(1)), False
     return fallback, True

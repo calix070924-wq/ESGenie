@@ -84,7 +84,10 @@ L0가 hint를 서술적으로 잘 뽑아준다(`용수 사용량(취수량) 합�
 
 from __future__ import annotations
 
-from typing import Any, Iterable
+import re
+from typing import Any, Iterable, Literal
+
+ValueRole = Literal["total", "component", "target", "unknown"]
 
 # ====================================================================
 # 어휘 사전 — 2026-07-26 hint 전수 조사(docs/집계어휘_실태_2026-07-26.md) 결과로 확정.
@@ -220,6 +223,138 @@ def _has_any(hint: str, terms: Iterable[str]) -> bool:
     return any(t in hint for t in terms)
 
 
+_TARGET_TERMS: tuple[str, ...] = ("목표", "예상", "전망", "계획", "예정")
+_COMPONENT_PATTERNS: tuple[re.Pattern[str], ...] = (
+    # Scope 3 카테고리·상하류는 어떤 총량 코드에서도 구성요소다.
+    re.compile(r"(?:category|카테고리)\s*\d+", re.I),
+    re.compile(r"(?:upstream|downstream|업스트림|다운스트림)", re.I),
+    # 괄호 안 물질기호: (SS), (NOx), (COD), (T-N), (Dust) 등.
+    re.compile(r"\((?:[A-Z][A-Za-z0-9]*(?:-[A-Z])?|Dust|VOCs?|HAPs?)\)", re.I),
+    # 공통적인 수식어+지표명 구조. 코드별 단어 목록이 아니라 지표의 부분집합 문법이다.
+    re.compile(r"재생\s*원(?:부)?자재"),
+    re.compile(r"주요\s+원(?:부)?자재"),
+    re.compile(r"(?:재생|비재생|화석|원자력)\s*(?:에너지|전력)"),
+    re.compile(r"에너지원을\s*알\s*수\s*없는\s*에너지"),
+    re.compile(r"(?:도시가스|천연가스|휘발유|경유|lng|lpg|석탄)\s*(?:사용량|소비량)", re.I),
+    re.compile(r"(?:지표수|지하수|상수도?|해수)\s*(?:취수량|사용량)"),
+    re.compile(r"(?:국가|사업장|법인|지역|제품|원료|수원|에너지원)별"),
+)
+
+
+def _future_hint_year(hint: str, report_year: int | None) -> int | None:
+    """hint의 미래연도를 돌려준다. 보고연도+1은 최신 증빙이므로 실적으로 둔다."""
+    if report_year is None:
+        return None
+    years = [int(y) for y in re.findall(r"20\d{2}", hint)]
+    future = [y for y in years if y - report_year >= 2]
+    return min(future) if future else None
+
+
+def _is_pollutant_component(hint: str) -> bool:
+    """오염물질 지표에서 특정 물질명 하나가 붙은 구조를 일반 문법으로 잡는다."""
+    for stem in ("대기오염물질", "대기오염", "수질오염물질", "수질오염"):
+        if stem not in hint:
+            continue
+        tail = hint.split(stem, 1)[1].strip()
+        if tail.startswith("배출량"):
+            detail = tail[len("배출량"):]
+        elif "배출량" in tail:
+            detail = tail.split("배출량", 1)[0]
+        else:
+            continue
+        detail = re.sub(r"20\d{2}년?", "", detail)
+        detail = re.sub(r"(?:합계|총계|전체|전사|total)", "", detail, flags=re.I)
+        return bool(detail.strip(" \t()·-/"))
+    return False
+
+
+def classify_common_value_role(
+    hint: str | None, *, report_year: int | None = None,
+) -> ValueRole:
+    """코드와 무관한 공통 문법으로 값의 역할을 판정한다.
+
+    우선순위는 target → component → total이다. 따라서 '지표수 취수량 합계'처럼
+    구성요소 안의 합계가 전체 총량으로 승격되지 않는다.
+    """
+    normalized = _norm(hint)
+    if _has_any(normalized, _TARGET_TERMS) or _future_hint_year(normalized, report_year):
+        return "target"
+    # 기존 분해·조직범위 축도 역할 하나로 수렴시킨다. '열회수소각 포함'처럼 범위를
+    # 넓히는 표현은 종전 예외를 유지한다.
+    if (_has_any(normalized, _BREAKDOWN_TERMS) and "포함" not in normalized):
+        return "component"
+    if _has_any(normalized, _PARTIAL_TERMS) or _has_region_partial(normalized):
+        return "component"
+    # 비율 지표의 분자는 지표 정의 자체다. 미래목표·지역/카테고리 분해가 아니라면
+    # '재생/재사용/재활용'이라는 말만으로 구성요소 취급하지 않는다.
+    if re.search(r"(?:비율|비중|률|율)(?:\s|$|\(|20\d{2})", normalized):
+        return "total"
+    if any(p.search(normalized) for p in _COMPONENT_PATTERNS):
+        return "component"
+    if _is_pollutant_component(normalized):
+        return "component"
+    if _has_any(normalized, _TOTAL_TERMS) or "전체" in normalized:
+        return "total"
+    return "unknown"
+
+
+def classify_value_role(
+    code: str, node_or_hint: Any, *, report_year: int | None = None,
+) -> ValueRole:
+    """공통 역할 판정에 최소 코드 예외를 적용한다.
+
+    5개사 실측 6개 회귀 유형 중 공통 문법이 5개를 해결했다. 이후 전수 풀 회귀에서
+    필요한 예외는 3개 계열뿐이었다: E-3-1 Scope 결합/단독, E-4-1 범위가 소실된
+    에너지값, E-7 물질 alias. E-7 어휘는 새 사전이 아니라 kesg_items를 재사용한다.
+    """
+    hint = node_or_hint if isinstance(node_or_hint, str) else _node_hint(node_or_hint)
+    normalized = _norm(hint)
+    role = classify_common_value_role(normalized, report_year=report_year)
+    base_code = code.split("__", 1)[0]
+    if base_code != "E-3-1":
+        if role != "unknown":
+            return role
+        # Scope 3 무수식 추론값은 모비스 각주 예상치 실측이라 총량으로 승격하지 않는다.
+        if (base_code == "E-3-2" and not isinstance(node_or_hint, str)
+                and getattr(node_or_hint, "period_inferred", False)):
+            return "unknown"
+        # 확장 풀의 '에너지 사용량'은 조직 범위가 소실된 값이 다수라 판정보류다.
+        # 반면 기존 모비스 기준값인 정확한 전력 사용량은 검증된 총량 표현이다.
+        if base_code == "E-4-1":
+            return "total" if normalized == "전력 사용량" else "unknown"
+        # K-ESG 단일 출처의 항목명/충분히 긴 alias가 그대로 등장하면 총량 지표로 본다.
+        # NOx·SS 같은 짧은 물질 alias는 제외해 오염물질 하나가 총량으로 승격되지 않는다.
+        from ..knowledge.kesg_items import by_code
+
+        item = by_code(base_code)
+        if base_code in {"E-7-1", "E-7-2"} and item and any(
+            _norm(term) in normalized for term in item.search_terms[1:]
+        ):
+            return "component"
+        semantic_terms = (item.name, *item.search_terms) if item else ()
+        if any(_norm(term) in normalized for term in semantic_terms if len(_norm(term)) >= 5):
+            return "total"
+        # 0건이 완전한 공시인 위반·사고 지표는 부분값으로 낮추지 않는다.
+        if item and item.unit == "건" and any(
+            term in f"{item.name} {item.description}"
+            for term in ("위반", "사고", "침해", "제재", "민원")
+        ):
+            return "total"
+        return role
+
+    compact = re.sub(r"\s+", "", normalized).replace("scope", "s")
+    has_scope1 = bool(re.search(r"s1", compact))
+    has_scope2 = bool(re.search(r"s2", compact) or re.search(r"s1[,/·+&]2", compact))
+    combined = has_scope1 and has_scope2 and "외" not in normalized
+    if combined:
+        return "total"
+    if re.search(r"s[123]", compact) or re.search(r"(?:category|카테고리)\s*\d+", normalized):
+        return "component"
+    # Scope 표지가 없는 '온실가스 배출량 총계'는 자회사/국가 부분합일 수 있어 총량을
+    # 입증하지 못한다. 확장 풀 실측에서 이 값들이 결합 Scope1+2 총량을 밀어냈다.
+    return "unknown" if role == "total" else role
+
+
 def is_derived_hint(hint: str | None) -> bool:
     """파생·비실적 hint 판정 — 우선순위 1단계(hard 배제). 공개(테스트·감사용)."""
     return _has_any(_norm(hint), _DERIVED_TERMS)
@@ -271,7 +406,9 @@ def _aggregation_rank(hint: str) -> int:
     return 1
 
 
-def is_partial_aggregate(node: Any) -> bool:
+def is_partial_aggregate(
+    node: Any, code: str | None = None, *, report_year: int | None = None,
+) -> bool:
     """선택된 노드가 **전사 총량이 아닌 부분값**인가 — 원장 표기용 조회 함수.
 
     2026-07-28 5개사 일반화에서 드러난 결함 (a): `_PARTIAL_TERMS`는 후순위 축이지
@@ -295,19 +432,38 @@ def is_partial_aggregate(node: Any) -> bool:
     """
     if node is None:
         return False
+    if code is not None:
+        # 판정 불가는 총량임을 입증하지 못한 상태이므로 D6에는 부분 공시로 보수적으로 전달한다.
+        return classify_value_role(code, node, report_year=report_year) in (
+            "component", "unknown")
     hint = _node_hint(node)
     if "포함" in hint:
         return False
     return _breakdown_rank(hint) == 1 or _aggregation_rank(hint) == 2
 
 
-def _unit_rank(node_unit: str | None, expected_unit: str | None) -> int:
+def _water_mass_volume_pair(code: str, unit_a: str | None, unit_b: str | None) -> bool:
+    """물 지표에서만 m³와 ton을 동등 취급한다(물의 밀도 약 1 t/m³)."""
+    if code.split("__", 1)[0] not in {"E-5-1", "E-5-2"}:
+        return False
+    volume = {"m3", "m³", "㎥", "m^3"}
+    mass = {"ton", "톤", "t"}
+    a = str(unit_a or "").lower().replace(" ", "")
+    b = str(unit_b or "").lower().replace(" ", "")
+    return (a in volume and b in mass) or (a in mass and b in volume)
+
+
+def _unit_rank(
+    node_unit: str | None, expected_unit: str | None, code: str = "",
+) -> int:
     """단위 정합 순위 — 우선순위 6단계. 0=동일, 1=환산 가능, 2=그 외/미상.
 
     표기 차이('ton' vs '톤', 'tCO2 eq' vs 'tCO2eq')는 normalize_unit으로 흡수한다.
     E-4-1(TJ)에서 TJ 노드가 MWh 노드를 이기게 하는 단계다.
     """
     if not expected_unit:
+        return 1
+    if _water_mass_volume_pair(code, node_unit, expected_unit):
         return 1
     from ..rag_gates.units import normalize_unit, units_compatible
 
@@ -410,15 +566,34 @@ def select_representative_node(
     base_code = code.split("__", 1)[0]
     expected = _expected_unit(base_code)
 
+    def _zero_is_valid() -> bool:
+        """0건 자체가 완전한 공시인 위반·사고 계열만 0을 대표값으로 허용한다."""
+        from ..knowledge.kesg_items import by_code
+
+        item = by_code(base_code)
+        if not item or item.unit != "건":
+            return False
+        basis = f"{item.name} {item.description}"
+        return any(term in basis for term in ("위반", "사고", "침해", "제재", "민원"))
+
+    if not _zero_is_valid():
+        pool = [n for n in pool if getattr(n, "value", None) != 0]
+        if not pool:
+            return None
+
     # 1·2단계 — hard 배제. 남는 게 없으면 None(미공시).
     survivors = [
         n for n in pool
         if not is_derived_hint(_node_hint(n))
         and not _conflicts_metric(base_code, _node_hint(n))
+        and ("__projection" in code or classify_value_role(
+            base_code, n, report_year=report_year) != "target")
     ]
     if not survivors:
         return None
     if len(survivors) == 1:
+        survivors[0].value_role = classify_value_role(
+            base_code, survivors[0], report_year=report_year)
         return survivors[0]
 
     def _period(node: Any) -> int:
@@ -430,10 +605,24 @@ def select_representative_node(
 
     # 3~7단계 — 순위 축을 단계별로 좁힌다. 사전식 비교와 동치이지만(_keep_min 주석),
     # 8단계가 '그 시점의 생존 집합'을 봐야 해서 정렬 키 한 방으로는 안 된다.
+    def _role_rank(node: Any) -> int:
+        role = classify_value_role(base_code, node, report_year=report_year)
+        if role == "total":
+            return 0
+        if role == "unknown" and not getattr(node, "period_inferred", False):
+            return 1
+        if role == "component":
+            return 2
+        if role == "unknown":
+            return 3
+        return 4
+
+    survivors = _keep_min(survivors, _role_rank)
     survivors = _keep_min(survivors, lambda n: _family_rank(base_code, _node_hint(n)))
     survivors = _keep_min(survivors, lambda n: _breakdown_rank(_node_hint(n)))
     survivors = _keep_min(survivors, lambda n: _aggregation_rank(_node_hint(n)))
-    survivors = _keep_min(survivors, lambda n: _unit_rank(getattr(n, "unit", None), expected))
+    survivors = _keep_min(
+        survivors, lambda n: _unit_rank(getattr(n, "unit", None), expected, base_code))
     # 7) 연도 — **최빈보다 앞이어야 한다**: 연도를 먼저 좁히지 않으면 최빈이
     #    '반복 언급'이 아니라 '시계열 정체'를 집는다(모듈 docstring §값 최빈의
     #    삼성전기 E-6-2 두 계열). 되돌리면 회귀가 난다.
@@ -454,11 +643,13 @@ def select_representative_node(
     survivors = _keep_value_mode(survivors)
 
     # 9) 최신 → 고신뢰 → str(id). 마지막 항이 완전 결정성 장치다 — 제거하지 마라.
-    return min(survivors, key=lambda n: (
+    selected = min(survivors, key=lambda n: (
         -_period(n),
         -(getattr(n, "confidence", 0.0) or 0.0),
         str(getattr(n, "id", "")),
     ))
+    selected.value_role = classify_value_role(base_code, selected, report_year=report_year)
+    return selected
 
 
 def normalize_to_item_unit(
@@ -486,6 +677,9 @@ def normalize_to_item_unit(
         return (value, unit or (expected or ""), None)
     if not unit:
         return (value, expected, None)
+    if _water_mass_volume_pair(code, unit, expected):
+        # 물은 밀도 약 1 t/m³이므로 수치가 같다. 다른 코드에는 절대 적용하지 않는다.
+        return (value, expected, None)
 
     na, nb = normalize_unit(str(unit)), normalize_unit(str(expected))
     if na is None or nb is None:
@@ -507,6 +701,9 @@ def normalize_to_item_unit(
 
 
 __all__ = [
+    "ValueRole",
+    "classify_common_value_role",
+    "classify_value_role",
     "select_representative_node",
     "is_derived_hint",
     "is_partial_aggregate",
