@@ -281,6 +281,9 @@ _HINT_TO_KESG: dict[str, str] = {
     "재활용비율": "E-6-2",
     "순환이용률": "E-6-2",
     "재활용률": "E-6-2",
+    # Scope 3는 일반 '온실가스'보다 구체적이다. 공백 제거 hint에 맞춰 키도 scope3로 둔다.
+    # kesg_items alias와 이 손관리 사전은 아직 별개이며, 통합은 이번 범위 밖이다.
+    "scope3": "E-3-2",
     "온실가스": "E-3-1",
     "scope1": "E-3-1",
     "scope2": "E-3-1",
@@ -441,6 +444,12 @@ def build_unified_graph(
 # 예: '지정폐기물'은 '폐기물'(E-6-1)에 걸리지만 총량이 아니라 하위 분류다.
 _HINT_EXCLUDE: tuple[str, ...] = ("지정폐기물",)
 
+# 배정 단계의 코드별 충돌 어휘. node_select에만 두면 잘못 배정된 노드가 후보 풀을 먼저
+# 오염시킨다. 이번 결함의 실측 범위(E-3-1 ← Scope 3)만 최소 적용한다.
+_ASSIGNMENT_NEGATIVE_KEYWORDS: dict[str, tuple[str, ...]] = {
+    "E-3-1": ("scope3", "1+2+3", "가치사슬"),
+}
+
 # G1 가드 어휘 — "실적 총량이 아닌 값"을 알리는 수식어. hint에 포함되면 코드 미부여.
 #   · 미래·의도: 목표/전망/계획/예정/로드맵/선언
 #   · 부분·파생(총량 자리에 오면 안 됨): 감축량/전환량/절감량/누적
@@ -471,6 +480,8 @@ def _resolve_kesg_code(m: ExtractedMetric) -> str | None:
     from ..layer1_extract import _unit_suspect
 
     hint = m.metric_hint.lower().replace(" ", "")
+    if getattr(m, "_kesg_backfill_blocked", False):
+        return None
     # 하위·보조 수치는 어떤 추정코드가 와도 총량 코드로 잡지 않는다(중복 노드 방지).
     if any(x in hint for x in _HINT_EXCLUDE):
         return None
@@ -479,11 +490,22 @@ def _resolve_kesg_code(m: ExtractedMetric) -> str | None:
     if any(g in hint for g in _GUARD_TERMS):
         return None
 
-    # 후보 코드 결정: LLM 추정 우선, 없으면 사전 최장 일치(G2).
+    def _conflicts(code: str) -> bool:
+        return any(term in hint for term in _ASSIGNMENT_NEGATIVE_KEYWORDS.get(code, ()))
+
+    # 후보 코드 결정: LLM 추정 우선. 단, 코드별 충돌 어휘가 있으면 그 추정을 버리고
+    # 사전 최장 일치로 다시 찾는다(Scope 3를 E-3-1 풀에 넣지 않는 배정 단계 방어).
     code = m.kesg_code_guess
+    # 모비스 Scope 3 캐시는 코드 대신 표 머리글 숫자("2")를 guess에 넣었다. 그 정확한
+    # 오응답만 버리고 아래 사전으로 다시 해소한다. 모든 비표준 문자열을 일반화해 버리면
+    # 기존 4개사의 후보 풀이 불필요하게 넓어진다.
+    if code and "scope3" in hint and str(code) == "2":
+        code = None
+    if code and _conflicts(code):
+        code = None
     if not code:
         for key, mapped in sorted(_HINT_TO_KESG.items(), key=lambda kv: -len(kv[0])):
-            if key.lower() in hint:
+            if key.lower() in hint and not _conflicts(mapped):
                 code = mapped
                 break
     if not code:

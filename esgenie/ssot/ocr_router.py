@@ -260,25 +260,53 @@ def _backfill_kesg_codes(ext: OcrExtraction) -> None:
     하이브리드 1단계(결정적 사전)다. 사전이 못 잡으면 코드를 비워 두어 상위 LLM
     폴백/HITL이 처리하게 한다. fuzzy로만 걸린 건 confidence를 낮춰 검증 큐로 보낸다.
 
-    중복 가드: 이미 **다른 라벨의** metric이 점유한 코드(템플릿/본문확정 등 권위 있는
+    중복 가드: 이미 **다른 지표 본체의** metric이 점유한 코드(템플릿/본문확정 등 권위 있는
     산출물)는 backfill이 다시 붙이지 않는다. 예) 보조수치 '지정폐기물'(template code=None)이
     E-6-1로 해소돼 본문확정 18.4t와 1000× 어긋난 유령 중복노드를 만드는 사례 차단.
 
-    단, **같은 라벨**은 예외다(2026-07-26). 표의 다연도 열·다중 행은 같은 hint로 여러
+    단, **같은 지표 본체**는 예외다(2026-08-02). 표의 다연도 열·다중 행은 집계수준과
+    연도가 달라도 정상적인 별도 노드다. '대기오염물질 배출량 국내(별도) 2022'가 먼저
+    E-7-1을 받아도 '해외 자회사 2022'와 '합계 2024'를 막으면 안 된다. 집계·연도
+    수식어만 제거한 본체가 같을 때 코드 재사용을 허용한다.
+
+    같은 라벨 예외(2026-07-26)도 포함된다. 표의 다연도 열·다중 행은 같은 hint로 여러
     metric이 되는데, 선착순 점유가 두 번째부터 코드를 못 받게 만들어 동일 hint가 연도마다
     다른 코드로 흘렀다(현대모비스 'Scope 3 온실가스 배출량 연결(일부)' → 2022는 E-3-2,
     2023·2024는 코드 미부여 후 evidence_graph의 _HINT_TO_KESG 폴백에서 '온실가스'에 걸려
     E-3-1). Scope3 값이 Scope1+2 후보 풀을 오염시키는 직접 원인이라, 라벨이 같으면
     점유 여부와 무관하게 같은 코드를 준다 — 동일 hint → 동일 코드(결정적).
     """
+    import re
+
     from ..knowledge.kesg_items import _normalize_label, resolve_kesg_code
 
-    # 코드 → 그 코드를 점유한 라벨들(정규화). 같은 라벨의 재사용은 중복이 아니다.
+    def _metric_body(label: str) -> str:
+        """집계수준·연도만 떼어 코드 점유를 비교할 지표 본체를 만든다.
+
+        '총탄화수소' 같은 실제 지표명을 훼손하지 않도록 단독 '총'은 제거하지 않는다.
+        조직 고유명사도 지우지 않아 서로 다른 하위 지표가 같은 코드로 합쳐지는 것을 막는다.
+        """
+        body = (label or "").lower()
+        body = re.sub(r"20\d{2}(?:\s*년)?", " ", body)
+        body = re.sub(r"국내\s*\(\s*별도\s*\)", " ", body)
+        body = re.sub(
+            r"국내\s*자회사|해외\s*자회사|국내\s*사업장|해외\s*사업장",
+            " ", body,
+        )
+        body = re.sub(r"연결\s*\(\s*일부\s*\)", " ", body)
+        body = re.sub(r"(?<![0-9a-z가-힣])(합계|총계|전사|total)(?![0-9a-z가-힣])", " ", body)
+        return _normalize_label(body)
+
+    # 코드 → 그 코드를 점유한 라벨/지표 본체. 같은 본체의 재사용은 중복이 아니다.
     taken_by_label: dict[str, set[str]] = {}
+    taken_by_body: dict[str, set[str]] = {}
     for m in ext.metrics:
         if m.kesg_code_guess:
             taken_by_label.setdefault(m.kesg_code_guess, set()).add(
                 _normalize_label(m.metric_hint))
+            body = _metric_body(m.metric_hint)
+            if body:
+                taken_by_body.setdefault(m.kesg_code_guess, set()).add(body)
     resolved: list[dict[str, Any]] = []
     for m in ext.metrics:
         if m.kesg_code_guess:
@@ -288,10 +316,19 @@ def _backfill_kesg_codes(ext: OcrExtraction) -> None:
             continue
         label = _normalize_label(m.metric_hint)
         holders = taken_by_label.get(code)
-        if holders and label not in holders:
-            continue  # 다른 라벨이 점유한 코드 → 중복노드 방지(권위 산출물 우선)
+        body = _metric_body(m.metric_hint)
+        same_body = bool(body and body in taken_by_body.get(code, set()))
+        if holders and label not in holders and not same_body:
+            # Scope 3는 evidence_graph 사전에도 키가 있어, 여기서 막은 카테고리별
+            # 보조수치가 merge 때 다시 E-3-2로 살아날 수 있다. 해당 코드만 차단 결정을
+            # 내부 표식으로 전달한다(외부 dataclass 스키마는 바꾸지 않음).
+            if code == "E-3-2":
+                m._kesg_backfill_blocked = True
+            continue  # 다른 지표 본체가 점유한 코드 → 권위 산출물 우선
         m.kesg_code_guess = code
         taken_by_label.setdefault(code, set()).add(label)
+        if body:
+            taken_by_body.setdefault(code, set()).add(body)
         if method == "fuzzy":
             m.confidence = min(m.confidence, 0.5)  # 불확실 → HITL 검증 큐
         resolved.append({"metric_hint": m.metric_hint, "code": code,

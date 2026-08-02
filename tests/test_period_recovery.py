@@ -17,14 +17,21 @@ from esgenie.ssot.evidence_graph import (
     EvidenceGraph,
     EvidenceNode,
     _normalize_period,
+    _resolve_kesg_code,
     merge_ocr_extraction,
 )
-from esgenie.ssot.node_select import select_representative_node
+from esgenie.ssot.node_select import (
+    _aggregation_rank,
+    is_derived_hint,
+    normalize_to_item_unit,
+    select_representative_node,
+)
 from esgenie.ssot.ocr_router import (
     DocChannel,
     ExtractedMetric,
     OcrExtraction,
     _attach_column_headers,
+    _backfill_kesg_codes,
     _map_vlm_json,
 )
 
@@ -268,3 +275,171 @@ class TestNodeSelectInferredDemotion:
         b = Bare("b", 200.0, 2024, "폐기물 발생량 합계")
         pick = select_representative_node("E-6-1", [a, b], report_year=2025)
         assert pick.id == "a"
+
+
+# =====================================================================
+# 연도 부착 후 드러난 잔존 결함 4건 (2026-08-02)
+# =====================================================================
+
+class TestResidualAssignmentDefects:
+    """(가)(나) 코드 배정 — 후보 풀을 만들기 전 단계의 회귀 게이트."""
+
+    def test_same_metric_body_allows_aggregation_and_year_variants(self):
+        """(가) 같은 지표의 국내·해외·합계·연도별 값은 모두 E-7-1 노드가 된다."""
+        ext = OcrExtraction(
+            source_file="mobis.pdf", channel=DocChannel.UNSTRUCTURED, doc_type="esg_report",
+            metrics=[
+                ExtractedMetric(metric_hint="대기오염물질 배출량 국내(별도) 2022",
+                                value=7.24, unit="ton", period="2022"),
+                ExtractedMetric(metric_hint="대기오염물질 배출량 해외 자회사 2022",
+                                value=134.07, unit="ton", period="2022"),
+                ExtractedMetric(metric_hint="대기오염물질 배출량 합계 2024",
+                                value=210.68, unit="ton", period="2024"),
+            ],
+        )
+        _backfill_kesg_codes(ext)
+        assert [m.kesg_code_guess for m in ext.metrics] == ["E-7-1"] * 3
+
+        graph = EvidenceGraph("X", "테스트")
+        merge_ocr_extraction(graph, ext, report_year=2025)
+        assert len(graph.nodes_by_metric("E-7-1")) == 3
+
+    def test_original_taken_code_guard_still_blocks_designated_waste(self):
+        """(가) 음성 — 다른 지표 본체인 지정폐기물은 E-6-1을 뺏지 못한다."""
+        ext = OcrExtraction(
+            source_file="waste.pdf", channel=DocChannel.STRUCTURED, doc_type="waste_ledger",
+            metrics=[
+                ExtractedMetric(metric_hint="폐기물 배출량 본문확정", value=18.4,
+                                unit="ton", period="2024", kesg_code_guess="E-6-1"),
+                ExtractedMetric(metric_hint="지정폐기물", value=18_400.0,
+                                unit="kg", period="2024"),
+            ],
+        )
+        _backfill_kesg_codes(ext)
+        assert ext.metrics[1].kesg_code_guess is None
+
+    def test_scope3_is_assigned_to_e32_even_with_wrong_llm_guess(self):
+        """(나) Scope 3 키와 배정 단계 negative가 E-3-1 풀 오염을 함께 막는다."""
+        cases = (
+            ("Scope 3 온실가스 배출량", "E-3-1"),
+            ("Scope 3 온실가스 배출량 연결(일부)", "E-3-1"),
+            # 모비스 현재 캐시 실측 — 표 머리글 숫자를 코드로 오응답한 경우도 재해소한다.
+            ("Scope 3 온실가스 배출량 연결(일부)", "2"),
+        )
+        for hint, wrong_guess in cases:
+            metric = ExtractedMetric(metric_hint=hint, value=3_136_024.0,
+                                     unit="tCO2eq", period="2024",
+                                     kesg_code_guess=wrong_guess)
+            assert _resolve_kesg_code(metric) == "E-3-2"
+
+    def test_scope1_scope2_and_plain_ghg_stay_e31(self):
+        """(나) 음성 — Scope 1·2와 일반 온실가스는 계속 E-3-1이다."""
+        for hint in ("Scope 1 온실가스 배출량", "Scope 2 온실가스 배출량",
+                     "온실가스 배출량"):
+            metric = ExtractedMetric(metric_hint=hint, value=401_502.0,
+                                     unit="tCO2eq", period="2024")
+            assert _resolve_kesg_code(metric) == "E-3-1"
+
+    def test_scope3_category_guard_survives_merge(self):
+        """(나) 음성 — NAVER의 다른 Scope 3 카테고리가 merge 폴백에서 되살아나지 않는다."""
+        ext = OcrExtraction(
+            source_file="naver.pdf", channel=DocChannel.UNSTRUCTURED, doc_type="esg_report",
+            metrics=[
+                ExtractedMetric(metric_hint="Scope 3 온실가스 배출량 - Upstream 구매 제품",
+                                value=71_385.0, unit="tCO2eq", period="2025"),
+                ExtractedMetric(metric_hint="Scope 3 온실가스 배출량 - Upstream 자본재",
+                                value=130_811.0, unit="tCO2eq", period="2025"),
+            ],
+        )
+        _backfill_kesg_codes(ext)
+        assert [m.kesg_code_guess for m in ext.metrics] == ["E-3-2", None]
+        graph = EvidenceGraph("X", "테스트")
+        merge_ocr_extraction(graph, ext, report_year=2025)
+        assert [n.value for n in graph.nodes_by_metric("E-3-2")] == [71_385.0]
+
+
+class TestResidualSelectionDefects:
+    """(다)(라) 대표 노드 선택 — 총량/부분과 파생값 경계의 회귀 게이트."""
+
+    @staticmethod
+    def _metric_node(nid: str, code: str, value: float, unit: str,
+                     hint: str, period: int = 2024) -> EvidenceNode:
+        return EvidenceNode(
+            id=nid, metric=code, value=value, unit=unit, period=period,
+            source="ocr/test", raw_text=f"{hint}={value}{unit} (mobis.pdf)",
+            origin="ocr_unstructured", confidence=0.75,
+        )
+
+    def test_partial_qualifier_overrides_total_word(self):
+        """(다) 지표명 속 합계보다 마지막 조직 범위 한정이 우선한다."""
+        partial = "온실가스 배출량 합계 (Scope 1+지역 기반 Scope 2) 해외자회사"
+        total = "온실가스 배출량 합계 (Scope 1+지역 기반 Scope 2) 합계"
+        assert _aggregation_rank(partial) == 2
+        assert _aggregation_rank(total) == 0
+
+    def test_pure_total_remains_total(self):
+        """(다) 음성 — 부분 한정이 없는 순수 총량은 계속 최우선이다."""
+        assert _aggregation_rank("용수 사용량(취수량) 합계 2024") == 0
+        # '국내(지역 기반)'은 조직 범위가 아니라 Scope 2 산정 방법이다.
+        assert _aggregation_rank("온실가스 배출량 - 총 배출량 국내(지역 기반)") == 0
+
+    def test_increase_family_is_derived_without_blocking_normal_metrics(self):
+        """(라) 증가·감소·증감률·전년대비는 배제하고 5개사 정상 지표는 보존한다."""
+        for hint in ("에너지 사용량 증가", "에너지 사용량 감소",
+                     "에너지 사용량 증감률", "전년 대비 에너지 사용량"):
+            assert is_derived_hint(hint)
+        for hint in ("에너지 사용량", "전력 사용량", "재생에너지 사용 비율",
+                     "재생에너지 사용·전환율", "용수 사용량(취수량) 합계 2024"):
+            assert not is_derived_hint(hint)
+
+    def test_mobis_five_measured_values(self):
+        """실측 5건 — 배정 후 노드 생존과 선택·단위 환산 결과를 한 번에 고정한다."""
+        pollution = OcrExtraction(
+            source_file="mobis.pdf", channel=DocChannel.UNSTRUCTURED, doc_type="esg_report",
+            metrics=[
+                ExtractedMetric(metric_hint="대기오염물질 배출량 국내(별도) 2022",
+                                value=7.24, unit="ton", period="2022"),
+                ExtractedMetric(metric_hint="대기오염물질 배출량 합계 2024",
+                                value=210.68, unit="ton", period="2024"),
+                ExtractedMetric(metric_hint="수질오염물질 배출량 국내(별도) 2022",
+                                value=0.082, unit="ton", period="2022"),
+                ExtractedMetric(metric_hint="수질오염물질 배출량 합계 2024",
+                                value=555.371, unit="ton", period="2024"),
+            ],
+        )
+        _backfill_kesg_codes(pollution)
+        graph = EvidenceGraph("X", "테스트")
+        merge_ocr_extraction(graph, pollution, report_year=2025)
+        for code, expected in (("E-7-1", 210_680.0), ("E-7-2", 555_371.0)):
+            pick = select_representative_node(
+                code, graph.nodes_by_metric(code), report_year=2025)
+            assert pick is not None
+            assert normalize_to_item_unit(code, pick.value, pick.unit)[0] == expected
+
+        scope3 = [
+            self._metric_node("s22", "E-3-2", 3_077_693.0, "tCO2eq",
+                              "Scope 3 온실가스 배출량 연결(일부)", 2022),
+            self._metric_node("s23", "E-3-2", 3_344_082.0, "tCO2eq",
+                              "Scope 3 온실가스 배출량 연결(일부)", 2023),
+            self._metric_node("s24", "E-3-2", 3_136_024.0, "tCO2eq",
+                              "Scope 3 온실가스 배출량 연결(일부)", 2024),
+            self._metric_node("footnote", "E-3-2", 14_160_000.0, "tCO2eq",
+                              "Scope 3 온실가스 배출량", 2025),
+        ]
+        scope3[-1].period_inferred = True
+        assert select_representative_node(
+            "E-3-2", scope3, report_year=2025).value == 3_136_024.0
+
+        ghg = [
+            self._metric_node("partial", "E-3-1", 189_420.0, "tCO2eq",
+                              "온실가스 배출량 합계 (Scope 1+지역 기반 Scope 2) 해외 자회사"),
+            self._metric_node("total", "E-3-1", 401_502.0, "tCO2eq",
+                              "온실가스 배출량 합계 (Scope 1+지역 기반 Scope 2) 합계"),
+        ]
+        assert select_representative_node("E-3-1", ghg, report_year=2025).value == 401_502.0
+
+        energy = [
+            self._metric_node("increase", "E-4-1", 431.0, "TJ", "에너지 사용량 증가"),
+            self._metric_node("power", "E-4-1", 7_929.0, "TJ", "전력 사용량"),
+        ]
+        assert select_representative_node("E-4-1", energy, report_year=2025).value == 7_929.0
