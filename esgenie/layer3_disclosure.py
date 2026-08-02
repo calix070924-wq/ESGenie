@@ -68,6 +68,9 @@ RATIO_CONTEXT_PAIRS: dict[str, list[str]] = {
 }
 
 ORPHAN_RATIO_WEIGHT = 1.0   # 고아 비율 1건의 기여(민감도 환산)
+# 부분값은 '무공시'보다 낫지만 총량 공시와 같지 않다. 정보량의 절반을 인정하는
+# 중립 기준(0.5)을 기본으로 두고 0.3/0.7 민감도 분석으로 결과 안정성을 함께 보고한다.
+PARTIAL_DISCLOSURE_OMISSION_FACTOR = 0.5
 
 _LEVELS = (("low", 0.25), ("medium", 0.50))  # 그 이상은 high
 _ISSB_REQUIRED_DISCLOSURE_CODES = {"E-3-1", "E-3-2"}
@@ -124,7 +127,12 @@ def _level(score: float) -> str:
     return "high"
 
 
-def detect_selective_disclosure(extraction: Any, industry_module=None) -> DisclosureReport:
+def detect_selective_disclosure(
+    extraction: Any,
+    industry_module=None,
+    *,
+    partial_weight_factor: float = PARTIAL_DISCLOSURE_OMISSION_FACTOR,
+) -> DisclosureReport:
     """ExtractionResult → 문서 단위 D6 선택적 공시 리포트.
 
     extraction: layer1_extract.ExtractionResult (mapped/missing/profile 보유)
@@ -139,11 +147,27 @@ def detect_selective_disclosure(extraction: Any, industry_module=None) -> Disclo
     ratio_context_pairs = resolve_map(
         industry_module, "d6_ratio_context_pairs", RATIO_CONTEXT_PAIRS)
 
+    if not 0.0 <= partial_weight_factor <= 1.0:
+        raise ValueError("partial_weight_factor는 0~1이어야 한다")
+
     item_by_code = {it.code: it for it in ALL_ITEMS}
     mapped: dict[str, Any] = getattr(extraction, "mapped", {}) or {}
     missing: list[str] = list(getattr(extraction, "missing", []) or [])
+    confidence_flags: dict[str, list[str]] = (
+        getattr(extraction, "confidence_flags", {}) or {})
     missing_set = set(missing)
     disclosed_set = set(mapped.keys())
+
+    def _disclosure_state(code: str) -> str:
+        """총량/부분/미공시 3상태. 구버전 entry는 종전 의미(총량)를 보존한다."""
+        if code in missing_set or code not in mapped:
+            return "missing"
+        entry = mapped.get(code) or {}
+        role = entry.get("value_role") if isinstance(entry, dict) else None
+        flags = confidence_flags.get(code, [])
+        if role in ("component", "target", "unknown") or "partial_value" in flags:
+            return "partial"
+        return "total"
 
     # 프로파일 내 민감 항목만 대상(분모) — 누락도 프로파일 기준이므로 일관
     profile_codes = disclosed_set | missing_set
@@ -152,17 +176,30 @@ def detect_selective_disclosure(extraction: Any, industry_module=None) -> Disclo
     omitted: list[OmittedItem] = []
     sens_omitted_weight = 0.0
     sens_total_weight = 0.0
+    disclosure_states = {"total": 0, "partial": 0, "missing": 0}
     for code, w in omission_sensitivity.items():
         if code not in profile_codes:
             continue  # 이 회사 프로파일 대상이 아니면 누락으로 보지 않음
         sens_total_weight += w
-        if code in missing_set:
+        state = _disclosure_state(code)
+        disclosure_states[state] += 1
+        if state == "missing":
             it = item_by_code.get(code)
             sens_omitted_weight += w
             omitted.append(OmittedItem(
                 code=code, name=it.name if it else code,
                 area=it.area if it else "?", sensitivity=w,
                 reason="불리 노출 항목 누락(hidden trade-off)",
+            ))
+        elif state == "partial":
+            it = item_by_code.get(code)
+            weighted = w * partial_weight_factor
+            sens_omitted_weight += weighted
+            omitted.append(OmittedItem(
+                code=code, name=it.name if it else code,
+                area=it.area if it else "?", sensitivity=weighted,
+                reason=("구성요소만 공시(partial disclosure) — "
+                        f"민감도 {partial_weight_factor:.1f}배 반영"),
             ))
 
     signal_a = (sens_omitted_weight / sens_total_weight) if sens_total_weight else 0.0
@@ -196,6 +233,9 @@ def detect_selective_disclosure(extraction: Any, industry_module=None) -> Disclo
         "favorable_ratios_disclosed": favorable_disclosed,
         "sensitive_items_omitted": len(omitted),
         "orphan_ratios": len(orphans),
+        "disclosure_states": disclosure_states,
+        "partial_weight_factor": partial_weight_factor,
+        "signal_a": round(signal_a, 4),
     }
 
     # ── 종합 점수: 고아 비율(강신호)에 가중 ─────────────────────────

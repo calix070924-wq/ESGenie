@@ -23,6 +23,7 @@ from typing import Any, Literal
 from .ocr_router import OcrExtraction, ExtractedMetric, ExtractedClause, DocChannel
 
 Origin = Literal["dart", "ocr_structured", "ocr_unstructured"]
+ValueRole = Literal["total", "component", "target", "unknown"]
 
 
 # ====================================================================
@@ -51,6 +52,8 @@ class EvidenceNode:
     # 그 15건은 사용자에게 2025 실적으로 보인다(근거: docs/연도미상_원인조사_2026-07-29.md).
     # 소비 지점 3곳 — G4 projection 판정(아래) · node_select 연도 축 · confidence_flags.
     period_inferred: bool = False
+    # 코드 배정(근거 보존)과 대표값 자격을 분리한다. unknown은 구버전 노드 호환 기본값.
+    value_role: ValueRole = "unknown"
 
     def to_dict(self) -> dict[str, Any]:
         return asdict(self)
@@ -288,7 +291,8 @@ def merge_ocr_extraction(
 
     for idx, m in enumerate(extraction.metrics):
         code = _resolve_kesg_code(m)
-        period, period_inferred = _normalize_period(m.period, fallback=report_year)
+        period, period_inferred = _normalize_period(
+            m.period, fallback=report_year, hint=m.metric_hint)
         confidence = m.confidence
         # G4. 미래 기간 분리 — 보고 연도보다 '충분히' 미래(2030/2035/2040 목표·전망 등)인
         # 확정 코드 노드는 실적 코드에서 떼어내 '{code}__projection'으로 보존. search_nodes
@@ -331,6 +335,12 @@ def merge_ocr_extraction(
             confidence=confidence,
             period_inferred=period_inferred,
         )
+        # 역할은 노드에 영속화하되 선택 시에도 재계산한다. 구버전 덤프를 리플레이해도
+        # 같은 규칙을 적용하고, 신규 산출물은 역할을 감사할 수 있게 하기 위함이다.
+        from .node_select import classify_value_role
+
+        node.value_role = classify_value_role(
+            code or metric, m.metric_hint, report_year=report_year)
         graph.add_node(node)
         _link_cross_check(graph, node)
         _emit_derived_emission(
@@ -464,16 +474,18 @@ def _resolve_kesg_code(
     # G3. 단위 정합성 — 항목 정의 단위와 명백히 다르면 기각(표기용 _unit_suspect 승격).
     item = by_code(str(code))
     # 용수는 보고서에서 부피(m³), K-ESG 정의에서 질량(ton)으로 병용한다. 이 동치는
-    # E-5-1에만 한정해 폐기물 등 다른 ton 지표의 m³ 오결합은 계속 차단한다.
+    # E-5-1/E-5-2 계열에만 한정해 폐기물 등 다른 ton 지표의 m³ 오결합은 계속 차단한다.
     raw_unit = str(m.unit or "").lower().replace(" ", "")
-    water_volume = code == "E-5-1" and raw_unit in {"m3", "m³", "㎥", "m^3"}
+    water_volume = code in {"E-5-1", "E-5-2"} and raw_unit in {"m3", "m³", "㎥", "m^3"}
     if item and item.unit and not water_volume and _unit_suspect(m.unit, item.unit):
         return None
 
     return code
 
 
-def _normalize_period(period_raw: str, *, fallback: int) -> tuple[int, bool]:
+def _normalize_period(
+    period_raw: str, *, fallback: int, hint: str = "",
+) -> tuple[int, bool]:
     """'2025-12' / '2025년' / '' → (연도 정수, 추론여부).
 
     두 번째 값이 True면 원문에 연도가 없어 `fallback`(=report_year)으로 채운 것이다.
@@ -483,6 +495,11 @@ def _normalize_period(period_raw: str, *, fallback: int) -> tuple[int, bool]:
     """
     import re
     m = re.search(r"(20\d{2})", period_raw or "")
+    if m:
+        return int(m.group(1)), False
+    # period가 비었거나 '미상'이면 hint의 연도를 폴백보다 먼저 쓴다. 특히
+    # '2040년 RE100 달성률'을 보고연도 실적으로 둔갑시키지 않고 G4 projection으로 보낸다.
+    m = re.search(r"(20\d{2})", hint or "")
     if m:
         return int(m.group(1)), False
     return fallback, True
