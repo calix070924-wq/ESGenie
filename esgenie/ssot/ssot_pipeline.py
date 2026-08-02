@@ -210,6 +210,24 @@ def _merge_ssot_evidence(result: Any, graph: EvidenceGraph) -> None:
             f"{hint or node.id} (총량 후보 없음)"
         )
 
+    def _flag_period_inferred(code: str, node: EvidenceNode) -> None:
+        """대표 노드의 연도가 폴백값이면 'period_inferred'를 남긴다 — 2026-07-29.
+
+        `_normalize_period`가 원문에서 `20\\d{2}`를 못 찾으면 report_year로 조용히 채운다.
+        그러면 원장 표에서 '2025 실적'과 '연도 미상'이 똑같이 보인다(실측 15건 —
+        모비스 폐기물 12건이 실제로는 2022 값이었다). 값은 하위 호환으로 그대로 싣되
+        추론값이라는 사실은 드러낸다 — D1은 이 오류를 못 잡는다(원장·노드가 같은 값).
+        """
+        if not getattr(node, "period_inferred", False):
+            return
+        _add_flag(code, "period_inferred")
+        raw = str(getattr(node, "raw_text", "") or "")
+        hint = raw.split("=", 1)[0].strip() if "=" in raw else raw.strip()
+        result.notes.append(
+            f"[연도 미상] {code}: 원문에 연도가 없어 {node.period}(보고연도)로 채운 값 — "
+            f"{hint or node.id}"
+        )
+
     ocr_repr: dict[str, EvidenceNode] = {}
     for metric, pool in ocr_pool.items():
         picked = select_representative_node(metric, pool, report_year=ref_year)
@@ -272,6 +290,7 @@ def _merge_ssot_evidence(result: Any, graph: EvidenceGraph) -> None:
             if unit_flag:
                 _add_flag(code, unit_flag)
             _flag_partial(code, repr_node)
+            _flag_period_inferred(code, repr_node)
             entry["note"] = (
                 f"OCR 증빙 노드로 대체 ({repr_node.source_file or repr_node.source}) — "
                 f"DART 정규식 값 {old_value}{old_unit or ''}은 무게이트 추출이라 강등"
@@ -326,6 +345,7 @@ def _merge_ssot_evidence(result: Any, graph: EvidenceGraph) -> None:
                 if unit_flag:
                     _add_flag(code, unit_flag)
                 _flag_partial(code, repr_node)
+                _flag_period_inferred(code, repr_node)
                 note = f"OCR 정량 증빙으로 자동 인식 ({repr_node.source_file or repr_node.source})"
                 tier = SOURCE_OCR_GATED
                 quant_added += 1

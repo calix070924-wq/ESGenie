@@ -101,7 +101,8 @@ from typing import Any, Iterable
 # '일평균 산업용수 공급량' 540,000 ton을 연간 사용량 자리에 올렸다(365배 오류).
 # '평균' 단독은 넣지 않는다 — '평균 근속연수'처럼 정상 지표가 걸린다.
 _DERIVED_TERMS: tuple[str, ...] = (
-    "감축", "효과", "예상", "증감", "원단위", "1톤당", "톤당",
+    "감축", "효과", "예상", "증감", "증감률", "증가", "감소",
+    "전년 대비", "전년대비", "원단위", "1톤당", "톤당",
     "제로화", "목표", "전환량", "절감", "누적", "집약도", "intensity",
     "전망", "계획", "예정", "로드맵", "선언", "회수량", "대비",
     "일평균", "일 평균", "월평균", "월 평균", "1일당", "1일 당", "1개월당",
@@ -126,6 +127,13 @@ _REGION_PARTIAL_TERMS: tuple[str, ...] = ("해외", "국내")
 # 단독 지역어의 예외 — '국내외'는 전 범위를 뜻하므로 부분값이 아니다.
 # '국내'가 부분문자열로 걸리는 것을 막는다(과차단 방지).
 _REGION_WHOLE_TERMS: tuple[str, ...] = ("국내외", "국내 및 해외", "국내·해외", "국내 해외")
+
+# '국내(지역 기반)'·'국내(시장 기반)'은 조직 범위가 아니라 Scope 2 산정 방법 표지다.
+# 단독 '국내' 부분문자열 예외로 두지 않으면 신한 E-3-1 총배출량이 Scope 1 부분값과 동률이 된다.
+_REGION_METHOD_TERMS: tuple[str, ...] = (
+    "국내(지역 기반)", "국내 (지역 기반)", "국내(지역기반)", "국내 (지역기반)",
+    "국내(시장 기반)", "국내 (시장 기반)", "국내(시장기반)", "국내 (시장기반)",
+)
 
 # (4) 코드별 negative keyword — 지표 정합 축. 충돌하면 후보에서 제외.
 # 실측 근거는 docs/집계어휘_실태_2026-07-26.md 참조.
@@ -159,6 +167,9 @@ _METRIC_FAMILY: dict[str, tuple[str, ...]] = {
     "E-6-1": ("발생량", "배출량", "처리량"),
     "E-4-1": ("에너지 사용량", "전력 사용량", "사용량", "구매한 전력량"),
     "E-3-1": ("지역 기반", "지역기반"),
+    # 실측 시계열(연결 일부)과 연도 없는 각주 예상치가 함께 있으면 실측 계열을 우선한다.
+    # 현대모비스: 2024 실측 3,136,024 vs 각주 예상치 14,160,000.
+    "E-3-2": ("연결(일부)", "연결 일부"),
     "E-6-2": ("폐기물 재활용률", "폐기물 재활용", "재활용 비율", "순환이용률"),
 }
 
@@ -242,7 +253,7 @@ def _has_region_partial(hint: str) -> bool:
     부분문자열로 걸려 정상 총량이 부분값으로 강등되는 것을 막는다).
     '국내(별도)'·'해외 자회사'는 이미 _PARTIAL_TERMS가 잡으므로 중복 판정은 무해하다.
     """
-    if _has_any(hint, _REGION_WHOLE_TERMS):
+    if _has_any(hint, _REGION_WHOLE_TERMS) or _has_any(hint, _REGION_METHOD_TERMS):
         return False
     return _has_any(hint, _REGION_PARTIAL_TERMS)
 
@@ -250,13 +261,13 @@ def _has_region_partial(hint: str) -> bool:
 def _aggregation_rank(hint: str) -> int:
     """집계 순위 — 우선순위 5단계. 0=총량 어휘, 1=구분어 없음, 2=부분 어휘.
 
-    총량 어휘를 먼저 본다 — '해외 사업장 … 총계'처럼 둘이 겹치면 종전대로 총량으로
-    취급한다(기존 실측 선택 불변).
+    부분 어휘는 총량 어휘보다 더 구체적인 범위 한정이다. 지표명 자체에 '합계'가 들어간
+    '온실가스 배출량 합계 (...) 해외 자회사'를 전사 총량으로 오인하지 않도록 먼저 본다.
     """
-    if _has_any(hint, _TOTAL_TERMS):
-        return 0
     if _has_any(hint, _PARTIAL_TERMS) or _has_region_partial(hint):
         return 2
+    if _has_any(hint, _TOTAL_TERMS):
+        return 0
     return 1
 
 
@@ -413,6 +424,10 @@ def select_representative_node(
     def _period(node: Any) -> int:
         return getattr(node, "period", 0) or 0
 
+    def _inferred(node: Any) -> int:
+        """period가 폴백값이면 1(후순위). 필드 없는 노드는 0 — 기존 동작 보존."""
+        return 1 if getattr(node, "period_inferred", False) else 0
+
     # 3~7단계 — 순위 축을 단계별로 좁힌다. 사전식 비교와 동치이지만(_keep_min 주석),
     # 8단계가 '그 시점의 생존 집합'을 봐야 해서 정렬 키 한 방으로는 안 된다.
     survivors = _keep_min(survivors, lambda n: _family_rank(base_code, _node_hint(n)))
@@ -425,10 +440,15 @@ def select_representative_node(
     #    report_year가 없으면 최신 연도로 좁혀 같은 불변식을 지킨다 — 종전 정렬 키의
     #    `-period` 항과 동치이고(그 항이 연도 다음이었다), 그 자리를 8단계보다 앞으로
     #    끌어올리지 않으면 report_year=None 경로만 정체 효과에 노출된다.
+    #    period_inferred(2026-07-29)는 **같은 순위 안에서만** 후순위다(튜플 2번째 항).
+    #    원문에서 연도를 못 읽어 report_year로 채운 노드는 근접도가 0으로 나와 확정 노드와
+    #    동률이 되는데, 그 동률을 근거 없이 이기면 안 된다. 축 순서는 그대로다 — 연도는
+    #    여전히 8단계(값 최빈)보다 앞이다.
     if report_year is not None:
-        survivors = _keep_min(survivors, lambda n: abs(_period(n) - report_year))
+        survivors = _keep_min(
+            survivors, lambda n: (abs(_period(n) - report_year), _inferred(n)))
     else:
-        survivors = _keep_min(survivors, lambda n: -_period(n))
+        survivors = _keep_min(survivors, lambda n: (-_period(n), _inferred(n)))
 
     # 8) 값 최빈 — 최빈값이 유일할 때만 좁힌다. 동률이면 무개입.
     survivors = _keep_value_mode(survivors)

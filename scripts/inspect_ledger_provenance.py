@@ -150,9 +150,16 @@ def main() -> None:
                 {"period": n.period, "value": n.value, "unit": n.unit,
                  "raw_text": getattr(n, "raw_text", "") or "",
                  "hint": _hint_of(n),
+                 # 원문에 연도가 없어 report_year로 채운 값인가(2026-07-29). 이 표시가
+                 # 없으면 '2025 실적'과 '연도 미상'이 출력에서 구분되지 않는다.
+                 "period_inferred": bool(getattr(n, "period_inferred", False)),
                  "origin": getattr(n, "origin", ""), "id": n.id}
                 for n in nodes
             ],
+            # 대표 노드의 연도가 폴백값인가 — 원장 값 해석을 바꾸는 정보다.
+            "ledger_period_inferred": bool(
+                ledger_pick is not None and getattr(ledger_pick, "period_inferred", False)
+            ),
             # 풀 구성 차이로 두 경로가 다른 노드를 가리키는가. 이게 진짜 신호다 —
             # 원장의 결정 기록(representative_node_ids)이 이 차이를 흡수해야 한다.
             "selector_split": bool(
@@ -212,7 +219,9 @@ def main() -> None:
                 mark += " ←D1풀선택"
             if n["id"] == r["recorded_pick"]:
                 mark += " ★원장기록"
-            print(f"  노드   : {n['period']}  {n['value']} {n['unit'] or ''}"
+            # 연도가 폴백값이면 연도 뒤에 '?'를 붙인다 — 2025와 미상을 눈으로 가른다.
+            period_txt = f"{n['period']}?" if n.get("period_inferred") else str(n["period"])
+            print(f"  노드   : {period_txt}  {n['value']} {n['unit'] or ''}"
                   f"  [{n['origin']}] {n['hint'][:48]}{mark}")
         print(f"  풀     : 원장 {r['ledger_pool_size']}개(ocr_*만) · "
               f"D1 {r['d1_pool_size']}개(search_nodes — DART 포함, 단위 필터 생략)")
@@ -221,6 +230,9 @@ def main() -> None:
                   "(D1은 ★원장기록을 따라가므로 실제 비교는 어긋나지 않는다)")
         if r["record_mismatch"]:
             print("  ⚠ 스크립트 재현 ≠ 실행 중 기록 — 풀 재현 로직이 원장과 어긋났다")
+        if r["ledger_period_inferred"]:
+            print("  ⚠ 대표 노드의 연도가 추론값 — 원문에 연도가 없어 보고연도로 채웠다 "
+                  "(period_inferred). 원장 값의 연도를 신뢰하지 마라")
         if r["sibling_count"] > 1:
             print(f"  ⚠ 동일 코드·동일 연도 노드 {r['sibling_count']}개 "
                   f"(값 범위 {r['sibling_min']} ~ {r['sibling_max']}) "
@@ -235,6 +247,11 @@ def main() -> None:
     orphan = [r["code"] for r in rows if not r["nodes"]]
     unrecorded = [r["code"] for r in rows if r["nodes"] and not r["recorded_pick"]]
     rec_bad = [r["code"] for r in rows if r["record_mismatch"]]
+    inferred_codes = [r["code"] for r in rows if r["ledger_period_inferred"]]
+    inferred_nodes = sum(
+        1 for r in rows for n in r["nodes"] if n.get("period_inferred"))
+    ocr_nodes = sum(
+        1 for r in rows for n in r["nodes"] if str(n.get("origin", "")).startswith("ocr"))
 
     print("\n" + "-" * 78)
     print("요약")
@@ -245,6 +262,10 @@ def main() -> None:
     print(f"  스크립트 재현 ≠ 실행 기록: {len(rec_bad)}개 {rec_bad}")
     print(f"  원장 단위 ≠ 항목 단위: {len(units)}개 {units}")
     print(f"  비교 노드 없음(claim만 존재): {len(orphan)}개 {orphan}")
+    # 연도 폴백 실태 — 작업4 라이브 판정의 핵심 지표다(모비스 감소 / 나머지 불변).
+    pct = (100.0 * inferred_nodes / ocr_nodes) if ocr_nodes else 0.0
+    print(f"  연도 추론 노드(period_inferred): {inferred_nodes}/{ocr_nodes} OCR노드 ({pct:.1f}%)")
+    print(f"  대표 노드가 추론 연도인 코드: {len(inferred_codes)}개 {inferred_codes}")
     print("-" * 78)
 
     if args.json_out:

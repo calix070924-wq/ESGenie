@@ -43,6 +43,14 @@ class EvidenceNode:
     bbox: list[float] | None = None  # ★ 신규: 원문 내 위치(0~1 정규화)
     page: int | None = None          # ★ 신규: 0-기준 페이지 인덱스
     confidence: float = 1.0          # ★ 신규: OCR/추출 신뢰도 (DART=1.0)
+    # 원문에서 연도를 못 읽어 report_year로 채운 값인가(_normalize_period 폴백).
+    # 기본값 False라 기존 노드·DART 경로는 동작이 바뀌지 않는다.
+    #
+    # 왜 필요한가(2026-07-29): period == report_year가 '진짜 report_year 실적'과
+    # '연도 미상'을 구분하지 못했다. 실측 478노드 중 폴백은 15건(3.1%)뿐이지만,
+    # 그 15건은 사용자에게 2025 실적으로 보인다(근거: docs/연도미상_원인조사_2026-07-29.md).
+    # 소비 지점 3곳 — G4 projection 판정(아래) · node_select 연도 축 · confidence_flags.
+    period_inferred: bool = False
 
     def to_dict(self) -> dict[str, Any]:
         return asdict(self)
@@ -273,6 +281,9 @@ _HINT_TO_KESG: dict[str, str] = {
     "재활용비율": "E-6-2",
     "순환이용률": "E-6-2",
     "재활용률": "E-6-2",
+    # Scope 3는 일반 '온실가스'보다 구체적이다. 공백 제거 hint에 맞춰 키도 scope3로 둔다.
+    # kesg_items alias와 이 손관리 사전은 아직 별개이며, 통합은 이번 범위 밖이다.
+    "scope3": "E-3-2",
     "온실가스": "E-3-1",
     "scope1": "E-3-1",
     "scope2": "E-3-1",
@@ -331,7 +342,7 @@ def merge_ocr_extraction(
 
     for idx, m in enumerate(extraction.metrics):
         code = _resolve_kesg_code(m)
-        period = _normalize_period(m.period, fallback=report_year)
+        period, period_inferred = _normalize_period(m.period, fallback=report_year)
         confidence = m.confidence
         # G4. 미래 기간 분리 — 보고 연도보다 '충분히' 미래(2030/2035/2040 목표·전망 등)인
         # 확정 코드 노드는 실적 코드에서 떼어내 '{code}__projection'으로 보존. search_nodes
@@ -342,8 +353,13 @@ def merge_ocr_extraction(
         # 명세 등)은 DART 공시연도보다 1년 앞설 수 있어(예: 2024 보고서 + 2025-12 고지서),
         # +1까지 미래로 보면 정상 최신 증빙까지 projection으로 오분류된다. 목표·전망 곡선의
         # 축 연도(2030+)는 +2 이상이라 이 임계값으로 정확히 걸러진다.
+        #
+        # period_inferred면 판정하지 않는다(2026-07-29): 폴백 연도는 report_year와 같아
+        # 임계값을 넘지 않으므로 지금도 projection이 되지 않는다. 조건을 명시해 두는 이유는
+        # 폴백 기준값이 report_year가 아니게 바뀌어도(예: 문서 연도) 추론값으로 '미래 전망'을
+        # 판정하지 않도록 못박기 위한 것이다 — 근거 없는 분리는 D1 비교 대상을 잘못 줄인다.
         metric = code or m.metric_hint
-        if code and period - report_year >= _PROJECTION_YEAR_GAP:
+        if code and not period_inferred and period - report_year >= _PROJECTION_YEAR_GAP:
             metric = f"{code}__projection"
             confidence = round(confidence * 0.3, 4)
         node = EvidenceNode(
@@ -367,6 +383,7 @@ def merge_ocr_extraction(
             bbox=m.bbox,
             page=m.page,
             confidence=confidence,
+            period_inferred=period_inferred,
         )
         graph.add_node(node)
         _link_cross_check(graph, node)
@@ -427,6 +444,12 @@ def build_unified_graph(
 # 예: '지정폐기물'은 '폐기물'(E-6-1)에 걸리지만 총량이 아니라 하위 분류다.
 _HINT_EXCLUDE: tuple[str, ...] = ("지정폐기물",)
 
+# 배정 단계의 코드별 충돌 어휘. node_select에만 두면 잘못 배정된 노드가 후보 풀을 먼저
+# 오염시킨다. 이번 결함의 실측 범위(E-3-1 ← Scope 3)만 최소 적용한다.
+_ASSIGNMENT_NEGATIVE_KEYWORDS: dict[str, tuple[str, ...]] = {
+    "E-3-1": ("scope3", "1+2+3", "가치사슬"),
+}
+
 # G1 가드 어휘 — "실적 총량이 아닌 값"을 알리는 수식어. hint에 포함되면 코드 미부여.
 #   · 미래·의도: 목표/전망/계획/예정/로드맵/선언
 #   · 부분·파생(총량 자리에 오면 안 됨): 감축량/전환량/절감량/누적
@@ -457,6 +480,8 @@ def _resolve_kesg_code(m: ExtractedMetric) -> str | None:
     from ..layer1_extract import _unit_suspect
 
     hint = m.metric_hint.lower().replace(" ", "")
+    if getattr(m, "_kesg_backfill_blocked", False):
+        return None
     # 하위·보조 수치는 어떤 추정코드가 와도 총량 코드로 잡지 않는다(중복 노드 방지).
     if any(x in hint for x in _HINT_EXCLUDE):
         return None
@@ -465,11 +490,22 @@ def _resolve_kesg_code(m: ExtractedMetric) -> str | None:
     if any(g in hint for g in _GUARD_TERMS):
         return None
 
-    # 후보 코드 결정: LLM 추정 우선, 없으면 사전 최장 일치(G2).
+    def _conflicts(code: str) -> bool:
+        return any(term in hint for term in _ASSIGNMENT_NEGATIVE_KEYWORDS.get(code, ()))
+
+    # 후보 코드 결정: LLM 추정 우선. 단, 코드별 충돌 어휘가 있으면 그 추정을 버리고
+    # 사전 최장 일치로 다시 찾는다(Scope 3를 E-3-1 풀에 넣지 않는 배정 단계 방어).
     code = m.kesg_code_guess
+    # 모비스 Scope 3 캐시는 코드 대신 표 머리글 숫자("2")를 guess에 넣었다. 그 정확한
+    # 오응답만 버리고 아래 사전으로 다시 해소한다. 모든 비표준 문자열을 일반화해 버리면
+    # 기존 4개사의 후보 풀이 불필요하게 넓어진다.
+    if code and "scope3" in hint and str(code) == "2":
+        code = None
+    if code and _conflicts(code):
+        code = None
     if not code:
         for key, mapped in sorted(_HINT_TO_KESG.items(), key=lambda kv: -len(kv[0])):
-            if key.lower() in hint:
+            if key.lower() in hint and not _conflicts(mapped):
                 code = mapped
                 break
     if not code:
@@ -483,11 +519,19 @@ def _resolve_kesg_code(m: ExtractedMetric) -> str | None:
     return code
 
 
-def _normalize_period(period_raw: str, *, fallback: int) -> int:
-    """'2025-12' / '2025년' / '' → 연도 정수."""
+def _normalize_period(period_raw: str, *, fallback: int) -> tuple[int, bool]:
+    """'2025-12' / '2025년' / '' → (연도 정수, 추론여부).
+
+    두 번째 값이 True면 원문에 연도가 없어 `fallback`(=report_year)으로 채운 것이다.
+    호출부가 이 사실을 노드에 남겨야 한다(EvidenceNode.period_inferred) — 값만 돌려주면
+    '진짜 report_year'와 '연도 미상'이 구분되지 않는다(실측: 모비스 '미상' 13건이
+    2025 실적으로 보였다).
+    """
     import re
     m = re.search(r"(20\d{2})", period_raw or "")
-    return int(m.group(1)) if m else fallback
+    if m:
+        return int(m.group(1)), False
+    return fallback, True
 
 
 def _link_cross_check(graph: EvidenceGraph, node: EvidenceNode) -> None:
@@ -547,6 +591,8 @@ def _emit_derived_emission(
         origin=node.origin,
         source_file=node.source_file,
         confidence=node.confidence * 0.95,   # 환산 불확실성 반영
+        # 파생 노드는 원 노드의 period를 그대로 쓰므로 추론여부도 함께 물려받는다.
+        period_inferred=node.period_inferred,
     )
     graph.add_node(derived)
 

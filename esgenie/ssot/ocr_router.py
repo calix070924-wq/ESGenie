@@ -260,25 +260,53 @@ def _backfill_kesg_codes(ext: OcrExtraction) -> None:
     하이브리드 1단계(결정적 사전)다. 사전이 못 잡으면 코드를 비워 두어 상위 LLM
     폴백/HITL이 처리하게 한다. fuzzy로만 걸린 건 confidence를 낮춰 검증 큐로 보낸다.
 
-    중복 가드: 이미 **다른 라벨의** metric이 점유한 코드(템플릿/본문확정 등 권위 있는
+    중복 가드: 이미 **다른 지표 본체의** metric이 점유한 코드(템플릿/본문확정 등 권위 있는
     산출물)는 backfill이 다시 붙이지 않는다. 예) 보조수치 '지정폐기물'(template code=None)이
     E-6-1로 해소돼 본문확정 18.4t와 1000× 어긋난 유령 중복노드를 만드는 사례 차단.
 
-    단, **같은 라벨**은 예외다(2026-07-26). 표의 다연도 열·다중 행은 같은 hint로 여러
+    단, **같은 지표 본체**는 예외다(2026-08-02). 표의 다연도 열·다중 행은 집계수준과
+    연도가 달라도 정상적인 별도 노드다. '대기오염물질 배출량 국내(별도) 2022'가 먼저
+    E-7-1을 받아도 '해외 자회사 2022'와 '합계 2024'를 막으면 안 된다. 집계·연도
+    수식어만 제거한 본체가 같을 때 코드 재사용을 허용한다.
+
+    같은 라벨 예외(2026-07-26)도 포함된다. 표의 다연도 열·다중 행은 같은 hint로 여러
     metric이 되는데, 선착순 점유가 두 번째부터 코드를 못 받게 만들어 동일 hint가 연도마다
     다른 코드로 흘렀다(현대모비스 'Scope 3 온실가스 배출량 연결(일부)' → 2022는 E-3-2,
     2023·2024는 코드 미부여 후 evidence_graph의 _HINT_TO_KESG 폴백에서 '온실가스'에 걸려
     E-3-1). Scope3 값이 Scope1+2 후보 풀을 오염시키는 직접 원인이라, 라벨이 같으면
     점유 여부와 무관하게 같은 코드를 준다 — 동일 hint → 동일 코드(결정적).
     """
+    import re
+
     from ..knowledge.kesg_items import _normalize_label, resolve_kesg_code
 
-    # 코드 → 그 코드를 점유한 라벨들(정규화). 같은 라벨의 재사용은 중복이 아니다.
+    def _metric_body(label: str) -> str:
+        """집계수준·연도만 떼어 코드 점유를 비교할 지표 본체를 만든다.
+
+        '총탄화수소' 같은 실제 지표명을 훼손하지 않도록 단독 '총'은 제거하지 않는다.
+        조직 고유명사도 지우지 않아 서로 다른 하위 지표가 같은 코드로 합쳐지는 것을 막는다.
+        """
+        body = (label or "").lower()
+        body = re.sub(r"20\d{2}(?:\s*년)?", " ", body)
+        body = re.sub(r"국내\s*\(\s*별도\s*\)", " ", body)
+        body = re.sub(
+            r"국내\s*자회사|해외\s*자회사|국내\s*사업장|해외\s*사업장",
+            " ", body,
+        )
+        body = re.sub(r"연결\s*\(\s*일부\s*\)", " ", body)
+        body = re.sub(r"(?<![0-9a-z가-힣])(합계|총계|전사|total)(?![0-9a-z가-힣])", " ", body)
+        return _normalize_label(body)
+
+    # 코드 → 그 코드를 점유한 라벨/지표 본체. 같은 본체의 재사용은 중복이 아니다.
     taken_by_label: dict[str, set[str]] = {}
+    taken_by_body: dict[str, set[str]] = {}
     for m in ext.metrics:
         if m.kesg_code_guess:
             taken_by_label.setdefault(m.kesg_code_guess, set()).add(
                 _normalize_label(m.metric_hint))
+            body = _metric_body(m.metric_hint)
+            if body:
+                taken_by_body.setdefault(m.kesg_code_guess, set()).add(body)
     resolved: list[dict[str, Any]] = []
     for m in ext.metrics:
         if m.kesg_code_guess:
@@ -288,10 +316,19 @@ def _backfill_kesg_codes(ext: OcrExtraction) -> None:
             continue
         label = _normalize_label(m.metric_hint)
         holders = taken_by_label.get(code)
-        if holders and label not in holders:
-            continue  # 다른 라벨이 점유한 코드 → 중복노드 방지(권위 산출물 우선)
+        body = _metric_body(m.metric_hint)
+        same_body = bool(body and body in taken_by_body.get(code, set()))
+        if holders and label not in holders and not same_body:
+            # Scope 3는 evidence_graph 사전에도 키가 있어, 여기서 막은 카테고리별
+            # 보조수치가 merge 때 다시 E-3-2로 살아날 수 있다. 해당 코드만 차단 결정을
+            # 내부 표식으로 전달한다(외부 dataclass 스키마는 바꾸지 않음).
+            if code == "E-3-2":
+                m._kesg_backfill_blocked = True
+            continue  # 다른 지표 본체가 점유한 코드 → 권위 산출물 우선
         m.kesg_code_guess = code
         taken_by_label.setdefault(code, set()).add(label)
+        if body:
+            taken_by_body.setdefault(code, set()).add(body)
         if method == "fuzzy":
             m.confidence = min(m.confidence, 0.5)  # 불확실 → HITL 검증 큐
         resolved.append({"metric_hint": m.metric_hint, "code": code,
@@ -1320,6 +1357,9 @@ _UNIT_LEAD_RE = __import__("re").compile(
 _FOOTNOTE_MARK_RE = __import__("re").compile(r"^\d+\)$")
 # 컬럼 헤더 행으로 인식할 라벨 키워드(연도는 4자리 숫자로 별도 판정).
 _COL_HEADER_KEYWORDS = ("합계", "전사", "국내", "해외", "자회사", "별도", "본사", "연결")
+# 순수 연도 셀('2024'). 2단 헤더의 위쪽 행을 식별한다 — '2024년 목표'처럼 수식어가
+# 붙은 셀은 연도 컬럼이 아니므로(값 성격이 다르다) fullmatch로 배제한다.
+_PURE_YEAR_RE = __import__("re").compile(r"20\d{2}")
 # 레이블 상속이 건너뛸 수 있는 최대 행 수(과잉 상속 방지).
 _LABEL_INHERIT_MAX_SPAN = 2
 
@@ -1394,16 +1434,39 @@ def _attach_column_headers(rows: list[list[tuple[float, str]]]) -> list[list[tup
     실측 검증: 값이 우측정렬이라 헤더보다 ~15pt 우측이나, 컬럼 피치(~46pt)가 훨씬 커
     최근접 중심 매칭이 12/12 정확(12.9→합계).
 
-    안전장치(틀린 라벨 부착 방지):
+    **2단 헤더(연도 위 / 집계 아래)** — 2026-07-29 추가.
+    실측(모비스 p.70)에서 연도 행과 집계 행이 분리된 표가 75개 발견됐다:
+
+        2022 | 2023 | 2024                                   ← ① 연도 행 (3열)
+        국내(별도) | 국내 자회사 | 해외 자회사 | 합계  × 3세트     ← ② 집계 행 (12열)
+        폐기물 처리량 | ton | 1,693(국내(별도)) … 17,694(합계) | 1,208(…) … 17,129(합계) | …
+
+    종전에는 ②만 부착해 `(합계)`가 세 번 똑같이 붙었다. 값 12개가 전부 살아 있는데도
+    라벨이 같아 **하류 LLM이 3세트를 1세트로 접고 첫 세트만 뽑은 뒤 `period='미상'`을
+    달았다**(근거: `docs/연도미상_원인조사_2026-07-29.md`). 데이터 소실이 아니라 라벨
+    모호가 원인이므로 연도를 붙이면 셋이 갈린다.
+
+    형식은 `17,694(합계|2024)` — 구분자 '|'로 **집계와 연도를 분리**한다. 하류
+    `_map_vlm_json`이 연도는 `period`, 집계는 `metric_hint`로 보내야 하기 때문이다.
+    연도를 hint에 섞으면 node_select의 수식어·집계 판정이 오작동한다.
+
+    연도↔집계 매핑은 **x중심 최근접**이다. 연도 라벨은 자기가 관장하는 집계 그룹의
+    중앙에 놓인다(실측: 2022@333.1이 264.0~402.2의 4개를, 2023@517.3이 448.2~586.4를
+    덮는다. 그룹내 최대거리 69.1 vs 차선 연도 최소거리 115.1 — 여유 1.67배).
+
+    안전장치(틀린 라벨 부착 방지). 기존 3종을 그대로 두고 연도용 2종을 더한다:
       · 헤더 행을 못 찾으면 그 표 구간은 원본 유지(부착 생략).
       · 헤더가 값보다 위 행에 있어야 하고, 값 셀 수가 헤더 컬럼 수를 넘으면 부착 생략.
       · 매칭 거리가 컬럼 간격의 절반을 넘으면 그 값은 부착 생략(경계 밖).
+      · **연도 그룹이 균등하지 않으면 연도 부착만 생략**(집계 부착은 종전대로 유지).
+        집계 컬럼 수가 연도 수로 나눠지지 않거나 그룹 크기가 서로 다르면 매핑을
+        신뢰할 수 없다 — 틀린 연도는 미상보다 나쁘다.
+      · **연도 전용 헤더 행이 없으면 아무것도 붙지 않는다.** 열이 연도가 아닌 표
+        (신한 p.160 Scope 구분)를 건드리지 않기 위한 조건이다.
     """
-    import re
-
     def is_header_row(cells: list[str]) -> bool:
         kw = sum(1 for c in cells if any(k in c for k in _COL_HEADER_KEYWORDS))
-        yr = sum(1 for c in cells if re.fullmatch(r"20\d{2}", c.strip()))
+        yr = sum(1 for c in cells if _PURE_YEAR_RE.fullmatch(c.strip()))
         return (kw + yr) >= 2  # 컬럼 라벨/연도가 2개 이상이면 헤더 행
 
     # 헤더 컬럼: (x중심, 라벨). 각주 마커·빈 셀 제외.
@@ -1413,16 +1476,60 @@ def _attach_column_headers(rows: list[list[tuple[float, str]]]) -> list[list[tup
                 and any(k in t for k in _COL_HEADER_KEYWORDS)]
         return cols
 
+    # 연도 전용 헤더 행인가 — 순수 연도 셀 2개 이상 + 집계 키워드 0개.
+    # 집계 키워드가 섞인 행('지표 | 단위 | 2023 | 2024')은 1단 헤더이므로 대상이 아니다.
+    def year_cols(row: list[tuple[float, str]]) -> list[tuple[float, str]]:
+        years = [(x, t.strip()) for x, t in row if _PURE_YEAR_RE.fullmatch(t.strip())]
+        if len(years) < 2:
+            return []
+        if any(any(k in t for k in _COL_HEADER_KEYWORDS) for _x, t in row):
+            return []
+        return years
+
+    def map_years(
+        cols: list[tuple[float, str]],
+        years: list[tuple[float, str]],
+    ) -> dict[int, str] | None:
+        """집계 컬럼 인덱스 → 연도 라벨. 매핑이 균등하지 않으면 None(연도 부착 생략)."""
+        if not years or len(cols) < len(years) or len(cols) % len(years) != 0:
+            return None
+        assigned: dict[int, str] = {}
+        counts: dict[str, int] = {}
+        for idx, (cx, _label) in enumerate(cols):
+            yx, ylabel = min(years, key=lambda y: abs(y[0] - cx))
+            assigned[idx] = ylabel
+            counts[ylabel] = counts.get(ylabel, 0) + 1
+        # 모든 연도가 같은 개수의 집계 컬럼을 관장해야 한다(3연도 × 4집계 = 12).
+        expected = len(cols) // len(years)
+        if len(counts) != len(years) or any(c != expected for c in counts.values()):
+            return None
+        return assigned
+
     out = [list(r) for r in rows]
     cur_cols: list[tuple[float, str]] = []
     col_pitch = 0.0
+    cur_years: dict[int, str] = {}                # 집계 컬럼 idx → 연도 라벨
+    pending_years: list[tuple[float, str]] = []   # 직전에 본 연도 전용 헤더 행
+    pending_at = -99                              # 그 행의 인덱스(신선도 판정용)
     for i, r in enumerate(rows):
         cells = [t for _x, t in r]
         if is_header_row(cells):
+            # 연도 전용 행이면 다음 집계 헤더에 넘길 연도로 보류한다. cur_cols 초기화는
+            # 종전과 동일하게 수행한다(연도 행은 종전에도 헤더 행으로 판정돼
+            # header_cols()가 []를 돌려 부착을 끊었다) — 잘 되던 표의 동작 보존.
+            yrs = year_cols(r)
+            if yrs:
+                pending_years, pending_at = yrs, i
             cur_cols = header_cols(r)
+            cur_years = {}
             if len(cur_cols) >= 2:
                 diffs = [cur_cols[k + 1][0] - cur_cols[k][0] for k in range(len(cur_cols) - 1)]
                 col_pitch = min(d for d in diffs if d > 0) if any(d > 0 for d in diffs) else 0.0
+                # 연도 행이 **바로 위 구간**에 있을 때만 2단 헤더로 본다. 오래된 연도
+                # 행을 무관한 표에 물리면 틀린 연도가 붙는다.
+                if pending_years and (i - pending_at) <= _LABEL_INHERIT_MAX_SPAN:
+                    cur_years = map_years(cur_cols, pending_years) or {}
+                pending_years = []
             continue
         if not cur_cols or col_pitch <= 0:
             continue
@@ -1433,9 +1540,12 @@ def _attach_column_headers(rows: list[list[tuple[float, str]]]) -> list[list[tup
         new_row = list(r)
         for k in val_idxs:
             vx, vt = r[k]
-            best = min(cur_cols, key=lambda h: abs(h[0] - vx))
-            if abs(best[0] - vx) <= col_pitch * 0.5:
-                new_row[k] = (vx, f"{vt}({best[1]})")
+            best_idx = min(range(len(cur_cols)), key=lambda c: abs(cur_cols[c][0] - vx))
+            best_x, best_label = cur_cols[best_idx]
+            if abs(best_x - vx) <= col_pitch * 0.5:
+                year = cur_years.get(best_idx)
+                label = f"{best_label}|{year}" if year else best_label
+                new_row[k] = (vx, f"{vt}({label})")
         out[i] = new_row
     return out
 
@@ -1739,6 +1849,32 @@ def _is_footnote_marker_value(metric_hint: str, value: float) -> bool:
         return False
 
 
+# 2단 헤더 부착 라벨의 연도 꼬리 — '합계|2024', '국내(별도)|2022'.
+# `_attach_column_headers`가 만든 형식이다(그 함수 docstring §2단 헤더).
+_HINT_YEAR_TAIL_RE = re.compile(r"\|\s*(20\d{2})\s*\)?\s*$")
+
+
+def _split_hint_year(hint: str, period: str) -> tuple[str, str]:
+    """hint 말미의 `|연도`를 떼어내 (집계만 남은 hint, 연도) 로 가른다 — 2026-07-29.
+
+    재구성 텍스트가 `17,694(합계|2024)`를 주면 LLM은 보통 연도를 period로 옮기지만,
+    라벨을 통째로 metric_hint에 복사하는 경우가 있다. 그러면 hint에 '2024'가 섞여
+    node_select의 수식어·집계 판정이 오작동한다(예: '목표'·'대비' 어휘 판정 문맥이
+    흐려진다). 프롬프트만으로 보장하지 않고 파싱에서도 갈라 둔다.
+
+    period가 이미 채워져 있으면 **덮어쓰지 않는다** — LLM이 표 제목 등에서 읽은
+    더 구체적인 연도('2024-12')를 잃지 않기 위한 것이다. hint의 꼬리만 떼어낸다.
+    """
+    m = _HINT_YEAR_TAIL_RE.search(hint or "")
+    if not m:
+        return hint, period
+    cleaned = _HINT_YEAR_TAIL_RE.sub("", hint).strip()
+    # '(합계' 처럼 여는 괄호만 남으면 정리한다.
+    if cleaned.count("(") > cleaned.count(")"):
+        cleaned = cleaned.rstrip("(").strip()
+    return (cleaned or hint), (period or m.group(1))
+
+
 def _map_vlm_json(data: dict[str, Any], *, page_no: int = 1) -> tuple[list[ExtractedMetric], list[ExtractedClause]]:
     """VLM 응답 JSON → ExtractedMetric[] + ExtractedClause[]."""
     metrics: list[ExtractedMetric] = []
@@ -1750,11 +1886,13 @@ def _map_vlm_json(data: dict[str, Any], *, page_no: int = 1) -> tuple[list[Extra
             value = float(m.get("value", 0))
             if _is_footnote_marker_value(hint, value):
                 continue  # G6: 각주 마커('재해율 4)')를 값(4.0)으로 오파싱한 노드 배제
+            # 2단 헤더 라벨이 hint에 통째로 들어온 경우 연도를 period로 되돌린다.
+            hint, period = _split_hint_year(hint, str(m.get("period", "")))
             metrics.append(ExtractedMetric(
                 metric_hint=hint,
                 value=value,
                 unit=str(m.get("unit", "")),
-                period=str(m.get("period", "")),
+                period=period,
                 kesg_code_guess=m.get("kesg_code") or None,
                 confidence=0.75,   # VLM 추출 기본 신뢰도
             ))

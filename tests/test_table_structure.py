@@ -75,15 +75,22 @@ def test_mobis_renewable_total_column_distinguishable():
     다른 11개 값과 구분 가능해야 한다(35.0 오염의 원인 지점).
 
     같은 행에 12.9가 '합계' 컬럼 라벨과 함께 부착되고, 다른 값(0.2 등)에는 '합계'가
-    붙지 않아야 한다(틀린 라벨 부착 금지)."""
+    붙지 않아야 한다(틀린 라벨 부착 금지).
+
+    2026-07-29: 이 표는 2단 헤더(연도 위/집계 아래)라 라벨이 `(합계|2024)`가 됐다 —
+    정보가 늘어난 것이므로 판정을 `(합계` 접두로 완화한다. 12.9는 세 개의 합계 열 중
+    **2024** 열이며, 종전에는 세 열 전부 `(합계)`라 구분되지 않았다(연도 미상의 원인).
+    """
     text = _page_text("data/real_reports/012330_mobis_2025.pdf", 53)
     row = next((ln for ln in text.splitlines() if "재생에너지 사용·전환율" in ln), None)
     assert row is not None, "재생에너지 사용·전환율 행을 찾지 못함"
 
     # 전사값 12.9에 합계 컬럼 라벨이 부착돼 전사임을 식별할 수 있어야 한다.
-    assert "12.9(합계)" in row, f"전사 12.9에 합계 라벨 미부착:\n{row}"
+    assert "12.9(합계" in row, f"전사 12.9에 합계 라벨 미부착:\n{row}"
     # 국내(별도) 첫 값 0.2는 합계가 아니므로 (합계)가 붙으면 안 된다.
-    assert "0.2(합계)" not in row, f"비전사 값에 합계 라벨 오부착:\n{row}"
+    assert "0.2(합계" not in row, f"비전사 값에 합계 라벨 오부착:\n{row}"
+    # 세 연도의 합계 열이 서로 구분돼야 한다 — 이 변경의 목적이다.
+    assert "12.9(합계|2024)" in row and "5.5(합계|2022)" in row, row
 
 
 def test_footnote_marker_split_from_value():
