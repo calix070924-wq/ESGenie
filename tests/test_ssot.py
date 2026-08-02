@@ -473,7 +473,7 @@ def test_recycle_mass_does_not_clobber_recycle_rate():
     """재활용량(톤, 코드없음)이 재활용 비율(%) E-6-2를 덮어쓰지 않는지 회귀 가드.
 
     OCR이 '재활용 비율 29.3%'를 정확히 뽑아도, '재활용량 5.4톤'(hint에 '재활용' 포함)이
-    _HINT_TO_KESG의 부분문자열 매칭으로 E-6-2를 차지해 5.4로 덮어쓰던 버그(한울정밀 시연).
+    과거 손관리 hint의 부분문자열 매칭으로 E-6-2를 차지해 5.4로 덮어쓰던 버그(한울정밀 시연).
     """
     mk = lambda h, v, u, g: ExtractedMetric(
         metric_hint=h, value=v, unit=u, period="2026", kesg_code_guess=g)

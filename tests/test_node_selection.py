@@ -904,8 +904,8 @@ class TestCodeAssignmentConsistency:
         """실사례: 'Scope 3 온실가스 배출량 연결(일부)' → 2022는 E-3-2, 2023·2024는 E-3-1.
 
         원인은 LLM 추정 경합이 아니라 _backfill_kesg_codes의 taken_codes 선착순 점유였다.
-        첫 metric만 E-3-2를 받고 나머지는 코드 미부여 → evidence_graph의 _HINT_TO_KESG
-        폴백에서 '온실가스'(E-3-1)에 걸렸다. Scope3 값이 Scope1+2 풀을 오염시킨 직접 원인.
+        첫 metric만 E-3-2를 받고 나머지는 코드 미부여 → 일반 온실가스 별칭(E-3-1)에
+        걸렸다. Scope3 값이 Scope1+2 풀을 오염시킨 직접 원인.
         """
         from esgenie.ssot.evidence_graph import _resolve_kesg_code
         from esgenie.ssot.ocr_router import (

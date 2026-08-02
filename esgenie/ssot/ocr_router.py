@@ -258,7 +258,7 @@ def _backfill_kesg_codes(ext: OcrExtraction) -> None:
     """kesg_code_guess가 비어 있는 metric을 라벨 동의어 사전으로 결정적 보강한다.
 
     하이브리드 1단계(결정적 사전)다. 사전이 못 잡으면 코드를 비워 두어 상위 LLM
-    폴백/HITL이 처리하게 한다. fuzzy로만 걸린 건 confidence를 낮춰 검증 큐로 보낸다.
+    폴백/HITL이 처리하게 한다. fuzzy 후보는 코드 배정 단계에서 거부한다.
 
     중복 가드: 이미 **다른 지표 본체의** metric이 점유한 코드(템플릿/본문확정 등 권위 있는
     산출물)는 backfill이 다시 붙이지 않는다. 예) 보조수치 '지정폐기물'(template code=None)이
@@ -272,8 +272,8 @@ def _backfill_kesg_codes(ext: OcrExtraction) -> None:
     같은 라벨 예외(2026-07-26)도 포함된다. 표의 다연도 열·다중 행은 같은 hint로 여러
     metric이 되는데, 선착순 점유가 두 번째부터 코드를 못 받게 만들어 동일 hint가 연도마다
     다른 코드로 흘렀다(현대모비스 'Scope 3 온실가스 배출량 연결(일부)' → 2022는 E-3-2,
-    2023·2024는 코드 미부여 후 evidence_graph의 _HINT_TO_KESG 폴백에서 '온실가스'에 걸려
-    E-3-1). Scope3 값이 Scope1+2 후보 풀을 오염시키는 직접 원인이라, 라벨이 같으면
+    2023·2024는 코드 미부여 후 일반 온실가스 별칭에 걸려 E-3-1로 흘렀다. Scope3 값이
+    Scope1+2 후보 풀을 오염시키는 직접 원인이라, 라벨이 같으면
     점유 여부와 무관하게 같은 코드를 준다 — 동일 hint → 동일 코드(결정적).
     """
     import re
@@ -312,7 +312,7 @@ def _backfill_kesg_codes(ext: OcrExtraction) -> None:
         if m.kesg_code_guess:
             continue
         code, score, method = resolve_kesg_code(m.metric_hint)
-        if not code:
+        if not code or method != "exact":
             continue
         label = _normalize_label(m.metric_hint)
         holders = taken_by_label.get(code)
@@ -329,8 +329,6 @@ def _backfill_kesg_codes(ext: OcrExtraction) -> None:
         taken_by_label.setdefault(code, set()).add(label)
         if body:
             taken_by_body.setdefault(code, set()).add(body)
-        if method == "fuzzy":
-            m.confidence = min(m.confidence, 0.5)  # 불확실 → HITL 검증 큐
         resolved.append({"metric_hint": m.metric_hint, "code": code,
                          "score": score, "method": method})
     if resolved:
