@@ -672,12 +672,21 @@ def render_greenwash_workspace(result, active_area: str) -> None:
         return
 
     verify = result.sections[active_area]
-    delta = verify.steps[0].detection.risk_score - verify.final_score
+    grounding = getattr(verify.steps[-1], "grounding", None)
+    ungrounded = len(getattr(grounding, "g1_uncited_sentences", None) or []) + len(
+        getattr(grounding, "g2_orphan_numbers", None) or []
+    )
+    if verify.converged:
+        judgment, judgment_note = "자동 통과", "근거 확인 완료"
+    elif verify.hitl_required:
+        judgment, judgment_note = "담당자 이관", f"근거 미확인 {ungrounded}건"
+    else:
+        judgment, judgment_note = "검토 필요", "수렴 미완료"
     cards = [
         {"label": "초안 위험도", "value": f"{verify.steps[0].detection.risk_score:.1f}", "note": "첫 생성본 기준"},
         {"label": "최종 위험도", "value": f"{verify.final_score:.1f}", "note": verify.final_band},
-        {"label": "위험도 개선", "value": f"{max(delta, 0):.1f}", "note": "자동 수정으로 감소"},
-        {"label": "검증 반복", "value": f"{verify.iterations_used}회", "note": "기준 충족까지 반복"},
+        {"label": "검증 판정", "value": judgment, "note": judgment_note},
+        {"label": "검증 반복", "value": f"{verify.iterations_used}회", "note": "검증 기준 반복 적용"},
     ]
     render_stat_row(cards, columns=4)
 
