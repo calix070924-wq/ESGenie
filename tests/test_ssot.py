@@ -5,7 +5,7 @@ import json
 
 import pytest
 
-from esgenie.dart_client import load_report
+from esgenie.dart_client import _empty_report, load_report
 from esgenie.schemas import AxisScore
 from esgenie.ssot import detector_5axis as det
 from esgenie.ssot.audit_trace import build_audit_trace_v15, build_data_points
@@ -25,7 +25,7 @@ from esgenie.ssot.ocr_router import (
     route_document,
 )
 from esgenie.ssot import ocr_router as ocr_router_mod
-from esgenie.ssot.ssot_pipeline import build_rag_with_ssot, extract_local_with_ssot, extract_with_ssot, ssot_summary
+from esgenie.ssot.ssot_pipeline import build_rag_with_ssot, extract_with_ssot, ssot_summary
 
 
 # ---- 헬퍼 ----------------------------------------------------------------------
@@ -396,7 +396,7 @@ class TestSsotPipeline:
         assert s["total_nodes"] == len(graph.nodes)
         assert "ocr_structured" in s["by_origin"]
 
-    def test_extract_local_with_ssot_maps_presence_items_without_dart(self):
+    def test_empty_report_maps_presence_items_through_shared_path(self):
         graph = build_unified_graph(
             None,
             [
@@ -431,14 +431,10 @@ class TestSsotPipeline:
             corp_name="로컬기업",
             report_year=2025,
         )
-        res = extract_local_with_ssot(
-            graph,
-            corp_code="LOCAL",
-            corp_name="로컬기업",
-            report_year=2025,
-            industry="자동차부품",
-            profile="sme",
-        )
+        report = _empty_report("LOCAL", 2025)
+        report.corp_name = "로컬기업"
+        report.industry = "자동차부품"
+        res = extract_with_ssot(report, graph, profile="sme")
         for code in ("E-1-1", "E-1-2", "S-4-1"):
             assert code in res.mapped
             assert res.mapped[code]["value"] == "문서 조항 확인"

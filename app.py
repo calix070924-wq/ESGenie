@@ -572,6 +572,8 @@ def _data_source_badge(result) -> tuple[str, str] | None:
     if report is None:
         return ("증빙 기반 (DART 미사용)", "neutral")
     source = getattr(report, "source", "")
+    if source == "ssot_local":
+        return ("증빙 기반 (DART 미사용)", "neutral")
     if source == "dart_api":
         return ("DART 실시간", "success")
     if source == "sample":
