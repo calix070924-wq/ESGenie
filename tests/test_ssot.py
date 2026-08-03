@@ -10,7 +10,7 @@ from esgenie.schemas import AxisScore
 from esgenie.ssot import detector_5axis as det
 from esgenie.ssot.audit_trace import build_audit_trace_v15, build_data_points
 from esgenie.ssot.evidence_graph import (
-    EvidenceGraph,
+    EvidenceGraph, EvidenceNode,
     build_from_dart,
     build_unified_graph,
     merge_ocr_extraction,
@@ -389,6 +389,40 @@ class TestSsotPipeline:
         docs = getattr(corp.vector, "_docs", [])
         assert any(d.meta.get("source") == "ssot_ocr" for d in docs)
         assert any(d.meta.get("source") == "ssot_text" for d in docs)
+
+    def test_local_rag_excludes_freeform_ocr_metrics(self):
+        """비상장 생성 인덱스에서 자유형 OCR 수치가 유효 S 조항을 밀어내지 않는다."""
+        from esgenie.layer2_rag import HybridRAG
+
+        report = _empty_report("LOCAL", 2026)
+        report.source = "ssot_local"
+        graph = EvidenceGraph("LOCAL", "로컬기업")
+        graph.add_node(EvidenceNode(
+            id="LOCAL_percentage_2026__ocr_unstructured",
+            metric="percentage",
+            value=200.0,
+            unit="%",
+            period=2026,
+            source="ocr/noise",
+            origin="ocr_unstructured",
+            source_file="임금규정.pdf",
+        ))
+        graph.add_node(EvidenceNode(
+            id="LOCAL_E-4-1_2026__ocr_structured",
+            metric="E-4-1",
+            value=1.0,
+            unit="TJ",
+            period=2026,
+            source="ocr/valid",
+            origin="ocr_structured",
+            source_file="전기고지서.pdf",
+        ))
+
+        corp = build_rag_with_ssot(HybridRAG(), report, graph)
+        docs = getattr(corp.vector, "_docs", [])
+
+        assert not any(d.meta.get("kesg_code") == "percentage" for d in docs)
+        assert any(d.meta.get("kesg_code") == "E-4-1" for d in docs)
 
     def test_ssot_summary(self, setup):
         _, graph = setup

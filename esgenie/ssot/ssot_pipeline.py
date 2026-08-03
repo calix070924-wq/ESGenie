@@ -388,8 +388,18 @@ def build_rag_with_ssot(
 
     # ── SSOT OCR 수치 노드 추가 편입 ──────────────────────────────────
     ocr_docs: list[IndexedDoc] = []
+    local_report = getattr(report, "source", "") == "ssot_local"
+    if local_report:
+        from esgenie.knowledge.kesg_items import by_code as _by_code
     for node in graph.nodes.values():
         if node.origin in ("ocr_structured", "ocr_unstructured"):
+            # 라이브 비상장 OCR은 표 안의 임의 수치에도 percentage·value 같은
+            # 자유형 metric 이름을 붙여 원장에 보존한다. 이 청크들이 넓은 S 쿼리의
+            # 상위를 독점하면 실제 S-4-1 정책 TextNode가 밀려 검색 게이트가 오차단된다.
+            # 상장 5개사 경로는 결과 불변 조건이 있으므로 기존 인덱스를 유지하고,
+            # ssot_local 보고서에서만 K-ESG 코드가 아닌 수치 청크를 생성 컨텍스트에서 뺀다.
+            if local_report and _by_code(node.metric) is None:
+                continue
             text = (
                 f"[{node.metric}] {node.value}{node.unit} "
                 f"({node.period}년, 출처: {node.source_file or node.source}, "

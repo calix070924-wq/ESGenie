@@ -25,7 +25,7 @@ from .layer2_rag import HybridRAG, get_hybrid_rag
 from .layer4_verify import VerificationResult, verify_and_refine
 from .layer5_audit_trace import AuditTrace, build_audit_trace, save_audit_trace
 from .llm import CLIENT as LLM_CLIENT
-from .knowledge.kesg_items import BASIC_28_CODES
+from .knowledge.kesg_items import BASIC_28_CODES, by_code
 from .ssot import (
     audit_trace as ssot_audit_trace,
     detector_5axis,
@@ -385,7 +385,11 @@ def run(
         report.corp_name = corp_name_final
         report.industry = (industry or "").strip()
         report.raw_text_snippets = (
-            [node.raw_text for node in evidence_graph.nodes.values() if node.raw_text]
+            [
+                node.raw_text
+                for node in evidence_graph.nodes.values()
+                if node.raw_text and by_code(node.metric) is not None
+            ]
             + [node.text for node in evidence_graph.text_nodes.values() if node.kesg_code]
         )[:20]
         report.source = "ssot_local"
