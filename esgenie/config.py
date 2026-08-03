@@ -122,3 +122,29 @@ JUDGE_TRIGGER: float = float(os.getenv("JUDGE_TRIGGER", "0.25"))
 
 # 최종 점수 = JUDGE_RULE_WEIGHT * 룰점수 + (1 - JUDGE_RULE_WEIGHT) * LLM점수
 JUDGE_RULE_WEIGHT: float = float(os.getenv("JUDGE_RULE_WEIGHT", "0.4"))
+
+
+# ---- 책임있는 기권(Abstention) ------------------------------------------------
+# 근거로 검증 불가한 수치 주장(코드는 매핑됐으나 근거 노드가 없거나 단위 호환
+# 불가)을 고위험/안전으로 단정하지 않고 판정 보류(abstain)로 표시할지 여부.
+# 기본 False — 꺼져 있으면 기존 동작 100% 그대로다.
+#
+# score 영향(경로별로 다름 — 정확히 기록):
+#   - layer3_detect._score_d1_numeric(주 생성문 경로): 미검증 시 score는 원래도
+#     0.0이라, 기권을 켜도 score는 불변이고 abstain/abstain_reason 플래그만 추가된다.
+#   - ssot.detector_5axis.detect_d1_numeric(정합화 경로): 기존 legacy 반환값
+#     0.6(코드 매핑 없음)/0.9(근거 노드 없음)를 abstain 시 score=0.0으로 **교체**한다.
+#     즉 이 경로에서는 score가 바뀐다. 프로덕션 호출부(pipeline._build_risk_rows의
+#     `if not nodes: continue`)는 이 분기에 닿지 않아 회귀는 없지만, 이는 설계된
+#     안전이 아니라 우연한 안전이므로 활성화 전 검토가 필요하다.
+# (게이트·HITL 반영은 후속 배치.)
+ABSTAIN_ENABLED: bool = os.getenv("ABSTAIN_ENABLED", "0") == "1"
+
+# 2026-07-28 실키 A/B(scripts/abstain_ab_eval.py) 결과: test held-out에서
+# 기권 7건이 전부 unit_mismatch였고 Overall/recall이 하락했다(no_evidence는
+# 0건 — 단일 그래프로 여러 회사 문장을 검증하는 현 벤치 구조상 "근거 노드
+# 자체가 없음"이 사실상 발생하지 않기 때문. docs/abstention_metrics_result.md
+# 참조). 그 결과 unit_mismatch는 기본적으로 기권시키지 않는다 — 세분 스위치로
+# 되돌릴 수 있게 남겨둔다(주 타깃인 no_evidence 기권 자체는 ABSTAIN_ENABLED로
+# 계속 켤 수 있음). 기본 False.
+ABSTAIN_UNIT_MISMATCH: bool = os.getenv("ABSTAIN_UNIT_MISMATCH", "0") == "1"

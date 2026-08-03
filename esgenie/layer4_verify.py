@@ -378,6 +378,6 @@ def _compute_text_risk_vector(
         best_rv = RiskVector(
             D1_numeric=zero, D2_modifier=zero, D3_semantic=zero,
             D5_timeseries=zero,
-            aggregate={"risk_score": 0.0, "level": "low", "top_axis": ""},
+            aggregate={"risk_score": 0.0, "level": "low", "top_axis": "", "abstained_axes": []},
         )
     return best_rv

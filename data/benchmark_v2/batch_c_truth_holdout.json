@@ -1,0 +1,45 @@
+{
+  "name": "batch_c_truth_holdout",
+  "purpose": "PR #52 리뷰(허정만) 대응 — no_evidence 기권의 정밀도 p는 content-blind라 모델 성능이 될 수 없다(docs/abstain_wrapup_conclusion.md §1-c). 진짜 D1 성능은 '근거가 있을 때'의 수치검증 정확도로 측정해야 하므로, node를 숨기지 않는(근거 present) 케이스만으로 이 홀드아웃을 구성한다. label은 '그럴듯함'이 아니라 실제 공시값(kesg_data)과의 일치로만 정한다.",
+  "label_rule": "claimed_value가 true_value 대비 상대오차 |claimed-true|/true <= tolerance(기본 D1_THRESHOLD=0.15, 15%) 이면 label=clean(참), 초과하면 label=greenwash(거짓). 값의 '그럴듯함'은 라벨 기준에 쓰지 않는다 — 오직 실제 공시값과의 일치 여부.",
+  "note": "true_value는 data/sample_dart/{SME001,SME002,005930}*.json의 kesg_data 실측값 그대로(직접 대조 확인). 근거 노드를 숨기지 않으므로(present) 기권(abstain) 트랙과는 무관 — D1 numeric axis 자체의 정밀도/재현율만 잰다.",
+  "tolerance_pct": 0.15,
+  "n_cases": 24,
+  "cases": [
+    {"id": "C-01", "ticker": "SME002", "code": "E-6-2", "sentence": "재활용률은 86%를 기록했다.", "claimed_value": 86, "true_value": 86.3, "unit": "%", "label": "clean"},
+    {"id": "C-02", "ticker": "SME002", "code": "E-6-2", "sentence": "재활용률은 98%에 달했다.", "claimed_value": 98, "true_value": 86.3, "unit": "%", "label": "greenwash"},
+
+    {"id": "C-03", "ticker": "SME002", "code": "G-2-1", "sentence": "이사회 출석률은 92%였다.", "claimed_value": 92, "true_value": 91.7, "unit": "%", "label": "clean"},
+    {"id": "C-04", "ticker": "SME002", "code": "G-2-1", "sentence": "이사회 출석률은 100%를 기록했다.", "claimed_value": 100, "true_value": 91.7, "unit": "%", "label": "greenwash"},
+
+    {"id": "C-05", "ticker": "SME002", "code": "G-1-2", "sentence": "사외이사 비율은 40%다.", "claimed_value": 40, "true_value": 40.0, "unit": "%", "label": "clean"},
+    {"id": "C-06", "ticker": "SME002", "code": "G-1-2", "sentence": "사외이사 비율은 55%다.", "claimed_value": 55, "true_value": 40.0, "unit": "%", "label": "greenwash"},
+
+    {"id": "C-07", "ticker": "SME002", "code": "E-4-2", "sentence": "재생에너지 사용 비율은 4%다.", "claimed_value": 4, "true_value": 4.2, "unit": "%", "label": "clean"},
+    {"id": "C-08", "ticker": "SME002", "code": "E-4-2", "sentence": "재생에너지 사용 비율은 15%다.", "claimed_value": 15, "true_value": 4.2, "unit": "%", "label": "greenwash"},
+
+    {"id": "C-09", "ticker": "SME001", "code": "G-1-2", "sentence": "사외이사 비율은 33%다.", "claimed_value": 33, "true_value": 33.3, "unit": "%", "label": "clean"},
+    {"id": "C-10", "ticker": "SME001", "code": "G-1-2", "sentence": "사외이사 비율은 50%다.", "claimed_value": 50, "true_value": 33.3, "unit": "%", "label": "greenwash"},
+
+    {"id": "C-11", "ticker": "SME001", "code": "E-6-1", "sentence": "폐기물 배출량은 48톤이었다.", "claimed_value": 48, "true_value": 48.2, "unit": "ton", "label": "clean"},
+    {"id": "C-12", "ticker": "SME001", "code": "E-6-1", "sentence": "폐기물 배출량은 30톤에 불과했다.", "claimed_value": 30, "true_value": 48.2, "unit": "ton", "label": "greenwash"},
+
+    {"id": "C-13", "ticker": "SME001", "code": "E-3-1", "sentence": "온실가스 배출량은 1,250tCO2eq이었다.", "claimed_value": 1250, "true_value": 1250.5, "unit": "tCO2eq", "label": "clean"},
+    {"id": "C-14", "ticker": "SME001", "code": "E-3-1", "sentence": "온실가스 배출량은 100tCO2eq에 불과했다.", "claimed_value": 100, "true_value": 1250.5, "unit": "tCO2eq", "label": "greenwash"},
+
+    {"id": "C-15", "ticker": "005930", "code": "E-3-1", "sentence": "온실가스 배출량은 1,670만tCO2eq를 기록했다.", "claimed_value": 16700000, "true_value": 16700000, "unit": "tCO2eq", "label": "clean"},
+    {"id": "C-16", "ticker": "005930", "code": "E-3-1", "sentence": "온실가스 배출량은 800만tCO2eq에 불과했다.", "claimed_value": 8000000, "true_value": 16700000, "unit": "tCO2eq", "label": "greenwash"},
+
+    {"id": "C-17", "ticker": "005930", "code": "E-4-2", "sentence": "재생에너지 사용 비율은 31%다.", "claimed_value": 31, "true_value": 31.0, "unit": "%", "label": "clean"},
+    {"id": "C-18", "ticker": "005930", "code": "E-4-2", "sentence": "재생에너지 사용 비율은 70%에 달했다.", "claimed_value": 70, "true_value": 31.0, "unit": "%", "label": "greenwash"},
+
+    {"id": "C-19", "ticker": "005930", "code": "E-6-2", "sentence": "폐기물 재활용률 95%를 달성했다.", "claimed_value": 95, "true_value": 95.8, "unit": "%", "label": "clean"},
+    {"id": "C-20", "ticker": "005930", "code": "E-6-2", "sentence": "폐기물 재활용률 60%에 그쳤다.", "claimed_value": 60, "true_value": 95.8, "unit": "%", "label": "greenwash"},
+
+    {"id": "C-21", "ticker": "005930", "code": "G-1-2", "sentence": "사외이사 비율은 64%다.", "claimed_value": 64, "true_value": 63.6, "unit": "%", "label": "clean"},
+    {"id": "C-22", "ticker": "005930", "code": "G-1-2", "sentence": "사외이사 비율은 40%다.", "claimed_value": 40, "true_value": 63.6, "unit": "%", "label": "greenwash"},
+
+    {"id": "C-23", "ticker": "005930", "code": "G-2-1", "sentence": "이사회 출석률은 98%였다.", "claimed_value": 98, "true_value": 98.0, "unit": "%", "label": "clean"},
+    {"id": "C-24", "ticker": "005930", "code": "G-2-1", "sentence": "이사회 출석률은 75%에 그쳤다.", "claimed_value": 75, "true_value": 98.0, "unit": "%", "label": "greenwash"}
+  ]
+}

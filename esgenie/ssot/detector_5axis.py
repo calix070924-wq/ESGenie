@@ -18,6 +18,7 @@ import re
 from dataclasses import dataclass, field
 from typing import Any
 
+from ..config import ABSTAIN_ENABLED
 from ..schemas import AxisScore   # 공유 스키마 (v15 통합 시 중복 정의 제거)
 from .evidence_graph import EvidenceGraph, EvidenceNode, TextNode
 from . import prompts
@@ -52,6 +53,38 @@ class PolicyAuditResult:
 _NUM_RE = re.compile(r"([0-9][0-9,\.]*)\s*(만|억|천)?\s*(tCO2eq|tCO2|kWh|MJ|ton|%|원|건|명)?")
 
 
+# ---- 책임있는 기권(abstain) 헬퍼 --------------------------------------------
+# ABSTAIN_ENABLED=0(기본)이면 아래 헬퍼는 호출되지 않아 기존 동작(0.6/0.9)이 그대로다.
+# 참고: 이 함수(detect_d1_numeric)의 유일한 프로덕션 호출부인
+# esgenie/pipeline.py::_build_risk_rows는 `if not nodes: continue`로 노드 없는
+# 코드를 호출 전에 걸러내므로, 아래 두 분기(코드 없음/근거 없음)는 사실상
+# 프로덕션 경로가 아니라 직접 호출(테스트 등)에서만 도달한다. 그럼에도 D1의
+# 두 구현이 "근거 없음"에 대해 같은 의미(기권)를 내도록 정합화한다.
+#
+# 2026-07-28 추가 정합화: layer3_detect._score_d1_numeric은 ABSTAIN_UNIT_MISMATCH
+# (기본 False)로 unit_mismatch 기권을 별도 제어한다(실키 A/B에서 unit_mismatch
+# 기권이 test held-out 지표를 하락시켜 기본 비활성화). 이 함수(ssot)는 애초에
+# unit_mismatch를 기권으로 전환하는 분기가 없다(L99 미일치는 그대로 위험 점수로
+# 유지 — 아래 참조) — 두 경로 모두 "기본적으로 no_evidence만 기권"이라는 점에서
+# 이미 정합화돼 있다.
+
+def _abstain(reason: str, detail: str) -> AxisScore:
+    return AxisScore(
+        score=0.0, evidence=[], detail=f"ABSTAIN({reason}): {detail}",
+        abstain=True, abstain_reason=reason,
+    )
+
+
+def _retry_evidence(code: str, graph: EvidenceGraph) -> list[Any] | None:
+    """근거 부재 시 최종 기권 판정 전 보조 재검색 훅.
+
+    강화된 재검색(동의어/상위코드 확장, RAG 청크 재조회 등)은 아직 구현하지
+    않았다. 현재는 항상 None을 반환한다.
+    TODO: 강화된 재검색(후속 배치 후보).
+    """
+    return None
+
+
 def detect_d1_numeric(
     sentence: str,
     kesg_code: str | None,
@@ -76,10 +109,14 @@ def detect_d1_numeric(
         return AxisScore(0.0, [], "수치 클레임 없음")
 
     if not kesg_code:
+        if ABSTAIN_ENABLED:
+            return _abstain("no_evidence", "수치는 있으나 K-ESG 매핑 없음 → 근거 추적 불가")
         return AxisScore(0.6, [], "수치는 있으나 K-ESG 매핑 없음 → 근거 추적 불가")
 
     candidates = graph.nodes_by_metric(kesg_code)
     if not candidates:
+        if ABSTAIN_ENABLED and not _retry_evidence(kesg_code, graph):
+            return _abstain("no_evidence", f"{kesg_code} 근거 노드 없음(재검색 후에도 없음)")
         return AxisScore(0.9, [], f"{kesg_code} 근거 노드 없음 → 미증빙 수치(고위험)")
 
     matched_evidence: list[str] = []
@@ -235,10 +272,16 @@ def detect_risk_axes(
     weighted = d1.score * 0.40 + d2.score * 0.25 + d3.score * 0.25 + d5.score * 0.10
     top = max({"D1": d1, "D2": d2, "D3": d3, "D5": d5}.items(), key=lambda kv: kv[1].score)
 
+    # 기권 전파: 축 중 하나라도 abstain이면 aggregate에도 표식을 실어, 이 경로
+    # 소비자가 '안전한 낮은 점수'와 '판정 보류'를 구분할 수 있게 한다(코드리뷰 must-fix 3).
+    abstained = [ax for ax in (d1, d2, d3, d5) if getattr(ax, "abstain", False)]
     aggregate = AxisScore(
         score=round(weighted, 4),
         evidence=d1.evidence + d3.evidence,
-        detail=f"종합 위험도={weighted:.3f} | 최고위험={top[0]}({top[1].score:.3f})",
+        detail=f"종합 위험도={weighted:.3f} | 최고위험={top[0]}({top[1].score:.3f})"
+               + (f" | ABSTAIN({abstained[0].abstain_reason})" if abstained else ""),
+        abstain=bool(abstained),
+        abstain_reason=(abstained[0].abstain_reason if abstained else None),
     )
     return {"D1": d1, "D2": d2, "D3": d3, "D5": d5, "aggregate": aggregate}
 

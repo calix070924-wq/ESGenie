@@ -19,6 +19,8 @@ class AxisScore:
     score: float
     evidence: list[str] = field(default_factory=list)  # node_id 또는 chunk_id 목록
     detail: str = ""
+    abstain: bool = False              # ★ 신설: 판정 보류 여부(기본 False — 기존 동작 불변)
+    abstain_reason: str | None = None  # ★ 신설: "no_evidence" | "unit_mismatch" | "low_confidence"
 
     def to_dict(self) -> dict[str, Any]:
         return asdict(self)
@@ -62,7 +64,10 @@ class RiskVector:
         return str(self.aggregate.get("top_axis", ""))
 
     def high_axes(self) -> list[str]:
-        """level이 high인 축 이름 목록."""
+        """level이 high인 축 이름 목록.
+
+        abstain=True인 축은 판정 보류 상태라 위험 축으로 오인하면 안 되므로 제외한다.
+        """
         axes = {
             "D1_numeric":    self.D1_numeric,
             "D2_modifier":   self.D2_modifier,
@@ -71,7 +76,17 @@ class RiskVector:
         }
         from .config import RISK_LEVEL_THRESHOLDS
         threshold = RISK_LEVEL_THRESHOLDS["medium"]
-        return [name for name, ax in axes.items() if ax.score >= threshold]
+        return [name for name, ax in axes.items() if not ax.abstain and ax.score >= threshold]
+
+    def abstained_axes(self) -> list[str]:
+        """abstain=True인 축 이름 목록."""
+        axes = {
+            "D1_numeric":    self.D1_numeric,
+            "D2_modifier":   self.D2_modifier,
+            "D3_semantic":   self.D3_semantic,
+            "D5_timeseries": self.D5_timeseries,
+        }
+        return [name for name, ax in axes.items() if ax.abstain]
 
 
 # ---- L4 재생성 시도 기록 -----------------------------------------------------
