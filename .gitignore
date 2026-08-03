@@ -27,6 +27,7 @@ out/
 
 # OCR LLM 응답 캐시 — 재생성 가능한 로컬 산출물(회사별 수백 MB). corp_codes.json은 추적 유지.
 data/_cache/ocr/
+data/_cache/llm/
 
 # Lock files from LibreOffice / other editors
 .~lock.*

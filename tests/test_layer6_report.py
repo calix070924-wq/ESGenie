@@ -101,6 +101,27 @@ def test_pdf_contains_korean(output, tmp_path: Path):
         assert kw in text, f"PDF 본문에 '{kw}' 없음"
 
 
+def test_pdf_replaces_unsupported_corporation_glyph(tmp_path: Path):
+    """번들 NotoSansKR에 없는 ㈜가 네모/NUL이 아니라 (주)로 표시된다."""
+    pytest.importorskip("reportlab")
+    fitz = pytest.importorskip("fitz")
+    doc = ReportDoc(
+        corp_name="한울정밀공업㈜",
+        industry="자동차부품",
+        report_year=2026,
+        generated_at="2026-08-03",
+        blocks=[ReportBlock("cover", "", "# 한울정밀공업㈜ ESG 보고서", "deterministic")],
+    )
+
+    path = export_report_pdf(doc, tmp_path)
+    pdf = fitz.open(path)
+    text = "".join(pdf.load_page(i).get_text() for i in range(pdf.page_count))
+    pdf.close()
+
+    assert "한울정밀공업(주)" in text
+    assert "\x00" not in text
+
+
 # ── 8. 데이터가 없는 블록은 안전하게 생략된다(빈 output) ──
 def test_assemble_handles_sparse_output():
     sparse = SimpleNamespace(

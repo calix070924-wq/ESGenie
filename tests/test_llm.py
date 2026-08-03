@@ -11,7 +11,7 @@ from types import SimpleNamespace
 
 import pytest
 
-from esgenie import llm as llm_module
+from esgenie import llm as llm_module, llm_cache
 from esgenie.llm import LLM_MAX_ATTEMPTS, LLMClient, LLMUnavailableError
 
 
@@ -90,6 +90,52 @@ def test_openai_retry_then_success():
     assert fake.calls == 2
     assert resp.used_mock is False
     assert resp.content == "실제 응답"
+
+
+def test_live_response_cache_replays_without_second_call(monkeypatch, tmp_path):
+    monkeypatch.setattr(llm_module.SETTINGS, "force_mock", False)
+    monkeypatch.delenv("ESGENIE_FORCE_MOCK", raising=False)
+    monkeypatch.setenv("ESGENIE_LLM_CACHE_DIR", str(tmp_path))
+    monkeypatch.delenv("ESGENIE_LLM_CACHE_REFRESH", raising=False)
+    llm_cache.reset_stats()
+    fake = _FakeOpenAI([_openai_response("캐시할 라이브 응답")])
+    client = _client()
+    client._openai_client = fake
+
+    first = client.complete(system="same system", user="same user")
+    second = client.complete(system="same system", user="same user")
+
+    assert first.content == second.content == "캐시할 라이브 응답"
+    assert fake.calls == 1
+    assert first.meta["cache"] == "miss"
+    assert second.meta["cache"] == "hit"
+    assert llm_cache.stats() == {
+        "mode": "on", "hits": 1, "misses": 1, "live_calls": 1,
+    }
+
+
+def test_live_response_cache_recovers_from_non_object_json(monkeypatch, tmp_path):
+    monkeypatch.setattr(llm_module.SETTINGS, "force_mock", False)
+    monkeypatch.delenv("ESGENIE_FORCE_MOCK", raising=False)
+    monkeypatch.setenv("ESGENIE_LLM_CACHE_DIR", str(tmp_path))
+    monkeypatch.delenv("ESGENIE_LLM_CACHE_REFRESH", raising=False)
+    llm_cache.reset_stats()
+    key = llm_cache.make_key(
+        provider="openai", model=llm_module.SETTINGS.openai_model,
+        system="same system", user="same user", temperature=0.0, json_mode=False,
+    )
+    (tmp_path / f"{key}.json").write_text("[]", encoding="utf-8")
+    fake = _FakeOpenAI([_openai_response("복구 응답")])
+    client = _client()
+    client._openai_client = fake
+
+    response = client.complete(system="same system", user="same user")
+
+    assert response.content == "복구 응답"
+    assert fake.calls == 1
+    assert llm_cache.stats() == {
+        "mode": "on", "hits": 0, "misses": 1, "live_calls": 1,
+    }
 
 
 def test_anthropic_retry_then_success():

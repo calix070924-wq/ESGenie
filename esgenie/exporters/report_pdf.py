@@ -22,6 +22,15 @@ from typing import Any
 from ..supplychain.exporters._fonts import resolve_korean_font
 
 
+def _pdf_safe_text(text: str) -> str:
+    """번들 NotoSansKR에 없는 호환문자를 의미가 같은 표시로 바꾼다.
+
+    U+321C(㈜)는 번들 TTF의 cmap에 없어 ReportLab이 네모로 렌더한다. 원본
+    ReportDoc과 파일명은 유지하고 PDF에 그리는 문자열만 `(주)`로 정규화한다.
+    """
+    return text.replace("㈜", "(주)")
+
+
 def _inline(text: str) -> str:
     """마크다운 인라인 → reportlab 마크업. HTML 이스케이프 후 태그만 복원."""
     text = html.escape(text)
@@ -162,13 +171,13 @@ def export_report_pdf(doc: Any, out_dir: str | Path) -> str:
         elements.append(Paragraph(
             "⚠ 한글 폰트 미발견 — 텍스트가 깨질 수 있습니다(ESGENIE_PDF_FONT 설정 권장).",
             styles["note"]))
-    elements += _md_to_flowables(doc.to_markdown(), styles, font)
+    elements += _md_to_flowables(_pdf_safe_text(doc.to_markdown()), styles, font)
 
     pdf = SimpleDocTemplate(
         str(out_path), pagesize=A4,
         leftMargin=18 * mm, rightMargin=18 * mm,
         topMargin=16 * mm, bottomMargin=16 * mm,
-        title=f"{doc.corp_name} ESG 공시 신뢰성 보고서",
+        title=f"{_pdf_safe_text(doc.corp_name)} ESG 공시 신뢰성 보고서",
     )
     pdf.build(elements)
     return str(out_path)
