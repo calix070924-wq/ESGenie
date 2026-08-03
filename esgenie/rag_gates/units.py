@@ -107,8 +107,14 @@ for _group in _UNIT_GROUPS:
 
 
 def normalize_unit(raw: str) -> str | None:
-    """Return canonical unit string, or None if unrecognized."""
-    key = raw.strip().lower()
+    """Return canonical unit string, or None if unrecognized.
+
+    내부 공백을 제거한다(2026-08-02). OCR이 뽑는 단위는 `'백만 원'`처럼 배율과 단위
+    사이에 공백이 들어오는데, 사전 키는 `'백만원'`이라 매칭에 실패해 `unit_suspect`가
+    붙고 값이 환산되지 않았다(모비스 S-2-4 교육훈련비 21,116 백만 원 → 21,116원,
+    10억 배 축소). 별칭 30개를 공백 제거 후 대조했을 때 충돌하는 키가 없어 안전하다.
+    """
+    key = re.sub(r"\s+", "", raw).lower()
     return _UNIT_ALIASES.get(key)
 
 

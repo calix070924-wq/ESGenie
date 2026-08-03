@@ -138,3 +138,42 @@ def test_d6_distinguishes_total_partial_and_missing() -> None:
 def test_d6_partial_factor_sensitivity_is_monotonic() -> None:
     scores = [_d6("component", factor).score for factor in (0.3, 0.5, 0.7)]
     assert scores[0] < scores[1] < scores[2]
+
+
+# ---- 단위 배율 접두 (2026-08-02) --------------------------------------------
+
+def test_scale_prefix_with_space_is_converted():
+    """'백만 원'처럼 배율과 단위 사이에 공백이 있어도 환산돼야 한다.
+
+    `rag_gates.units._UNIT_ALIASES`에는 '백만원'(공백 없음)만 있어 OCR이 뽑는
+    '백만 원'이 매칭에 실패했다. 그 결과 모비스 S-2-4 교육훈련비가
+    21,116 백만 원 → 21,116원으로 실려 **10억 배 축소**됐다(unit_suspect만 붙고
+    값은 그대로). 5개사 S·G에서 이 유형이 7건이다.
+    """
+    from esgenie.ssot.node_select import normalize_to_item_unit
+
+    assert normalize_to_item_unit("S-2-4", 21_116.0, "백만 원") == (21_116_000_000.0, "원", None)
+    assert normalize_to_item_unit("S-2-5", 425_674.0, "백만 원") == (425_674_000_000.0, "원", None)
+    assert normalize_to_item_unit("S-2-4", 100.0, "억 원") == (10_000_000_000.0, "원", None)
+
+
+def test_scale_prefix_does_not_break_plain_units():
+    """음성 — 배율 없는 단위와 기존 환산은 그대로여야 한다(과통합 방지)."""
+    from esgenie.ssot.node_select import normalize_to_item_unit
+
+    assert normalize_to_item_unit("S-2-4", 100.0, "원") == (100.0, "원", None)
+    assert normalize_to_item_unit("E-7-1", 210.68, "ton") == (210_680.0, "kg", None)
+    assert normalize_to_item_unit("G-1-2", 50.0, "퍼센트") == (50.0, "%", None)
+
+
+def test_unit_alias_keys_do_not_collide_when_spaces_stripped():
+    """공백 제거가 서로 다른 별칭을 같은 키로 뭉개지 않는가 — 수정의 안전 근거."""
+    import re
+    from collections import defaultdict
+    from esgenie.rag_gates.units import _UNIT_ALIASES
+
+    by_key = defaultdict(set)
+    for raw, canon in _UNIT_ALIASES.items():
+        by_key[re.sub(r"\s+", "", raw)].add(canon)
+    collisions = {k: v for k, v in by_key.items() if len(v) > 1}
+    assert not collisions, f"공백 제거 시 별칭 충돌: {collisions}"
