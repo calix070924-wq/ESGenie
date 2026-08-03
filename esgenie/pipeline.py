@@ -16,7 +16,7 @@ from pathlib import Path
 from typing import Any
 
 from .config import INDUSTRY_DIR, MAX_REFINEMENT_ITER, SETTINGS
-from .dart_client import CompanyReport, load_report
+from .dart_client import CompanyReport, _empty_report, load_report
 from .industry import resolve_module  # 업종 모듈 self-register 포함
 from .issb_gap import ISSBGapReport, build_issb_gap_report
 from .layer1_extract import ExtractionResult
@@ -25,7 +25,7 @@ from .layer2_rag import HybridRAG, get_hybrid_rag
 from .layer4_verify import VerificationResult, verify_and_refine
 from .layer5_audit_trace import AuditTrace, build_audit_trace, save_audit_trace
 from .llm import CLIENT as LLM_CLIENT
-from .knowledge.kesg_items import BASIC_28_CODES
+from .knowledge.kesg_items import BASIC_28_CODES, by_code
 from .ssot import (
     audit_trace as ssot_audit_trace,
     detector_5axis,
@@ -34,7 +34,7 @@ from .ssot import (
     ocr_table_gate,
     ocr_router,
 )
-from .ssot.ssot_pipeline import build_rag_with_ssot, extract_local_with_ssot, extract_with_ssot
+from .ssot.ssot_pipeline import build_rag_with_ssot, extract_with_ssot
 
 logger = logging.getLogger(__name__)
 
@@ -377,6 +377,24 @@ def run(
         len(evidence_graph.edges),
     )
 
+    # 비DART 실행도 아래의 단일 L1~L5 경로를 탄다. 증빙이 있을 때만 빈 보고서를
+    # 실행 컨텍스트로 합성한다. 증빙·설문이 모두 없는 호출까지 일반론 보고서를
+    # 생성하지 않도록 기존 로컬 분기의 입력 가드는 보존한다.
+    if report is None and (evidence_graph.nodes or evidence_graph.text_nodes):
+        report = _empty_report(corp_code_final, report_year_final)
+        report.corp_name = corp_name_final
+        report.industry = (industry or "").strip()
+        report.raw_text_snippets = (
+            [
+                node.raw_text
+                for node in evidence_graph.nodes.values()
+                if node.raw_text and by_code(node.metric) is not None
+            ]
+            + [node.text for node in evidence_graph.text_nodes.values() if node.kesg_code]
+        )[:20]
+        report.source = "ssot_local"
+        logger.info("[L0] 비DART 증빙을 빈 CompanyReport에 연결 — 단일 L1~L5 경로 사용")
+
     extraction: ExtractionResult | None = None
     disclosure: DisclosureReport | None = None
     issb_gap: ISSBGapReport | None = None
@@ -458,33 +476,6 @@ def run(
                 path = save_audit_trace(trace)
                 trace_paths[area] = str(path)
                 logger.info("[L5] 저장 완료: %s", path)
-    elif evidence_graph.nodes or evidence_graph.text_nodes:
-        logger.info("[L1] K-ESG 항목 추출 중... (비상장/SSOT 로컬)")
-        extraction = extract_local_with_ssot(
-            evidence_graph,
-            corp_code=corp_code_final,
-            corp_name=corp_name_final,
-            report_year=report_year_final,
-            industry=((industry or "").strip()),
-            profile=profile,
-        )
-        _apply_survey_answers(extraction, survey_answers)
-        logger.info(
-            "[L1] 완료: %.1f%% 커버리지 (%s)",
-            extraction.coverage_pct,
-            extraction.profile_label,
-        )
-
-        disclosure = detect_selective_disclosure(extraction, industry_module)
-        logger.info("[D6] 선택적 공시 의심도=%.2f (%s)", disclosure.score, disclosure.level)
-        issb_gap = build_issb_gap_report(extraction)
-        logger.info(
-            "[ISSB] 프로파일 내 %d/%d 공시, 누락 %d",
-            issb_gap.in_profile_disclosed,
-            issb_gap.in_profile_total,
-            issb_gap.in_profile_missing,
-        )
-
     effective_industry = ((report.industry if report is not None else "") or industry or "")
     v15_trace, export_paths, risk_rows, policy_results, policy_drafts = _export_v15_artifacts(
         evidence_graph,

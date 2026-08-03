@@ -177,3 +177,71 @@ def test_unit_alias_keys_do_not_collide_when_spaces_stripped():
         by_key[re.sub(r"\s+", "", raw)].add(canon)
     collisions = {k: v for k, v in by_key.items() if len(v) > 1}
     assert not collisions, f"공백 제거 시 별칭 충돌: {collisions}"
+
+
+# ---- 로컬(비상장/시연) 경로 통일 (2026-08-03) --------------------------------
+
+def _local_graph():
+    """로컬 경로가 옛 규칙(max period)으로 틀리던 유형을 재현한 그래프."""
+    from esgenie.ssot.evidence_graph import EvidenceGraph, EvidenceNode
+
+    def n(code, v, u, p, hint, i):
+        return EvidenceNode(
+            id=i, metric=code, value=v, unit=u, period=p, source="ocr/x.pdf",
+            raw_text=f"{hint}={v}{u} (x.pdf)", origin="ocr_unstructured", source_file="x.pdf")
+
+    g = EvidenceGraph(corp_code="SME001", corp_name="한울정밀(가상)")
+    g.report_year = 2025
+    for x in [
+        n("E-3-1", 50_000.0, "tCO2eq", 2024, "온실가스 배출량 합계", "a"),
+        n("E-3-1", 9_999.0, "tCO2eq", 2025, "온실가스 감축 효과", "b"),        # 파생 + 최신
+        n("E-5-1", 1_200.0, "ton", 2024, "용수 사용량(취수량) 합계", "c"),
+        n("E-5-1", 300.0, "ton", 2025, "용수 사용량(취수량) 국내(별도)", "d"),  # 부분 + 최신
+        n("E-7-1", 1.5, "ton", 2024, "대기오염물질 배출량 합계", "e"),          # 단위 환산 대상
+    ]:
+        g.add_node(x)
+    return g
+
+
+def _extract_local_graph():
+    from esgenie.dart_client import _empty_report
+    from esgenie.ssot.ssot_pipeline import extract_with_ssot
+
+    report = _empty_report("SME001", 2025)
+    report.corp_name = "한울정밀"
+    return extract_with_ssot(report, _local_graph())
+
+
+def test_local_path_uses_same_representative_rules_as_listed_path():
+    """비상장(시연) 경로가 상장 경로와 **같은 승격 규칙**을 타야 한다.
+
+    2026-08-03 이전 로컬 경로는 `best_nodes`(= max(period, confidence))로
+    kesg_data를 미리 합성해, `_merge_ssot_evidence`의 승격이 통째로 건너뛰어졌다.
+    그 결과 로컬 경로에는 대표노드 선정·단위 정규화·역할 판정·플래그가 **전부 빠져 있었다**.
+    5개사 실측에서 두 규칙은 76개 항목 중 35건(46%)이 갈렸고, 본선 시연이 이 경로를 탄다.
+    """
+    r = _extract_local_graph()
+
+    # 파생(감축 효과)이 최신 연도여도 배제된다 — 옛 규칙이면 9,999를 골랐다
+    assert r.mapped["E-3-1"]["value"] == 50_000.0
+    # 부분값(국내(별도))이 최신 연도여도 합계가 이긴다 — 옛 규칙이면 300을 골랐다
+    assert r.mapped["E-5-1"]["value"] == 1_200.0
+    # 단위가 항목 정의 단위로 환산된다 — 옛 규칙이면 1.5 ton 그대로였다
+    assert r.mapped["E-7-1"]["value"] == 1_500.0
+    assert r.mapped["E-7-1"]["unit"] == "kg"
+
+
+def test_local_path_carries_role_and_tier_metadata():
+    """역할·경로 태그·플래그가 로컬 경로에도 실려야 한다(상장 경로와 동일 스키마)."""
+    from esgenie.ssot.ssot_pipeline import SOURCE_OCR_GATED
+
+    r = _extract_local_graph()
+    e = r.mapped["E-5-1"]
+    assert e.get("source_tier") == SOURCE_OCR_GATED
+    assert e.get("value_role") == "total"
+
+
+def test_local_path_still_promotes_ocr_nodes():
+    """별도 로컬 추출기 없이도 빈 보고서가 공용 OCR 승격 경로를 타야 한다."""
+    r = _extract_local_graph()
+    assert r.mapped, "원장이 비면 승격 경로가 안 돈 것이다"

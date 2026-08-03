@@ -113,6 +113,17 @@ class LLMClient:
                 _sys, _usr = _mask_pii(system), _mask_pii(user)
             else:
                 _sys, _usr = system, user
+            from . import llm_cache
+            cache_key = llm_cache.make_key(
+                provider="openai", model=SETTINGS.openai_model,
+                system=_sys, user=_usr, temperature=temperature, json_mode=json_mode,
+            )
+            cached = llm_cache.lookup(cache_key)
+            if cached is not None:
+                return LLMResponse(
+                    content=cached, used_mock=False,
+                    meta={"model": SETTINGS.openai_model, "provider": "openai", "cache": "hit"},
+                )
             kwargs: dict[str, Any] = {
                 "model": SETTINGS.openai_model,
                 "temperature": temperature,
@@ -127,10 +138,14 @@ class LLMClient:
             attempt = 0
             for attempt in range(1, LLM_MAX_ATTEMPTS + 1):
                 try:
+                    llm_cache.record_live_call()
                     resp = self._openai_client.chat.completions.create(**kwargs)
                     text = resp.choices[0].message.content or ""
+                    llm_cache.store(
+                        cache_key, text, provider="openai", model=SETTINGS.openai_model,
+                    )
                     return LLMResponse(content=text, used_mock=False,
-                                       meta={"model": SETTINGS.openai_model, "provider": "openai"})
+                                       meta={"model": SETTINGS.openai_model, "provider": "openai", "cache": "miss"})
                 except Exception as call_exc:
                     exc = call_exc
                     if attempt < LLM_MAX_ATTEMPTS and _is_retryable(exc):
@@ -154,6 +169,17 @@ class LLMClient:
                 _sys, _usr = _mask_pii(system), _mask_pii(user)
             else:
                 _sys, _usr = system, user
+            from . import llm_cache
+            cache_key = llm_cache.make_key(
+                provider="anthropic", model=SETTINGS.anthropic_model,
+                system=_sys, user=_usr, temperature=temperature, json_mode=json_mode,
+            )
+            cached = llm_cache.lookup(cache_key)
+            if cached is not None:
+                return LLMResponse(
+                    content=cached, used_mock=False,
+                    meta={"model": SETTINGS.anthropic_model, "provider": "anthropic", "cache": "hit"},
+                )
             sys_prompt = _sys
             if json_mode:
                 sys_prompt += "\n\n응답은 반드시 유효한 JSON 객체 하나로만 출력하라. 코드블록·설명 금지."
@@ -161,6 +187,7 @@ class LLMClient:
             attempt = 0
             for attempt in range(1, LLM_MAX_ATTEMPTS + 1):
                 try:
+                    llm_cache.record_live_call()
                     resp = self._anthropic_client.messages.create(
                         model=SETTINGS.anthropic_model,
                         max_tokens=2048,
@@ -171,8 +198,11 @@ class LLMClient:
                     text = "".join(
                         block.text for block in resp.content if getattr(block, "type", "") == "text"
                     )
+                    llm_cache.store(
+                        cache_key, text, provider="anthropic", model=SETTINGS.anthropic_model,
+                    )
                     return LLMResponse(content=text, used_mock=False,
-                                       meta={"model": SETTINGS.anthropic_model, "provider": "anthropic"})
+                                       meta={"model": SETTINGS.anthropic_model, "provider": "anthropic", "cache": "miss"})
                 except Exception as call_exc:
                     exc = call_exc
                     if attempt < LLM_MAX_ATTEMPTS and _is_retryable(exc):

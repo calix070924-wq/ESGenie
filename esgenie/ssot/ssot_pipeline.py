@@ -72,76 +72,6 @@ def extract_with_ssot(
     return result
 
 
-def extract_local_with_ssot(
-    graph: EvidenceGraph,
-    *,
-    corp_code: str,
-    corp_name: str,
-    report_year: int,
-    industry: str = "",
-    profile: str | None = None,
-):
-    """비상장/비DART 경로용 L1 추출.
-
-    SSOT(graph)에 이미 편입된 OCR 정량/정성 노드를 CompanyReport 형태로 얇게 합성한 뒤
-    기존 extract_with_ssot()를 재사용한다. 이렇게 하면 공급망 실사·커버리지·D6/ISSB 계산이
-    상장사 경로와 같은 ExtractionResult 스키마를 공유한다.
-    """
-    from esgenie.dart_client import CompanyReport
-    from esgenie.knowledge.kesg_items import by_code
-
-    kesg_data: dict[str, dict[str, Any]] = {}
-    snippets: list[str] = []
-
-    # metric별 최신/고신뢰 노드를 대표값으로 사용한다.
-    best_nodes: dict[str, EvidenceNode] = {}
-    for node in graph.nodes.values():
-        current = best_nodes.get(node.metric)
-        if current is None or (node.period, node.confidence) >= (current.period, current.confidence):
-            best_nodes[node.metric] = node
-
-    for code, node in best_nodes.items():
-        item = by_code(code)
-        kesg_data[code] = {
-            "value": node.value,
-            "unit": node.unit or (item.unit if item else ""),
-            "note": node.source_file or node.source,
-        }
-        if node.raw_text:
-            snippets.append(node.raw_text)
-
-    text_by_code: dict[str, list[Any]] = defaultdict(list)
-    for tnode in graph.text_nodes.values():
-        if not tnode.kesg_code:
-            continue
-        text_by_code[tnode.kesg_code].append(tnode)
-        snippets.append(tnode.text)
-
-    for code, nodes in text_by_code.items():
-        if code in kesg_data:
-            continue
-        item = by_code(code)
-        kesg_data[code] = {
-            "value": "문서 조항 확인",
-            "unit": "",
-            "note": nodes[0].section if nodes else (item.name if item else ""),
-        }
-
-    synthetic = CompanyReport(
-        corp_code=corp_code,
-        corp_name=corp_name,
-        industry=industry,
-        report_year=report_year,
-        financials={},
-        kesg_data=kesg_data,
-        raw_text_snippets=snippets[:20],
-        source="ssot_local",
-    )
-    result = extract_with_ssot(synthetic, graph, profile=profile)
-    result.notes.append("SSOT 로컬 추출: OCR 정량/정성 노드로 비상장 경로 L1 매핑")
-    return result
-
-
 def _merge_ssot_evidence(result: Any, graph: EvidenceGraph) -> None:
     """SSOT graph의 OCR/TextNode를 L1 결과에 병합."""
     from esgenie.dart_client import SOURCE_DART_REGEX
@@ -458,8 +388,18 @@ def build_rag_with_ssot(
 
     # ── SSOT OCR 수치 노드 추가 편입 ──────────────────────────────────
     ocr_docs: list[IndexedDoc] = []
+    local_report = getattr(report, "source", "") == "ssot_local"
+    if local_report:
+        from esgenie.knowledge.kesg_items import by_code as _by_code
     for node in graph.nodes.values():
         if node.origin in ("ocr_structured", "ocr_unstructured"):
+            # 라이브 비상장 OCR은 표 안의 임의 수치에도 percentage·value 같은
+            # 자유형 metric 이름을 붙여 원장에 보존한다. 이 청크들이 넓은 S 쿼리의
+            # 상위를 독점하면 실제 S-4-1 정책 TextNode가 밀려 검색 게이트가 오차단된다.
+            # 상장 5개사 경로는 결과 불변 조건이 있으므로 기존 인덱스를 유지하고,
+            # ssot_local 보고서에서만 K-ESG 코드가 아닌 수치 청크를 생성 컨텍스트에서 뺀다.
+            if local_report and _by_code(node.metric) is None:
+                continue
             text = (
                 f"[{node.metric}] {node.value}{node.unit} "
                 f"({node.period}년, 출처: {node.source_file or node.source}, "

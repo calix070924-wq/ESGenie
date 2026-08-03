@@ -150,8 +150,12 @@ def test_pipeline_supports_local_ssot_without_dart() -> None:
         evidence_files=evidence,
         export_outputs=False,
     )
-    assert output.report is None
-    assert output.sections == {}
+    assert output.report is not None
+    assert output.report.source == "ssot_local"
+    assert output.report.corp_name == "로컬기업"
+    assert output.report.industry == "금속가공"
+    assert output.sections.keys() == {"E"}
+    assert output.audit_traces.keys() == {"E"}
     assert output.extraction is not None
     assert output.v15_trace is not None
     assert len(output.evidence_graph.nodes) > 0
@@ -161,6 +165,43 @@ def test_pipeline_supports_local_ssot_without_dart() -> None:
         any(str(nid).startswith(f"{output.evidence_graph.corp_code}_TXT_") for nid in entry.get("evidence_node_ids", []))
         for entry in output.extraction.mapped.values()
     )
+
+
+def test_pipeline_skips_empty_local_input() -> None:
+    output = run(
+        "",
+        areas=["E"],
+        corp_name="빈기업",
+        use_dart=False,
+        save_traces=False,
+        evidence_files={},
+    )
+    assert output.report is None
+    assert output.extraction is None
+    assert output.sections == {}
+    assert output.audit_traces == {}
+
+
+def test_pipeline_local_ssot_reaches_l6(tmp_path) -> None:
+    evidence = {
+        "waste_ledger_2025.pdf": str(DATA_DIR / "test_docs" / "waste_ledger_2025.pdf"),
+        "safety_policy_2025.pdf": str(DATA_DIR / "test_docs" / "safety_policy_2025.pdf"),
+    }
+    output = run(
+        "LOCAL-L6",
+        areas=["E"],
+        corp_name="로컬보고서기업",
+        industry="금속가공",
+        report_year=2025,
+        use_dart=False,
+        save_traces=False,
+        evidence_files=evidence,
+        export_root=tmp_path,
+        export_report=True,
+    )
+    assert set(output.sections) == {"E"}
+    assert Path(output.export_paths["report_md"]).is_file()
+    assert Path(output.export_paths["report_pdf"]).is_file()
 
 
 def test_pipeline_passes_resolved_industry_module_to_verify(monkeypatch) -> None:
