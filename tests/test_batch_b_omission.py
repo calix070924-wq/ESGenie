@@ -1,4 +1,4 @@
-"""배치 B — 실데이터 미공시 평가셋 하네스 회귀 가드.
+"""배치 B — 샘플/시나리오 리포트 미공시 평가셋 하네스 회귀 가드.
 
 핵심 불변식:
   1) 각 케이스가 자기 회사 리포트의 실제 공백에서 no_evidence를 '주입 없이' 발동한다.
@@ -78,3 +78,12 @@ def test_deferral_breakdown_consistency():
 
 def test_deterministic():
     assert abstain_coverage(_run_rows()) == abstain_coverage(_run_rows())
+
+
+def test_classify_judge_call_flags_mock_contamination():
+    """리뷰 #3(PR #52): ESGENIE_ABSTAIN_LIVE=1인데 LLM이 mock으로 폴백하면
+    judge.used만 보는 구 로직은 이를 실호출로 잘못 집계했다. used_mock까지
+    확인해야 한다."""
+    assert mod.classify_judge_call({"used": False}) == "skipped"
+    assert mod.classify_judge_call({"used": True, "used_mock": False}) == "used"
+    assert mod.classify_judge_call({"used": True, "used_mock": True}) == "mock_contaminated"

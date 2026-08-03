@@ -74,3 +74,12 @@ def test_deterministic_across_runs():
     a = abstain_coverage(_run_rows())
     b = abstain_coverage(_run_rows())
     assert a == b
+
+
+def test_classify_judge_call_flags_mock_contamination():
+    """리뷰 #3(PR #52): ESGENIE_ABSTAIN_LIVE=1인데 LLM이 mock으로 폴백하면
+    judge.used만 보는 구 로직은 이를 실호출로 잘못 집계했다. used_mock까지
+    확인해야 한다."""
+    assert probe_mod.classify_judge_call({"used": False}) == "skipped"
+    assert probe_mod.classify_judge_call({"used": True, "used_mock": False}) == "used"
+    assert probe_mod.classify_judge_call({"used": True, "used_mock": True}) == "mock_contaminated"

@@ -1,10 +1,16 @@
-"""배치 B — 실데이터 미공시 평가셋 A/B 하네스 (멀티티커, 주입 없음).
+"""배치 B — 샘플/시나리오 리포트 미공시 평가셋 A/B 하네스 (멀티티커, 주입 없음).
+
+2026-08-03 리뷰 반영(허정만, PR #52): SME001/SME002는 실제 DART 공시가 아니라
+data/sample_dart의 합성 파일럿 리포트다(`.source`="사업보고서 2024 (현대차/삼성전자
+협력사 시나리오)"). "실데이터"라는 표현은 이 사실을 오도하므로 정정한다 — 다만
+"주입/조작 없이 해당 리포트가 실제로 누락한 코드에서 기권이 자연 발동한다"는
+사실 자체는 그대로 유지된다(아래 참조).
 
 probe(abstain_probe_eval.py)와의 차이: probe는 005930 그래프 하나에 omit_codes를
 '주입'해 미공시를 재현했다. 여기서는 **케이스마다 자기 회사(ticker) 리포트를
 로드**하고, 그 리포트가 실제로 누락한 지표에 대한 주장을 평가한다 — 주입 없이
-실 그래프에서 D1 no_evidence가 자연 발동한다. 즉 docs/abstain_realworld_prevalence.md
-가 지적한 "현행 벤치는 미공시를 관측 못 함"을 실데이터로 메운 실측이다.
+그래프에서 D1 no_evidence가 자연 발동한다. 즉 docs/abstain_realworld_prevalence.md
+가 지적한 "현행 벤치는 미공시를 관측 못 함"을 이 샘플 리포트 실측으로 메운다.
 
 지표 해석은 probe와 동일: Overall = 정답assessed/N 은 이 A/B 설계에서 기권으로
 오르지 않는다(단조 비증가). 채택 판정은 기권 정밀도 p 와 비용비 B/R > (1-p)/p.
@@ -94,6 +100,22 @@ def _integrity_check(rows: list[dict[str, Any]]) -> list[str]:
     return problems
 
 
+def classify_judge_call(judge: dict[str, Any]) -> str:
+    """RiskVector.aggregate['judge'] 메타를 분류 (리뷰 #3, PR #52).
+
+    `judge.get("used")`만 보면 ESGENIE_ABSTAIN_LIVE=1 + ESGENIE_FORCE_MOCK=1 조합에서도
+    "LLM 호출 성공"으로 잘못 집계된다 — LLMClient가 mock으로 조용히 폴백해도
+    judge_risk_vector 입장에선 "judge를 돌렸다(used=True)"이기 때문. used_mock까지
+    같이 봐야 실제로 실 LLM을 탄 건지 구분된다.
+
+    Returns: "skipped"(JUDGE_TRIGGER 미만이라 애초에 호출 안 됨) |
+             "used"(실 LLM 호출) | "mock_contaminated"(호출은 됐으나 mock 폴백)
+    """
+    if not judge.get("used"):
+        return "skipped"
+    return "mock_contaminated" if judge.get("used_mock") else "used"
+
+
 def main() -> None:
     _layer3_detect.ABSTAIN_ENABLED = True
     _detector_5axis.ABSTAIN_ENABLED = True
@@ -106,6 +128,7 @@ def main() -> None:
     rows: list[dict[str, Any]] = []
     llm_used = 0
     mismatches: list[str] = []
+    mock_contaminated: list[str] = []   # judge.used=True인데 judge.used_mock=True(리뷰 #3)
     try:
         for case in bench["cases"]:
             t = case["ticker"]
@@ -115,8 +138,11 @@ def main() -> None:
             if live:
                 rv_rule = detect_risk_vector(case["sentence"], evidence_graph=graph)
                 rv = detect_risk_vector_hybrid(case["sentence"], evidence_graph=graph)
-                if bool(rv.aggregate.get("judge", {}).get("used")):
+                verdict = classify_judge_call(rv.aggregate.get("judge", {}))
+                if verdict == "used":
                     llm_used += 1
+                elif verdict == "mock_contaminated":
+                    mock_contaminated.append(case["id"])
                 row_rule = _case_row(case, rv_rule, cfg)
                 row = _case_row(case, rv, cfg)
                 if (row_rule["abstained"], row_rule["pred"], rv_rule.abstained_axes()) \
@@ -143,11 +169,13 @@ def main() -> None:
     ne = sum(1 for r in rows if r["d1_reason"] == "no_evidence")
 
     L = [
-        "# 배치 B — 실데이터 미공시 평가셋 결과 (멀티티커, 주입 없음)",
+        "# 배치 B — 샘플/시나리오 리포트 미공시 평가셋 결과 (멀티티커, 주입 없음)",
         "",
         f"> bench: `data/benchmark_v2/batch_b_omission.json` (n={on['n']}, 회사={tickers}) · "
         f"모드: {'LIVE(룰+LLM 하이브리드)' if live else ('MOCK(룰 기반, 결정적)' if mock else 'AUTO')} · 임계값 BASELINE 고정",
-        "> 각 케이스는 해당 회사가 **실제로 공시하지 않은** 지표에 대한 주장 → 주입 없이 실 그래프에서 no_evidence 자연 발동.",
+        "> SME001/SME002는 실제 DART 공시가 아니라 합성 파일럿 리포트(시나리오)다 — "
+        "각 케이스는 해당 리포트가 **실제로 공시하지 않은** 지표에 대한 주장 → 주입 없이 "
+        "그 그래프에서 no_evidence 자연 발동.",
         "",
         "## 0. 데이터 무결성 감사 (expect 대비 실제)",
         "",
@@ -173,11 +201,15 @@ def main() -> None:
         f"- **waste**(OFF면 맞았을 것 → 불필요 검토): {brk['waste_ids']}",
         f"- **기권 정밀도 p = {brk['deferral_precision']:.3f}** · 손익분기 **B/R > {brk['breakeven_benefit_cost_ratio']}**",
         "",
-        "> 주의: p는 이 파일럿의 미공시 영역 라벨 구성(greenwash:clean = 9:6)을 반영한 값이다. "
-        "실제 운영에서의 p는 '미검증 주장 중 실제 그린워싱 비율'에 좌우되므로, 회사·지표 수를 "
-        "늘려 신뢰구간과 함께 재추정해야 한다(§4 다음 단계).",
+        "> **p는 성능 지표가 아니다**(2026-08-03 리뷰 반영, 허정만): no_evidence 기권은 "
+        "content-blind다 — 노드 유무로만 발동하고 주장의 참/거짓을 보지 않는다. 따라서 "
+        "기권 케이스에 어떤 라벨을 붙여도 abstain은 참·거짓을 동일하게 전부 기권하므로, "
+        "p는 구조적으로 이 파일럿의 라벨 구성비(greenwash:clean = 9:6)와 같아진다 — "
+        "relabeling으로 해소되지 않는다. 근거가 있을 때의 실제 D1 성능은 진위 holdout"
+        "(`data/benchmark_v2/batch_c_truth_holdout.json`, `scripts/d1_truth_eval.py`)으로 "
+        "별도 측정한다.",
         "",
-        "## 3. probe(주입) 대비 — 실데이터가 말해주는 것",
+        "## 3. probe(주입) 대비 — 이 샘플 리포트가 말해주는 것",
         "",
         _vs_probe(brk),
         "",
@@ -195,6 +227,10 @@ def main() -> None:
             "abstain 케이스는 구조적으로 미호출, control_mismatch만 실 호출 기대)",
             f"- rule↔hybrid abstain 판정 불일치: {len(mismatches)}건"
             + ("" if not mismatches else "\n" + "\n".join(f"  - {m}" for m in mismatches)),
+            f"- MOCK 오염(judge.used=True인데 used_mock=True): {len(mock_contaminated)}건"
+            + ("" if not mock_contaminated else " " + str(mock_contaminated)
+               + " — ESGENIE_ABSTAIN_LIVE=1인데 실 LLM 대신 mock으로 폴백함(키 누락/오류 가능). "
+                 "이 실행은 라이브 검증으로 인정하지 않는다."),
             "",
         ]
     OUT_DOC.parent.mkdir(parents=True, exist_ok=True)
@@ -207,34 +243,41 @@ def main() -> None:
     if problems:
         print("⚠ 무결성:", *problems, sep="\n  ")
     if live:
-        print(f"LIVE: LLM 호출 {llm_used}/{len(rows)}건, rule↔hybrid 불일치 {len(mismatches)}건")
+        print(f"LIVE: LLM 호출 {llm_used}/{len(rows)}건, rule↔hybrid 불일치 {len(mismatches)}건, "
+              f"MOCK 오염 {len(mock_contaminated)}건")
         for m in mismatches:
             print(f"  ⚠ {m}")
+        for c in mock_contaminated:
+            print(f"  [!] MOCK-CONTAMINATED: {c}")
     print("="*72)
     print(f"결과 문서: {OUT_DOC}")
 
-    if live and mismatches:
+    if live and (mismatches or mock_contaminated):
         raise SystemExit(1)
 
 
 def _vs_probe(brk: dict[str, Any]) -> str:
     return (
-        "probe(005930 단일 그래프에 omit_codes 주입, p=0.60)와 달리 이 배치는 서로 다른 회사의 "
-        "**실제 공시 공백**에서 no_evidence가 자연 발동했다 — 주입 없이도 기권 메커니즘이 실 "
-        "데이터에서 동일하게 작동함을 확인. 이로써 '현행 벤치는 미공시를 관측 못 한다'는 감사 결론의 "
-        f"해법(배치 B)이 실제로 성립함을 실측으로 입증했다(자연 no_evidence {brk['deferred']}건)."
+        "probe(005930 단일 그래프에 omit_codes 주입)와 달리 이 배치는 서로 다른 회사(샘플/시나리오 "
+        "리포트)의 **실제 공시 공백**에서 no_evidence가 자연 발동했다 — 주입 없이도 기권 메커니즘이 "
+        "동일하게 작동함을 확인. 이로써 '현행 벤치는 미공시를 관측 못 한다'는 감사 결론의 "
+        f"해법(배치 B)이 실제로 성립함을 실측으로 입증했다(자연 no_evidence {brk['deferred']}건). "
+        "(p 수치 자체의 성능 지표 여부는 §2 주의 참조 — content-blind라 성능 아님.)"
     )
 
 
 def _verdict(off, on, brk, ne, n) -> str:
     d_acc = on["accuracy_on_assessed"] - off["accuracy_on_assessed"]
     return (
-        f"실데이터에서 no_evidence 기권이 {ne}건/{n} 자연 발동했고(현행 dev/test는 0건이었음), "
-        f"그중 미탐 {brk['saves']}건을 사람 검토로 전환하며 자동판정 정확도를 {d_acc:+.3f} 끌어올렸다"
-        f"(정밀도 p={brk['deferral_precision']:.3f}). Overall({on['overall'] - off['overall']:+.3f})은 "
-        "이 설계에서 구조상 오를 수 없으므로 채택 판정은 p와 B/R로 한다. "
+        f"샘플/시나리오 리포트에서 no_evidence 기권이 {ne}건/{n} 자연 발동했고(현행 dev/test는 0건이었음), "
+        f"그중 미탐 {brk['saves']}건을 사람 검토로 전환하며 자동판정 정확도를 {d_acc:+.3f} 끌어올렸다. "
+        f"Overall({on['overall'] - off['overall']:+.3f})은 이 설계에서 구조상 오를 수 없으므로 여전히 "
+        "채택 판정 기준이 아니다. **정밀도 p 역시 채택 판정 기준이 아니다** — content-blind 기권은 "
+        "구성한 라벨 비율을 그대로 반영할 뿐 모델 성능이 아니다. 이 하네스가 검증하는 것은 "
+        "'정확한 발동(무결성 감사 §0)'과 'Accuracy(assessed)/Coverage 트레이드오프'뿐이며, "
+        "근거가 있을 때의 실제 D1 성능은 진위 holdout(`scripts/d1_truth_eval.py`)으로 별도 측정한다. "
         "다음 단계: (1) 이 셋을 실키 회귀에 편입해 실측 고정, (2) HITL 라우팅을 붙여 '기권→검토'를 "
-        "실제 동작으로 연결, (3) 회사 수·지표 수를 늘려 정밀도 p의 안정성(신뢰구간) 확인."
+        "실제 동작으로 연결, (3) 진위 holdout 확충으로 D1 실성능 신뢰구간 확보."
     )
 
 

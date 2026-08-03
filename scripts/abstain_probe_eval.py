@@ -135,6 +135,22 @@ def _deferral_breakdown(rows: list[dict[str, Any]]) -> dict[str, Any]:
     }
 
 
+def classify_judge_call(judge: dict[str, Any]) -> str:
+    """RiskVector.aggregate['judge'] 메타를 분류 (리뷰 #3, PR #52).
+
+    `judge.get("used")`만 보면 ESGENIE_ABSTAIN_LIVE=1 + ESGENIE_FORCE_MOCK=1 조합에서도
+    "LLM 호출 성공"으로 잘못 집계된다 — LLMClient가 mock으로 조용히 폴백해도
+    judge_risk_vector 입장에선 "judge를 돌렸다(used=True)"이기 때문. used_mock까지
+    같이 봐야 실제로 실 LLM을 탄 건지 구분된다.
+
+    Returns: "skipped"(JUDGE_TRIGGER 미만이라 애초에 호출 안 됨) |
+             "used"(실 LLM 호출) | "mock_contaminated"(호출은 됐으나 mock 폴백)
+    """
+    if not judge.get("used"):
+        return "skipped"
+    return "mock_contaminated" if judge.get("used_mock") else "used"
+
+
 def main() -> None:
     _layer3_detect.ABSTAIN_ENABLED = True
     _detector_5axis.ABSTAIN_ENABLED = True
@@ -149,13 +165,17 @@ def main() -> None:
     rows: list[dict[str, Any]] = []
     llm_used = 0
     mismatches: list[str] = []
+    mock_contaminated: list[str] = []   # judge.used=True인데 judge.used_mock=True(리뷰 #3, PR #52)
     try:
         for case in probe["cases"]:
             omit_codes = case.get("omit_codes") or []
             if live:
                 rv_rule, rv = _rv_pair_with_omission(graph, case["sentence"], omit_codes)
-                if bool(rv.aggregate.get("judge", {}).get("used")):
+                verdict = classify_judge_call(rv.aggregate.get("judge", {}))
+                if verdict == "used":
                     llm_used += 1
+                elif verdict == "mock_contaminated":
+                    mock_contaminated.append(case["id"])
                 row_rule = _case_row(case, rv_rule, cfg)
                 row = _case_row(case, rv, cfg)
                 if (row_rule["abstained"], row_rule["pred"], rv_rule.abstained_axes()) \
@@ -234,6 +254,10 @@ def main() -> None:
             "abstain 케이스는 구조적으로 미호출, control_mismatch만 실 호출 기대)",
             f"- rule↔hybrid abstain 판정 불일치: {len(mismatches)}건"
             + ("" if not mismatches else "\n" + "\n".join(f"  - {m}" for m in mismatches)),
+            f"- MOCK 오염(judge.used=True인데 used_mock=True): {len(mock_contaminated)}건"
+            + ("" if not mock_contaminated else " " + str(mock_contaminated)
+               + " — ESGENIE_ABSTAIN_LIVE=1인데 실 LLM 대신 mock으로 폴백함(키 누락/오류 가능). "
+                 "이 실행은 라이브 검증으로 인정하지 않는다."),
             "",
         ]
     out = "\n".join(lines)
@@ -242,16 +266,20 @@ def main() -> None:
     print(f"ON  : {fmt(on)}")
     print(f"기권 정밀도 p={brk['deferral_precision']:.3f}  "
           f"(save={brk['saves']}, waste={brk['wastes']}, 손익분기 B/R>{brk['breakeven_benefit_cost_ratio']})")
+    print("(p는 omit_codes를 임의로 구성한 probe의 라벨 비율일 뿐 성능 지표가 아니다 - 4절 판정 참조)")
     if live:
-        print(f"LIVE: LLM 호출 {llm_used}/{len(rows)}건, rule↔hybrid 불일치 {len(mismatches)}건")
+        print(f"LIVE: LLM 호출 {llm_used}/{len(rows)}건, rule↔hybrid 불일치 {len(mismatches)}건, "
+              f"MOCK 오염 {len(mock_contaminated)}건")
         for m in mismatches:
             print(f"  ⚠ {m}")
+        for c in mock_contaminated:
+            print(f"  [!] MOCK-CONTAMINATED: {c}")
     print("="*72 + "\n")
     OUT_DOC.parent.mkdir(parents=True, exist_ok=True)
     OUT_DOC.write_text(out, encoding="utf-8")
     print(f"결과 문서 저장: {OUT_DOC}")
 
-    if live and mismatches:
+    if live and (mismatches or mock_contaminated):
         raise SystemExit(1)
 
 
