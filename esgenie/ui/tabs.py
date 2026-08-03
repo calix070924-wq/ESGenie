@@ -188,12 +188,17 @@ def _draft_vs_final_panel(result, active_area: str) -> None:
     first_step = verify.steps[0]
     left, right = st.columns(2)
     with left:
-        st.markdown(panel_html("초안 (검증 전)", "수집한 데이터로 처음 만든 보고서입니다. 과장·모호 표현이 남아 있을 수 있습니다."), unsafe_allow_html=True)
+        st.markdown(panel_html("초안 (검증 전)", "수집한 데이터로 처음 만든 보고서입니다. 근거가 확인되지 않은 문장이 남아 있을 수 있습니다."), unsafe_allow_html=True)
         render_report_card(first_step.generation.text, "draft", "DRAFT")
     with right:
         delta = first_step.detection.risk_score - verify.final_score
-        delta_text = f"위험도 {delta:.1f} 감소" if delta > 0 else "초안이 이미 기준치 이하"
-        st.markdown(panel_html("최종본 (검증 후)", "그린워싱 검증과 자동 수정을 거친 제출 직전 버전입니다.", compact_note=delta_text), unsafe_allow_html=True)
+        if verify.hitl_required:
+            right_note = "담당자 확인 대기 — 근거 미확인 문장 있음"
+            right_body = "자동 검증을 마쳤으나 근거를 확인하지 못한 문장이 남아 담당자 확인이 필요한 버전입니다."
+        else:
+            right_note = f"위험도 {delta:.1f} 감소" if delta > 0 else "초안이 이미 기준치 이하"
+            right_body = "그린워싱 검증과 자동 수정을 거친 제출 직전 버전입니다."
+        st.markdown(panel_html("최종본 (검증 후)", right_body, compact_note=right_note), unsafe_allow_html=True)
         render_report_card(verify.final_text, "final", "FINAL")
 
     with st.expander("📚 이 보고서의 근거 문서 보기", expanded=False):
@@ -1031,15 +1036,17 @@ def render_verify_tab(
     verify = result.sections[active_area]
     band_emoji = {"LOW": "🟢", "MEDIUM": "🟡", "HIGH": "🟠", "CRITICAL": "🔴"}
 
-    if len(verify.steps) > 1:
-        before = verify.steps[0].detection.risk_score
-        after = verify.final.detection.risk_score
-        if after < before:
-            st.success(f"✅ L4 재생성으로 위험도 {before:.1f} → {after:.1f} 감소")
-        else:
-            st.info("ℹ️ 초안이 이미 기준치 이하")
+    before = verify.steps[0].detection.risk_score
+    after = verify.final_score
+    if verify.hitl_required:
+        st.warning(
+            f"⚠️ 자동 검증 {verify.iterations_used}회 후에도 근거를 확인하지 못했습니다 "
+            f"— 담당자 확인으로 넘깁니다 (위험도 {before:.1f} → {after:.1f})"
+        )
+    elif after < before:
+        st.success(f"✅ L4 재생성으로 위험도 {before:.1f} → {after:.1f} 감소")
     else:
-        st.info("ℹ️ 초안이 이미 기준치 이하")
+        st.info("ℹ️ 초안이 이미 기준치 이하 — 재생성 없이 통과")
 
     if show_final_text:
         st.markdown("### 최종 보고서")
