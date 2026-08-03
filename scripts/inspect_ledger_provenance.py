@@ -40,12 +40,20 @@ MANIFEST = ROOT / "data" / "real_reports" / "manifest.json"
 # note 문자열 → 공급 경로 라벨. dart_client / ssot_pipeline이 남기는 note를 그대로 읽는다.
 _PATH_BY_NOTE: list[tuple[str, str]] = [
     ("DART 원문 정규식 추출", "[A] DART 정규식 (무게이트)"),
+    # 구조화 API note는 종류마다 문구가 다르다(직원현황·임원현황·배당·사외이사…).
+    # 2026-08-02: '직원현황 API'·'임원현황 API'가 빠져 S-3-1·S-2-2·G-1-4가 '[?] 판정 불가'로
+    # 새고 있었다. 라벨링 §4-1이 "정확한 대조군"으로 확인한 경로가 미분류로 보이면
+    # 출처 판정 전체가 무의미해진다. 'DART …API' 일반 패턴을 뒤에 두어 신종도 잡는다.
     ("구조화 API", "[A'] DART 구조화 API (신뢰)"),
     ("DART 배당 구조화 API", "[A'] DART 구조화 API (신뢰)"),
     ("DART 사외이사", "[A'] DART 구조화 API (신뢰)"),
+    ("DART 직원현황 API", "[A'] DART 구조화 API (신뢰)"),
+    ("DART 임원현황 API", "[A'] DART 구조화 API (신뢰)"),
     ("OCR 정량 증빙으로 자동 인식", "[B] OCR 노드 승격 (게이트 통과)"),
     ("OCR 정성 증빙으로 자동 인식", "[B] OCR 정성 노드"),
     ("설문", "[C] 설문 주입"),
+    # 위 구체 패턴에 안 걸린 DART 계열 최후 포섭 — 새 API가 늘어도 미분류로 안 샌다.
+    ("DART", "[A'] DART 구조화 API (신뢰)"),
 ]
 
 
@@ -164,12 +172,20 @@ def main() -> None:
             "ledger_period_inferred": bool(
                 ledger_pick is not None and getattr(ledger_pick, "period_inferred", False)
             ),
-            # 풀 구성 차이로 두 경로가 다른 노드를 가리키는가. 이게 진짜 신호다 —
-            # 원장의 결정 기록(representative_node_ids)이 이 차이를 흡수해야 한다.
+            # 풀 구성 차이로 두 경로가 다른 노드를 가리키는가.
+            #
+            # ⚠ 이건 **결함 수가 아니라 잠재 차이**다. 원장의 결정 기록
+            # (representative_node_ids)이 이 차이를 흡수하므로 실제 비교는 어긋나지 않는다.
+            # 2026-08-02: 이 값을 결함으로 읽어 "대칭이 깨졌다"고 오진한 적이 있다 —
+            # S-3-1은 원장 실제값이 DART 23.8인데 OCR 풀 재현이 16.2를 가리켜 갈린 것처럼
+            # 보였다. 아래 `ledger_from_dart`가 그 경우를 명시한다.
             "selector_split": bool(
                 ledger_pick is not None and d1_pick is not None
                 and ledger_pick.id != d1_pick.id
             ),
+            # 원장 값이 DART 경로에서 온 경우, OCR 풀 재현(ledger_pick)은 원장과 무관하다.
+            # 이 표시가 없으면 `←원장풀선택` 마크가 실제 원장값이 아닌 노드에 붙어 오해를 부른다.
+            "ledger_from_dart": str(led.get("note") or "").startswith("DART"),
             "ledger_pick": ledger_pick.id if ledger_pick else None,
             "d1_pick": d1_pick.id if d1_pick else None,
             "recorded_pick": recorded_id,
@@ -216,10 +232,13 @@ def main() -> None:
             print(f"  DART값 : {r['dart_only_value']}  (그래프 병합 이전)")
         if not r["nodes"]:
             print("  노드   : 없음 — D1 비교 대상 없음")
+        if r.get("ledger_from_dart"):
+            print("  ※ 원장 값은 DART 경로에서 왔다 — 아래 '←원장풀선택'은 "
+                  "OCR 풀만으로 재현한 것이라 실제 원장값과 무관하다")
         for n in r["nodes"]:
             mark = ""
             if n["id"] == r["ledger_pick"]:
-                mark += " ←원장풀선택"
+                mark += " ←OCR풀재현" if r.get("ledger_from_dart") else " ←원장풀선택"
             if n["id"] == r["d1_pick"]:
                 mark += " ←D1풀선택"
             if n["id"] == r["recorded_pick"]:
@@ -262,7 +281,13 @@ def main() -> None:
     print("요약")
     for p, c in sorted(by_path.items()):
         print(f"  {p}: {c}개")
-    print(f"  풀 구성 차이로 갈리는 코드: {len(splits)}개 {splits}")
+    # ⚠ 결함 수가 아니다 — 기록이 흡수하는 '잠재 차이'다. 문구를 결함처럼 쓰면 오진한다
+    # (2026-08-02에 이 줄을 결함으로 읽어 "대칭이 깨졌다"고 판단한 적이 있다).
+    # 실제 결함 지표는 바로 아래 '스크립트 재현 ≠ 실행 기록'이다.
+    dart_led = [c for c in splits
+                if any(r["code"] == c and r.get("ledger_from_dart") for r in rows)]
+    print(f"  [참고] 풀 구성 차이(기록이 흡수): {len(splits)}개 {splits}"
+          + (f"  ← 그중 원장이 DART 출처: {dart_led}" if dart_led else ""))
     print(f"  원장 대표노드 기록 없음(D1 폴백 경로): {len(unrecorded)}개 {unrecorded}")
     print(f"  스크립트 재현 ≠ 실행 기록: {len(rec_bad)}개 {rec_bad}")
     print(f"  원장 단위 ≠ 항목 단위: {len(units)}개 {units}")
