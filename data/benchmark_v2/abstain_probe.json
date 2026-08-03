@@ -1,6 +1,6 @@
 {
   "ticker": "005930",
-  "purpose": "no_evidence 기권(abstain)의 순수 효과를 격리 측정하기 위한 통제 probe 셋. 각 케이스는 '해당 회사가 그 지표를 공시하지 않음'을 그래프에서 omit_codes 코드를 제거해 재현한다(→ D1 no_evidence 기권 발동). label은 주장 자체의 진위(오도 여부)로 부여하며 검증가능성과 독립적이다. controls는 omit 없음 → 기권 아님 → OFF==ON 불변 확인용.",
+  "purpose": "no_evidence 기권(abstain)의 순수 효과를 격리 측정하기 위한 통제 probe 셋. 각 케이스는 '해당 회사가 그 지표를 공시하지 않음'을 그래프에서 omit_codes 코드를 제거해 재현한다(→ D1 no_evidence 기권 발동). label은 값 타당성(비현실적=greenwash, 통상 범위=clean) 기반으로 부여한다 — 2026-08-03 정정: 이는 실제 공시값과의 일치 여부로 정한 '진위'가 아니며, 여기서 도출되는 기권 정밀도 p도 성능 지표가 아니다(no_evidence는 content-blind, docs/abstain_wrapup_conclusion.md §1-c 참조). controls는 omit 없음 → 기권 아님 → OFF==ON 불변 확인용.",
   "n_cases": 12,
   "cases": [
     {
