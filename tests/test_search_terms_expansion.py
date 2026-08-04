@@ -1,13 +1,17 @@
 """실측 보고서 표현의 D1 토픽 귀속 회귀 (2026-07-29)."""
 from __future__ import annotations
 
+from dataclasses import replace
+
 import pytest
 
-from esgenie.knowledge.kesg_items import ALL_ITEMS, resolve_kesg_code
+from esgenie.knowledge import kesg_items
+from esgenie.knowledge.kesg_items import resolve_kesg_code
 from esgenie.layer3_detect import _NUMBER_PATTERN, _build_topic_terms, _match_topic_near
+from esgenie.rag_gates.retrieval_gate import _area_terms
+from scripts import replay_search_terms
 
 
-BASELINE_TOPIC_TERM_COUNT = 262
 EXPANDED_TERMS = {
     "폐기물 발생량": "E-6-1",
     "여성 직원 비율": "S-3-1",
@@ -44,14 +48,9 @@ def test_inside_director_attendance_remains_g22():
 
 
 def test_search_terms_remain_disjoint_between_esg_areas():
-    """retrieval_gate의 E/S/G 영역 어휘 무중복 전제를 유지한다."""
+    """retrieval_gate가 실제 소비하는 seed+search_terms 어휘는 영역별로 겹치지 않는다."""
     terms_by_area = {
-        area: {
-            term
-            for item in ALL_ITEMS
-            if item.area == area
-            for term in item.search_terms
-        }
+        area: {term.lower() for term in _area_terms()[area]}
         for area in "ESG"
     }
     assert terms_by_area["E"].isdisjoint(terms_by_area["S"])
@@ -59,9 +58,40 @@ def test_search_terms_remain_disjoint_between_esg_areas():
     assert terms_by_area["S"].isdisjoint(terms_by_area["G"])
 
 
-def test_topic_term_index_does_not_lose_terms():
-    """모호 용어 추가로 기존 262개 토픽이 유실되지 않는다."""
-    assert len(_build_topic_terms()) >= BASELINE_TOPIC_TERM_COUNT + len(EXPANDED_TERMS)
+def test_topic_term_index_does_not_lose_terms(monkeypatch):
+    """신규 네 용어를 추가해도 그 전 토픽 인덱스의 모든 항목이 보존된다."""
+    expanded_index = set(_build_topic_terms())
+    baseline_items = tuple(
+        replace(
+            item,
+            search_terms=tuple(
+                term for term in item.search_terms if term not in EXPANDED_TERMS
+            ),
+        )
+        for item in kesg_items.ALL_ITEMS
+    )
+    with monkeypatch.context() as patch:
+        patch.setattr(kesg_items, "ALL_ITEMS", baseline_items)
+        baseline_index = set(_build_topic_terms())
+
+    assert baseline_index <= expanded_index
+    assert len(expanded_index - baseline_index) == len(EXPANDED_TERMS)
+
+
+def test_replay_snapshot_freezes_alias_input(monkeypatch):
+    """artifact가 바뀌어도 비교 snapshot은 기준선 라벨만 재평가한다."""
+    monkeypatch.setattr(
+        replay_search_terms,
+        "_collect_dump_labels",
+        lambda: ({"비교 후 새 artifact 라벨"}, []),
+    )
+
+    result = replay_search_terms.snapshot(
+        audit_sentences=[], alias_labels={"폐기물 발생량"}
+    )
+
+    assert set(result["aliases"]) == {"폐기물 발생량"}
+    assert result["artifact_labels"] == ["비교 후 새 artifact 라벨"]
 
 
 @pytest.mark.parametrize("label,expected", EXPANDED_TERMS.items())

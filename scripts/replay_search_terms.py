@@ -104,11 +104,15 @@ def snapshot(
     audit_sentences: list[str] | None = None,
     audit_cutoff: str | None = None,
     modified_before: float | None = None,
+    alias_labels: set[str] | None = None,
 ) -> dict[str, Any]:
     from esgenie.knowledge.kesg_items import resolve_kesg_code
     from esgenie.layer3_detect import _build_topic_terms
 
-    labels, missing = _collect_dump_labels()
+    artifact_labels, missing = _collect_dump_labels()
+    # 코드 전후 비교에서는 기준선이 사용한 라벨 집합을 그대로 재평가한다.
+    # artifact가 그 사이 바뀌어도 데이터 변화가 resolver 변화로 섞이면 안 된다.
+    labels = set(alias_labels) if alias_labels is not None else artifact_labels
     if audit_sentences is None:
         sentences, audit_paths = _collect_audit_sentences(
             audit_cutoff=audit_cutoff, modified_before=modified_before
@@ -136,6 +140,7 @@ def snapshot(
         "assigned_number_count": assigned,
         "unassigned_number_count": unassigned,
         "missing_dumps": missing,
+        "artifact_labels": sorted(artifact_labels),
         "aliases": {label: list(resolve_kesg_code(label)) for label in sorted(labels)},
         "probes": {sentence: _assignments(sentence) for sentence in PROBES},
     }
@@ -152,16 +157,32 @@ def _print_comparison(before: dict[str, Any], after: dict[str, Any]) -> None:
         old, new = before[key], after[key]
         print(f"| {label} | {old} | {new} | {new - old:+d} |")
 
+    alias_labels = set(before["aliases"]) | set(after["aliases"])
     changed = {
-        label: (old, after["aliases"].get(label))
-        for label, old in before["aliases"].items()
-        if after["aliases"].get(label) != old
+        label: (before["aliases"].get(label), after["aliases"].get(label))
+        for label in sorted(alias_labels)
+        if before["aliases"].get(label) != after["aliases"].get(label)
     }
     print("\nalias 변화:")
     if not changed:
         print("- 없음")
     for label, (old, new) in changed.items():
         print(f"- `{label}`: `{old}` → `{new}`")
+
+    before_artifact_labels = set(
+        before.get("artifact_labels", before["aliases"])
+    )
+    after_artifact_labels = set(
+        after.get("artifact_labels", after["aliases"])
+    )
+    added_labels = sorted(after_artifact_labels - before_artifact_labels)
+    removed_labels = sorted(before_artifact_labels - after_artifact_labels)
+    if added_labels or removed_labels:
+        print("\nartifact 라벨 변화(코드 비교에서는 제외):")
+        for label in added_labels:
+            print(f"- 추가: `{label}`")
+        for label in removed_labels:
+            print(f"- 제거: `{label}`")
 
     before_assignments = before.get("audit_assignments", [])
     after_assignments = after.get("audit_assignments", [])
@@ -238,6 +259,7 @@ def main() -> None:
         audit_sentences=before.get("audit_sentences"),
         audit_cutoff=before.get("audit_cutoff"),
         modified_before=None if before.get("audit_sentences") else args.compare.stat().st_mtime,
+        alias_labels=set(before.get("artifact_labels", before["aliases"])),
     )
     _print_comparison(before, current)
 
