@@ -25,7 +25,10 @@ def fw(code, kind='numeric'):
 def numeric(value, claim_value, unit='%', claim_unit='%', code='E-6-2'):
     dp = DataPoint(code, code, value, unit, 2025, .95, 'verified', 0,
                    [EvidenceLink('bill.pdf', 'evidence_pack/bill.pdf', 'ocr_structured', node_id='n')])
-    return build_response_sheet(fw(code), data_points=[dp],
+    graph = EvidenceGraph('AUDIT', 'Audit')
+    graph.add_node(EvidenceNode('n', code, value, unit, 2025, 'ocr', origin='ocr_structured',
+                               source_file='bill.pdf', raw_text=f'{code} {value}{unit}'))
+    return build_response_sheet(fw(code), data_points=[dp], evidence_graph=graph,
         supplier_claims={code: SupplierClaim(code, claim_value, claim_unit)}).answers[0]
 
 

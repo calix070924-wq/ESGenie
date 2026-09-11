@@ -48,8 +48,8 @@ def build_response_sheet(
             mapped=mapped,
             missing=missing,
             dp_by_code=dp_by_code,
-            evidence_index=evidence_index,
-            claims=supplier_claims or {},
+            evidence_index=evidence_index if evidence_graph is not None else None,
+            claims=supplier_claims if supplier_claims is not None else {},
         )
         ans = apply_gating(ans, q, disclosure=disclosure, issb_gap=issb_gap)
         answers.append(ans)

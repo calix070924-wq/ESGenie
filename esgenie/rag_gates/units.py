@@ -136,6 +136,8 @@ def units_compatible(u1: str, u2: str) -> bool:
 
 def convert_to_common(value: float, from_unit: str, to_unit: str) -> float | None:
     """Convert value from from_unit to to_unit if they are compatible."""
+    if not math.isfinite(value):
+        return None
     if from_unit == to_unit:
         return value
     group = _UNIT_TO_GROUP.get(from_unit)

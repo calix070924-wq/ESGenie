@@ -36,7 +36,10 @@ def numeric_answer(actual, claimed, *, unit='%', claim_unit='%', code='E-6-2'):
     point = DataPoint(code, code, actual, unit, 2025, .94, 'verified', 0,
         [EvidenceLink('audit.pdf', 'evidence_pack/audit.pdf', 'ocr_structured',
             node_id='value', page=0)])
-    sheet = build_response_sheet(SAQ5_ENV, data_points=[point],
+    graph = EvidenceGraph('AUDIT', 'Audit')
+    graph.add_node(EvidenceNode('value', code, actual, unit, 2025, 'ocr',
+        source_file='audit.pdf', origin='ocr_structured', raw_text=f'{code} {actual}{unit}', page=0))
+    sheet = build_response_sheet(SAQ5_ENV, data_points=[point], evidence_graph=graph,
         supplier_claims={code: SupplierClaim(code, claimed, claim_unit)})
     qid = next(q.qid for q in SAQ5_ENV.questions if q.qtype == 'numeric' and q.primary_code == code)
     return answer(sheet, qid)

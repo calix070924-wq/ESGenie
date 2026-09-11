@@ -118,6 +118,22 @@ class Answer:
     option_evidence: dict[str, dict] = field(default_factory=dict)
 
     @property
+    def display_value(self) -> str:
+        value = self.value
+        if value is None:
+            return "—"
+        if isinstance(value, bool):
+            return "예" if value else "아니오"
+        if isinstance(value, list):
+            return ", ".join(map(str, value)) if value else "—"
+        rendered = str(value)
+        if self.unit:
+            rendered += f" {self.unit}"
+        if self.period is not None:
+            rendered += f" ({self.period}년)"
+        return rendered
+
+    @property
     def badge(self) -> str:
         emoji, label = _BADGE[self.status]
         return f"{emoji} {label}"
@@ -131,6 +147,7 @@ class Answer:
         d = asdict(self)
         d["evidence_links"] = [e.to_dict() for e in self.evidence_links]
         d["badge"] = self.badge
+        d["display_value"] = self.display_value
         return d
 
 

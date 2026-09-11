@@ -1373,7 +1373,7 @@ def _render_supplychain_answer_detail(result, answer, *, question_map: dict[str,
     left, right = st.columns([2, 3])
     with left:
         st.markdown(f"**문항**: {answer.question_text}")
-        st.markdown(f"**답변**: {_fmt_answer_value(answer.value)}")
+        st.markdown(f"**답변**: {answer.display_value}")
         st.markdown(f"**신뢰**: {answer.badge}")
         if data_point is not None:
             view = verification_view(getattr(data_point, "verification", ""))
@@ -1502,7 +1502,7 @@ def _render_responder_workspace(
             "신뢰": a.badge,
             "섹션": a.section,
             "문항": a.question_text,
-            "답변": _fmt_answer_value(a.value),
+            "답변": a.display_value,
             "근거": _fmt_answer_evidence(a),
         }
         for a in sheet.answers

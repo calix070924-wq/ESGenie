@@ -277,7 +277,7 @@ def export_response_sheet_pdf(
                 draft_display += "<br/>출처: " + " / ".join(cite_parts)
             answer_para = Paragraph(draft_display, cell)
         else:
-            answer_para = Paragraph(_fmt_value(a.value), cell)
+            answer_para = Paragraph(a.display_value, cell)
         data.append([
             Paragraph(a.qid, cell),
             Paragraph(a.section, cell),
@@ -357,7 +357,7 @@ def export_response_sheet_pdf(
             a = fig["answer"]
             loc = f" p.{(e.page or 0) + 1}" if e.page is not None else ""
             caption = (f"[{fig['fig_id']}] {e.file_name}{loc} · "
-                       f"{a.qid} {a.question_text} → {_fmt_value(a.value)}")
+                       f"{a.qid} {a.question_text} → {a.display_value}")
             flow.append(KeepTogether([
                 Paragraph(caption, cap),
                 RLImage(BytesIO(png), width=w, height=h),
