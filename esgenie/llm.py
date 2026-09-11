@@ -17,6 +17,7 @@ from dataclasses import dataclass
 from typing import Any
 
 from .config import SETTINGS
+from .openai_client import create_openai_client
 
 logger = logging.getLogger(__name__)
 
@@ -61,26 +62,7 @@ class LLMClient:
         if not SETTINGS.use_mock_llm:
             if SETTINGS.openai_api_key:
                 try:
-                    if SETTINGS.azure_openai_endpoint:
-                        from openai import AzureOpenAI, OpenAI  # type: ignore
-                        ep = SETTINGS.azure_openai_endpoint.rstrip("/")
-                        if "services.ai.azure.com" in ep:
-                            # Azure AI Foundry Model Inference API — uses /models/ path
-                            self._openai_client = OpenAI(
-                                api_key=SETTINGS.openai_api_key,
-                                base_url=f"{ep}/models/",
-                                max_retries=0,
-                            )
-                        else:
-                            self._openai_client = AzureOpenAI(
-                                api_key=SETTINGS.openai_api_key,
-                                api_version=SETTINGS.azure_api_version,
-                                azure_endpoint=SETTINGS.azure_openai_endpoint,
-                                max_retries=0,
-                            )
-                    else:
-                        from openai import OpenAI  # type: ignore
-                        self._openai_client = OpenAI(api_key=SETTINGS.openai_api_key, max_retries=0)
+                    self._openai_client = create_openai_client(SETTINGS)
                 except Exception:
                     self._openai_client = None
             if self._openai_client is None and SETTINGS.anthropic_api_key:

@@ -13,6 +13,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 from esgenie.config import SETTINGS
+from esgenie.openai_client import create_openai_client
 
 # 시도할 후보 (배포명은 프로젝트마다 다를 수 있음 — 포털에서 본 이름 추가)
 CANDIDATES = [
@@ -29,9 +30,7 @@ def main() -> None:
     if not ep or not SETTINGS.openai_api_key:
         print("Azure 엔드포인트/키 없음 — .env 확인")
         sys.exit(1)
-    from openai import OpenAI
-    base = f"{ep}/models/" if "services.ai.azure.com" in ep else ep
-    client = OpenAI(api_key=SETTINGS.openai_api_key, base_url=base)
+    client = create_openai_client(SETTINGS)
 
     print(f"엔드포인트: …{ep[-30:]}")
     print(f"추출 모델(제외 대상): {SETTINGS.openai_model}\n")

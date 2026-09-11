@@ -6,7 +6,16 @@
 
 **비상장 경로도 빈 보고서를 통해 상장 경로와 같은 L1~L6를 탄다.** 대표노드 선정·단위
 정규화·역할 판정뿐 아니라 D1/D2와 보고서 생성까지 단일 경로이므로, 그 전에 기록된
-수치(K-ESG 53.6% · D6 62.7pp)와는 달라질 수 있다. **달라지면 컷시나리오의 대사도 함께 본다.**
+수치와는 달라질 수 있다. **달라지면 컷시나리오의 대사도 함께 본다.**
+
+수치 이력 (달라진 이유를 남긴다)
+  · 08-03  K-ESG 35.7%(10/28) · RBA 51.1%(24/47) · D1 62.7%p
+  · 08-06  K-ESG 57.1%(16/28) · RBA 68.1%(32/47) · D1 62.7%p
+           증빙 08~20번 13건이 한글 폰트 미임베딩으로 텍스트 추출 0%였던 것을
+           `scripts/gen_hanwool_evidence.py`로 재생성해 정상화한 결과다.
+
+축 표기: 폐기물 92% ↔ 29.3%는 **D1**(자가주장 ↔ 증빙 수치 불일치)이다.
+D6는 '무엇을 안 썼는가'(누락·선택적 공시)를 보는 별개 축이므로 혼용하지 않는다.
 
 사용:
     python3 scripts/run_demo_hanwool.py                      # 번호 01~20 전체, E S G
@@ -175,7 +184,10 @@ def main() -> None:
     }
     print(f"RBA42 자동응답 커버리지: {rba.coverage_pct:.1f}% "
           f"({sum(a.answered for a in rba.answers)}/{rba.denominator})")
-    print(f"D6 폐기물 모순: {waste_conflict['badge'] or waste_conflict['status']}"
+    # 축 표기 주의: 이 판정은 D1(자가주장 ↔ 증빙 수치 불일치)이다.
+    # 임계는 supplychain/mapping.py의 _CLAIM_DISCREPANCY_PP(절대 10%p).
+    # D6는 '무엇을 안 썼는가'(누락·선택적 공시)를 문서 단위로 보는 별개 축이다.
+    print(f"D1 폐기물 자가주장–증빙 불일치: {waste_conflict['badge'] or waste_conflict['status']}"
           f" · 자가신고 {claim_value}% ↔ 증빙 {evidence_value}%"
           f" · Δ{gap_pp}%p")
     for flag in waste_conflict["flags"]:
