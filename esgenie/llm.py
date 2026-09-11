@@ -17,7 +17,7 @@ from dataclasses import dataclass
 from typing import Any
 
 from .config import SETTINGS
-from .openai_client import create_openai_client
+from .openai_client import create_openai_client, configured_connection, connection_identity
 
 logger = logging.getLogger(__name__)
 
@@ -55,10 +55,25 @@ class LLMResponse:
     meta: dict[str, Any]
 
 
+def _response_meta(response, provider, requested_model):
+    usage = getattr(response, "usage", None)
+    if hasattr(usage, "model_dump"):
+        usage = usage.model_dump()
+    elif usage is not None and not isinstance(usage, dict):
+        usage = None
+    return {"provider": provider, "requested_model": requested_model,
+            "model": getattr(response, "model", None) or requested_model,
+            "returned_model": getattr(response, "model", None),
+            "request_id": getattr(response, "_request_id", None),
+            "response_id": getattr(response, "id", None), "usage": usage,
+            "used_mock": False}
+
+
 class LLMClient:
     def __init__(self) -> None:
         self._openai_client = None
         self._anthropic_client = None
+        self._connections = {p: configured_connection(SETTINGS, p) for p in ("openai", "anthropic")}
         if not SETTINGS.use_mock_llm:
             if SETTINGS.openai_api_key:
                 try:
@@ -96,15 +111,16 @@ class LLMClient:
             else:
                 _sys, _usr = system, user
             from . import llm_cache
+            connection = connection_identity(self._openai_client, "openai", self._connections["openai"])
             cache_key = llm_cache.make_key(
-                provider="openai", model=SETTINGS.openai_model,
+                connection=connection, provider="openai", model=SETTINGS.openai_model,
                 system=_sys, user=_usr, temperature=temperature, json_mode=json_mode,
             )
-            cached = llm_cache.lookup(cache_key)
+            cached = llm_cache.lookup(cache_key, with_meta=True)
             if cached is not None:
                 return LLMResponse(
-                    content=cached, used_mock=False,
-                    meta={"model": SETTINGS.openai_model, "provider": "openai", "cache": "hit"},
+                    content=cached["content"], used_mock=False,
+                    meta={"model": SETTINGS.openai_model, "provider": "openai", **cached["meta"], "cache": "hit"},
                 )
             kwargs: dict[str, Any] = {
                 "model": SETTINGS.openai_model,
@@ -123,12 +139,13 @@ class LLMClient:
                     llm_cache.record_live_call()
                     resp = self._openai_client.chat.completions.create(**kwargs)
                     text = resp.choices[0].message.content or ""
-                    llm_cache.store(
-                        cache_key, text, provider="openai", model=SETTINGS.openai_model,
-                    )
-                    return LLMResponse(content=text, used_mock=False,
-                                       meta={"model": SETTINGS.openai_model, "provider": "openai", "cache": "miss"})
+                    meta = _response_meta(resp, "openai", SETTINGS.openai_model)
+                    llm_cache.record_success(meta)
+                    llm_cache.store(cache_key, text, provider="openai", model=SETTINGS.openai_model,
+                                    response_meta=meta, connection=connection)
+                    return LLMResponse(content=text, used_mock=False, meta={**meta, "cache": "miss"})
                 except Exception as call_exc:
+                    llm_cache.record_failure()
                     exc = call_exc
                     if attempt < LLM_MAX_ATTEMPTS and _is_retryable(exc):
                         delay = LLM_BACKOFF_BASE * (2 ** (attempt - 1)) + random.uniform(0, 0.1)
@@ -152,15 +169,16 @@ class LLMClient:
             else:
                 _sys, _usr = system, user
             from . import llm_cache
+            connection = connection_identity(self._anthropic_client, "anthropic", self._connections["anthropic"])
             cache_key = llm_cache.make_key(
-                provider="anthropic", model=SETTINGS.anthropic_model,
+                connection=connection, provider="anthropic", model=SETTINGS.anthropic_model,
                 system=_sys, user=_usr, temperature=temperature, json_mode=json_mode,
             )
-            cached = llm_cache.lookup(cache_key)
+            cached = llm_cache.lookup(cache_key, with_meta=True)
             if cached is not None:
                 return LLMResponse(
-                    content=cached, used_mock=False,
-                    meta={"model": SETTINGS.anthropic_model, "provider": "anthropic", "cache": "hit"},
+                    content=cached["content"], used_mock=False,
+                    meta={"model": SETTINGS.anthropic_model, "provider": "anthropic", **cached["meta"], "cache": "hit"},
                 )
             sys_prompt = _sys
             if json_mode:
@@ -180,12 +198,13 @@ class LLMClient:
                     text = "".join(
                         block.text for block in resp.content if getattr(block, "type", "") == "text"
                     )
-                    llm_cache.store(
-                        cache_key, text, provider="anthropic", model=SETTINGS.anthropic_model,
-                    )
-                    return LLMResponse(content=text, used_mock=False,
-                                       meta={"model": SETTINGS.anthropic_model, "provider": "anthropic", "cache": "miss"})
+                    meta = _response_meta(resp, "anthropic", SETTINGS.anthropic_model)
+                    llm_cache.record_success(meta)
+                    llm_cache.store(cache_key, text, provider="anthropic", model=SETTINGS.anthropic_model,
+                                    response_meta=meta, connection=connection)
+                    return LLMResponse(content=text, used_mock=False, meta={**meta, "cache": "miss"})
                 except Exception as call_exc:
+                    llm_cache.record_failure()
                     exc = call_exc
                     if attempt < LLM_MAX_ATTEMPTS and _is_retryable(exc):
                         delay = LLM_BACKOFF_BASE * (2 ** (attempt - 1)) + random.uniform(0, 0.1)

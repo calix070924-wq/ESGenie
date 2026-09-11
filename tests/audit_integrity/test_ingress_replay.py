@@ -12,7 +12,7 @@ from esgenie.ssot.audit_trace import build_data_points
 from esgenie.pipeline import _build_risk_rows
 from esgenie.supplychain.frameworks.saq5 import SAQ5_ENV
 from esgenie.supplychain.responder import build_response_sheet
-from test_fresh_contracts import answer, report
+from .test_fresh_contracts import answer, report
 
 
 @pytest.mark.parametrize('case,label,year', [

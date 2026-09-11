@@ -15,8 +15,9 @@ from pathlib import Path
 
 logger = logging.getLogger(__name__)
 
-SCHEMA_VERSION = 1
-_stats = {"hits": 0, "misses": 0, "live_calls": 0}
+SCHEMA_VERSION = 2
+_stats = {"hits": 0, "misses": 0, "live_calls": 0, "successes": 0, "failures": 0}
+_events: list[dict] = []
 
 
 def _force_mock() -> bool:
@@ -42,16 +43,17 @@ def cache_dir() -> Path:
 
 def make_key(
     *, provider: str, model: str, system: str, user: str,
-    temperature: float, json_mode: bool,
+    temperature: float, json_mode: bool, connection: dict | None = None,
 ) -> str:
     h = hashlib.sha256()
-    for part in (provider, model, temperature, json_mode, system, user):
+    identity = json.dumps(connection or {}, sort_keys=True, separators=(",", ":"))
+    for part in (SCHEMA_VERSION, provider, identity, model, temperature, json_mode, system, user):
         h.update(str(part).encode("utf-8"))
         h.update(b"\x00")
     return h.hexdigest()
 
 
-def lookup(key: str) -> str | None:
+def lookup(key: str, *, with_meta: bool = False) -> str | dict | None:
     mode = cache_mode()
     if mode == "disabled":
         return None
@@ -78,10 +80,10 @@ def lookup(key: str) -> str | None:
         _stats["misses"] += 1
         return None
     _stats["hits"] += 1
-    return content
+    return {"content": content, "meta": entry.get("meta", {}).get("response", {})} if with_meta else content
 
 
-def store(key: str, content: str, *, provider: str, model: str) -> None:
+def store(key: str, content: str, *, provider: str, model: str, response_meta: dict | None = None, connection: dict | None = None) -> None:
     if cache_mode() == "disabled":
         return
     path = cache_dir() / f"{key}.json"
@@ -91,6 +93,8 @@ def store(key: str, content: str, *, provider: str, model: str) -> None:
             "created_at": datetime.now(timezone.utc).isoformat(timespec="seconds"),
             "provider": provider,
             "model": model,
+            "connection": connection or {},
+            "response": response_meta or {},
         },
         "content": content,
     }
@@ -105,7 +109,21 @@ def record_live_call() -> None:
     _stats["live_calls"] += 1
 
 
+def record_success(meta: dict) -> None:
+    _stats["successes"] += 1
+    _events.append(dict(meta))
+
+
+def record_failure() -> None:
+    _stats["failures"] += 1
+
+
+def response_events() -> list[dict]:
+    return list(_events)
+
+
 def reset_stats() -> None:
+    _events.clear()
     for key in _stats:
         _stats[key] = 0
 

@@ -110,7 +110,7 @@ def test_live_response_cache_replays_without_second_call(monkeypatch, tmp_path):
     assert first.meta["cache"] == "miss"
     assert second.meta["cache"] == "hit"
     assert llm_cache.stats() == {
-        "mode": "on", "hits": 1, "misses": 1, "live_calls": 1,
+        "mode": "on", "hits": 1, "misses": 1, "live_calls": 1, "successes": 1, "failures": 0,
     }
 
 
@@ -134,7 +134,7 @@ def test_live_response_cache_recovers_from_non_object_json(monkeypatch, tmp_path
     assert response.content == "복구 응답"
     assert fake.calls == 1
     assert llm_cache.stats() == {
-        "mode": "on", "hits": 0, "misses": 1, "live_calls": 1,
+        "mode": "on", "hits": 0, "misses": 1, "live_calls": 1, "successes": 1, "failures": 0,
     }
 
 
