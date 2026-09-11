@@ -111,6 +111,8 @@ class Answer:
     draft_text: str = ""
     draft_citations: list[dict] = field(default_factory=list)
     draft_grounding: dict | None = None
+    self_reports: list[dict] = field(default_factory=list)
+    option_evidence: dict[str, dict] = field(default_factory=dict)
 
     @property
     def badge(self) -> str:

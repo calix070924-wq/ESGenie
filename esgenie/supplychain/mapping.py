@@ -201,19 +201,50 @@ def _reconcile_claim(
     return ans
 
 
+def _entry_presence(entry):
+    from ..survey import presence_value
+    survey = entry.get("survey_answer") or {}
+    if survey:
+        return presence_value(survey.get("yn"))
+    value = entry.get("value")
+    explicit = presence_value(value)
+    if explicit is not None:
+        return explicit
+    if value is None or str(value).strip() in ("", "미입력"):
+        return None
+    return True
+
+
+def _valid_link(link, code):
+    return (link is not None and link.resolved and link.independent
+            and code in link.kesg_codes and bool(link.quote.strip()))
+
+
 def _derive_presence(q, mapped, missing, evidence_index) -> Answer:
-    present = [c for c in q.kesg_codes if c in mapped]
+    present = [c for c in q.kesg_codes if c in mapped
+               and _entry_presence(mapped[c]) is not None]
     if present:
         ev = _collect_evidence(present, mapped, evidence_index)
-        if q.evidence_required and not ev:
-            status = "self_reported"
-            rationale = "해당 항목 공시됨 — 증빙 문서 업로드 시 '증빙검증'으로 승격"
+        values = [_entry_presence(mapped[c]) for c in present]
+        surveys = [mapped[c]["survey_answer"] for c in present if mapped[c].get("survey_answer")]
+        # 명시적인 부정은 항상 보존한다. 독립 문서와의 모순은 별도 검토 대상이다.
+        value = False if False in values else True
+        conflict = (value is False and bool(ev)) or (False in values and True in values)
+        status = "flagged" if conflict else "verified" if ev else "self_reported"
+        rationale = f"응답: {'예' if value else '아니오'}"
+        if surveys:
+            rationale += " · 설문 자가신고: " + " / ".join(
+                f"{x['yn']} {x.get('text', '')} [survey_form]".strip() for x in surveys)
+        if ev:
+            rationale += " · 독립 증빙: " + " / ".join(
+                f"{e.file_name}: {e.quote}" for e in ev)
         else:
-            status = "verified" if ev else "self_reported"
-            rationale = f"공시 근거: {', '.join(present)}"
-        return _base(q, value=True, status=status,
-                     evidence_links=ev, rationale=rationale)
-    # 공시 안 됨 — 데이터타입 기준 라우팅(정성 서술필요면 hitl_required, 그 외 insufficient)
+            rationale += " · 관련 독립 증빙 미확인"
+        flags = _evidence_diagnostics(present, mapped, evidence_index)
+        if conflict:
+            flags.append("설문/응답과 독립 문서 내용이 충돌함 — 원문 검토 필요")
+        return _base(q, value=value, status=status, evidence_links=ev,
+                     rationale=rationale, flags=flags, self_reports=surveys)
     status, request, ev_needed = _unresolved(
         q, "관련 공시/규정 미확인 — 환경방침서·인증서 등 증빙 업로드 필요")
     return _base(q, value=None, status=status, rationale=request,
@@ -221,53 +252,56 @@ def _derive_presence(q, mapped, missing, evidence_index) -> Answer:
 
 
 def _derive_multi(q, mapped, missing, evidence_index) -> Answer:
-    ticked: list[str] = []
-    not_covered: list[str] = []
-    ev_codes: list[str] = []
+    ticked, not_covered, unproven, links, flags = [], [], [], [], []
+    details = {}
+    conflict = False
     for label, codes in q.option_map:
-        hit = [c for c in codes if c in mapped]
+        hit = [c for c in codes if c in mapped and _entry_presence(mapped[c]) is True]
+        ev = _collect_evidence(hit, mapped, evidence_index)
+        negative = [c for c in codes if c in mapped and _entry_presence(mapped[c]) is False]
+        if _collect_evidence(negative, mapped, evidence_index):
+            conflict = True
+            flags.append(f"{label}: 부정 응답과 문서 증빙 충돌")
         if hit:
             ticked.append(label)
-            ev_codes.extend(hit)
+            links.extend(ev)
+            if not ev:
+                unproven.append(label)
         else:
             not_covered.append(label)
-
-    if not ticked:
-        return _base(
-            q, value=[], status="insufficient",
-            rationale="해당 영역 공시 없음 — 증빙 업로드 후 자동 체크됨",
-        )
-    ev = _collect_evidence(ev_codes, mapped, evidence_index)
-    status = "verified" if ev else "self_reported"
-    rationale = f"{len(ticked)}개 영역 충족"
+        details[label] = {"selected": bool(hit), "verified": bool(ev),
+                          "evidence_node_ids": [e.node_id for e in ev]}
+        flags.extend(_evidence_diagnostics(hit, mapped, evidence_index))
+    if not ticked and not conflict:
+        return _base(q, value=[], status="insufficient", option_evidence=details,
+                     rationale="해당 영역 공시 없음 — 증빙 업로드 후 자동 체크됨")
+    status = "flagged" if conflict else "self_reported" if unproven else "verified"
+    rationale = f"{len(ticked)}개 영역 응답 · {len(ticked) - len(unproven)}개 영역 증빙 확인"
+    if unproven:
+        rationale += " · 부분 충족, 미입증: " + ", ".join(unproven)
     if not_covered:
-        rationale += f" · 미충족(보완 권장): {', '.join(not_covered)}"
-    ans = _base(q, value=ticked, status=status, evidence_links=ev,
-                rationale=rationale)
-    ans.flags.extend(f"미충족: {lbl}" for lbl in not_covered)
-    return ans
+        rationale += " · 미충족(보완 권장): " + ", ".join(not_covered)
+    flags.extend(f"미입증: {label}" for label in unproven)
+    flags.extend(f"미충족: {label}" for label in not_covered)
+    unique = {e.node_id: e for e in links}
+    return _base(q, value=ticked, status=status, evidence_links=list(unique.values()),
+                 rationale=rationale, flags=flags, option_evidence=details)
+
+
+def _evidence_diagnostics(codes, mapped, evidence_index):
+    diagnostics = []
+    for code in codes:
+        for nid in mapped[code].get("evidence_node_ids", []) or []:
+            if not _valid_link(evidence_index.get(nid), code):
+                diagnostics.append(f"증빙 미확인: {nid} ({code}, 노드/주제/독립 출처 확인 필요)")
+    return diagnostics
 
 
 def _collect_evidence(codes, mapped, evidence_index):
-    """mapped 항목의 evidence_node_ids를 가벼운 EvidenceLink로 변환.
-
-    실제 파일/bbox는 numeric의 DataPoint 경로에서 채워진다. 존재형은
-    노드 ID만 알 수 있는 경우가 많아, 노드 ID를 근거로 남긴다.
-    """
-    from ..ssot.audit_trace import EvidenceLink
-    links: list[EvidenceLink] = []
-    seen: set[str] = set()
-    for c in codes:
-        for nid in (mapped.get(c, {}) or {}).get("evidence_node_ids", []) or []:
-            if nid in seen:
-                continue
-            seen.add(nid)
+    links = {}
+    for code in codes:
+        for nid in mapped.get(code, {}).get("evidence_node_ids", []) or []:
             link = evidence_index.get(nid)
-            if link is not None:
-                links.append(link)
-                continue
-            links.append(EvidenceLink(
-                file_name=str(nid), relative_path="",
-                origin="dart", node_id=str(nid),
-            ))
-    return links
+            if _valid_link(link, code):
+                links[nid] = link
+    return list(links.values())

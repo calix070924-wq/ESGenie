@@ -184,7 +184,17 @@ def _merge_ssot_evidence(result: Any, graph: EvidenceGraph) -> None:
     # 정성 조항(TextNode)도 존재형 문항의 증빙 근거다. 규정집/회의록에서 매핑된
     # K-ESG 코드가 있으면 해당 항목의 evidence_node_ids에 편입한다.
     text_by_code: dict[str, list[str]] = {}
+    survey_answers: dict[str, dict] = {}
+    from ..survey import is_survey, presence_value, apply_survey_answers
     for tnode in graph.text_nodes.values():
+        if is_survey(tnode):
+            value = presence_value(tnode.text)
+            if tnode.kesg_code and value is not None:
+                survey_answers[tnode.kesg_code] = {
+                    "yn": "예" if value else "아니오", "text": tnode.text,
+                    "node_ids": [tnode.id],
+                }
+            continue
         if tnode.kesg_code:
             text_by_code.setdefault(tnode.kesg_code, []).append(tnode.id)
 
@@ -340,6 +350,13 @@ def _merge_ssot_evidence(result: Any, graph: EvidenceGraph) -> None:
     )
     if ocr_resolved:
         result.notes.append(f"OCR 증빙 병합: {ocr_resolved}개 항목에 내부 증빙 노드 부착")
+    # 커버리지도 실제 노드와 독립 출처를 기준으로 계산한다.
+    all_nodes = {**graph.nodes, **graph.text_nodes}
+    for entry in result.mapped.values():
+        entry["independent_evidence_node_ids"] = [
+            nid for nid in entry.get("evidence_node_ids", [])
+            if nid in all_nodes and not is_survey(all_nodes[nid])]
+    apply_survey_answers(result, survey_answers)
 
 
 # ====================================================================
@@ -371,6 +388,9 @@ def build_rag_with_ssot(
     # ── SSOT TextNode 추가 편입 (규정집·회의록 조항) ───────────────────
     text_docs: list[IndexedDoc] = []
     for tnode in graph.text_nodes.values():
+        from ..survey import is_survey
+        if is_survey(tnode):
+            continue
         code_tag = f"[{tnode.kesg_code}] " if tnode.kesg_code else ""
         text = (
             f"{code_tag}{tnode.section}: {tnode.text}"

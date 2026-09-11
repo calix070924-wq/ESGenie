@@ -22,7 +22,7 @@ from typing import Any, Literal
 
 from .ocr_router import OcrExtraction, ExtractedMetric, ExtractedClause, DocChannel
 
-Origin = Literal["dart", "ocr_structured", "ocr_unstructured"]
+Origin = Literal["dart", "ocr_structured", "ocr_unstructured", "survey"]
 ValueRole = Literal["total", "component", "target", "unknown"]
 
 
@@ -285,6 +285,9 @@ def merge_ocr_extraction(
     origin: Origin = (
         "ocr_structured" if extraction.channel is DocChannel.STRUCTURED else "ocr_unstructured"
     )
+    if (extraction.doc_type == "survey" or extraction.source_file == "survey_form"
+            or extraction.router_meta.get("source") == "survey"):
+        origin = "survey"
     # G5 참조 기준 — 그래프에 보고 연도 기록(검출기가 최근접 노드 선택에 사용).
     if getattr(graph, "report_year", None) is None:
         graph.report_year = report_year

@@ -34,6 +34,10 @@ class EvidenceLink:
     bbox: list[float] | None = None    # 0~1 정규화 위치
     page: int | None = None            # 0-기준 페이지 인덱스
     node_id: str = ""
+    kesg_codes: list[str] = field(default_factory=list)
+    quote: str = ""
+    resolved: bool = False
+    independent: bool = False
 
     def to_dict(self) -> dict[str, Any]:
         return asdict(self)
@@ -181,14 +185,25 @@ def _pick_primary(nodes: list[EvidenceNode]) -> EvidenceNode:
 
 
 def _to_link(n: EvidenceNode) -> EvidenceLink:
-    fname = n.source_file or f"{n.id}.json"
+    return evidence_link(n)
+
+
+def evidence_link(n: Any) -> EvidenceLink:
+    """실제 노드에서만 검증 가능한 링크를 만든다. 파일명 자체는 증빙 판정이 아니다."""
+    from ..survey import is_survey
+    fname = n.source_file or getattr(n, "source", "") or f"{n.id}.json"
+    codes = [getattr(n, k, None) for k in ("metric", "kesg_code", "rba_code")]
     return EvidenceLink(
         file_name=fname,
         relative_path=f"evidence_pack/{fname}",
         origin=n.origin,
-        bbox=n.bbox,
+        bbox=getattr(n, "bbox", None),
         page=n.page,
         node_id=n.id,
+        kesg_codes=[c for c in codes if c],
+        quote=getattr(n, "raw_text", "") or getattr(n, "text", ""),
+        resolved=True,
+        independent=not is_survey(n),
     )
 
 

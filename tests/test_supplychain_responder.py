@@ -33,7 +33,7 @@ def _extraction(mapped_codes, missing=()):
         corp_name="한국정밀",
         profile="full",
         profile_label="전체 (61항목)",
-        mapped={c: {"code": c, "name": c, "evidence_node_ids": []} for c in mapped_codes},
+        mapped={c: {"code": c, "name": c, "value": True, "evidence_node_ids": []} for c in mapped_codes},
         missing=list(missing),
     )
 

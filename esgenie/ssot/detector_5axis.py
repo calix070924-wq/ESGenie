@@ -162,7 +162,8 @@ def audit_policy_documents(
     if not checklist:
         return PolicyAuditResult(kesg_code, [], passed=True, source_files=[])
 
-    text_nodes = graph.text_nodes_by_code(kesg_code)
+    from ..survey import is_survey
+    text_nodes = [n for n in graph.text_nodes_by_code(kesg_code) if not is_survey(n)]
     if not text_nodes:
         # 규정 자체가 없음 → 전 항목 missing 처리
         findings = [

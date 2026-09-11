@@ -140,7 +140,10 @@ def _merge_rba_clause_evidence(
     from ..knowledge.rba_items import RBA_BY_CODE
 
     by_code: dict[str, list[str]] = {}
+    from ..survey import is_survey
     for node in getattr(evidence_graph, "text_nodes", {}).values():
+        if is_survey(node):
+            continue
         code = getattr(node, "rba_code", None)
         if code:
             by_code.setdefault(code, []).append(node.id)
@@ -170,29 +173,9 @@ def _build_evidence_index(evidence_graph: Any | None) -> dict[str, Any]:
     if evidence_graph is None:
         return {}
 
-    from ..ssot.audit_trace import EvidenceLink
+    from ..ssot.audit_trace import evidence_link
 
-    index: dict[str, EvidenceLink] = {}
-    for node in getattr(evidence_graph, "nodes", {}).values():
-        file_name = node.source_file or node.source or node.id
-        relative_path = f"evidence_pack/{node.source_file}" if node.source_file else ""
-        index[node.id] = EvidenceLink(
-            file_name=file_name,
-            relative_path=relative_path,
-            origin=node.origin,
-            bbox=node.bbox,
-            page=node.page,
-            node_id=node.id,
-        )
-
-    for node in getattr(evidence_graph, "text_nodes", {}).values():
-        relative_path = f"evidence_pack/{node.source_file}" if node.source_file else ""
-        index[node.id] = EvidenceLink(
-            file_name=node.source_file or node.id,
-            relative_path=relative_path,
-            origin=node.origin,
-            page=node.page,
-            node_id=node.id,
-        )
-
-    return index
+    return {node.id: evidence_link(node)
+            for nodes in (getattr(evidence_graph, "nodes", {}),
+                          getattr(evidence_graph, "text_nodes", {}))
+            for node in nodes.values()}
