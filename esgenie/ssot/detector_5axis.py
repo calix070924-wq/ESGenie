@@ -50,7 +50,7 @@ class PolicyAuditResult:
 # ====================================================================
 
 # 문장에서 수치 토큰 추출: 1,670만 / 12.3% / 4781 tCO2 등
-_NUM_RE = re.compile(r"([0-9][0-9,\.]*)\s*(만|억|천)?\s*(tCO2eq|tCO2|kWh|MJ|ton|%|원|건|명)?")
+_NUM_RE = re.compile(r"([+-]?[0-9][0-9,\.]*)\s*(만|억|천)?\s*(tCO2eq|tCO2|kWh|MWh|GWh|TJ|GJ|MJ|kg|ton|톤|%|원|건|명)?")
 
 
 # ---- 책임있는 기권(abstain) 헬퍼 --------------------------------------------
@@ -113,7 +113,9 @@ def detect_d1_numeric(
             return _abstain("no_evidence", "수치는 있으나 K-ESG 매핑 없음 → 근거 추적 불가")
         return AxisScore(0.6, [], "수치는 있으나 K-ESG 매핑 없음 → 근거 추적 불가")
 
-    candidates = graph.nodes_by_metric(kesg_code)
+    from .selection import comparison_node
+    selected = comparison_node(graph, kesg_code)
+    candidates = [selected] if selected is not None else []
     if not candidates:
         if ABSTAIN_ENABLED and not _retry_evidence(kesg_code, graph):
             return _abstain("no_evidence", f"{kesg_code} 근거 노드 없음(재검색 후에도 없음)")
@@ -326,13 +328,19 @@ def _find_matching_node(
     tol: float,
 ) -> EvidenceNode | None:
     """±tol% 이내 + 단위 호환 노드 탐색 (128,400원 ≠ 128,400 kWh)."""
-    from ..layer3_detect import units_compatible
+    from ..rag_gates.units import normalize_unit, convert_to_common
+    from .selection import finite_number
     for n in nodes:
+        if finite_number(n.value) is None or finite_number(claim) is None:
+            continue
+        cu, nu = normalize_unit(claim_unit or "") or claim_unit, normalize_unit(n.unit) or n.unit
+        comparable = convert_to_common(claim, cu, nu) if cu else claim
+        if comparable is None:
+            continue
         if n.value == 0:
-            continue
-        if not units_compatible(claim_unit, n.unit):
-            continue
-        if abs(claim - n.value) / abs(n.value) * 100 <= tol:
+            if comparable == 0:
+                return n
+        elif abs(comparable - n.value) / abs(n.value) * 100 <= tol:
             return n
     return None
 

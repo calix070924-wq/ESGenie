@@ -149,10 +149,10 @@ def _build_risk_rows(
     risk_rows: list[dict[str, Any]] = []
 
     for code in target_codes:
-        nodes = graph.nodes_by_metric(code)
-        if not nodes:
+        from .ssot.selection import resolve_fact
+        node = resolve_fact(graph, code)
+        if node is None:
             continue
-        node = nodes[-1]
         axes = detector_5axis.detect_risk_axes(
             f"{code} 값은 {node.value}{node.unit}이다.",
             code,
@@ -163,6 +163,9 @@ def _build_risk_rows(
         risk_rows.append({
             "K-ESG 코드": code,
             "값": f"{node.value} {node.unit}",
+            "보고 연도": node.period,
+            "대표 근거": node.representative_node_ids,
+            "신뢰 정보": node.flags,
             "D1 수치": round(axes["D1"].score, 3),
             "D2 수식어": round(axes["D2"].score, 3),
             "D3 의미": round(axes["D3"].score, 3),

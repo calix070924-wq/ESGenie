@@ -111,6 +111,9 @@ class Answer:
     draft_text: str = ""
     draft_citations: list[dict] = field(default_factory=list)
     draft_grounding: dict | None = None
+    unit: str = ""
+    period: int | None = None
+    confidence_flags: list[str] = field(default_factory=list)
     self_reports: list[dict] = field(default_factory=list)
     option_evidence: dict[str, dict] = field(default_factory=dict)
 

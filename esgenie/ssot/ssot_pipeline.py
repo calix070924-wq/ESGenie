@@ -163,7 +163,8 @@ def _merge_ssot_evidence(result: Any, graph: EvidenceGraph) -> None:
 
     ocr_repr: dict[str, EvidenceNode] = {}
     for metric, pool in ocr_pool.items():
-        picked = select_representative_node(metric, pool, report_year=ref_year)
+        reported = [n for n in pool if not str(n.source).startswith("derived_from:")]
+        picked = select_representative_node(metric, reported or pool, report_year=ref_year)
         if picked is not None:
             ocr_repr[metric] = picked
             # D1이 따라 쓸 수 있도록 결정을 그래프에 남긴다(2026-07-26). 공용 함수를
@@ -357,6 +358,8 @@ def _merge_ssot_evidence(result: Any, graph: EvidenceGraph) -> None:
             nid for nid in entry.get("evidence_node_ids", [])
             if nid in all_nodes and not is_survey(all_nodes[nid])]
     apply_survey_answers(result, survey_answers)
+    from .selection import finalize_ledger
+    finalize_ledger(result, graph)
 
 
 # ====================================================================

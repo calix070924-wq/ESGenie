@@ -115,6 +115,7 @@ class EvidenceGraph:
         # 돌리는 대신 원장의 결정을 여기 기록해 D1이 따르게 한다.
         # 대표 노드가 없는(미공시) 코드는 기록하지 않는다.
         self.representative_node_ids: dict[str, str] = {}
+        self.resolved_facts: dict[str, Any] = {}
         self._nodes: dict[str, EvidenceNode] = {}
         self._text_nodes: dict[str, TextNode] = {}
         self._edges: list[EvidenceEdge] = []
@@ -196,6 +197,9 @@ class EvidenceGraph:
         return {
             "corp_code": self.corp_code,
             "corp_name": self.corp_name,
+            "report_year": self.report_year,
+            "representative_node_ids": self.representative_node_ids,
+            "resolved_facts": {c: f.to_dict() if f else None for c, f in self.resolved_facts.items()},
             "nodes": [n.to_dict() for n in self._nodes.values()],
             "text_nodes": [t.to_dict() for t in self._text_nodes.values()],
             "edges": [e.to_dict() for e in self._edges],

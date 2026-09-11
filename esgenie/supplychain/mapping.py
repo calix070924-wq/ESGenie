@@ -80,8 +80,10 @@ def _derive_numeric(q, mapped, missing, dp_by_code, claims=None) -> Answer:
         ans = _base(
             q, value=dp.value, status=status,
             evidence_links=list(dp.evidence_files),
+            unit=dp.unit, period=dp.period, confidence_flags=list(dp.confidence_flags),
             rationale=f"{dp.kesg_name} = {dp.value}{dp.unit} "
-                      f"(D1 위험 {dp.d1_risk}, 검증={dp.verification})",
+                      f"(보고 연도 {dp.period}, D1 위험 {dp.d1_risk}, 검증={dp.verification})"
+                      + (f" · 신뢰 정보: {', '.join(dp.confidence_flags)}" if dp.confidence_flags else ""),
         )
     else:
         entry = mapped.get(code)

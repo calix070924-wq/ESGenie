@@ -531,6 +531,21 @@ def _score_d1_numeric(
         best: tuple[float, Any, str] | None = None  # (delta, node, code)
         any_nodes = False
         for c in cand_codes:
+            facts = getattr(evidence_graph, "resolved_facts", {})
+            if c in facts:
+                from .ssot.selection import comparison_node
+                from .rag_gates.units import normalize_unit, convert_to_common
+                resolved = comparison_node(evidence_graph, c)
+                if resolved is not None:
+                    any_nodes = True
+                    cv = convert_to_common(claim_val, normalize_unit(claim_unit or "") or claim_unit,
+                                           normalize_unit(resolved.unit) or resolved.unit)
+                    if cv is not None:
+                        delta = (abs(cv - resolved.value) / abs(resolved.value)
+                                 if resolved.value else (0.0 if cv == 0 else float("inf")))
+                        if best is None or delta < best[0]:
+                            best = (delta, resolved, c)
+                continue
             nodes = evidence_graph.search_nodes(keywords=[c])
             if not nodes:
                 continue
