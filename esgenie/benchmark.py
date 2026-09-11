@@ -34,6 +34,7 @@ from pathlib import Path
 from typing import Any
 
 from .config import DATA_DIR, ROOT_DIR, SETTINGS
+from .schemas import format_score
 from .schemas import RiskVector
 
 BENCH_PATH = DATA_DIR / "benchmark" / "greenwash_bench.json"
@@ -178,8 +179,8 @@ def load_benchmark(path: Path = BENCH_PATH) -> dict[str, Any]:
 
 def _flagged(rv: RiskVector, threshold: float, axis_flag: float) -> tuple[bool, float]:
     score = rv.risk_score
-    max_axis = max(rv.D1_numeric.score, rv.D2_modifier.score, rv.D5_timeseries.score)
-    return (score >= threshold or max_axis >= axis_flag), score
+    max_axis = max((a.score for a in (rv.D1_numeric, rv.D2_modifier, rv.D5_timeseries) if not a.abstain), default=0.0)
+    return ((score is not None and score >= threshold) or max_axis >= axis_flag), score
 
 
 def _case_abstain_info(rv: RiskVector, flagged: bool) -> tuple[bool, list[str]]:
@@ -395,7 +396,7 @@ def format_report(reports: dict[str, DetectorReport], *, n_cases: int) -> str:
         lines.append(f"### {_DETECTOR_LABELS.get(name, name)} — 오답 {len(wrong)}건")
         for c in wrong:
             kind = "오탐(FP)" if c.label == "clean" else "미탐(FN)"
-            lines.append(f"- [{kind}] {c.case_id} ({c.category}) score={c.risk_score:.3f} {c.detail}")
+            lines.append(f"- [{kind}] {c.case_id} ({c.category}) score={format_score(c.risk_score, digits=3)} {c.detail}")
         lines.append("")
     return "\n".join(lines)
 

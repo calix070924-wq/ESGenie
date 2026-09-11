@@ -89,7 +89,7 @@ def _rec(d1_score=0.0, d1_abstain=False, d1_reason=None, d2_score=0.0, label="cl
 
 def test_case_rows_marks_abstained_when_no_other_axis_flags():
     # D1이 기권(no_evidence)이고, D2도 낮아 flagged 안 됨 → 기권 케이스로 카운트.
-    rec = _rec(d1_score=0.0, d1_abstain=True, d1_reason="no_evidence", d2_score=0.1, label="clean")
+    rec = _rec(d1_score=0.0, d1_abstain=True, d1_reason="no_evidence", d2_score=0.0, label="clean")
     rows = _case_rows([rec], _CFG)
     assert rows[0]["abstained"] is True
     assert rows[0]["abstain_reasons"] == ["no_evidence"]

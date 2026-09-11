@@ -15,6 +15,8 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any
 
+from .schemas import format_score
+
 from .config import INDUSTRY_DIR, MAX_REFINEMENT_ITER, SETTINGS
 from .dart_client import CompanyReport, _empty_report, load_report
 from .industry import resolve_module  # 업종 모듈 self-register 포함
@@ -168,9 +170,11 @@ def _build_risk_rows(
             "신뢰 정보": node.flags,
             "D1 수치": round(axes["D1"].score, 3),
             "D2 수식어": round(axes["D2"].score, 3),
-            "D3 의미": round(axes["D3"].score, 3),
+            "D3 의미": None if axes["D3"].abstain else round(axes["D3"].score, 3),
             "D5 시계열": round(axes["D5"].score, 3),
-            "종합 위험도": round(axes["aggregate"].score, 3),
+            "종합 위험도": axes["aggregate"].evaluation.get("risk_score"),
+            "평가 상태": axes["aggregate"].detail,
+            "평가 범위": axes["aggregate"].evaluation,
         })
     return d1_scores, risk_rows
 
@@ -549,7 +553,7 @@ def _cli() -> None:
         )
     for area, verify in output.sections.items():
         hitl = " [HITL_REQUIRED]" if verify.hitl_required else ""
-        print(f"  [{area}] 위험도={verify.final_score:.1f} | {verify.final_band}{hitl}")
+        print(f"  [{area}] 위험도={format_score(verify.final_score)} | {verify.final_band}{hitl}")
     if output.trace_paths:
         print("\nAudit Trace 저장:")
         for area, path in output.trace_paths.items():

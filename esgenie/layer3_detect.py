@@ -122,7 +122,7 @@ class DetectionResult:
     claim_checks: list[ClaimCheck]
     vague_phrases: list[dict[str, Any]]
     semantic_similarity: float
-    risk_score: float
+    risk_score: float | None
     components: dict[str, float] = field(default_factory=dict)
     highlights: list[dict[str, Any]] = field(default_factory=list)
     risk_vector: RiskVector | None = None   # v10 신설
@@ -644,8 +644,8 @@ def _score_d3_semantic(
     prebuilt_index: Any | None = None,
 ) -> AxisScore:
     """SBERT cos-sim(claim, evidence chunk) 역수."""
-    if not retrieved_chunks and prebuilt_index is None:
-        return AxisScore(score=0.5, evidence=[], detail="retrieved_chunks 없음 — 중립값")
+    if prebuilt_index is None and not any(str(c.get("text", "")).strip() for c in (retrieved_chunks or [])):
+        return _abstain("no_evidence", "검색 청크 없음 — D3 평가불가")
 
     from .embeddings import IndexedDoc, VectorIndex
     if prebuilt_index is not None:
@@ -655,9 +655,11 @@ def _score_d3_semantic(
         idx = VectorIndex()
         docs = [IndexedDoc(text=c.get("text", ""), meta={"id": c.get("id", "")}) for c in retrieved_chunks]
         idx.build(docs)
+    if not docs or not any(getattr(d, "text", "").strip() for d in docs):
+        return _abstain("no_evidence", "빈 검색 인덱스 — D3 평가불가")
     hits = idx.search(sentence, k=min(3, len(docs)))
     if not hits:
-        return AxisScore(score=1.0, evidence=[], detail="유사 청크 없음")
+        return _abstain("no_evidence", "검색 결과 없음 — D3 평가불가")
 
     best_sim = max(s for _, s in hits)
     best_chunk_id = hits[0][0].meta.get("id", "")
@@ -744,33 +746,9 @@ def _build_risk_vector(
         "D3_semantic":   d3,
         "D5_timeseries": d5,
     }
-    weighted = sum(D_WEIGHTS[k] * ax.score for k, ax in axes.items())
-    risk_score = round(weighted, 4)
-
-    if risk_score < RISK_LEVEL_THRESHOLDS["low"]:
-        level = "low"
-    elif risk_score < RISK_LEVEL_THRESHOLDS["medium"]:
-        level = "medium"
-    else:
-        level = "high"
-
-    # 전 축이 0이면 top_axis는 빈 문자열이다. max()는 동점에서 첫 키를 돌려주므로
-    # 깨끗한 문장이 늘 'D1_numeric'으로 찍혔고, L5 summary의 high_risk_axes가 그걸
-    # 최빈값으로 집계해 **위험이 0인 섹션을 '고위험 축 D1'으로 보고**했다
-    # (2026-07-27 현대모비스 E: 전 문장 D1=0인데 high_risk_axes=['D1_numeric', ...]).
-    top_axis = max(axes, key=lambda k: axes[k].score) if any(a.score > 0 for a in axes.values()) else ""
-    abstained_axes = [name for name, ax in axes.items() if ax.abstain]
-
-    return RiskVector(
-        D1_numeric=d1, D2_modifier=d2, D3_semantic=d3,
-        D5_timeseries=d5,
-        aggregate={
-            "risk_score": risk_score,
-            "level":      level,
-            "top_axis":   top_axis,
-            "abstained_axes": abstained_axes,
-        },
-    )
+    from .schemas import aggregate_axes
+    return RiskVector(D1_numeric=d1, D2_modifier=d2, D3_semantic=d3,
+                      D5_timeseries=d5, aggregate=aggregate_axes(axes))
 
 
 # ---- 공개 별칭 (esgenie.ssot 등 외부 모듈 재사용용) ---------------------------

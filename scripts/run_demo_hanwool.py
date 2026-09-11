@@ -66,7 +66,9 @@ def _axis_payload(rv: Any) -> dict[str, dict[str, Any]]:
         return {}
     return {
         key: {
-            "score": round(getattr(rv, key).score, 4),
+            "score": None if getattr(rv, key).abstain else round(getattr(rv, key).score, 4),
+            "abstain": getattr(rv, key).abstain,
+            "abstain_reason": getattr(rv, key).abstain_reason,
             "evidence": list(getattr(rv, key).evidence),
             "detail": getattr(rv, key).detail,
         }
@@ -91,6 +93,7 @@ def main() -> None:
           f" · 영역 {'·'.join(args.areas)}")
 
     from esgenie import pipeline
+    from esgenie.schemas import format_score
     from esgenie import llm_cache
     from esgenie.knowledge.kesg_items import by_code, items_for_profile
     from esgenie.layer1_extract import evidence_coverage_pct
@@ -205,7 +208,8 @@ def main() -> None:
             "score": v.final_score,
             "initial_score": initial_score,
             "final_score": v.final_score,
-            "score_delta": round(initial_score - v.final_score, 1),
+            "score_delta": round(initial_score - v.final_score, 1) if initial_score is not None and v.final_score is not None else None,
+            "evaluation": rv.aggregate if rv is not None else {},
             "step_scores": step_scores,
             "iterations_used": v.iterations_used,
             "band": v.final_band,
@@ -214,8 +218,8 @@ def main() -> None:
             "hitl_required": v.hitl_required,
         }
         axis_scores = {key: axis["score"] for key, axis in axes.items()}
-        print(f"  {area}: 초안 {initial_score:.1f} → 최종 {v.final_score:.1f} "
-              f"(하락폭 {initial_score - v.final_score:+.1f}, {v.iterations_used}회, "
+        print(f"  {area}: 초안 {format_score(initial_score)} → 최종 {format_score(v.final_score)} "
+              f"(하락폭 {format_score(initial_score - v.final_score if initial_score is not None and v.final_score is not None else None)}, {v.iterations_used}회, "
               f"{v.final_band})  {axis_scores}")
     for area, tr in (out.trace_paths or {}).items():
         print(f"     trace[{area}] {tr}")

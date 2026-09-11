@@ -151,8 +151,8 @@ def _simulate_vector(rec: dict[str, Any], *, trigger: float, rule_weight: float)
 
 
 def _flagged(rv: RiskVector, threshold: float, axis_flag: float) -> bool:
-    max_axis = max(rv.D1_numeric.score, rv.D2_modifier.score, rv.D5_timeseries.score)
-    return rv.risk_score >= threshold or max_axis >= axis_flag
+    max_axis = max((a.score for a in (rv.D1_numeric, rv.D2_modifier, rv.D5_timeseries) if not a.abstain), default=0.0)
+    return (rv.risk_score is not None and rv.risk_score >= threshold) or max_axis >= axis_flag
 
 
 def _f1(records: list[dict[str, Any]], *, trigger: float, rule_weight: float,

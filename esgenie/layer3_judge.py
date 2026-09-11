@@ -143,7 +143,7 @@ def judge_risk_vector(
     # 중립값·스킵 축은 판정할 신호가 없으므로 트리거에서 제외 (불필요 호출 방지)
     triggered = {
         name: ax for name, ax in axes.items()
-        if ax.score >= trigger
+        if not ax.abstain and ax.score >= trigger
         and "중립값" not in ax.detail
         and "스킵" not in ax.detail
     }
@@ -331,24 +331,5 @@ def _llm_score(verdict: dict[str, Any], rule_score: float) -> float:
 
 
 def _rebuild_vector(axes: dict[str, AxisScore]) -> RiskVector:
-    weighted = sum(D_WEIGHTS[k] * ax.score for k, ax in axes.items())
-    risk_score = round(weighted, 4)
-    if risk_score < RISK_LEVEL_THRESHOLDS["low"]:
-        level = "low"
-    elif risk_score < RISK_LEVEL_THRESHOLDS["medium"]:
-        level = "medium"
-    else:
-        level = "high"
-    # 전 축이 0이면 빈 문자열 — layer3_detect와 같은 규칙(깨끗한 문장이 D1로 찍히는 문제).
-    top_axis = max(axes, key=lambda k: axes[k].score) if any(a.score > 0 for a in axes.values()) else ""
-    abstained_axes = [name for name, ax in axes.items() if ax.abstain]
-    return RiskVector(
-        D1_numeric=axes["D1_numeric"],
-        D2_modifier=axes["D2_modifier"],
-        D3_semantic=axes["D3_semantic"],
-        D5_timeseries=axes["D5_timeseries"],
-        aggregate={
-            "risk_score": risk_score, "level": level, "top_axis": top_axis,
-            "abstained_axes": abstained_axes,
-        },
-    )
+    from .schemas import aggregate_axes
+    return RiskVector(**axes, aggregate=aggregate_axes(axes))

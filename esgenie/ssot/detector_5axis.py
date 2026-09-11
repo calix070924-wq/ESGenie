@@ -271,21 +271,16 @@ def detect_risk_axes(
     d3 = detect_d3_semantic(sentence, retrieved_chunks)
     d5 = detect_d5_timeseries(sentence, graph)
 
-    # 가중평균 (D4 제거 후 재배분: D1=40%, D2=25%, D3=25%, D5=10%)
-    weighted = d1.score * 0.40 + d2.score * 0.25 + d3.score * 0.25 + d5.score * 0.10
-    top = max({"D1": d1, "D2": d2, "D3": d3, "D5": d5}.items(), key=lambda kv: kv[1].score)
-
-    # 기권 전파: 축 중 하나라도 abstain이면 aggregate에도 표식을 실어, 이 경로
-    # 소비자가 '안전한 낮은 점수'와 '판정 보류'를 구분할 수 있게 한다(코드리뷰 must-fix 3).
-    abstained = [ax for ax in (d1, d2, d3, d5) if getattr(ax, "abstain", False)]
+    from ..layer3_detect import _build_risk_vector
+    rv = _build_risk_vector(d1, d2, d3, d5)
     aggregate = AxisScore(
-        score=round(weighted, 4),
+        score=rv.risk_score if rv.risk_score is not None else 0.0,
         evidence=d1.evidence + d3.evidence,
-        detail=f"종합 위험도={weighted:.3f} | 최고위험={top[0]}({top[1].score:.3f})"
-               + (f" | ABSTAIN({abstained[0].abstain_reason})" if abstained else ""),
-        abstain=bool(abstained),
-        abstain_reason=(abstained[0].abstain_reason if abstained else None),
-    )
+        detail=f"{rv.evaluation_label} · 유효 축: {', '.join(rv.aggregate['evaluated_axes'])}",
+        abstain=not rv.evaluation_complete,
+        abstain_reason="no_evidence" if not rv.evaluation_complete else None,
+        evaluation=rv.aggregate)
+
     return {"D1": d1, "D2": d2, "D3": d3, "D5": d5, "aggregate": aggregate}
 
 

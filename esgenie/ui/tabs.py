@@ -1,6 +1,9 @@
 """Streamlit tab renderers for ESGenie."""
 from __future__ import annotations
 
+from ..schemas import format_score
+
+
 import html
 import json
 import logging
@@ -168,7 +171,7 @@ def _result_status_meta(result, active_area: str) -> list[dict[str, str]]:
     if verify is not None:
         rows.append({
             "label": "그린워싱 위험도",
-            "value": f"{verify.final_score:.1f}",
+            "value": f"{format_score(verify.final_score)}",
             "note": f"{verify.final_band} · 검증 {verify.iterations_used}회",
         })
         rows.append({
@@ -191,12 +194,12 @@ def _draft_vs_final_panel(result, active_area: str) -> None:
         st.markdown(panel_html("초안 (검증 전)", "수집한 데이터로 처음 만든 보고서입니다. 근거가 확인되지 않은 문장이 남아 있을 수 있습니다."), unsafe_allow_html=True)
         render_report_card(first_step.generation.text, "draft", "DRAFT")
     with right:
-        delta = first_step.detection.risk_score - verify.final_score
+        delta = _score_delta(first_step.detection.risk_score, verify.final_score)
         if verify.hitl_required:
             right_note = "담당자 확인 대기 — 근거 미확인 문장 있음"
             right_body = "자동 검증을 마쳤으나 근거를 확인하지 못한 문장이 남아 담당자 확인이 필요한 버전입니다."
         else:
-            right_note = f"위험도 {delta:.1f} 감소" if delta > 0 else "초안이 이미 기준치 이하"
+            right_note = f"위험도 {delta:.1f} 감소" if delta is not None and delta > 0 else "초안이 이미 기준치 이하"
             right_body = "그린워싱 검증과 자동 수정을 거친 제출 직전 버전입니다."
         st.markdown(panel_html("최종본 (검증 후)", right_body, compact_note=right_note), unsafe_allow_html=True)
         render_report_card(verify.final_text, "final", "FINAL")
@@ -382,7 +385,7 @@ def render_overview_workspace(
         if export_paths.get("audit_json"):
             deliverables.append(f"감사 추적 준비됨: {os.path.basename(export_paths['audit_json'])}")
         if verify is not None:
-            deliverables.append(f"최종 위험도 {verify.final_score:.1f} / {verify.final_band}")
+            deliverables.append(f"최종 위험도 {format_score(verify.final_score)} / {verify.final_band}")
         st.markdown(
             callout_html("Delivery Pack", deliverables or ["산출물은 분석 완료 후 이곳에 표시됩니다."], tone="success"),
             unsafe_allow_html=True,
@@ -401,11 +404,11 @@ def render_analysis_workspace(result, active_area: str, gradient: str) -> None:
         return
 
     verify = result.sections[active_area]
-    delta = verify.steps[0].detection.risk_score - verify.final_score
+    delta = _score_delta(verify.steps[0].detection.risk_score, verify.final_score)
     cards = [
-        {"label": "초안 위험도", "value": f"{verify.steps[0].detection.risk_score:.1f}", "note": "첫 생성본 기준"},
-        {"label": "최종 위험도", "value": f"{verify.final_score:.1f}", "note": verify.final_band},
-        {"label": "위험도 개선", "value": f"{max(delta, 0):.1f}", "note": "재생성 감소폭"},
+        {"label": "초안 위험도", "value": f"{format_score(verify.steps[0].detection.risk_score)}", "note": "첫 생성본 기준"},
+        {"label": "최종 위험도", "value": f"{format_score(verify.final_score)}", "note": verify.final_band},
+        {"label": "위험도 개선", "value": f"{format_score(max(delta, 0) if delta is not None else None)}", "note": "재생성 감소폭"},
         {"label": "검증 반복", "value": f"{verify.iterations_used}회", "note": "임계치 수렴 루프"},
     ]
     render_stat_row(cards, columns=4)
@@ -688,8 +691,8 @@ def render_greenwash_workspace(result, active_area: str) -> None:
     else:
         judgment, judgment_note = "검토 필요", "수렴 미완료"
     cards = [
-        {"label": "초안 위험도", "value": f"{verify.steps[0].detection.risk_score:.1f}", "note": "첫 생성본 기준"},
-        {"label": "최종 위험도", "value": f"{verify.final_score:.1f}", "note": verify.final_band},
+        {"label": "초안 위험도", "value": f"{format_score(verify.steps[0].detection.risk_score)}", "note": "첫 생성본 기준"},
+        {"label": "최종 위험도", "value": f"{format_score(verify.final_score)}", "note": verify.final_band},
         {"label": "검증 판정", "value": judgment, "note": judgment_note},
         {"label": "검증 반복", "value": f"{verify.iterations_used}회", "note": "검증 기준 반복 적용"},
     ]
@@ -827,7 +830,7 @@ def render_home_tab(result, active_area: str, gradient: str, *, show_header: boo
     c4.metric("규정 통과", f"{v15_trace.summary['policy_pass']}/{v15_trace.summary['policy_total']}")
     if verify:
         band_emoji = {"LOW": "🟢", "MEDIUM": "🟡", "HIGH": "🟠", "CRITICAL": "🔴"}.get(verify.final_band, "")
-        c5.metric("그린워싱 위험도", f"{verify.final_score:.1f}", f"{band_emoji} {verify.final_band}", delta_color="off")
+        c5.metric("그린워싱 위험도", f"{format_score(verify.final_score)}", f"{band_emoji} {verify.final_band}", delta_color="off")
 
     if verify:
         st.markdown("#### 보고서 미리보기")
@@ -1041,10 +1044,10 @@ def render_verify_tab(
     if verify.hitl_required:
         st.warning(
             f"⚠️ 자동 검증 {verify.iterations_used}회 후에도 근거를 확인하지 못했습니다 "
-            f"— 담당자 확인으로 넘깁니다 (위험도 {before:.1f} → {after:.1f})"
+            f"— 담당자 확인으로 넘깁니다 (위험도 {format_score(before)} → {format_score(after)})"
         )
-    elif after < before:
-        st.success(f"✅ L4 재생성으로 위험도 {before:.1f} → {after:.1f} 감소")
+    elif after is not None and before is not None and after < before:
+        st.success(f"✅ L4 재생성으로 위험도 {format_score(before)} → {format_score(after)} 감소")
     else:
         st.info("ℹ️ 초안이 이미 기준치 이하 — 재생성 없이 통과")
 
@@ -1052,19 +1055,21 @@ def render_verify_tab(
         st.markdown("### 최종 보고서")
         render_report_card(verify.final_text, "final", "FINAL")
     st.caption(
-        f"{band_emoji.get(verify.final_band, '')} 위험도 **{verify.final_score:.1f}** ({verify.final_band}) · "
+        f"{band_emoji.get(verify.final_band, '')} 위험도 **{format_score(verify.final_score)}** ({verify.final_band}) · "
         f"검증 {verify.iterations_used}회 · "
         + ("수렴 완료 ✅" if verify.converged else "HITL 필요 ⚠️" if verify.hitl_required else "미수렴 ⚠️")
     )
 
     final_risk = verify.final.detection.risk_vector
     if final_risk is not None:
+        if not final_risk.evaluation_complete:
+            st.warning(f"{final_risk.evaluation_label}: 기권 축 {', '.join(final_risk.abstained_axes())} — 독립 증빙 확인 필요")
         axes = ["D1 수치오차", "D2 모호어", "D3 의미괴리", "D5 시계열모순"]
         scores = [
-            final_risk.D1_numeric.score * 100,
-            final_risk.D2_modifier.score * 100,
-            final_risk.D3_semantic.score * 100,
-            final_risk.D5_timeseries.score * 100,
+            None if final_risk.D1_numeric.abstain else final_risk.D1_numeric.score * 100,
+            None if final_risk.D2_modifier.abstain else final_risk.D2_modifier.score * 100,
+            None if final_risk.D3_semantic.abstain else final_risk.D3_semantic.score * 100,
+            None if final_risk.D5_timeseries.abstain else final_risk.D5_timeseries.score * 100,
         ]
         fig = go.Figure()
         fig.add_trace(go.Scatterpolar(
@@ -1079,7 +1084,7 @@ def render_verify_tab(
             showlegend=False,
             height=300,
             margin=dict(t=30, b=20),
-            title=f"4축 위험 분해 (종합 {final_risk.risk_score*100:.1f})",
+            title=f"4축 위험 분해 ({final_risk.evaluation_label} · {format_score(final_risk.risk_score, scale=100)})",
         )
         st.plotly_chart(fig, width='stretch', key="radar_final")
 
@@ -1692,7 +1697,7 @@ def render_benchmark_tab(gradient: str, *, show_header: bool = True) -> None:
                         "ID": case.case_id,
                         "카테고리": case.category,
                         "유형": "오탐(FP)" if case.label == "clean" else "미탐(FN)",
-                        "점수": round(case.risk_score, 3),
+                        "점수": round(case.risk_score, 3) if case.risk_score is not None else None,
                         "비고": case.detail[:60],
                     }
                     for case in wrong
@@ -1919,7 +1924,7 @@ def _render_hitl_panel(sentence_trace) -> None:
     m1, m2, m3, m4 = st.columns(4)
     m1.metric("총 문장", summary["total_sentences"])
     m2.metric("HITL 필요", summary["hitl_count"])
-    m3.metric("평균 위험도", f"{summary['avg_risk_score']:.3f}")
+    m3.metric("평균 위험도", format_score(summary["avg_risk_score"], digits=3))
     m4.metric("수렴", "✅" if summary["converged"] else "❌")
 
     if "hitl_decisions" not in st.session_state:
@@ -1927,11 +1932,13 @@ def _render_hitl_panel(sentence_trace) -> None:
 
     for sentence in sentence_trace.sentences:
         risk_vector = sentence.risk_vector
-        risk_score = risk_vector.risk_score * 100 if risk_vector else 0.0
-        level = risk_vector.level if risk_vector else "low"
+        risk_score = risk_vector.risk_score * 100 if risk_vector and risk_vector.risk_score is not None else None
+        level = risk_vector.level if risk_vector else "unavailable"
         color = {"low": "🟢", "medium": "🟡", "high": "🔴"}.get(level, "⚪")
 
-        with st.expander(f"{color} [{sentence.sentence_id}] {sentence.sentence_text[:60]}... (위험도 {risk_score:.1f})", expanded=(level == "high")):
+        if risk_vector is None or not risk_vector.evaluation_complete:
+            color = "⚪ 평가불가" if risk_score is None else "⚪ 부분 평가"
+        with st.expander(f"{color} [{sentence.sentence_id}] {sentence.sentence_text[:60]}... (위험도 {format_score(risk_score)})", expanded=(level == "high")):
             text_col, meta_col = st.columns([3, 2])
             with text_col:
                 st.markdown("**문장 원문**")
@@ -1939,12 +1946,12 @@ def _render_hitl_panel(sentence_trace) -> None:
                 if risk_vector is not None:
                     st.markdown("**4축 위험 분해**")
                     st.dataframe(pd.DataFrame([
-                        {"축": axis, "점수": f"{score:.3f}", "설명": detail}
+                        {"축": axis, "점수": format_score(score, digits=3), "설명": detail}
                         for axis, score, detail in [
-                            ("D1 수치오차", risk_vector.D1_numeric.score, risk_vector.D1_numeric.detail),
-                            ("D2 모호어", risk_vector.D2_modifier.score, risk_vector.D2_modifier.detail),
-                            ("D3 의미괴리", risk_vector.D3_semantic.score, risk_vector.D3_semantic.detail),
-                            ("D5 시계열모순", risk_vector.D5_timeseries.score, risk_vector.D5_timeseries.detail),
+                            ("D1 수치오차", None if risk_vector.D1_numeric.abstain else risk_vector.D1_numeric.score, risk_vector.D1_numeric.detail),
+                            ("D2 모호어", None if risk_vector.D2_modifier.abstain else risk_vector.D2_modifier.score, risk_vector.D2_modifier.detail),
+                            ("D3 의미괴리", None if risk_vector.D3_semantic.abstain else risk_vector.D3_semantic.score, risk_vector.D3_semantic.detail),
+                            ("D5 시계열모순", None if risk_vector.D5_timeseries.abstain else risk_vector.D5_timeseries.score, risk_vector.D5_timeseries.detail),
                         ]
                     ]), hide_index=True, width='stretch')
             with meta_col:
@@ -2029,3 +2036,7 @@ def _source_tag(entry: dict, graph=None) -> str:
     if has_dart:
         return "🏛 DART"
     return "🏛 DART"
+
+
+def _score_delta(before, after):
+    return before - after if before is not None and after is not None else None

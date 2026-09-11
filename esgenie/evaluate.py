@@ -57,7 +57,7 @@ def _case_rows(records: list[dict[str, Any]], cfg: dict[str, float]) -> list[dic
         ]
         abstained = bool(abstained_axis_names) and not pred
         rows.append({"id": rec["id"], "category": rec["category"],
-                     "p": p, "y": y, "pred": int(pred), "correct": int(int(pred) == y),
+                     "p": p, "y": y, "pred": int(pred), "correct": int(p is not None and int(pred) == y),
                      "abstained": abstained, "abstain_reasons": abstain_reasons})
     return rows
 
@@ -159,6 +159,8 @@ def calibration(rows: list[dict[str, Any]], *, n_bins: int = 10) -> dict[str, An
     """
     bins: list[list[dict[str, Any]]] = [[] for _ in range(n_bins)]
     for r in rows:
+        if r["p"] is None:
+            continue
         idx = min(int(r["p"] * n_bins), n_bins - 1)
         bins[idx].append(r)
 
@@ -191,7 +193,7 @@ def risk_coverage(rows: list[dict[str, Any]], cfg: dict[str, float],
     coverage c = 자동판정 비율 → 그 부분집합의 정확도.
     """
     thr = cfg["threshold"]
-    ordered = sorted(rows, key=lambda r: abs(r["p"] - thr), reverse=True)
+    ordered = sorted((r for r in rows if r["p"] is not None), key=lambda r: abs(r["p"] - thr), reverse=True)
     N = len(rows)
     out = []
     for c in steps:
