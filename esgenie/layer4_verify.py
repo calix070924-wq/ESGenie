@@ -70,12 +70,16 @@ class VerificationResult:
         return strip_citation_markers(self.final.generation.text)
 
     @property
-    def final_score(self) -> float:
+    def final_score(self) -> float | None:
         return self.final.detection.risk_score
 
     @property
     def final_band(self) -> str:
-        return risk_band(self.final_score)
+        rv = self.final.detection.risk_vector
+        if self.final_score is None:
+            return "평가불가"
+        band = risk_band(self.final_score)
+        return f"부분 평가 · {band}" if rv is not None and not rv.evaluation_complete else band
 
 
 # ---- 내부 헬퍼 --------------------------------------------------------------
@@ -221,6 +225,7 @@ def verify_and_refine(
                                        industry_module=industry_module,
                                        llm_judge=llm_judge)
         det.risk_vector = rv
+        det.risk_score = rv.risk_score * 100 if rv.risk_score is not None else None
 
     steps.append(VerificationStep(
         iteration=0,
@@ -230,10 +235,12 @@ def verify_and_refine(
         instruction="",
     ))
 
-    converged = det.risk_score <= threshold and (grounding.decision == "ACCEPT" or not grounding_blocks)
+    converged = _can_converge(det, grounding, threshold, grounding_blocks)
     i = 0
 
     while not converged and i < max_iter:
+        if rv is not None and not rv.evaluation_complete and not rv.high_axes():
+            break  # 증빙 추가 없이 재생성만 반복해도 평가 범위는 늘어나지 않는다.
         i += 1
         before_text = gen.text
 
@@ -254,6 +261,7 @@ def verify_and_refine(
                                            industry_module=industry_module,
                                            llm_judge=llm_judge)
             det.risk_vector = rv
+            det.risk_score = rv.risk_score * 100 if rv.risk_score is not None else None
 
         refinement_attempts.append(_make_refinement_attempt(
             attempt_no=i,
@@ -270,11 +278,11 @@ def verify_and_refine(
             instruction=instruction,
         ))
 
-        if det.risk_score <= threshold and (grounding.decision == "ACCEPT" or not grounding_blocks):
+        if _can_converge(det, grounding, threshold, grounding_blocks):
             converged = True
             break
 
-    hitl_required = not converged and i >= max_iter
+    hitl_required = not converged
 
     return VerificationResult(
         area=area,
@@ -288,6 +296,7 @@ def verify_and_refine(
             "threshold": threshold,
             "max_iter":  max_iter,
             "hitl_status": "HITL_REQUIRED" if hitl_required else "ok",
+            "evaluation": rv.aggregate if rv is not None else {},
             "grounding_status": steps[-1].grounding.decision if steps[-1].grounding else "unknown",
             "faithfulness": steps[-1].grounding.faithfulness if steps[-1].grounding else None,
             "retrieval_decision": retrieval_decision.to_dict() if retrieval_decision is not None else None,
@@ -295,11 +304,22 @@ def verify_and_refine(
     )
 
 
+def _can_converge(det, grounding, threshold, grounding_blocks):
+    rv = det.risk_vector
+    return (det.risk_score is not None and det.risk_score <= threshold
+            and (rv is None or rv.evaluation_complete)
+            and (grounding.decision == "ACCEPT" or not grounding_blocks))
+
+
 def _merge_instructions(*blocks: str) -> str:
     return "\n\n".join(block for block in blocks if block.strip())
 
 
 def _retrieval_blocked_detection(gen: GenerationResult) -> DetectionResult:
+    from .schemas import AxisScore
+    from .layer3_detect import _build_risk_vector
+    rv = _build_risk_vector(*(AxisScore(0, abstain=True, abstain_reason="no_evidence",
+                                       detail="검색 근거 부족으로 평가하지 않음") for _ in range(4)))
     text = strip_citation_markers(gen.text)
     return DetectionResult(
         text=text,
@@ -308,8 +328,8 @@ def _retrieval_blocked_detection(gen: GenerationResult) -> DetectionResult:
         claim_checks=[],
         vague_phrases=[],
         semantic_similarity=0.0,
-        risk_score=100.0,
-        components={"retrieval_gate": 100.0},
+        risk_score=None,
+        components={},
         highlights=[{
             "type": "retrieval_gate",
             "sentence": text,
@@ -318,7 +338,7 @@ def _retrieval_blocked_detection(gen: GenerationResult) -> DetectionResult:
                 if gen.context.retrieval_decision is not None else []
             ),
         }],
-        risk_vector=None,
+        risk_vector=rv,
     )
 
 
@@ -359,6 +379,7 @@ def _compute_text_risk_vector(
         _detect = detect_risk_vector
 
     best_rv: RiskVector | None = None
+    incomplete = []
     for sent in sents:
         rv = _detect(
             sent,
@@ -368,16 +389,19 @@ def _compute_text_risk_vector(
             industry_module=industry_module,
             _d3_index=d3_index,
         )
-        if best_rv is None or rv.risk_score > best_rv.risk_score:
+        if not rv.evaluation_complete:
+            incomplete.append(rv.abstained_axes())
+        if best_rv is None or (rv.risk_score is not None and (best_rv.risk_score is None or rv.risk_score > best_rv.risk_score)):
             best_rv = rv
 
     if best_rv is None:
-        # 빈 텍스트 폴백
         from .schemas import AxisScore
-        zero = AxisScore(score=0.0)
-        best_rv = RiskVector(
-            D1_numeric=zero, D2_modifier=zero, D3_semantic=zero,
-            D5_timeseries=zero,
-            aggregate={"risk_score": 0.0, "level": "low", "top_axis": "", "abstained_axes": []},
-        )
+        from .layer3_detect import _build_risk_vector
+        no_text = AxisScore(0, detail="분석할 문장 없음 — 평가불가", abstain=True, abstain_reason="no_evidence")
+        best_rv = _build_risk_vector(no_text, no_text, no_text, no_text)
+    if incomplete:
+        best_rv.aggregate["evaluation_complete"] = False
+        best_rv.aggregate["evaluation_status"] = "partial" if best_rv.risk_score is not None else "unavailable"
+        best_rv.aggregate["incomplete_sentences"] = len(incomplete)
+        best_rv.aggregate["sentence_abstained_axes"] = sorted({axis for axes in incomplete for axis in axes})
     return best_rv

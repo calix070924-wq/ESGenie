@@ -1,0 +1,141 @@
+........................................................................ [  5%]
+........................................................................ [ 11%]
+........................................................................ [ 17%]
+........................................................................ [ 23%]
+........................................................................ [ 29%]
+........................................................................ [ 35%]
+........................................................................ [ 41%]
+........................................................................ [ 47%]
+........................................................................ [ 53%]
+........................................................................ [ 59%]
+........................................................................ [ 64%]
+........................................................................ [ 70%]
+........................................................................ [ 76%]
+........................................................................ [ 82%]
+........................................................................ [ 88%]
+........................................................................ [ 94%]
+....................................................................     [100%]
+=============================== warnings summary ===============================
+<frozen importlib._bootstrap>:488
+<frozen importlib._bootstrap>:488
+  <frozen importlib._bootstrap>:488: DeprecationWarning: builtin type SwigPyPacked has no __module__ attribute
+
+<frozen importlib._bootstrap>:488
+<frozen importlib._bootstrap>:488
+  <frozen importlib._bootstrap>:488: DeprecationWarning: builtin type SwigPyObject has no __module__ attribute
+
+<frozen importlib._bootstrap>:488
+  <frozen importlib._bootstrap>:488: DeprecationWarning: builtin type swigvarlink has no __module__ attribute
+
+tests/audit_integrity/test_fresh_contracts.py::TestSurveyAndEvidence::test_survey_only_stays_self_reported[yes]
+tests/audit_integrity/test_fresh_contracts.py::TestSurveyAndEvidence::test_survey_only_stays_self_reported[no]
+tests/audit_integrity/test_fresh_contracts.py::TestSurveyAndEvidence::test_survey_only_stays_self_reported[yes-with-note]
+tests/audit_integrity/test_fresh_contracts.py::TestSurveyAndEvidence::test_survey_only_stays_self_reported[no-with-note]
+  tests/audit_integrity/test_fresh_contracts.py:54: PytestWarning: record_property is incompatible with junit_family 'xunit2' (use 'legacy' or 'xunit1')
+    @pytest.mark.parametrize('reply,note', [
+
+tests/audit_integrity/test_fresh_contracts.py::TestSurveyAndEvidence::test_unanswered_survey_stays_unanswered
+  tests/audit_integrity/test_fresh_contracts.py:73: PytestWarning: record_property is incompatible with junit_family 'xunit2' (use 'legacy' or 'xunit1')
+    def test_unanswered_survey_stays_unanswered(self, observe):
+
+tests/audit_integrity/test_fresh_contracts.py::TestSurveyAndEvidence::test_policy_requires_resolvable_relevant_evidence[valid-verified]
+tests/audit_integrity/test_fresh_contracts.py::TestSurveyAndEvidence::test_policy_requires_resolvable_relevant_evidence[unlinked-self_reported]
+tests/audit_integrity/test_fresh_contracts.py::TestSurveyAndEvidence::test_policy_requires_resolvable_relevant_evidence[dangling-not_verified]
+tests/audit_integrity/test_fresh_contracts.py::TestSurveyAndEvidence::test_policy_requires_resolvable_relevant_evidence[wrong-topic-not_verified]
+  tests/audit_integrity/test_fresh_contracts.py:80: PytestWarning: record_property is incompatible with junit_family 'xunit2' (use 'legacy' or 'xunit1')
+    @pytest.mark.parametrize('kind,expected', [
+
+tests/audit_integrity/test_fresh_contracts.py::TestSurveyAndEvidence::test_one_valid_link_cannot_verify_other_unsupported_options
+  tests/audit_integrity/test_fresh_contracts.py:100: PytestWarning: record_property is incompatible with junit_family 'xunit2' (use 'legacy' or 'xunit1')
+    def test_one_valid_link_cannot_verify_other_unsupported_options(self, observe):
+
+tests/audit_integrity/test_fresh_contracts.py::TestNumericalClaims::test_valid_values_and_documented_threshold[43.8-43.8-verified]
+tests/audit_integrity/test_fresh_contracts.py::TestNumericalClaims::test_valid_values_and_documented_threshold[43.8-90.2-flagged]
+tests/audit_integrity/test_fresh_contracts.py::TestNumericalClaims::test_valid_values_and_documented_threshold[0-0-verified]
+tests/audit_integrity/test_fresh_contracts.py::TestNumericalClaims::test_valid_values_and_documented_threshold[100-100-verified]
+tests/audit_integrity/test_fresh_contracts.py::TestNumericalClaims::test_valid_values_and_documented_threshold[40-49.9-verified]
+tests/audit_integrity/test_fresh_contracts.py::TestNumericalClaims::test_valid_values_and_documented_threshold[40-50-flagged]
+  tests/audit_integrity/test_fresh_contracts.py:115: PytestWarning: record_property is incompatible with junit_family 'xunit2' (use 'legacy' or 'xunit1')
+    @pytest.mark.parametrize('actual,claimed,expected', [
+
+tests/audit_integrity/test_fresh_contracts.py::TestNumericalClaims::test_rounding_does_not_cross_ten_percentage_point_threshold
+  tests/audit_integrity/test_fresh_contracts.py:125: PytestWarning: record_property is incompatible with junit_family 'xunit2' (use 'legacy' or 'xunit1')
+    def test_rounding_does_not_cross_ten_percentage_point_threshold(self, observe):
+
+tests/audit_integrity/test_fresh_contracts.py::TestNumericalClaims::test_invalid_rates_are_never_reported_as_a_match[evidence-negative]
+tests/audit_integrity/test_fresh_contracts.py::TestNumericalClaims::test_invalid_rates_are_never_reported_as_a_match[evidence-over-100]
+tests/audit_integrity/test_fresh_contracts.py::TestNumericalClaims::test_invalid_rates_are_never_reported_as_a_match[evidence-nan]
+tests/audit_integrity/test_fresh_contracts.py::TestNumericalClaims::test_invalid_rates_are_never_reported_as_a_match[evidence-infinite]
+tests/audit_integrity/test_fresh_contracts.py::TestNumericalClaims::test_invalid_rates_are_never_reported_as_a_match[claim-negative]
+tests/audit_integrity/test_fresh_contracts.py::TestNumericalClaims::test_invalid_rates_are_never_reported_as_a_match[claim-over-100]
+tests/audit_integrity/test_fresh_contracts.py::TestNumericalClaims::test_invalid_rates_are_never_reported_as_a_match[claim-nan]
+tests/audit_integrity/test_fresh_contracts.py::TestNumericalClaims::test_invalid_rates_are_never_reported_as_a_match[claim-infinite]
+  tests/audit_integrity/test_fresh_contracts.py:130: PytestWarning: record_property is incompatible with junit_family 'xunit2' (use 'legacy' or 'xunit1')
+    @pytest.mark.parametrize('side,bad', [
+
+tests/audit_integrity/test_fresh_contracts.py::TestNumericalClaims::test_energy_claims_respect_units[convert-mwh-to-kwh]
+tests/audit_integrity/test_fresh_contracts.py::TestNumericalClaims::test_energy_claims_respect_units[convert-kwh-to-mwh]
+tests/audit_integrity/test_fresh_contracts.py::TestNumericalClaims::test_energy_claims_respect_units[same-number-wrong-scale]
+tests/audit_integrity/test_fresh_contracts.py::TestNumericalClaims::test_energy_claims_respect_units[incompatible-dimensions]
+tests/audit_integrity/test_fresh_contracts.py::TestNumericalClaims::test_energy_claims_respect_units[same-unit-control]
+  tests/audit_integrity/test_fresh_contracts.py:144: PytestWarning: record_property is incompatible with junit_family 'xunit2' (use 'legacy' or 'xunit1')
+    @pytest.mark.parametrize('actual,unit,claimed,claim_unit,matching', [
+
+tests/audit_integrity/test_fresh_contracts.py: 10 warnings
+  tests/audit_integrity/test_fresh_contracts.py:160: PytestWarning: record_property is incompatible with junit_family 'xunit2' (use 'legacy' or 'xunit1')
+    @pytest.mark.parametrize('text,expected', [
+
+tests/audit_integrity/test_fresh_contracts.py::TestLedgerToResponse::test_selected_ledger_value_survives_export[single]
+tests/audit_integrity/test_fresh_contracts.py::TestLedgerToResponse::test_selected_ledger_value_survives_export[component]
+tests/audit_integrity/test_fresh_contracts.py::TestLedgerToResponse::test_selected_ledger_value_survives_export[target]
+tests/audit_integrity/test_fresh_contracts.py::TestLedgerToResponse::test_selected_ledger_value_survives_export[future-target]
+tests/audit_integrity/test_fresh_contracts.py::TestLedgerToResponse::test_selected_ledger_value_survives_export[older-total]
+  tests/audit_integrity/test_fresh_contracts.py:198: PytestWarning: record_property is incompatible with junit_family 'xunit2' (use 'legacy' or 'xunit1')
+    @pytest.mark.parametrize('case', ['single', 'component', 'target', 'future-target', 'older-total'])
+
+tests/audit_integrity/test_fresh_contracts.py::TestLedgerToResponse::test_target_only_cannot_reappear_as_verified_actual
+  tests/audit_integrity/test_fresh_contracts.py:219: PytestWarning: record_property is incompatible with junit_family 'xunit2' (use 'legacy' or 'xunit1')
+    def test_target_only_cannot_reappear_as_verified_actual(self, observe):
+
+tests/audit_integrity/test_fresh_contracts.py::TestLedgerToResponse::test_superseded_dart_regex_does_not_return_in_export
+  tests/audit_integrity/test_fresh_contracts.py:232: PytestWarning: record_property is incompatible with junit_family 'xunit2' (use 'legacy' or 'xunit1')
+    def test_superseded_dart_regex_does_not_return_in_export(self, observe):
+
+tests/audit_integrity/test_fresh_contracts.py::TestLedgerToResponse::test_risk_rows_describe_the_selected_total[total-first]
+tests/audit_integrity/test_fresh_contracts.py::TestLedgerToResponse::test_risk_rows_describe_the_selected_total[total-last]
+  tests/audit_integrity/test_fresh_contracts.py:248: PytestWarning: record_property is incompatible with junit_family 'xunit2' (use 'legacy' or 'xunit1')
+    @pytest.mark.parametrize('order', ['total-first', 'total-last'])
+
+tests/audit_integrity/test_fresh_contracts.py::TestProviderCache::test_identical_request_reuses_success
+  tests/audit_integrity/test_fresh_contracts.py:289: PytestWarning: record_property is incompatible with junit_family 'xunit2' (use 'legacy' or 'xunit1')
+    def test_identical_request_reuses_success(self, fake_provider, observe):
+
+tests/audit_integrity/test_fresh_contracts.py::TestProviderCache::test_changed_request_identity_requires_provider[prompt]
+tests/audit_integrity/test_fresh_contracts.py::TestProviderCache::test_changed_request_identity_requires_provider[model]
+tests/audit_integrity/test_fresh_contracts.py::TestProviderCache::test_changed_request_identity_requires_provider[json-mode]
+tests/audit_integrity/test_fresh_contracts.py::TestProviderCache::test_changed_request_identity_requires_provider[temperature]
+tests/audit_integrity/test_fresh_contracts.py::TestProviderCache::test_changed_request_identity_requires_provider[endpoint]
+  tests/audit_integrity/test_fresh_contracts.py:297: PytestWarning: record_property is incompatible with junit_family 'xunit2' (use 'legacy' or 'xunit1')
+    @pytest.mark.parametrize('change', ['prompt', 'model', 'json-mode', 'temperature', 'endpoint'])
+
+tests/audit_integrity/test_fresh_contracts.py::TestProviderCache::test_cache_disabled_always_calls_provider
+  tests/audit_integrity/test_fresh_contracts.py:320: PytestWarning: record_property is incompatible with junit_family 'xunit2' (use 'legacy' or 'xunit1')
+    def test_cache_disabled_always_calls_provider(self, fake_provider, monkeypatch, observe):
+
+tests/audit_integrity/test_fresh_contracts.py::TestProviderCache::test_strict_failure_does_not_become_mock_success
+  tests/audit_integrity/test_fresh_contracts.py:329: PytestWarning: record_property is incompatible with junit_family 'xunit2' (use 'legacy' or 'xunit1')
+    def test_strict_failure_does_not_become_mock_success(self, fake_provider, observe):
+
+tests/audit_integrity/test_fresh_contracts.py::TestProposedD3Requirement::test_missing_evidence_is_explicit_abstention[no-chunks]
+tests/audit_integrity/test_fresh_contracts.py::TestProposedD3Requirement::test_missing_evidence_is_explicit_abstention[empty-index]
+  tests/audit_integrity/test_fresh_contracts.py:341: PytestWarning: record_property is incompatible with junit_family 'xunit2' (use 'legacy' or 'xunit1')
+    @pytest.mark.parametrize('kind', ['no-chunks', 'empty-index'])
+
+tests/audit_integrity/test_ingress_replay.py::test_imported_ocr_output_preserves_selected_actual[component-\uc5d0\ub108\uc9c0 \uc0ac\uc6a9\ub7c9 \uad6d\ub0b4 \uc0ac\uc5c5\uc7a5-2025]
+tests/audit_integrity/test_ingress_replay.py::test_imported_ocr_output_preserves_selected_actual[target-\uc5d0\ub108\uc9c0 \uc0ac\uc6a9\ub7c9 \ubaa9\ud45c-2025]
+tests/audit_integrity/test_ingress_replay.py::test_imported_ocr_output_preserves_selected_actual[projection-\uc5d0\ub108\uc9c0 \uc0ac\uc6a9\ub7c9 \uc804\uc0ac \ud569\uacc4-2030]
+  tests/audit_integrity/test_ingress_replay.py:18: PytestWarning: record_property is incompatible with junit_family 'xunit2' (use 'legacy' or 'xunit1')
+    @pytest.mark.parametrize('case,label,year', [
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+1220 passed, 67 warnings in 43.03s

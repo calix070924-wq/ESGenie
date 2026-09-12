@@ -1,0 +1,343 @@
+FFFF...FFF......FFFF.FFF.FFFF..F.FFFF....FFF.FFF......F..FFF......FFFFFF [ 78%]
+.FF....FFFFFF.F..FFF                                                     [100%]
+=================================== FAILURES ===================================
+_______ TestSurveyAndEvidence.test_survey_only_stays_self_reported[yes] ________
+tests/audit_integrity/test_fresh_contracts.py:66: in test_survey_only_stays_self_reported
+    assert ans.status != 'verified', 'A self-report has no independent evidence'
+E   AssertionError: A self-report has no independent evidence
+E   assert 'verified' != 'verified'
+E    +  where 'verified' = Answer(qid='SAQ-E-10', section='Environment', question_text='Q10. 귀사는 법규 준수·지속적 측정·환경성과 개선을 포함한 공식 환경방침을 보유하고 있습니까?', ...01')], flags=[], rationale='공시 근거: E-1-1', evidence_needed=[], draft_text='', draft_citations=[], draft_grounding=None).status
+________ TestSurveyAndEvidence.test_survey_only_stays_self_reported[no] ________
+tests/audit_integrity/test_fresh_contracts.py:66: in test_survey_only_stays_self_reported
+    assert ans.status != 'verified', 'A self-report has no independent evidence'
+E   AssertionError: A self-report has no independent evidence
+E   assert 'verified' != 'verified'
+E    +  where 'verified' = Answer(qid='SAQ-E-10', section='Environment', question_text='Q10. 귀사는 법규 준수·지속적 측정·환경성과 개선을 포함한 공식 환경방침을 보유하고 있습니까?', ...01')], flags=[], rationale='공시 근거: E-1-1', evidence_needed=[], draft_text='', draft_citations=[], draft_grounding=None).status
+__ TestSurveyAndEvidence.test_survey_only_stays_self_reported[yes-with-note] ___
+tests/audit_integrity/test_fresh_contracts.py:66: in test_survey_only_stays_self_reported
+    assert ans.status != 'verified', 'A self-report has no independent evidence'
+E   AssertionError: A self-report has no independent evidence
+E   assert 'verified' != 'verified'
+E    +  where 'verified' = Answer(qid='SAQ-E-10', section='Environment', question_text='Q10. 귀사는 법규 준수·지속적 측정·환경성과 개선을 포함한 공식 환경방침을 보유하고 있습니까?', ...01')], flags=[], rationale='공시 근거: E-1-1', evidence_needed=[], draft_text='', draft_citations=[], draft_grounding=None).status
+___ TestSurveyAndEvidence.test_survey_only_stays_self_reported[no-with-note] ___
+tests/audit_integrity/test_fresh_contracts.py:66: in test_survey_only_stays_self_reported
+    assert ans.status != 'verified', 'A self-report has no independent evidence'
+E   AssertionError: A self-report has no independent evidence
+E   assert 'verified' != 'verified'
+E    +  where 'verified' = Answer(qid='SAQ-E-10', section='Environment', question_text='Q10. 귀사는 법규 준수·지속적 측정·환경성과 개선을 포함한 공식 환경방침을 보유하고 있습니까?', ...01')], flags=[], rationale='공시 근거: E-1-1', evidence_needed=[], draft_text='', draft_citations=[], draft_grounding=None).status
+_ TestSurveyAndEvidence.test_policy_requires_resolvable_relevant_evidence[dangling-not_verified] _
+tests/audit_integrity/test_fresh_contracts.py:93: in test_policy_requires_resolvable_relevant_evidence
+    assert ans.status != 'verified'
+E   AssertionError: assert 'verified' != 'verified'
+E    +  where 'verified' = Answer(qid='SAQ-E-10', section='Environment', question_text='Q10. 귀사는 법규 준수·지속적 측정·환경성과 개선을 포함한 공식 환경방침을 보유하고 있습니까?', ...cy')], flags=[], rationale='공시 근거: E-1-1', evidence_needed=[], draft_text='', draft_citations=[], draft_grounding=None).status
+_ TestSurveyAndEvidence.test_policy_requires_resolvable_relevant_evidence[wrong-topic-not_verified] _
+tests/audit_integrity/test_fresh_contracts.py:93: in test_policy_requires_resolvable_relevant_evidence
+    assert ans.status != 'verified'
+E   AssertionError: assert 'verified' != 'verified'
+E    +  where 'verified' = Answer(qid='SAQ-E-10', section='Environment', question_text='Q10. 귀사는 법규 준수·지속적 측정·환경성과 개선을 포함한 공식 환경방침을 보유하고 있습니까?', ...cy')], flags=[], rationale='공시 근거: E-1-1', evidence_needed=[], draft_text='', draft_citations=[], draft_grounding=None).status
+_ TestSurveyAndEvidence.test_one_valid_link_cannot_verify_other_unsupported_options _
+tests/audit_integrity/test_fresh_contracts.py:108: in test_one_valid_link_cannot_verify_other_unsupported_options
+    assert ans.status != 'verified', 'A single link must not verify all selected options'
+E   AssertionError: A single link must not verify all selected options
+E   assert 'verified' != 'verified'
+E    +  where 'verified' = Answer(qid='SAQ-E-10a', section='Environment', question_text='Q10a. 환경방침이 적용되는 영역을 모두 선택하십시오.', value=['에너지 효율', '재사용·... GHG 배출 보고, 재생에너지, 폐기물 감축, 수질·용수 관리, 대기질', evidence_needed=[], draft_text='', draft_citations=[], draft_grounding=None).status
+_ TestNumericalClaims.test_rounding_does_not_cross_ten_percentage_point_threshold _
+tests/audit_integrity/test_fresh_contracts.py:125: in test_rounding_does_not_cross_ten_percentage_point_threshold
+    assert ans.status != 'flagged', 'The documented threshold is at least 10 percentage points'
+E   AssertionError: The documented threshold is at least 10 percentage points
+E   assert 'flagged' != 'flagged'
+E    +  where 'flagged' = Answer(qid='SAQ-E-NUM-WASTE', section='Environment', question_text='(수치) 폐기물 재활용률', value=40, status='flagged', eviden...빙(40.0%)과 10.0%p 괴리 — 과장 의심, 실사 시 소명 필요.', evidence_needed=[], draft_text='', draft_citations=[], draft_grounding=None).status
+_ TestNumericalClaims.test_invalid_rates_are_never_reported_as_a_match[evidence-negative] _
+tests/audit_integrity/test_fresh_contracts.py:139: in test_invalid_rates_are_never_reported_as_a_match
+    assert ans.status != 'verified' and not any('자가신고 일치' in f for f in ans.flags)
+E   AssertionError: assert ('verified' != 'verified')
+E    +  where 'verified' = Answer(qid='SAQ-E-NUM-WASTE', section='Environment', question_text='(수치) 폐기물 재활용률', value=-4, status='verified', evide...nale='E-6-2 = -4% (D1 위험 0, 검증=verified)', evidence_needed=[], draft_text='', draft_citations=[], draft_grounding=None).status
+_ TestNumericalClaims.test_invalid_rates_are_never_reported_as_a_match[evidence-over-100] _
+tests/audit_integrity/test_fresh_contracts.py:139: in test_invalid_rates_are_never_reported_as_a_match
+    assert ans.status != 'verified' and not any('자가신고 일치' in f for f in ans.flags)
+E   AssertionError: assert ('verified' != 'verified')
+E    +  where 'verified' = Answer(qid='SAQ-E-NUM-WASTE', section='Environment', question_text='(수치) 폐기물 재활용률', value=101.2, status='verified', ev...e='E-6-2 = 101.2% (D1 위험 0, 검증=verified)', evidence_needed=[], draft_text='', draft_citations=[], draft_grounding=None).status
+_ TestNumericalClaims.test_invalid_rates_are_never_reported_as_a_match[evidence-nan] _
+tests/audit_integrity/test_fresh_contracts.py:139: in test_invalid_rates_are_never_reported_as_a_match
+    assert ans.status != 'verified' and not any('자가신고 일치' in f for f in ans.flags)
+E   AssertionError: assert ('verified' != 'verified')
+E    +  where 'verified' = Answer(qid='SAQ-E-NUM-WASTE', section='Environment', question_text='(수치) 폐기물 재활용률', value=nan, status='verified', evid...ale='E-6-2 = nan% (D1 위험 0, 검증=verified)', evidence_needed=[], draft_text='', draft_citations=[], draft_grounding=None).status
+_ TestNumericalClaims.test_invalid_rates_are_never_reported_as_a_match[claim-negative] _
+tests/audit_integrity/test_fresh_contracts.py:139: in test_invalid_rates_are_never_reported_as_a_match
+    assert ans.status != 'verified' and not any('자가신고 일치' in f for f in ans.flags)
+E   AssertionError: assert ('verified' != 'verified')
+E    +  where 'verified' = Answer(qid='SAQ-E-NUM-WASTE', section='Environment', question_text='(수치) 폐기물 재활용률', value=0, status='verified', eviden...onale='E-6-2 = 0% (D1 위험 0, 검증=verified)', evidence_needed=[], draft_text='', draft_citations=[], draft_grounding=None).status
+_ TestNumericalClaims.test_invalid_rates_are_never_reported_as_a_match[claim-over-100] _
+tests/audit_integrity/test_fresh_contracts.py:139: in test_invalid_rates_are_never_reported_as_a_match
+    assert ans.status != 'verified' and not any('자가신고 일치' in f for f in ans.flags)
+E   AssertionError: assert ('verified' != 'verified')
+E    +  where 'verified' = Answer(qid='SAQ-E-NUM-WASTE', section='Environment', question_text='(수치) 폐기물 재활용률', value=100, status='verified', evid...ale='E-6-2 = 100% (D1 위험 0, 검증=verified)', evidence_needed=[], draft_text='', draft_citations=[], draft_grounding=None).status
+_ TestNumericalClaims.test_invalid_rates_are_never_reported_as_a_match[claim-nan] _
+tests/audit_integrity/test_fresh_contracts.py:139: in test_invalid_rates_are_never_reported_as_a_match
+    assert ans.status != 'verified' and not any('자가신고 일치' in f for f in ans.flags)
+E   AssertionError: assert ('verified' != 'verified')
+E    +  where 'verified' = Answer(qid='SAQ-E-NUM-WASTE', section='Environment', question_text='(수치) 폐기물 재활용률', value=43.8, status='verified', evi...le='E-6-2 = 43.8% (D1 위험 0, 검증=verified)', evidence_needed=[], draft_text='', draft_citations=[], draft_grounding=None).status
+___ TestNumericalClaims.test_energy_claims_respect_units[convert-mwh-to-kwh] ___
+tests/audit_integrity/test_fresh_contracts.py:153: in test_energy_claims_respect_units
+    assert (ans.status == 'verified' and has_match) if matching else not has_match
+E   assert False
+___ TestNumericalClaims.test_energy_claims_respect_units[convert-kwh-to-mwh] ___
+tests/audit_integrity/test_fresh_contracts.py:153: in test_energy_claims_respect_units
+    assert (ans.status == 'verified' and has_match) if matching else not has_match
+E   assert False
+_ TestNumericalClaims.test_energy_claims_respect_units[same-number-wrong-scale] _
+tests/audit_integrity/test_fresh_contracts.py:153: in test_energy_claims_respect_units
+    assert (ans.status == 'verified' and has_match) if matching else not has_match
+E   assert False
+_ TestNumericalClaims.test_energy_claims_respect_units[incompatible-dimensions] _
+tests/audit_integrity/test_fresh_contracts.py:153: in test_energy_claims_respect_units
+    assert (ans.status == 'verified' and has_match) if matching else not has_match
+E   assert False
+_ TestActualSaqPdfParsing.test_embedded_pdf_text_yields_only_valid_actual[target-before-actual] _
+tests/audit_integrity/test_fresh_contracts.py:183: in test_embedded_pdf_text_yields_only_valid_actual
+    assert (claim is None) if expected is None else (claim is not None and claim.value == expected)
+E   assert False
+_ TestActualSaqPdfParsing.test_embedded_pdf_text_yields_only_valid_actual[target-only] _
+tests/audit_integrity/test_fresh_contracts.py:183: in test_embedded_pdf_text_yields_only_valid_actual
+    assert (claim is None) if expected is None else (claim is not None and claim.value == expected)
+E   assert False
+_ TestActualSaqPdfParsing.test_embedded_pdf_text_yields_only_valid_actual[postfix-target] _
+tests/audit_integrity/test_fresh_contracts.py:183: in test_embedded_pdf_text_yields_only_valid_actual
+    assert (claim is None) if expected is None else (claim is not None and claim.value == expected)
+E   assert False
+_ TestActualSaqPdfParsing.test_embedded_pdf_text_yields_only_valid_actual[negative] _
+tests/audit_integrity/test_fresh_contracts.py:183: in test_embedded_pdf_text_yields_only_valid_actual
+    assert (claim is None) if expected is None else (claim is not None and claim.value == expected)
+E   assert False
+_ TestActualSaqPdfParsing.test_embedded_pdf_text_yields_only_valid_actual[over-100] _
+tests/audit_integrity/test_fresh_contracts.py:183: in test_embedded_pdf_text_yields_only_valid_actual
+    assert (claim is None) if expected is None else (claim is not None and claim.value == expected)
+E   assert False
+__ TestLedgerToResponse.test_selected_ledger_value_survives_export[component] __
+tests/audit_integrity/test_fresh_contracts.py:214: in test_selected_ledger_value_survives_export
+    assert ans.value == 248.5 and points[0].period == 2025
+E   AssertionError: assert (61.2 == 248.5)
+E    +  where 61.2 = Answer(qid='SAQ-E-NUM-ENERGY', section='Environment', question_text='(수치) 연간 에너지 사용량', value=61.2, status='verified', ...너지 사용량 = 61.2TJ (D1 위험 0.0, 검증=verified)', evidence_needed=[], draft_text='', draft_citations=[], draft_grounding=None).value
+___ TestLedgerToResponse.test_selected_ledger_value_survives_export[target] ____
+tests/audit_integrity/test_fresh_contracts.py:214: in test_selected_ledger_value_survives_export
+    assert ans.value == 248.5 and points[0].period == 2025
+E   AssertionError: assert (61.2 == 248.5)
+E    +  where 61.2 = Answer(qid='SAQ-E-NUM-ENERGY', section='Environment', question_text='(수치) 연간 에너지 사용량', value=61.2, status='verified', ...너지 사용량 = 61.2TJ (D1 위험 0.0, 검증=verified)', evidence_needed=[], draft_text='', draft_citations=[], draft_grounding=None).value
+_ TestLedgerToResponse.test_selected_ledger_value_survives_export[future-target] _
+tests/audit_integrity/test_fresh_contracts.py:214: in test_selected_ledger_value_survives_export
+    assert ans.value == 248.5 and points[0].period == 2025
+E   AssertionError: assert (61.2 == 248.5)
+E    +  where 61.2 = Answer(qid='SAQ-E-NUM-ENERGY', section='Environment', question_text='(수치) 연간 에너지 사용량', value=61.2, status='verified', ...너지 사용량 = 61.2TJ (D1 위험 0.0, 검증=verified)', evidence_needed=[], draft_text='', draft_citations=[], draft_grounding=None).value
+___ TestLedgerToResponse.test_target_only_cannot_reappear_as_verified_actual ___
+tests/audit_integrity/test_fresh_contracts.py:227: in test_target_only_cannot_reappear_as_verified_actual
+    assert ans.value is None and ans.status != 'verified'
+E   AssertionError: assert (61.2 is None)
+E    +  where 61.2 = Answer(qid='SAQ-E-NUM-ENERGY', section='Environment', question_text='(수치) 연간 에너지 사용량', value=61.2, status='verified', ...너지 사용량 = 61.2TJ (D1 위험 0.0, 검증=verified)', evidence_needed=[], draft_text='', draft_citations=[], draft_grounding=None).value
+__ TestLedgerToResponse.test_superseded_dart_regex_does_not_return_in_export ___
+tests/audit_integrity/test_fresh_contracts.py:243: in test_superseded_dart_regex_does_not_return_in_export
+    assert ans.value == 248.5
+E   AssertionError: assert 999.0 == 248.5
+E    +  where 999.0 = Answer(qid='SAQ-E-NUM-ENERGY', section='Environment', question_text='(수치) 연간 에너지 사용량', value=999.0, status='verified',...지 사용량 = 999.0TJ (D1 위험 0.0, 검증=verified)', evidence_needed=[], draft_text='', draft_citations=[], draft_grounding=None).value
+_ TestLedgerToResponse.test_risk_rows_describe_the_selected_total[total-first] _
+tests/audit_integrity/test_fresh_contracts.py:257: in test_risk_rows_describe_the_selected_total
+    assert rows[0]['값'] == '248.5 TJ'
+E   AssertionError: assert '61.2 TJ' == '248.5 TJ'
+E
+E     - 248.5 TJ
+E     + 61.2 TJ
+_ TestProviderCache.test_changed_request_identity_requires_provider[endpoint] __
+tests/audit_integrity/test_fresh_contracts.py:315: in test_changed_request_identity_requires_provider
+    assert len(calls) == 2 and second.meta['cache'] == 'miss'
+E   AssertionError: assert (1 == 2)
+E    +  where 1 = len([{'endpoint': 'https://audit-a.invalid/openai/v1', 'request': {'model': 'synthetic-deployment', 'temperature': 0.3, 'messages': [{'role': 'system', 'content': 'audit system'}, {'role': 'user', 'content': 'audit question'}]}}])
+_ TestProposedD3Requirement.test_missing_evidence_is_explicit_abstention[no-chunks] _
+tests/audit_integrity/test_fresh_contracts.py:346: in test_missing_evidence_is_explicit_abstention
+    assert d3.abstain, 'Proposed requirement: distinguish unavailable evidence from measured risk'
+E   AssertionError: Proposed requirement: distinguish unavailable evidence from measured risk
+E   assert False
+E    +  where False = AxisScore(score=0.5, evidence=[], detail='retrieved_chunks 없음 — 중립값', abstain=False, abstain_reason=None).abstain
+_ TestProposedD3Requirement.test_missing_evidence_is_explicit_abstention[empty-index] _
+tests/audit_integrity/test_fresh_contracts.py:346: in test_missing_evidence_is_explicit_abstention
+    assert d3.abstain, 'Proposed requirement: distinguish unavailable evidence from measured risk'
+E   AssertionError: Proposed requirement: distinguish unavailable evidence from measured risk
+E   assert False
+E    +  where False = AxisScore(score=1.0, evidence=[], detail='유사 청크 없음', abstain=False, abstain_reason=None).abstain
+_ test_imported_ocr_output_preserves_selected_actual[component-\uc5d0\ub108\uc9c0 \uc0ac\uc6a9\ub7c9 \uad6d\ub0b4 \uc0ac\uc5c5\uc7a5-2025] _
+tests/audit_integrity/test_ingress_replay.py:42: in test_imported_ocr_output_preserves_selected_actual
+    assert ans.value == 248.5
+E   AssertionError: assert 61.2 == 248.5
+E    +  where 61.2 = Answer(qid='SAQ-E-NUM-ENERGY', section='Environment', question_text='(수치) 연간 에너지 사용량', value=61.2, status='verified', ...너지 사용량 = 61.2TJ (D1 위험 0.0, 검증=verified)', evidence_needed=[], draft_text='', draft_citations=[], draft_grounding=None).value
+__________ test_invalid_rate_cannot_be_verified_as_matching[negative] __________
+tests/audit_20260909/test_new_audit.py:45: in test_invalid_rate_cannot_be_verified_as_matching
+    assert ans.status != 'verified' and not any('자가신고 일치' in f for f in ans.flags), describe(ans)
+E   AssertionError: status=verified; value=-5; flags=['자가신고 일치: -5.0% ≈ 증빙 -5.0%']; rationale=E-6-2 = -5% (D1 위험 0, 검증=verified)
+E   assert ('verified' != 'verified')
+E    +  where 'verified' = Answer(qid='Q1', section='E', question_text='E-6-2', value=-5, status='verified', evidence_links=[EvidenceLink(file_na...nale='E-6-2 = -5% (D1 위험 0, 검증=verified)', evidence_needed=[], draft_text='', draft_citations=[], draft_grounding=None).status
+_________ test_invalid_rate_cannot_be_verified_as_matching[above_100] __________
+tests/audit_20260909/test_new_audit.py:45: in test_invalid_rate_cannot_be_verified_as_matching
+    assert ans.status != 'verified' and not any('자가신고 일치' in f for f in ans.flags), describe(ans)
+E   AssertionError: status=verified; value=105; flags=['자가신고 일치: 105.0% ≈ 증빙 105.0%']; rationale=E-6-2 = 105% (D1 위험 0, 검증=verified)
+E   assert ('verified' != 'verified')
+E    +  where 'verified' = Answer(qid='Q1', section='E', question_text='E-6-2', value=105, status='verified', evidence_links=[EvidenceLink(file_n...ale='E-6-2 = 105% (D1 위험 0, 검증=verified)', evidence_needed=[], draft_text='', draft_citations=[], draft_grounding=None).status
+________ test_invalid_rate_cannot_be_verified_as_matching[nan_evidence] ________
+tests/audit_20260909/test_new_audit.py:45: in test_invalid_rate_cannot_be_verified_as_matching
+    assert ans.status != 'verified' and not any('자가신고 일치' in f for f in ans.flags), describe(ans)
+E   AssertionError: status=verified; value=nan; flags=['자가신고 일치: 29.3% ≈ 증빙 nan%']; rationale=E-6-2 = nan% (D1 위험 0, 검증=verified)
+E   assert ('verified' != 'verified')
+E    +  where 'verified' = Answer(qid='Q1', section='E', question_text='E-6-2', value=nan, status='verified', evidence_links=[EvidenceLink(file_n...ale='E-6-2 = nan% (D1 위험 0, 검증=verified)', evidence_needed=[], draft_text='', draft_citations=[], draft_grounding=None).status
+_________ test_invalid_rate_cannot_be_verified_as_matching[nan_claim] __________
+tests/audit_20260909/test_new_audit.py:45: in test_invalid_rate_cannot_be_verified_as_matching
+    assert ans.status != 'verified' and not any('자가신고 일치' in f for f in ans.flags), describe(ans)
+E   AssertionError: status=verified; value=29.3; flags=['자가신고 일치: nan% ≈ 증빙 29.3%']; rationale=E-6-2 = 29.3% (D1 위험 0, 검증=verified)
+E   assert ('verified' != 'verified')
+E    +  where 'verified' = Answer(qid='Q1', section='E', question_text='E-6-2', value=29.3, status='verified', evidence_links=[EvidenceLink(file_...le='E-6-2 = 29.3% (D1 위험 0, 검증=verified)', evidence_needed=[], draft_text='', draft_citations=[], draft_grounding=None).status
+______________ test_equivalent_energy_units_are_not_a_discrepancy ______________
+tests/audit_20260909/test_new_audit.py:50: in test_equivalent_energy_units_are_not_a_discrepancy
+    assert ans.status != 'flagged', describe(ans)
+E   AssertionError: status=flagged; value=1000; flags=['D1 불일치: 자가신고 1.0MWh ↔ 증빙 1000.0kWh (Δ999.0%p, manual)']; rationale=E-4-1 = 1000kWh (D1 위험 0, 검증=verified) · ⚠ 자가주장(1.0MWh)이 증빙(1000.0kWh)과 999.0%p 괴리 — 과장 의심, 실사 시 소명 필요.
+E   assert 'flagged' != 'flagged'
+E    +  where 'flagged' = Answer(qid='Q1', section='E', question_text='E-4-1', value=1000, status='flagged', evidence_links=[EvidenceLink(file_n...0.0kWh)과 999.0%p 괴리 — 과장 의심, 실사 시 소명 필요.', evidence_needed=[], draft_text='', draft_citations=[], draft_grounding=None).status
+_______ test_equal_numbers_with_different_energy_units_are_not_matching ________
+tests/audit_20260909/test_new_audit.py:55: in test_equal_numbers_with_different_energy_units_are_not_matching
+    assert not any('자가신고 일치' in f for f in ans.flags), describe(ans)
+E   AssertionError: status=verified; value=1; flags=['자가신고 일치: 1.0MWh ≈ 증빙 1.0kWh']; rationale=E-4-1 = 1kWh (D1 위험 0, 검증=verified)
+E   assert not True
+E    +  where True = any(<generator object test_equal_numbers_with_different_energy_units_are_not_matching.<locals>.<genexpr> at 0x10cae8380>)
+_______________ test_dangling_evidence_id_does_not_prove_policy ________________
+tests/audit_20260909/test_new_audit.py:70: in test_dangling_evidence_id_does_not_prove_policy
+    assert ans.status != 'verified', describe(ans)
+E   AssertionError: status=verified; value=True; flags=[]; rationale=공시 근거: E-1-1
+E   assert 'verified' != 'verified'
+E    +  where 'verified' = Answer(qid='Q1', section='E', question_text='E-1-1', value=True, status='verified', evidence_links=[EvidenceLink(file_...de')], flags=[], rationale='공시 근거: E-1-1', evidence_needed=[], draft_text='', draft_citations=[], draft_grounding=None).status
+__________ test_explicit_negative_policy_answer_is_not_changed_to_yes __________
+tests/audit_20260909/test_new_audit.py:77: in test_explicit_negative_policy_answer_is_not_changed_to_yes
+    assert ans.value is not True, describe(ans)
+E   AssertionError: status=verified; value=True; flags=[]; rationale=공시 근거: E-1-1
+E   assert True is not True
+E    +  where True = Answer(qid='Q1', section='E', question_text='E-1-1', value=True, status='verified', evidence_links=[EvidenceLink(file_...cy')], flags=[], rationale='공시 근거: E-1-1', evidence_needed=[], draft_text='', draft_citations=[], draft_grounding=None).value
+____________ test_saq_actual_claim_extraction[target_before_actual] ____________
+tests/audit_20260909/test_new_audit.py:108: in test_saq_actual_claim_extraction
+    assert actual is not None and actual.value == expected, f'expected={expected}; actual={actual}'
+E   AssertionError: expected=29.3; actual=SupplierClaim(code='E-6-2', value=92.0, unit='%', raw='재활용률 목표 92%', source='saq:audit_saq.pdf')
+E   assert (SupplierClaim(code='E-6-2', value=92.0, unit='%', raw='재활용률 목표 92%', source='saq:audit_saq.pdf') is not None and 92.0 == 29.3)
+E    +  where 92.0 = SupplierClaim(code='E-6-2', value=92.0, unit='%', raw='재활용률 목표 92%', source='saq:audit_saq.pdf').value
+________________ test_saq_actual_claim_extraction[target_only] _________________
+tests/audit_20260909/test_new_audit.py:106: in test_saq_actual_claim_extraction
+    assert actual is None, f'Invalid or target-only text promoted to actual: {actual}'
+E   AssertionError: Invalid or target-only text promoted to actual: SupplierClaim(code='E-6-2', value=92.0, unit='%', raw='재활용률 목표 92%', source='saq:audit_saq.pdf')
+E   assert SupplierClaim(code='E-6-2', value=92.0, unit='%', raw='재활용률 목표 92%', source='saq:audit_saq.pdf') is None
+__________________ test_saq_actual_claim_extraction[negative] __________________
+tests/audit_20260909/test_new_audit.py:106: in test_saq_actual_claim_extraction
+    assert actual is None, f'Invalid or target-only text promoted to actual: {actual}'
+E   AssertionError: Invalid or target-only text promoted to actual: SupplierClaim(code='E-6-2', value=5.0, unit='%', raw='재활용률 -5%', source='saq:audit_saq.pdf')
+E   assert SupplierClaim(code='E-6-2', value=5.0, unit='%', raw='재활용률 -5%', source='saq:audit_saq.pdf') is None
+_________________ test_saq_actual_claim_extraction[above_100] __________________
+tests/audit_20260909/test_new_audit.py:106: in test_saq_actual_claim_extraction
+    assert actual is None, f'Invalid or target-only text promoted to actual: {actual}'
+E   AssertionError: Invalid or target-only text promoted to actual: SupplierClaim(code='E-6-2', value=105.0, unit='%', raw='재활용률 105%', source='saq:audit_saq.pdf')
+E   assert SupplierClaim(code='E-6-2', value=105.0, unit='%', raw='재활용률 105%', source='saq:audit_saq.pdf') is None
+___________ test_selected_actual_survives_audit_and_response_export ____________
+tests/audit_20260909/test_new_audit.py:123: in test_selected_actual_survives_audit_and_response_export
+    assert ans.value == 100, f'L1 representative=actual 100; exported {describe(ans)}'
+E   AssertionError: L1 representative=actual 100; exported status=verified; value=60; flags=[]; rationale=에너지 사용량 = 60TJ (D1 위험 0, 검증=verified)
+E   assert 60 == 100
+E    +  where 60 = Answer(qid='Q1', section='E', question_text='E-4-1', value=60, status='verified', evidence_links=[EvidenceLink(file_na...e='에너지 사용량 = 60TJ (D1 위험 0, 검증=verified)', evidence_needed=[], draft_text='', draft_citations=[], draft_grounding=None).value
+___________ test_future_target_cannot_replace_reporting_year_actual ____________
+tests/audit_20260909/test_new_audit.py:132: in test_future_target_cannot_replace_reporting_year_actual
+    assert (point.period,point.value)==(2025,100), point.to_dict()
+E   AssertionError: {'kesg_code': 'E-4-1', 'kesg_name': '에너지 사용량', 'value': 60, 'unit': 'TJ', ...}
+E   assert (2030, 60) == (2025, 100)
+E
+E     At index 0 diff: 2030 != 2025
+E     Use -v to get more diff
+___________ test_missing_semantic_evidence_is_abstention_requirement ___________
+tests/audit_20260909/test_new_audit.py:144: in test_missing_semantic_evidence_is_abstention_requirement
+    assert d3.abstain, f'D3={d3.to_dict()}; aggregate={rv.aggregate}'
+E   AssertionError: D3={'score': 0.5, 'evidence': [], 'detail': 'retrieved_chunks 없음 — 중립값', 'abstain': False, 'abstain_reason': None}; aggregate={'risk_score': 0.125, 'level': 'low', 'top_axis': 'D3_semantic', 'abstained_axes': []}
+E   assert False
+E    +  where False = AxisScore(score=0.5, evidence=[], detail='retrieved_chunks 없음 — 중립값', abstain=False, abstain_reason=None).abstain
+_______ test_production_survey_input_cannot_create_verified_yes[\uc608] ________
+tests/audit_20260909/test_new_audit.py:185: in test_production_survey_input_cannot_create_verified_yes
+    assert ans.status != 'verified', f'survey={reply}; mapped={extraction.mapped}; {describe(ans)}'
+E   AssertionError: survey=예; mapped={'E-1-1': {'code': 'E-1-1', 'name': '환경경영 목표 수립', 'area': 'E', 'category': '환경경영 목표', 'data_type': '정성', 'value': '예', 'unit': '', 'note': None, 'evidence_node_ids': ['survey_E-1-1'], 'beyond_profile': False}}; status=verified; value=True; flags=[]; rationale=공시 근거: E-1-1
+E   assert 'verified' != 'verified'
+E    +  where 'verified' = Answer(qid='Q1', section='E', question_text='E-1-1', value=True, status='verified', evidence_links=[EvidenceLink(file_...-1')], flags=[], rationale='공시 근거: E-1-1', evidence_needed=[], draft_text='', draft_citations=[], draft_grounding=None).status
+_ test_production_survey_input_cannot_create_verified_yes[\uc544\ub2c8\uc624] __
+tests/audit_20260909/test_new_audit.py:185: in test_production_survey_input_cannot_create_verified_yes
+    assert ans.status != 'verified', f'survey={reply}; mapped={extraction.mapped}; {describe(ans)}'
+E   AssertionError: survey=아니오; mapped={'E-1-1': {'code': 'E-1-1', 'name': '환경경영 목표 수립', 'area': 'E', 'category': '환경경영 목표', 'data_type': '정성', 'value': '아니오', 'unit': '', 'note': None, 'evidence_node_ids': ['survey_E-1-1'], 'beyond_profile': False}}; status=verified; value=True; flags=[]; rationale=공시 근거: E-1-1
+E   assert 'verified' != 'verified'
+E    +  where 'verified' = Answer(qid='Q1', section='E', question_text='E-1-1', value=True, status='verified', evidence_links=[EvidenceLink(file_...-1')], flags=[], rationale='공시 근거: E-1-1', evidence_needed=[], draft_text='', draft_citations=[], draft_grounding=None).status
+_______________ test_production_l1_selection_survives_l5_export ________________
+tests/audit_20260909/test_new_audit.py:212: in test_production_l1_selection_survives_l5_export
+    assert ans.value == extraction.mapped['E-4-1']['value'], (
+E   AssertionError: L1=100; d1_scores={'E-4-1': 0.0}; L5 response=status=verified; value=60; flags=[]; rationale=에너지 사용량 = 60TJ (D1 위험 0.0, 검증=verified)
+E   assert 60 == 100
+E    +  where 60 = Answer(qid='Q1', section='E', question_text='E-4-1', value=60, status='verified', evidence_links=[EvidenceLink(file_na...'에너지 사용량 = 60TJ (D1 위험 0.0, 검증=verified)', evidence_needed=[], draft_text='', draft_citations=[], draft_grounding=None).value
+=============================== warnings summary ===============================
+tests/audit_integrity/test_fresh_contracts.py::TestActualSaqPdfParsing::test_embedded_pdf_text_yields_only_valid_actual[actual]
+tests/audit_integrity/test_fresh_contracts.py::TestActualSaqPdfParsing::test_embedded_pdf_text_yields_only_valid_actual[actual]
+  <frozen importlib._bootstrap>:488: DeprecationWarning: builtin type SwigPyPacked has no __module__ attribute
+
+tests/audit_integrity/test_fresh_contracts.py::TestActualSaqPdfParsing::test_embedded_pdf_text_yields_only_valid_actual[actual]
+tests/audit_integrity/test_fresh_contracts.py::TestActualSaqPdfParsing::test_embedded_pdf_text_yields_only_valid_actual[actual]
+  <frozen importlib._bootstrap>:488: DeprecationWarning: builtin type SwigPyObject has no __module__ attribute
+
+tests/audit_integrity/test_fresh_contracts.py::TestActualSaqPdfParsing::test_embedded_pdf_text_yields_only_valid_actual[actual]
+  <frozen importlib._bootstrap>:488: DeprecationWarning: builtin type swigvarlink has no __module__ attribute
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED tests/audit_integrity/test_fresh_contracts.py::TestSurveyAndEvidence::test_survey_only_stays_self_reported[yes]
+FAILED tests/audit_integrity/test_fresh_contracts.py::TestSurveyAndEvidence::test_survey_only_stays_self_reported[no]
+FAILED tests/audit_integrity/test_fresh_contracts.py::TestSurveyAndEvidence::test_survey_only_stays_self_reported[yes-with-note]
+FAILED tests/audit_integrity/test_fresh_contracts.py::TestSurveyAndEvidence::test_survey_only_stays_self_reported[no-with-note]
+FAILED tests/audit_integrity/test_fresh_contracts.py::TestSurveyAndEvidence::test_policy_requires_resolvable_relevant_evidence[dangling-not_verified]
+FAILED tests/audit_integrity/test_fresh_contracts.py::TestSurveyAndEvidence::test_policy_requires_resolvable_relevant_evidence[wrong-topic-not_verified]
+FAILED tests/audit_integrity/test_fresh_contracts.py::TestSurveyAndEvidence::test_one_valid_link_cannot_verify_other_unsupported_options
+FAILED tests/audit_integrity/test_fresh_contracts.py::TestNumericalClaims::test_rounding_does_not_cross_ten_percentage_point_threshold
+FAILED tests/audit_integrity/test_fresh_contracts.py::TestNumericalClaims::test_invalid_rates_are_never_reported_as_a_match[evidence-negative]
+FAILED tests/audit_integrity/test_fresh_contracts.py::TestNumericalClaims::test_invalid_rates_are_never_reported_as_a_match[evidence-over-100]
+FAILED tests/audit_integrity/test_fresh_contracts.py::TestNumericalClaims::test_invalid_rates_are_never_reported_as_a_match[evidence-nan]
+FAILED tests/audit_integrity/test_fresh_contracts.py::TestNumericalClaims::test_invalid_rates_are_never_reported_as_a_match[claim-negative]
+FAILED tests/audit_integrity/test_fresh_contracts.py::TestNumericalClaims::test_invalid_rates_are_never_reported_as_a_match[claim-over-100]
+FAILED tests/audit_integrity/test_fresh_contracts.py::TestNumericalClaims::test_invalid_rates_are_never_reported_as_a_match[claim-nan]
+FAILED tests/audit_integrity/test_fresh_contracts.py::TestNumericalClaims::test_energy_claims_respect_units[convert-mwh-to-kwh]
+FAILED tests/audit_integrity/test_fresh_contracts.py::TestNumericalClaims::test_energy_claims_respect_units[convert-kwh-to-mwh]
+FAILED tests/audit_integrity/test_fresh_contracts.py::TestNumericalClaims::test_energy_claims_respect_units[same-number-wrong-scale]
+FAILED tests/audit_integrity/test_fresh_contracts.py::TestNumericalClaims::test_energy_claims_respect_units[incompatible-dimensions]
+FAILED tests/audit_integrity/test_fresh_contracts.py::TestActualSaqPdfParsing::test_embedded_pdf_text_yields_only_valid_actual[target-before-actual]
+FAILED tests/audit_integrity/test_fresh_contracts.py::TestActualSaqPdfParsing::test_embedded_pdf_text_yields_only_valid_actual[target-only]
+FAILED tests/audit_integrity/test_fresh_contracts.py::TestActualSaqPdfParsing::test_embedded_pdf_text_yields_only_valid_actual[postfix-target]
+FAILED tests/audit_integrity/test_fresh_contracts.py::TestActualSaqPdfParsing::test_embedded_pdf_text_yields_only_valid_actual[negative]
+FAILED tests/audit_integrity/test_fresh_contracts.py::TestActualSaqPdfParsing::test_embedded_pdf_text_yields_only_valid_actual[over-100]
+FAILED tests/audit_integrity/test_fresh_contracts.py::TestLedgerToResponse::test_selected_ledger_value_survives_export[component]
+FAILED tests/audit_integrity/test_fresh_contracts.py::TestLedgerToResponse::test_selected_ledger_value_survives_export[target]
+FAILED tests/audit_integrity/test_fresh_contracts.py::TestLedgerToResponse::test_selected_ledger_value_survives_export[future-target]
+FAILED tests/audit_integrity/test_fresh_contracts.py::TestLedgerToResponse::test_target_only_cannot_reappear_as_verified_actual
+FAILED tests/audit_integrity/test_fresh_contracts.py::TestLedgerToResponse::test_superseded_dart_regex_does_not_return_in_export
+FAILED tests/audit_integrity/test_fresh_contracts.py::TestLedgerToResponse::test_risk_rows_describe_the_selected_total[total-first]
+FAILED tests/audit_integrity/test_fresh_contracts.py::TestProviderCache::test_changed_request_identity_requires_provider[endpoint]
+FAILED tests/audit_integrity/test_fresh_contracts.py::TestProposedD3Requirement::test_missing_evidence_is_explicit_abstention[no-chunks]
+FAILED tests/audit_integrity/test_fresh_contracts.py::TestProposedD3Requirement::test_missing_evidence_is_explicit_abstention[empty-index]
+FAILED tests/audit_integrity/test_ingress_replay.py::test_imported_ocr_output_preserves_selected_actual[component-\uc5d0\ub108\uc9c0 \uc0ac\uc6a9\ub7c9 \uad6d\ub0b4 \uc0ac\uc5c5\uc7a5-2025]
+FAILED tests/audit_20260909/test_new_audit.py::test_invalid_rate_cannot_be_verified_as_matching[negative]
+FAILED tests/audit_20260909/test_new_audit.py::test_invalid_rate_cannot_be_verified_as_matching[above_100]
+FAILED tests/audit_20260909/test_new_audit.py::test_invalid_rate_cannot_be_verified_as_matching[nan_evidence]
+FAILED tests/audit_20260909/test_new_audit.py::test_invalid_rate_cannot_be_verified_as_matching[nan_claim]
+FAILED tests/audit_20260909/test_new_audit.py::test_equivalent_energy_units_are_not_a_discrepancy
+FAILED tests/audit_20260909/test_new_audit.py::test_equal_numbers_with_different_energy_units_are_not_matching
+FAILED tests/audit_20260909/test_new_audit.py::test_dangling_evidence_id_does_not_prove_policy
+FAILED tests/audit_20260909/test_new_audit.py::test_explicit_negative_policy_answer_is_not_changed_to_yes
+FAILED tests/audit_20260909/test_new_audit.py::test_saq_actual_claim_extraction[target_before_actual]
+FAILED tests/audit_20260909/test_new_audit.py::test_saq_actual_claim_extraction[target_only]
+FAILED tests/audit_20260909/test_new_audit.py::test_saq_actual_claim_extraction[negative]
+FAILED tests/audit_20260909/test_new_audit.py::test_saq_actual_claim_extraction[above_100]
+FAILED tests/audit_20260909/test_new_audit.py::test_selected_actual_survives_audit_and_response_export
+FAILED tests/audit_20260909/test_new_audit.py::test_future_target_cannot_replace_reporting_year_actual
+FAILED tests/audit_20260909/test_new_audit.py::test_missing_semantic_evidence_is_abstention_requirement
+FAILED tests/audit_20260909/test_new_audit.py::test_production_survey_input_cannot_create_verified_yes[\uc608]
+FAILED tests/audit_20260909/test_new_audit.py::test_production_survey_input_cannot_create_verified_yes[\uc544\ub2c8\uc624]
+FAILED tests/audit_20260909/test_new_audit.py::test_production_l1_selection_survives_l5_export
+51 failed, 41 passed, 5 warnings in 1.11s
+<sys>:0: DeprecationWarning: builtin type swigvarlink has no __module__ attribute

@@ -1,5 +1,18 @@
 """한울정밀 리허설 러너의 입력 세트·역할 분리 회귀 테스트."""
+import pytest
+
+from scripts import run_demo_hanwool
 from scripts.run_demo_hanwool import collect_inputs
+
+
+@pytest.fixture(autouse=True)
+def numbered_input_directory(tmp_path, monkeypatch):
+    """파일 선택·역할 분리는 저장소에 없는 개인 시연 PDF에 의존하지 않는다."""
+    for number in range(1, 32):
+        (tmp_path / f"{number:02d}_example.pdf").touch()
+    (tmp_path / "test.pdf").touch()
+    (tmp_path / "01_reference.md").touch()
+    monkeypatch.setattr(run_demo_hanwool, "EVIDENCE_DIR", tmp_path)
 
 
 def test_collect_full_numbered_set_and_split_supplier_claims() -> None:

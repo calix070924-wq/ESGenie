@@ -14,6 +14,7 @@ import streamlit as st
 from esgenie.dart_client import search_companies
 from esgenie.embeddings import embedding_backend
 from esgenie.pipeline import run as run_pipeline
+from esgenie.schemas import format_score
 from esgenie.supplychain import is_saq_upload, parse_saq_claims
 from esgenie.ui.components import (
     badge_html,
@@ -337,9 +338,11 @@ def _hero_status(result, is_stale: bool, active_area: str) -> tuple[str, str, st
     verify = result.sections.get(active_area)
     if verify is None:
         return "부분 결과", "info", "현재 선택한 영역과 저장된 결과 영역이 다릅니다."
+    if verify.final_score is None:
+        return "평가불가", "warning", "독립 근거가 부족해 위험도를 평가하지 못했습니다. 증빙을 보완해 다시 분석하세요."
     if verify.hitl_required:
         return "검토 필요", "danger", "최종본은 생성됐지만 일부 문장에 수동 검토가 필요합니다."
-    return "분석 완료", "success", f"위험도 {verify.final_score:.1f} / {verify.final_band}"
+    return "분석 완료", "success", f"위험도 {format_score(verify.final_score)} / {verify.final_band}"
 
 
 def _run_pipeline_now(
@@ -690,7 +693,7 @@ if result is not None:
         summary_cards.append({"label": "증빙 확인률", "value": f"{v15_trace.summary['verified_ratio']*100:.0f}%", "note": f"정량 {v15_trace.summary['data_point_count']}건"})
         summary_cards.append({"label": "규정 충족", "value": f"{v15_trace.summary['policy_pass']}/{v15_trace.summary['policy_total']}", "note": "법규·사내 규정"})
     if verify is not None:
-        summary_cards.append({"label": "그린워싱 위험도", "value": f"{verify.final_score:.1f}", "note": verify.final_band})
+        summary_cards.append({"label": "그린워싱 위험도", "value": format_score(verify.final_score), "note": verify.final_band})
         summary_cards.append({"label": "담당자 확인", "value": "필요" if verify.hitl_required else "완료", "note": f"검증 {verify.iterations_used}회"})
     render_metric_cards(summary_cards, columns=min(5, len(summary_cards)) or 1)
 

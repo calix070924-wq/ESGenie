@@ -106,7 +106,7 @@ def run_smoke() -> dict[str, Any]:
             "ok": True,
             "elapsed_sec": round(time.time() - t0, 2),
             "coverage": f"{out.extraction.coverage_pct:.1f}% ({out.extraction.profile_label})",
-            "risk": {a: round(v.final_score, 1) for a, v in out.sections.items()},
+            "risk": {a: round(v.final_score, 1) if v.final_score is not None else None for a, v in out.sections.items()},
         }
     except Exception as e:
         return {"ok": False, "error": f"{type(e).__name__}: {e}"}

@@ -42,6 +42,7 @@ def main() -> None:
     pdf = ROOT / entry["pdf"]
 
     from esgenie import pipeline
+    from esgenie.schemas import format_score
     output = pipeline.run(
         corp_code=entry.get("corp_code", entry["ticker"]),
         areas=args.areas,
@@ -58,7 +59,7 @@ def main() -> None:
         b_str = f"{b[0]} ({b[1]})" if b else "—"
         rv = v.final.detection.risk_vector
         d1 = f"D1={rv.D1_numeric.score*100:.0f}" if rv else "D1=?"
-        print(f"  {area}: {b_str} → {v.final_score:.1f} ({v.final_band})  [{d1}]")
+        print(f"  {area}: {b_str} → {format_score(v.final_score)} ({v.final_band})  [{d1}]")
         if rv and rv.D1_numeric.detail:
             print(f"     detail: {rv.D1_numeric.detail[:220]}")
 

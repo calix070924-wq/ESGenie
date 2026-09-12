@@ -50,7 +50,7 @@ class PolicyAuditResult:
 # ====================================================================
 
 # 문장에서 수치 토큰 추출: 1,670만 / 12.3% / 4781 tCO2 등
-_NUM_RE = re.compile(r"([0-9][0-9,\.]*)\s*(만|억|천)?\s*(tCO2eq|tCO2|kWh|MJ|ton|%|원|건|명)?")
+_NUM_RE = re.compile(r"([+-]?[0-9][0-9,\.]*)\s*(만|억|천)?\s*(tCO2eq|tCO2|kWh|MWh|GWh|TJ|GJ|MJ|kg|ton|톤|%|원|건|명)?")
 
 
 # ---- 책임있는 기권(abstain) 헬퍼 --------------------------------------------
@@ -113,7 +113,9 @@ def detect_d1_numeric(
             return _abstain("no_evidence", "수치는 있으나 K-ESG 매핑 없음 → 근거 추적 불가")
         return AxisScore(0.6, [], "수치는 있으나 K-ESG 매핑 없음 → 근거 추적 불가")
 
-    candidates = graph.nodes_by_metric(kesg_code)
+    from .selection import comparison_node
+    selected = comparison_node(graph, kesg_code)
+    candidates = [selected] if selected is not None else []
     if not candidates:
         if ABSTAIN_ENABLED and not _retry_evidence(kesg_code, graph):
             return _abstain("no_evidence", f"{kesg_code} 근거 노드 없음(재검색 후에도 없음)")
@@ -162,7 +164,8 @@ def audit_policy_documents(
     if not checklist:
         return PolicyAuditResult(kesg_code, [], passed=True, source_files=[])
 
-    text_nodes = graph.text_nodes_by_code(kesg_code)
+    from ..survey import is_survey
+    text_nodes = [n for n in graph.text_nodes_by_code(kesg_code) if not is_survey(n)]
     if not text_nodes:
         # 규정 자체가 없음 → 전 항목 missing 처리
         findings = [
@@ -268,21 +271,16 @@ def detect_risk_axes(
     d3 = detect_d3_semantic(sentence, retrieved_chunks)
     d5 = detect_d5_timeseries(sentence, graph)
 
-    # 가중평균 (D4 제거 후 재배분: D1=40%, D2=25%, D3=25%, D5=10%)
-    weighted = d1.score * 0.40 + d2.score * 0.25 + d3.score * 0.25 + d5.score * 0.10
-    top = max({"D1": d1, "D2": d2, "D3": d3, "D5": d5}.items(), key=lambda kv: kv[1].score)
-
-    # 기권 전파: 축 중 하나라도 abstain이면 aggregate에도 표식을 실어, 이 경로
-    # 소비자가 '안전한 낮은 점수'와 '판정 보류'를 구분할 수 있게 한다(코드리뷰 must-fix 3).
-    abstained = [ax for ax in (d1, d2, d3, d5) if getattr(ax, "abstain", False)]
+    from ..layer3_detect import _build_risk_vector
+    rv = _build_risk_vector(d1, d2, d3, d5)
     aggregate = AxisScore(
-        score=round(weighted, 4),
+        score=rv.risk_score if rv.risk_score is not None else 0.0,
         evidence=d1.evidence + d3.evidence,
-        detail=f"종합 위험도={weighted:.3f} | 최고위험={top[0]}({top[1].score:.3f})"
-               + (f" | ABSTAIN({abstained[0].abstain_reason})" if abstained else ""),
-        abstain=bool(abstained),
-        abstain_reason=(abstained[0].abstain_reason if abstained else None),
-    )
+        detail=f"{rv.evaluation_label} · 유효 축: {', '.join(rv.aggregate['evaluated_axes'])}",
+        abstain=not rv.evaluation_complete,
+        abstain_reason="no_evidence" if not rv.evaluation_complete else None,
+        evaluation=rv.aggregate)
+
     return {"D1": d1, "D2": d2, "D3": d3, "D5": d5, "aggregate": aggregate}
 
 
@@ -325,13 +323,19 @@ def _find_matching_node(
     tol: float,
 ) -> EvidenceNode | None:
     """±tol% 이내 + 단위 호환 노드 탐색 (128,400원 ≠ 128,400 kWh)."""
-    from ..layer3_detect import units_compatible
+    from ..rag_gates.units import normalize_unit, convert_to_common
+    from .selection import finite_number
     for n in nodes:
+        if finite_number(n.value) is None or finite_number(claim) is None:
+            continue
+        cu, nu = normalize_unit(claim_unit or "") or claim_unit, normalize_unit(n.unit) or n.unit
+        comparable = convert_to_common(claim, cu, nu) if cu else claim
+        if comparable is None:
+            continue
         if n.value == 0:
-            continue
-        if not units_compatible(claim_unit, n.unit):
-            continue
-        if abs(claim - n.value) / abs(n.value) * 100 <= tol:
+            if comparable == 0:
+                return n
+        elif abs(comparable - n.value) / abs(n.value) * 100 <= tol:
             return n
     return None
 

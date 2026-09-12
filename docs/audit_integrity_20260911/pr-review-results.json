@@ -1,0 +1,168 @@
+{
+  "date": "2026-09-12",
+  "base": "d3a06e22f41c5c2b0fb4fa4ad61cbe7d089cc2e6",
+  "reviewed_head": "cdebcacae42056f6c219ffeb82b2e07e624e6baf",
+  "delivery_patch_sha256": "2fd0ce505a9e4d9b6fa6d8dc5acb1e0280e7273f15e23b5a5b58ad606369da53",
+  "runs": {
+    "delivery_regression_rerun": {
+      "tests": 1220,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "time": 43.306,
+      "passed": 1220,
+      "timestamp": "2026-09-12T11:37:30.579718+09:00",
+      "junit_sha256": "4fcce9dcf6b8e29a60327505b4d445dc8cc6a5be35112162bf08122b795b1e83",
+      "failures_detail": []
+    },
+    "new_reproductions_before": {
+      "tests": 4,
+      "failures": 4,
+      "errors": 0,
+      "skipped": 0,
+      "time": 5.354,
+      "passed": 0,
+      "timestamp": "2026-09-12T11:40:27.723103+09:00",
+      "junit_sha256": "60831ad6d0b5bfc5a7a2e8b1ad43c742debdbd40ababa6b82a6bafee519eb783",
+      "failures_detail": [
+        {
+          "test": "tests.test_ui_apptest_smoke::test_unavailable_result_renders_entire_app[False]",
+          "reason": "assert not ElementList(_list=[Exception(message='unsupported format string passed to NoneType.__format__', stack_trace=['File \"/p...e\": verify.final_band})\\n                                                                 ^^^^^^^^^^^^^^^^^^^^^^^^'])])"
+        },
+        {
+          "test": "tests.test_ui_apptest_smoke::test_unavailable_result_renders_entire_app[True]",
+          "reason": "assert not ElementList(_list=[Exception(message='unsupported format string passed to NoneType.__format__', stack_trace=['File \"/p...e\": verify.final_band})\\n                                                                 ^^^^^^^^^^^^^^^^^^^^^^^^'])])"
+        },
+        {
+          "test": "tests.audit_integrity.test_provenance_contract::test_local_pipeline_does_not_reimport_survey_as_dart_evidence[\\uc608]",
+          "reason": "AssertionError: 설문 자가응답이 독립 검색 근거로 다시 들어옴"
+        },
+        {
+          "test": "tests.audit_integrity.test_provenance_contract::test_local_pipeline_does_not_reimport_survey_as_dart_evidence[\\uc544\\ub2c8\\uc624]",
+          "reason": "AssertionError: 설문 자가응답이 독립 검색 근거로 다시 들어옴"
+        }
+      ]
+    },
+    "local_full_after": {
+      "tests": 1224,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "time": 43.21,
+      "passed": 1224,
+      "timestamp": "2026-09-12T11:43:31.674707+09:00",
+      "junit_sha256": "7cc5c15c56fd05ade4caf5b2cab0efc94199fe3ed0c24ea194caf0aba542454b",
+      "failures_detail": []
+    },
+    "clean_checkout_first": {
+      "tests": 1224,
+      "failures": 4,
+      "errors": 0,
+      "skipped": 12,
+      "time": 8.841,
+      "passed": 1208,
+      "timestamp": "2026-09-12T11:43:31.674546+09:00",
+      "junit_sha256": "6b1eac514fcbd042b402aa03c10f53e30e9234869c27350e1bfe9eafdeb76390",
+      "failures_detail": [
+        {
+          "test": "tests.audit_integrity.test_provenance_contract::test_local_pipeline_does_not_reimport_survey_as_dart_evidence[\\uc608]",
+          "reason": "AssertionError: assert 25.0 is None"
+        },
+        {
+          "test": "tests.audit_integrity.test_provenance_contract::test_local_pipeline_does_not_reimport_survey_as_dart_evidence[\\uc544\\ub2c8\\uc624]",
+          "reason": "AssertionError: assert 25.0 is None"
+        },
+        {
+          "test": "tests.test_run_demo_hanwool::test_collect_full_numbered_set_and_split_supplier_claims",
+          "reason": "assert 0 == 20"
+        },
+        {
+          "test": "tests.test_run_demo_hanwool::test_collect_core_readme_set",
+          "reason": "assert 0 == 7"
+        }
+      ]
+    },
+    "clean_checkout_final": {
+      "tests": 1224,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 12,
+      "time": 7.569,
+      "passed": 1212,
+      "timestamp": "2026-09-12T11:44:59.411199+09:00",
+      "junit_sha256": "af6407f3ab0a6a5a121d653e5d488d8d440e03a9e633fb23cf8821ddda8daf4f",
+      "failures_detail": [],
+      "skipped_tests": [
+        "tests.test_table_structure::test_cases_are_linked[lgchem_water::\\uc6a9\\uc218 \\ucde8\\uc218\\ub7c9::65,237]",
+        "tests.test_table_structure::test_cases_are_linked[lgchem_water::\\uc6a9\\uc218 \\uc0ac\\uc6a9\\ub7c9::43,947]",
+        "tests.test_table_structure::test_cases_are_linked[lgchem_water::\\uc6a9\\uc218 \\uc7ac\\uc774\\uc6a9\\ub960::7.90]",
+        "tests.test_table_structure::test_cases_are_linked[lgchem_water::\\uc6a9\\uc218 \\uc7ac\\uc774\\uc6a9\\ub960::2.72]",
+        "tests.test_table_structure::test_cases_are_linked[mobis_ghg_target::\\ub204\\uc801 \\uc628\\uc2e4\\uac00\\uc2a4 \\ubaa9\\ud45c \\uac10\\ucd95\\ub7c9::382,946]",
+        "tests.test_table_structure::test_cases_are_linked[mobis_ghg_target::\\uc628\\uc2e4\\uac00\\uc2a4 \\ubaa9\\ud45c \\ubc30\\ucd9c\\ub7c9::268,062]",
+        "tests.test_table_structure::test_cases_are_linked[mobis_renewable_multicol::\\uc7ac\\uc0dd\\uc5d0\\ub108\\uc9c0 \\uc0ac\\uc6a9\\xb7\\uc804\\ud658\\uc728::12.9]",
+        "tests.test_table_structure::test_cases_are_linked[mobis_energy_total::\\uc5d0\\ub108\\uc9c0 \\uc0ac\\uc6a9\\ub7c9::9,075]",
+        "tests.test_table_structure::test_cases_are_linked[mobis_energy_total::TJ::9,075]",
+        "tests.test_table_structure::test_mobis_energy_label_inheritance",
+        "tests.test_table_structure::test_mobis_renewable_total_column_distinguishable",
+        "tests.test_table_structure::test_footnote_marker_split_from_value"
+      ]
+    }
+  },
+  "saved_live_evidence": {
+    "new_api_calls_in_this_review": 0,
+    "identical_fields": {
+      "inputs": true,
+      "settings": true,
+      "ledger": true,
+      "risk_rows": true,
+      "claims": true,
+      "responses": true,
+      "sections": true
+    },
+    "final_llm_stats": {
+      "mode": "on",
+      "hits": 15,
+      "misses": 4,
+      "live_calls": 4,
+      "successes": 4,
+      "failures": 0
+    },
+    "reuse_llm_stats": {
+      "mode": "on",
+      "hits": 19,
+      "misses": 0,
+      "live_calls": 0,
+      "successes": 0,
+      "failures": 0
+    },
+    "table_gates": [
+      {
+        "file": "01_전기요금청구서_2026-05.pdf",
+        "status": "ESCALATE",
+        "pending": true
+      },
+      {
+        "file": "02_도시가스요금고지서_2026-05.pdf",
+        "status": "ACCEPT",
+        "pending": false
+      },
+      {
+        "file": "03_사업장폐기물_위탁처리명세_2026-04.pdf",
+        "status": "ESCALATE",
+        "pending": true
+      },
+      {
+        "file": "04_사내_환경ESG경영방침_규정.pdf",
+        "status": "skipped",
+        "pending": false
+      }
+    ]
+  },
+  "preservation": {
+    "original_files_checked": 467,
+    "changed": 0,
+    "original_main_unchanged": true,
+    "introduced_history_blobs_scanned": 111,
+    "credential_value_matches": 0
+  }
+}

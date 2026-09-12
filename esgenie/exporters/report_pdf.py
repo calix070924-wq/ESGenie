@@ -19,7 +19,7 @@ import re
 from pathlib import Path
 from typing import Any
 
-from ..supplychain.exporters._fonts import resolve_korean_font
+from ..supplychain.exporters._fonts import resolve_korean_font, pdf_safe_text
 
 
 def _pdf_safe_text(text: str) -> str:
@@ -28,7 +28,7 @@ def _pdf_safe_text(text: str) -> str:
     U+321C(㈜)는 번들 TTF의 cmap에 없어 ReportLab이 네모로 렌더한다. 원본
     ReportDoc과 파일명은 유지하고 PDF에 그리는 문자열만 `(주)`로 정규화한다.
     """
-    return text.replace("㈜", "(주)")
+    return pdf_safe_text(text)
 
 
 def _inline(text: str) -> str:

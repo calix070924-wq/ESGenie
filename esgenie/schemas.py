@@ -22,6 +22,8 @@ class AxisScore:
     abstain: bool = False              # ★ 신설: 판정 보류 여부(기본 False — 기존 동작 불변)
     abstain_reason: str | None = None  # ★ 신설: "no_evidence" | "unit_mismatch" | "low_confidence"
 
+    evaluation: dict[str, Any] = field(default_factory=dict)
+
     def to_dict(self) -> dict[str, Any]:
         return asdict(self)
 
@@ -52,8 +54,20 @@ class RiskVector:
         }
 
     @property
-    def risk_score(self) -> float:
-        return float(self.aggregate.get("risk_score", 0.0))
+    def risk_score(self) -> float | None:
+        score = self.aggregate.get("risk_score", 0.0)
+        return float(score) if score is not None else None
+
+    @property
+    def evaluation_complete(self) -> bool:
+        return bool(self.aggregate.get("evaluation_complete", not self.abstained_axes()))
+
+    @property
+    def evaluation_label(self) -> str:
+        if self.risk_score is None:
+            return "평가불가"
+        return "평가 완료" if self.evaluation_complete else "부분 평가"
+
 
     @property
     def level(self) -> str:
@@ -87,6 +101,32 @@ class RiskVector:
             "D5_timeseries": self.D5_timeseries,
         }
         return [name for name, ax in axes.items() if ax.abstain]
+
+
+def aggregate_axes(axes: dict[str, AxisScore]) -> dict[str, Any]:
+    """기권 축을 제외한 가중치 재정규화. 유효 축이 없으면 점수도 없다."""
+    from .config import D_WEIGHTS, RISK_LEVEL_THRESHOLDS
+    valid = {name: axis for name, axis in axes.items() if not axis.abstain}
+    abstained = [name for name, axis in axes.items() if axis.abstain]
+    weight = sum(D_WEIGHTS[name] for name in valid)
+    score = round(sum(D_WEIGHTS[name] * axis.score for name, axis in valid.items()) / weight, 4) if weight else None
+    if score is None:
+        level = "unavailable"
+    elif score < RISK_LEVEL_THRESHOLDS["low"]:
+        level = "low"
+    elif score < RISK_LEVEL_THRESHOLDS["medium"]:
+        level = "medium"
+    else:
+        level = "high"
+    top = max(valid, key=lambda k: valid[k].score) if any(a.score > 0 for a in valid.values()) else ""
+    return {"risk_score": score, "level": level, "top_axis": top,
+            "abstained_axes": abstained, "evaluated_axes": list(valid),
+            "evaluated_weight": round(weight, 6), "evaluation_complete": not abstained,
+            "evaluation_status": "unavailable" if score is None else "partial" if abstained else "complete"}
+
+
+def format_score(score: float | None, *, scale: float = 1, digits: int = 1) -> str:
+    return "평가불가" if score is None else f"{score * scale:.{digits}f}"
 
 
 # ---- L4 재생성 시도 기록 -----------------------------------------------------

@@ -140,3 +140,10 @@ def resolve_korean_font() -> FontResult:
         embedded=False,
         source="폴백(Helvetica) — 한글 폰트 미발견, 한글이 □로 표시됨",
     )
+
+
+def pdf_safe_text(text: str) -> str:
+    """Render status words without unsupported emoji glyphs in the bundled font."""
+    import re
+    text = str(text).replace("㈜", "(주)").replace("Δ", "차이 ").replace("≥", ">=")
+    return re.sub(r"[\U0001F000-\U0001FAFF\u2600-\u27BF\uFE0F\u258C]", "", text)

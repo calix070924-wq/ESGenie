@@ -34,6 +34,10 @@ class EvidenceLink:
     bbox: list[float] | None = None    # 0~1 정규화 위치
     page: int | None = None            # 0-기준 페이지 인덱스
     node_id: str = ""
+    kesg_codes: list[str] = field(default_factory=list)
+    quote: str = ""
+    resolved: bool = False
+    independent: bool = False
 
     def to_dict(self) -> dict[str, Any]:
         return asdict(self)
@@ -46,11 +50,15 @@ class DataPoint:
     kesg_name: str                 # "에너지 사용량"
     value: float
     unit: str
-    period: int
+    period: int | None
     confidence: float
     verification: str              # "verified" | "estimated" | "unverified"
     d1_risk: float                 # L3 D1 수치 위험도
     evidence_files: list[EvidenceLink] = field(default_factory=list)
+    source_tier: str = ""
+    representative_node_ids: list[str] = field(default_factory=list)
+    value_role: str = "unknown"
+    confidence_flags: list[str] = field(default_factory=list)
 
     def to_dict(self) -> dict[str, Any]:
         d = asdict(self)
@@ -95,43 +103,30 @@ def build_data_points(
     *,
     target_codes: list[str],
 ) -> list[DataPoint]:
-    """K-ESG 코드별로 SSOT에서 확정값 1개를 선정 + 증빙 링크 부착.
-
-    선정 규칙:
-      - 같은 코드/연도에 노드가 여럿이면 confidence 최댓값 노드 채택.
-      - DART와 OCR이 모두 있으면 DART를 1순위(공시 우선), OCR을 보조 증빙으로 첨부.
-    """
-    points: list[DataPoint] = []
+    """최종 원장 선택을 소비한다. 결정 메타데이터가 없는 구버전만 공용 규칙으로 선택."""
+    from .selection import resolve_fact, finite_number
+    points = []
     for code in target_codes:
-        nodes = graph.nodes_by_metric(code)
-        if not nodes:
+        fact = resolve_fact(graph, code)
+        if fact is None:
             continue
-        latest_year = max(n.period for n in nodes)
-        year_nodes = [n for n in nodes if n.period == latest_year]
-        primary = _pick_primary(year_nodes)
-        value = primary.value
-        # 가산 코드(Scope1+2 등)는 출처별 파생값을 합산한다 — 단 공시(reported)값이
-        # 있으면 그것을 우선해 이중계산을 피한다(전력 Scope2 + 가스 Scope1 합산).
-        if code in _ADDITIVE_DERIVED and len(year_nodes) > 1:
-            derived = [n for n in year_nodes
-                       if str(getattr(n, "source", "")).startswith("derived_from:")]
-            reported = [n for n in year_nodes if n not in derived]
-            if derived and not reported:
-                value = round(sum(n.value for n in derived), 3)
-                primary = _pick_primary(derived)
-        links = [_to_link(n) for n in year_nodes]
+        links = [_to_link(graph.nodes[nid]) for nid in fact.representative_node_ids
+                 if nid in graph.nodes]
         d1 = d1_scores.get(code, 0.0)
+        valid = bool(links) and all(e.resolved and e.independent and e.quote for e in links)
+        flags = set(fact.flags)
+        if finite_number(fact.value) is None or d1 >= 0.5 or "unit_suspect" in flags:
+            verification = "unverified"
+        elif not valid or flags.intersection({"period_inferred", "partial_aggregate", "partial_value", "derived", "no_representative_node"}):
+            verification = "estimated"
+        else:
+            verification = "verified" if d1 < 0.2 else "estimated"
         points.append(DataPoint(
-            kesg_code=code,
-            kesg_name=_kesg_name(code),
-            value=value,
-            unit=primary.unit,
-            period=primary.period,
-            confidence=round(primary.confidence, 3),
-            verification=_verification_label(primary, d1),
-            d1_risk=round(d1, 3),
-            evidence_files=links,
-        ))
+            kesg_code=code, kesg_name=_kesg_name(code), value=fact.value,
+            unit=fact.unit, period=fact.period, confidence=round(fact.confidence, 3),
+            verification=verification, d1_risk=round(d1, 3), evidence_files=links,
+            source_tier=fact.source_tier, representative_node_ids=fact.representative_node_ids,
+            value_role=fact.value_role, confidence_flags=fact.flags))
     return points
 
 
@@ -174,21 +169,26 @@ def build_audit_trace_v15(
 # 헬퍼
 # ====================================================================
 
-def _pick_primary(nodes: list[EvidenceNode]) -> EvidenceNode:
-    dart = [n for n in nodes if n.origin == "dart"]
-    pool = dart or nodes
-    return max(pool, key=lambda n: n.confidence)
-
-
 def _to_link(n: EvidenceNode) -> EvidenceLink:
-    fname = n.source_file or f"{n.id}.json"
+    return evidence_link(n)
+
+
+def evidence_link(n: Any) -> EvidenceLink:
+    """실제 노드에서만 검증 가능한 링크를 만든다. 파일명 자체는 증빙 판정이 아니다."""
+    from ..survey import is_survey
+    fname = n.source_file or getattr(n, "source", "") or f"{n.id}.json"
+    codes = [getattr(n, k, None) for k in ("metric", "kesg_code", "rba_code")]
     return EvidenceLink(
         file_name=fname,
         relative_path=f"evidence_pack/{fname}",
         origin=n.origin,
-        bbox=n.bbox,
+        bbox=getattr(n, "bbox", None),
         page=n.page,
         node_id=n.id,
+        kesg_codes=[c for c in codes if c],
+        quote=getattr(n, "raw_text", "") or getattr(n, "text", ""),
+        resolved=True,
+        independent=not is_survey(n),
     )
 
 

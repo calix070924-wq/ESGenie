@@ -11,6 +11,7 @@ ExtractionResult.mapped / missing 와 v15 DataPoint 를 양식 칸에 떨군다.
 from __future__ import annotations
 
 from typing import Any
+import re
 
 from ..knowledge.kesg_evidence_requirements import requirement_for
 from .schema import Answer, Question
@@ -40,7 +41,7 @@ def derive_answer(
     claims: dict[str, Any] | None = None,  # code → supplychain.claims.SupplierClaim
 ) -> Answer:
     if q.qtype == "numeric":
-        return _derive_numeric(q, mapped, missing, dp_by_code, claims or {})
+        return _derive_numeric(q, mapped, missing, dp_by_code, claims if claims is not None else {}, evidence_index)
     if q.qtype == "multi_select":
         return _derive_multi(q, mapped, missing, evidence_index or {})
     # yes_no / yes_no_evidence / text → 존재형
@@ -68,8 +69,8 @@ def _unresolved(q: Question, fallback: str) -> tuple[str, str, list[str]]:
     return status, (req.request or fallback), list(req.evidence_types)
 
 
-def _derive_numeric(q, mapped, missing, dp_by_code, claims=None) -> Answer:
-    claims = claims or {}
+def _derive_numeric(q, mapped, missing, dp_by_code, claims=None, evidence_index=None) -> Answer:
+    claims = claims if claims is not None else {}
     code = q.primary_code
     evid_value: Any = None
     evid_unit = ""
@@ -80,8 +81,10 @@ def _derive_numeric(q, mapped, missing, dp_by_code, claims=None) -> Answer:
         ans = _base(
             q, value=dp.value, status=status,
             evidence_links=list(dp.evidence_files),
+            unit=dp.unit, period=dp.period, confidence_flags=list(dp.confidence_flags),
             rationale=f"{dp.kesg_name} = {dp.value}{dp.unit} "
-                      f"(D1 위험 {dp.d1_risk}, 검증={dp.verification})",
+                      f"(보고 연도 {dp.period}, D1 위험 {dp.d1_risk}, 검증={dp.verification})"
+                      + (f" · 신뢰 정보: {', '.join(dp.confidence_flags)}" if dp.confidence_flags else ""),
         )
     else:
         entry = mapped.get(code)
@@ -89,6 +92,7 @@ def _derive_numeric(q, mapped, missing, dp_by_code, claims=None) -> Answer:
             evid_value, evid_unit = entry.get("value"), entry.get("unit", "")
             ans = _base(
                 q, value=entry.get("value"), status="self_reported",
+                unit=entry.get("unit", ""), period=entry.get("period"),
                 rationale=f"{entry.get('name', code)} = {entry.get('value')}"
                           f"{entry.get('unit', '')} (증빙 미연결, 자가신고)",
             )
@@ -97,6 +101,32 @@ def _derive_numeric(q, mapped, missing, dp_by_code, claims=None) -> Answer:
                 q, f"{code} 증빙 없음 — 해당 수치를 입증할 고지서/명세서 업로드 필요")
             ans = _base(q, value=None, status=status, rationale=request,
                         evidence_needed=ev_needed)
+    if dp is not None:
+        links = [evidence_index.get(e.node_id) if evidence_index is not None else e
+                 for e in dp.evidence_files]
+        valid_links = [e for e in links if _valid_link(e, code)]
+        ans.evidence_links = valid_links
+        if ans.status == "verified" and not valid_links:
+            ans.status = "self_reported"
+            ans.flags.append("증빙 미확인: 실제 노드·주제·원문·독립 출처 확인 필요")
+    evid_num = _as_number(evid_value)
+    if evid_value is not None:
+        invalid = _invalid_number_reason(evid_value, evid_unit, code)
+        if invalid:
+            ans.status = "flagged"
+            ans.flags.append(f"증빙값 검토필요: {invalid}")
+        # 구버전 비율 단위 복구는 실제 원문에 같은 값의 % 표기가 있을 때만 허용한다.
+        if code in _RATE_KESG_CODES and not _looks_like_rate_unit(evid_unit) and evid_num is not None and 0 <= evid_num <= 100:
+            entry = mapped.get(code, {})
+            recovery = entry.get("unit_recovery") or {}
+            quotes = [e.quote for e in ans.evidence_links] + [recovery.get("raw", "")]
+            if any(_quote_confirms_rate(raw, evid_num) for raw in quotes):
+                evid_unit = "%"
+                ans.unit = "%"
+                ans.flags.append(f"단위 복구: 원문의 {evid_num}% 표기 확인 (입력 단위 {getattr(dp, 'unit', entry.get('unit', ''))})")
+    for diagnostic in getattr(claims, "diagnostics", []):
+        if diagnostic.get("code") == code:
+            ans.flags.append(f"자가주장 제외: {diagnostic.get('reason')} · {diagnostic.get('raw', '')} [{diagnostic.get('source')}]")
     # ── 협력사 자가주장 대조 (D1) ──────────────────────────────────────────
     claim = claims.get(code)
     if claim is not None:
@@ -105,115 +135,137 @@ def _derive_numeric(q, mapped, missing, dp_by_code, claims=None) -> Answer:
 
 
 def _as_number(v: Any) -> float | None:
-    try:
-        return float(v)
-    except (TypeError, ValueError):
-        return None
+    from ..ssot.selection import finite_number
+    from ..rag_gates.units import parse_number
+    if isinstance(v, str):
+        parsed = parse_number(v)
+        return finite_number(parsed)
+    return finite_number(v)
 
 
 def _looks_like_rate_unit(unit: str) -> bool:
-    unit = unit or ""
-    return "%" in unit or "비율" in unit or "이용률" in unit or unit.lower() == "pct"
+    return str(unit or "").strip().lower() in {"%", "pct", "percent", "퍼센트", "비율", "이용률"}
 
 
-def _reconcile_claim(
-    ans: Answer,
-    claim: Any,
-    evid_value: Any,
-    evid_unit: str,
-    *,
-    code: str = "",
-) -> Answer:
-    """자가주장값을 증빙값과 대조해 신뢰상태를 덧씌운다.
+def _quote_confirms_rate(raw, value):
+    return any(_as_number(m.group(1).replace("−", "-")) == value
+               for m in re.finditer(r"([+\-−]?\d+(?:\.\d+)?)\s*%", raw))
 
-    · 증빙 있음 + 괴리 큼 → flagged (자가신고 과장 의심, D1 불일치)
-    · 증빙 있음 + 일치     → 기존 상태 유지(자가신고 일치 메모)
-    · 증빙 없음            → self_reported (응답은 있으나 증빙 미연결)
-    """
-    cval = _as_number(getattr(claim, "value", None))
+
+def _invalid_number_reason(value, unit, code):
+    number = _as_number(value)
+    if number is None:
+        return f"유한한 수치가 아님: {value!r}"
+    if (_looks_like_rate_unit(unit) or code in _RATE_KESG_CODES) and not 0 <= number <= 100:
+        return f"비율 범위(0~100%)를 벗어남: {value}{unit}"
+    return ""
+
+
+def _reconcile_claim(ans: Answer, claim: Any, evid_value: Any, evid_unit: str, *, code: str = "") -> Answer:
+    """양쪽 값·차원을 검증한 뒤 비교한다. 비율은 10%p, 그 외는 D1 상대오차 기준."""
+    from ..config import D1_THRESHOLD
+    from ..rag_gates.units import normalize_unit, convert_to_common
     cunit = getattr(claim, "unit", "") or ""
-    craw = getattr(claim, "raw", "") or ""
-    csrc = getattr(claim, "source", "") or ""
-    if cval is None:
+    cvalue = getattr(claim, "value", None)
+    craw, csrc = getattr(claim, "raw", ""), getattr(claim, "source", "")
+    ans.self_reports.append(vars(claim).copy())
+    if getattr(claim, "status", "reported") == "ambiguous":
+        ans.status = "flagged"
+        ans.flags.extend(getattr(claim, "diagnostics", []) or ["상충하는 실적 주장 — 확정 불가"])
+        ans.rationale += f" · 자가주장 검토필요: {craw} [{csrc}]"
         return ans
-
-    evid_num = _as_number(evid_value)
-    if evid_num is None:
-        # 증빙 없음 → 자가신고만 기록
-        ans.value = cval
+    reason = _invalid_number_reason(cvalue, cunit, code)
+    if reason:
+        ans.status = "flagged"
+        ans.flags.append(f"자가주장 검토필요: {reason} · {craw} [{csrc}]")
+        return ans
+    cval = _as_number(cvalue)
+    if evid_value is None:
+        ans.value, ans.unit, ans.period = cval, cunit, getattr(claim, "period", None)
         ans.status = "self_reported"
         ans.flags.append(f"자가신고(증빙 미연결): {craw} [{csrc}]")
-        ans.rationale = (ans.rationale + f" · 자가주장 {cval}{cunit} 입력됨(증빙 없음)").strip()
+        ans.rationale += f" · 자가주장 {cval}{cunit} (독립 증빙 없음)"
         return ans
-
-    # K-ESG상 '비율(%)' 코드는 다운스트림 단위문자열이 ton 등으로 와도 본질적으로 비율로 본다.
-    ccode = code or getattr(claim, "code", "") or ""
-    claim_is_rate = _looks_like_rate_unit(cunit) or ccode in _RATE_KESG_CODES
-    evid_is_rate = _looks_like_rate_unit(evid_unit)
-
-    # E-6-2 같은 '본질적으로 비율' 코드면 단위 문자열이 깨져도 값 자체를 %로 본다.
-    # 다만 0~100 범위를 벗어나면 비율값이 아니라 오추출로 보고 즉시 flagged 처리한다.
-    if ccode in _RATE_KESG_CODES and not evid_is_rate:
-        if 0.0 <= evid_num <= _RATE_MAX_VALUE:
-            evid_is_rate = True
-            evid_unit = "%"
-        else:
-            ans.status = "flagged"
-            ans.flags.append(
-                f"D1 불일치: {ccode}는 비율 코드인데 증빙값 {evid_num}{evid_unit}이 "
-                "비율 범위(0~100%)를 벗어남"
-            )
-            ans.rationale = (
-                ans.rationale
-                + f" · ⚠ {ccode}는 비율 코드인데 증빙 추출값 {evid_num}{evid_unit}이 "
-                  "0~100% 범위를 벗어남 — OCR/매핑 보정 필요."
-            ).strip()
-            return ans
-
-    # 단위 불일치(주장은 비율% / 증빙은 톤 등) → %p 비교 불가. 정직하게 '비율 증빙 미확보'로 flagged.
-    if claim_is_rate and not evid_is_rate:
+    reason = _invalid_number_reason(evid_value, evid_unit, code)
+    if reason:
         ans.status = "flagged"
-        ans.flags.append(
-            f"D1 불일치: 자가신고 {cval}{cunit}(비율) ↔ 증빙은 비율(%) 미확보"
-            f"(추출 {evid_num}{evid_unit}, {csrc})"
-        )
-        ans.rationale = (
-            ans.rationale
-            + f" · ⚠ 자가주장은 재활용 '비율'({cval}{cunit})인데 증빙에서 비율(%)이 확보되지 않음"
-              f"(추출값 {evid_num}{evid_unit}) — 재활용 비율 증빙 보완·소명 필요."
-        ).strip()
+        ans.flags.append(f"증빙값 검토필요: {reason}")
         return ans
-
-    diff = round(abs(cval - evid_num), 1)
-    if diff >= _CLAIM_DISCREPANCY_PP:
+    evid_num = _as_number(evid_value)
+    claim_is_rate, evid_is_rate = _looks_like_rate_unit(cunit), _looks_like_rate_unit(evid_unit)
+    if code in _RATE_KESG_CODES and not (claim_is_rate and evid_is_rate):
         ans.status = "flagged"
-        ans.flags.append(
-            f"D1 불일치: 자가신고 {cval}{cunit} ↔ 증빙 {evid_num}{evid_unit} "
-            f"(Δ{diff}%p, {csrc})"
-        )
-        ans.rationale = (
-            ans.rationale
-            + f" · ⚠ 자가주장({cval}{cunit})이 증빙({evid_num}{evid_unit})과 {diff}%p 괴리 "
-              "— 과장 의심, 실사 시 소명 필요."
-        ).strip()
+        ans.flags.append(f"비율(%) 미확보: 자가신고 {cval}{cunit} ↔ 증빙 {evid_num}{evid_unit} — 단위 비교 불가")
+        return ans
+    cu = "%" if claim_is_rate else normalize_unit(cunit) or cunit.strip()
+    eu = "%" if evid_is_rate else normalize_unit(evid_unit) or evid_unit.strip()
+    converted = convert_to_common(cval, cu, eu) if cu and eu else None
+    if converted is None or _as_number(converted) is None:
+        ans.status = "flagged"
+        ans.flags.append(f"D1 비교 불가: 단위 {cunit or '미상'} ↔ {evid_unit or '미상'} (차원/환산 확인 필요)")
+        return ans
+    if claim_is_rate and evid_is_rate:
+        difference = abs(converted - evid_num)
+        mismatch = difference >= _CLAIM_DISCREPANCY_PP
+        description = f"Δ{difference:.2f}%p, 기준 ≥{_CLAIM_DISCREPANCY_PP:g}%p"
     else:
-        ans.flags.append(f"자가신고 일치: {cval}{cunit} ≈ 증빙 {evid_num}{evid_unit}")
+        relative = abs(converted - evid_num) / abs(evid_num) if evid_num else (0.0 if converted == 0 else float("inf"))
+        mismatch = relative >= D1_THRESHOLD
+        description = (f"상대오차 {relative:.2%}, 기준 ≥{D1_THRESHOLD:.0%} (분모=|증빙값|; "
+                       "증빙 0이면 주장 0만 일치)")
+    if mismatch:
+        ans.status = "flagged"
+        ans.flags.append(f"D1 불일치: 자가신고 {cval}{cunit} ↔ 증빙 {evid_num}{evid_unit} ({description}, {csrc})")
+        ans.rationale += f" · 자가주장과 증빙 불일치 ({description}) — 소명 필요"
+    else:
+        ans.flags.append(f"자가신고 일치: {cval}{cunit} ≈ 증빙 {evid_num}{evid_unit} ({description})")
     return ans
 
 
+def _entry_presence(entry):
+    from ..survey import presence_value
+    survey = entry.get("survey_answer") or {}
+    if survey:
+        return presence_value(survey.get("yn"))
+    value = entry.get("value")
+    explicit = presence_value(value)
+    if explicit is not None:
+        return explicit
+    if value is None or str(value).strip() in ("", "미입력"):
+        return None
+    return True
+
+
+def _valid_link(link, code):
+    return (link is not None and link.resolved and link.independent
+            and code in link.kesg_codes and bool(link.quote.strip()))
+
+
 def _derive_presence(q, mapped, missing, evidence_index) -> Answer:
-    present = [c for c in q.kesg_codes if c in mapped]
+    present = [c for c in q.kesg_codes if c in mapped
+               and _entry_presence(mapped[c]) is not None]
     if present:
         ev = _collect_evidence(present, mapped, evidence_index)
-        if q.evidence_required and not ev:
-            status = "self_reported"
-            rationale = "해당 항목 공시됨 — 증빙 문서 업로드 시 '증빙검증'으로 승격"
+        values = [_entry_presence(mapped[c]) for c in present]
+        surveys = [mapped[c]["survey_answer"] for c in present if mapped[c].get("survey_answer")]
+        # 명시적인 부정은 항상 보존한다. 독립 문서와의 모순은 별도 검토 대상이다.
+        value = False if False in values else True
+        conflict = (value is False and bool(ev)) or (False in values and True in values)
+        status = "flagged" if conflict else "verified" if ev else "self_reported"
+        rationale = f"응답: {'예' if value else '아니오'}"
+        if surveys:
+            rationale += " · 설문 자가신고: " + " / ".join(
+                f"{x['yn']} {x.get('text', '')} [survey_form]".strip() for x in surveys)
+        if ev:
+            rationale += " · 독립 증빙: " + " / ".join(
+                f"{e.file_name}: {e.quote}" for e in ev)
         else:
-            status = "verified" if ev else "self_reported"
-            rationale = f"공시 근거: {', '.join(present)}"
-        return _base(q, value=True, status=status,
-                     evidence_links=ev, rationale=rationale)
-    # 공시 안 됨 — 데이터타입 기준 라우팅(정성 서술필요면 hitl_required, 그 외 insufficient)
+            rationale += " · 관련 독립 증빙 미확인"
+        flags = _evidence_diagnostics(present, mapped, evidence_index)
+        if conflict:
+            flags.append("설문/응답과 독립 문서 내용이 충돌함 — 원문 검토 필요")
+        return _base(q, value=value, status=status, evidence_links=ev,
+                     rationale=rationale, flags=flags, self_reports=surveys)
     status, request, ev_needed = _unresolved(
         q, "관련 공시/규정 미확인 — 환경방침서·인증서 등 증빙 업로드 필요")
     return _base(q, value=None, status=status, rationale=request,
@@ -221,53 +273,56 @@ def _derive_presence(q, mapped, missing, evidence_index) -> Answer:
 
 
 def _derive_multi(q, mapped, missing, evidence_index) -> Answer:
-    ticked: list[str] = []
-    not_covered: list[str] = []
-    ev_codes: list[str] = []
+    ticked, not_covered, unproven, links, flags = [], [], [], [], []
+    details = {}
+    conflict = False
     for label, codes in q.option_map:
-        hit = [c for c in codes if c in mapped]
+        hit = [c for c in codes if c in mapped and _entry_presence(mapped[c]) is True]
+        ev = _collect_evidence(hit, mapped, evidence_index)
+        negative = [c for c in codes if c in mapped and _entry_presence(mapped[c]) is False]
+        if _collect_evidence(negative, mapped, evidence_index):
+            conflict = True
+            flags.append(f"{label}: 부정 응답과 문서 증빙 충돌")
         if hit:
             ticked.append(label)
-            ev_codes.extend(hit)
+            links.extend(ev)
+            if not ev:
+                unproven.append(label)
         else:
             not_covered.append(label)
-
-    if not ticked:
-        return _base(
-            q, value=[], status="insufficient",
-            rationale="해당 영역 공시 없음 — 증빙 업로드 후 자동 체크됨",
-        )
-    ev = _collect_evidence(ev_codes, mapped, evidence_index)
-    status = "verified" if ev else "self_reported"
-    rationale = f"{len(ticked)}개 영역 충족"
+        details[label] = {"selected": bool(hit), "verified": bool(ev),
+                          "evidence_node_ids": [e.node_id for e in ev]}
+        flags.extend(_evidence_diagnostics(hit, mapped, evidence_index))
+    if not ticked and not conflict:
+        return _base(q, value=[], status="insufficient", option_evidence=details,
+                     rationale="해당 영역 공시 없음 — 증빙 업로드 후 자동 체크됨")
+    status = "flagged" if conflict else "self_reported" if unproven else "verified"
+    rationale = f"{len(ticked)}개 영역 응답 · {len(ticked) - len(unproven)}개 영역 증빙 확인"
+    if unproven:
+        rationale += " · 부분 충족, 미입증: " + ", ".join(unproven)
     if not_covered:
-        rationale += f" · 미충족(보완 권장): {', '.join(not_covered)}"
-    ans = _base(q, value=ticked, status=status, evidence_links=ev,
-                rationale=rationale)
-    ans.flags.extend(f"미충족: {lbl}" for lbl in not_covered)
-    return ans
+        rationale += " · 미충족(보완 권장): " + ", ".join(not_covered)
+    flags.extend(f"미입증: {label}" for label in unproven)
+    flags.extend(f"미충족: {label}" for label in not_covered)
+    unique = {e.node_id: e for e in links}
+    return _base(q, value=ticked, status=status, evidence_links=list(unique.values()),
+                 rationale=rationale, flags=flags, option_evidence=details)
+
+
+def _evidence_diagnostics(codes, mapped, evidence_index):
+    diagnostics = []
+    for code in codes:
+        for nid in mapped[code].get("evidence_node_ids", []) or []:
+            if not _valid_link(evidence_index.get(nid), code):
+                diagnostics.append(f"증빙 미확인: {nid} ({code}, 노드/주제/독립 출처 확인 필요)")
+    return diagnostics
 
 
 def _collect_evidence(codes, mapped, evidence_index):
-    """mapped 항목의 evidence_node_ids를 가벼운 EvidenceLink로 변환.
-
-    실제 파일/bbox는 numeric의 DataPoint 경로에서 채워진다. 존재형은
-    노드 ID만 알 수 있는 경우가 많아, 노드 ID를 근거로 남긴다.
-    """
-    from ..ssot.audit_trace import EvidenceLink
-    links: list[EvidenceLink] = []
-    seen: set[str] = set()
-    for c in codes:
-        for nid in (mapped.get(c, {}) or {}).get("evidence_node_ids", []) or []:
-            if nid in seen:
-                continue
-            seen.add(nid)
+    links = {}
+    for code in codes:
+        for nid in mapped.get(code, {}).get("evidence_node_ids", []) or []:
             link = evidence_index.get(nid)
-            if link is not None:
-                links.append(link)
-                continue
-            links.append(EvidenceLink(
-                file_name=str(nid), relative_path="",
-                origin="dart", node_id=str(nid),
-            ))
-    return links
+            if _valid_link(link, code):
+                links[nid] = link
+    return list(links.values())

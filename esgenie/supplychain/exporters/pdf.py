@@ -28,7 +28,7 @@ from typing import Any
 
 from ..frameworks import get_framework
 from ..schema import ResponseSheet
-from ._fonts import resolve_korean_font
+from ._fonts import resolve_korean_font, pdf_safe_text
 
 # status → (라벨, 셀 배경 hex). excel.py status_fill과 색을 맞춤.
 _STATUS_STYLE: dict[str, tuple[str, str]] = {
@@ -159,7 +159,7 @@ def export_response_sheet_pdf(
     from reportlab.lib.styles import ParagraphStyle, getSampleStyleSheet
     from reportlab.lib.units import mm
     from reportlab.platypus import (
-        Paragraph,
+        Paragraph as _Paragraph,
         SimpleDocTemplate,
         Spacer,
         Table,
@@ -167,6 +167,9 @@ def export_response_sheet_pdf(
     )
 
     from ..checklist import checklist_rows
+
+    def Paragraph(text, *args, **kwargs):
+        return _Paragraph(pdf_safe_text(text), *args, **kwargs)
 
     font = resolve_korean_font()
 
@@ -277,7 +280,7 @@ def export_response_sheet_pdf(
                 draft_display += "<br/>출처: " + " / ".join(cite_parts)
             answer_para = Paragraph(draft_display, cell)
         else:
-            answer_para = Paragraph(_fmt_value(a.value), cell)
+            answer_para = Paragraph(a.display_value, cell)
         data.append([
             Paragraph(a.qid, cell),
             Paragraph(a.section, cell),
@@ -357,7 +360,7 @@ def export_response_sheet_pdf(
             a = fig["answer"]
             loc = f" p.{(e.page or 0) + 1}" if e.page is not None else ""
             caption = (f"[{fig['fig_id']}] {e.file_name}{loc} · "
-                       f"{a.qid} {a.question_text} → {_fmt_value(a.value)}")
+                       f"{a.qid} {a.question_text} → {a.display_value}")
             flow.append(KeepTogether([
                 Paragraph(caption, cap),
                 RLImage(BytesIO(png), width=w, height=h),

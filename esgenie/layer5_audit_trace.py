@@ -122,7 +122,7 @@ def build_audit_trace(
         # hitl_status
         hitl_status = (
             "HITL_REQUIRED"
-            if (verification.hitl_required and idx == 0)   # 첫 문장에 마킹
+            if (rv is not None and not rv.evaluation_complete) or (verification.hitl_required and idx == 0)   # 첫 문장에 마킹
             else "ok"
         )
 
@@ -144,8 +144,9 @@ def build_audit_trace(
 
     # 요약 통계
     hitl_count    = sum(1 for s in audit_sentences if s.hitl_status == "HITL_REQUIRED")
-    risk_scores   = [s.risk_vector.risk_score for s in audit_sentences if s.risk_vector]
-    avg_risk      = round(sum(risk_scores) / len(risk_scores), 4) if risk_scores else 0.0
+    risk_scores   = [s.risk_vector.risk_score for s in audit_sentences
+                     if s.risk_vector and s.risk_vector.risk_score is not None]
+    avg_risk      = round(sum(risk_scores) / len(risk_scores), 4) if risk_scores else None
     high_risk_axes: list[str] = []
     if audit_sentences:
         from collections import Counter
@@ -159,6 +160,9 @@ def build_audit_trace(
         "total_sentences":   len(audit_sentences),
         "hitl_count":        hitl_count,
         "avg_risk_score":    avg_risk,
+        "evaluated_sentences": len(risk_scores),
+        "evaluation_complete": bool(audit_sentences) and all(s.risk_vector is not None and s.risk_vector.evaluation_complete for s in audit_sentences),
+        "partial_sentences": sum(s.risk_vector is not None and not s.risk_vector.evaluation_complete for s in audit_sentences),
         "high_risk_axes":    high_risk_axes,
         "refinement_total":  len(verification.refinement_attempts),
         "converged":         verification.converged,

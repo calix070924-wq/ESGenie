@@ -163,7 +163,8 @@ def _merge_ssot_evidence(result: Any, graph: EvidenceGraph) -> None:
 
     ocr_repr: dict[str, EvidenceNode] = {}
     for metric, pool in ocr_pool.items():
-        picked = select_representative_node(metric, pool, report_year=ref_year)
+        reported = [n for n in pool if not str(n.source).startswith("derived_from:")]
+        picked = select_representative_node(metric, reported or pool, report_year=ref_year)
         if picked is not None:
             ocr_repr[metric] = picked
             # D1이 따라 쓸 수 있도록 결정을 그래프에 남긴다(2026-07-26). 공용 함수를
@@ -184,7 +185,17 @@ def _merge_ssot_evidence(result: Any, graph: EvidenceGraph) -> None:
     # 정성 조항(TextNode)도 존재형 문항의 증빙 근거다. 규정집/회의록에서 매핑된
     # K-ESG 코드가 있으면 해당 항목의 evidence_node_ids에 편입한다.
     text_by_code: dict[str, list[str]] = {}
+    survey_answers: dict[str, dict] = {}
+    from ..survey import is_survey, presence_value, apply_survey_answers
     for tnode in graph.text_nodes.values():
+        if is_survey(tnode):
+            value = presence_value(tnode.text)
+            if tnode.kesg_code and value is not None:
+                survey_answers[tnode.kesg_code] = {
+                    "yn": "예" if value else "아니오", "text": tnode.text,
+                    "node_ids": [tnode.id],
+                }
+            continue
         if tnode.kesg_code:
             text_by_code.setdefault(tnode.kesg_code, []).append(tnode.id)
 
@@ -340,6 +351,15 @@ def _merge_ssot_evidence(result: Any, graph: EvidenceGraph) -> None:
     )
     if ocr_resolved:
         result.notes.append(f"OCR 증빙 병합: {ocr_resolved}개 항목에 내부 증빙 노드 부착")
+    # 커버리지도 실제 노드와 독립 출처를 기준으로 계산한다.
+    all_nodes = {**graph.nodes, **graph.text_nodes}
+    for entry in result.mapped.values():
+        entry["independent_evidence_node_ids"] = [
+            nid for nid in entry.get("evidence_node_ids", [])
+            if nid in all_nodes and not is_survey(all_nodes[nid])]
+    apply_survey_answers(result, survey_answers)
+    from .selection import finalize_ledger
+    finalize_ledger(result, graph)
 
 
 # ====================================================================
@@ -364,6 +384,7 @@ def build_rag_with_ssot(
     추가 편입한다.
     """
     from esgenie.embeddings import IndexedDoc
+    from ..survey import is_survey
 
     # ── DART 원문 인덱스 먼저 빌드 (v10 원본 로직) ────────────────────
     corp = rag.build_corp_index(report)
@@ -371,6 +392,8 @@ def build_rag_with_ssot(
     # ── SSOT TextNode 추가 편입 (규정집·회의록 조항) ───────────────────
     text_docs: list[IndexedDoc] = []
     for tnode in graph.text_nodes.values():
+        if is_survey(tnode):
+            continue
         code_tag = f"[{tnode.kesg_code}] " if tnode.kesg_code else ""
         text = (
             f"{code_tag}{tnode.section}: {tnode.text}"
@@ -392,6 +415,8 @@ def build_rag_with_ssot(
     if local_report:
         from esgenie.knowledge.kesg_items import by_code as _by_code
     for node in graph.nodes.values():
+        if is_survey(node):
+            continue
         if node.origin in ("ocr_structured", "ocr_unstructured"):
             # 라이브 비상장 OCR은 표 안의 임의 수치에도 percentage·value 같은
             # 자유형 metric 이름을 붙여 원장에 보존한다. 이 청크들이 넓은 S 쿼리의

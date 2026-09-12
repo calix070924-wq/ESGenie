@@ -184,7 +184,10 @@ def evidence_coverage_pct(extraction: "ExtractionResult") -> float:
         return 0.0
     linked = 0
     for code in in_profile:
-        ev = extraction.mapped[code].get("evidence_node_ids") or []
+        entry = extraction.mapped[code]
+        ev = entry.get("independent_evidence_node_ids", entry.get("evidence_node_ids")) or []
+        if entry.get("source_tier") == "survey":
+            continue
         if any(not str(e).startswith("survey_") for e in ev):
             linked += 1
     return 100.0 * linked / denom

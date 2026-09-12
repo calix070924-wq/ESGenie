@@ -15,6 +15,9 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any
 
+from .schemas import format_score
+from .survey import is_survey
+
 from .config import INDUSTRY_DIR, MAX_REFINEMENT_ITER, SETTINGS
 from .dart_client import CompanyReport, _empty_report, load_report
 from .industry import resolve_module  # 업종 모듈 self-register 포함
@@ -135,49 +138,8 @@ def _apply_survey_answers(
     extraction: ExtractionResult | None,
     survey_answers: dict[str, dict[str, str]] | None,
 ) -> None:
-    if extraction is None or not survey_answers:
-        return
-
-    from esgenie.knowledge.kesg_items import by_code
-
-    injected_in_profile = 0
-    for code, answer in survey_answers.items():
-        if answer.get("yn", "미입력") == "미입력" or code in extraction.mapped:
-            continue
-        item = by_code(code)
-        if item is None:
-            continue
-        in_profile = code in extraction.missing  # missing은 프로파일 내 누락만 담는다
-        extraction.mapped[code] = {
-            "code": code,
-            "name": item.name,
-            "area": item.area,
-            "category": item.category,
-            "data_type": item.data_type,
-            "value": answer.get("yn"),
-            "unit": "",
-            "note": answer.get("text") or None,
-            "evidence_node_ids": [f"survey_{code}"],
-            "beyond_profile": not in_profile,
-        }
-        if in_profile:
-            extraction.missing.remove(code)
-            injected_in_profile += 1
-            if item.area in extraction.by_area:
-                extraction.by_area[item.area]["present"] += 1
-        elif code not in extraction.beyond_profile:
-            # 프로파일 밖 설문 응답 — 커버리지 분모를 왜곡하지 않도록 beyond로 분류
-            extraction.beyond_profile.append(code)
-
-    # 커버리지 재계산 (2026-07-17): 설문으로 채운 항목도 '값 존재' 커버리지에 반영.
-    # 증빙 기준 수치는 evidence_coverage_pct가 분리 담당(survey_* 분자 제외)하므로
-    # 두 지표의 역할이 겹치지 않는다.
-    if injected_in_profile:
-        beyond = set(extraction.beyond_profile)
-        in_profile_mapped = sum(1 for c in extraction.mapped if c not in beyond)
-        denom = in_profile_mapped + len(extraction.missing)
-        if denom:
-            extraction.coverage_pct = 100.0 * in_profile_mapped / denom
+    from .survey import apply_survey_answers
+    apply_survey_answers(extraction, survey_answers)
 
 
 def _build_risk_rows(
@@ -190,10 +152,10 @@ def _build_risk_rows(
     risk_rows: list[dict[str, Any]] = []
 
     for code in target_codes:
-        nodes = graph.nodes_by_metric(code)
-        if not nodes:
+        from .ssot.selection import resolve_fact
+        node = resolve_fact(graph, code)
+        if node is None:
             continue
-        node = nodes[-1]
         axes = detector_5axis.detect_risk_axes(
             f"{code} 값은 {node.value}{node.unit}이다.",
             code,
@@ -204,11 +166,16 @@ def _build_risk_rows(
         risk_rows.append({
             "K-ESG 코드": code,
             "값": f"{node.value} {node.unit}",
+            "보고 연도": node.period,
+            "대표 근거": node.representative_node_ids,
+            "신뢰 정보": node.flags,
             "D1 수치": round(axes["D1"].score, 3),
             "D2 수식어": round(axes["D2"].score, 3),
-            "D3 의미": round(axes["D3"].score, 3),
+            "D3 의미": None if axes["D3"].abstain else round(axes["D3"].score, 3),
             "D5 시계열": round(axes["D5"].score, 3),
-            "종합 위험도": round(axes["aggregate"].score, 3),
+            "종합 위험도": axes["aggregate"].evaluation.get("risk_score"),
+            "평가 상태": axes["aggregate"].detail,
+            "평가 범위": axes["aggregate"].evaluation,
         })
     return d1_scores, risk_rows
 
@@ -388,9 +355,10 @@ def run(
             [
                 node.raw_text
                 for node in evidence_graph.nodes.values()
-                if node.raw_text and by_code(node.metric) is not None
+                if node.raw_text and by_code(node.metric) is not None and not is_survey(node)
             ]
-            + [node.text for node in evidence_graph.text_nodes.values() if node.kesg_code]
+            + [node.text for node in evidence_graph.text_nodes.values()
+               if node.kesg_code and not is_survey(node)]
         )[:20]
         report.source = "ssot_local"
         logger.info("[L0] 비DART 증빙을 빈 CompanyReport에 연결 — 단일 L1~L5 경로 사용")
@@ -453,7 +421,7 @@ def run(
             )
             sections[area] = verify
             logger.info(
-                "[L4] 영역 %s 완료: 위험도=%.1f, 수렴=%s, HITL=%s",
+                "[L4] 영역 %s 완료: 위험도=%s, 수렴=%s, HITL=%s",
                 area,
                 verify.final_score,
                 verify.converged,
@@ -587,7 +555,7 @@ def _cli() -> None:
         )
     for area, verify in output.sections.items():
         hitl = " [HITL_REQUIRED]" if verify.hitl_required else ""
-        print(f"  [{area}] 위험도={verify.final_score:.1f} | {verify.final_band}{hitl}")
+        print(f"  [{area}] 위험도={format_score(verify.final_score)} | {verify.final_band}{hitl}")
     if output.trace_paths:
         print("\nAudit Trace 저장:")
         for area, path in output.trace_paths.items():

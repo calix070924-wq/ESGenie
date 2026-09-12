@@ -15,8 +15,8 @@ from openpyxl import load_workbook
 
 from esgenie.issb_gap import build_issb_gap_report
 from esgenie.layer3_disclosure import DisclosureReport, OrphanRatio
-from esgenie.ssot.audit_trace import DataPoint, EvidenceLink
-from esgenie.ssot.evidence_graph import EvidenceGraph, TextNode
+from esgenie.ssot.audit_trace import DataPoint, EvidenceLink, evidence_link
+from esgenie.ssot.evidence_graph import EvidenceGraph, TextNode, EvidenceNode
 from esgenie.supplychain import (
     all_framework_keys,
     build_response_sheet,
@@ -33,7 +33,7 @@ def _extraction(mapped_codes, missing=()):
         corp_name="한국정밀",
         profile="full",
         profile_label="전체 (61항목)",
-        mapped={c: {"code": c, "name": c, "evidence_node_ids": []} for c in mapped_codes},
+        mapped={c: {"code": c, "name": c, "value": True, "evidence_node_ids": []} for c in mapped_codes},
         missing=list(missing),
     )
 
@@ -43,12 +43,10 @@ def _energy_datapoint():
         kesg_code="E-4-1", kesg_name="에너지 사용량",
         value=128400.0, unit="kWh", period=2025, confidence=0.95,
         verification="verified", d1_risk=0.05,
-        evidence_files=[EvidenceLink(
-            file_name="한전고지서_2025_03.pdf",
-            relative_path="evidence_pack/한전고지서_2025_03.pdf",
-            origin="ocr_structured", bbox=[0.084, 0.234, 0.306, 0.247],
-            page=0, node_id="ocr_E-4-1_2025",
-        )],
+        evidence_files=[evidence_link(EvidenceNode(
+            'ocr_E-4-1_2025', 'E-4-1', 128400.0, 'kWh' if 'E-4-1' == 'E-4-1' else 'tCO2eq',
+            2025, 'ocr', raw_text='E-4-1 실제 수치 128400.0', origin='ocr_structured',
+            source_file='한전고지서_2025_03.pdf', bbox=[0.084, 0.234, 0.306, 0.247], page=0))],
     )
 
 
@@ -57,12 +55,10 @@ def _ghg_datapoint():
         kesg_code="E-3-1", kesg_name="온실가스 배출량(Scope1+2)",
         value=61.39, unit="tCO2eq", period=2025, confidence=0.91,
         verification="estimated", d1_risk=0.12,
-        evidence_files=[EvidenceLink(
-            file_name="한전고지서_2025_03.pdf",
-            relative_path="evidence_pack/한전고지서_2025_03.pdf",
-            origin="ocr_structured", bbox=[0.084, 0.234, 0.306, 0.247],
-            page=0, node_id="LOCAL_E-3-1_2025__derived_ocr_structured",
-        )],
+        evidence_files=[evidence_link(EvidenceNode(
+            'ocr_E-3-1_2025', 'E-3-1', 61.39, 'kWh' if 'E-3-1' == 'E-4-1' else 'tCO2eq',
+            2025, 'ocr', raw_text='E-3-1 실제 수치 61.39', origin='ocr_structured',
+            source_file='한전고지서_2025_03.pdf', bbox=[0.084, 0.234, 0.306, 0.247], page=0))],
     )
 
 
@@ -191,6 +187,7 @@ def test_supplier_claim_treats_e62_as_ratio_even_if_unit_string_is_wrong():
         "name": "폐기물 재활용 비율",
         "value": 29.3,
         "unit": "ton",
+        "unit_recovery": {"raw": "폐기물 재활용 비율 29.3%", "source": "original.pdf"},
         "evidence_node_ids": [],
     }
 

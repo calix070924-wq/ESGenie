@@ -248,10 +248,12 @@ class TestSsotDetectorAbstain:
 class _VerifiedGraph_ssot:
     """ssot detect_d1_numeric용 — nodes_by_metric이 단일 노드를 반환."""
 
+    report_year = 2025
+
     def __init__(self):
-        self._node = SimpleNamespace(
-            id="n1", value=128_400.0, unit="kWh", period=2025, source_file=None,
-        )
+        from esgenie.ssot.evidence_graph import EvidenceNode
+        self._node = EvidenceNode("n1", "E-4-1", 128_400.0, "kWh", 2025, "dart")
+        self.nodes = {self._node.id: self._node}
 
     def nodes_by_metric(self, metric):
         return [self._node]

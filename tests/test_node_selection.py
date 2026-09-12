@@ -334,10 +334,11 @@ class TestLedgerD1Symmetry:
         assert graph.representative_node_ids.get("E-4-1") == tj.id, "원장은 TJ 노드를 채택"
 
         d1 = _score_d1_numeric("에너지 사용량 비중은 12.9 %이다.", graph)
-        assert "단위 비호환 → 폴백" in d1.detail, f"폴백 사실이 기록되지 않았다 — {d1.detail}"
+        assert "단위 불일치" in d1.detail, f"확정 원장 단위와 비교 불가 — {d1.detail}"
+        assert not d1.evidence, "확정 원장과 다른 후보로 폴백해 검증하면 안 됨"
         # 폴백은 기존 동작 그대로 — % claim은 % 노드와 비교된다(TJ 노드와 비교하지 않는다).
         assert d1.score == 0.0, d1.detail
-        assert pct.id in d1.evidence
+        assert pct.id not in d1.evidence  # 확정 원장과 다른 물리량은 검증 근거가 아님
 
 
 # =====================================================================

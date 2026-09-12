@@ -46,7 +46,7 @@ logger = logging.getLogger(__name__)
 # 엔트리 스키마 버전 — 구조를 바꾸면 올린다(옛 파일은 스키마 불일치로 조용히 무시된다).
 #   1 → 2 (2026-07-27): 본문을 '_map_vlm_json 이후 OcrExtraction'에서 'LLM 원본 응답 JSON'으로
 #   교체. 옛 엔트리는 스키마 불일치로 자동 폐기된다(실사용 전이라 재생성 비용 없음).
-SCHEMA_VERSION = 2
+SCHEMA_VERSION = 3
 
 MODE_DISABLED = "disabled"   # 읽기·쓰기 없음 (캐시 OFF 또는 FORCE_MOCK)
 MODE_ON = "on"               # 읽고 없으면 쓴다
@@ -90,7 +90,8 @@ def model_name() -> str:
     return SETTINGS.openai_model
 
 
-def make_key(*, model: str, prompt: str, doc_type: str, llm_input: str) -> str:
+def make_key(*, model: str, prompt: str, doc_type: str, llm_input: str,
+             connection: dict[str, str] | None = None) -> str:
     """캐시 키 — 실제 LLM 입력의 sha256.
 
     Parameters
@@ -103,7 +104,8 @@ def make_key(*, model: str, prompt: str, doc_type: str, llm_input: str) -> str:
     파일 경로·타임스탬프·회사명은 넣지 않는다 — 같은 내용의 파일은 같은 키여야 한다.
     """
     h = hashlib.sha256()
-    for part in (model, prompt, doc_type, llm_input):
+    for part in (str(SCHEMA_VERSION), json.dumps(connection or {}, sort_keys=True),
+                 model, prompt, doc_type, llm_input):
         h.update(str(part).encode("utf-8"))
         h.update(b"\x00")
     return h.hexdigest()
@@ -147,6 +149,7 @@ def store_response(
     doc_type: str,
     source_file: str,
     llm_input: str,
+    connection: dict[str, str] | None = None,
 ) -> None:
     """LLM 원본 응답 JSON을 `{key}.json`으로 저장한다.
 
@@ -160,6 +163,7 @@ def store_response(
             # 언제 채운 캐시인지 — 오래된 캐시를 지울 판단 근거.
             "created_at": datetime.now(timezone.utc).isoformat(timespec="seconds"),
             "model": model,
+            "connection": connection or {},
             "doc_type": doc_type,
             # source_file은 **키에 들어가지 않는다**(같은 내용 = 같은 키). 감사용 기록일 뿐이다.
             "source_file": source_file,

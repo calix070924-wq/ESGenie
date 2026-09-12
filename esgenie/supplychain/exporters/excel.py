@@ -34,7 +34,7 @@ def _fmt_evidence(answer) -> str:
             loc += f" bbox{[round(x, 3) for x in e.bbox]}"
         parts.append(f"{e.file_name}{loc}".strip())
     ev = " / ".join(parts)
-    rationale = answer.rationale
+    rationale = "\n".join([answer.rationale, *answer.flags]).strip()
     if ev and rationale:
         return f"{rationale}\n근거: {ev}"
     return ev or rationale
@@ -150,7 +150,7 @@ def export_response_sheet(sheet: ResponseSheet, out_dir: str | Path) -> str:
                 answer_text += "\n\n출처: " + " / ".join(cite_lines)
             ws.cell(row=r, column=4, value=answer_text).alignment = Alignment(wrap_text=True)
         else:
-            ws.cell(row=r, column=4, value=_fmt_value(a.value)).alignment = Alignment(wrap_text=True)
+            ws.cell(row=r, column=4, value=a.display_value).alignment = Alignment(wrap_text=True)
         badge = ws.cell(row=r, column=5, value=a.badge)
         badge.alignment = Alignment(horizontal="center")
         ws.cell(row=r, column=6, value=_fmt_evidence(a)).alignment = Alignment(wrap_text=True)

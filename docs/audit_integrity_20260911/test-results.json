@@ -1,0 +1,657 @@
+{
+  "baseline": {
+    "summary": {
+      "name": "pytest",
+      "errors": "0",
+      "failures": "51",
+      "skipped": "0",
+      "tests": "92",
+      "time": "1.098",
+      "timestamp": "2026-09-11T14:02:55.520040+09:00",
+      "hostname": "heojeongmin-ui-MacBookAir.local"
+    },
+    "failures": [
+      {
+        "test": "tests.audit_integrity.test_fresh_contracts.TestSurveyAndEvidence.test_survey_only_stays_self_reported[yes]",
+        "trace": "tests/audit_integrity/test_fresh_contracts.py:66: in test_survey_only_stays_self_reported\n    assert ans.status != 'verified', 'A self-report has no independent evidence'\nE   AssertionError: A self-report has no independent evidence\nE   assert 'verified' != 'verified'\nE    +  where 'verified' = Answer(qid='SAQ-E-10', section='Environment', question_text='Q10. 귀사는 법규 준수·지속적 측정·환경성과 개선을 포함한 공식 환경방침을 보유하고 있습니까?', ...01')], flags=[], rationale='공시 근거: E-1-1', evidence_needed=[], draft_text='', draft_citations=[], draft_grounding=None).status"
+      },
+      {
+        "test": "tests.audit_integrity.test_fresh_contracts.TestSurveyAndEvidence.test_survey_only_stays_self_reported[no]",
+        "trace": "tests/audit_integrity/test_fresh_contracts.py:66: in test_survey_only_stays_self_reported\n    assert ans.status != 'verified', 'A self-report has no independent evidence'\nE   AssertionError: A self-report has no independent evidence\nE   assert 'verified' != 'verified'\nE    +  where 'verified' = Answer(qid='SAQ-E-10', section='Environment', question_text='Q10. 귀사는 법규 준수·지속적 측정·환경성과 개선을 포함한 공식 환경방침을 보유하고 있습니까?', ...01')], flags=[], rationale='공시 근거: E-1-1', evidence_needed=[], draft_text='', draft_citations=[], draft_grounding=None).status"
+      },
+      {
+        "test": "tests.audit_integrity.test_fresh_contracts.TestSurveyAndEvidence.test_survey_only_stays_self_reported[yes-with-note]",
+        "trace": "tests/audit_integrity/test_fresh_contracts.py:66: in test_survey_only_stays_self_reported\n    assert ans.status != 'verified', 'A self-report has no independent evidence'\nE   AssertionError: A self-report has no independent evidence\nE   assert 'verified' != 'verified'\nE    +  where 'verified' = Answer(qid='SAQ-E-10', section='Environment', question_text='Q10. 귀사는 법규 준수·지속적 측정·환경성과 개선을 포함한 공식 환경방침을 보유하고 있습니까?', ...01')], flags=[], rationale='공시 근거: E-1-1', evidence_needed=[], draft_text='', draft_citations=[], draft_grounding=None).status"
+      },
+      {
+        "test": "tests.audit_integrity.test_fresh_contracts.TestSurveyAndEvidence.test_survey_only_stays_self_reported[no-with-note]",
+        "trace": "tests/audit_integrity/test_fresh_contracts.py:66: in test_survey_only_stays_self_reported\n    assert ans.status != 'verified', 'A self-report has no independent evidence'\nE   AssertionError: A self-report has no independent evidence\nE   assert 'verified' != 'verified'\nE    +  where 'verified' = Answer(qid='SAQ-E-10', section='Environment', question_text='Q10. 귀사는 법규 준수·지속적 측정·환경성과 개선을 포함한 공식 환경방침을 보유하고 있습니까?', ...01')], flags=[], rationale='공시 근거: E-1-1', evidence_needed=[], draft_text='', draft_citations=[], draft_grounding=None).status"
+      },
+      {
+        "test": "tests.audit_integrity.test_fresh_contracts.TestSurveyAndEvidence.test_policy_requires_resolvable_relevant_evidence[dangling-not_verified]",
+        "trace": "tests/audit_integrity/test_fresh_contracts.py:93: in test_policy_requires_resolvable_relevant_evidence\n    assert ans.status != 'verified'\nE   AssertionError: assert 'verified' != 'verified'\nE    +  where 'verified' = Answer(qid='SAQ-E-10', section='Environment', question_text='Q10. 귀사는 법규 준수·지속적 측정·환경성과 개선을 포함한 공식 환경방침을 보유하고 있습니까?', ...cy')], flags=[], rationale='공시 근거: E-1-1', evidence_needed=[], draft_text='', draft_citations=[], draft_grounding=None).status"
+      },
+      {
+        "test": "tests.audit_integrity.test_fresh_contracts.TestSurveyAndEvidence.test_policy_requires_resolvable_relevant_evidence[wrong-topic-not_verified]",
+        "trace": "tests/audit_integrity/test_fresh_contracts.py:93: in test_policy_requires_resolvable_relevant_evidence\n    assert ans.status != 'verified'\nE   AssertionError: assert 'verified' != 'verified'\nE    +  where 'verified' = Answer(qid='SAQ-E-10', section='Environment', question_text='Q10. 귀사는 법규 준수·지속적 측정·환경성과 개선을 포함한 공식 환경방침을 보유하고 있습니까?', ...cy')], flags=[], rationale='공시 근거: E-1-1', evidence_needed=[], draft_text='', draft_citations=[], draft_grounding=None).status"
+      },
+      {
+        "test": "tests.audit_integrity.test_fresh_contracts.TestSurveyAndEvidence.test_one_valid_link_cannot_verify_other_unsupported_options",
+        "trace": "tests/audit_integrity/test_fresh_contracts.py:108: in test_one_valid_link_cannot_verify_other_unsupported_options\n    assert ans.status != 'verified', 'A single link must not verify all selected options'\nE   AssertionError: A single link must not verify all selected options\nE   assert 'verified' != 'verified'\nE    +  where 'verified' = Answer(qid='SAQ-E-10a', section='Environment', question_text='Q10a. 환경방침이 적용되는 영역을 모두 선택하십시오.', value=['에너지 효율', '재사용·... GHG 배출 보고, 재생에너지, 폐기물 감축, 수질·용수 관리, 대기질', evidence_needed=[], draft_text='', draft_citations=[], draft_grounding=None).status"
+      },
+      {
+        "test": "tests.audit_integrity.test_fresh_contracts.TestNumericalClaims.test_rounding_does_not_cross_ten_percentage_point_threshold",
+        "trace": "tests/audit_integrity/test_fresh_contracts.py:125: in test_rounding_does_not_cross_ten_percentage_point_threshold\n    assert ans.status != 'flagged', 'The documented threshold is at least 10 percentage points'\nE   AssertionError: The documented threshold is at least 10 percentage points\nE   assert 'flagged' != 'flagged'\nE    +  where 'flagged' = Answer(qid='SAQ-E-NUM-WASTE', section='Environment', question_text='(수치) 폐기물 재활용률', value=40, status='flagged', eviden...빙(40.0%)과 10.0%p 괴리 — 과장 의심, 실사 시 소명 필요.', evidence_needed=[], draft_text='', draft_citations=[], draft_grounding=None).status"
+      },
+      {
+        "test": "tests.audit_integrity.test_fresh_contracts.TestNumericalClaims.test_invalid_rates_are_never_reported_as_a_match[evidence-negative]",
+        "trace": "tests/audit_integrity/test_fresh_contracts.py:139: in test_invalid_rates_are_never_reported_as_a_match\n    assert ans.status != 'verified' and not any('자가신고 일치' in f for f in ans.flags)\nE   AssertionError: assert ('verified' != 'verified')\nE    +  where 'verified' = Answer(qid='SAQ-E-NUM-WASTE', section='Environment', question_text='(수치) 폐기물 재활용률', value=-4, status='verified', evide...nale='E-6-2 = -4% (D1 위험 0, 검증=verified)', evidence_needed=[], draft_text='', draft_citations=[], draft_grounding=None).status"
+      },
+      {
+        "test": "tests.audit_integrity.test_fresh_contracts.TestNumericalClaims.test_invalid_rates_are_never_reported_as_a_match[evidence-over-100]",
+        "trace": "tests/audit_integrity/test_fresh_contracts.py:139: in test_invalid_rates_are_never_reported_as_a_match\n    assert ans.status != 'verified' and not any('자가신고 일치' in f for f in ans.flags)\nE   AssertionError: assert ('verified' != 'verified')\nE    +  where 'verified' = Answer(qid='SAQ-E-NUM-WASTE', section='Environment', question_text='(수치) 폐기물 재활용률', value=101.2, status='verified', ev...e='E-6-2 = 101.2% (D1 위험 0, 검증=verified)', evidence_needed=[], draft_text='', draft_citations=[], draft_grounding=None).status"
+      },
+      {
+        "test": "tests.audit_integrity.test_fresh_contracts.TestNumericalClaims.test_invalid_rates_are_never_reported_as_a_match[evidence-nan]",
+        "trace": "tests/audit_integrity/test_fresh_contracts.py:139: in test_invalid_rates_are_never_reported_as_a_match\n    assert ans.status != 'verified' and not any('자가신고 일치' in f for f in ans.flags)\nE   AssertionError: assert ('verified' != 'verified')\nE    +  where 'verified' = Answer(qid='SAQ-E-NUM-WASTE', section='Environment', question_text='(수치) 폐기물 재활용률', value=nan, status='verified', evid...ale='E-6-2 = nan% (D1 위험 0, 검증=verified)', evidence_needed=[], draft_text='', draft_citations=[], draft_grounding=None).status"
+      },
+      {
+        "test": "tests.audit_integrity.test_fresh_contracts.TestNumericalClaims.test_invalid_rates_are_never_reported_as_a_match[claim-negative]",
+        "trace": "tests/audit_integrity/test_fresh_contracts.py:139: in test_invalid_rates_are_never_reported_as_a_match\n    assert ans.status != 'verified' and not any('자가신고 일치' in f for f in ans.flags)\nE   AssertionError: assert ('verified' != 'verified')\nE    +  where 'verified' = Answer(qid='SAQ-E-NUM-WASTE', section='Environment', question_text='(수치) 폐기물 재활용률', value=0, status='verified', eviden...onale='E-6-2 = 0% (D1 위험 0, 검증=verified)', evidence_needed=[], draft_text='', draft_citations=[], draft_grounding=None).status"
+      },
+      {
+        "test": "tests.audit_integrity.test_fresh_contracts.TestNumericalClaims.test_invalid_rates_are_never_reported_as_a_match[claim-over-100]",
+        "trace": "tests/audit_integrity/test_fresh_contracts.py:139: in test_invalid_rates_are_never_reported_as_a_match\n    assert ans.status != 'verified' and not any('자가신고 일치' in f for f in ans.flags)\nE   AssertionError: assert ('verified' != 'verified')\nE    +  where 'verified' = Answer(qid='SAQ-E-NUM-WASTE', section='Environment', question_text='(수치) 폐기물 재활용률', value=100, status='verified', evid...ale='E-6-2 = 100% (D1 위험 0, 검증=verified)', evidence_needed=[], draft_text='', draft_citations=[], draft_grounding=None).status"
+      },
+      {
+        "test": "tests.audit_integrity.test_fresh_contracts.TestNumericalClaims.test_invalid_rates_are_never_reported_as_a_match[claim-nan]",
+        "trace": "tests/audit_integrity/test_fresh_contracts.py:139: in test_invalid_rates_are_never_reported_as_a_match\n    assert ans.status != 'verified' and not any('자가신고 일치' in f for f in ans.flags)\nE   AssertionError: assert ('verified' != 'verified')\nE    +  where 'verified' = Answer(qid='SAQ-E-NUM-WASTE', section='Environment', question_text='(수치) 폐기물 재활용률', value=43.8, status='verified', evi...le='E-6-2 = 43.8% (D1 위험 0, 검증=verified)', evidence_needed=[], draft_text='', draft_citations=[], draft_grounding=None).status"
+      },
+      {
+        "test": "tests.audit_integrity.test_fresh_contracts.TestNumericalClaims.test_energy_claims_respect_units[convert-mwh-to-kwh]",
+        "trace": "tests/audit_integrity/test_fresh_contracts.py:153: in test_energy_claims_respect_units\n    assert (ans.status == 'verified' and has_match) if matching else not has_match\nE   assert False"
+      },
+      {
+        "test": "tests.audit_integrity.test_fresh_contracts.TestNumericalClaims.test_energy_claims_respect_units[convert-kwh-to-mwh]",
+        "trace": "tests/audit_integrity/test_fresh_contracts.py:153: in test_energy_claims_respect_units\n    assert (ans.status == 'verified' and has_match) if matching else not has_match\nE   assert False"
+      },
+      {
+        "test": "tests.audit_integrity.test_fresh_contracts.TestNumericalClaims.test_energy_claims_respect_units[same-number-wrong-scale]",
+        "trace": "tests/audit_integrity/test_fresh_contracts.py:153: in test_energy_claims_respect_units\n    assert (ans.status == 'verified' and has_match) if matching else not has_match\nE   assert False"
+      },
+      {
+        "test": "tests.audit_integrity.test_fresh_contracts.TestNumericalClaims.test_energy_claims_respect_units[incompatible-dimensions]",
+        "trace": "tests/audit_integrity/test_fresh_contracts.py:153: in test_energy_claims_respect_units\n    assert (ans.status == 'verified' and has_match) if matching else not has_match\nE   assert False"
+      },
+      {
+        "test": "tests.audit_integrity.test_fresh_contracts.TestActualSaqPdfParsing.test_embedded_pdf_text_yields_only_valid_actual[target-before-actual]",
+        "trace": "tests/audit_integrity/test_fresh_contracts.py:183: in test_embedded_pdf_text_yields_only_valid_actual\n    assert (claim is None) if expected is None else (claim is not None and claim.value == expected)\nE   assert False"
+      },
+      {
+        "test": "tests.audit_integrity.test_fresh_contracts.TestActualSaqPdfParsing.test_embedded_pdf_text_yields_only_valid_actual[target-only]",
+        "trace": "tests/audit_integrity/test_fresh_contracts.py:183: in test_embedded_pdf_text_yields_only_valid_actual\n    assert (claim is None) if expected is None else (claim is not None and claim.value == expected)\nE   assert False"
+      },
+      {
+        "test": "tests.audit_integrity.test_fresh_contracts.TestActualSaqPdfParsing.test_embedded_pdf_text_yields_only_valid_actual[postfix-target]",
+        "trace": "tests/audit_integrity/test_fresh_contracts.py:183: in test_embedded_pdf_text_yields_only_valid_actual\n    assert (claim is None) if expected is None else (claim is not None and claim.value == expected)\nE   assert False"
+      },
+      {
+        "test": "tests.audit_integrity.test_fresh_contracts.TestActualSaqPdfParsing.test_embedded_pdf_text_yields_only_valid_actual[negative]",
+        "trace": "tests/audit_integrity/test_fresh_contracts.py:183: in test_embedded_pdf_text_yields_only_valid_actual\n    assert (claim is None) if expected is None else (claim is not None and claim.value == expected)\nE   assert False"
+      },
+      {
+        "test": "tests.audit_integrity.test_fresh_contracts.TestActualSaqPdfParsing.test_embedded_pdf_text_yields_only_valid_actual[over-100]",
+        "trace": "tests/audit_integrity/test_fresh_contracts.py:183: in test_embedded_pdf_text_yields_only_valid_actual\n    assert (claim is None) if expected is None else (claim is not None and claim.value == expected)\nE   assert False"
+      },
+      {
+        "test": "tests.audit_integrity.test_fresh_contracts.TestLedgerToResponse.test_selected_ledger_value_survives_export[component]",
+        "trace": "tests/audit_integrity/test_fresh_contracts.py:214: in test_selected_ledger_value_survives_export\n    assert ans.value == 248.5 and points[0].period == 2025\nE   AssertionError: assert (61.2 == 248.5)\nE    +  where 61.2 = Answer(qid='SAQ-E-NUM-ENERGY', section='Environment', question_text='(수치) 연간 에너지 사용량', value=61.2, status='verified', ...너지 사용량 = 61.2TJ (D1 위험 0.0, 검증=verified)', evidence_needed=[], draft_text='', draft_citations=[], draft_grounding=None).value"
+      },
+      {
+        "test": "tests.audit_integrity.test_fresh_contracts.TestLedgerToResponse.test_selected_ledger_value_survives_export[target]",
+        "trace": "tests/audit_integrity/test_fresh_contracts.py:214: in test_selected_ledger_value_survives_export\n    assert ans.value == 248.5 and points[0].period == 2025\nE   AssertionError: assert (61.2 == 248.5)\nE    +  where 61.2 = Answer(qid='SAQ-E-NUM-ENERGY', section='Environment', question_text='(수치) 연간 에너지 사용량', value=61.2, status='verified', ...너지 사용량 = 61.2TJ (D1 위험 0.0, 검증=verified)', evidence_needed=[], draft_text='', draft_citations=[], draft_grounding=None).value"
+      },
+      {
+        "test": "tests.audit_integrity.test_fresh_contracts.TestLedgerToResponse.test_selected_ledger_value_survives_export[future-target]",
+        "trace": "tests/audit_integrity/test_fresh_contracts.py:214: in test_selected_ledger_value_survives_export\n    assert ans.value == 248.5 and points[0].period == 2025\nE   AssertionError: assert (61.2 == 248.5)\nE    +  where 61.2 = Answer(qid='SAQ-E-NUM-ENERGY', section='Environment', question_text='(수치) 연간 에너지 사용량', value=61.2, status='verified', ...너지 사용량 = 61.2TJ (D1 위험 0.0, 검증=verified)', evidence_needed=[], draft_text='', draft_citations=[], draft_grounding=None).value"
+      },
+      {
+        "test": "tests.audit_integrity.test_fresh_contracts.TestLedgerToResponse.test_target_only_cannot_reappear_as_verified_actual",
+        "trace": "tests/audit_integrity/test_fresh_contracts.py:227: in test_target_only_cannot_reappear_as_verified_actual\n    assert ans.value is None and ans.status != 'verified'\nE   AssertionError: assert (61.2 is None)\nE    +  where 61.2 = Answer(qid='SAQ-E-NUM-ENERGY', section='Environment', question_text='(수치) 연간 에너지 사용량', value=61.2, status='verified', ...너지 사용량 = 61.2TJ (D1 위험 0.0, 검증=verified)', evidence_needed=[], draft_text='', draft_citations=[], draft_grounding=None).value"
+      },
+      {
+        "test": "tests.audit_integrity.test_fresh_contracts.TestLedgerToResponse.test_superseded_dart_regex_does_not_return_in_export",
+        "trace": "tests/audit_integrity/test_fresh_contracts.py:243: in test_superseded_dart_regex_does_not_return_in_export\n    assert ans.value == 248.5\nE   AssertionError: assert 999.0 == 248.5\nE    +  where 999.0 = Answer(qid='SAQ-E-NUM-ENERGY', section='Environment', question_text='(수치) 연간 에너지 사용량', value=999.0, status='verified',...지 사용량 = 999.0TJ (D1 위험 0.0, 검증=verified)', evidence_needed=[], draft_text='', draft_citations=[], draft_grounding=None).value"
+      },
+      {
+        "test": "tests.audit_integrity.test_fresh_contracts.TestLedgerToResponse.test_risk_rows_describe_the_selected_total[total-first]",
+        "trace": "tests/audit_integrity/test_fresh_contracts.py:257: in test_risk_rows_describe_the_selected_total\n    assert rows[0]['값'] == '248.5 TJ'\nE   AssertionError: assert '61.2 TJ' == '248.5 TJ'\nE     \nE     - 248.5 TJ\nE     + 61.2 TJ"
+      },
+      {
+        "test": "tests.audit_integrity.test_fresh_contracts.TestProviderCache.test_changed_request_identity_requires_provider[endpoint]",
+        "trace": "tests/audit_integrity/test_fresh_contracts.py:315: in test_changed_request_identity_requires_provider\n    assert len(calls) == 2 and second.meta['cache'] == 'miss'\nE   AssertionError: assert (1 == 2)\nE    +  where 1 = len([{'endpoint': 'https://audit-a.invalid/openai/v1', 'request': {'model': 'synthetic-deployment', 'temperature': 0.3, 'messages': [{'role': 'system', 'content': 'audit system'}, {'role': 'user', 'content': 'audit question'}]}}])"
+      },
+      {
+        "test": "tests.audit_integrity.test_fresh_contracts.TestProposedD3Requirement.test_missing_evidence_is_explicit_abstention[no-chunks]",
+        "trace": "tests/audit_integrity/test_fresh_contracts.py:346: in test_missing_evidence_is_explicit_abstention\n    assert d3.abstain, 'Proposed requirement: distinguish unavailable evidence from measured risk'\nE   AssertionError: Proposed requirement: distinguish unavailable evidence from measured risk\nE   assert False\nE    +  where False = AxisScore(score=0.5, evidence=[], detail='retrieved_chunks 없음 — 중립값', abstain=False, abstain_reason=None).abstain"
+      },
+      {
+        "test": "tests.audit_integrity.test_fresh_contracts.TestProposedD3Requirement.test_missing_evidence_is_explicit_abstention[empty-index]",
+        "trace": "tests/audit_integrity/test_fresh_contracts.py:346: in test_missing_evidence_is_explicit_abstention\n    assert d3.abstain, 'Proposed requirement: distinguish unavailable evidence from measured risk'\nE   AssertionError: Proposed requirement: distinguish unavailable evidence from measured risk\nE   assert False\nE    +  where False = AxisScore(score=1.0, evidence=[], detail='유사 청크 없음', abstain=False, abstain_reason=None).abstain"
+      },
+      {
+        "test": "tests.audit_integrity.test_ingress_replay.test_imported_ocr_output_preserves_selected_actual[component-\\uc5d0\\ub108\\uc9c0 \\uc0ac\\uc6a9\\ub7c9 \\uad6d\\ub0b4 \\uc0ac\\uc5c5\\uc7a5-2025]",
+        "trace": "tests/audit_integrity/test_ingress_replay.py:42: in test_imported_ocr_output_preserves_selected_actual\n    assert ans.value == 248.5\nE   AssertionError: assert 61.2 == 248.5\nE    +  where 61.2 = Answer(qid='SAQ-E-NUM-ENERGY', section='Environment', question_text='(수치) 연간 에너지 사용량', value=61.2, status='verified', ...너지 사용량 = 61.2TJ (D1 위험 0.0, 검증=verified)', evidence_needed=[], draft_text='', draft_citations=[], draft_grounding=None).value"
+      },
+      {
+        "test": "tests.audit_20260909.test_new_audit.test_invalid_rate_cannot_be_verified_as_matching[negative]",
+        "trace": "tests/audit_20260909/test_new_audit.py:45: in test_invalid_rate_cannot_be_verified_as_matching\n    assert ans.status != 'verified' and not any('자가신고 일치' in f for f in ans.flags), describe(ans)\nE   AssertionError: status=verified; value=-5; flags=['자가신고 일치: -5.0% ≈ 증빙 -5.0%']; rationale=E-6-2 = -5% (D1 위험 0, 검증=verified)\nE   assert ('verified' != 'verified')\nE    +  where 'verified' = Answer(qid='Q1', section='E', question_text='E-6-2', value=-5, status='verified', evidence_links=[EvidenceLink(file_na...nale='E-6-2 = -5% (D1 위험 0, 검증=verified)', evidence_needed=[], draft_text='', draft_citations=[], draft_grounding=None).status"
+      },
+      {
+        "test": "tests.audit_20260909.test_new_audit.test_invalid_rate_cannot_be_verified_as_matching[above_100]",
+        "trace": "tests/audit_20260909/test_new_audit.py:45: in test_invalid_rate_cannot_be_verified_as_matching\n    assert ans.status != 'verified' and not any('자가신고 일치' in f for f in ans.flags), describe(ans)\nE   AssertionError: status=verified; value=105; flags=['자가신고 일치: 105.0% ≈ 증빙 105.0%']; rationale=E-6-2 = 105% (D1 위험 0, 검증=verified)\nE   assert ('verified' != 'verified')\nE    +  where 'verified' = Answer(qid='Q1', section='E', question_text='E-6-2', value=105, status='verified', evidence_links=[EvidenceLink(file_n...ale='E-6-2 = 105% (D1 위험 0, 검증=verified)', evidence_needed=[], draft_text='', draft_citations=[], draft_grounding=None).status"
+      },
+      {
+        "test": "tests.audit_20260909.test_new_audit.test_invalid_rate_cannot_be_verified_as_matching[nan_evidence]",
+        "trace": "tests/audit_20260909/test_new_audit.py:45: in test_invalid_rate_cannot_be_verified_as_matching\n    assert ans.status != 'verified' and not any('자가신고 일치' in f for f in ans.flags), describe(ans)\nE   AssertionError: status=verified; value=nan; flags=['자가신고 일치: 29.3% ≈ 증빙 nan%']; rationale=E-6-2 = nan% (D1 위험 0, 검증=verified)\nE   assert ('verified' != 'verified')\nE    +  where 'verified' = Answer(qid='Q1', section='E', question_text='E-6-2', value=nan, status='verified', evidence_links=[EvidenceLink(file_n...ale='E-6-2 = nan% (D1 위험 0, 검증=verified)', evidence_needed=[], draft_text='', draft_citations=[], draft_grounding=None).status"
+      },
+      {
+        "test": "tests.audit_20260909.test_new_audit.test_invalid_rate_cannot_be_verified_as_matching[nan_claim]",
+        "trace": "tests/audit_20260909/test_new_audit.py:45: in test_invalid_rate_cannot_be_verified_as_matching\n    assert ans.status != 'verified' and not any('자가신고 일치' in f for f in ans.flags), describe(ans)\nE   AssertionError: status=verified; value=29.3; flags=['자가신고 일치: nan% ≈ 증빙 29.3%']; rationale=E-6-2 = 29.3% (D1 위험 0, 검증=verified)\nE   assert ('verified' != 'verified')\nE    +  where 'verified' = Answer(qid='Q1', section='E', question_text='E-6-2', value=29.3, status='verified', evidence_links=[EvidenceLink(file_...le='E-6-2 = 29.3% (D1 위험 0, 검증=verified)', evidence_needed=[], draft_text='', draft_citations=[], draft_grounding=None).status"
+      },
+      {
+        "test": "tests.audit_20260909.test_new_audit.test_equivalent_energy_units_are_not_a_discrepancy",
+        "trace": "tests/audit_20260909/test_new_audit.py:50: in test_equivalent_energy_units_are_not_a_discrepancy\n    assert ans.status != 'flagged', describe(ans)\nE   AssertionError: status=flagged; value=1000; flags=['D1 불일치: 자가신고 1.0MWh ↔ 증빙 1000.0kWh (Δ999.0%p, manual)']; rationale=E-4-1 = 1000kWh (D1 위험 0, 검증=verified) · ⚠ 자가주장(1.0MWh)이 증빙(1000.0kWh)과 999.0%p 괴리 — 과장 의심, 실사 시 소명 필요.\nE   assert 'flagged' != 'flagged'\nE    +  where 'flagged' = Answer(qid='Q1', section='E', question_text='E-4-1', value=1000, status='flagged', evidence_links=[EvidenceLink(file_n...0.0kWh)과 999.0%p 괴리 — 과장 의심, 실사 시 소명 필요.', evidence_needed=[], draft_text='', draft_citations=[], draft_grounding=None).status"
+      },
+      {
+        "test": "tests.audit_20260909.test_new_audit.test_equal_numbers_with_different_energy_units_are_not_matching",
+        "trace": "tests/audit_20260909/test_new_audit.py:55: in test_equal_numbers_with_different_energy_units_are_not_matching\n    assert not any('자가신고 일치' in f for f in ans.flags), describe(ans)\nE   AssertionError: status=verified; value=1; flags=['자가신고 일치: 1.0MWh ≈ 증빙 1.0kWh']; rationale=E-4-1 = 1kWh (D1 위험 0, 검증=verified)\nE   assert not True\nE    +  where True = any(<generator object test_equal_numbers_with_different_energy_units_are_not_matching.<locals>.<genexpr> at 0x10cae8380>)"
+      },
+      {
+        "test": "tests.audit_20260909.test_new_audit.test_dangling_evidence_id_does_not_prove_policy",
+        "trace": "tests/audit_20260909/test_new_audit.py:70: in test_dangling_evidence_id_does_not_prove_policy\n    assert ans.status != 'verified', describe(ans)\nE   AssertionError: status=verified; value=True; flags=[]; rationale=공시 근거: E-1-1\nE   assert 'verified' != 'verified'\nE    +  where 'verified' = Answer(qid='Q1', section='E', question_text='E-1-1', value=True, status='verified', evidence_links=[EvidenceLink(file_...de')], flags=[], rationale='공시 근거: E-1-1', evidence_needed=[], draft_text='', draft_citations=[], draft_grounding=None).status"
+      },
+      {
+        "test": "tests.audit_20260909.test_new_audit.test_explicit_negative_policy_answer_is_not_changed_to_yes",
+        "trace": "tests/audit_20260909/test_new_audit.py:77: in test_explicit_negative_policy_answer_is_not_changed_to_yes\n    assert ans.value is not True, describe(ans)\nE   AssertionError: status=verified; value=True; flags=[]; rationale=공시 근거: E-1-1\nE   assert True is not True\nE    +  where True = Answer(qid='Q1', section='E', question_text='E-1-1', value=True, status='verified', evidence_links=[EvidenceLink(file_...cy')], flags=[], rationale='공시 근거: E-1-1', evidence_needed=[], draft_text='', draft_citations=[], draft_grounding=None).value"
+      },
+      {
+        "test": "tests.audit_20260909.test_new_audit.test_saq_actual_claim_extraction[target_before_actual]",
+        "trace": "tests/audit_20260909/test_new_audit.py:108: in test_saq_actual_claim_extraction\n    assert actual is not None and actual.value == expected, f'expected={expected}; actual={actual}'\nE   AssertionError: expected=29.3; actual=SupplierClaim(code='E-6-2', value=92.0, unit='%', raw='재활용률 목표 92%', source='saq:audit_saq.pdf')\nE   assert (SupplierClaim(code='E-6-2', value=92.0, unit='%', raw='재활용률 목표 92%', source='saq:audit_saq.pdf') is not None and 92.0 == 29.3)\nE    +  where 92.0 = SupplierClaim(code='E-6-2', value=92.0, unit='%', raw='재활용률 목표 92%', source='saq:audit_saq.pdf').value"
+      },
+      {
+        "test": "tests.audit_20260909.test_new_audit.test_saq_actual_claim_extraction[target_only]",
+        "trace": "tests/audit_20260909/test_new_audit.py:106: in test_saq_actual_claim_extraction\n    assert actual is None, f'Invalid or target-only text promoted to actual: {actual}'\nE   AssertionError: Invalid or target-only text promoted to actual: SupplierClaim(code='E-6-2', value=92.0, unit='%', raw='재활용률 목표 92%', source='saq:audit_saq.pdf')\nE   assert SupplierClaim(code='E-6-2', value=92.0, unit='%', raw='재활용률 목표 92%', source='saq:audit_saq.pdf') is None"
+      },
+      {
+        "test": "tests.audit_20260909.test_new_audit.test_saq_actual_claim_extraction[negative]",
+        "trace": "tests/audit_20260909/test_new_audit.py:106: in test_saq_actual_claim_extraction\n    assert actual is None, f'Invalid or target-only text promoted to actual: {actual}'\nE   AssertionError: Invalid or target-only text promoted to actual: SupplierClaim(code='E-6-2', value=5.0, unit='%', raw='재활용률 -5%', source='saq:audit_saq.pdf')\nE   assert SupplierClaim(code='E-6-2', value=5.0, unit='%', raw='재활용률 -5%', source='saq:audit_saq.pdf') is None"
+      },
+      {
+        "test": "tests.audit_20260909.test_new_audit.test_saq_actual_claim_extraction[above_100]",
+        "trace": "tests/audit_20260909/test_new_audit.py:106: in test_saq_actual_claim_extraction\n    assert actual is None, f'Invalid or target-only text promoted to actual: {actual}'\nE   AssertionError: Invalid or target-only text promoted to actual: SupplierClaim(code='E-6-2', value=105.0, unit='%', raw='재활용률 105%', source='saq:audit_saq.pdf')\nE   assert SupplierClaim(code='E-6-2', value=105.0, unit='%', raw='재활용률 105%', source='saq:audit_saq.pdf') is None"
+      },
+      {
+        "test": "tests.audit_20260909.test_new_audit.test_selected_actual_survives_audit_and_response_export",
+        "trace": "tests/audit_20260909/test_new_audit.py:123: in test_selected_actual_survives_audit_and_response_export\n    assert ans.value == 100, f'L1 representative=actual 100; exported {describe(ans)}'\nE   AssertionError: L1 representative=actual 100; exported status=verified; value=60; flags=[]; rationale=에너지 사용량 = 60TJ (D1 위험 0, 검증=verified)\nE   assert 60 == 100\nE    +  where 60 = Answer(qid='Q1', section='E', question_text='E-4-1', value=60, status='verified', evidence_links=[EvidenceLink(file_na...e='에너지 사용량 = 60TJ (D1 위험 0, 검증=verified)', evidence_needed=[], draft_text='', draft_citations=[], draft_grounding=None).value"
+      },
+      {
+        "test": "tests.audit_20260909.test_new_audit.test_future_target_cannot_replace_reporting_year_actual",
+        "trace": "tests/audit_20260909/test_new_audit.py:132: in test_future_target_cannot_replace_reporting_year_actual\n    assert (point.period,point.value)==(2025,100), point.to_dict()\nE   AssertionError: {'kesg_code': 'E-4-1', 'kesg_name': '에너지 사용량', 'value': 60, 'unit': 'TJ', ...}\nE   assert (2030, 60) == (2025, 100)\nE     \nE     At index 0 diff: 2030 != 2025\nE     Use -v to get more diff"
+      },
+      {
+        "test": "tests.audit_20260909.test_new_audit.test_missing_semantic_evidence_is_abstention_requirement",
+        "trace": "tests/audit_20260909/test_new_audit.py:144: in test_missing_semantic_evidence_is_abstention_requirement\n    assert d3.abstain, f'D3={d3.to_dict()}; aggregate={rv.aggregate}'\nE   AssertionError: D3={'score': 0.5, 'evidence': [], 'detail': 'retrieved_chunks 없음 — 중립값', 'abstain': False, 'abstain_reason': None}; aggregate={'risk_score': 0.125, 'level': 'low', 'top_axis': 'D3_semantic', 'abstained_axes': []}\nE   assert False\nE    +  where False = AxisScore(score=0.5, evidence=[], detail='retrieved_chunks 없음 — 중립값', abstain=False, abstain_reason=None).abstain"
+      },
+      {
+        "test": "tests.audit_20260909.test_new_audit.test_production_survey_input_cannot_create_verified_yes[\\uc608]",
+        "trace": "tests/audit_20260909/test_new_audit.py:185: in test_production_survey_input_cannot_create_verified_yes\n    assert ans.status != 'verified', f'survey={reply}; mapped={extraction.mapped}; {describe(ans)}'\nE   AssertionError: survey=예; mapped={'E-1-1': {'code': 'E-1-1', 'name': '환경경영 목표 수립', 'area': 'E', 'category': '환경경영 목표', 'data_type': '정성', 'value': '예', 'unit': '', 'note': None, 'evidence_node_ids': ['survey_E-1-1'], 'beyond_profile': False}}; status=verified; value=True; flags=[]; rationale=공시 근거: E-1-1\nE   assert 'verified' != 'verified'\nE    +  where 'verified' = Answer(qid='Q1', section='E', question_text='E-1-1', value=True, status='verified', evidence_links=[EvidenceLink(file_...-1')], flags=[], rationale='공시 근거: E-1-1', evidence_needed=[], draft_text='', draft_citations=[], draft_grounding=None).status"
+      },
+      {
+        "test": "tests.audit_20260909.test_new_audit.test_production_survey_input_cannot_create_verified_yes[\\uc544\\ub2c8\\uc624]",
+        "trace": "tests/audit_20260909/test_new_audit.py:185: in test_production_survey_input_cannot_create_verified_yes\n    assert ans.status != 'verified', f'survey={reply}; mapped={extraction.mapped}; {describe(ans)}'\nE   AssertionError: survey=아니오; mapped={'E-1-1': {'code': 'E-1-1', 'name': '환경경영 목표 수립', 'area': 'E', 'category': '환경경영 목표', 'data_type': '정성', 'value': '아니오', 'unit': '', 'note': None, 'evidence_node_ids': ['survey_E-1-1'], 'beyond_profile': False}}; status=verified; value=True; flags=[]; rationale=공시 근거: E-1-1\nE   assert 'verified' != 'verified'\nE    +  where 'verified' = Answer(qid='Q1', section='E', question_text='E-1-1', value=True, status='verified', evidence_links=[EvidenceLink(file_...-1')], flags=[], rationale='공시 근거: E-1-1', evidence_needed=[], draft_text='', draft_citations=[], draft_grounding=None).status"
+      },
+      {
+        "test": "tests.audit_20260909.test_new_audit.test_production_l1_selection_survives_l5_export",
+        "trace": "tests/audit_20260909/test_new_audit.py:212: in test_production_l1_selection_survives_l5_export\n    assert ans.value == extraction.mapped['E-4-1']['value'], (\nE   AssertionError: L1=100; d1_scores={'E-4-1': 0.0}; L5 response=status=verified; value=60; flags=[]; rationale=에너지 사용량 = 60TJ (D1 위험 0.0, 검증=verified)\nE   assert 60 == 100\nE    +  where 60 = Answer(qid='Q1', section='E', question_text='E-4-1', value=60, status='verified', evidence_links=[EvidenceLink(file_na...'에너지 사용량 = 60TJ (D1 위험 0.0, 검증=verified)', evidence_needed=[], draft_text='', draft_citations=[], draft_grounding=None).value"
+      }
+    ]
+  },
+  "first_full": {
+    "summary": {
+      "name": "pytest",
+      "errors": "0",
+      "failures": "10",
+      "skipped": "0",
+      "tests": "1215",
+      "time": "44.170",
+      "timestamp": "2026-09-11T15:05:36.554245+09:00",
+      "hostname": "heojeongmin-ui-MacBookAir.local"
+    },
+    "failures": [
+      {
+        "test": "tests.test_abstain_ab_determinism.test_only_abstained_and_unflagged_case_is_excluded_in_on",
+        "trace": "def test_only_abstained_and_unflagged_case_is_excluded_in_on():\n        on_rows = {r[\"id\"]: r for r in _rows_from_records(_mixed_records())}\n        off_rows = {r[\"id\"]: r for r in with_abstain_ignored(list(on_rows.values()))}\n    \n        # A3: abstain 축 있음 + D2도 안 flag → ON에서 기권.\n>       assert on_rows[\"A3\"][\"abstained\"] is True\nE       assert False is True\n\ntests/test_abstain_ab_determinism.py:111: AssertionError"
+      },
+      {
+        "test": "tests.test_abstain_ab_determinism.test_coverage_and_overall_formula_from_single_cache",
+        "trace": "def test_coverage_and_overall_formula_from_single_cache():\n        on_rows = _rows_from_records(_mixed_records())\n        off_rows = with_abstain_ignored(on_rows)\n    \n        on_cov = abstain_coverage(on_rows)\n        off_cov = abstain_coverage(off_rows)\n    \n        # 4건 중 1건(A3)만 기권 → ON coverage = 3/4.\n>       assert on_cov[\"coverage\"] == 0.75\nE       assert 1.0 == 0.75\n\ntests/test_abstain_ab_determinism.py:130: AssertionError"
+      },
+      {
+        "test": "tests.test_abstain_ab_determinism.test_with_abstain_ignored_after_simulate_vector_roundtrip",
+        "trace": "def test_with_abstain_ignored_after_simulate_vector_roundtrip():\n        \"\"\"judge_cache.json → _simulate_vector → _case_rows → with_abstain_ignored\n        전체 배관이 abstain 표식만 무시하고 판정 자체는 바꾸지 않는지 확인.\"\"\"\n        rec = _rec(\"C1\", label=\"clean\", d1_score=0.0, d1_abstain=True, d1_reason=\"no_evidence\", d2_score=0.1)\n        rv = _simulate_vector(rec, trigger=_CFG[\"trigger\"], rule_weight=_CFG[\"rule_weight\"])\n        assert rv.D1_numeric.abstain is True\n    \n        on_rows = _case_rows([rec], _CFG)\n        off_rows = with_abstain_ignored(on_rows)\n    \n>       assert on_rows[0][\"abstained\"] is True\nE       assert False is True\n\ntests/test_abstain_ab_determinism.py:170: AssertionError"
+      },
+      {
+        "test": "tests.test_abstain_probe.test_deferral_breakdown_consistency",
+        "trace": "def test_deferral_breakdown_consistency():\n        rows = _run_rows()\n        brk = probe_mod._deferral_breakdown(rows)\n        assert brk[\"saves\"] + brk[\"wastes\"] == brk[\"deferred\"]\n        if brk[\"deferred\"]:\n>           assert abs(brk[\"deferral_precision\"] - brk[\"saves\"] / brk[\"deferred\"]) < 1e-9\nE           assert 4.545454545457073e-05 < 1e-09\nE            +  where 4.545454545457073e-05 = abs((0.5455 - (6 / 11)))\n\ntests/test_abstain_probe.py:62: AssertionError"
+      },
+      {
+        "test": "tests.test_batch_b_omission.test_real_no_evidence_fires_without_injection",
+        "trace": "def test_real_no_evidence_fires_without_injection():\n        rows = _run_rows()\n        ne = [r for r in rows if r[\"d1_reason\"] == \"no_evidence\"]\n        assert len(ne) >= 10  # SME 실공백에서 다수 자연 발동\n        on = abstain_coverage(rows)\n>       assert on[\"abstains\"][\"by_reason\"][\"no_evidence\"] == len(\n            [r for r in rows if r[\"abstained\"] and \"no_evidence\" in r[\"abstain_reasons\"]]\n        )\nE       AssertionError: assert 34 == 19\nE        +  where 19 = len([{'id': 'B-GW-01', 'ticker': 'SME001', 'category': 'no_evidence_greenwash', 'label': 'greenwash', ...}, {'id': 'B-GW-0...ash', ...}, {'id': 'B-GW-06', 'ticker': 'SME002', 'category': 'no_evidence_greenwash', 'label': 'greenwash', ...}, ...])\n\ntests/test_batch_b_omission.py:50: AssertionError"
+      },
+      {
+        "test": "tests.test_d1_abstain.TestSsotDetectorAbstain.test_unmatched_value_is_not_abstain",
+        "trace": "self = <tests.test_d1_abstain.TestSsotDetectorAbstain object at 0x112086ad0>\n\n    def test_unmatched_value_is_not_abstain(self):\n        \"\"\"미일치(근거는 있으나 값이 다름)는 기권이 아니라 실제 위험 — 건드리지 않는다.\"\"\"\n        graph = _VerifiedGraph_ssot()\n>       axis = detect_d1_numeric(\"사용량은 999,999 kWh였습니다.\", \"E-4-1\", graph)\n               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n\ntests/test_d1_abstain.py:243: \n_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ \nesgenie/ssot/detector_5axis.py:117: in detect_d1_numeric\n    selected = comparison_node(graph, kesg_code)\n               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nesgenie/ssot/selection.py:171: in comparison_node\n    fact = resolve_fact(graph, code)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^\nesgenie/ssot/selection.py:95: in resolve_fact\n    return _from_nodes(graph, code, select_fact_nodes(graph, code))\n                                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nesgenie/ssot/selection.py:52: in select_fact_nodes\n    reported = [n for n in nodes if not _is_derived(n)]\n                                        ^^^^^^^^^^^^^^\n_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ \n\nnode = namespace(id='n1', value=128400.0, unit='kWh', period=2025, source_file=None)\n\n    def _is_derived(node):\n>       return str(node.source).startswith(\"derived_from:\")\n                   ^^^^^^^^^^^\nE       AttributeError: 'types.SimpleNamespace' object has no attribute 'source'\n\nesgenie/ssot/selection.py:43: AttributeError"
+      },
+      {
+        "test": "tests.test_kesg_self_diagnosis.test_sample_regression_full_catalog",
+        "trace": "tmp_path = PosixPath('/private/var/folders/gv/v1k12j3j7md1v39gzbkw5qg40000gn/T/pytest-of-heojeongmin/pytest-25/test_sample_regression_full_ca0')\n\n    def test_sample_regression_full_catalog(tmp_path: Path):\n        extraction, data_points = _sample_supplier()\n        sheet = build_response_sheet(\n            \"kesg28\", corp_name=\"한울정밀\",\n            extraction=extraction, data_points=data_points,\n        )\n    \n        # 1) 빈 섹션 없음 + 전 항목 유효 status\n        assert {a.section for a in sheet.answers} == {\"정보공시\", \"환경\", \"사회\", \"지배구조\"}\n        assert all(a.status in _VALID for a in sheet.answers)\n    \n        # 2) 실제로 verified/self_reported 가 생겨 자동응답% > 0\n        statuses = {a.status for a in sheet.answers}\n        assert \"verified\" in statuses or \"self_reported\" in statuses\n        assert sheet.auto_pct > 0.0\n    \n        # 3) 에너지(E-4-1) 정량 증빙 → verified\n        energy = next(a for a in sheet.answers if a.qid == \"KESG-E-4-1\")\n        assert energy.value == 128400.0\n>       assert energy.status == \"verified\"\nE       AssertionError: assert 'self_reported' == 'verified'\nE         \nE         - verified\nE         + self_reported\n\ntests/test_kesg_self_diagnosis.py:129: AssertionError"
+      },
+      {
+        "test": "tests.test_ocr_bbox_norm.test_upstage_bbox_from_points_and_page",
+        "trace": "monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x1123c6900>\ntmp_path = PosixPath('/private/var/folders/gv/v1k12j3j7md1v39gzbkw5qg40000gn/T/pytest-of-heojeongmin/pytest-25/test_upstage_bbox_from_points_0')\n\n    def test_upstage_bbox_from_points_and_page(monkeypatch, tmp_path):\n        # 이 테스트는 라이브 키 경로(HTTP 모킹)를 검증하므로 전역 force_mock을 끈다.\n        monkeypatch.setattr(\"esgenie.config.SETTINGS.force_mock\", False)\n        monkeypatch.setenv(\"UPSTAGE_API_KEY\", \"k\")\n        # coordinates는 이미 페이지 기준 0~1 정규화된 네 꼭짓점.\n        body = {\n            \"content\": {\"text\": \"사용전력량 142,560 kWh\"},\n            \"elements\": [\n                {\n                    \"id\": 0,\n                    \"category\": \"paragraph\",\n                    \"page\": 1,\n                    \"content\": {\"text\": \"사용전력량 142,560 kWh\"},\n                    \"coordinates\": [\n                        {\"x\": 0.1, \"y\": 0.1},\n                        {\"x\": 0.5, \"y\": 0.1},\n                        {\"x\": 0.5, \"y\": 0.2},\n                        {\"x\": 0.1, \"y\": 0.2},\n                    ],\n                }\n            ],\n        }\n        captured = _patch_post(monkeypatch, body)\n    \n        f = tmp_path / \"bill.pdf\"\n        f.write_bytes(b\"%PDF-1.4 fake\")\n>       tokens = ocr_router._call_upstage_dp(str(f))\n                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n\ntests/test_ocr_bbox_norm.py:59: \n_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ \nesgenie/ssot/ocr_router.py:733: in _call_upstage_dp\n    return _call_upstage_dp_payload(\n_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ \n\nfile_path = '/private/var/folders/gv/v1k12j3j7md1v39gzbkw5qg40000gn/T/pytest-of-heojeongmin/pytest-25/test_upstage_bbox_from_points_0/bill.pdf'\nocr_mode = 'force', pages = None, model = None\n\n    def _call_upstage_dp_payload(\n        file_path: str,\n        *,\n        ocr_mode: str = \"force\",\n        pages: str | None = None,\n        model: str | None = None,\n    ) -> dict[str, Any]:\n        \"\"\"Upstage Document Parse REST 호출 → 토큰 + 표(HTML 복원) 메타데이터.\n    \n        POST multipart/form-data:\n          files: document=<파일 bytes>\n          data : model=UPSTAGE_DP_MODEL(기본 document-parse-260630), ocr=force|auto, output_formats=['html','text'],\n                 coordinates=true, base64_encoding=[]\n        응답 JSON: {content, elements:[{id,category,content:{html,text},page,coordinates}], usage}\n          · 텍스트 토큰: 모든 요소의 content.text + coordinates(외접 bbox) + page(0-기준 변환)\n          · 표: category=='table' 요소의 content.html을 셀 그리드로 파싱 → ExtractedTable\n        ocr_mode 'force'는 텍스트 레이어 유무와 무관하게 항상 OCR(정확도 우선, 스캔본 안전).\n        pages=\"1\"이면 PDF 첫 장만 잘라 전송(라우팅 프리뷰 비용 최소화).\n        \"\"\"\n        import requests\n        key = _get_upstage_key()\n        if not key:\n            raise RuntimeError(\"UPSTAGE_API_KEY 미설정\")\n    \n        doc_bytes: bytes | None = None\n        if pages == \"1\":\n            doc_bytes = _slice_first_page_pdf(file_path)\n        if doc_bytes is None:\n            doc_bytes = Path(file_path).read_bytes()\n    \n        headers = {\"Authorization\": f\"Bearer {key}\"}\n        data = {\n            \"model\": model or UPSTAGE_DP_MODEL,\n            \"ocr\": ocr_mode,\n            \"output_formats\": \"['html', 'text']\",\n            \"coordinates\": \"true\",\n            \"base64_encoding\": \"[]\",\n        }\n        files = {\"document\": (Path(file_path).name, doc_bytes)}\n    \n        resp = requests.post(_upstage_dp_url(), headers=headers, data=data, files=files, timeout=120)\n        resp.raise_for_status()\n        body = resp.json()\n        elements = body.get(\"elements\", []) or []\n    \n        tokens: list[dict[str, Any]] = []\n        tables: list[ExtractedTable] = []\n        for el in elements:\n            content = el.get(\"content\") or {}\n            text = str(content.get(\"text\") or \"\").strip()\n            page0 = int(el.get(\"page\", 1) or 1) - 1   # 1-기준 → 0-기준\n            bbox = _norm_bbox_from_points(el.get(\"coordinates\"))\n            if text:\n                tokens.append({\"text\": text, \"bbox\": bbox, \"page\": page0})\n            if el.get(\"category\") == \"table\":\n                html = str(content.get(\"html\") or \"\")\n                table = _parse_html_table(\n                    html,\n                    table_id=f\"upstage_table_{len(tables)}\",\n                    page=page0,\n                    bbox=bbox,\n                )\n                if table is not None:\n                    tables.append(table)\n    \n        response_meta = {\n>           \"status_code\": resp.status_code, \"requested_model\": model or UPSTAGE_DP_MODEL,\n                           ^^^^^^^^^^^^^^^^\n            \"returned_model\": body.get(\"model\"), \"usage\": body.get(\"usage\"),\n            \"request_id\": resp.headers.get(\"x-request-id\") or resp.headers.get(\"request-id\"),\n            \"token_count\": len(tokens), \"table_count\": len(tables),\n            \"coordinate_count\": sum(t.get(\"bbox\") is not None for t in tokens),\n        }\nE       AttributeError: '_Resp' object has no attribute 'status_code'\n\nesgenie/ssot/ocr_router.py:803: AttributeError"
+      },
+      {
+        "test": "tests.test_ocr_bbox_norm.test_upstage_table_html_parsed_to_cells",
+        "trace": "monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x112278980>\ntmp_path = PosixPath('/private/var/folders/gv/v1k12j3j7md1v39gzbkw5qg40000gn/T/pytest-of-heojeongmin/pytest-25/test_upstage_table_html_parsed0')\n\n    def test_upstage_table_html_parsed_to_cells(monkeypatch, tmp_path):\n        # 이 테스트는 라이브 키 경로(HTTP 모킹)를 검증하므로 전역 force_mock을 끈다.\n        monkeypatch.setattr(\"esgenie.config.SETTINGS.force_mock\", False)\n        monkeypatch.setenv(\"UPSTAGE_API_KEY\", \"k\")\n        html = (\n            \"<table>\"\n            \"<tr><th>항목</th><th>값</th></tr>\"\n            \"<tr><td>전력</td><td>100</td></tr>\"\n            \"<tr><td>합계</td><td>180</td></tr>\"\n            \"</table>\"\n        )\n        body = {\n            \"content\": {\"text\": \"...\"},\n            \"elements\": [\n                {\n                    \"id\": 0,\n                    \"category\": \"table\",\n                    \"page\": 1,\n                    \"content\": {\"text\": \"항목 값 전력 100 합계 180\", \"html\": html},\n                    \"coordinates\": [\n                        {\"x\": 0.1, \"y\": 0.1},\n                        {\"x\": 0.9, \"y\": 0.1},\n                        {\"x\": 0.9, \"y\": 0.6},\n                        {\"x\": 0.1, \"y\": 0.6},\n                    ],\n                }\n            ],\n        }\n        _patch_post(monkeypatch, body)\n    \n        f = tmp_path / \"table.pdf\"\n        f.write_bytes(b\"%PDF-1.4 fake\")\n>       payload = ocr_router._call_upstage_dp_payload(str(f), ocr_mode=\"force\")\n                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n\ntests/test_ocr_bbox_norm.py:109: \n_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ \n\nfile_path = '/private/var/folders/gv/v1k12j3j7md1v39gzbkw5qg40000gn/T/pytest-of-heojeongmin/pytest-25/test_upstage_table_html_parsed0/table.pdf'\nocr_mode = 'force', pages = None, model = None\n\n    def _call_upstage_dp_payload(\n        file_path: str,\n        *,\n        ocr_mode: str = \"force\",\n        pages: str | None = None,\n        model: str | None = None,\n    ) -> dict[str, Any]:\n        \"\"\"Upstage Document Parse REST 호출 → 토큰 + 표(HTML 복원) 메타데이터.\n    \n        POST multipart/form-data:\n          files: document=<파일 bytes>\n          data : model=UPSTAGE_DP_MODEL(기본 document-parse-260630), ocr=force|auto, output_formats=['html','text'],\n                 coordinates=true, base64_encoding=[]\n        응답 JSON: {content, elements:[{id,category,content:{html,text},page,coordinates}], usage}\n          · 텍스트 토큰: 모든 요소의 content.text + coordinates(외접 bbox) + page(0-기준 변환)\n          · 표: category=='table' 요소의 content.html을 셀 그리드로 파싱 → ExtractedTable\n        ocr_mode 'force'는 텍스트 레이어 유무와 무관하게 항상 OCR(정확도 우선, 스캔본 안전).\n        pages=\"1\"이면 PDF 첫 장만 잘라 전송(라우팅 프리뷰 비용 최소화).\n        \"\"\"\n        import requests\n        key = _get_upstage_key()\n        if not key:\n            raise RuntimeError(\"UPSTAGE_API_KEY 미설정\")\n    \n        doc_bytes: bytes | None = None\n        if pages == \"1\":\n            doc_bytes = _slice_first_page_pdf(file_path)\n        if doc_bytes is None:\n            doc_bytes = Path(file_path).read_bytes()\n    \n        headers = {\"Authorization\": f\"Bearer {key}\"}\n        data = {\n            \"model\": model or UPSTAGE_DP_MODEL,\n            \"ocr\": ocr_mode,\n            \"output_formats\": \"['html', 'text']\",\n            \"coordinates\": \"true\",\n            \"base64_encoding\": \"[]\",\n        }\n        files = {\"document\": (Path(file_path).name, doc_bytes)}\n    \n        resp = requests.post(_upstage_dp_url(), headers=headers, data=data, files=files, timeout=120)\n        resp.raise_for_status()\n        body = resp.json()\n        elements = body.get(\"elements\", []) or []\n    \n        tokens: list[dict[str, Any]] = []\n        tables: list[ExtractedTable] = []\n        for el in elements:\n            content = el.get(\"content\") or {}\n            text = str(content.get(\"text\") or \"\").strip()\n            page0 = int(el.get(\"page\", 1) or 1) - 1   # 1-기준 → 0-기준\n            bbox = _norm_bbox_from_points(el.get(\"coordinates\"))\n            if text:\n                tokens.append({\"text\": text, \"bbox\": bbox, \"page\": page0})\n            if el.get(\"category\") == \"table\":\n                html = str(content.get(\"html\") or \"\")\n                table = _parse_html_table(\n                    html,\n                    table_id=f\"upstage_table_{len(tables)}\",\n                    page=page0,\n                    bbox=bbox,\n                )\n                if table is not None:\n                    tables.append(table)\n    \n        response_meta = {\n>           \"status_code\": resp.status_code, \"requested_model\": model or UPSTAGE_DP_MODEL,\n                           ^^^^^^^^^^^^^^^^\n            \"returned_model\": body.get(\"model\"), \"usage\": body.get(\"usage\"),\n            \"request_id\": resp.headers.get(\"x-request-id\") or resp.headers.get(\"request-id\"),\n            \"token_count\": len(tokens), \"table_count\": len(tables),\n            \"coordinate_count\": sum(t.get(\"bbox\") is not None for t in tokens),\n        }\nE       AttributeError: '_Resp' object has no attribute 'status_code'\n\nesgenie/ssot/ocr_router.py:803: AttributeError"
+      },
+      {
+        "test": "tests.test_supplychain_checklist.test_resolved_item_drops_out_of_checklist",
+        "trace": "def test_resolved_item_drops_out_of_checklist():\n        # 인권정책(S-5-1)에 공시 근거가 잡히면 verified/self_reported → 체크리스트 제외\n        extraction = _extraction(mapped_codes=[\"S-5-1\"])\n        sheet = build_response_sheet(\"saq5\", extraction=extraction)\n    \n        hr_answer = next(a for a in sheet.answers if a.qid == \"SAQ-L-3\")\n>       assert hr_answer.status in (\"verified\", \"self_reported\")\nE       AssertionError: assert 'insufficient' in ('verified', 'self_reported')\nE        +  where 'insufficient' = Answer(qid='SAQ-L-3', section='Labor & Human Rights', question_text='인권 정책 또는 인권 실사 체계를 운영합니까?', value=None, status='i...aft_citations=[], draft_grounding=None, unit='', period=None, confidence_flags=[], self_reports=[], option_evidence={}).status\n\ntests/test_supplychain_checklist.py:55: AssertionError"
+      }
+    ]
+  },
+  "final_full": {
+    "summary": {
+      "name": "pytest",
+      "errors": "0",
+      "failures": "0",
+      "skipped": "0",
+      "tests": "1220",
+      "time": "43.016",
+      "timestamp": "2026-09-12T11:09:15.462832+09:00",
+      "hostname": "heojeongmin-ui-MacBookAir.local"
+    },
+    "failures": [],
+    "reproductions": [
+      {
+        "test": "tests.audit_20260909.test_new_audit.test_valid_rate_controls[29.3-29.3-verified]",
+        "passed": true
+      },
+      {
+        "test": "tests.audit_20260909.test_new_audit.test_valid_rate_controls[29.3-92-flagged]",
+        "passed": true
+      },
+      {
+        "test": "tests.audit_20260909.test_new_audit.test_valid_rate_controls[0-0-verified]",
+        "passed": true
+      },
+      {
+        "test": "tests.audit_20260909.test_new_audit.test_valid_rate_controls[100-100-verified]",
+        "passed": true
+      },
+      {
+        "test": "tests.audit_20260909.test_new_audit.test_invalid_rate_cannot_be_verified_as_matching[negative]",
+        "passed": true
+      },
+      {
+        "test": "tests.audit_20260909.test_new_audit.test_invalid_rate_cannot_be_verified_as_matching[above_100]",
+        "passed": true
+      },
+      {
+        "test": "tests.audit_20260909.test_new_audit.test_invalid_rate_cannot_be_verified_as_matching[nan_evidence]",
+        "passed": true
+      },
+      {
+        "test": "tests.audit_20260909.test_new_audit.test_invalid_rate_cannot_be_verified_as_matching[nan_claim]",
+        "passed": true
+      },
+      {
+        "test": "tests.audit_20260909.test_new_audit.test_equivalent_energy_units_are_not_a_discrepancy",
+        "passed": true
+      },
+      {
+        "test": "tests.audit_20260909.test_new_audit.test_equal_numbers_with_different_energy_units_are_not_matching",
+        "passed": true
+      },
+      {
+        "test": "tests.audit_20260909.test_new_audit.test_valid_matching_energy_control",
+        "passed": true
+      },
+      {
+        "test": "tests.audit_20260909.test_new_audit.test_dangling_evidence_id_does_not_prove_policy",
+        "passed": true
+      },
+      {
+        "test": "tests.audit_20260909.test_new_audit.test_explicit_negative_policy_answer_is_not_changed_to_yes",
+        "passed": true
+      },
+      {
+        "test": "tests.audit_20260909.test_new_audit.test_positive_policy_link_control",
+        "passed": true
+      },
+      {
+        "test": "tests.audit_20260909.test_new_audit.test_unlinked_policy_control",
+        "passed": true
+      },
+      {
+        "test": "tests.audit_20260909.test_new_audit.test_saq_actual_claim_extraction[actual]",
+        "passed": true
+      },
+      {
+        "test": "tests.audit_20260909.test_new_audit.test_saq_actual_claim_extraction[zero]",
+        "passed": true
+      },
+      {
+        "test": "tests.audit_20260909.test_new_audit.test_saq_actual_claim_extraction[target_before_actual]",
+        "passed": true
+      },
+      {
+        "test": "tests.audit_20260909.test_new_audit.test_saq_actual_claim_extraction[target_only]",
+        "passed": true
+      },
+      {
+        "test": "tests.audit_20260909.test_new_audit.test_saq_actual_claim_extraction[negative]",
+        "passed": true
+      },
+      {
+        "test": "tests.audit_20260909.test_new_audit.test_saq_actual_claim_extraction[above_100]",
+        "passed": true
+      },
+      {
+        "test": "tests.audit_20260909.test_new_audit.test_selected_actual_survives_audit_and_response_export",
+        "passed": true
+      },
+      {
+        "test": "tests.audit_20260909.test_new_audit.test_future_target_cannot_replace_reporting_year_actual",
+        "passed": true
+      },
+      {
+        "test": "tests.audit_20260909.test_new_audit.test_single_valid_actual_export_control",
+        "passed": true
+      },
+      {
+        "test": "tests.audit_20260909.test_new_audit.test_missing_semantic_evidence_is_abstention_requirement",
+        "passed": true
+      },
+      {
+        "test": "tests.audit_20260909.test_new_audit.test_d6_overrides_matching_numeric_answer_control",
+        "passed": true
+      },
+      {
+        "test": "tests.audit_20260909.test_new_audit.test_cache_prompt_change_requires_another_provider_call",
+        "passed": true
+      },
+      {
+        "test": "tests.audit_20260909.test_new_audit.test_production_survey_input_cannot_create_verified_yes[\\uc608]",
+        "passed": true
+      },
+      {
+        "test": "tests.audit_20260909.test_new_audit.test_production_survey_input_cannot_create_verified_yes[\\uc544\\ub2c8\\uc624]",
+        "passed": true
+      },
+      {
+        "test": "tests.audit_20260909.test_new_audit.test_production_l1_selection_survives_l5_export",
+        "passed": true
+      },
+      {
+        "test": "tests.audit_integrity.test_fresh_contracts.TestSurveyAndEvidence.test_survey_only_stays_self_reported[yes]",
+        "passed": true
+      },
+      {
+        "test": "tests.audit_integrity.test_fresh_contracts.TestSurveyAndEvidence.test_survey_only_stays_self_reported[no]",
+        "passed": true
+      },
+      {
+        "test": "tests.audit_integrity.test_fresh_contracts.TestSurveyAndEvidence.test_survey_only_stays_self_reported[yes-with-note]",
+        "passed": true
+      },
+      {
+        "test": "tests.audit_integrity.test_fresh_contracts.TestSurveyAndEvidence.test_survey_only_stays_self_reported[no-with-note]",
+        "passed": true
+      },
+      {
+        "test": "tests.audit_integrity.test_fresh_contracts.TestSurveyAndEvidence.test_unanswered_survey_stays_unanswered",
+        "passed": true
+      },
+      {
+        "test": "tests.audit_integrity.test_fresh_contracts.TestSurveyAndEvidence.test_policy_requires_resolvable_relevant_evidence[valid-verified]",
+        "passed": true
+      },
+      {
+        "test": "tests.audit_integrity.test_fresh_contracts.TestSurveyAndEvidence.test_policy_requires_resolvable_relevant_evidence[unlinked-self_reported]",
+        "passed": true
+      },
+      {
+        "test": "tests.audit_integrity.test_fresh_contracts.TestSurveyAndEvidence.test_policy_requires_resolvable_relevant_evidence[dangling-not_verified]",
+        "passed": true
+      },
+      {
+        "test": "tests.audit_integrity.test_fresh_contracts.TestSurveyAndEvidence.test_policy_requires_resolvable_relevant_evidence[wrong-topic-not_verified]",
+        "passed": true
+      },
+      {
+        "test": "tests.audit_integrity.test_fresh_contracts.TestSurveyAndEvidence.test_one_valid_link_cannot_verify_other_unsupported_options",
+        "passed": true
+      },
+      {
+        "test": "tests.audit_integrity.test_fresh_contracts.TestNumericalClaims.test_valid_values_and_documented_threshold[43.8-43.8-verified]",
+        "passed": true
+      },
+      {
+        "test": "tests.audit_integrity.test_fresh_contracts.TestNumericalClaims.test_valid_values_and_documented_threshold[43.8-90.2-flagged]",
+        "passed": true
+      },
+      {
+        "test": "tests.audit_integrity.test_fresh_contracts.TestNumericalClaims.test_valid_values_and_documented_threshold[0-0-verified]",
+        "passed": true
+      },
+      {
+        "test": "tests.audit_integrity.test_fresh_contracts.TestNumericalClaims.test_valid_values_and_documented_threshold[100-100-verified]",
+        "passed": true
+      },
+      {
+        "test": "tests.audit_integrity.test_fresh_contracts.TestNumericalClaims.test_valid_values_and_documented_threshold[40-49.9-verified]",
+        "passed": true
+      },
+      {
+        "test": "tests.audit_integrity.test_fresh_contracts.TestNumericalClaims.test_valid_values_and_documented_threshold[40-50-flagged]",
+        "passed": true
+      },
+      {
+        "test": "tests.audit_integrity.test_fresh_contracts.TestNumericalClaims.test_rounding_does_not_cross_ten_percentage_point_threshold",
+        "passed": true
+      },
+      {
+        "test": "tests.audit_integrity.test_fresh_contracts.TestNumericalClaims.test_invalid_rates_are_never_reported_as_a_match[evidence-negative]",
+        "passed": true
+      },
+      {
+        "test": "tests.audit_integrity.test_fresh_contracts.TestNumericalClaims.test_invalid_rates_are_never_reported_as_a_match[evidence-over-100]",
+        "passed": true
+      },
+      {
+        "test": "tests.audit_integrity.test_fresh_contracts.TestNumericalClaims.test_invalid_rates_are_never_reported_as_a_match[evidence-nan]",
+        "passed": true
+      },
+      {
+        "test": "tests.audit_integrity.test_fresh_contracts.TestNumericalClaims.test_invalid_rates_are_never_reported_as_a_match[evidence-infinite]",
+        "passed": true
+      },
+      {
+        "test": "tests.audit_integrity.test_fresh_contracts.TestNumericalClaims.test_invalid_rates_are_never_reported_as_a_match[claim-negative]",
+        "passed": true
+      },
+      {
+        "test": "tests.audit_integrity.test_fresh_contracts.TestNumericalClaims.test_invalid_rates_are_never_reported_as_a_match[claim-over-100]",
+        "passed": true
+      },
+      {
+        "test": "tests.audit_integrity.test_fresh_contracts.TestNumericalClaims.test_invalid_rates_are_never_reported_as_a_match[claim-nan]",
+        "passed": true
+      },
+      {
+        "test": "tests.audit_integrity.test_fresh_contracts.TestNumericalClaims.test_invalid_rates_are_never_reported_as_a_match[claim-infinite]",
+        "passed": true
+      },
+      {
+        "test": "tests.audit_integrity.test_fresh_contracts.TestNumericalClaims.test_energy_claims_respect_units[convert-mwh-to-kwh]",
+        "passed": true
+      },
+      {
+        "test": "tests.audit_integrity.test_fresh_contracts.TestNumericalClaims.test_energy_claims_respect_units[convert-kwh-to-mwh]",
+        "passed": true
+      },
+      {
+        "test": "tests.audit_integrity.test_fresh_contracts.TestNumericalClaims.test_energy_claims_respect_units[same-number-wrong-scale]",
+        "passed": true
+      },
+      {
+        "test": "tests.audit_integrity.test_fresh_contracts.TestNumericalClaims.test_energy_claims_respect_units[incompatible-dimensions]",
+        "passed": true
+      },
+      {
+        "test": "tests.audit_integrity.test_fresh_contracts.TestNumericalClaims.test_energy_claims_respect_units[same-unit-control]",
+        "passed": true
+      },
+      {
+        "test": "tests.audit_integrity.test_fresh_contracts.TestActualSaqPdfParsing.test_embedded_pdf_text_yields_only_valid_actual[actual]",
+        "passed": true
+      },
+      {
+        "test": "tests.audit_integrity.test_fresh_contracts.TestActualSaqPdfParsing.test_embedded_pdf_text_yields_only_valid_actual[target-before-actual]",
+        "passed": true
+      },
+      {
+        "test": "tests.audit_integrity.test_fresh_contracts.TestActualSaqPdfParsing.test_embedded_pdf_text_yields_only_valid_actual[actual-before-target]",
+        "passed": true
+      },
+      {
+        "test": "tests.audit_integrity.test_fresh_contracts.TestActualSaqPdfParsing.test_embedded_pdf_text_yields_only_valid_actual[target-only]",
+        "passed": true
+      },
+      {
+        "test": "tests.audit_integrity.test_fresh_contracts.TestActualSaqPdfParsing.test_embedded_pdf_text_yields_only_valid_actual[postfix-target]",
+        "passed": true
+      },
+      {
+        "test": "tests.audit_integrity.test_fresh_contracts.TestActualSaqPdfParsing.test_embedded_pdf_text_yields_only_valid_actual[negative]",
+        "passed": true
+      },
+      {
+        "test": "tests.audit_integrity.test_fresh_contracts.TestActualSaqPdfParsing.test_embedded_pdf_text_yields_only_valid_actual[over-100]",
+        "passed": true
+      },
+      {
+        "test": "tests.audit_integrity.test_fresh_contracts.TestActualSaqPdfParsing.test_embedded_pdf_text_yields_only_valid_actual[zero]",
+        "passed": true
+      },
+      {
+        "test": "tests.audit_integrity.test_fresh_contracts.TestActualSaqPdfParsing.test_embedded_pdf_text_yields_only_valid_actual[hundred]",
+        "passed": true
+      },
+      {
+        "test": "tests.audit_integrity.test_fresh_contracts.TestActualSaqPdfParsing.test_embedded_pdf_text_yields_only_valid_actual[complement]",
+        "passed": true
+      },
+      {
+        "test": "tests.audit_integrity.test_fresh_contracts.TestLedgerToResponse.test_selected_ledger_value_survives_export[single]",
+        "passed": true
+      },
+      {
+        "test": "tests.audit_integrity.test_fresh_contracts.TestLedgerToResponse.test_selected_ledger_value_survives_export[component]",
+        "passed": true
+      },
+      {
+        "test": "tests.audit_integrity.test_fresh_contracts.TestLedgerToResponse.test_selected_ledger_value_survives_export[target]",
+        "passed": true
+      },
+      {
+        "test": "tests.audit_integrity.test_fresh_contracts.TestLedgerToResponse.test_selected_ledger_value_survives_export[future-target]",
+        "passed": true
+      },
+      {
+        "test": "tests.audit_integrity.test_fresh_contracts.TestLedgerToResponse.test_selected_ledger_value_survives_export[older-total]",
+        "passed": true
+      },
+      {
+        "test": "tests.audit_integrity.test_fresh_contracts.TestLedgerToResponse.test_target_only_cannot_reappear_as_verified_actual",
+        "passed": true
+      },
+      {
+        "test": "tests.audit_integrity.test_fresh_contracts.TestLedgerToResponse.test_superseded_dart_regex_does_not_return_in_export",
+        "passed": true
+      },
+      {
+        "test": "tests.audit_integrity.test_fresh_contracts.TestLedgerToResponse.test_risk_rows_describe_the_selected_total[total-first]",
+        "passed": true
+      },
+      {
+        "test": "tests.audit_integrity.test_fresh_contracts.TestLedgerToResponse.test_risk_rows_describe_the_selected_total[total-last]",
+        "passed": true
+      },
+      {
+        "test": "tests.audit_integrity.test_fresh_contracts.TestProviderCache.test_identical_request_reuses_success",
+        "passed": true
+      },
+      {
+        "test": "tests.audit_integrity.test_fresh_contracts.TestProviderCache.test_changed_request_identity_requires_provider[prompt]",
+        "passed": true
+      },
+      {
+        "test": "tests.audit_integrity.test_fresh_contracts.TestProviderCache.test_changed_request_identity_requires_provider[model]",
+        "passed": true
+      },
+      {
+        "test": "tests.audit_integrity.test_fresh_contracts.TestProviderCache.test_changed_request_identity_requires_provider[json-mode]",
+        "passed": true
+      },
+      {
+        "test": "tests.audit_integrity.test_fresh_contracts.TestProviderCache.test_changed_request_identity_requires_provider[temperature]",
+        "passed": true
+      },
+      {
+        "test": "tests.audit_integrity.test_fresh_contracts.TestProviderCache.test_changed_request_identity_requires_provider[endpoint]",
+        "passed": true
+      },
+      {
+        "test": "tests.audit_integrity.test_fresh_contracts.TestProviderCache.test_cache_disabled_always_calls_provider",
+        "passed": true
+      },
+      {
+        "test": "tests.audit_integrity.test_fresh_contracts.TestProviderCache.test_strict_failure_does_not_become_mock_success",
+        "passed": true
+      },
+      {
+        "test": "tests.audit_integrity.test_fresh_contracts.TestProposedD3Requirement.test_missing_evidence_is_explicit_abstention[no-chunks]",
+        "passed": true
+      },
+      {
+        "test": "tests.audit_integrity.test_fresh_contracts.TestProposedD3Requirement.test_missing_evidence_is_explicit_abstention[empty-index]",
+        "passed": true
+      },
+      {
+        "test": "tests.audit_integrity.test_ingress_replay.test_imported_ocr_output_preserves_selected_actual[component-\\uc5d0\\ub108\\uc9c0 \\uc0ac\\uc6a9\\ub7c9 \\uad6d\\ub0b4 \\uc0ac\\uc5c5\\uc7a5-2025]",
+        "passed": true
+      },
+      {
+        "test": "tests.audit_integrity.test_ingress_replay.test_imported_ocr_output_preserves_selected_actual[target-\\uc5d0\\ub108\\uc9c0 \\uc0ac\\uc6a9\\ub7c9 \\ubaa9\\ud45c-2025]",
+        "passed": true
+      },
+      {
+        "test": "tests.audit_integrity.test_ingress_replay.test_imported_ocr_output_preserves_selected_actual[projection-\\uc5d0\\ub108\\uc9c0 \\uc0ac\\uc6a9\\ub7c9 \\uc804\\uc0ac \\ud569\\uacc4-2030]",
+        "passed": true
+      }
+    ]
+  }
+}

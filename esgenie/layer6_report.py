@@ -18,6 +18,9 @@ PipelineOutput에 흩어져 있는 분석 결과(커버리지·D6 선택적 공�
 """
 from __future__ import annotations
 
+from .schemas import format_score
+
+
 import datetime
 import json
 from dataclasses import dataclass, field
@@ -115,12 +118,15 @@ def _load_industry_stats(industry: str | None) -> dict[str, Any] | None:
 # 공통 추출 헬퍼
 # ====================================================================
 
-def _overall_risk(output: Any) -> tuple[float, str]:
+def _overall_risk(output: Any) -> tuple[float | None, str]:
     """영역별 위험도 중 최댓값과 그 밴드."""
-    scores = [(v.final_score, v.final_band) for v in output.sections.values()]
+    scores = [(v.final_score, v.final_band) for v in output.sections.values() if v.final_score is not None]
     if not scores:
-        return 0.0, "—"
-    return max(scores, key=lambda x: x[0])
+        return None, "평가불가"
+    score, band = max(scores, key=lambda x: x[0])
+    if any(v.final_score is None or "부분 평가" in v.final_band for v in output.sections.values()):
+        band = "부분 평가"
+    return score, band
 
 
 def _corp_meta(output: Any) -> tuple[str, str, int]:
@@ -153,7 +159,7 @@ def _block_cover(output: Any) -> ReportBlock:
         ["적용 프로파일", profile],
         ["K-ESG 커버리지", cov],
         ["증빙 연결 커버리지", ecov],
-        ["종합 그린워싱 위험도", f"{risk:.1f} ({band})"],
+        ["종합 그린워싱 위험도", f"{format_score(risk)} ({band})"],
     ]
     if d6 is not None:
         rows.append(["선택적 공시 의심도", f"{d6.score:.2f} ({d6.level})"])
@@ -182,13 +188,15 @@ def _block_esg(output: Any, area: str) -> ReportBlock | None:
     rv = verify.final.detection.risk_vector
     axis_note = ""
     if rv is not None:
-        axis_note = (
-            f" · 4축(D1/D2/D3/D5): "
-            f"{rv.D1_numeric.score*100:.0f}/{rv.D2_modifier.score*100:.0f}/"
-            f"{rv.D3_semantic.score*100:.0f}/{rv.D5_timeseries.score*100:.0f}"
-        )
+        axis_note = " · 4축(D1/D2/D3/D5): " + "/".join(
+            "평가불가" if axis.abstain else format_score(axis.score, scale=100, digits=0)
+            for axis in (rv.D1_numeric, rv.D2_modifier, rv.D3_semantic, rv.D5_timeseries))
+        axis_note += f" · {rv.evaluation_label}"
+        if not rv.evaluation_complete:
+            axis_note += " (기권 축: " + ", ".join(rv.abstained_axes()) + ")"
+
     lead = (
-        f"> **{label} ({area})** · 위험도 {verify.final_score:.1f} ({verify.final_band}) "
+        f"> **{label} ({area})** · 위험도 {format_score(verify.final_score)} ({verify.final_band}) "
         f"· 검증 {verify.iterations_used}회"
         + (" · ⚠ 사람 검토 필요(HITL)" if verify.hitl_required else "")
         + axis_note
@@ -254,11 +262,18 @@ def _block_risk(output: Any) -> ReportBlock | None:
     rows = output.risk_rows
     if not rows:
         return None
-    headers = ["K-ESG 코드", "값", "D1 수치", "D2 수식어", "D3 의미", "D5 시계열", "종합 위험도"]
-    table_rows = [[r.get(h, "—") for h in headers] for r in rows]
+    headers = ["K-ESG 코드", "값", "D1 수치", "D2 수식어", "D3 의미", "D5 시계열", "종합 위험도", "평가 상태"]
+    labels = {"complete": "평가완료", "partial": "부분 평가", "unavailable": "평가불가"}
+    table_rows = []
+    for row in rows:
+        values = ["평가불가" if row.get(h) is None else row[h] for h in headers[:-1]]
+        values.append(labels.get(row.get("평가 범위", {}).get("evaluation_status"), "평가 정보 없음"))
+        table_rows.append(values)
     body = (
         "증빙(L0 노드)에 연결된 정량 항목별 4축 그린워싱 위험 분해다. "
-        "D1=수치 정확성, D2=과장 수식어, D3=의미 괴리, D5=시계열 모순.\n\n"
+        "D1=수치 정확성, D2=과장 수식어, D3=의미 괴리, D5=시계열 모순. "
+        "기권 축은 종합 점수에서 제외하고 유효 가중치를 재정규화한다. "
+        "부분 평가 항목은 추가 근거 확인이 필요하다.\n\n"
         + _md_table(headers, table_rows)
     )
     return ReportBlock(id="risk", title="항목별 4축 리스크", body_md=body, kind="deterministic")
@@ -326,17 +341,18 @@ def _block_exec_summary(output: Any) -> ReportBlock:
         "연도": year,
         "K-ESG_커버리지_pct": round(cov, 1),
         "증빙_연결_커버리지_pct": round(ecov, 1),
-        "종합_위험도": round(risk, 1),
+        "종합_위험도": round(risk, 1) if risk is not None else None,
+        "영역별_평가범위": {a: v.final.detection.risk_vector.aggregate if v.final.detection.risk_vector else {} for a, v in output.sections.items()},
         "위험_밴드": band,
         "선택적공시_의심도": round(d6.score, 2) if d6 else None,
         "선택적공시_수준": d6.level if d6 else None,
         "ISSB_누락": issb.in_profile_missing if issb else None,
-        "영역별_위험도": {a: round(v.final_score, 1) for a, v in output.sections.items()},
+        "영역별_위험도": {a: round(v.final_score, 1) if v.final_score is not None else None for a, v in output.sections.items()},
     }
 
     fallback = (
         f"{name}의 K-ESG 공시 커버리지는 {cov:.1f}%(증빙 연결 기준 {ecov:.1f}%)이며, 종합 그린워싱 위험도는 "
-        f"{risk:.1f}({band}) 수준이다. "
+        f"{format_score(risk)}({band}) 수준이다. "
         + (f"선택적 공시 의심도는 {d6.score:.2f}({d6.level})로 평가되었다. " if d6 else "")
         + (f"ISSB/KSSB 연계 항목 중 {issb.in_profile_missing}건이 누락되었다. " if issb else "")
         + "정량 근거가 확보된 영역은 신뢰도가 높으나, 누락·고아 비율 항목은 추가 증빙 보완이 필요하다."
@@ -345,7 +361,8 @@ def _block_exec_summary(output: Any) -> ReportBlock:
     system = (
         "당신은 ESG 공시 신뢰성 평가 보고서의 Executive Summary를 쓰는 전문가다. "
         "주어진 수치만 사용하고, 표·제목·불릿 없이 5~7문장의 서술형 한 단락으로만 작성하라. "
-        "과장 수식어를 피하고 경영진이 한눈에 읽을 수 있게 요약하라."
+        "과장 수식어를 피하고 경영진이 한눈에 읽을 수 있게 요약하라. "
+        "평가불가·부분 평가·기권 축은 반드시 명시하고, 근거 없는 검증 통과나 저위험으로 바꾸지 마라."
     )
     user = (
         "다음 분석 결과를 바탕으로 Executive Summary를 작성하라.\n"

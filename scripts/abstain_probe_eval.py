@@ -129,7 +129,7 @@ def _deferral_breakdown(rows: list[dict[str, Any]]) -> dict[str, Any]:
     breakeven = ((1 - precision) / precision) if precision > 0 else float("inf")
     return {
         "deferred": n_def, "saves": len(saves), "wastes": len(wastes),
-        "deferral_precision": round(precision, 4),
+        "deferral_precision": precision,
         "breakeven_benefit_cost_ratio": (round(breakeven, 4) if breakeven != float("inf") else None),
         "save_ids": [r["id"] for r in saves], "waste_ids": [r["id"] for r in wastes],
     }

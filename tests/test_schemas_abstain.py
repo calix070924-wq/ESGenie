@@ -56,8 +56,8 @@ def test_abstained_axes_lists_flagged_axis() -> None:
     assert rv.abstained_axes() == ["D1_numeric"]
 
 
-def test_no_axis_abstains_by_default_in_production_path() -> None:
-    """기존 탐지 경로는 어디서도 abstain을 세팅하지 않는다 — 동작 불변 확인."""
+def test_d3_abstains_without_evidence_in_production_path() -> None:
+    """D3 근거 부재는 기본 기권이며 D1/D2/D5 기본 동작은 유지된다."""
     rv = detect_risk_vector("온실가스 배출량은 1,670만 tCO2eq으로 전년 대비 2.1% 감소하였다.")
-    assert rv.abstained_axes() == []
-    assert rv.aggregate.get("abstained_axes") == []
+    assert rv.abstained_axes() == ["D3_semantic"]
+    assert rv.aggregate.get("abstained_axes") == ["D3_semantic"]
