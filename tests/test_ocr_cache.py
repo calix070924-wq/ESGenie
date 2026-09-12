@@ -354,3 +354,17 @@ def test_cache_entry_holds_raw_llm_response_not_mapped_result(cache_on, counting
     # 원본 응답은 LLM이 준 키(metric_hint/value/unit/period)를 그대로 갖는다.
     assert set(entry["response"]) >= {"metrics", "clauses"}
     assert entry["response"]["metrics"][0]["metric_hint"] == "전력 사용량 합계"
+
+
+def test_actual_client_connection_changes_outer_ocr_cache(cache_on, counting_client, monkeypatch):
+    """같은 문서라도 실제 연결 A→B이면 OCR 응답 캐시를 우회한다."""
+    address = {'name': 'A'}
+    monkeypatch.setattr(counting_client, 'cache_connection',
+        lambda self: {'provider':'openai','endpoint_sha256':address['name']}, raising=False)
+    kwargs = dict(doc_type='policy_manual',file_path='policy.pdf',raw_text='환경방침과 에너지 실적')
+    _extract_unstructured_text(**kwargs)
+    _extract_unstructured_text(**kwargs)
+    assert len(counting_client.calls) == 1
+    address['name'] = 'B'
+    _extract_unstructured_text(**kwargs)
+    assert len(counting_client.calls) == 2

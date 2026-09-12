@@ -75,3 +75,12 @@ def test_old_addressless_cache_is_preserved_and_not_reused(client_factory):
     old = directory / 'old.json'; old.write_text(json.dumps({'schema': 1, 'content': 'old'}))
     assert llm.LLMClient().complete('s','u').meta['cache'] == 'miss'
     assert old.exists() and len(client_factory) == 1
+
+
+def test_outer_ocr_cache_is_also_connection_scoped():
+    from esgenie.ssot.ocr_cache import make_key
+    args = dict(model='gpt-4.1-mini',prompt='extract',doc_type='policy',llm_input='source')
+    a = make_key(**args,connection={'provider':'openai','endpoint_sha256':'A'})
+    b = make_key(**args,connection={'provider':'openai','endpoint_sha256':'B'})
+    assert a != b
+    assert a == make_key(**args,connection={'endpoint_sha256':'A','provider':'openai'})

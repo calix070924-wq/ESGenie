@@ -87,6 +87,16 @@ class LLMClient:
                 except Exception:
                     self._anthropic_client = None
 
+    def cache_connection(self) -> dict[str, str]:
+        """Actual connection identity for caches outside the completion layer."""
+        if self._openai_client is not None:
+            return {"provider": "openai", **connection_identity(
+                self._openai_client, "openai", self._connections["openai"])}
+        if self._anthropic_client is not None:
+            return {"provider": "anthropic", **connection_identity(
+                self._anthropic_client, "anthropic", self._connections["anthropic"])}
+        return {"provider": "mock"}
+
     # ---- public API ---------------------------------------------------
     def complete(
         self,

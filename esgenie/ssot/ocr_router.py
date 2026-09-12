@@ -440,7 +440,8 @@ def extract_structured(file_path: str, *, doc_type: str) -> OcrExtraction:
                 file_path=file_path,
                 engine="upstage_dp",
                 tables=payload.get("tables") or [],
-                engine_meta={"upstage_model": UPSTAGE_DP_MODEL},
+                engine_meta={"upstage_model": UPSTAGE_DP_MODEL,
+                             "dp_response": payload.get("response_meta", {})},
             )
         except Exception as exc:
             # Upstage 실패 → 디지털 PDF 폴백 (데모 안정성)
@@ -798,7 +799,14 @@ def _call_upstage_dp_payload(
             if table is not None:
                 tables.append(table)
 
-    return {"tokens": tokens, "tables": tables}
+    response_meta = {
+        "status_code": getattr(resp, "status_code", None), "requested_model": model or UPSTAGE_DP_MODEL,
+        "returned_model": body.get("model"), "usage": body.get("usage"),
+        "request_id": getattr(resp, "headers", {}).get("x-request-id") or getattr(resp, "headers", {}).get("request-id"),
+        "token_count": len(tokens), "table_count": len(tables),
+        "coordinate_count": sum(t.get("bbox") is not None for t in tokens),
+    }
+    return {"tokens": tokens, "tables": tables, "response_meta": response_meta}
 
 
 class _HTMLTableParser(HTMLParser):
@@ -1691,6 +1699,7 @@ def _extract_unstructured_text(
     # extract_document의 _backfill_kesg_codes도 마찬가지로 캐시 밖이다.
     mode = ocr_cache.cache_mode()
     cache_model = ocr_cache.model_name()
+    cache_connection = client.cache_connection() if hasattr(client, "cache_connection") else {"provider": "test-double"}
     cache_prompt = VLM_EXTRACT_SYSTEM + "\n" + VLM_EXTRACT_PROMPT
     hits = misses = 0
 
@@ -1700,7 +1709,7 @@ def _extract_unstructured_text(
         if mode != ocr_cache.MODE_DISABLED:
             key = ocr_cache.make_key(
                 model=cache_model, prompt=cache_prompt,
-                doc_type=doc_type, llm_input=prompt,
+                doc_type=doc_type, llm_input=prompt, connection=cache_connection,
             )
         data: dict | None = None
         if mode == ocr_cache.MODE_ON and key:
@@ -1729,7 +1738,7 @@ def _extract_unstructured_text(
                 ocr_cache.store_response(
                     key, data,
                     model=cache_model, prompt=cache_prompt, doc_type=doc_type,
-                    source_file=Path(file_path).name, llm_input=prompt,
+                    source_file=Path(file_path).name, llm_input=prompt, connection=cache_connection,
                 )
 
         # 히트·미스 공통 경로 — 결정적 후처리는 캐시에 굳히지 않는다(G6 등이 여기 있다).
