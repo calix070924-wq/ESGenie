@@ -1,4 +1,33 @@
-# ESGenie — K-ESG 공시 보고서 생성·검증 AI (v15)
+# ESGenie — 서류에서 답을 찾는 ESG 실사 준비
+
+ESG를 잘 모르는 담당자도 **서류 올리기 → 내용 확인하기 → 응답서 받기** 순서로 작업합니다.
+첫 화면은 해야 할 일을 안내하고, 질문을 열면 답변과 연결된 원문을 나란히 검토합니다.
+회사가 직접 적은 답변, 추정한 연도, 확인하지 못한 내용은 구분해서 보관합니다.
+
+## 새 작업 화면 실행
+
+Python 3.10 이상, Node.js 22.12 이상이 필요합니다.
+
+```bash
+python -m venv .venv
+source .venv/bin/activate
+python -m pip install -r requirements.txt
+npm --prefix frontend ci
+npm --prefix frontend run build
+python -m esgenie.web
+```
+
+브라우저에서 `http://127.0.0.1:8765`를 엽니다. **예시로 먼저 둘러보기**는 외부 AI 호출 없이
+대표 질문 세 개로 저장·근거 비교·내려받기를 체험합니다. 실제 분석은 기존 `.env` 설정을
+사용하며 연결이 준비되지 않으면 시작 버튼 옆에 안내합니다.
+
+작업과 서류는 `outputs/web_workspace/`에 보관됩니다. 개발 중에는 별도로
+`npm --prefix frontend run dev`를 실행하면 화면 변경을 바로 확인할 수 있습니다.
+설계 결정, 검증 범위, 기존 화면과의 관계는 [새 UI 설계·검증 기록](docs/guided_workspace_20260912.md)에 정리했습니다.
+
+기존 Streamlit 실험·전문가 화면은 `streamlit run app.py`로 실행합니다.
+
+## 기존 검증 엔진
 
 2026 인공지능 루키 대회 제출용 프로토타입.  
 DART 공시 + 내부 증빙 OCR을 단일 진실 원천(SSOT)으로 통합하고,  
