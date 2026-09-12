@@ -66,3 +66,11 @@ def test_non_rate_relative_error_and_zero(evidence, claim, expected, monkeypatch
 def test_rate_code_cannot_convert_unrelated_physical_unit():
     ans = _reconcile_claim(Answer('q','E','rate',2,'verified'), SupplierClaim('E-6-2',2,'%'), 2,'kWh',code='E-6-2')
     assert ans.status == 'flagged' and not any('자가신고 일치' in f for f in ans.flags)
+
+
+def test_question_threshold_is_not_an_answer_in_actual_saq(monkeypatch):
+    from esgenie.supplychain import claims as mod
+    monkeypatch.setattr(mod, '_extract_text', lambda _: '재활용률은 90% 이상인가?\n예 — 재활용률 92% 달성\n예 — 매립·소각 8% 수준')
+    result = mod.parse_saq_claims(['saq.pdf'])
+    assert result['E-6-2'].value == 92 and result['E-6-2'].status == 'reported'
+    assert any(d['reason'] == 'question_not_answer' for d in result.diagnostics)

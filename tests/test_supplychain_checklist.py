@@ -23,7 +23,7 @@ SECTION = "Labor & Human Rights"  # saq5: SAQ-L-1(S-1-1)/L-2(S-2-6)/L-3(S-5-1)
 def _extraction(mapped_codes, missing=()):
     return SimpleNamespace(
         corp_name="한울정밀",
-        mapped={c: {"code": c, "name": c, "evidence_node_ids": []} for c in mapped_codes},
+        mapped={c: {"code": c, "name": c, "value": True, "evidence_node_ids": []} for c in mapped_codes},
         missing=list(missing),
     )
 

@@ -171,7 +171,7 @@ def main() -> None:
     rba = respond_from_pipeline(out, "rba42", supplier_claims=supplier_claims)
     waste = next((a for a in rba.answers if a.qid == "RBA-C-4-E-6-2"), None)
     claim = supplier_claims.get("E-6-2")
-    claim_value = float(claim.value) if claim is not None else None
+    claim_value = float(claim.value) if claim is not None and claim.value is not None else None
     evidence_value = float(waste.value) if waste is not None and isinstance(waste.value, (int, float)) else None
     gap_pp = (round(abs(claim_value - evidence_value), 1)
               if claim_value is not None and evidence_value is not None else None)

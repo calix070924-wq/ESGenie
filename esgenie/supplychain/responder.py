@@ -25,6 +25,7 @@ def build_response_sheet(
     evidence_graph: Any | None = None,    # ssot.evidence_graph.EvidenceGraph
     supplier_claims: dict[str, Any] | None = None,  # code → claims.SupplierClaim
     enable_drafts: bool = False,
+    policy_audit: list[dict[str, Any]] | None = None,
 ) -> ResponseSheet:
     """양식을 ESGenie 산출물로 자동 응답한다.
 
@@ -41,6 +42,8 @@ def build_response_sheet(
     # 키(RBA "A-3" vs K-ESG "E-4-1")가 안 겹쳐 안전. 크로스워크 항목은 기존 K-ESG 경로 유지.
     _merge_rba_clause_evidence(mapped, evidence_graph)
 
+    policy_failures = {row["kesg_code"]: row for row in (policy_audit or [])
+                       if row.get("passed") is False and row.get("kesg_code")}
     answers: list[Answer] = []
     for q in fw.questions:
         ans = derive_answer(
@@ -51,6 +54,22 @@ def build_response_sheet(
             evidence_index=evidence_index if evidence_graph is not None else None,
             claims=supplier_claims if supplier_claims is not None else {},
         )
+        # A relevant document proves presence, not satisfaction of failed clauses.
+        codes = set(q.kesg_codes)
+        for option, option_codes in q.option_map:
+            if option in (ans.value if isinstance(ans.value, list) else []):
+                codes.update(option_codes)
+                if set(option_codes) & policy_failures.keys():
+                    ans.option_evidence.setdefault(option, {})["verified"] = False
+        failed = sorted(codes & policy_failures.keys())
+        if failed and ans.answered and ans.value is not False:
+            ans.status = "flagged"
+            for code in failed:
+                findings = policy_failures[code].get("findings", [])
+                missing_clauses = [str(f.get("description") or f.get("clause_id") or f.get("status"))
+                                   for f in findings if f.get("status") != "met"]
+                ans.flags.append(f"조항 검사 미충족: {code}" +
+                                 (" · " + ", ".join(missing_clauses) if missing_clauses else ""))
         ans = apply_gating(ans, q, disclosure=disclosure, issb_gap=issb_gap)
         answers.append(ans)
 
@@ -102,6 +121,7 @@ def respond_from_pipeline(
         evidence_graph=getattr(pipeline_output, "evidence_graph", None),
         supplier_claims=supplier_claims,
         enable_drafts=enable_drafts,
+        policy_audit=list(getattr(v15, "policy_audit", []) or []) if v15 else [],
     )
 
 

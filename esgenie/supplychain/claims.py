@@ -51,6 +51,7 @@ _CLAIM_PATTERNS = [
 ]
 _TARGET = re.compile(r"목표|계획|전망|예정|지향|추진|target|plan|forecast", re.I)
 _BOUNDARY = re.compile(r"[\n\f;/|]+|\.(?=\s|$)|(?=20\d{2}\s*년)")
+_QUESTION = re.compile(r"[?？]|(?:인가|하는가|되는가|있는가|있습니까|합니까)\s*$")
 _YEAR = re.compile(r"(20\d{2})\s*년")
 
 _SAQ_FILENAME_HINTS = (
@@ -134,7 +135,9 @@ def parse_saq_claims(pdf_paths: list[str]) -> ClaimSet:
                           "period": int(year.group(1)) if year else None,
                           "page": text[:offset + match.start()].count("\f"),
                           "position": offset + match.start(), "input_value": raw_value}
-                if _TARGET.search(context):
+                if _QUESTION.search(context):
+                    claims.diagnostics.append(dict(record, reason="question_not_answer"))
+                elif _TARGET.search(context):
                     claims.diagnostics.append(dict(record, reason="target_not_actual"))
                 elif not 0 <= raw_value <= 100:
                     claims.diagnostics.append(dict(record, reason="invalid_rate"))

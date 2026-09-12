@@ -1417,15 +1417,23 @@ def _get_cached_response_sheet(result, framework, *, supplier_claims=None):
         getattr(getattr(result, "report", None), "corp_name", "")
         or getattr(result, "corp_name", "") or ""
     )
-    claims = supplier_claims or {}
-    sig = (
-        corp_name,
-        framework.key if hasattr(framework, "key") else str(framework),
-        len(getattr(getattr(result, "v15_trace", None), "data_points", []) or []),
-        len(getattr(getattr(result, "extraction", None), "mapped", {}) or {}),
-        tuple(sorted(claims.keys())),
-        len(claims),
-    )
+    # Counts do not identify changed answers, canonical facts or claim values.
+    from dataclasses import asdict, is_dataclass
+    import hashlib
+    def serialize(value):
+        if hasattr(value, "to_dict"):
+            return value.to_dict()
+        if is_dataclass(value):
+            return asdict(value)
+        return vars(value) if hasattr(value, "__dict__") else str(value)
+    content = {
+        "corp": corp_name, "framework": framework,
+        "claims": supplier_claims or {},
+        **{key: getattr(result, key, None) for key in (
+            "extraction", "v15_trace", "evidence_graph", "disclosure", "issb_gap")},
+    }
+    sig = hashlib.sha256(json.dumps(content, default=serialize, sort_keys=True,
+                                   ensure_ascii=False).encode()).hexdigest()
     cached = st.session_state.get("_cached_response_sheet")
     if cached and cached[0] == sig:
         return cached[1]

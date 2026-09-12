@@ -85,7 +85,7 @@ def _sample_supplier():
     mapped_codes = ["E-1-1", "E-1-2", "P-1-1", "S-5-1", "G-1-1", "G-5-1"]
     extraction = SimpleNamespace(
         corp_name="한울정밀",
-        mapped={c: {"code": c, "name": c, "evidence_node_ids": []} for c in mapped_codes},
+        mapped={c: {"code": c, "name": c, "value": True, "evidence_node_ids": []} for c in mapped_codes},
         missing=[],
     )
     data_points = [
@@ -96,7 +96,8 @@ def _sample_supplier():
             evidence_files=[EvidenceLink(
                 file_name="한전고지서_2025.pdf", relative_path="evidence_pack/x.pdf",
                 origin="ocr_structured", bbox=[0.08, 0.23, 0.3, 0.24], page=0,
-                node_id="n1")],
+                node_id="n1", kesg_codes=["E-4-1"], quote="에너지 사용량 128400 kWh",
+                resolved=True, independent=True)],
         ),
         DataPoint(
             kesg_code="E-3-1", kesg_name="온실가스(Scope1+2)",
