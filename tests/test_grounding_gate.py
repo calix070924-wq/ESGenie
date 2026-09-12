@@ -236,5 +236,7 @@ def test_verify_and_refine_short_circuits_when_retrieval_gate_blocks() -> None:
     assert result.hitl_required is True
     assert result.converged is False
     assert result.iterations_used == 0
-    assert result.final_score == 100.0
+    assert result.final_score is None
+    assert result.final_band == "평가불가"
+    assert result.final.detection.risk_vector.aggregate["evaluation_status"] == "unavailable"
     assert result.metadata["retrieval_decision"]["decision"] == "HUMAN"

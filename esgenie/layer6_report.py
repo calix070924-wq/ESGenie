@@ -262,11 +262,18 @@ def _block_risk(output: Any) -> ReportBlock | None:
     rows = output.risk_rows
     if not rows:
         return None
-    headers = ["K-ESG 코드", "값", "D1 수치", "D2 수식어", "D3 의미", "D5 시계열", "종합 위험도"]
-    table_rows = [[r.get(h, "—") for h in headers] for r in rows]
+    headers = ["K-ESG 코드", "값", "D1 수치", "D2 수식어", "D3 의미", "D5 시계열", "종합 위험도", "평가 상태"]
+    labels = {"complete": "평가완료", "partial": "부분 평가", "unavailable": "평가불가"}
+    table_rows = []
+    for row in rows:
+        values = ["평가불가" if row.get(h) is None else row[h] for h in headers[:-1]]
+        values.append(labels.get(row.get("평가 범위", {}).get("evaluation_status"), "평가 정보 없음"))
+        table_rows.append(values)
     body = (
         "증빙(L0 노드)에 연결된 정량 항목별 4축 그린워싱 위험 분해다. "
-        "D1=수치 정확성, D2=과장 수식어, D3=의미 괴리, D5=시계열 모순.\n\n"
+        "D1=수치 정확성, D2=과장 수식어, D3=의미 괴리, D5=시계열 모순. "
+        "기권 축은 종합 점수에서 제외하고 유효 가중치를 재정규화한다. "
+        "부분 평가 항목은 추가 근거 확인이 필요하다.\n\n"
         + _md_table(headers, table_rows)
     )
     return ReportBlock(id="risk", title="항목별 4축 리스크", body_md=body, kind="deterministic")

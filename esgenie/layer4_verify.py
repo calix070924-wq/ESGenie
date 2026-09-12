@@ -316,6 +316,10 @@ def _merge_instructions(*blocks: str) -> str:
 
 
 def _retrieval_blocked_detection(gen: GenerationResult) -> DetectionResult:
+    from .schemas import AxisScore
+    from .layer3_detect import _build_risk_vector
+    rv = _build_risk_vector(*(AxisScore(0, abstain=True, abstain_reason="no_evidence",
+                                       detail="검색 근거 부족으로 평가하지 않음") for _ in range(4)))
     text = strip_citation_markers(gen.text)
     return DetectionResult(
         text=text,
@@ -324,8 +328,8 @@ def _retrieval_blocked_detection(gen: GenerationResult) -> DetectionResult:
         claim_checks=[],
         vague_phrases=[],
         semantic_similarity=0.0,
-        risk_score=100.0,
-        components={"retrieval_gate": 100.0},
+        risk_score=None,
+        components={},
         highlights=[{
             "type": "retrieval_gate",
             "sentence": text,
@@ -334,7 +338,7 @@ def _retrieval_blocked_detection(gen: GenerationResult) -> DetectionResult:
                 if gen.context.retrieval_decision is not None else []
             ),
         }],
-        risk_vector=None,
+        risk_vector=rv,
     )
 
 
