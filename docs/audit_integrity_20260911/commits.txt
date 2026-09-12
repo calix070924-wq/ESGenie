@@ -1,0 +1,11 @@
+a5da4a0 fix: resolve actual PDF pages and render review states clearly
+47cb4de fix: label blocked generation and report tables as unavailable
+888538d fix: reconcile abstention metrics and remaining consumers
+e0b5276 fix: scope OCR response cache and record actual DP responses
+4d5745e fix: preserve response semantics across real forms and exports
+6a83af9 feat: make missing D3 evidence an explicit incomplete assessment
+d6b375a fix: namespace response cache by actual provider connection
+8c41922 fix: validate actual claims, numeric ranges and comparable units
+e95122d fix: carry finalized ledger facts through risk and response outputs
+54291ca fix: preserve survey answers and require independent relevant evidence
+b42feec chore: preserve audit baseline and Azure v1 compatibility
