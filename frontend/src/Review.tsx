@@ -21,6 +21,7 @@ import {
   TriangleAlert,
 } from 'lucide-react';
 import type { Answer, Project, Source } from './types';
+import { questionHelp } from './questionHelp';
 
 export function Badge({ answer }: { answer: Answer }) {
   return (
@@ -282,6 +283,12 @@ export function Review({
         <span className="eyebrow">{answer.section}</span>
         <h2>{answer.question}</h2>
         <p>{answer.why}</p>
+        <details className="question-help">
+          <summary>이 질문은 어떤 뜻인가요?</summary>
+          {questionHelp(answer).map((explanation) => (
+            <p key={explanation}>{explanation}</p>
+          ))}
+        </details>
       </div>
       <div className="review-columns">
         <section className="answer-paper" aria-label="답변 검토">

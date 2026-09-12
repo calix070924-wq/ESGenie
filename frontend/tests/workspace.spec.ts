@@ -1,5 +1,16 @@
 import { expect, test } from '@playwright/test';
 import path from 'node:path';
+import { questionHelp } from '../src/questionHelp';
+
+test('plain explanations distinguish purchased energy from other indirect emissions', () => {
+  const scopeThree = questionHelp({ question: '기타 간접 배출 (Scope 3)', section: '환경' });
+  expect(scopeThree).toHaveLength(1);
+  expect(scopeThree[0]).toContain('구매·운송·제품 사용·폐기');
+  const combined = questionHelp({ question: 'Scope 1+2 배출량', section: '환경' });
+  expect(combined).toHaveLength(2);
+  expect(combined[0]).toContain('보일러·차량');
+  expect(combined[1]).toContain('구매한 전기·열');
+});
 
 test('beginner can explore, compare evidence, save, resume and download', async ({
   page,
@@ -19,6 +30,12 @@ test('beginner can explore, compare evidence, save, resume and download', async 
     .click();
   await expect(page.getByText('회사가 적은 답변과 자료에서 계산한 값이 달라요.')).toBeVisible();
   await expect(page.getByText('2026년 · 추정', { exact: false }).first()).toBeVisible();
+  await page.getByText('이 질문은 어떤 뜻인가요?', { exact: true }).click();
+  await expect(
+    page.getByText('비율만 보지 말고, 전체 양과 재활용한 양이 같은 기간·범위인지', {
+      exact: false,
+    }),
+  ).toBeVisible();
   await page.getByText('회사가 직접 적은 답변 보기', { exact: true }).click();
   await expect(page.getByText('재활용률 92%', { exact: true })).toBeVisible();
   await page.getByLabel('확인한 내용 메모').fill('회계팀에 원본 처리 내역 요청하기');

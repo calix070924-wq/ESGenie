@@ -1044,6 +1044,19 @@ summary {
   color: var(--muted);
   margin: 9px 0 0;
 }
+.question-help {
+  margin-top: 13px;
+  max-width: 740px;
+}
+.question-help summary {
+  color: var(--accent);
+  font-size: 12px;
+}
+.question-help p {
+  padding-left: 14px;
+  border-left: 2px solid #d5dfce;
+  line-height: 1.9;
+}
 .review-columns {
   display: grid;
   grid-template-columns: minmax(0, 1fr) minmax(0, 0.95fr);
