@@ -92,7 +92,7 @@ def abstain_coverage(rows: list[dict[str, Any]]) -> dict[str, Any]:
     # (.get(reason, 0) 폴백은 두 방어를 서로 무력화하므로 제거 — 코드리뷰 개선).
     by_reason: dict[str, int] = {r: 0 for r in _ABSTAIN_REASONS}
     for r in abstained_rows:
-        for reason in r.get("abstain_reasons") or []:
+        for reason in set(r.get("abstain_reasons") or []):
             by_reason[reason] += 1
 
     return {

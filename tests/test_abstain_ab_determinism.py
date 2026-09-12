@@ -83,7 +83,7 @@ def _mixed_records():
     return [
         _rec("A1", label="clean", d1_score=0.1, d2_score=0.1),                       # 비-abstain
         _rec("A2", label="greenwash", d1_score=0.0, d2_score=0.95),                  # 비-abstain, flagged(D2)
-        _rec("A3", label="clean", d1_score=0.0, d1_abstain=True, d1_reason="no_evidence", d2_score=0.1),  # 기권 후보
+        _rec("A3", label="clean", d1_score=0.0, d1_abstain=True, d1_reason="no_evidence", d2_score=0.0),  # 기권 후보
         _rec("A4", label="greenwash", d1_score=0.0, d1_abstain=True, d1_reason="no_evidence", d2_score=0.95),  # D2가 flag → 기권 아님
     ]
 
@@ -160,7 +160,7 @@ def test_no_abstain_records_give_off_equals_on():
 def test_with_abstain_ignored_after_simulate_vector_roundtrip():
     """judge_cache.json → _simulate_vector → _case_rows → with_abstain_ignored
     전체 배관이 abstain 표식만 무시하고 판정 자체는 바꾸지 않는지 확인."""
-    rec = _rec("C1", label="clean", d1_score=0.0, d1_abstain=True, d1_reason="no_evidence", d2_score=0.1)
+    rec = _rec("C1", label="clean", d1_score=0.0, d1_abstain=True, d1_reason="no_evidence", d2_score=0.0)
     rv = _simulate_vector(rec, trigger=_CFG["trigger"], rule_weight=_CFG["rule_weight"])
     assert rv.D1_numeric.abstain is True
 
@@ -170,3 +170,12 @@ def test_with_abstain_ignored_after_simulate_vector_roundtrip():
     assert on_rows[0]["abstained"] is True
     assert off_rows[0]["abstained"] is False
     assert on_rows[0]["pred"] == off_rows[0]["pred"]
+
+
+def test_renormalized_partial_score_preserves_threshold_boundary():
+    """D1 기권이면 나머지 가중치 .6: (.1*.25+.5*.25)/.6=.25."""
+    rec = _rec("boundary", label="greenwash", d1_abstain=True,
+               d1_reason="no_evidence", d2_score=.1)
+    rv = _simulate_vector(rec, trigger=_CFG["trigger"], rule_weight=_CFG["rule_weight"])
+    assert rv.risk_score == .25 and not rv.evaluation_complete
+    assert _case_rows([rec], _CFG)[0]["pred"] == 1

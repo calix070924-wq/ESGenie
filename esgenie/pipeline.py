@@ -419,7 +419,7 @@ def run(
             )
             sections[area] = verify
             logger.info(
-                "[L4] 영역 %s 완료: 위험도=%.1f, 수렴=%s, HITL=%s",
+                "[L4] 영역 %s 완료: 위험도=%s, 수렴=%s, HITL=%s",
                 area,
                 verify.final_score,
                 verify.converged,

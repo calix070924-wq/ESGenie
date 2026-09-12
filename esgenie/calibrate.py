@@ -224,7 +224,7 @@ def search(cache_path: Path = CACHE_PATH, top_n: int = 15) -> dict[str, Any]:
         kind = "오탐FP" if (pred and not gw) else "미탐FN"
         verdicts = {n: rec["axes"][n].get("verdict") for n in _JUDGEABLE
                     if rec["axes"][n].get("verdict")}
-        print(f"  [{kind}] {rec['id']} ({rec['category']}) risk={rv.risk_score:.3f} "
+        print(f"  [{kind}] {rec['id']} ({rec['category']}) risk={rv.risk_score} "
               f"verdicts={verdicts}")
     return {"baseline": base, "best": best, "top": results[:top_n]}
 
