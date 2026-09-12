@@ -56,6 +56,7 @@ def pytest_runtest_makereport(item, call):
 def pytest_sessionfinish(session, exitstatus):
     destination = Path(os.environ.get('ESGENIE_AUDIT_RESULT',
         str(Path(__file__).resolve().parents[2] / 'outputs/audit_integrity_results.json')))
+    destination.parent.mkdir(parents=True, exist_ok=True)
     destination.write_text(json.dumps({
         'exitstatus': int(exitstatus), 'network': 'blocked', 'tests': _results,
     }, ensure_ascii=False, indent=2), encoding='utf-8')

@@ -112,6 +112,26 @@ def test_t3_expert_mode_renders_ssot_and_lab(mock_result):
     assert "실험실" in header_text
 
 
+@pytest.mark.parametrize("expert_mode", [False, True])
+def test_unavailable_result_renders_entire_app(expert_mode, mock_result):
+    """검색 차단으로 점수가 없는 결과도 메인 카드와 모든 탭을 렌더해야 한다."""
+    from esgenie.layer4_verify import _retrieval_blocked_detection
+
+    result = copy.deepcopy(mock_result)
+    verify = result.sections["E"]
+    verify.final.detection = _retrieval_blocked_detection(verify.final.generation)
+    verify.hitl_required = True
+    verify.converged = False
+    assert verify.final_score is None
+    at = _seed_result(_fresh_app(), result)
+    at.session_state["expert_mode"] = expert_mode
+    at.run()
+
+    assert not at.exception
+    assert "평가불가" in " ".join(block.value for block in at.markdown)
+    assert len(at.tabs) >= 3
+
+
 # ---- T4 M1·M3 회귀 (다운로드 가드) ------------------------------------------
 
 def test_t4_missing_download_files_warn_not_crash(mock_result):

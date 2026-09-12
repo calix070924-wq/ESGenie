@@ -63,7 +63,7 @@ def _run_one(entry: dict, *, llm_judge: bool, export_report: bool) -> dict:
             row["d6_score"] = round(output.disclosure.score, 2)
             row["d6_level"] = output.disclosure.level
         row["sections"] = {
-            area: {"score": round(v.final_score, 1), "band": v.final_band,
+            area: {"score": round(v.final_score, 1) if v.final_score is not None else None, "band": v.final_band,
                    "hitl": v.hitl_required}
             for area, v in output.sections.items()
         }

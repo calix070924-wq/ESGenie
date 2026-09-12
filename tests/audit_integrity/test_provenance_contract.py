@@ -10,6 +10,34 @@ from esgenie.ssot.ssot_pipeline import extract_with_ssot
 from esgenie.supplychain.responder import build_response_sheet
 
 
+@pytest.mark.parametrize("yn", ["예", "아니오"])
+def test_local_pipeline_does_not_reimport_survey_as_dart_evidence(monkeypatch, yn):
+    from esgenie import pipeline, layer2_rag
+
+    # 설치된 임베딩 모델 유무와 무관하게 운영용 검색 차단 계약을 검사한다.
+    monkeypatch.setattr(layer2_rag, "RAG_GATE_FALLBACK_BYPASS", False)
+
+    captured = []
+    build_corp = pipeline.build_rag_with_ssot
+
+    def capture_corp(*args, **kwargs):
+        corp = build_corp(*args, **kwargs)
+        captured.extend(corp.vector._docs)
+        return corp
+
+    monkeypatch.setattr(pipeline, "build_rag_with_ssot", capture_corp)
+    result = pipeline.run(
+        "SURVEY-ONLY", corp_name="설문 전용 검증", areas=["G"],
+        use_dart=False, save_traces=False, export_outputs=False,
+        survey_answers={"G-3-1": {"yn": yn, "text": "주주총회 소집 공고 자가응답"}},
+    )
+    assert result.extraction.mapped["G-3-1"]["survey_answer"]["yn"] == yn
+    assert captured == [], "설문 자가응답이 독립 검색 근거로 다시 들어옴"
+    assert result.report.raw_text_snippets == []
+    assert result.sections["G"].final_score is None
+    assert result.sections["G"].hitl_required
+
+
 @pytest.mark.parametrize("yn,expected", [("예", True), ("아니오", False)])
 @pytest.mark.parametrize("note", ["", "응답 메모"])
 def test_survey_semantics_and_independent_coverage(yn, expected, note):

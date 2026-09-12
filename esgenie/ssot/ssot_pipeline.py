@@ -384,6 +384,7 @@ def build_rag_with_ssot(
     추가 편입한다.
     """
     from esgenie.embeddings import IndexedDoc
+    from ..survey import is_survey
 
     # ── DART 원문 인덱스 먼저 빌드 (v10 원본 로직) ────────────────────
     corp = rag.build_corp_index(report)
@@ -391,7 +392,6 @@ def build_rag_with_ssot(
     # ── SSOT TextNode 추가 편입 (규정집·회의록 조항) ───────────────────
     text_docs: list[IndexedDoc] = []
     for tnode in graph.text_nodes.values():
-        from ..survey import is_survey
         if is_survey(tnode):
             continue
         code_tag = f"[{tnode.kesg_code}] " if tnode.kesg_code else ""
@@ -415,6 +415,8 @@ def build_rag_with_ssot(
     if local_report:
         from esgenie.knowledge.kesg_items import by_code as _by_code
     for node in graph.nodes.values():
+        if is_survey(node):
+            continue
         if node.origin in ("ocr_structured", "ocr_unstructured"):
             # 라이브 비상장 OCR은 표 안의 임의 수치에도 percentage·value 같은
             # 자유형 metric 이름을 붙여 원장에 보존한다. 이 청크들이 넓은 S 쿼리의

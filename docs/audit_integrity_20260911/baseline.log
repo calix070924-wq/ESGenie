@@ -142,7 +142,7 @@ _ TestLedgerToResponse.test_risk_rows_describe_the_selected_total[total-first] _
 tests/audit_integrity/test_fresh_contracts.py:257: in test_risk_rows_describe_the_selected_total
     assert rows[0]['값'] == '248.5 TJ'
 E   AssertionError: assert '61.2 TJ' == '248.5 TJ'
-E     
+E
 E     - 248.5 TJ
 E     + 61.2 TJ
 _ TestProviderCache.test_changed_request_identity_requires_provider[endpoint] __
@@ -247,7 +247,7 @@ tests/audit_20260909/test_new_audit.py:132: in test_future_target_cannot_replace
     assert (point.period,point.value)==(2025,100), point.to_dict()
 E   AssertionError: {'kesg_code': 'E-4-1', 'kesg_name': '에너지 사용량', 'value': 60, 'unit': 'TJ', ...}
 E   assert (2030, 60) == (2025, 100)
-E     
+E
 E     At index 0 diff: 2030 != 2025
 E     Use -v to get more diff
 ___________ test_missing_semantic_evidence_is_abstention_requirement ___________

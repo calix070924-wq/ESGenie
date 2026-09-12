@@ -586,7 +586,7 @@ def render_deliverables_workspace(result, active_area: str, gradient: str) -> No
                 "Integrated Report",
                 "결정적 분석 블록(커버리지·D6·ISSB·리스크·로드맵)과 LLM 서술(요약·벤치마크)을 "
                 "하나로 엮은 통합 보고서입니다.",
-                compact_note=f"종합 위험도 {doc.meta.get('overall_risk', 0):.1f} · 섹션 {len(doc.blocks)}개",
+                compact_note=f"종합 위험도 {format_score(doc.meta.get('overall_risk'))} · 섹션 {len(doc.blocks)}개",
             ),
             unsafe_allow_html=True,
         )
@@ -798,7 +798,7 @@ def render_submission_workspace(result, active_area: str, *, focus: str = "both"
                     panel_html(
                         "통합 보고서",
                         "진단 수치와 서술을 하나로 엮은 최종 보고서입니다. 위에서 PDF로 내려받을 수 있습니다.",
-                        compact_note=f"종합 위험도 {doc.meta.get('overall_risk', 0):.1f} · 섹션 {len(doc.blocks)}개",
+                        compact_note=f"종합 위험도 {format_score(doc.meta.get('overall_risk'))} · 섹션 {len(doc.blocks)}개",
                     ),
                     unsafe_allow_html=True,
                 )

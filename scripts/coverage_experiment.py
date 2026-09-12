@@ -128,7 +128,7 @@ def _run(variant: str, args: argparse.Namespace) -> dict[str, Any]:
         row["issb_missing"] = output.issb_gap.in_profile_missing
     row["sections"] = {
         area: {
-            "score": round(v.final_score, 1),
+            "score": round(v.final_score, 1) if v.final_score is not None else None,
             "band": v.final_band,
             "hitl": v.hitl_required,
             "text_chars": len(v.final_text),

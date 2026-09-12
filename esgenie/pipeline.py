@@ -16,6 +16,7 @@ from pathlib import Path
 from typing import Any
 
 from .schemas import format_score
+from .survey import is_survey
 
 from .config import INDUSTRY_DIR, MAX_REFINEMENT_ITER, SETTINGS
 from .dart_client import CompanyReport, _empty_report, load_report
@@ -354,9 +355,10 @@ def run(
             [
                 node.raw_text
                 for node in evidence_graph.nodes.values()
-                if node.raw_text and by_code(node.metric) is not None
+                if node.raw_text and by_code(node.metric) is not None and not is_survey(node)
             ]
-            + [node.text for node in evidence_graph.text_nodes.values() if node.kesg_code]
+            + [node.text for node in evidence_graph.text_nodes.values()
+               if node.kesg_code and not is_survey(node)]
         )[:20]
         report.source = "ssot_local"
         logger.info("[L0] 비DART 증빙을 빈 CompanyReport에 연결 — 단일 L1~L5 경로 사용")
