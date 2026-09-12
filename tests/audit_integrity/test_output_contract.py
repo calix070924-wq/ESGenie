@@ -126,3 +126,35 @@ def test_existing_failed_clause_audit_blocks_verified_badge():
     assert sheet.answers[0].status == 'verified'
     assert checked.answers[0].status == 'flagged'
     assert any('정기 검토 주기' in flag for flag in checked.answers[0].flags)
+
+
+def test_blocked_generation_exports_unavailable_report_pdf(tmp_path):
+    from esgenie.layer4_verify import _retrieval_blocked_detection, VerificationStep, VerificationResult
+    from esgenie.layer6_report import _block_esg, ReportDoc
+    from esgenie.exporters.report_pdf import export_report_pdf
+    gen = SimpleNamespace(text='독립 증빙 부족으로 생성 보류',
+                          context=SimpleNamespace(retrieval_decision=SimpleNamespace(hard_fails=['no_corp_evidence'])))
+    det = _retrieval_blocked_detection(gen)
+    step = VerificationStep(0,gen,det,None,'retrieval_gate_blocked')
+    verification = VerificationResult('G',[step],step,hitl_required=True)
+    out = SimpleNamespace(sections={'G':verification})
+    doc = ReportDoc('평가불가 대조군','제조업',2026,'2026-09-11',[_block_esg(out,'G')])
+    with fitz.open(export_report_pdf(doc,tmp_path)) as pdf:
+        text = '\n'.join(page.get_text() for page in pdf)
+    assert '평가불가' in text and '사람 검토 필요' in text
+    assert '100.0' not in text and det.risk_vector.risk_score is None
+    assert det.risk_vector.aggregate['evaluated_axes'] == []
+
+
+def test_risk_table_report_labels_partial_evaluation(tmp_path):
+    from esgenie.layer6_report import _block_risk, ReportDoc
+    from esgenie.exporters.report_pdf import export_report_pdf
+    row={'K-ESG 코드':'E-4-1','값':'248.5 TJ','D1 수치':0,'D2 수식어':0,
+         'D3 의미':None,'D5 시계열':0,'종합 위험도':0,
+         '평가 범위':{'evaluation_status':'partial'}}
+    block=_block_risk(SimpleNamespace(risk_rows=[row]))
+    assert '평가불가' in block.body_md and '부분 평가' in block.body_md
+    doc=ReportDoc('부분 평가 합성 대조군','제조업',2026,'2026-09-12',[block])
+    with fitz.open(export_report_pdf(doc,tmp_path)) as pdf:
+        text='\n'.join(page.get_text() for page in pdf)
+    assert '평가불가' in text and '부분 평가' in text and '248.5 TJ' in text

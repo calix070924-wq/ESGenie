@@ -251,7 +251,37 @@ def extract_document(file_path: str, decision: RouteDecision | None = None) -> O
     })
     # 동의어 해소 backstop — 코드 미부여 metric을 사전 매칭으로 채움(전 채널 공통 합류점).
     _backfill_kesg_codes(ext)
+    _resolve_clause_pages(ext, file_path)
     return ext
+
+
+def _resolve_clause_pages(ext: OcrExtraction, file_path: str) -> None:
+    """Use actual PDF pages, not the LLM's ambiguous 1-based page numbers."""
+    if not ext.clauses or Path(file_path).suffix.lower() != ".pdf":
+        return
+    try:
+        import fitz
+        import re
+        with fitz.open(file_path) as doc:
+            pages = [re.sub(r"\s+", "", p.get_text()) for p in doc]
+        if not pages:
+            return
+        unresolved = 0
+        for clause in ext.clauses:
+            quote = re.sub(r"\s+", "", clause.text)
+            matches = [i for i, text in enumerate(pages) if quote and quote in text]
+            if len(pages) == 1:
+                clause.page = 0
+            elif len(matches) == 1:
+                clause.page = matches[0]
+            else:
+                # Unknown/ambiguous location must not become a fabricated page link.
+                clause.page = None
+                unresolved += 1
+        ext.router_meta["clause_page_resolution"] = {
+            "source": "actual_pdf", "page_count": len(pages), "unresolved": unresolved}
+    except (ImportError, OSError, RuntimeError, ValueError):
+        return
 
 
 def _backfill_kesg_codes(ext: OcrExtraction) -> None:

@@ -56,3 +56,24 @@ def test_legacy_survey_form_node_cannot_be_document_evidence():
     ans = build_response_sheet("saq5_env", extraction=ledger, evidence_graph=graph).answers[0]
     assert ans.value is False and ans.status == "self_reported"
     assert evidence_coverage_pct(ledger) == 0
+
+
+def test_clause_pages_are_resolved_against_actual_pdf(tmp_path):
+    import fitz
+    from esgenie.ssot.ocr_router import OcrExtraction, ExtractedClause, DocChannel, _resolve_clause_pages
+    path=tmp_path/'policy.pdf'
+    with fitz.open() as doc:
+        doc.new_page().insert_text((50,50),'Policy actual text')
+        doc.new_page().insert_text((50,50),'Safety actual text')
+        doc.save(path)
+    ext=OcrExtraction('policy.pdf',DocChannel.UNSTRUCTURED,'policy_manual',
+        clauses=[ExtractedClause('policy','Safety actual text','S-4-1',page=2),
+                 ExtractedClause('unknown','Absent quotation','E-1-1',page=2)])
+    _resolve_clause_pages(ext,str(path))
+    assert ext.clauses[0].page == 1
+    assert ext.clauses[1].page is None
+    single=tmp_path/'single.pdf'
+    with fitz.open() as doc:
+        doc.new_page().insert_text((50,50),'Single-page policy');doc.save(single)
+    _resolve_clause_pages(ext,str(single))
+    assert all(c.page==0 for c in ext.clauses)
