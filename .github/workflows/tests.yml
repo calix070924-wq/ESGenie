@@ -40,6 +40,22 @@ jobs:
         run: python -m pytest tests/audit_integrity/test_cache_connection.py -q
       - name: Run full offline regression suite
         run: python -m pytest tests -q -o junit_family=xunit1 --junitxml=outputs/ci-regression.xml
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+      - name: Build guided workspace
+        working-directory: frontend
+        run: |
+          npm ci
+          npm run build
+      - name: Install browser for workspace checks
+        working-directory: frontend
+        run: npx playwright install --with-deps chromium
+      - name: Check guided browser workflows
+        working-directory: frontend
+        run: npm test
       - name: Upload regression results
         if: always()
         uses: actions/upload-artifact@v4
@@ -48,5 +64,7 @@ jobs:
           path: |
             outputs/ci-regression.xml
             outputs/audit_integrity_results.json
+            frontend/playwright-report/
+            frontend/test-results/
           if-no-files-found: ignore
           retention-days: 7
