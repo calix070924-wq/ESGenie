@@ -25,14 +25,12 @@ from .knowledge.greenwash_lexicon import vague_matches
 from .schemas import AxisScore, RiskVector
 
 # ---- 수치 주장 패턴 --------------------------------------------------------
-# lookbehind: 글자에 붙은 숫자는 수치 주장이 아니다 — "Scope3 배출량"에서 3+'배',
-# "RE100", "IFRS S2" 류가 가짜 claim으로 뽑히는 걸 막는다 (2026-07-27).
-# 배(?!출): '배출'의 '배'를 배수 단위로 오인하지 않는다.
-_NUMBER_PATTERN = re.compile(
-    r"(?<![0-9A-Za-z가-힣])"
-    r"(?P<num>\d{1,3}(?:,\d{3})*(?:\.\d+)?)\s*"
-    r"(?P<unit>%|억원|조원|tCO2eq|만\s*tCO2eq|톤|ton|TJ|%p|건|명|배(?!출))",
-)
+from .numeric_tokens import number_pattern, parse_number
+
+# Longest unit first: a percentage point is not a percent.
+_CORE_UNITS = r"%p|%|억원|조원|만\s*tCO2eq|tCO2eq|톤|ton|TJ|건|명|배(?!출)"
+_NUMBER_PATTERN = number_pattern(_CORE_UNITS)
+_NUMBER_CANDIDATE_PATTERN = number_pattern(_CORE_UNITS, candidates=True)
 
 # ---- 토픽 인덱스 (kesg_items.search_terms 단일 출처) -------------------------
 # 2026-07-27: 손으로 관리하던 13개 _KEYWORD_MAP을 제거하고 항목 정의의
@@ -98,11 +96,14 @@ _TOPIC_TERMS: tuple[tuple[str, str, str], ...] = _build_topic_terms()
 @dataclass
 class NumericClaim:
     raw: str
-    number: float
+    number: float | None
     unit: str
     topic: str | None
     matched_code: str | None
     sentence: str
+    start: int = 0
+    end: int = 0
+    issue: str | None = None
 
 
 @dataclass
@@ -136,7 +137,9 @@ def _sentences(text: str) -> list[str]:
 
 
 def _normalize_number(num: str, unit: str) -> tuple[float, str]:
-    n = float(num.replace(",", ""))
+    n = parse_number(num)
+    if n is None:
+        raise ValueError(f"Invalid numeric token: {num}")
     u = unit.replace(" ", "")
     if u.startswith("만"):
         n *= 10_000
@@ -236,15 +239,21 @@ def units_compatible(a: str | None, b: str | None) -> bool:
 
 def extract_numeric_claims(text: str) -> list[NumericClaim]:
     claims: list[NumericClaim] = []
+    offset = 0
     for sent in _sentences(text):
-        for m in _NUMBER_PATTERN.finditer(sent):
+        offset = text.index(sent, offset)
+        for m in _NUMBER_CANDIDATE_PATTERN.finditer(sent):
             num_str, unit = m.group("num"), m.group("unit")
-            n, u = _normalize_number(num_str, unit)
+            value = parse_number(num_str)
+            n, u = _normalize_number(num_str, unit) if value is not None else (None, unit)
             topic, code = _match_topic_near(sent, m.start(), m.end())
             claims.append(NumericClaim(
-                raw=f"{num_str} {unit}", number=n, unit=u,
+                raw=m.group(), number=n, unit=u,
                 topic=topic, matched_code=code, sentence=sent,
+                start=offset + m.start(), end=offset + m.end(),
+                issue="invalid_number" if n is None or n < 0 else None,
             ))
+        offset += len(sent)
     return claims
 
 
@@ -259,7 +268,7 @@ def _dart_numeric_value(report: CompanyReport, code: str) -> tuple[float | None,
 
 
 def _compare_claim(claim: NumericClaim, report: CompanyReport) -> ClaimCheck:
-    if not claim.matched_code:
+    if claim.issue or not claim.matched_code:
         return ClaimCheck(claim=claim, dart_value=None, dart_unit=None,
                           delta_pct=None, verdict="unverifiable")
     dart_v, dart_u = _dart_numeric_value(report, claim.matched_code)
