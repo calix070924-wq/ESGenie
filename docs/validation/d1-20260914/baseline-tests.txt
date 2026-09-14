@@ -1,0 +1,34 @@
+........................................................................ [  5%]
+........................................................................ [ 11%]
+........................................................................ [ 17%]
+........................................................................ [ 23%]
+........................................................................ [ 29%]
+........................................................................ [ 35%]
+........................................................................ [ 41%]
+........................................................................ [ 47%]
+........................................................................ [ 52%]
+........................................................................ [ 58%]
+........................................................................ [ 64%]
+........................................................................ [ 70%]
+........................................................................ [ 76%]
+........................................................................ [ 82%]
+........................................................................ [ 88%]
+...............................................................sssssssss [ 94%]
+sss..................................................................... [100%]
+=============================== warnings summary ===============================
+<frozen importlib._bootstrap>:488
+<frozen importlib._bootstrap>:488
+tests/audit_integrity/test_provenance_contract.py::test_local_pipeline_does_not_reimport_survey_as_dart_evidence[\uc608]
+  <frozen importlib._bootstrap>:488: DeprecationWarning: builtin type SwigPyPacked has no __module__ attribute
+
+<frozen importlib._bootstrap>:488
+<frozen importlib._bootstrap>:488
+tests/audit_integrity/test_provenance_contract.py::test_local_pipeline_does_not_reimport_survey_as_dart_evidence[\uc608]
+  <frozen importlib._bootstrap>:488: DeprecationWarning: builtin type SwigPyObject has no __module__ attribute
+
+<frozen importlib._bootstrap>:488
+tests/audit_integrity/test_provenance_contract.py::test_local_pipeline_does_not_reimport_survey_as_dart_evidence[\uc608]
+  <frozen importlib._bootstrap>:488: DeprecationWarning: builtin type swigvarlink has no __module__ attribute
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+1212 passed, 12 skipped, 8 warnings in 44.34s

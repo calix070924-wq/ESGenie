@@ -1,0 +1,23 @@
+{
+  "python": "3.13.13 (v3.13.13:01104ce1beb, Apr  7 2026, 14:43:30) [Clang 16.0.0 (clang-1600.0.26.6)]",
+  "executable": "/Library/Frameworks/Python.framework/Versions/3.13/bin/python3",
+  "platform": "macOS-26.6.2-arm64-arm-64bit-Mach-O",
+  "packages": {
+    "pytest": "9.0.3",
+    "streamlit": "1.56.0",
+    "numpy": "2.4.4",
+    "sentence-transformers": "5.4.1",
+    "reportlab": "5.0.0",
+    "openpyxl": "3.1.5",
+    "PyMuPDF": "1.27.2.3"
+  },
+  "OCR_cache": "/private/tmp/esgenie-d1-run/ocr",
+  "LLM_cache": "/private/tmp/esgenie-d1-run/llm",
+  "test_network": "socket connect/connect_ex/create_connection blocked by autouse fixture",
+  "LLM": "FORCE_MOCK=1; no external model API evaluation",
+  "embeddings": "sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2 from existing local cache; HF offline",
+  "PDF_test_references": {
+    "012330_mobis_2025.pdf": "/Users/heojeongmin/Documents/Claude/Projects/ESGenie/data/real_reports/012330_mobis_2025.pdf",
+    "051910_lgchem_2025.pdf": "/Users/heojeongmin/Documents/Claude/Projects/ESGenie/data/real_reports/051910_lgchem_2025.pdf"
+  }
+}

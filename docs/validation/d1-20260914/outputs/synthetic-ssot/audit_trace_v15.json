@@ -1,0 +1,135 @@
+{
+  "schema_version": "v15",
+  "ticker": "D1",
+  "corp_name": "수치 검증 합성",
+  "generated_at": "2026-09-14T04:49:46.727562+00:00",
+  "data_points": [
+    {
+      "kesg_code": "E-4-2",
+      "kesg_name": "재생에너지 사용 비율",
+      "value": 31,
+      "unit": "%",
+      "period": 2025,
+      "confidence": 1.0,
+      "verification": "estimated",
+      "d1_risk": 0.0,
+      "evidence_files": [
+        {
+          "file_name": "kesg_data/E-4-2",
+          "relative_path": "evidence_pack/kesg_data/E-4-2",
+          "origin": "dart",
+          "bbox": null,
+          "page": null,
+          "node_id": "D1_E-4-2_2025",
+          "kesg_codes": [
+            "E-4-2"
+          ],
+          "quote": "",
+          "resolved": true,
+          "independent": true
+        }
+      ],
+      "source_tier": "dart",
+      "representative_node_ids": [
+        "D1_E-4-2_2025"
+      ],
+      "value_role": "unknown",
+      "confidence_flags": [],
+      "d1_evaluation": {
+        "status": "complete",
+        "compared_claims": 1,
+        "unverified_claims": 0,
+        "excluded_claims": 0,
+        "reasons": {},
+        "claims": [
+          {
+            "raw": "31%",
+            "start": 9,
+            "end": 12,
+            "code": "E-4-2",
+            "claim_value": 31.0,
+            "claim_unit": "%",
+            "evidence_ids": [
+              "D1_E-4-2_2025"
+            ],
+            "evidence_value": 31,
+            "evidence_unit": "%",
+            "evidence_period": 2025,
+            "status": "compared",
+            "reason": "match",
+            "evidence_files": [],
+            "compared_value": 31.0,
+            "delta_ratio": 0.0,
+            "nonzero_against_zero": false
+          }
+        ]
+      }
+    },
+    {
+      "kesg_code": "E-3-1",
+      "kesg_name": "온실가스 배출량 (Scope1 + Scope2)",
+      "value": -100,
+      "unit": "tCO2eq",
+      "period": 2025,
+      "confidence": 1.0,
+      "verification": "unverified",
+      "d1_risk": null,
+      "evidence_files": [
+        {
+          "file_name": "kesg_data/E-3-1",
+          "relative_path": "evidence_pack/kesg_data/E-3-1",
+          "origin": "dart",
+          "bbox": null,
+          "page": null,
+          "node_id": "D1_E-3-1_2025",
+          "kesg_codes": [
+            "E-3-1"
+          ],
+          "quote": "",
+          "resolved": true,
+          "independent": true
+        }
+      ],
+      "source_tier": "dart",
+      "representative_node_ids": [
+        "D1_E-3-1_2025"
+      ],
+      "value_role": "unknown",
+      "confidence_flags": [],
+      "d1_evaluation": {
+        "status": "unavailable",
+        "compared_claims": 0,
+        "unverified_claims": 1,
+        "excluded_claims": 0,
+        "reasons": {
+          "invalid_number": 1
+        },
+        "claims": [
+          {
+            "raw": "-100tCO2eq",
+            "start": 9,
+            "end": 19,
+            "code": "E-3-1",
+            "claim_value": -100.0,
+            "claim_unit": "tCO2eq",
+            "evidence_ids": [],
+            "evidence_value": null,
+            "evidence_unit": null,
+            "evidence_period": null,
+            "status": "unverified",
+            "reason": "invalid_number"
+          }
+        ]
+      }
+    }
+  ],
+  "policy_audit": [],
+  "sentences": [],
+  "summary": {
+    "data_point_count": 2,
+    "verified_count": 0,
+    "verified_ratio": 0.0,
+    "policy_pass": 0,
+    "policy_total": 0
+  }
+}

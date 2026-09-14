@@ -1,0 +1,550 @@
+{
+  "mode": "offline; fixed generated text; real graph, ledger, L3-L6 and exporters; citation gate controlled",
+  "cases": [
+    {
+      "name": "normal",
+      "text": "재생에너지 사용 비율은 31%이며 폐기물 재활용 비율은 92%였다.",
+      "score": 0.0,
+      "converged": true,
+      "hitl_required": false,
+      "numeric_evaluation": {
+        "status": "complete",
+        "compared_claims": 2,
+        "unverified_claims": 0,
+        "excluded_claims": 0,
+        "reasons": {},
+        "claims": [
+          {
+            "raw": "31%",
+            "start": 13,
+            "end": 16,
+            "code": "E-4-2",
+            "claim_value": 31.0,
+            "claim_unit": "%",
+            "evidence_ids": [
+              "D1_E-4-2_2025"
+            ],
+            "evidence_value": 31,
+            "evidence_unit": "%",
+            "evidence_period": 2025,
+            "status": "compared",
+            "reason": "match",
+            "evidence_files": [],
+            "compared_value": 31.0,
+            "delta_ratio": 0.0,
+            "nonzero_against_zero": false
+          },
+          {
+            "raw": "92%",
+            "start": 31,
+            "end": 34,
+            "code": "E-6-2",
+            "claim_value": 92.0,
+            "claim_unit": "%",
+            "evidence_ids": [
+              "D1_E-6-2_2025"
+            ],
+            "evidence_value": 92,
+            "evidence_unit": "%",
+            "evidence_period": 2025,
+            "status": "compared",
+            "reason": "match",
+            "evidence_files": [],
+            "compared_value": 92.0,
+            "delta_ratio": 0.0,
+            "nonzero_against_zero": false
+          }
+        ]
+      }
+    },
+    {
+      "name": "swapped",
+      "text": "재생에너지 사용 비율은 92%이며 폐기물 재활용 비율은 31%였다.",
+      "score": 40.0,
+      "converged": false,
+      "hitl_required": true,
+      "numeric_evaluation": {
+        "status": "complete",
+        "compared_claims": 2,
+        "unverified_claims": 0,
+        "excluded_claims": 0,
+        "reasons": {},
+        "claims": [
+          {
+            "raw": "92%",
+            "start": 13,
+            "end": 16,
+            "code": "E-4-2",
+            "claim_value": 92.0,
+            "claim_unit": "%",
+            "evidence_ids": [
+              "D1_E-4-2_2025"
+            ],
+            "evidence_value": 31,
+            "evidence_unit": "%",
+            "evidence_period": 2025,
+            "status": "compared",
+            "reason": "mismatch",
+            "evidence_files": [],
+            "compared_value": 92.0,
+            "delta_ratio": 1.967741935483871,
+            "nonzero_against_zero": false
+          },
+          {
+            "raw": "31%",
+            "start": 31,
+            "end": 34,
+            "code": "E-6-2",
+            "claim_value": 31.0,
+            "claim_unit": "%",
+            "evidence_ids": [
+              "D1_E-6-2_2025"
+            ],
+            "evidence_value": 92,
+            "evidence_unit": "%",
+            "evidence_period": 2025,
+            "status": "compared",
+            "reason": "mismatch",
+            "evidence_files": [],
+            "compared_value": 31.0,
+            "delta_ratio": 0.6630434782608695,
+            "nonzero_against_zero": false
+          }
+        ]
+      }
+    },
+    {
+      "name": "plain_error",
+      "text": "온실가스 배출량은 9999 tCO2eq이다.",
+      "score": 40.0,
+      "converged": false,
+      "hitl_required": true,
+      "numeric_evaluation": {
+        "status": "complete",
+        "compared_claims": 1,
+        "unverified_claims": 0,
+        "excluded_claims": 0,
+        "reasons": {},
+        "claims": [
+          {
+            "raw": "9999 tCO2eq",
+            "start": 10,
+            "end": 21,
+            "code": "E-3-1",
+            "claim_value": 9999.0,
+            "claim_unit": "tCO2eq",
+            "evidence_ids": [
+              "D1_E-3-1_2025"
+            ],
+            "evidence_value": 100,
+            "evidence_unit": "tCO2eq",
+            "evidence_period": 2025,
+            "status": "compared",
+            "reason": "mismatch",
+            "evidence_files": [],
+            "compared_value": 9999.0,
+            "delta_ratio": 98.99,
+            "nonzero_against_zero": false
+          }
+        ]
+      }
+    },
+    {
+      "name": "missing",
+      "text": "용수 사용량은 100톤이다.",
+      "score": 0.0,
+      "converged": false,
+      "hitl_required": true,
+      "numeric_evaluation": {
+        "status": "unavailable",
+        "compared_claims": 0,
+        "unverified_claims": 1,
+        "excluded_claims": 0,
+        "reasons": {
+          "no_evidence": 1
+        },
+        "claims": [
+          {
+            "raw": "100톤",
+            "start": 8,
+            "end": 12,
+            "code": "E-5-1",
+            "claim_value": 100.0,
+            "claim_unit": "톤",
+            "evidence_ids": [],
+            "evidence_value": null,
+            "evidence_unit": null,
+            "evidence_period": null,
+            "status": "unverified",
+            "reason": "no_evidence"
+          }
+        ]
+      }
+    },
+    {
+      "name": "normal_missing",
+      "text": "재생에너지 사용 비율은 31%이며 용수 사용량은 100톤이다.",
+      "score": 0.0,
+      "converged": false,
+      "hitl_required": true,
+      "numeric_evaluation": {
+        "status": "partial",
+        "compared_claims": 1,
+        "unverified_claims": 1,
+        "excluded_claims": 0,
+        "reasons": {
+          "no_evidence": 1
+        },
+        "claims": [
+          {
+            "raw": "31%",
+            "start": 13,
+            "end": 16,
+            "code": "E-4-2",
+            "claim_value": 31.0,
+            "claim_unit": "%",
+            "evidence_ids": [
+              "D1_E-4-2_2025"
+            ],
+            "evidence_value": 31,
+            "evidence_unit": "%",
+            "evidence_period": 2025,
+            "status": "compared",
+            "reason": "match",
+            "evidence_files": [],
+            "compared_value": 31.0,
+            "delta_ratio": 0.0,
+            "nonzero_against_zero": false
+          },
+          {
+            "raw": "100톤",
+            "start": 27,
+            "end": 31,
+            "code": "E-5-1",
+            "claim_value": 100.0,
+            "claim_unit": "톤",
+            "evidence_ids": [],
+            "evidence_value": null,
+            "evidence_unit": null,
+            "evidence_period": null,
+            "status": "unverified",
+            "reason": "no_evidence"
+          }
+        ]
+      }
+    },
+    {
+      "name": "error_missing",
+      "text": "재생에너지 사용 비율은 92%이며 용수 사용량은 100톤이다.",
+      "score": 40.0,
+      "converged": false,
+      "hitl_required": true,
+      "numeric_evaluation": {
+        "status": "partial",
+        "compared_claims": 1,
+        "unverified_claims": 1,
+        "excluded_claims": 0,
+        "reasons": {
+          "no_evidence": 1
+        },
+        "claims": [
+          {
+            "raw": "92%",
+            "start": 13,
+            "end": 16,
+            "code": "E-4-2",
+            "claim_value": 92.0,
+            "claim_unit": "%",
+            "evidence_ids": [
+              "D1_E-4-2_2025"
+            ],
+            "evidence_value": 31,
+            "evidence_unit": "%",
+            "evidence_period": 2025,
+            "status": "compared",
+            "reason": "mismatch",
+            "evidence_files": [],
+            "compared_value": 92.0,
+            "delta_ratio": 1.967741935483871,
+            "nonzero_against_zero": false
+          },
+          {
+            "raw": "100톤",
+            "start": 27,
+            "end": 31,
+            "code": "E-5-1",
+            "claim_value": 100.0,
+            "claim_unit": "톤",
+            "evidence_ids": [],
+            "evidence_value": null,
+            "evidence_unit": null,
+            "evidence_period": null,
+            "status": "unverified",
+            "reason": "no_evidence"
+          }
+        ]
+      }
+    }
+  ],
+  "actual_document": {
+    "source": {
+      "source_file": "012330_mobis_2025.pdf",
+      "pdf_sha256": "b7845ec3e1f9cf0087b3c9140c7f531cb9fc4ce6bfab80188f6f6c93fe75e8e0",
+      "source_type": "actual public report and previously saved extraction (read-only)",
+      "cache_file": "b16d54bf96efca738aa6d9294702c5d32eb0c9caacdde9f5d584e475be828cb8.json",
+      "cache_sha256": "fc33065f163f8b9d9f9adf8179de0864db575b121d7b21a991a3786f4198c79e",
+      "cached_model": "gpt-4.1-mini",
+      "cached_at": "2026-07-30T14:54:42+00:00",
+      "fresh_api_called": false,
+      "human_page_mapping": "페이지와 코드는 이번 원문 대조에서 수동 연결. 캐시 자체에 페이지/코드는 없음.",
+      "supporting_quote_page": 67,
+      "supporting_quote": "2024년에는 국내 사업장 기준 폐기물 재활용률 92.9%를 달성하였습니다.",
+      "metrics": [
+        {
+          "metric_hint": "폐기물 매립 제로화(재활용률)",
+          "value": 92.9,
+          "unit": "%",
+          "period": "2024",
+          "kesg_code": null,
+          "code": "E-6-2",
+          "source_page_index": 69,
+          "scope": "2024년 국내(별도) 연간"
+        },
+        {
+          "metric_hint": "폐기물 발생량 합계",
+          "value": 72463,
+          "unit": "ton",
+          "period": "2024",
+          "kesg_code": null,
+          "code": "E-6-1",
+          "source_page_index": 69,
+          "scope": "2024년 국내·해외 합계 연간"
+        }
+      ]
+    },
+    "rows": [
+      {
+        "K-ESG 코드": "E-6-1",
+        "값": "72463 톤",
+        "보고 연도": 2024,
+        "대표 근거": [
+          "MOBIS_E-6-1_2024__ocr_unstructured__b82328c722"
+        ],
+        "신뢰 정보": [],
+        "D1 수치": 0.0,
+        "D1 평가": {
+          "status": "complete",
+          "compared_claims": 1,
+          "unverified_claims": 0,
+          "excluded_claims": 0,
+          "reasons": {},
+          "claims": [
+            {
+              "raw": "72463톤",
+              "start": 9,
+              "end": 15,
+              "code": "E-6-1",
+              "claim_value": 72463.0,
+              "claim_unit": "톤",
+              "evidence_ids": [
+                "MOBIS_E-6-1_2024__ocr_unstructured__b82328c722"
+              ],
+              "evidence_value": 72463,
+              "evidence_unit": "톤",
+              "evidence_period": 2024,
+              "status": "compared",
+              "reason": "match",
+              "evidence_files": [
+                "012330_mobis_2025.pdf"
+              ],
+              "compared_value": 72463.0,
+              "delta_ratio": 0.0,
+              "nonzero_against_zero": false
+            }
+          ]
+        },
+        "D2 수식어": 0.0,
+        "D3 의미": null,
+        "D5 시계열": 0.0,
+        "종합 위험도": 0.0,
+        "평가 상태": "부분 평가 · 유효 축: D1_numeric, D2_modifier, D5_timeseries",
+        "평가 범위": {
+          "risk_score": 0.0,
+          "level": "low",
+          "top_axis": "",
+          "abstained_axes": [
+            "D3_semantic"
+          ],
+          "evaluated_axes": [
+            "D1_numeric",
+            "D2_modifier",
+            "D5_timeseries"
+          ],
+          "evaluated_weight": 0.75,
+          "incomplete_axes": [
+            "D3_semantic"
+          ],
+          "evaluation_complete": false,
+          "evaluation_status": "partial"
+        }
+      }
+    ],
+    "unselected_recycling_claim": {
+      "score": 0.0,
+      "evidence": [],
+      "detail": "E-6-2: 92.9% — 근거 노드 없음",
+      "abstain": true,
+      "abstain_reason": "no_evidence",
+      "evaluation": {
+        "status": "unavailable",
+        "compared_claims": 0,
+        "unverified_claims": 1,
+        "excluded_claims": 0,
+        "reasons": {
+          "no_evidence": 1
+        },
+        "claims": [
+          {
+            "raw": "92.9%",
+            "start": 12,
+            "end": 17,
+            "code": "E-6-2",
+            "claim_value": 92.9,
+            "claim_unit": "%",
+            "evidence_ids": [],
+            "evidence_value": null,
+            "evidence_unit": null,
+            "evidence_period": null,
+            "status": "unverified",
+            "reason": "no_evidence"
+          }
+        ]
+      }
+    }
+  },
+  "synthetic_ssot_rows": [
+    {
+      "K-ESG 코드": "E-4-2",
+      "값": "31 %",
+      "보고 연도": 2025,
+      "대표 근거": [
+        "D1_E-4-2_2025"
+      ],
+      "신뢰 정보": [],
+      "D1 수치": 0.0,
+      "D1 평가": {
+        "status": "complete",
+        "compared_claims": 1,
+        "unverified_claims": 0,
+        "excluded_claims": 0,
+        "reasons": {},
+        "claims": [
+          {
+            "raw": "31%",
+            "start": 9,
+            "end": 12,
+            "code": "E-4-2",
+            "claim_value": 31.0,
+            "claim_unit": "%",
+            "evidence_ids": [
+              "D1_E-4-2_2025"
+            ],
+            "evidence_value": 31,
+            "evidence_unit": "%",
+            "evidence_period": 2025,
+            "status": "compared",
+            "reason": "match",
+            "evidence_files": [],
+            "compared_value": 31.0,
+            "delta_ratio": 0.0,
+            "nonzero_against_zero": false
+          }
+        ]
+      },
+      "D2 수식어": 0.0,
+      "D3 의미": null,
+      "D5 시계열": 0.0,
+      "종합 위험도": 0.0,
+      "평가 상태": "부분 평가 · 유효 축: D1_numeric, D2_modifier, D5_timeseries",
+      "평가 범위": {
+        "risk_score": 0.0,
+        "level": "low",
+        "top_axis": "",
+        "abstained_axes": [
+          "D3_semantic"
+        ],
+        "evaluated_axes": [
+          "D1_numeric",
+          "D2_modifier",
+          "D5_timeseries"
+        ],
+        "evaluated_weight": 0.75,
+        "incomplete_axes": [
+          "D3_semantic"
+        ],
+        "evaluation_complete": false,
+        "evaluation_status": "partial"
+      }
+    },
+    {
+      "K-ESG 코드": "E-3-1",
+      "값": "-100 tCO2eq",
+      "보고 연도": 2025,
+      "대표 근거": [
+        "D1_E-3-1_2025"
+      ],
+      "신뢰 정보": [],
+      "D1 수치": null,
+      "D1 평가": {
+        "status": "unavailable",
+        "compared_claims": 0,
+        "unverified_claims": 1,
+        "excluded_claims": 0,
+        "reasons": {
+          "invalid_number": 1
+        },
+        "claims": [
+          {
+            "raw": "-100tCO2eq",
+            "start": 9,
+            "end": 19,
+            "code": "E-3-1",
+            "claim_value": -100.0,
+            "claim_unit": "tCO2eq",
+            "evidence_ids": [],
+            "evidence_value": null,
+            "evidence_unit": null,
+            "evidence_period": null,
+            "status": "unverified",
+            "reason": "invalid_number"
+          }
+        ]
+      },
+      "D2 수식어": 0.0,
+      "D3 의미": null,
+      "D5 시계열": 0.0,
+      "종합 위험도": 0.0,
+      "평가 상태": "부분 평가 · 유효 축: D2_modifier, D5_timeseries",
+      "평가 범위": {
+        "risk_score": 0.0,
+        "level": "low",
+        "top_axis": "",
+        "abstained_axes": [
+          "D1_numeric",
+          "D3_semantic"
+        ],
+        "evaluated_axes": [
+          "D2_modifier",
+          "D5_timeseries"
+        ],
+        "evaluated_weight": 0.35,
+        "incomplete_axes": [
+          "D1_numeric",
+          "D3_semantic"
+        ],
+        "evaluation_complete": false,
+        "evaluation_status": "partial"
+      }
+    }
+  ]
+}
