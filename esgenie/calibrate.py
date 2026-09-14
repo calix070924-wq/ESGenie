@@ -101,7 +101,8 @@ def capture(bench_path: Path = BENCH_PATH, cache_path: Path = CACHE_PATH) -> dic
             a = axes_obj[n]
             entry: dict[str, Any] = {"rule_score": a.score, "detail": a.detail,
                                      "judgeable": n in triggered,
-                                     "abstain": a.abstain, "abstain_reason": a.abstain_reason}
+                                     "abstain": a.abstain, "abstain_reason": a.abstain_reason,
+                                     "evaluation": a.evaluation}
             if n in triggered and n in verdicts:
                 v = verdicts[n]
                 entry["verdict"] = v.get("verdict")
@@ -142,10 +143,13 @@ def _simulate_vector(rec: dict[str, Any], *, trigger: float, rule_weight: float)
                 blended = round(rule_weight * rule + (1.0 - rule_weight) * llm_s, 4)
         else:
             blended = rule
+        if n == "D1_numeric" and a.get("evaluation", {}).get("compared_claims", 0):
+            blended = max(rule, blended)
         axes[n] = AxisScore(
             score=blended, evidence=[], detail="",
             abstain=bool(a.get("abstain", False)),
             abstain_reason=a.get("abstain_reason"),
+            evaluation=a.get("evaluation", {}),
         )
     return _rebuild_vector(axes)
 

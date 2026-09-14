@@ -1,259 +1,86 @@
-"""D1 정밀 기권(abstain) 조건 — 배치 2 회귀 테스트.
+"""2026-09-14 product policy: absent comparisons never count as verified.
 
-핵심 불변식:
-  - ABSTAIN_ENABLED=0(기본)이면 어떤 케이스에서도 기존 동작(0.9/0.6/0.0)이
-    그대로 나와야 한다(회귀 없음).
-  - 기권은 "수치 주장 있음 + 코드 매핑됨 + (근거 없음 or 단위 호환 불가)"일
-    때만 발동한다. 수치 없음/코드 매핑 없음/evidence_graph 없음은 기권이 아니다.
-  - 문장 내 다수 수치 중 하나라도 검증되면 기권이 아니다(실제 위험 신호를
-    기권으로 가리지 않기 위함).
+Replaces the previous opt-in/legacy-zero expectations from the task's step 4.
+Measured mismatches are retained independently from incomplete claim coverage.
 """
-from __future__ import annotations
-
-from types import SimpleNamespace
-
+from dataclasses import replace
 import pytest
-
-from esgenie.layer3_detect import _score_d1_numeric
+from esgenie.layer3_detect import score_d1_numeric, _build_risk_vector
 from esgenie.ssot.detector_5axis import detect_d1_numeric
+from esgenie.schemas import AxisScore
+from tests.d1_fixtures import make_evidence
+
+@pytest.mark.parametrize('ssot', [False, True])
+@pytest.mark.parametrize('sentence,code,reason', [
+    ('용수 사용량은 100톤이다.', 'E-5-1', 'no_evidence'),
+    ('재생에너지 사용 비율은 31%p였다.', 'E-4-2', 'unit_mismatch'),
+    ('총 15건을 수행하였다.', None, 'ambiguous_topic'),
+    ('재생에너지 사용 비율은 -31%였다.', 'E-4-2', 'invalid_number'),
+    ('재생에너지 사용 비율은 3,1%였다.', 'E-4-2', 'invalid_number'),
+])
+def test_unverified_reasons_are_distinct(ssot, sentence, code, reason):
+    _, graph, _ = make_evidence()
+    axis = detect_d1_numeric(sentence, code, graph) if ssot else score_d1_numeric(sentence, graph)
+    assert axis.score == 0 and axis.abstain and axis.abstain_reason == reason
+    assert axis.evaluation['compared_claims'] == 0
+    assert axis.evaluation['unverified_claims'] == 1
+    assert axis.evaluation['reasons'] == {reason: 1}
+
+@pytest.mark.parametrize('ssot', [False, True])
+@pytest.mark.parametrize('sentence', ['수치가 없는 문장입니다.', '2025년 제3장 IFRS S2 RE100', '재생에너지 비율 100% 전환 목표'])
+def test_no_actual_comparison_is_not_abstention(ssot, sentence):
+    _, graph, _ = make_evidence()
+    axis = detect_d1_numeric(sentence, 'E-4-2', graph) if ssot else score_d1_numeric(sentence, graph)
+    assert not axis.abstain and axis.score == 0
+    assert axis.evaluation['status'] == 'not_applicable'
 
 
-class _NoNodeGraph:
-    """어떤 keyword로 검색해도 노드를 찾지 못하는 그래프 — no_evidence 시나리오."""
+def test_missing_graph_is_no_evidence():
+    axis = score_d1_numeric('재생에너지 사용 비율은 31%였다.', None)
+    assert axis.abstain_reason == 'no_evidence'
 
-    report_year = 2025
-
-    def search_nodes(self, keywords, period=None):
-        return []
-
-    # ssot 경로용(EvidenceGraph.nodes_by_metric 호환)
-    def nodes_by_metric(self, metric):
-        return []
-
-
-class _UnitMismatchGraph:
-    """노드는 있으나 단위가 항상 다른 그래프 — unit_mismatch 시나리오."""
-
-    report_year = 2025
-
-    def __init__(self):
-        self._node = SimpleNamespace(id="n1", value=100.0, unit="tCO2eq", period=2025)
-
-    def search_nodes(self, keywords, period=None):
-        return [self._node]
-
-    def nodes_by_metric(self, metric):
-        return [self._node]
+@pytest.mark.parametrize('value,score', [(31,0),(92,1)])
+def test_partial_verification_preserves_measured_result(value, score):
+    _, graph, _ = make_evidence()
+    axis = score_d1_numeric(f'재생에너지 사용 비율은 {value}%이며 용수 사용량은 100톤이다.', graph)
+    assert axis.score == score and not axis.abstain
+    assert axis.evaluation['status'] == 'partial'
+    assert (axis.evaluation['compared_claims'], axis.evaluation['unverified_claims']) == (1,1)
+    rv = _build_risk_vector(axis, AxisScore(0), AxisScore(0), AxisScore(0))
+    assert rv.risk_score == .4 * score
+    assert not rv.evaluation_complete
+    assert rv.aggregate['incomplete_axes'] == ['D1_numeric']
 
 
-class _VerifiedGraph:
-    """정상 매칭되는 그래프 — 검증 성공 시나리오."""
-
-    report_year = 2025
-
-    def __init__(self, value=31.0, unit="%"):
-        self._node = SimpleNamespace(id="n1", value=value, unit=unit, period=2025)
-
-    def search_nodes(self, keywords, period=None):
-        return [self._node]
+def test_mixed_unverified_reasons_do_not_mask_each_other():
+    _, graph, _ = make_evidence()
+    axis = score_d1_numeric('재생에너지 비율은 31%p이며 용수 사용량은 100톤이다.', graph)
+    assert axis.abstain_reason == 'no_evidence'
+    assert axis.evaluation['reasons'] == {'unit_mismatch':1,'no_evidence':1}
 
 
-class _PartialGraph:
-    """두 코드 중 하나만 노드를 갖는 그래프 — '하나라도 검증되면 기권 아님' 시나리오."""
-
-    report_year = 2025
-
-    def __init__(self):
-        self._nodes = {"E-4-1": SimpleNamespace(id="n_energy", value=500.0, unit="%", period=2025)}
-
-    def search_nodes(self, keywords, period=None):
-        out = []
-        for k in keywords:
-            if k in self._nodes:
-                out.append(self._nodes[k])
-        return out
+def test_explicit_no_selection_is_not_legacy_missing_metadata():
+    _, graph, _ = make_evidence()
+    graph.resolved_facts['E-4-2'] = None
+    assert score_d1_numeric('재생에너지 비율은 31%이다.', graph).abstain_reason == 'no_evidence'
+    del graph.resolved_facts['E-4-2']
+    axis = score_d1_numeric('재생에너지 비율은 31%이다.', graph)
+    assert not axis.abstain and axis.score == 0
 
 
-class _CodeSpecificGraph:
-    """지정 코드에만 노드를 반환하는 그래프(코드별 검색) — 혼합 문장 시나리오용.
-    기본: E-4-2에 단위 불일치(tCO2eq) 노드만, S-2-3(이직률)엔 노드 없음."""
-
-    report_year = 2025
-
-    def __init__(self, nodes=None):
-        self._nodes = nodes or {
-            "E-4-2": SimpleNamespace(id="n_re", value=100.0, unit="tCO2eq", period=2025),
-            "E-4-1": SimpleNamespace(id="n_en", value=100.0, unit="tCO2eq", period=2025),
-        }
-
-    def search_nodes(self, keywords, period=None):
-        return [self._nodes[k] for k in keywords if k in self._nodes]
-
-    def nodes_by_metric(self, metric):
-        return [self._nodes[metric]] if metric in self._nodes else []
+def test_finalized_unit_cannot_reselect_compatible_decoy():
+    from esgenie.ssot.evidence_graph import EvidenceNode
+    _, graph, _ = make_evidence()
+    graph.resolved_facts['E-4-2'] = replace(graph.resolved_facts['E-4-2'], unit='tCO2eq')
+    graph.add_node(EvidenceNode('decoy','E-4-2',31,'%',2025,'dart'))
+    axis = score_d1_numeric('재생에너지 비율은 31%이다.', graph)
+    assert axis.abstain_reason == 'unit_mismatch' and 'decoy' not in axis.evidence
 
 
-# ============================================================================
-# layer3_detect._score_d1_numeric (주 타깃)
-# ============================================================================
-
-class TestLayer3DetectAbstain:
-    def test_no_numeric_claim_never_abstains(self, monkeypatch):
-        monkeypatch.setattr("esgenie.layer3_detect.ABSTAIN_ENABLED", True)
-        axis = _score_d1_numeric("올해도 최선을 다해 노력하고 있습니다.", _NoNodeGraph())
-        assert axis.abstain is False
-        assert axis.score == 0.0
-
-    def test_number_without_code_mapping_never_abstains(self, monkeypatch):
-        monkeypatch.setattr("esgenie.layer3_detect.ABSTAIN_ENABLED", True)
-        # "15건"은 _NUMBER_PATTERN 단위(건)엔 걸리지만, 주변에 _KEYWORD_MAP 키워드가 없어
-        # 코드 매핑이 되지 않는다 → 기권 대상 아님(수치는 있으나 검증 대상이 아님).
-        s = "본 사업장은 총 15건의 안전점검을 수행하였다."
-        axis = _score_d1_numeric(s, _NoNodeGraph())
-        assert axis.abstain is False
-        assert axis.score == 0.0
-
-    def test_evidence_graph_none_never_abstains(self, monkeypatch):
-        monkeypatch.setattr("esgenie.layer3_detect.ABSTAIN_ENABLED", True)
-        axis = _score_d1_numeric("재생에너지 사용 비율은 31.0%였다.", None)
-        assert axis.abstain is False
-        assert axis.score == 0.0
-        assert "스킵" in axis.detail
-
-    def test_no_evidence_abstains_when_enabled(self, monkeypatch):
-        monkeypatch.setattr("esgenie.layer3_detect.ABSTAIN_ENABLED", True)
-        axis = _score_d1_numeric("재생에너지 사용 비율은 31.0%였다.", _NoNodeGraph())
-        assert axis.abstain is True
-        assert axis.abstain_reason == "no_evidence"
-        assert axis.score == 0.0  # 점수 산정 자체는 불변 — 표식만 추가
-
-    def test_no_evidence_stays_score_zero_when_disabled(self, monkeypatch):
-        # 비활성(False) 시 회귀 없음 확인 — env(ABSTAIN_ENABLED=1) 오염에도 안전하도록 명시.
-        monkeypatch.setattr("esgenie.layer3_detect.ABSTAIN_ENABLED", False)
-        monkeypatch.setattr("esgenie.layer3_detect.ABSTAIN_UNIT_MISMATCH", False)
-        axis = _score_d1_numeric("재생에너지 사용 비율은 31.0%였다.", _NoNodeGraph())
-        assert axis.abstain is False
-        assert axis.abstain_reason is None
-        assert axis.score == 0.0
-
-    def test_unit_mismatch_does_not_abstain_by_default_even_when_enabled(self, monkeypatch):
-        """2026-07-28 실키 A/B: unit_mismatch 기권이 test held-out 지표를 하락시켜
-        ABSTAIN_UNIT_MISMATCH 기본값을 False로 바꿨다 — ABSTAIN_ENABLED만으로는
-        더 이상 unit_mismatch가 기권되지 않는다(기존 동작인 score 0.0 유지)."""
-        monkeypatch.setattr("esgenie.layer3_detect.ABSTAIN_ENABLED", True)
-        monkeypatch.setattr("esgenie.layer3_detect.ABSTAIN_UNIT_MISMATCH", False)
-        axis = _score_d1_numeric("재생에너지 사용 비율은 31.0%였다.", _UnitMismatchGraph())
-        assert axis.abstain is False
-        assert axis.abstain_reason is None
-        assert axis.score == 0.0
-
-    def test_unit_mismatch_abstains_when_both_flags_enabled(self, monkeypatch):
-        monkeypatch.setattr("esgenie.layer3_detect.ABSTAIN_ENABLED", True)
-        monkeypatch.setattr("esgenie.layer3_detect.ABSTAIN_UNIT_MISMATCH", True)
-        axis = _score_d1_numeric("재생에너지 사용 비율은 31.0%였다.", _UnitMismatchGraph())
-        assert axis.abstain is True
-        assert axis.abstain_reason == "unit_mismatch"
-
-    def test_unit_mismatch_stays_score_zero_when_disabled(self, monkeypatch):
-        monkeypatch.setattr("esgenie.layer3_detect.ABSTAIN_ENABLED", False)
-        monkeypatch.setattr("esgenie.layer3_detect.ABSTAIN_UNIT_MISMATCH", False)
-        axis = _score_d1_numeric("재생에너지 사용 비율은 31.0%였다.", _UnitMismatchGraph())
-        assert axis.abstain is False
-        assert axis.score == 0.0
-
-    def test_no_evidence_still_abstains_with_unit_mismatch_flag_off(self, monkeypatch):
-        """주 타깃(no_evidence)은 ABSTAIN_UNIT_MISMATCH와 무관하게 계속 기권한다."""
-        monkeypatch.setattr("esgenie.layer3_detect.ABSTAIN_ENABLED", True)
-        monkeypatch.setattr("esgenie.layer3_detect.ABSTAIN_UNIT_MISMATCH", False)
-        axis = _score_d1_numeric("재생에너지 사용 비율은 31.0%였다.", _NoNodeGraph())
-        assert axis.abstain is True
-        assert axis.abstain_reason == "no_evidence"
-
-    def test_verified_claim_never_abstains(self, monkeypatch):
-        monkeypatch.setattr("esgenie.layer3_detect.ABSTAIN_ENABLED", True)
-        axis = _score_d1_numeric("재생에너지 사용 비율은 31.0%였다.", _VerifiedGraph(value=31.0))
-        assert axis.abstain is False
-
-    def test_one_verified_among_many_never_abstains(self, monkeypatch):
-        monkeypatch.setattr("esgenie.layer3_detect.ABSTAIN_ENABLED", True)
-        # 에너지(검증 가능) + 용수(노드 없음) 두 지표가 한 문장에 섞여 있어도,
-        # 하나라도 검증되면 기권이 아니다.
-        s = "에너지 사용량은 500%이며 용수 사용량은 120%였다."
-        axis = _score_d1_numeric(s, _PartialGraph())
-        assert axis.abstain is False
-
-    def test_mixed_sentence_no_evidence_not_masked_by_neighbor_node(self, monkeypatch):
-        """코드리뷰 must-fix 2 회귀: 혼합 문장에서 옆 지표(재생에너지, 단위불일치 노드
-        존재) 때문에 자기 코드(이직률, 근거 전무)의 no_evidence가 unit_mismatch로
-        오분류돼 조용히 통과하던 버그. no_evidence는 자기 코드 근거 유무로 판정되어야
-        하며, no_evidence가 하나라도 있으면 우선한다."""
-        monkeypatch.setattr("esgenie.layer3_detect.ABSTAIN_ENABLED", True)
-        monkeypatch.setattr("esgenie.layer3_detect.ABSTAIN_UNIT_MISMATCH", False)
-        s = "재생에너지 비율은 31.0%이며 이직률은 1.2%였다."
-        axis = _score_d1_numeric(s, _CodeSpecificGraph())
-        assert axis.abstain is True
-        assert axis.abstain_reason == "no_evidence"
-
-    def test_mismatch_risk_not_turned_into_abstain(self, monkeypatch):
-        """실제 위험(수치 불일치)은 기권으로 가리지 않는다 — 근거는 있고 값만 다른 경우."""
-        monkeypatch.setattr("esgenie.layer3_detect.ABSTAIN_ENABLED", True)
-        axis = _score_d1_numeric("재생에너지 사용 비율은 90.0%였다.", _VerifiedGraph(value=31.0))
-        assert axis.abstain is False
-        assert axis.score > 0.5
-
-
-# ============================================================================
-# ssot/detector_5axis.detect_d1_numeric (정합화 — 프로덕션 지렛대 아님)
-# ============================================================================
-
-class TestSsotDetectorAbstain:
-    def test_no_claim_never_abstains(self, monkeypatch):
-        monkeypatch.setattr("esgenie.ssot.detector_5axis.ABSTAIN_ENABLED", True)
-        axis = detect_d1_numeric("수치가 없는 문장입니다.", "E-4-1", _NoNodeGraph())
-        assert axis.abstain is False
-        assert axis.score == 0.0
-
-    def test_no_kesg_code_abstains_when_enabled(self, monkeypatch):
-        monkeypatch.setattr("esgenie.ssot.detector_5axis.ABSTAIN_ENABLED", True)
-        axis = detect_d1_numeric("사용량은 128,400 kWh였습니다.", None, _NoNodeGraph())
-        assert axis.abstain is True
-        assert axis.abstain_reason == "no_evidence"
-
-    def test_no_kesg_code_stays_legacy_when_disabled(self, monkeypatch):
-        monkeypatch.setattr("esgenie.ssot.detector_5axis.ABSTAIN_ENABLED", False)
-        axis = detect_d1_numeric("사용량은 128,400 kWh였습니다.", None, _NoNodeGraph())
-        assert axis.abstain is False
-        assert axis.score == 0.6
-
-    def test_no_evidence_node_abstains_when_enabled(self, monkeypatch):
-        monkeypatch.setattr("esgenie.ssot.detector_5axis.ABSTAIN_ENABLED", True)
-        axis = detect_d1_numeric("사용량은 128,400 kWh였습니다.", "E-4-1", _NoNodeGraph())
-        assert axis.abstain is True
-        assert axis.abstain_reason == "no_evidence"
-
-    def test_no_evidence_node_stays_legacy_when_disabled(self, monkeypatch):
-        monkeypatch.setattr("esgenie.ssot.detector_5axis.ABSTAIN_ENABLED", False)
-        axis = detect_d1_numeric("사용량은 128,400 kWh였습니다.", "E-4-1", _NoNodeGraph())
-        assert axis.abstain is False
-        assert axis.score == 0.9
-
-    def test_unmatched_value_is_not_abstain(self):
-        """미일치(근거는 있으나 값이 다름)는 기권이 아니라 실제 위험 — 건드리지 않는다."""
-        graph = _VerifiedGraph_ssot()
-        axis = detect_d1_numeric("사용량은 999,999 kWh였습니다.", "E-4-1", graph)
-        assert axis.abstain is False
-        assert axis.score >= 0.5
-
-
-class _VerifiedGraph_ssot:
-    """ssot detect_d1_numeric용 — nodes_by_metric이 단일 노드를 반환."""
-
-    report_year = 2025
-
-    def __init__(self):
-        from esgenie.ssot.evidence_graph import EvidenceNode
-        self._node = EvidenceNode("n1", "E-4-1", 128_400.0, "kWh", 2025, "dart")
-        self.nodes = {self._node.id: self._node}
-
-    def nodes_by_metric(self, metric):
-        return [self._node]
+def test_old_axis_payload_and_all_abstention_contract():
+    axis = AxisScore(**{'score':0,'detail':'old','evidence':[]})
+    assert axis.evaluation_complete
+    ab = AxisScore(0,abstain=True,abstain_reason='no_evidence')
+    rv = _build_risk_vector(ab,ab,ab,ab)
+    assert rv.risk_score is None and rv.aggregate['evaluated_weight'] == 0
+    assert rv.numeric_coverage_label == '평가불가'

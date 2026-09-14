@@ -19,10 +19,31 @@ class AxisScore:
     score: float
     evidence: list[str] = field(default_factory=list)  # node_id 또는 chunk_id 목록
     detail: str = ""
-    abstain: bool = False              # ★ 신설: 판정 보류 여부(기본 False — 기존 동작 불변)
-    abstain_reason: str | None = None  # ★ 신설: "no_evidence" | "unit_mismatch" | "low_confidence"
+    abstain: bool = False              # 전부 미검증인 축. 부분 검증은 evaluation에 기록.
+    abstain_reason: str | None = None  # 근거/단위/지표 연결/숫자 부적합 사유
 
     evaluation: dict[str, Any] = field(default_factory=dict)
+
+    @property
+    def evaluation_complete(self) -> bool:
+        return not self.abstain and self.evaluation.get("status") not in {"partial", "unavailable"}
+
+    @property
+    def evaluation_label(self) -> str:
+        if self.abstain or self.evaluation.get("status") == "unavailable":
+            return "평가불가"
+        return {"partial": "부분 평가", "not_applicable": "비교 대상 없음"}.get(self.evaluation.get("status"), "평가 완료")
+
+    @property
+    def coverage_label(self) -> str:
+        if not self.evaluation:
+            return self.evaluation_label
+        labels = {"no_evidence": "근거 없음", "unit_mismatch": "단위 비교 불가",
+                  "ambiguous_topic": "지표 연결 모호", "invalid_number": "부적합 숫자"}
+        reasons = ", ".join(f"{labels.get(k, k)} {v}건" for k, v in self.evaluation.get("reasons", {}).items())
+        return (f"{self.evaluation_label} · 비교 {self.evaluation.get('compared_claims', 0)}건"
+                f" · 미검증 {self.evaluation.get('unverified_claims', 0)}건"
+                + (f" · {reasons}" if reasons else ""))
 
     def to_dict(self) -> dict[str, Any]:
         return asdict(self)
@@ -60,7 +81,8 @@ class RiskVector:
 
     @property
     def evaluation_complete(self) -> bool:
-        return bool(self.aggregate.get("evaluation_complete", not self.abstained_axes()))
+        return (bool(self.aggregate.get("evaluation_complete", True))
+                and all(a.evaluation_complete for a in (self.D1_numeric, self.D2_modifier, self.D3_semantic, self.D5_timeseries)))
 
     @property
     def evaluation_label(self) -> str:
@@ -68,6 +90,16 @@ class RiskVector:
             return "평가불가"
         return "평가 완료" if self.evaluation_complete else "부분 평가"
 
+
+    @property
+    def numeric_evaluation(self) -> dict[str, Any]:
+        return self.aggregate.get("numeric_evaluation", self.D1_numeric.evaluation)
+
+    @property
+    def numeric_coverage_label(self) -> str:
+        if "numeric_evaluation" not in self.aggregate:
+            return self.D1_numeric.coverage_label
+        return AxisScore(0, evaluation=self.numeric_evaluation).coverage_label
 
     @property
     def level(self) -> str:
@@ -108,6 +140,7 @@ def aggregate_axes(axes: dict[str, AxisScore]) -> dict[str, Any]:
     from .config import D_WEIGHTS, RISK_LEVEL_THRESHOLDS
     valid = {name: axis for name, axis in axes.items() if not axis.abstain}
     abstained = [name for name, axis in axes.items() if axis.abstain]
+    incomplete = [name for name, axis in axes.items() if not axis.evaluation_complete]
     weight = sum(D_WEIGHTS[name] for name in valid)
     score = round(sum(D_WEIGHTS[name] * axis.score for name, axis in valid.items()) / weight, 4) if weight else None
     if score is None:
@@ -121,8 +154,8 @@ def aggregate_axes(axes: dict[str, AxisScore]) -> dict[str, Any]:
     top = max(valid, key=lambda k: valid[k].score) if any(a.score > 0 for a in valid.values()) else ""
     return {"risk_score": score, "level": level, "top_axis": top,
             "abstained_axes": abstained, "evaluated_axes": list(valid),
-            "evaluated_weight": round(weight, 6), "evaluation_complete": not abstained,
-            "evaluation_status": "unavailable" if score is None else "partial" if abstained else "complete"}
+            "evaluated_weight": round(weight, 6), "incomplete_axes": incomplete, "evaluation_complete": not incomplete,
+            "evaluation_status": "unavailable" if score is None else "partial" if incomplete else "complete"}
 
 
 def format_score(score: float | None, *, scale: float = 1, digits: int = 1) -> str:

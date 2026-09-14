@@ -74,7 +74,7 @@ class TestSsotD1Units:
         """128,400 '원' 주장은 128,400 kWh 노드와 일치하면 안 됨."""
         g = _graph(128400.0, "kWh")
         r = det.detect_d1_numeric("전기요금으로 128,400원을 납부했다.", "E-4-1", g)
-        assert r.score >= 0.5, "단위 불일치 → 미일치 처리"
+        assert r.score == 0 and r.abstain_reason == "unit_mismatch"  # 2026-09-14: 비교 불가는 불일치 확정이 아님
 
     def test_same_value_same_unit_matches(self):
         g = _graph(128400.0, "kWh")

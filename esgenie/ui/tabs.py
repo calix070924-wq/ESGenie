@@ -684,7 +684,10 @@ def render_greenwash_workspace(result, active_area: str) -> None:
     ungrounded = len(getattr(grounding, "g1_uncited_sentences", None) or []) + len(
         getattr(grounding, "g2_orphan_numbers", None) or []
     )
-    if verify.converged:
+    rv = verify.final.detection.risk_vector
+    if rv is not None and not rv.evaluation_complete:
+        judgment, judgment_note = "담당자 이관", f"D1 {rv.numeric_coverage_label}"
+    elif verify.converged:
         judgment, judgment_note = "자동 통과", "근거 확인 완료"
     elif verify.hitl_required:
         judgment, judgment_note = "담당자 이관", f"근거 미확인 {ungrounded}건"
@@ -1046,6 +1049,8 @@ def render_verify_tab(
             f"⚠️ 자동 검증 {verify.iterations_used}회 후에도 근거를 확인하지 못했습니다 "
             f"— 담당자 확인으로 넘깁니다 (위험도 {format_score(before)} → {format_score(after)})"
         )
+    elif verify.final.detection.risk_vector is not None and not verify.final.detection.risk_vector.evaluation_complete:
+        st.warning(f"독립 증빙 확인 필요 · D1 {verify.final.detection.risk_vector.numeric_coverage_label}")
     elif after is not None and before is not None and after < before:
         st.success(f"✅ L4 재생성으로 위험도 {format_score(before)} → {format_score(after)} 감소")
     else:
@@ -1063,7 +1068,10 @@ def render_verify_tab(
     final_risk = verify.final.detection.risk_vector
     if final_risk is not None:
         if not final_risk.evaluation_complete:
-            st.warning(f"{final_risk.evaluation_label}: 기권 축 {', '.join(final_risk.abstained_axes())} — 독립 증빙 확인 필요")
+            st.warning(f"{final_risk.evaluation_label} · 미완료 축 {', '.join(final_risk.aggregate.get('incomplete_axes', final_risk.abstained_axes()))} · D1 {final_risk.numeric_coverage_label} — 독립 증빙 확인 필요")
+        st.caption(f"D1 수치 검증: {final_risk.numeric_coverage_label}")
+        if final_risk.numeric_evaluation.get("claims"):
+            st.dataframe(pd.DataFrame(final_risk.numeric_evaluation["claims"]), hide_index=True, width='stretch')
         axes = ["D1 수치오차", "D2 모호어", "D3 의미괴리", "D5 시계열모순"]
         scores = [
             None if final_risk.D1_numeric.abstain else final_risk.D1_numeric.score * 100,
@@ -1664,6 +1672,7 @@ def render_benchmark_tab(gradient: str, *, show_header: bool = True) -> None:
             "F1": metrics["f1"],
             "Accuracy": metrics["accuracy"],
             "LLM 호출": metrics["llm_calls"],
+            "평가 완료": f"{metrics['complete_cases']}/{len(report.cases)}",
         })
     st.dataframe(pd.DataFrame(metric_rows), hide_index=True, width='stretch')
 
@@ -1710,8 +1719,10 @@ def render_benchmark_tab(gradient: str, *, show_header: bool = True) -> None:
                     }
                     for case in wrong
                 ]), hide_index=True, width='stretch')
-            else:
+            elif all(case.evaluation_complete for case in report.cases):
                 st.success("오답 없음")
+            else:
+                st.info("분류상 오답 없음 · 부분 평가가 있어 독립 증빙 확인 필요")
 
     report_md = bench_format(reports, n_cases=len(cases))
     st.download_button("📥 벤치마크 리포트 (.md)", report_md.encode(), file_name="benchmark_report.md", mime="text/markdown")
@@ -1882,7 +1893,13 @@ def _render_provenance_panel(result) -> None:
             with cc1:
                 st.badge(view["label"], color=tone_color[view["tone"]])
                 st.caption("D1 수치 위험도")
-                st.progress(min(1.0, float(data_point.d1_risk or 0.0)), text=f"{float(data_point.d1_risk or 0.0):.2f}")
+                if data_point.d1_risk is None:
+                    st.warning("평가불가 · 독립 증빙 확인 필요")
+                else:
+                    st.progress(min(1.0, data_point.d1_risk), text=f"{data_point.d1_risk:.2f}")
+                if data_point.d1_evaluation:
+                    from esgenie.schemas import AxisScore
+                    st.caption(AxisScore(0, evaluation=data_point.d1_evaluation).coverage_label)
             with cc2:
                 evidence = primary_evidence(data_point.evidence_files or [])
                 bbox = getattr(evidence, "bbox", None) if evidence else None
@@ -1952,6 +1969,7 @@ def _render_hitl_panel(sentence_trace) -> None:
                 st.markdown("**문장 원문**")
                 st.write(sentence.sentence_text)
                 if risk_vector is not None:
+                    st.caption(f"D1 수치 검증: {risk_vector.numeric_coverage_label}")
                     st.markdown("**4축 위험 분해**")
                     st.dataframe(pd.DataFrame([
                         {"축": axis, "점수": format_score(score, digits=3), "설명": detail}

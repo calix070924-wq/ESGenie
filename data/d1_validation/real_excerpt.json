@@ -1,0 +1,35 @@
+{
+  "source_file": "012330_mobis_2025.pdf",
+  "pdf_sha256": "b7845ec3e1f9cf0087b3c9140c7f531cb9fc4ce6bfab80188f6f6c93fe75e8e0",
+  "source_type": "actual public report and previously saved extraction (read-only)",
+  "cache_file": "b16d54bf96efca738aa6d9294702c5d32eb0c9caacdde9f5d584e475be828cb8.json",
+  "cache_sha256": "fc33065f163f8b9d9f9adf8179de0864db575b121d7b21a991a3786f4198c79e",
+  "cached_model": "gpt-4.1-mini",
+  "cached_at": "2026-07-30T14:54:42+00:00",
+  "fresh_api_called": false,
+  "human_page_mapping": "페이지와 코드는 이번 원문 대조에서 수동 연결. 캐시 자체에 페이지/코드는 없음.",
+  "supporting_quote_page": 67,
+  "supporting_quote": "2024년에는 국내 사업장 기준 폐기물 재활용률 92.9%를 달성하였습니다.",
+  "metrics": [
+    {
+      "metric_hint": "폐기물 매립 제로화(재활용률)",
+      "value": 92.9,
+      "unit": "%",
+      "period": "2024",
+      "kesg_code": null,
+      "code": "E-6-2",
+      "source_page_index": 69,
+      "scope": "2024년 국내(별도) 연간"
+    },
+    {
+      "metric_hint": "폐기물 발생량 합계",
+      "value": 72463,
+      "unit": "ton",
+      "period": "2024",
+      "kesg_code": null,
+      "code": "E-6-1",
+      "source_page_index": 69,
+      "scope": "2024년 국내·해외 합계 연간"
+    }
+  ]
+}

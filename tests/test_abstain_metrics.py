@@ -52,7 +52,7 @@ def test_k_abstains_formula():
     assert out["accuracy_on_assessed"] == pytest.approx(2 / 3, abs=1e-3)
     assert out["overall"] == pytest.approx((3 / 5) * (2 / 3), abs=1e-3)
     assert out["abstains"]["total"] == 2
-    assert out["abstains"]["by_reason"] == {"no_evidence": 1, "unit_mismatch": 1, "low_confidence": 0}
+    assert out["abstains"]["by_reason"] == {"no_evidence": 1, "unit_mismatch": 1, "low_confidence": 0, "ambiguous_topic": 0, "invalid_number": 0}
 
 
 def test_empty_rows_do_not_crash():
@@ -168,7 +168,7 @@ def test_detector_report_metrics_with_abstained_case():
     assert m["coverage"] == pytest.approx(2 / 3, abs=1e-3)
     assert m["accuracy_on_assessed"] == 1.0  # 남은 2건(c1,c2) 모두 정답
     assert m["overall"] == pytest.approx((2 / 3) * 1.0, abs=1e-3)
-    assert m["abstains"] == {"total": 1, "by_reason": {"no_evidence": 1, "unit_mismatch": 0, "low_confidence": 0}}
+    assert m["abstains"] == {"total": 1, "by_reason": {"no_evidence": 1, "unit_mismatch": 0, "low_confidence": 0, "ambiguous_topic": 0, "invalid_number": 0}}
 
 
 # ============================================================================

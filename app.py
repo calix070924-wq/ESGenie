@@ -694,7 +694,7 @@ if result is not None:
         summary_cards.append({"label": "규정 충족", "value": f"{v15_trace.summary['policy_pass']}/{v15_trace.summary['policy_total']}", "note": "법규·사내 규정"})
     if verify is not None:
         summary_cards.append({"label": "그린워싱 위험도", "value": format_score(verify.final_score), "note": verify.final_band})
-        summary_cards.append({"label": "담당자 확인", "value": "필요" if verify.hitl_required else "완료", "note": f"검증 {verify.iterations_used}회"})
+        summary_cards.append({"label": "담당자 확인", "value": "필요" if verify.hitl_required else "완료", "note": verify.final.detection.risk_vector.numeric_coverage_label if verify.final.detection.risk_vector else f"검증 {verify.iterations_used}회"})
     render_metric_cards(summary_cards, columns=min(5, len(summary_cards)) or 1)
 
 expert_mode = bool(st.session_state.expert_mode)

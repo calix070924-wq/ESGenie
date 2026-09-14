@@ -10,7 +10,7 @@ def test_full_numeric_variants(value, space):
     assert (a.number, a.unit, a.matched_code) == (b.number, b.unit, b.matched_code)
     assert a.number == float(value) and not a.issue
 
-@pytest.mark.parametrize('token', ['9,99', '12,34,567', '1234,567', '1.2.3', '1,,000', '1e3', '.5'])
+@pytest.mark.parametrize('token', ['9,99', '12,34,567', '1234,567', '1.2.3', '1,,000', '1e3', '.5', '--100', '- 100', '+-100'])
 def test_invalid_token_is_never_partially_accepted(token):
     sentence = f'온실가스 배출량은 {token} tCO2eq이다.'
     assert list(_NUMBER_PATTERN.finditer(sentence)) == []

@@ -70,10 +70,13 @@ class CaseResult:
     category: str
     label: str            # greenwash | clean
     flagged: bool
-    risk_score: float
+    risk_score: float | None
     detail: str = ""
     abstained: bool = False               # ★ 신설: 측정 전용 — 기권(deferred) 케이스 여부
     abstain_reasons: list[str] = field(default_factory=list)  # ★ 신설: abstained 축들의 사유
+
+    evaluation_complete: bool = True
+    numeric_evaluation: dict[str, Any] = field(default_factory=dict)
 
     @property
     def correct(self) -> bool:
@@ -114,7 +117,7 @@ class DetectorReport:
         )
         overall = accuracy_on_assessed * coverage
         # 직접 인덱싱: 미등록(오타) 사유는 KeyError로 드러나게 한다(코드리뷰 개선).
-        by_reason: dict[str, int] = {"no_evidence": 0, "unit_mismatch": 0, "low_confidence": 0}
+        by_reason: dict[str, int] = {"no_evidence": 0, "unit_mismatch": 0, "low_confidence": 0, "ambiguous_topic": 0, "invalid_number": 0}
         for c in abstained:
             for reason in c.abstain_reasons:
                 by_reason[reason] += 1
@@ -125,6 +128,7 @@ class DetectorReport:
             "tp": tp, "fp": fp, "fn": fn, "tn": tn,
             "llm_calls": self.llm_calls,
             "coverage": round(coverage, 3),
+            "complete_cases": sum(c.evaluation_complete for c in self.cases),
             "accuracy_on_assessed": round(accuracy_on_assessed, 3),
             "overall": round(overall, 3),
             "abstains": {"total": len(abstained), "by_reason": by_reason},
@@ -195,7 +199,8 @@ def _case_abstain_info(rv: RiskVector, flagged: bool) -> tuple[bool, list[str]]:
     }
     abstained_names = rv.abstained_axes()
     reasons = [axes_map[n].abstain_reason for n in abstained_names if axes_map[n].abstain_reason]
-    return (bool(abstained_names) and not flagged), reasons
+    reasons = sorted(set(reasons) | set(rv.D1_numeric.evaluation.get("reasons", {})))
+    return (not rv.evaluation_complete and not flagged), reasons
 
 
 def _evidence_table(report: Any) -> str:
@@ -247,6 +252,7 @@ def run_benchmark(
                 case["id"], case["category"], label, flagged, score,
                 detail=rule_rv.aggregate.get("top_axis", ""),
                 abstained=abstained, abstain_reasons=reasons,
+                evaluation_complete=rule_rv.evaluation_complete, numeric_evaluation=rule_rv.numeric_evaluation,
             ))
 
         if "hybrid" in reports:
@@ -259,6 +265,7 @@ def run_benchmark(
                 case["id"], case["category"], label, flagged, score,
                 detail=str(j.get("verdicts", j.get("reason", ""))),
                 abstained=abstained, abstain_reasons=reasons,
+                evaluation_complete=hyb_rv.evaluation_complete, numeric_evaluation=hyb_rv.numeric_evaluation,
             ))
 
         if "llm_only" in reports:
@@ -388,6 +395,10 @@ def format_report(reports: dict[str, DetectorReport], *, n_cases: int) -> str:
             bc = rep.by_category().get(cat, {})
             row.append(f"{bc.get('correct', 0)}/{bc.get('total', 0)}")
         lines.append("| " + " | ".join(row) + " |")
+    lines.append("")
+    lines.append("## 평가 범위")
+    for name, report in reports.items():
+        lines.append(f"- {name}: 평가 완료 {sum(c.evaluation_complete for c in report.cases)}/{len(report.cases)}건. 분류 정확도와 전체 검증 완료 여부는 별도로 집계한다.")
     lines.append("")
     lines.append("## 오답 상세")
     lines.append("")

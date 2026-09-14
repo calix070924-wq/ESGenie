@@ -49,42 +49,6 @@ class PolicyAuditResult:
 # D1 — 수치 일치성 (증빙 기반)
 # ====================================================================
 
-# 문장에서 수치 토큰 추출: 1,670만 / 12.3% / 4781 tCO2 등
-_NUM_RE = re.compile(r"([+-]?[0-9][0-9,\.]*)\s*(만|억|천)?\s*(tCO2eq|tCO2|kWh|MWh|GWh|TJ|GJ|MJ|kg|ton|톤|%|원|건|명)?")
-
-
-# ---- 책임있는 기권(abstain) 헬퍼 --------------------------------------------
-# ABSTAIN_ENABLED=0(기본)이면 아래 헬퍼는 호출되지 않아 기존 동작(0.6/0.9)이 그대로다.
-# 참고: 이 함수(detect_d1_numeric)의 유일한 프로덕션 호출부인
-# esgenie/pipeline.py::_build_risk_rows는 `if not nodes: continue`로 노드 없는
-# 코드를 호출 전에 걸러내므로, 아래 두 분기(코드 없음/근거 없음)는 사실상
-# 프로덕션 경로가 아니라 직접 호출(테스트 등)에서만 도달한다. 그럼에도 D1의
-# 두 구현이 "근거 없음"에 대해 같은 의미(기권)를 내도록 정합화한다.
-#
-# 2026-07-28 추가 정합화: layer3_detect._score_d1_numeric은 ABSTAIN_UNIT_MISMATCH
-# (기본 False)로 unit_mismatch 기권을 별도 제어한다(실키 A/B에서 unit_mismatch
-# 기권이 test held-out 지표를 하락시켜 기본 비활성화). 이 함수(ssot)는 애초에
-# unit_mismatch를 기권으로 전환하는 분기가 없다(L99 미일치는 그대로 위험 점수로
-# 유지 — 아래 참조) — 두 경로 모두 "기본적으로 no_evidence만 기권"이라는 점에서
-# 이미 정합화돼 있다.
-
-def _abstain(reason: str, detail: str) -> AxisScore:
-    return AxisScore(
-        score=0.0, evidence=[], detail=f"ABSTAIN({reason}): {detail}",
-        abstain=True, abstain_reason=reason,
-    )
-
-
-def _retry_evidence(code: str, graph: EvidenceGraph) -> list[Any] | None:
-    """근거 부재 시 최종 기권 판정 전 보조 재검색 훅.
-
-    강화된 재검색(동의어/상위코드 확장, RAG 청크 재조회 등)은 아직 구현하지
-    않았다. 현재는 항상 None을 반환한다.
-    TODO: 강화된 재검색(후속 배치 후보).
-    """
-    return None
-
-
 def detect_d1_numeric(
     sentence: str,
     kesg_code: str | None,
@@ -92,58 +56,17 @@ def detect_d1_numeric(
     *,
     tolerance_pct: float = 2.0,
 ) -> AxisScore:
-    """문장 속 수치를 Evidence Graph 노드값과 대조.
-
-    판정 단계:
-      1) 문장에서 수치 클레임 추출.
-      2) kesg_code에 연결된 노드(DART + OCR) 후보 수집.
-      3) 각 클레임이 ±tolerance_pct 안에 일치하는 노드가 있는지 확인.
-         - 일치 노드가 OCR 증빙(origin=ocr_*)이면 source_file을 evidence에 기록 → 증빙 추적.
-         - 근거 노드 자체가 없으면 '근거 부족' = 고위험(0.9).
-      4) DART↔OCR cross_check 엣지의 오차가 크면 가산 위험.
-
-    Returns: AxisScore(score, evidence=[node_id|source_file], detail)
-    """
-    claims = _extract_numbers(sentence)
-    if not claims:
-        return AxisScore(0.0, [], "수치 클레임 없음")
-
-    if not kesg_code:
-        if ABSTAIN_ENABLED:
-            return _abstain("no_evidence", "수치는 있으나 K-ESG 매핑 없음 → 근거 추적 불가")
-        return AxisScore(0.6, [], "수치는 있으나 K-ESG 매핑 없음 → 근거 추적 불가")
-
-    from .selection import comparison_node
-    selected = comparison_node(graph, kesg_code)
-    candidates = [selected] if selected is not None else []
-    if not candidates:
-        if ABSTAIN_ENABLED and not _retry_evidence(kesg_code, graph):
-            return _abstain("no_evidence", f"{kesg_code} 근거 노드 없음(재검색 후에도 없음)")
-        return AxisScore(0.9, [], f"{kesg_code} 근거 노드 없음 → 미증빙 수치(고위험)")
-
-    matched_evidence: list[str] = []
-    unmatched: list[float] = []
-    for claim_val, claim_unit in claims:
-        hit = _find_matching_node(claim_val, claim_unit, candidates, tolerance_pct)
-        if hit is None:
-            unmatched.append(claim_val)
-        else:
-            tag = hit.source_file or hit.id   # 증빙 파일명 우선(감사 추적)
-            matched_evidence.append(tag)
-
-    if unmatched:
-        score = min(0.5 + 0.1 * len(unmatched), 1.0)
-        return AxisScore(
-            score, matched_evidence,
-            f"미일치 수치 {len(unmatched)}건(±{tolerance_pct}% 초과): {unmatched}",
-        )
-
-    # 모두 일치 → cross_check 엣지 점검
-    xrisk = _cross_check_risk(kesg_code, graph)
-    return AxisScore(
-        round(xrisk, 3), matched_evidence,
-        "모든 수치 증빙 일치" + (f"; 교차검증 경고" if xrisk > 0 else ""),
-    )
+    """SSOT keeps its tolerance/risk scale and shares D1 ownership and coverage."""
+    from ..layer3_detect import _compare_numeric_claims, _numeric_axis
+    records = _compare_numeric_claims(sentence, graph, _ssot_claims(sentence, kesg_code),
+                                      tolerance=tolerance_pct / 100)
+    mismatches = sum(r['status'] == 'compared' and r['reason'] == 'mismatch' for r in records)
+    score = min(.5 + .1 * mismatches, 1.0) if mismatches else 0.0
+    if not mismatches and any(r['status'] == 'compared' for r in records) and kesg_code:
+        score = _cross_check_risk(kesg_code, graph)
+    axis = _numeric_axis(records, score)
+    axis.evidence = list(dict.fromkeys(axis.evidence + [f for r in records if r["status"] == "compared" for f in r.get("evidence_files", [])]))
+    return axis
 
 
 # ====================================================================
@@ -277,8 +200,8 @@ def detect_risk_axes(
         score=rv.risk_score if rv.risk_score is not None else 0.0,
         evidence=d1.evidence + d3.evidence,
         detail=f"{rv.evaluation_label} · 유효 축: {', '.join(rv.aggregate['evaluated_axes'])}",
-        abstain=not rv.evaluation_complete,
-        abstain_reason="no_evidence" if not rv.evaluation_complete else None,
+        abstain=rv.risk_score is None,
+        abstain_reason="no_evidence" if rv.risk_score is None else None,
         evaluation=rv.aggregate)
 
     return {"D1": d1, "D2": d2, "D3": d3, "D5": d5, "aggregate": aggregate}
@@ -288,32 +211,40 @@ def detect_risk_axes(
 # 내부 헬퍼
 # ====================================================================
 
+from ..numeric_tokens import TOKEN_START, CANDIDATE_NUMBER, TOKEN_END, parse_number
+
 _SCALE = {"만": 1e4, "억": 1e8, "천": 1e3}
+# Preserve the SSOT unit vocabulary; numeric grammar has one implementation.
+_NUM_RE = re.compile(TOKEN_START + rf"(?P<num>{CANDIDATE_NUMBER})" + TOKEN_END
+    + r"\s*(?P<scale>만|억|천)?\s*(?P<unit>tCO2eq|tCO2|kWh|MWh|GWh|TJ|GJ|MJ|kg|ton|톤|%p|%|원|건|명)?")
+
+
+def _ssot_claims(sentence: str, kesg_code: str | None):
+    from ..layer3_detect import NumericClaim, _match_topic_near, _sentence_topic_codes
+    out = []
+    for m in _NUM_RE.finditer(sentence):
+        raw, scale, unit = m.group('num', 'scale', 'unit')
+        val = parse_number(raw)
+        if unit is None and scale is None:
+            if val is not None and 1900 <= val <= 2100 and '.' not in raw:
+                continue
+            if ',' not in raw and '.' not in raw:
+                continue
+        if val is not None and scale:
+            val *= _SCALE[scale]
+        topic, code = _match_topic_near(sentence, m.start(), m.end())
+        # The caller's explicit metric is only a fallback for unnamed single-metric
+        # SSOT rows. It must not override ambiguous named metrics in prose.
+        if code is None and not _sentence_topic_codes(sentence):
+            code = kesg_code
+        out.append(NumericClaim(m.group().rstrip(), val, unit or '', topic, code,
+                                sentence, m.start(), m.end(),
+                                'invalid_number' if val is None or val < 0 else None))
+    return out
 
 
 def _extract_numbers(sentence: str) -> list[tuple[float, str | None]]:
-    """문장에서 (수치, 단위) 클레임 추출.
-
-    오탐 필터:
-      - 연도(1900~2100, 단위·스케일 없음) 제외 — "2025년"은 수치 주장이 아님
-      - 단위·스케일·쉼표·소수점이 전혀 없는 맨 정수 제외 — 페이지·항목 번호 오탐 방지
-    """
-    out: list[tuple[float, str | None]] = []
-    for m in _NUM_RE.finditer(sentence):
-        raw, scale, unit = m.group(1), m.group(2), m.group(3)
-        try:
-            val = float(raw.replace(",", ""))
-        except ValueError:
-            continue
-        if unit is None and scale is None:
-            if 1900 <= val <= 2100 and "." not in raw:
-                continue   # 연도
-            if "," not in raw and "." not in raw:
-                continue   # 맨 정수 (번호류)
-        if scale:
-            val *= _SCALE.get(scale, 1)
-        out.append((val, unit))
-    return out
+    return [(c.number, c.unit or None) for c in _ssot_claims(sentence, None) if c.number is not None]
 
 
 def _find_matching_node(
