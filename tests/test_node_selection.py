@@ -315,16 +315,7 @@ class TestLedgerD1Symmetry:
         assert d1.score == 0.0, f"폴백 경로에서 오탐 — {d1.detail}"
 
     def test_d1_falls_back_when_claim_unit_is_incompatible(self) -> None:
-        """원장 대표노드가 TJ인데 claim이 %면 환산군이 달라 그 노드로는 비교가 무의미하다.
-
-        원장은 항목 정의 단위로 정규화해 저장하지만 노드 자체는 원 단위다. 기록된
-        노드가 claim 단위 필터(compat)에서 걸러지면 기록을 쓰지 않고 **기존 폴백**
-        (공용 규칙 재실행)으로 가고, 그 사실을 detail에 남긴다 — 조용히 넘기면
-        D1이 왜 그 노드를 골랐는지 추적할 수 없다.
-
-        같은 코드에 % 노드가 함께 있어야 이 분기에 닿는다. 호환 노드가 아예 없으면
-        기존 '단위 불일치 스킵'이 먼저 걸린다.
-        """
+        """확정 원장 단위와 비교할 수 없으면 다른 후보를 고르지 않고 보류한다."""
         from esgenie.layer3_detect import _score_d1_numeric
 
         tj = _n("E-4-1", 7_497.0, "TJ", 2024, "전력 사용량")
@@ -334,9 +325,9 @@ class TestLedgerD1Symmetry:
         assert graph.representative_node_ids.get("E-4-1") == tj.id, "원장은 TJ 노드를 채택"
 
         d1 = _score_d1_numeric("에너지 사용량 비중은 12.9 %이다.", graph)
-        assert "단위 불일치" in d1.detail, f"확정 원장 단위와 비교 불가 — {d1.detail}"
+        assert d1.abstain_reason == "unit_mismatch", f"확정 원장 단위와 비교 불가 — {d1.detail}"
         assert not d1.evidence, "확정 원장과 다른 후보로 폴백해 검증하면 안 됨"
-        # 폴백은 기존 동작 그대로 — % claim은 % 노드와 비교된다(TJ 노드와 비교하지 않는다).
+        # 내부 0은 일치 판정이 아니라 미검증 표시와 함께 저장된다.
         assert d1.score == 0.0, d1.detail
         assert pct.id not in d1.evidence  # 확정 원장과 다른 물리량은 검증 근거가 아님
 

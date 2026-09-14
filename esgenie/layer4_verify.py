@@ -218,14 +218,12 @@ def verify_and_refine(
     det = detect(clean_text, report)
     grounding = grounding_evaluator(gen.text, gen.context.as_chunk_dicts())
 
-    # 5축 벡터 계산 (evidence_graph 있을 때만)
-    rv: RiskVector | None = None
-    if evidence_graph is not None:
-        rv = _compute_text_risk_vector(clean_text, evidence_graph, gen, industry_stats,
-                                       industry_module=industry_module,
-                                       llm_judge=llm_judge)
-        det.risk_vector = rv
-        det.risk_score = rv.risk_score * 100 if rv.risk_score is not None else None
+    # A missing graph must still carry D1 no_evidence to convergence/HITL.
+    rv = _compute_text_risk_vector(clean_text, evidence_graph, gen, industry_stats,
+                                   industry_module=industry_module,
+                                   llm_judge=llm_judge)
+    det.risk_vector = rv
+    det.risk_score = rv.risk_score * 100 if rv.risk_score is not None else None
 
     steps.append(VerificationStep(
         iteration=0,
@@ -256,12 +254,11 @@ def verify_and_refine(
         det = detect(clean_text, report)
         grounding = grounding_evaluator(gen.text, gen.context.as_chunk_dicts())
 
-        if evidence_graph is not None:
-            rv = _compute_text_risk_vector(clean_text, evidence_graph, gen, industry_stats,
-                                           industry_module=industry_module,
-                                           llm_judge=llm_judge)
-            det.risk_vector = rv
-            det.risk_score = rv.risk_score * 100 if rv.risk_score is not None else None
+        rv = _compute_text_risk_vector(clean_text, evidence_graph, gen, industry_stats,
+                                       industry_module=industry_module,
+                                       llm_judge=llm_judge)
+        det.risk_vector = rv
+        det.risk_score = rv.risk_score * 100 if rv.risk_score is not None else None
 
         refinement_attempts.append(_make_refinement_attempt(
             attempt_no=i,
@@ -380,6 +377,8 @@ def _compute_text_risk_vector(
 
     best_rv: RiskVector | None = None
     incomplete = []
+    numeric_records = []
+    text_offset = 0
     for sent in sents:
         rv = _detect(
             sent,
@@ -389,8 +388,13 @@ def _compute_text_risk_vector(
             industry_module=industry_module,
             _d3_index=d3_index,
         )
+        text_offset = text.index(sent, text_offset)
+        for record in rv.D1_numeric.evaluation.get("claims", []):
+            numeric_records.append(dict(record, start=record["start"] + text_offset,
+                                        end=record["end"] + text_offset))
+        text_offset += len(sent)
         if not rv.evaluation_complete:
-            incomplete.append(rv.abstained_axes())
+            incomplete.append(rv.aggregate.get("incomplete_axes", rv.abstained_axes()))
         if best_rv is None or (rv.risk_score is not None and (best_rv.risk_score is None or rv.risk_score > best_rv.risk_score)):
             best_rv = rv
 
@@ -399,6 +403,9 @@ def _compute_text_risk_vector(
         from .layer3_detect import _build_risk_vector
         no_text = AxisScore(0, detail="분석할 문장 없음 — 평가불가", abstain=True, abstain_reason="no_evidence")
         best_rv = _build_risk_vector(no_text, no_text, no_text, no_text)
+    if numeric_records:
+        from .layer3_detect import _numeric_axis
+        best_rv.aggregate["numeric_evaluation"] = _numeric_axis(numeric_records, 0).evaluation
     if incomplete:
         best_rv.aggregate["evaluation_complete"] = False
         best_rv.aggregate["evaluation_status"] = "partial" if best_rv.risk_score is not None else "unavailable"

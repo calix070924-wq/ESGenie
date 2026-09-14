@@ -55,10 +55,13 @@ def _case_rows(records: list[dict[str, Any]], cfg: dict[str, float]) -> list[dic
             axes_map[name].abstain_reason for name in abstained_axis_names
             if axes_map[name].abstain_reason
         ]
-        abstained = bool(abstained_axis_names) and not pred
+        abstain_reasons = sorted(set(abstain_reasons) | set(rv.D1_numeric.evaluation.get("reasons", {})))
+        abstained = not rv.evaluation_complete and not pred
         rows.append({"id": rec["id"], "category": rec["category"],
                      "p": p, "y": y, "pred": int(pred), "correct": int(p is not None and int(pred) == y),
-                     "abstained": abstained, "abstain_reasons": abstain_reasons})
+                     "abstained": abstained, "abstain_reasons": abstain_reasons,
+                     "evaluation_complete": rv.evaluation_complete,
+                     "numeric_evaluation": rv.numeric_evaluation})
     return rows
 
 
@@ -67,7 +70,7 @@ def _case_rows(records: list[dict[str, Any]], cfg: dict[str, float]) -> list[dic
 #      (아래 §3 risk_coverage 곡선과 구분 — 이쪽은 축의 abstain 플래그 기반)
 # ====================================================================
 
-_ABSTAIN_REASONS = ("no_evidence", "unit_mismatch", "low_confidence")
+_ABSTAIN_REASONS = ("no_evidence", "unit_mismatch", "low_confidence", "ambiguous_topic", "invalid_number")
 
 
 def abstain_coverage(rows: list[dict[str, Any]]) -> dict[str, Any]:

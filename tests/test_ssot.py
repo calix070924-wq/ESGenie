@@ -304,15 +304,15 @@ class TestDetector:
         r = det.detect_d1_numeric("수치가 없는 문장입니다.", "E-4-1", g)
         assert r.score == 0.0
 
-    def test_d1_no_kesg_code_is_risky(self):
+    def test_d1_no_kesg_code_is_unverified(self):
         g = self._graph_with_e41()
         r = det.detect_d1_numeric("사용량은 128,400 kWh였습니다.", None, g)
-        assert r.score >= 0.5
+        assert r.score == 0 and r.abstain_reason == "ambiguous_topic"
 
-    def test_d1_no_evidence_nodes_high_risk(self):
+    def test_d1_no_evidence_nodes_abstain(self):
         g = EvidenceGraph("LOCAL", "로컬")
         r = det.detect_d1_numeric("사용량은 128,400 kWh였습니다.", "E-4-1", g)
-        assert r.score >= 0.9
+        assert r.score == 0 and r.abstain_reason == "no_evidence"
 
     def test_d1_matching_value_low_risk(self):
         g = self._graph_with_e41(128400.0)

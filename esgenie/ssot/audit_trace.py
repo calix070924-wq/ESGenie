@@ -53,12 +53,13 @@ class DataPoint:
     period: int | None
     confidence: float
     verification: str              # "verified" | "estimated" | "unverified"
-    d1_risk: float                 # L3 D1 수치 위험도
+    d1_risk: float | None          # L3 D1 수치 위험도
     evidence_files: list[EvidenceLink] = field(default_factory=list)
     source_tier: str = ""
     representative_node_ids: list[str] = field(default_factory=list)
     value_role: str = "unknown"
     confidence_flags: list[str] = field(default_factory=list)
+    d1_evaluation: dict[str, Any] = field(default_factory=dict)
 
     def to_dict(self) -> dict[str, Any]:
         d = asdict(self)
@@ -102,6 +103,7 @@ def build_data_points(
     d1_scores: dict[str, float],
     *,
     target_codes: list[str],
+    d1_evaluations: dict[str, dict[str, Any]] | None = None,
 ) -> list[DataPoint]:
     """최종 원장 선택을 소비한다. 결정 메타데이터가 없는 구버전만 공용 규칙으로 선택."""
     from .selection import resolve_fact, finite_number
@@ -113,9 +115,11 @@ def build_data_points(
         links = [_to_link(graph.nodes[nid]) for nid in fact.representative_node_ids
                  if nid in graph.nodes]
         d1 = d1_scores.get(code, 0.0)
+        evaluation = (d1_evaluations or {}).get(code, {})
+        incomplete = evaluation.get("status") in {"partial", "unavailable"}
         valid = bool(links) and all(e.resolved and e.independent and e.quote for e in links)
         flags = set(fact.flags)
-        if finite_number(fact.value) is None or d1 >= 0.5 or "unit_suspect" in flags:
+        if incomplete or finite_number(fact.value) is None or d1 >= 0.5 or "unit_suspect" in flags:
             verification = "unverified"
         elif not valid or flags.intersection({"period_inferred", "partial_aggregate", "partial_value", "derived", "no_representative_node"}):
             verification = "estimated"
@@ -124,7 +128,8 @@ def build_data_points(
         points.append(DataPoint(
             kesg_code=code, kesg_name=_kesg_name(code), value=fact.value,
             unit=fact.unit, period=fact.period, confidence=round(fact.confidence, 3),
-            verification=verification, d1_risk=round(d1, 3), evidence_files=links,
+            verification=verification, d1_risk=None if evaluation.get("status") == "unavailable" else round(d1, 3), evidence_files=links,
+            d1_evaluation=evaluation,
             source_tier=fact.source_tier, representative_node_ids=fact.representative_node_ids,
             value_role=fact.value_role, confidence_flags=fact.flags))
     return points

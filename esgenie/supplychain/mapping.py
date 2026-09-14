@@ -76,6 +76,7 @@ def _derive_numeric(q, mapped, missing, dp_by_code, claims=None, evidence_index=
     evid_unit = ""
     dp = dp_by_code.get(code)
     if dp is not None and dp.value is not None:
+        from ..schemas import AxisScore, format_score
         status = _VERIF_TO_STATUS.get(dp.verification, "self_reported")
         evid_value, evid_unit = dp.value, dp.unit
         ans = _base(
@@ -83,7 +84,8 @@ def _derive_numeric(q, mapped, missing, dp_by_code, claims=None, evidence_index=
             evidence_links=list(dp.evidence_files),
             unit=dp.unit, period=dp.period, confidence_flags=list(dp.confidence_flags),
             rationale=f"{dp.kesg_name} = {dp.value}{dp.unit} "
-                      f"(보고 연도 {dp.period}, D1 위험 {dp.d1_risk}, 검증={dp.verification})"
+                      f"(보고 연도 {dp.period}, D1 위험 {format_score(dp.d1_risk)}, 검증={dp.verification})"
+                      + (f" · {AxisScore(0, evaluation=dp.d1_evaluation).coverage_label}" if dp.d1_evaluation else "")
                       + (f" · 신뢰 정보: {', '.join(dp.confidence_flags)}" if dp.confidence_flags else ""),
         )
     else:

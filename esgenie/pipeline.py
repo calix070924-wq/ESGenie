@@ -169,7 +169,8 @@ def _build_risk_rows(
             "보고 연도": node.period,
             "대표 근거": node.representative_node_ids,
             "신뢰 정보": node.flags,
-            "D1 수치": round(axes["D1"].score, 3),
+            "D1 수치": None if axes["D1"].abstain else round(axes["D1"].score, 3),
+            "D1 평가": axes["D1"].evaluation,
             "D2 수식어": round(axes["D2"].score, 3),
             "D3 의미": None if axes["D3"].abstain else round(axes["D3"].score, 3),
             "D5 시계열": round(axes["D5"].score, 3),
@@ -233,7 +234,8 @@ def _export_v15_artifacts(
     v15_trace = ssot_audit_trace.build_audit_trace_v15(
         corp_code,
         corp_name,
-        ssot_audit_trace.build_data_points(graph, d1_scores, target_codes=BASIC_28_CODES),
+        ssot_audit_trace.build_data_points(graph, d1_scores, target_codes=BASIC_28_CODES,
+            d1_evaluations={r["K-ESG 코드"]: r["D1 평가"] for r in risk_rows}),
         policy_results,
     )
 

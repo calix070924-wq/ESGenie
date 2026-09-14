@@ -93,28 +93,30 @@ def build_audit_trace(
 
         # risk_vector (문장 단위) — llm_judge=True면 룰+LLM 하이브리드
         rv: RiskVector | None = None
-        if evidence_graph is not None or chunks:
-            related_codes = list(dict.fromkeys(
-                ([kesg_item_id] if kesg_item_id else []) + guessed_codes
-            ))
-            if llm_judge:
-                from .layer3_judge import detect_risk_vector_hybrid as _detect
-                rv = _detect(
-                    sent_text,
-                    evidence_graph=evidence_graph,
-                    retrieved_chunks=chunks or None,
-                    industry_stats=industry_stats,
-                    _d3_index=d3_index,
-                    kesg_codes=related_codes or None,
-                )
-            else:
-                rv = detect_risk_vector(
-                    sent_text,
-                    evidence_graph=evidence_graph,
-                    retrieved_chunks=chunks or None,
-                    industry_stats=industry_stats,
-                    _d3_index=d3_index,
-                )
+        related_codes = list(dict.fromkeys(
+            ([kesg_item_id] if kesg_item_id else []) + guessed_codes
+        ))
+        if llm_judge:
+            from .layer3_judge import detect_risk_vector_hybrid as _detect
+            rv = _detect(
+                sent_text,
+                evidence_graph=evidence_graph,
+                retrieved_chunks=chunks or None,
+                industry_stats=industry_stats,
+                _d3_index=d3_index,
+                kesg_codes=related_codes or None,
+            )
+        else:
+            rv = detect_risk_vector(
+                sent_text,
+                evidence_graph=evidence_graph,
+                retrieved_chunks=chunks or None,
+                industry_stats=industry_stats,
+                _d3_index=d3_index,
+            )
+
+        if rv is not None:
+            ev_node_ids.extend(rv.D1_numeric.evidence)
 
         # refinement_attempts (해당 문장에 영향을 준 시도 목록)
         ref_attempts = _filter_attempts(verification.refinement_attempts, sent_text)
@@ -122,7 +124,7 @@ def build_audit_trace(
         # hitl_status
         hitl_status = (
             "HITL_REQUIRED"
-            if (rv is not None and not rv.evaluation_complete) or (verification.hitl_required and idx == 0)   # 첫 문장에 마킹
+            if (rv is not None and (not rv.evaluation_complete or bool(rv.high_axes()))) or (verification.hitl_required and idx == 0)   # 첫 문장에 마킹
             else "ok"
         )
 
@@ -161,6 +163,9 @@ def build_audit_trace(
         "hitl_count":        hitl_count,
         "avg_risk_score":    avg_risk,
         "evaluated_sentences": len(risk_scores),
+        "complete_sentences": sum(s.risk_vector is not None and s.risk_vector.evaluation_complete for s in audit_sentences),
+        "numeric_compared_claims": sum(s.risk_vector.D1_numeric.evaluation.get("compared_claims", 0) for s in audit_sentences if s.risk_vector),
+        "numeric_unverified_claims": sum(s.risk_vector.D1_numeric.evaluation.get("unverified_claims", 0) for s in audit_sentences if s.risk_vector),
         "evaluation_complete": bool(audit_sentences) and all(s.risk_vector is not None and s.risk_vector.evaluation_complete for s in audit_sentences),
         "partial_sentences": sum(s.risk_vector is not None and not s.risk_vector.evaluation_complete for s in audit_sentences),
         "high_risk_axes":    high_risk_axes,

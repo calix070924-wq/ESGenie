@@ -57,7 +57,7 @@ def test_abstained_axes_lists_flagged_axis() -> None:
 
 
 def test_d3_abstains_without_evidence_in_production_path() -> None:
-    """D3 근거 부재는 기본 기권이며 D1/D2/D5 기본 동작은 유지된다."""
+    """D1 실적 수치와 D3 모두 근거가 없으므로 기본 기권한다 (2026-09-14)."""
     rv = detect_risk_vector("온실가스 배출량은 1,670만 tCO2eq으로 전년 대비 2.1% 감소하였다.")
-    assert rv.abstained_axes() == ["D3_semantic"]
-    assert rv.aggregate.get("abstained_axes") == ["D3_semantic"]
+    assert rv.abstained_axes() == ["D1_numeric", "D3_semantic"]
+    assert rv.aggregate.get("abstained_axes") == ["D1_numeric", "D3_semantic"]

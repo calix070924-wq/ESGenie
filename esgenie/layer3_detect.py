@@ -25,14 +25,12 @@ from .knowledge.greenwash_lexicon import vague_matches
 from .schemas import AxisScore, RiskVector
 
 # ---- 수치 주장 패턴 --------------------------------------------------------
-# lookbehind: 글자에 붙은 숫자는 수치 주장이 아니다 — "Scope3 배출량"에서 3+'배',
-# "RE100", "IFRS S2" 류가 가짜 claim으로 뽑히는 걸 막는다 (2026-07-27).
-# 배(?!출): '배출'의 '배'를 배수 단위로 오인하지 않는다.
-_NUMBER_PATTERN = re.compile(
-    r"(?<![0-9A-Za-z가-힣])"
-    r"(?P<num>\d{1,3}(?:,\d{3})*(?:\.\d+)?)\s*"
-    r"(?P<unit>%|억원|조원|tCO2eq|만\s*tCO2eq|톤|ton|TJ|%p|건|명|배(?!출))",
-)
+from .numeric_tokens import number_pattern, parse_number
+
+# Longest unit first: a percentage point is not a percent.
+_CORE_UNITS = r"%p|%|억원|조원|만\s*tCO2eq|tCO2eq|톤|ton|TJ|건|명|배(?!출)"
+_NUMBER_PATTERN = number_pattern(_CORE_UNITS)
+_NUMBER_CANDIDATE_PATTERN = number_pattern(_CORE_UNITS, candidates=True)
 
 # ---- 토픽 인덱스 (kesg_items.search_terms 단일 출처) -------------------------
 # 2026-07-27: 손으로 관리하던 13개 _KEYWORD_MAP을 제거하고 항목 정의의
@@ -98,11 +96,14 @@ _TOPIC_TERMS: tuple[tuple[str, str, str], ...] = _build_topic_terms()
 @dataclass
 class NumericClaim:
     raw: str
-    number: float
+    number: float | None
     unit: str
     topic: str | None
     matched_code: str | None
     sentence: str
+    start: int = 0
+    end: int = 0
+    issue: str | None = None
 
 
 @dataclass
@@ -136,7 +137,9 @@ def _sentences(text: str) -> list[str]:
 
 
 def _normalize_number(num: str, unit: str) -> tuple[float, str]:
-    n = float(num.replace(",", ""))
+    n = parse_number(num)
+    if n is None:
+        raise ValueError(f"Invalid numeric token: {num}")
     u = unit.replace(" ", "")
     if u.startswith("만"):
         n *= 10_000
@@ -171,30 +174,46 @@ def _topic_spans(window_text: str) -> list[tuple[int, int, str, str]]:
     return kept
 
 
+# Clause separators exclude decimal points and thousands-grouping commas.
+_CLAUSE_BREAK = re.compile(
+    r"(?<!\d)[,.]|[,.](?!\d)|[;!?。\n]|(?:이며|이고|으며|지만)\s*|\s+(?:그리고|반면|또한)\s+"
+)
+
+
+def _clause_bounds(sentence: str, start: int, end: int) -> tuple[int, int]:
+    left, right = 0, len(sentence)
+    for match in _CLAUSE_BREAK.finditer(sentence):
+        if match.end() <= start:
+            left = match.end()
+        elif match.start() >= end:
+            right = match.start()
+            break
+    return left, right
+
+
 def _match_topic_near(sentence: str, span_start: int, span_end: int, window: int = 25) -> tuple[str | None, str | None]:
-    """수치 주변 창에서 가장 가까운 지표 용어를 찾아 (topic, code)를 돌린다.
+    """Bind by clause and expression position, never by the numeric evidence value.
 
-    before 창(수치 앞)을 먼저 보고 **끝이 가장 뒤**(= 수치에 가장 가까운) 스팬을 택한다.
-    before가 비면 after 창에서 가장 앞선 스팬을 택한다.
-
-    2026-07-27: 창에 아무 용어도 없으면 **None을 돌린다.** 예전에는 문장 전체를 훑어
-    아무 키워드나 붙였는데(`kw in sentence`), 다지표 문장에서는 사실상 임의 배정이라
-    "원부자재 102,462톤"을 폐기물 노드 72,463과 비교하는 오탐을 만들었다.
-    호출부(`_score_d1_numeric`)는 code가 없으면 비교를 건너뛴다 — 정밀도 우선.
+    A preceding numeric claim closes its topic phrase. Enumerations with multiple
+    possible owners stay unresolved; an attached following phrase (31%인 비율)
+    can own a number. The existing 25-character proximity limit is retained.
     """
-    before = _norm_topic_text(sentence[max(0, span_start - window):span_start])
-    spans = _topic_spans(before)
-    if spans:
-        best = max(spans, key=lambda sp: sp[1])
-        return best[2], best[3]
-
-    after = _norm_topic_text(sentence[span_end:span_end + window])
-    spans = _topic_spans(after)
-    if spans:
-        best = min(spans, key=lambda sp: sp[0])
-        return best[2], best[3]
-
-    return None, None
+    left, right = _clause_bounds(sentence, span_start, span_end)
+    for match in _NUMBER_CANDIDATE_PATTERN.finditer(sentence, left, right):
+        if match.end() <= span_start:
+            left = max(left, match.end())
+        elif match.start() >= span_end:
+            right = min(right, match.start())
+            break
+    before = _topic_spans(_norm_topic_text(sentence[max(left, span_start-window):span_start]))
+    after_text = sentence[span_end:min(right, span_end+window)]
+    after = _topic_spans(_norm_topic_text(after_text))
+    attached_after = bool(re.match(r"\s*(?:인|의|에 해당하는)\s", after_text))
+    spans = after if attached_after and after else before or after
+    if len({span[3] for span in spans}) != 1:
+        return None, None
+    best = max(spans, key=lambda sp: sp[1]) if spans is before else min(spans, key=lambda sp: sp[0])
+    return best[2], best[3]
 
 
 def _norm_unit(u: str | None) -> str:
@@ -236,15 +255,21 @@ def units_compatible(a: str | None, b: str | None) -> bool:
 
 def extract_numeric_claims(text: str) -> list[NumericClaim]:
     claims: list[NumericClaim] = []
+    offset = 0
     for sent in _sentences(text):
-        for m in _NUMBER_PATTERN.finditer(sent):
+        offset = text.index(sent, offset)
+        for m in _NUMBER_CANDIDATE_PATTERN.finditer(sent):
             num_str, unit = m.group("num"), m.group("unit")
-            n, u = _normalize_number(num_str, unit)
+            value = parse_number(num_str)
+            n, u = _normalize_number(num_str, unit) if value is not None else (None, unit)
             topic, code = _match_topic_near(sent, m.start(), m.end())
             claims.append(NumericClaim(
-                raw=f"{num_str} {unit}", number=n, unit=u,
+                raw=m.group(), number=n, unit=u,
                 topic=topic, matched_code=code, sentence=sent,
+                start=offset + m.start(), end=offset + m.end(),
+                issue="invalid_number" if n is None or n < 0 else None,
             ))
+        offset += len(sent)
     return claims
 
 
@@ -259,7 +284,7 @@ def _dart_numeric_value(report: CompanyReport, code: str) -> tuple[float | None,
 
 
 def _compare_claim(claim: NumericClaim, report: CompanyReport) -> ClaimCheck:
-    if not claim.matched_code:
+    if claim.issue or not claim.matched_code:
         return ClaimCheck(claim=claim, dart_value=None, dart_unit=None,
                           delta_pct=None, verdict="unverifiable")
     dart_v, dart_u = _dart_numeric_value(report, claim.matched_code)
@@ -420,20 +445,14 @@ _TARGET_WINDOW = 40  # 수치 앞뒤로 살필 문자 수
 
 def _is_target_context(sentence: str, start: int, end: int) -> bool:
     """수치 주변 창(window)에 목표/전망 마커가 있으면 True."""
-    window = sentence[max(0, start - _TARGET_WINDOW):min(len(sentence), end + _TARGET_WINDOW)]
+    left, right = _clause_bounds(sentence, start, end)
+    window = sentence[max(left, start - _TARGET_WINDOW):min(right, end + _TARGET_WINDOW)]
     return bool(_TARGET_CONTEXT_RE.search(window))
 
 
 def _sentence_topic_codes(sentence: str) -> set[str]:
-    """문장에 등장하는 모든 지표 용어의 K-ESG 코드 집합.
-
-    `_match_topic_near`와 **같은 인덱스**를 쓴다(2026-07-27). 여기가 D1 교차 비교
-    후보(`cand_codes`)를 만드는 곳이라, 인덱스가 갈리면 E-3-2 같은 신규 커버 코드의
-    노드가 후보에 안 들어와 최근접 매칭만 남는다.
-    여기는 문장 전체가 대상이므로 겹침 해소 없이 등장하는 용어를 모두 모은다.
-    """
-    text = _norm_topic_text(sentence)
-    return {code for term, _topic, code in _TOPIC_TERMS if term in text}
+    """Diagnostic inventory only; it is never a pool of alternative D1 owners."""
+    return {sp[3] for sp in _topic_spans(_norm_topic_text(sentence))}
 
 
 def _repr_ids(evidence_graph: Any) -> dict[str, str]:
@@ -441,24 +460,7 @@ def _repr_ids(evidence_graph: Any) -> dict[str, str]:
     return getattr(evidence_graph, "representative_node_ids", None) or {}
 
 
-def _ledger_representative(evidence_graph: Any, code: str, compat: list[Any]) -> Any | None:
-    """원장이 채택한 대표 노드를 단위 호환 후보 안에서 찾는다. 없으면 None(폴백).
-
-    None을 돌리는 경우 두 가지 — 호출부가 구분한다.
-      · 기록 자체가 없다(미공시 코드, DART-only 경로, 원장 미실행)
-      · 기록은 있으나 claim 단위와 환산군이 달라 compat에서 걸러졌다
-    """
-    node_id = _repr_ids(evidence_graph).get(code)
-    if not node_id:
-        return None
-    for node in compat:
-        if getattr(node, "id", None) == node_id:
-            return node
-    return None
-
-
-# ---- 책임있는 기권(abstain) 헬퍼 --------------------------------------------
-# ABSTAIN_ENABLED=0(기본)이면 아래 헬퍼는 호출되지 않아 기존 동작이 그대로다.
+# ---- 평가 보류 -------------------------------------------------------------
 
 def _abstain(reason: str, detail: str) -> AxisScore:
     """판정 보류 AxisScore. score는 0.0 고정(위험도 미가산) + abstain 플래그로 구분."""
@@ -468,151 +470,106 @@ def _abstain(reason: str, detail: str) -> AxisScore:
     )
 
 
-def _retry_evidence(code: str, evidence_graph: Any) -> list[Any] | None:
-    """근거 부재 시 최종 기권 판정 전 보조 재검색 훅.
-
-    동의어/상위코드 확장·OCR 증빙 노드·RAG 청크 재조회 등 강화된 재검색은
-    아직 구현하지 않았다. 현재는 항상 None(추가 근거 없음)을 반환해 호출부가
-    초기 검색 결과 그대로 기권 여부를 판정하게 한다.
-    TODO: 강화된 재검색(후속 배치 후보).
-    """
-    return None
-
-
-def _score_d1_numeric(
-    sentence: str,
-    evidence_graph: Any | None,
-) -> AxisScore:
-    """claim 숫자 vs L0 노드값 상대 오차.
-
-    2026-07-17 정밀도 개선 2건:
-    - 목표/전망 문맥의 수치는 실적 노드와 비교하지 않는다 (목표 100% vs 실적 72% 오탐).
-    - 다지표 문장 교차 오탐 차단: 수치를 최근접 코드 하나가 아니라 **문장 내 전체 토픽
-      코드의 노드들과 비교해 최솟값 오차**를 쓴다. 배치 실측(5개사)에서 D1 만점의
-      대부분이 "여성 비율 16.6을 옆 지표 노드 29.0과 비교" 류의 교차 매칭이었다.
-      수치가 문장 내 어떤 관련 노드와도 안 맞을 때만 오차로 계산된다.
-      (트레이드오프: 문장 내 다른 지표의 노드값과 우연히 일치하는 허위 수치는
-      놓칠 수 있음 — 정밀도 우선. 재현율 보강은 D5·교차검증 엣지 몫.)
-    """
-    if evidence_graph is None:
-        return AxisScore(score=0.0, evidence=[], detail="evidence_graph 없음 — 스킵")
-
-    # G5. 노드 선택 기준 연도 — 그래프 report_year 우선, 없으면 후보 최신 연도 폴백.
-    # 대표 노드는 원장이 그래프에 남긴 결정(representative_node_ids)을 우선 따르고,
-    # 기록이 없을 때만 이 공용 함수로 규칙을 재실행한다(상세는 node_select 참조).
+def _selected_d1_node(graph: Any, code: str) -> Any | None:
+    """Choose once, before checking claim units; never reselect to fit a claim."""
+    if graph is None:
+        return None
+    if hasattr(graph, 'resolved_facts'):
+        from .ssot.selection import comparison_node
+        return comparison_node(graph, code)
+    # Compatibility with pre-ledger graph adapters.
+    nodes = graph.search_nodes(keywords=[code]) if hasattr(graph, 'search_nodes') else graph.nodes_by_metric(code)
+    preferred = _repr_ids(graph).get(code)
+    if preferred:
+        return next((n for n in nodes if n.id == preferred), None)
     from .ssot.node_select import select_representative_node
+    return select_representative_node(code, nodes, report_year=getattr(graph, 'report_year', None))
 
-    ref_year = getattr(evidence_graph, "report_year", None)
 
-    worst_delta = 0.0
-    hit_node_ids: list[str] = []
-    details: list[str] = []
-    sentence_codes = _sentence_topic_codes(sentence)
-    # 기권 판정용: 코드가 매핑되고 실적 비교 대상인(목표/전망 제외) claim만 추적.
-    # ABSTAIN_ENABLED=0이면 아래 리스트는 채워져도 전혀 소비되지 않는다(동작 불변).
-    mapped_claims: list[dict[str, Any]] = []
-
-    for m in _NUMBER_PATTERN.finditer(sentence):
-        num_str, unit = m.group("num"), m.group("unit")
-        claim_val, claim_unit = _normalize_number(num_str, unit)
-        _, code = _match_topic_near(sentence, m.start(), m.end())
+def _compare_numeric_claims(sentence: str, evidence_graph: Any, claims: list[NumericClaim],
+                            *, tolerance: float = 0.0) -> list[dict[str, Any]]:
+    """Structured claim/evidence trace shared by generated-text and SSOT D1."""
+    from .rag_gates.units import normalize_unit, convert_to_common
+    from .ssot.selection import finite_number
+    records = []
+    for claim in claims:
+        code = claim.matched_code
+        record = dict(raw=claim.raw, start=claim.start, end=claim.end, code=code,
+                      claim_value=claim.number, claim_unit=claim.unit,
+                      evidence_ids=[], evidence_value=None, evidence_unit=None,
+                      evidence_period=None, status='unverified', reason=None)
+        records.append(record)
+        if _is_target_context(sentence, claim.start, claim.end):
+            record.update(status='excluded', reason='target')
+            continue
+        if claim.issue:
+            record['reason'] = claim.issue
+            continue
         if not code:
+            record['reason'] = 'ambiguous_topic'
             continue
-        if _is_target_context(sentence, m.start(), m.end()):
-            details.append(f"{code}: claim={claim_val} — 목표/전망 문맥, 실적 비교 제외")
+        node = _selected_d1_node(evidence_graph, code)
+        if node is None or finite_number(node.value) is None:
+            record['reason'] = 'no_evidence'
             continue
-
-        # 후보: 최근접 코드 우선 + 문장 내 나머지 토픽 코드 (교차 오탐 방지)
-        cand_codes = [code] + sorted(sentence_codes - {code})
-        # 기권 사유 판정용 근거 유무는 **claim 자기 코드** 기준으로만 본다.
-        # (혼합 문장에서 옆 지표 노드 때문에 no_evidence가 unit_mismatch로 오분류돼
-        #  조용히 통과하던 버그 방지 — 코드리뷰 must-fix 2.)
-        own_has_nodes = bool(evidence_graph.search_nodes(keywords=[code]))
-        best: tuple[float, Any, str] | None = None  # (delta, node, code)
-        any_nodes = False
-        for c in cand_codes:
-            facts = getattr(evidence_graph, "resolved_facts", {})
-            if c in facts:
-                from .ssot.selection import comparison_node
-                from .rag_gates.units import normalize_unit, convert_to_common
-                resolved = comparison_node(evidence_graph, c)
-                if resolved is not None:
-                    any_nodes = True
-                    cv = convert_to_common(claim_val, normalize_unit(claim_unit or "") or claim_unit,
-                                           normalize_unit(resolved.unit) or resolved.unit)
-                    if cv is not None:
-                        delta = (abs(cv - resolved.value) / abs(resolved.value)
-                                 if resolved.value else (0.0 if cv == 0 else float("inf")))
-                        if best is None or delta < best[0]:
-                            best = (delta, resolved, c)
-                continue
-            nodes = evidence_graph.search_nodes(keywords=[c])
-            if not nodes:
-                continue
-            any_nodes = True
-            # 단위 호환 노드만 비교 대상 ("31 %" 주장을 tCO2eq 노드와 비교하지 않음)
-            compat = [n for n in nodes if units_compatible(claim_unit, getattr(n, "unit", None))]
-            if not compat:
-                continue
-            # G5. 대표 노드 — **원장이 그래프에 기록한 결정을 그대로 따른다**(2026-07-26).
-            # 공용 함수(select_representative_node)를 공유하는 것만으로는 대칭이 성립하지
-            # 않는다: 원장은 origin이 ocr_*인 노드만, 여기 compat는 search_nodes()로
-            # DART 노드까지 포함한 풀이라 같은 규칙도 다른 노드를 가리킨다
-            # (실측: 원장 623,648 '국내(별도)' vs D1 1,992,921 DART '합계').
-            # 규칙을 두 번 돌리는 대신 결정을 공유하면 풀이 달라도 어긋날 수 없다.
-            node = _ledger_representative(evidence_graph, c, compat)
-            if node is None:
-                if _repr_ids(evidence_graph).get(c):
-                    # 기록은 있으나 claim과 환산군이 다르다 — 원장은 항목 정의 단위로
-                    # 정규화하지만 노드는 원 단위다. 비교 자체가 무의미하므로 폴백한다.
-                    details.append(f"{c}: 원장 대표노드와 단위 비호환 → 폴백")
-                # 기록이 없는 코드(미공시·DART-only 경로 등)는 기존대로 규칙을 재실행한다.
-                node = select_representative_node(c, compat, report_year=ref_year)
-            if node is None or node.value == 0:
-                continue
-            delta = abs(claim_val - node.value) / abs(node.value)
-            if best is None or delta < best[0]:
-                best = (delta, node, c)
-
-        if best is None:
-            if own_has_nodes:
-                details.append(
-                    f"{code}: claim={claim_val}{claim_unit} — 단위 불일치(노드 단위와 비교 불가, 스킵)")
-            else:
-                details.append(f"{code}: claim={claim_val}{claim_unit} — 근거 노드 없음")
-            mapped_claims.append({"code": code, "verified": False, "any_nodes": own_has_nodes})
+        fact = getattr(evidence_graph, 'resolved_facts', {}).get(code)
+        ids = list(fact.representative_node_ids) if fact else [node.id]
+        record.update(evidence_ids=ids, evidence_value=node.value, evidence_unit=node.unit,
+                      evidence_period=getattr(node, 'period', None),
+                      evidence_files=list(dict.fromkeys(
+                          getattr(getattr(evidence_graph, 'nodes', {}).get(nid), 'source_file', None)
+                          for nid in ids if getattr(getattr(evidence_graph, 'nodes', {}).get(nid), 'source_file', None)))
+                      or ([node.source_file] if getattr(node, 'source_file', None) else []))
+        cu = normalize_unit(claim.unit or '') or claim.unit
+        nu = normalize_unit(node.unit or '') or node.unit
+        cv = convert_to_common(claim.number, cu, nu) if cu and nu else None
+        if cv is None:
+            record['reason'] = 'unit_mismatch'
             continue
+        delta = (abs(cv - node.value) / abs(node.value) if node.value
+                 else (0.0 if cv == 0 else float('inf')))
+        record.update(status='compared', reason='match' if delta <= tolerance else 'mismatch',
+                      compared_value=cv, delta_ratio=delta if delta != float('inf') else None,
+                      nonzero_against_zero=delta == float('inf'))
+    return records
 
-        delta, node, matched_code = best
-        if delta > worst_delta:
-            worst_delta = delta
-        hit_node_ids.append(node.id)
-        details.append(f"{matched_code}: claim={claim_val} vs node={node.value} (Δ={delta:.1%})")
-        mapped_claims.append({"code": code, "verified": True, "any_nodes": True})
 
-    # ---- 정밀 기권 판정 (ABSTAIN_ENABLED=1일 때만) --------------------------
-    # 조건: 코드가 매핑된 claim이 최소 1건 있고, 그중 단 하나도 검증(매칭)되지
-    # 못했을 때만 기권. 하나라도 검증됐으면(worst_delta 산정에 기여) 기권 아님 —
-    # 실제 위험(수치 불일치) 신호를 기권으로 숨기지 않기 위함.
-    if ABSTAIN_ENABLED and mapped_claims and not any(c["verified"] for c in mapped_claims):
-        unresolved_codes = {c["code"] for c in mapped_claims}
-        retried = any(_retry_evidence(c, evidence_graph) for c in unresolved_codes)
-        if not retried:
-            reason = "no_evidence" if any(not c["any_nodes"] for c in mapped_claims) else "unit_mismatch"
-            # 2026-07-28 실키 A/B: unit_mismatch 기권이 test held-out에서 Overall·recall을
-            # 하락시켰다(주 타깃 no_evidence는 0건 관측 — docs/abstention_metrics_result.md).
-            # 근거 자체가 없는 no_evidence만 기본적으로 기권시키고, unit_mismatch는
-            # ABSTAIN_UNIT_MISMATCH가 명시적으로 켜졌을 때만 기권시킨다(기본 False —
-            # 꺼져 있으면 기존 동작인 score 계산으로 흘려보낸다).
-            if reason == "no_evidence" or ABSTAIN_UNIT_MISMATCH:
-                return _abstain(reason, "; ".join(details) if details else "수치 매칭 없음")
+def _numeric_axis(records: list[dict[str, Any]], score: float) -> AxisScore:
+    """Keep measured risk and unverified scope independently, including legacy toggles."""
+    from collections import Counter
+    compared = [r for r in records if r['status'] == 'compared']
+    unverified = [r for r in records if r['status'] == 'unverified']
+    reasons = dict(Counter(r['reason'] for r in unverified))
+    status = ('partial' if compared else 'unavailable') if unverified else ('complete' if compared else 'not_applicable')
+    # Historical experiment switches no longer suppress the fact of non-verification.
+    reason = next((r for r in ('no_evidence', 'unit_mismatch', 'ambiguous_topic', 'invalid_number') if r in reasons), None)
+    labels = {'no_evidence': '근거 노드 없음', 'unit_mismatch': '단위 비교 불가',
+              'ambiguous_topic': '지표 연결 모호', 'invalid_number': '부적합 숫자',
+              'target': '목표/전망 문맥, 실적 비교 제외'}
+    details = []
+    for r in records:
+        if r['status'] == 'compared':
+            delta = r['delta_ratio'] if r['delta_ratio'] is not None else float('inf')
+            details.append(f"{r['code']}: claim={r['claim_value']} vs node={r['evidence_value']} (Δ={delta:.1%})")
+        else:
+            details.append(f"{r['code'] or '미확정'}: {r['raw']} — {labels[r['reason']]}")
+    return AxisScore(score=round(score, 4),
+        evidence=list(dict.fromkeys(nid for r in compared for nid in r['evidence_ids'])),
+        detail='; '.join(details) or '수치 비교 대상 없음',
+        abstain=bool(unverified) and not compared,
+        abstain_reason=reason if unverified and not compared else None,
+        evaluation={'status': status, 'compared_claims': len(compared),
+                    'unverified_claims': len(unverified),
+                    'excluded_claims': sum(r['status'] == 'excluded' for r in records),
+                    'reasons': reasons, 'claims': records})
 
-    score = min(1.0, worst_delta / max(D1_THRESHOLD, 1e-9))
-    return AxisScore(
-        score=round(score, 4),
-        evidence=hit_node_ids,
-        detail="; ".join(details) if details else "수치 매칭 없음",
-    )
+
+def _score_d1_numeric(sentence: str, evidence_graph: Any | None) -> AxisScore:
+    """Compare each claim only to its metric's finalized evidence; preserve coverage."""
+    records = _compare_numeric_claims(sentence, evidence_graph, extract_numeric_claims(sentence))
+    worst_delta = max((float('inf') if r['nonzero_against_zero'] else r['delta_ratio']
+                       for r in records if r['status'] == 'compared'), default=0.0)
+    return _numeric_axis(records, min(1.0, worst_delta / max(D1_THRESHOLD, 1e-9)))
 
 
 # ---- D2: 모호어 밀도 --------------------------------------------------------

@@ -1,0 +1,80 @@
+{
+  "schema_version": "v15",
+  "ticker": "MOBIS",
+  "corp_name": "현대모비스",
+  "generated_at": "2026-09-14T04:49:46.680621+00:00",
+  "data_points": [
+    {
+      "kesg_code": "E-6-1",
+      "kesg_name": "폐기물 배출량",
+      "value": 72463,
+      "unit": "톤",
+      "period": 2024,
+      "confidence": 0.9,
+      "verification": "verified",
+      "d1_risk": 0.0,
+      "evidence_files": [
+        {
+          "file_name": "012330_mobis_2025.pdf",
+          "relative_path": "evidence_pack/012330_mobis_2025.pdf",
+          "origin": "ocr_unstructured",
+          "bbox": null,
+          "page": 69,
+          "node_id": "MOBIS_E-6-1_2024__ocr_unstructured__b82328c722",
+          "kesg_codes": [
+            "E-6-1"
+          ],
+          "quote": "폐기물 발생량 합계=72463ton (012330_mobis_2025.pdf)",
+          "resolved": true,
+          "independent": true
+        }
+      ],
+      "source_tier": "ocr_node_gated",
+      "representative_node_ids": [
+        "MOBIS_E-6-1_2024__ocr_unstructured__b82328c722"
+      ],
+      "value_role": "total",
+      "confidence_flags": [],
+      "d1_evaluation": {
+        "status": "complete",
+        "compared_claims": 1,
+        "unverified_claims": 0,
+        "excluded_claims": 0,
+        "reasons": {},
+        "claims": [
+          {
+            "raw": "72463톤",
+            "start": 9,
+            "end": 15,
+            "code": "E-6-1",
+            "claim_value": 72463.0,
+            "claim_unit": "톤",
+            "evidence_ids": [
+              "MOBIS_E-6-1_2024__ocr_unstructured__b82328c722"
+            ],
+            "evidence_value": 72463,
+            "evidence_unit": "톤",
+            "evidence_period": 2024,
+            "status": "compared",
+            "reason": "match",
+            "evidence_files": [
+              "012330_mobis_2025.pdf"
+            ],
+            "compared_value": 72463.0,
+            "delta_ratio": 0.0,
+            "nonzero_against_zero": false
+          }
+        ]
+      }
+    }
+  ],
+  "policy_audit": [],
+  "sentences": [],
+  "summary": {
+    "data_point_count": 1,
+    "verified_count": 1,
+    "verified_ratio": 1.0,
+    "policy_pass": 0,
+    "policy_total": 0
+  }
+}
