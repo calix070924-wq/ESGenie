@@ -174,30 +174,46 @@ def _topic_spans(window_text: str) -> list[tuple[int, int, str, str]]:
     return kept
 
 
+# Clause separators exclude decimal points and thousands-grouping commas.
+_CLAUSE_BREAK = re.compile(
+    r"(?<!\d)[,.]|[,.](?!\d)|[;!?。\n]|(?:이며|이고|으며|지만)\s*|\s+(?:그리고|반면|또한)\s+"
+)
+
+
+def _clause_bounds(sentence: str, start: int, end: int) -> tuple[int, int]:
+    left, right = 0, len(sentence)
+    for match in _CLAUSE_BREAK.finditer(sentence):
+        if match.end() <= start:
+            left = match.end()
+        elif match.start() >= end:
+            right = match.start()
+            break
+    return left, right
+
+
 def _match_topic_near(sentence: str, span_start: int, span_end: int, window: int = 25) -> tuple[str | None, str | None]:
-    """수치 주변 창에서 가장 가까운 지표 용어를 찾아 (topic, code)를 돌린다.
+    """Bind by clause and expression position, never by the numeric evidence value.
 
-    before 창(수치 앞)을 먼저 보고 **끝이 가장 뒤**(= 수치에 가장 가까운) 스팬을 택한다.
-    before가 비면 after 창에서 가장 앞선 스팬을 택한다.
-
-    2026-07-27: 창에 아무 용어도 없으면 **None을 돌린다.** 예전에는 문장 전체를 훑어
-    아무 키워드나 붙였는데(`kw in sentence`), 다지표 문장에서는 사실상 임의 배정이라
-    "원부자재 102,462톤"을 폐기물 노드 72,463과 비교하는 오탐을 만들었다.
-    호출부(`_score_d1_numeric`)는 code가 없으면 비교를 건너뛴다 — 정밀도 우선.
+    A preceding numeric claim closes its topic phrase. Enumerations with multiple
+    possible owners stay unresolved; an attached following phrase (31%인 비율)
+    can own a number. The existing 25-character proximity limit is retained.
     """
-    before = _norm_topic_text(sentence[max(0, span_start - window):span_start])
-    spans = _topic_spans(before)
-    if spans:
-        best = max(spans, key=lambda sp: sp[1])
-        return best[2], best[3]
-
-    after = _norm_topic_text(sentence[span_end:span_end + window])
-    spans = _topic_spans(after)
-    if spans:
-        best = min(spans, key=lambda sp: sp[0])
-        return best[2], best[3]
-
-    return None, None
+    left, right = _clause_bounds(sentence, span_start, span_end)
+    for match in _NUMBER_CANDIDATE_PATTERN.finditer(sentence, left, right):
+        if match.end() <= span_start:
+            left = max(left, match.end())
+        elif match.start() >= span_end:
+            right = min(right, match.start())
+            break
+    before = _topic_spans(_norm_topic_text(sentence[max(left, span_start-window):span_start]))
+    after_text = sentence[span_end:min(right, span_end+window)]
+    after = _topic_spans(_norm_topic_text(after_text))
+    attached_after = bool(re.match(r"\s*(?:인|의|에 해당하는)\s", after_text))
+    spans = after if attached_after and after else before or after
+    if len({span[3] for span in spans}) != 1:
+        return None, None
+    best = max(spans, key=lambda sp: sp[1]) if spans is before else min(spans, key=lambda sp: sp[0])
+    return best[2], best[3]
 
 
 def _norm_unit(u: str | None) -> str:
@@ -429,20 +445,14 @@ _TARGET_WINDOW = 40  # 수치 앞뒤로 살필 문자 수
 
 def _is_target_context(sentence: str, start: int, end: int) -> bool:
     """수치 주변 창(window)에 목표/전망 마커가 있으면 True."""
-    window = sentence[max(0, start - _TARGET_WINDOW):min(len(sentence), end + _TARGET_WINDOW)]
+    left, right = _clause_bounds(sentence, start, end)
+    window = sentence[max(left, start - _TARGET_WINDOW):min(right, end + _TARGET_WINDOW)]
     return bool(_TARGET_CONTEXT_RE.search(window))
 
 
 def _sentence_topic_codes(sentence: str) -> set[str]:
-    """문장에 등장하는 모든 지표 용어의 K-ESG 코드 집합.
-
-    `_match_topic_near`와 **같은 인덱스**를 쓴다(2026-07-27). 여기가 D1 교차 비교
-    후보(`cand_codes`)를 만드는 곳이라, 인덱스가 갈리면 E-3-2 같은 신규 커버 코드의
-    노드가 후보에 안 들어와 최근접 매칭만 남는다.
-    여기는 문장 전체가 대상이므로 겹침 해소 없이 등장하는 용어를 모두 모은다.
-    """
-    text = _norm_topic_text(sentence)
-    return {code for term, _topic, code in _TOPIC_TERMS if term in text}
+    """Diagnostic inventory only; it is never a pool of alternative D1 owners."""
+    return {sp[3] for sp in _topic_spans(_norm_topic_text(sentence))}
 
 
 def _repr_ids(evidence_graph: Any) -> dict[str, str]:
@@ -492,17 +502,7 @@ def _score_d1_numeric(
     sentence: str,
     evidence_graph: Any | None,
 ) -> AxisScore:
-    """claim 숫자 vs L0 노드값 상대 오차.
-
-    2026-07-17 정밀도 개선 2건:
-    - 목표/전망 문맥의 수치는 실적 노드와 비교하지 않는다 (목표 100% vs 실적 72% 오탐).
-    - 다지표 문장 교차 오탐 차단: 수치를 최근접 코드 하나가 아니라 **문장 내 전체 토픽
-      코드의 노드들과 비교해 최솟값 오차**를 쓴다. 배치 실측(5개사)에서 D1 만점의
-      대부분이 "여성 비율 16.6을 옆 지표 노드 29.0과 비교" 류의 교차 매칭이었다.
-      수치가 문장 내 어떤 관련 노드와도 안 맞을 때만 오차로 계산된다.
-      (트레이드오프: 문장 내 다른 지표의 노드값과 우연히 일치하는 허위 수치는
-      놓칠 수 있음 — 정밀도 우선. 재현율 보강은 D5·교차검증 엣지 몫.)
-    """
+    """Compare each claim with its own metric's finalized evidence."""
     if evidence_graph is None:
         return AxisScore(score=0.0, evidence=[], detail="evidence_graph 없음 — 스킵")
 
@@ -516,7 +516,6 @@ def _score_d1_numeric(
     worst_delta = 0.0
     hit_node_ids: list[str] = []
     details: list[str] = []
-    sentence_codes = _sentence_topic_codes(sentence)
     # 기권 판정용: 코드가 매핑되고 실적 비교 대상인(목표/전망 제외) claim만 추적.
     # ABSTAIN_ENABLED=0이면 아래 리스트는 채워져도 전혀 소비되지 않는다(동작 불변).
     mapped_claims: list[dict[str, Any]] = []
@@ -531,8 +530,8 @@ def _score_d1_numeric(
             details.append(f"{code}: claim={claim_val} — 목표/전망 문맥, 실적 비교 제외")
             continue
 
-        # 후보: 최근접 코드 우선 + 문장 내 나머지 토픽 코드 (교차 오탐 방지)
-        cand_codes = [code] + sorted(sentence_codes - {code})
+        # 소유 지표만 비교: 값이 비슷한 이웃 지표로 재배정하지 않는다.
+        cand_codes = [code]
         # 기권 사유 판정용 근거 유무는 **claim 자기 코드** 기준으로만 본다.
         # (혼합 문장에서 옆 지표 노드 때문에 no_evidence가 unit_mismatch로 오분류돼
         #  조용히 통과하던 버그 방지 — 코드리뷰 must-fix 2.)
