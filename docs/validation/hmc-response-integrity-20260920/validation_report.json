@@ -1,4 +1,70 @@
 {
+  "input_provenance": {
+    "evidence_dir": "/Users/heojeongmin/Documents/Claude/Projects/ESGenie/시연증빙세트_한울정밀공업",
+    "note": "읽기 전용으로만 접근했다. 원본 PDF·저장 OCR 캐시를 고치지 않았다.",
+    "inputs": [
+      {
+        "file": "의사소통절차서_2025.pdf",
+        "exists": true,
+        "sha256": "ea9b48f60738d1f10fc23e0608622a58cee0708abb1e3612c15e973a4b5c135a",
+        "bytes": 2090
+      },
+      {
+        "file": "15_노사협의회규정_2026-06.pdf",
+        "exists": true,
+        "sha256": "285587de243e950176d65dab5000992df979e2a8cbcadc3c93fc794931d34f76",
+        "bytes": 34930
+      },
+      {
+        "file": "17_고충처리및신원보호규정_2026-06.pdf",
+        "exists": true,
+        "sha256": "51ba2554cdf9639a93feac577b829635346718db64205f0c11dacd638dab1316",
+        "bytes": 35797
+      },
+      {
+        "file": "18_정보보호정책_2026-06.pdf",
+        "exists": true,
+        "sha256": "d8b71febc94335187d7eec0ed3e6b4db2a92154179a66f497628509aef090d02",
+        "bytes": 35285
+      },
+      {
+        "file": "16_부패방지윤리경영규정_2026-06.pdf",
+        "exists": true,
+        "sha256": "91efc1986b926c4590e561e2c92465c1423d2efcaf7f26dc6d4f80a3ec26f1d3",
+        "bytes": 35872
+      },
+      {
+        "file": "14_임금및복리후생규정_2026-06.pdf",
+        "exists": true,
+        "sha256": "3f61f73dabdbbb6106b61af73dd022341d81b1f791efcf3395d016f454e68fc7",
+        "bytes": 38655
+      },
+      {
+        "file": "근로시간관리규정_2025.pdf",
+        "exists": true,
+        "sha256": "2d48975e6d3f270e3be6982ee6512624ce945e503132c07ff31af86daa90e129",
+        "bytes": 2042
+      },
+      {
+        "file": "지식재산보호규정_2025.pdf",
+        "exists": true,
+        "sha256": "cef0359c867df21804b0de9a8979c8df329fe9e9414a27e0adaab06332815284",
+        "bytes": 2033
+      },
+      {
+        "file": "위생_기숙사관리규정_2025.pdf",
+        "exists": true,
+        "sha256": "fc8b64f95c8a1b98512141e79c74cbddd58c102fd72d9d84b259efe2f29dc691",
+        "bytes": 2154
+      },
+      {
+        "file": "책임광물실사정책_2025.pdf",
+        "exists": true,
+        "sha256": "d971832b035471ad2ac6408207ed80d156b48a4759a7b065521da145b1facbd1",
+        "bytes": 2162
+      }
+    ]
+  },
   "real_document_replay": {
     "all_documents_tagged_to_one_question": {
       "HMC-E-7": {
@@ -489,5 +555,15 @@
       "pdf_p3.png"
     ],
     "note": "Excel은 렌더러가 없어 셀 값·줄바꿈·열 너비를 재개봉 검사로 확인했다."
+  },
+  "output_hashes": {
+    "pdf_draft_p5.png": "8b1035c9e319b18de4f112eb24e5d5085cea6af60af88cd63c5c9cb3b4a0bffe",
+    "pdf_draft_p9.png": "d899ba39973d6003ca91f45189da9e97b68d4a5db6c6a0ee19fba7a7de63d59b",
+    "pdf_p1.png": "a6e9e923ae88126410d007c1b0b75b9a660589247052189cab733898a4cb00e4",
+    "pdf_p2.png": "4900c4678bbdaab36fea6f7b9582a92783c6c461dbb1d2ef45d019abb270e2ae",
+    "pdf_p3.png": "4f3cd61f05dada526d475a803b5a91eb8201ef9cf0c67801372e2d1faa8092c0",
+    "response_sheet.json": "8157fbae0bc00a72593731d6b5506ed63a62a864dd13d075cfffc029b72b787c",
+    "실사응답서_hmc_한울정밀공업㈜.pdf": "13bc23e2605d95943c7f5dacdd4066b1b7ea10e41223f7520dfc749ce80acece",
+    "실사응답서_hmc_한울정밀공업㈜.xlsx": "9905fee5d309a8b4bf0a0820b93d1f3452c20303a88056a36929ef4f31bee5bf"
   }
 }

@@ -58,6 +58,31 @@ CLAUSE_DOCS = (
 )
 
 
+def sha256(path: Path) -> str:
+    import hashlib
+    h = hashlib.sha256()
+    with open(path, "rb") as fh:
+        for block in iter(lambda: fh.read(1 << 16), b""):
+            h.update(block)
+    return h.hexdigest()
+
+
+def provenance(evidence_dir: Path) -> dict:
+    """입력 출처와 해시 — 재생 결과가 어느 파일에서 나왔는지 나중에 확인할 수 있게.
+
+    해시는 '원본을 고치지 않았다'는 증거도 된다. 작업 전후 값이 같아야 한다.
+    """
+    inputs = []
+    for name in CLAUSE_DOCS:
+        p = evidence_dir / name
+        inputs.append({"file": name, "exists": p.exists(),
+                       "sha256": sha256(p) if p.exists() else None,
+                       "bytes": p.stat().st_size if p.exists() else None})
+    return {"evidence_dir": str(evidence_dir),
+            "note": "읽기 전용으로만 접근했다. 원본 PDF·저장 OCR 캐시를 고치지 않았다.",
+            "inputs": inputs}
+
+
 def pdf_text(path: Path) -> str:
     import fitz  # PyMuPDF — 로컬 텍스트 레이어 추출. OCR/네트워크 아님.
     with fitz.open(path) as doc:
@@ -343,6 +368,7 @@ def main() -> None:
 
     OUT_DIR.mkdir(parents=True, exist_ok=True)
     report: dict = {}
+    report["input_provenance"] = provenance(evidence_dir)
     report["real_document_replay"] = replay_real_documents(evidence_dir)
     report["framework_survey"] = survey_all_frameworks()
     sheet = build_sheet(evidence_dir)
@@ -350,6 +376,11 @@ def main() -> None:
     report["rendering"] = render_screens(
         report["output_crosscheck"]["files"]["pdf"],
         report["output_crosscheck"]["files"]["xlsx"])
+
+    # 생성 산출물 해시 — 보고서의 수치가 어느 파일에서 나왔는지 묶어둔다.
+    report["output_hashes"] = {
+        p.name: sha256(p) for p in sorted(OUT_DIR.iterdir())
+        if p.is_file() and p.name != "validation_report.json"}
 
     (OUT_DIR / "validation_report.json").write_text(
         json.dumps(report, ensure_ascii=False, indent=2), encoding="utf-8")
