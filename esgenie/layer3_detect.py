@@ -524,14 +524,57 @@ def _compare_numeric_claims(sentence: str, evidence_graph: Any, claims: list[Num
         nu = normalize_unit(node.unit or '') or node.unit
         cv = convert_to_common(claim.number, cu, nu) if cu and nu else None
         if cv is None:
-            record['reason'] = 'unit_mismatch'
+            # 단위 차원이 다르면 애초에 같은 대상이 아니다 — 불일치가 아니라 비교 불가다.
+            record.update(reason='unit_mismatch', comparison='not_comparable',
+                          comparison_reason=f'단위 차원 상이({claim.unit} ↔ {node.unit})')
             continue
         delta = (abs(cv - node.value) / abs(node.value) if node.value
                  else (0.0 if cv == 0 else float('inf')))
         record.update(status='compared', reason='match' if delta <= tolerance else 'mismatch',
                       compared_value=cv, delta_ratio=delta if delta != float('inf') else None,
                       nonzero_against_zero=delta == float('inf'))
+        # 4상태 판정(작업지시서 §4-2). 가중치·임계값은 건드리지 않는다 — 수치 위험도는
+        # 위에서 계산한 delta 그대로다. 여기서 정하는 것은 '무엇과 비교했는지'다.
+        record.update(**_claim_comparison(evidence_graph, code, record))
     return records
+
+
+def _claim_comparison(evidence_graph: Any, code: str, record: dict[str, Any]) -> dict[str, str]:
+    """claim↔원장 비교의 4상태 판정 — 대조 완료 / 실제 불일치 / 범위 확인 필요.
+
+    숫자가 허용오차 안이라도 원장값이 부분값이면 '대조 완료'가 아니다. 재생에너지
+    전체 비율 자리에 앉은 에너지원별 구성비가 '자가신고 일치'로 덮이는 경로를 막는다
+    (§4-2). 위험 점수와 D1 임계값은 이 판정과 독립이다.
+    """
+    from .ssot.boundary import Boundary
+
+    if record.get('reason') == 'mismatch':
+        return {'comparison': 'mismatch',
+                'comparison_reason': f"오차 {(record.get('delta_ratio') or 0) * 100:.1f}%"}
+    fact = getattr(evidence_graph, 'resolved_facts', {}).get(code)
+    completeness = getattr(fact, 'completeness', 'unknown') if fact else 'unknown'
+    boundary = Boundary.from_dict(getattr(fact, 'boundary', None) if fact else None)
+    if completeness == 'partial':
+        return {'comparison': 'scope_unconfirmed',
+                'comparison_reason': f"원장값이 부분값 — {boundary.label() or '경계 미기록'}"}
+    if completeness == 'unknown' and not boundary.is_known:
+        return {'comparison': 'scope_unconfirmed',
+                'comparison_reason': '원장값의 기간·사업장 경계 미기록'}
+    return {'comparison': 'compared', 'comparison_reason': ''}
+
+
+# 4상태의 심각도 — 하나의 문장에 여러 claim이 있으면 가장 심한 상태를 대표로 올린다.
+_COMPARISON_RANK: dict[str, int] = {
+    'compared': 0, 'scope_unconfirmed': 1, 'not_comparable': 2, 'mismatch': 3}
+
+
+def worst_comparison(records: list[dict[str, Any]]) -> tuple[str, str]:
+    """기록들 중 가장 심각한 비교 상태와 그 사유. 판정이 없으면 ('', '')."""
+    ranked = [(r.get('comparison'), r.get('comparison_reason') or '')
+              for r in records if r.get('comparison')]
+    if not ranked:
+        return '', ''
+    return max(ranked, key=lambda x: _COMPARISON_RANK.get(x[0], 0))
 
 
 def _numeric_axis(records: list[dict[str, Any]], score: float) -> AxisScore:
@@ -553,6 +596,7 @@ def _numeric_axis(records: list[dict[str, Any]], score: float) -> AxisScore:
             details.append(f"{r['code']}: claim={r['claim_value']} vs node={r['evidence_value']} (Δ={delta:.1%})")
         else:
             details.append(f"{r['code'] or '미확정'}: {r['raw']} — {labels[r['reason']]}")
+    comparison, comparison_reason = worst_comparison(records)
     return AxisScore(score=round(score, 4),
         evidence=list(dict.fromkeys(nid for r in compared for nid in r['evidence_ids'])),
         detail='; '.join(details) or '수치 비교 대상 없음',
@@ -561,6 +605,10 @@ def _numeric_axis(records: list[dict[str, Any]], score: float) -> AxisScore:
         evaluation={'status': status, 'compared_claims': len(compared),
                     'unverified_claims': len(unverified),
                     'excluded_claims': sum(r['status'] == 'excluded' for r in records),
+                    # 4상태 판정(§4-2) — status(complete/partial/unavailable)와 독립이다.
+                    # 평가하지 못한 항목을 위험 0·verified로 되살리지 않는 계약은 status가
+                    # 계속 담당한다.
+                    'comparison': comparison, 'comparison_reason': comparison_reason,
                     'reasons': reasons, 'claims': records})
 
 

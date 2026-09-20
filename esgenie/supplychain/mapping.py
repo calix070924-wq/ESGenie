@@ -111,6 +111,16 @@ def _derive_numeric(q, mapped, missing, dp_by_code, claims=None, evidence_index=
         if ans.status == "verified" and not valid_links:
             ans.status = "self_reported"
             ans.flags.append("증빙 미확인: 실제 노드·주제·원문·독립 출처 확인 필요")
+        # 경계·비교 판정을 답변까지 전달한다(§2·§4-2). 보완 대상 근거는 산정 근거와
+        # 분리해 싣는다 — 쓰지 않은 문서를 산정 근거처럼 보이게 하지 않는다.
+        ans.boundary_label = getattr(dp, "boundary_label", "") or ""
+        ans.completeness = getattr(dp, "completeness", "") or ""
+        ans.comparison = getattr(dp, "comparison", "") or ""
+        ans.comparison_reason = getattr(dp, "comparison_reason", "") or ""
+        ans.scope_notes = list(getattr(dp, "scope_notes", []) or [])
+        refs = [evidence_index.get(e.node_id) if evidence_index is not None else e
+                for e in getattr(dp, "reference_files", [])]
+        ans.reference_links = [e for e in refs if e is not None]
     evid_num = _as_number(evid_value)
     if evid_value is not None:
         invalid = _invalid_number_reason(evid_value, evid_unit, code)
@@ -134,6 +144,29 @@ def _derive_numeric(q, mapped, missing, dp_by_code, claims=None, evidence_index=
     if claim is not None:
         ans = _reconcile_claim(ans, claim, evid_value, evid_unit, code=code)
     return ans
+
+
+def _comparison_from_claim(ans: Answer, mismatch: bool, description: str) -> None:
+    """자가주장 대조 결과를 4상태로 답변에 싣는다(§4-2).
+
+    숫자가 허용오차 안에 들어도, 증빙 쪽이 부분값이면 '자가신고 일치'라고 쓰지 않는다 —
+    전체 비율과 에너지원별 구성비를 같은 값으로 취급하던 경로가 여기였다. 기존 임계값
+    (비율 10%p / D1_THRESHOLD)은 그대로 쓰고, 여기서 정하는 것은 '무엇과 비교했는지'다.
+    """
+    if mismatch:
+        ans.comparison = "mismatch"
+        ans.comparison_reason = description
+        return
+    if ans.completeness == "partial":
+        ans.comparison = "scope_unconfirmed"
+        ans.comparison_reason = (
+            f"증빙값이 부분값 — {ans.boundary_label or '경계 미기록'} · 숫자는 {description}")
+        return
+    # 이미 상위 레이어(D1·교차검증)가 더 심한 상태를 실었으면 낮추지 않는다.
+    from ..layer3_detect import _COMPARISON_RANK
+    if _COMPARISON_RANK.get(ans.comparison, -1) < _COMPARISON_RANK["compared"]:
+        ans.comparison = "compared"
+        ans.comparison_reason = ""
 
 
 def _as_number(v: Any) -> float | None:
@@ -198,6 +231,7 @@ def _reconcile_claim(ans: Answer, claim: Any, evid_value: Any, evid_unit: str, *
     if code in _RATE_KESG_CODES and not (claim_is_rate and evid_is_rate):
         ans.status = "flagged"
         ans.flags.append(f"비율(%) 미확보: 자가신고 {cval}{cunit} ↔ 증빙 {evid_num}{evid_unit} — 단위 비교 불가")
+        ans.comparison, ans.comparison_reason = "not_comparable", f"비율 단위 미확보({cunit or '미상'} ↔ {evid_unit or '미상'})"
         return ans
     cu = "%" if claim_is_rate else normalize_unit(cunit) or cunit.strip()
     eu = "%" if evid_is_rate else normalize_unit(evid_unit) or evid_unit.strip()
@@ -205,6 +239,7 @@ def _reconcile_claim(ans: Answer, claim: Any, evid_value: Any, evid_unit: str, *
     if converted is None or _as_number(converted) is None:
         ans.status = "flagged"
         ans.flags.append(f"D1 비교 불가: 단위 {cunit or '미상'} ↔ {evid_unit or '미상'} (차원/환산 확인 필요)")
+        ans.comparison, ans.comparison_reason = "not_comparable", f"단위 차원 상이({cunit or '미상'} ↔ {evid_unit or '미상'})"
         return ans
     if claim_is_rate and evid_is_rate:
         difference = abs(converted - evid_num)
@@ -219,8 +254,14 @@ def _reconcile_claim(ans: Answer, claim: Any, evid_value: Any, evid_unit: str, *
         ans.status = "flagged"
         ans.flags.append(f"D1 불일치: 자가신고 {cval}{cunit} ↔ 증빙 {evid_num}{evid_unit} ({description}, {csrc})")
         ans.rationale += f" · 자가주장과 증빙 불일치 ({description}) — 소명 필요"
+    elif ans.completeness == "partial":
+        # 숫자는 맞지만 증빙이 부분값 — 전체 값과 대조된 것이 아니다.
+        ans.flags.append(
+            f"범위 확인 필요: 자가신고 {cval}{cunit} ≈ 증빙 {evid_num}{evid_unit} ({description}) "
+            f"— 증빙값이 부분값({ans.boundary_label or '경계 미기록'})이라 전체 범위 일치는 미확인")
     else:
         ans.flags.append(f"자가신고 일치: {cval}{cunit} ≈ 증빙 {evid_num}{evid_unit} ({description})")
+    _comparison_from_claim(ans, mismatch, description)
     return ans
 
 

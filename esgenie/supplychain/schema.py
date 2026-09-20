@@ -116,6 +116,28 @@ class Answer:
     confidence_flags: list[str] = field(default_factory=list)
     self_reports: list[dict] = field(default_factory=list)
     option_evidence: dict[str, dict] = field(default_factory=dict)
+    # ── 측정 경계·비교 판정(2026-09-20, 작업지시서 §2·§4-2) ──────────────
+    # UI·Excel·PDF·체크리스트가 같은 필드를 읽어 배지·값·범위·검토 사유를 맞춘다.
+    boundary_label: str = ""          # "2026-05 · 월간 · 사용전력량 + 도시가스 · 부분"
+    completeness: str = ""            # total | partial | unknown | ""
+    comparison: str = ""              # compared|mismatch|not_comparable|scope_unconfirmed
+    comparison_reason: str = ""
+    scope_notes: list[str] = field(default_factory=list)
+    # 보완 대상 근거 — 값 산정에 쓰이지 않았다. evidence_links와 섞지 않는다.
+    reference_links: list[EvidenceLink] = field(default_factory=list)
+
+    @property
+    def comparison_label(self) -> str:
+        """비교 4상태의 사람 읽는 라벨. 판정이 없으면 빈 문자열."""
+        from ..ssot.boundary import COMPARISON_LABEL
+        return COMPARISON_LABEL.get(self.comparison, "")
+
+    @property
+    def review_note(self) -> str:
+        """검토 사유 한 줄 — 배지만으로는 알 수 없는 범위·불일치 이유."""
+        parts = [p for p in (self.comparison_label, self.comparison_reason) if p]
+        head = ": ".join(parts) if len(parts) > 1 else "".join(parts)
+        return " · ".join([p for p in (head, *self.scope_notes) if p])
 
     @property
     def display_value(self) -> str:
@@ -146,8 +168,11 @@ class Answer:
     def to_dict(self) -> dict[str, Any]:
         d = asdict(self)
         d["evidence_links"] = [e.to_dict() for e in self.evidence_links]
+        d["reference_links"] = [e.to_dict() for e in self.reference_links]
         d["badge"] = self.badge
         d["display_value"] = self.display_value
+        d["comparison_label"] = self.comparison_label
+        d["review_note"] = self.review_note
         return d
 
 

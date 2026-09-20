@@ -65,6 +65,9 @@ class DataPoint:
     boundary: dict[str, Any] = field(default_factory=dict)
     boundary_label: str = ""               # 출력이 그대로 쓰는 기간·사업장·측정 대상 요약
     scope_notes: list[str] = field(default_factory=list)   # 검토 사유
+    # 비교 4상태(§4-2) — compared | mismatch | not_comparable | scope_unconfirmed | ""
+    comparison: str = ""
+    comparison_reason: str = ""
     # 합산·비교에 쓰이지 않은 보완 대상 근거. evidence_files와 섞지 않는다.
     reference_files: list[EvidenceLink] = field(default_factory=list)
 
@@ -134,9 +137,16 @@ def build_data_points(
         # 부분합·상반기값·에너지원별 구성비가 총량 자리에서 자동 검증되는 경로를 막는다.
         # 'unknown'(구버전 입력·경계 미기록)은 강등 대상이 아니다 — 부분값과 구분한다.
         scope_incomplete = code in WHOLE_SCOPE_CODES and fact.completeness == "partial"
-        if incomplete or finite_number(fact.value) is None or d1 >= 0.5 or "unit_suspect" in flags:
+        comparison = str(evaluation.get("comparison") or "")
+        comparison_reason = str(evaluation.get("comparison_reason") or "")
+        # 실제 불일치는 위험 점수가 0.4라는 이유만으로 자가신고에 머물 수 없다(§4-2).
+        # 비교 불가·범위 확인 필요는 불일치가 아니므로 unverified로 올리지 않는다.
+        if (incomplete or finite_number(fact.value) is None or d1 >= 0.5
+                or "unit_suspect" in flags or comparison == "mismatch"):
             verification = "unverified"
-        elif scope_incomplete or not valid or flags.intersection({"period_inferred", "partial_aggregate", "partial_value", "derived", "no_representative_node"}):
+        elif (scope_incomplete or not valid
+                or comparison in ("not_comparable", "scope_unconfirmed")
+                or flags.intersection({"period_inferred", "partial_aggregate", "partial_value", "derived", "no_representative_node"})):
             verification = "estimated"
         else:
             verification = "verified" if d1 < 0.2 else "estimated"
@@ -150,6 +160,7 @@ def build_data_points(
             value_role=fact.value_role, confidence_flags=fact.flags,
             completeness=fact.completeness, boundary=fact.boundary,
             boundary_label=boundary.label(), scope_notes=list(fact.scope_notes),
+            comparison=comparison, comparison_reason=comparison_reason,
             reference_files=refs))
     return points
 

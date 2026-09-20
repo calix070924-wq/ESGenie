@@ -57,7 +57,7 @@ def detect_d1_numeric(
     tolerance_pct: float = 2.0,
 ) -> AxisScore:
     """SSOT keeps its tolerance/risk scale and shares D1 ownership and coverage."""
-    from ..layer3_detect import _compare_numeric_claims, _numeric_axis
+    from ..layer3_detect import _COMPARISON_RANK, _compare_numeric_claims, _numeric_axis
     records = _compare_numeric_claims(sentence, graph, _ssot_claims(sentence, kesg_code),
                                       tolerance=tolerance_pct / 100)
     mismatches = sum(r['status'] == 'compared' and r['reason'] == 'mismatch' for r in records)
@@ -65,6 +65,14 @@ def detect_d1_numeric(
     if not mismatches and any(r['status'] == 'compared' for r in records) and kesg_code:
         score = _cross_check_risk(kesg_code, graph)
     axis = _numeric_axis(records, score)
+    # 증빙 간 교차검증 판정을 claim 판정과 합쳐 가장 심한 상태를 올린다(§4-2).
+    # 점수는 위에서 기존 계약대로 정해졌고, 여기서는 사유 전달만 보강한다.
+    if kesg_code:
+        cross, detail = cross_check_status(kesg_code, graph)
+        current = axis.evaluation.get("comparison") or ""
+        if cross and _COMPARISON_RANK.get(cross, 0) > _COMPARISON_RANK.get(current, -1):
+            axis.evaluation["comparison"] = cross
+            axis.evaluation["comparison_reason"] = detail
     axis.evidence = list(dict.fromkeys(axis.evidence + [f for r in records if r["status"] == "compared" for f in r.get("evidence_files", [])]))
     return axis
 
@@ -272,7 +280,12 @@ def _find_matching_node(
 
 
 def _cross_check_risk(kesg_code: str, graph: EvidenceGraph) -> float:
-    """DART↔OCR cross_check 엣지 오차가 크면 위험 가산."""
+    """DART↔OCR cross_check 엣지 오차가 크면 위험 가산.
+
+    임계값 5%·가산 0.4는 기존 D1 계약이므로 유지한다. scope_gap 엣지(비교 불가)는
+    수치 불일치가 아니므로 위험을 올리지 않는다 — 대신 cross_check_status()가
+    '비교 불가/범위 확인 필요'로 끝까지 전달한다(작업지시서 §4-2).
+    """
     risk = 0.0
     for e in graph.edges:
         if e.edge_type != "cross_check":
@@ -282,6 +295,33 @@ def _cross_check_risk(kesg_code: str, graph: EvidenceGraph) -> float:
             if mobj and float(mobj.group(1)) > 5.0:
                 risk = max(risk, 0.4)
     return risk
+
+
+def cross_check_status(kesg_code: str, graph: EvidenceGraph) -> tuple[str, str]:
+    """증빙 간 교차검증의 4상태 판정 → (상태, 사유). 엣지가 없으면 ('', '').
+
+    관련 없는 범위의 문서를 많이 넣었다고 경고가 쏟아지지 않게, 범위 차이는
+    '비교 불가'로만 남기고 수치 불일치와 구분한다(§4-2).
+    """
+    from .boundary import COMPARISON_LABEL
+
+    best: tuple[int, str, str] = (-1, "", "")
+    rank = {"compared": 0, "scope_unconfirmed": 1, "not_comparable": 2, "mismatch": 3}
+    for e in graph.edges:
+        if e.edge_type not in ("cross_check", "scope_gap"):
+            continue
+        if kesg_code not in e.source_id and kesg_code not in e.target_id:
+            continue
+        if e.edge_type == "scope_gap":
+            status = "not_comparable"
+        elif COMPARISON_LABEL["scope_unconfirmed"] in e.detail:
+            status = "scope_unconfirmed"
+        else:
+            mobj = re.search(r"([0-9\.]+)%", e.detail)
+            status = "mismatch" if mobj and float(mobj.group(1)) > 5.0 else "compared"
+        if rank[status] > best[0]:
+            best = (rank[status], status, e.detail)
+    return best[1], best[2]
 
 
 def _safe_json(text: str) -> dict[str, Any]:
