@@ -53,6 +53,11 @@ class ExtractedMetric:
     bbox: list[float] | None = None      # [x0,y0,x1,y1] 정규화 위치(0~1, 감사 추적용)
     page: int | None = None              # 0-기준 페이지 인덱스 (원본 렌더용)
     confidence: float = 0.0
+    # 측정 경계(ssot.boundary.Boundary의 dict 표현) — 정형 파서가 표 제목·행/열에서
+    # 직접 읽은 축만 담는다. 비어 있으면 merge_ocr_extraction이 hint·기간 원문에서
+    # 규칙으로 도출한다. dict로 두는 이유는 캐시 JSON 왕복 호환이다(from_dict는
+    # 모르는 키를 무시하므로 구버전 캐시는 빈 dict로 읽힌다).
+    boundary: dict[str, Any] = field(default_factory=dict)
 
 
 @dataclass

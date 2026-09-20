@@ -20,6 +20,9 @@ import hashlib
 from dataclasses import dataclass, field, asdict
 from typing import Any, Literal
 
+from .boundary import (
+    COMPARISON_LABEL, Boundary, comparable, derive_boundary, detect_measure,
+)
 from .ocr_router import OcrExtraction, ExtractedMetric, ExtractedClause, DocChannel
 
 Origin = Literal["dart", "ocr_structured", "ocr_unstructured", "survey"]
@@ -54,6 +57,10 @@ class EvidenceNode:
     period_inferred: bool = False
     # 코드 배정(근거 보존)과 대표값 자격을 분리한다. unknown은 구버전 노드 호환 기본값.
     value_role: ValueRole = "unknown"
+    # 측정 경계 — 기간/집계·사업장 범위·측정 대상·실적여부·총량여부·분모.
+    # period(연도 정수)만으로는 월간값과 연간값을 가를 수 없어 별도 축으로 둔다.
+    # 기본값은 빈 Boundary이고, 빈 Boundary는 '모른다'로 취급된다(같다고 보지 않는다).
+    boundary: Boundary = field(default_factory=Boundary)
 
     def to_dict(self) -> dict[str, Any]:
         return asdict(self)
@@ -242,6 +249,7 @@ def build_from_dart(report: Any) -> EvidenceGraph:
             source_file=None,   # DART는 파일 증빙 없음
             bbox=None,
             confidence=1.0,     # DART 공식 공시 = 신뢰도 최대
+            boundary=_dart_boundary(v10_node),
         )
         graph.add_node(node)
 
@@ -259,6 +267,31 @@ def build_from_dart(report: Any) -> EvidenceGraph:
         graph.add_edge(edge)
 
     return graph
+
+
+def _dart_boundary(v10_node: Any) -> Boundary:
+    """DART 공시값의 경계 — 공시 규약에서 나오는 값이므로 추론임을 명시한다.
+
+    지속가능경영보고서/사업보고서의 정량 공시는 정의상 **연간·법인 전체·실적**이다.
+    이 규약을 적지 않으면 단월 고지서(2026-05, 142,560 kWh)와 연간 공시값이
+    '연도만 같다'는 이유로 교차검증 오차를 만든다.
+
+    읽어서 확인한 값이 아니라 규약에서 가정한 값이므로 세 축 전부 `inferred`에
+    남긴다 — 하류가 '원문에서 확인된 경계'와 구분할 수 있어야 한다.
+    """
+    measure_kind, measure = detect_measure(getattr(v10_node, "raw_text", "") or "")
+    return Boundary(
+        period_text=str(getattr(v10_node, "period", "") or ""),
+        aggregation="annual",
+        coverage_months=12,
+        basis="actual",
+        site_scope="entity",
+        measure=measure,
+        measure_kind=measure_kind or "unknown",
+        completeness="total",
+        inferred=("aggregation", "site_scope", "completeness", "basis"),
+        source_quote="DART 공시 규약(연간·법인 전체·실적)",
+    )
 
 
 # ====================================================================
@@ -296,10 +329,23 @@ def merge_ocr_extraction(
     if getattr(graph, "report_year", None) is None:
         graph.report_year = report_year
 
+    # 문서 수준 문맥 — 파일명·문서종류·본문 머리말. 표 제목/머리말에 있는 사업장·
+    # 에너지원 표기를 metric마다 다시 읽지 않고 한 번만 만들어 경계 판정에 넘긴다.
+    doc_context = " ".join(filter(None, (
+        extraction.source_file or "",
+        extraction.doc_type or "",
+        (extraction.raw_text or "")[:_DOC_CONTEXT_CHARS],
+    )))
+
     for idx, m in enumerate(extraction.metrics):
         code = _resolve_kesg_code(m)
         period, period_inferred = _normalize_period(
             m.period, fallback=report_year, hint=m.metric_hint)
+        boundary = derive_boundary(
+            m.metric_hint, m.period, unit=m.unit,
+            doc_type=extraction.doc_type, doc_context=doc_context,
+            base=getattr(m, "boundary", None),
+        )
         confidence = m.confidence
         # G4. 미래 기간 분리 — 보고 연도보다 '충분히' 미래(2030/2035/2040 목표·전망 등)인
         # 확정 코드 노드는 실적 코드에서 떼어내 '{code}__projection'으로 보존. search_nodes
@@ -341,6 +387,7 @@ def merge_ocr_extraction(
             page=m.page,
             confidence=confidence,
             period_inferred=period_inferred,
+            boundary=boundary,
         )
         # 역할은 노드에 영속화하되 선택 시에도 재계산한다. 구버전 덤프를 리플레이해도
         # 같은 규칙을 적용하고, 신규 산출물은 역할을 감사할 수 있게 하기 위함이다.
@@ -429,6 +476,10 @@ _GUARD_TERMS: tuple[str, ...] = (
 # 2로 둔다: report_year+1(최신 증빙)은 실적, +2 이상(2030/2035/2040 목표축)은 전망.
 _PROJECTION_YEAR_GAP: int = 2
 
+# 경계 판정에 넘기는 문서 머리말 길이. 표 제목·사업장 표기는 문서 앞머리에 있다.
+# 본문 전체를 넘기면 뒤쪽 무관한 사업장 표기가 모든 metric에 붙는다.
+_DOC_CONTEXT_CHARS: int = 400
+
 
 def _resolve_kesg_code(
     m: ExtractedMetric, *, allow_fuzzy: bool = False
@@ -513,18 +564,57 @@ def _normalize_period(
 
 
 def _link_cross_check(graph: EvidenceGraph, node: EvidenceNode) -> None:
-    """같은 metric/period의 DART 노드와 cross_check 엣지 연결 (D1 교차검증 재료)."""
+    """같은 metric/period의 다른 출처 노드와 cross_check 엣지 연결 (D1 교차검증 재료).
+
+    2026-09-20: **비교 가능성을 먼저 판정한다.** 종전에는 코드와 연도만 같으면
+    수치를 그대로 나눠 오차율을 냈다. 그래서 단월 고지서(142,560 kWh)와 6개월
+    월평균(805 MWh), 태양광 구성비(5.6%)와 전체 재생에너지 비율(10.6%)이
+    '교차검증 오차 99%'로 기록되고, 그 값이 D1 위험으로 올라갔다.
+
+    단위·기간·집계·사업장·에너지원 범위가 맞지 않으면 **오차율을 계산하지 않는다**.
+    엣지는 그대로 남기되 `edge_type`을 'scope_gap'으로 두어 '비교 불가/확인 필요'를
+    구분한다 — 엣지를 지우면 두 값이 같은 코드에 겹쳐 있다는 사실이 사라진다.
+    """
+    from ..rag_gates.units import convert_to_common, normalize_unit
+
     for other in graph.nodes_by_metric(node.metric):
         if other.id == node.id or other.period != node.period:
             continue
-        if other.origin == "dart" or other.origin != node.origin:
-            diff_pct = _pct_diff(node.value, other.value)
+        if not (other.origin == "dart" or other.origin != node.origin):
+            continue
+        status, reason = comparable(other.boundary, node.boundary)
+        # 'not_comparable'만 수치 비교를 막는다. 'scope_unconfirmed'(한쪽 경계 미기록)는
+        # **비교는 하되 확인이 필요하다**는 뜻이므로 오차율을 그대로 계산한다 —
+        # 두 상태를 하나로 합치면 경계를 못 읽은 구버전 입력의 교차검증이 통째로 사라진다.
+        if status == "not_comparable":
             graph.add_edge(EvidenceEdge(
                 source_id=other.id,
                 target_id=node.id,
-                edge_type="cross_check",
-                detail=f"교차검증 오차 {diff_pct:.1f}% ({other.origin}↔{node.origin})",
+                edge_type="scope_gap",
+                detail=f"{COMPARISON_LABEL[status]}: {reason} ({other.origin}↔{node.origin})",
             ))
+            continue
+        caveat = f" · {COMPARISON_LABEL[status]}({reason})" if status != "compared" else ""
+        # 단위가 다르면 환산 후 비교한다. 환산군이 다르면 그것도 비교 불가다.
+        nu, ou = normalize_unit(str(node.unit or "")), normalize_unit(str(other.unit or ""))
+        value = node.value
+        if nu and ou and nu != ou:
+            converted = convert_to_common(float(node.value), nu, ou)
+            if converted is None:
+                graph.add_edge(EvidenceEdge(
+                    source_id=other.id, target_id=node.id, edge_type="scope_gap",
+                    detail=(f"{COMPARISON_LABEL['not_comparable']}: 단위 차원 상이"
+                            f"({node.unit} ↔ {other.unit}) ({other.origin}↔{node.origin})"),
+                ))
+                continue
+            value = converted
+        diff_pct = _pct_diff(value, other.value)
+        graph.add_edge(EvidenceEdge(
+            source_id=other.id,
+            target_id=node.id,
+            edge_type="cross_check",
+            detail=f"교차검증 오차 {diff_pct:.1f}% ({other.origin}↔{node.origin}){caveat}",
+        ))
 
 
 def _emit_derived_emission(
@@ -544,12 +634,30 @@ def _emit_derived_emission(
     factors = resolve_map(industry_module, "emission_factors", _EMISSION_FACTORS)
 
     tco2: float | None = None
+    scope = ""
     if node.unit.lower() == "kwh" and node.metric == "E-4-1":
         tco2 = node.value * factors["kWh_to_tco2"]
+        scope = "emission_scope2"          # 구매 전력 → 간접배출
     elif node.unit.lower() == "mj" and node.metric == "E-4-1":
         tco2 = node.value * factors["MJ_gas_to_tco2"]
+        scope = "emission_scope1"          # 연료 연소 → 직접배출
     if tco2 is None:
         return
+    # 파생 노드의 경계는 원 노드의 기간·사업장·실적여부를 그대로 물려받고, 측정 대상만
+    # 배출량으로 바꾼다. 에너지원 하나에서 나온 값이므로 완전성은 항상 부분이다.
+    derived_boundary = Boundary(
+        period_text=node.boundary.period_text,
+        aggregation=node.boundary.aggregation,
+        coverage_months=node.boundary.coverage_months,
+        basis=node.boundary.basis,
+        site=node.boundary.site,
+        site_scope=node.boundary.site_scope,
+        measure=f"{node.boundary.measure or node.metric} 환산 배출량".strip(),
+        measure_kind=scope,
+        completeness="partial",
+        inferred=tuple(sorted(set(node.boundary.inferred) | {"measure_kind"})),
+        source_quote=node.boundary.source_quote,
+    )
     derived = EvidenceNode(
         id=_make_derived_node_id(
             graph.corp_code,
@@ -571,6 +679,7 @@ def _emit_derived_emission(
         confidence=node.confidence * 0.95,   # 환산 불확실성 반영
         # 파생 노드는 원 노드의 period를 그대로 쓰므로 추론여부도 함께 물려받는다.
         period_inferred=node.period_inferred,
+        boundary=derived_boundary,
     )
     graph.add_node(derived)
 
