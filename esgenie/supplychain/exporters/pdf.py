@@ -27,6 +27,7 @@ from pathlib import Path
 from typing import Any
 
 from ..frameworks import get_framework
+from ..render import note_lines, scope_line, summary_line
 from ..schema import ResponseSheet
 from ._fonts import resolve_korean_font, pdf_safe_text
 
@@ -49,34 +50,13 @@ _CHECK_ACTION_BG: dict[str, str] = {
 }
 
 
-def _fmt_value(value: Any) -> str:
-    if value is None:
-        return "—"
-    if isinstance(value, bool):
-        return "예" if value else "아니오"
-    if isinstance(value, list):
-        return ", ".join(str(v) for v in value) if value else "—"
-    return str(value)
-
-
 def _fmt_evidence(answer, fig_map: dict[int, str] | None = None) -> str:
-    """근거 셀 텍스트. fig_map에 든 링크는 부록 figure 번호(→ [E3])를 덧붙인다."""
-    parts: list[str] = []
-    for e in answer.evidence_links:
-        loc = ""
-        if e.page is not None:
-            loc = f" p.{e.page + 1}"
-        if e.bbox:
-            loc += f" bbox{[round(x, 3) for x in e.bbox]}"
-        tag = ""
-        if fig_map and id(e) in fig_map:
-            tag = f" → [{fig_map[id(e)]}]"
-        parts.append(f"{e.file_name}{loc}{tag}".strip())
-    ev = " / ".join(parts)
-    rationale = answer.rationale
-    if ev and rationale:
-        return f"{rationale}<br/>근거: {ev}"
-    return ev or rationale
+    """근거 셀 텍스트. fig_map에 든 링크는 부록 figure 번호(→ [E3])를 덧붙인다.
+
+    excel.py와 같은 render.note_lines를 쓴다 — 줄 구분자만 다르다. 전에는 PDF가
+    flags를 빼서 같은 응답서인데 엑셀에만 D1 불일치 사유가 보였다(§5-1).
+    """
+    return "<br/>".join(note_lines(answer, fig_map=fig_map))
 
 
 def _resolve_evidence_path(base_dir: Path, link) -> Path | None:
@@ -218,11 +198,8 @@ def export_response_sheet_pdf(
 
     # ── 표지 요약 ──
     elements.append(Paragraph(sheet.framework_label, title))
-    elements.append(Paragraph(
-        f"기업: {sheet.corp_name or '—'} &nbsp;|&nbsp; "
-        f"자동응답 {sheet.auto_pct}% · 작성필요 {sheet.hitl_pct}% · 증빙대기 {sheet.pending_pct}% "
-        f"&nbsp;|&nbsp; 검토필요 {sheet.flagged_count}건 &nbsp;|&nbsp; 문항 {len(sheet.answers)}개",
-        subtitle))
+    # 헤더 문장은 엑셀 A2·화면 캡션과 같은 단일 출처를 쓴다(§5-1).
+    elements.append(Paragraph(summary_line(sheet).replace("  |  ", " &nbsp;|&nbsp; "), subtitle))
     if not font.embedded:
         elements.append(Paragraph(
             "⚠ 한글 폰트 미발견 — 텍스트가 깨질 수 있습니다(ESGENIE_PDF_FONT 설정 권장).",
@@ -230,8 +207,8 @@ def export_response_sheet_pdf(
     elements.append(Spacer(1, 6))
 
     # ── 응답표 ──
-    header = ["문항 ID", "섹션", "문항", "답변", "신뢰", "근거 / 비고"]
-    col_w = [w / 100.0 * page_w for w in (9, 11, 27, 16, 9, 28)]
+    header = ["문항 ID", "섹션", "문항", "답변", "측정 범위 / 검토", "신뢰", "근거 / 비고"]
+    col_w = [w / 100.0 * page_w for w in (8, 9, 22, 13, 17, 7, 24)]
     # 섹션(현대차 영역)별 집계 — 그룹 헤더 요약용.
     from collections import defaultdict
     sec_total: dict[str, int] = defaultdict(int)
@@ -266,7 +243,7 @@ def export_response_sheet_pdf(
             flag_note = f" · 검토필요 {sec_flag[a.section]}건" if sec_flag[a.section] else ""
             glabel = (f"▌ {a.section}    "
                       f"(자동응답 {sec_auto[a.section]}/{sec_total[a.section]}{flag_note})")
-            data.append([Paragraph(glabel, group_style), "", "", "", "", ""])
+            data.append([Paragraph(glabel, group_style), *[""] * (len(header) - 1)])
             style_cmds.append(("SPAN", (0, ri), (-1, ri)))
             style_cmds.append(("BACKGROUND", (0, ri), (-1, ri), colors.HexColor("#D9E1F2")))
         ri += 1
@@ -286,6 +263,7 @@ def export_response_sheet_pdf(
             Paragraph(a.section, cell),
             Paragraph(a.question_text, cell),
             answer_para,
+            Paragraph(scope_line(a) or "—", cell),
             Paragraph(label, cell_c),
             Paragraph(_fmt_evidence(a, fig_map) or "—", cell),
         ])

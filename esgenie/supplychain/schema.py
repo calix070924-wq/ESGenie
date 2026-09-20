@@ -54,6 +54,26 @@ _PENDING_STATUSES: tuple[str, ...] = ("insufficient",)
 _DRAFT_STATUSES: tuple[str, ...] = ("draft_ready",)
 
 
+def format_amount(value: Any) -> str:
+    """원장 수치를 표시용 문자열로 — 천 단위 구분, 불필요한 `.0` 제거, 반올림 금지.
+
+    표시 단계에서 자리수를 줄이면 0.513216 TJ가 0.5나 0으로 뭉개진다(2026-09-20
+    HMC 응답서 실측). 그래서 유효자리를 깎지 않고 그룹 구분만 넣는다. 수치로 읽히지
+    않는 값은 원문 그대로 돌려준다 — 조용히 0으로 바꾸지 않는다.
+    """
+    if isinstance(value, bool) or value is None:
+        return str(value)
+    if isinstance(value, int):
+        return f"{value:,}"
+    if isinstance(value, float):
+        if value != value or value in (float("inf"), float("-inf")):
+            return str(value)
+        if value.is_integer():
+            return f"{int(value):,}"
+        return f"{value:,}"
+    return str(value)
+
+
 @dataclass(frozen=True)
 class Question:
     """양식의 한 문항 + 무엇으로 답하는가에 대한 매핑 메타데이터."""
@@ -148,7 +168,7 @@ class Answer:
             return "예" if value else "아니오"
         if isinstance(value, list):
             return ", ".join(map(str, value)) if value else "—"
-        rendered = str(value)
+        rendered = format_amount(value)
         if self.unit:
             rendered += f" {self.unit}"
         if self.period is not None:

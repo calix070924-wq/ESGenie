@@ -1238,12 +1238,10 @@ def _fmt_answer_value(value) -> str:
 
 
 def _fmt_answer_evidence(answer) -> str:
-    parts: list[str] = []
-    for e in answer.evidence_links:
-        loc = f" p.{e.page + 1}" if e.page is not None else ""
-        if e.bbox:
-            loc += " 📍"
-        parts.append(f"{e.file_name}{loc}".strip())
+    """화면 표의 근거 칸 — Excel/PDF와 같은 표기 규칙(render.locator)을 쓴다(§5-1)."""
+    from esgenie.supplychain.render import locator
+
+    parts = [locator(e, bbox_mark="📍") for e in answer.evidence_links]
     return " / ".join(parts) or "—"
 
 
@@ -1375,6 +1373,10 @@ def _render_supplychain_evidence_preview(evidence, *, evidence_dir: str = "") ->
 
 def _render_supplychain_answer_detail(result, answer, *, question_map: dict[str, Any]) -> None:
     from esgenie.provenance import primary_evidence, verification_view
+    from esgenie.supplychain.render import (
+        locator as _sc_locator,
+        scope_line as _sc_scope_line,
+    )
 
     code = _answer_primary_code(question_map, answer)
     data_point = _data_point_by_code(result).get(code)
@@ -1391,6 +1393,10 @@ def _render_supplychain_answer_detail(result, answer, *, question_map: dict[str,
         if data_point is not None:
             view = verification_view(getattr(data_point, "verification", ""))
             st.caption(f"{view['label']} · D1 위험 {float(getattr(data_point, 'd1_risk', 0.0) or 0.0):.2f}")
+        # 측정 범위·비교 판정 — 제출본과 같은 문장을 화면에서도 보여준다(§5-1).
+        scope = _sc_scope_line(answer)
+        if scope:
+            st.markdown(f"**측정 범위 / 검토**: {scope}")
         if answer.flags:
             st.markdown("**검토 포인트**")
             for flag in answer.flags:
@@ -1401,12 +1407,13 @@ def _render_supplychain_answer_detail(result, answer, *, question_map: dict[str,
         if answer.evidence_links:
             st.markdown("**연결된 증빙**")
             for evidence_link in answer.evidence_links:
-                label = evidence_link.file_name
-                if evidence_link.page is not None:
-                    label += f" · p.{evidence_link.page + 1}"
-                if getattr(evidence_link, "bbox", None):
-                    label += " · bbox"
-                st.markdown(f"- {label}")
+                st.markdown(f"- {_sc_locator(evidence_link, bbox_mark='· bbox')}")
+        refs = getattr(answer, "reference_links", None) or []
+        if refs:
+            # 값 산정에 쓰이지 않은 문서 — 산정 근거 목록과 섞지 않는다(§2-2).
+            st.markdown("**보완 대상 근거 (값 산정 미사용)**")
+            for ref in refs:
+                st.markdown(f"- {_sc_locator(ref, bbox_mark='· bbox')}")
 
     with right:
         st.markdown("**원본 위치 미리보기**")
@@ -1486,16 +1493,19 @@ def _render_responder_workspace(
     sheet = _get_cached_response_sheet(result, framework, supplier_claims=supplier_claims)
     question_map = {question.qid: question for question in framework.questions}
 
+    # 화면 수치는 Excel/PDF 헤더와 같은 소수 첫째자리로 적는다 — 68.1%가 68%로
+    # 보여 제출본과 어긋나던 표기를 맞춘다(§5-1).
     c1, c2, c3, c4, c5 = st.columns(5)
-    c1.metric("자동응답", f"{sheet.auto_pct:.0f}%")
-    c2.metric("AI초안 (🤖)", f"{sheet.draft_pct:.0f}%")
-    c3.metric("작성필요 (✍️)", f"{sheet.hitl_pct:.0f}%")
-    c4.metric("증빙대기 (❗)", f"{sheet.pending_pct:.0f}%")
+    c1.metric("자동응답", f"{sheet.auto_pct:.1f}%")
+    c2.metric("AI초안 (🤖)", f"{sheet.draft_pct:.1f}%")
+    c3.metric("작성필요 (✍️)", f"{sheet.hitl_pct:.1f}%")
+    c4.metric("증빙대기 (❗)", f"{sheet.pending_pct:.1f}%")
     c5.metric("검토 필요 (🚩)", f"{sheet.flagged_count}건")
     st.caption(
         f"문항 {len(sheet.answers)}개 (분모 {sheet.denominator}개, 해당없음 제외) · "
         "자동응답=기계가 답 채움 / AI초안=근거게이트 통과 초안(담당자 승인 전) / "
-        "작성필요=사람 서술 / 증빙대기=증빙 업로드 시 자동화"
+        "작성필요=사람 서술 / 증빙대기=증빙 업로드 시 자동화 · "
+        "검토필요는 자동응답 안에 포함된 중첩 지표입니다"
     )
 
     if supplier_claims:
@@ -1518,12 +1528,16 @@ def _render_responder_workspace(
             st.dataframe(pd.DataFrame(upload_cta_rows), hide_index=True, width='stretch')
 
     st.markdown("#### 자동 응답")
+    from esgenie.supplychain.render import scope_line as _scope_line
+
     rows = [
         {
             "신뢰": a.badge,
             "섹션": a.section,
             "문항": a.question_text,
             "답변": a.display_value,
+            # 제출본(Excel/PDF)의 '측정 범위 / 검토' 열과 같은 문장.
+            "측정 범위 / 검토": _scope_line(a) or "—",
             "근거": _fmt_answer_evidence(a),
         }
         for a in sheet.answers

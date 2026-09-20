@@ -6,38 +6,17 @@
 from __future__ import annotations
 
 from pathlib import Path
-from typing import Any
 
 from ..frameworks import get_framework
+from ..render import note_lines, scope_line, summary_line
 from ..schema import ResponseSheet
 
-_HEADER = ["문항 ID", "섹션", "문항", "답변", "신뢰", "근거 / 비고"]
-
-
-def _fmt_value(value: Any) -> str:
-    if value is None:
-        return "—"
-    if isinstance(value, bool):
-        return "예" if value else "아니오"
-    if isinstance(value, list):
-        return ", ".join(str(v) for v in value) if value else "—"
-    return str(value)
+_HEADER = ["문항 ID", "섹션", "문항", "답변", "측정 범위 / 검토", "신뢰", "근거 / 비고"]
 
 
 def _fmt_evidence(answer) -> str:
-    parts: list[str] = []
-    for e in answer.evidence_links:
-        loc = ""
-        if e.page is not None:
-            loc = f" p.{e.page + 1}"
-        if e.bbox:
-            loc += f" bbox{[round(x, 3) for x in e.bbox]}"
-        parts.append(f"{e.file_name}{loc}".strip())
-    ev = " / ".join(parts)
-    rationale = "\n".join([answer.rationale, *answer.flags]).strip()
-    if ev and rationale:
-        return f"{rationale}\n근거: {ev}"
-    return ev or rationale
+    # 표기 규칙은 render.py 한 곳에 둔다 — 화면과 제출본이 같은 문장을 쓰게(§5-1).
+    return "\n".join(note_lines(answer)).strip()
 
 
 def _issb_followup_rows(answers) -> list[dict[str, str]]:
@@ -82,11 +61,9 @@ def export_response_sheet(sheet: ResponseSheet, out_dir: str | Path) -> str:
     # ── 제목/요약 ──
     ws["A1"] = f"{sheet.framework_label}"
     ws["A1"].font = Font(size=13, bold=True)
-    ws["A2"] = (
-        f"기업: {sheet.corp_name or '—'}  |  자동응답 {sheet.auto_pct}% · "
-        f"작성필요 {sheet.hitl_pct}% · 증빙대기 {sheet.pending_pct}%  "
-        f"|  검토필요: {sheet.flagged_count}건"
-    )
+    # 4분할(자동응답/AI초안/작성필요/증빙대기)을 빠짐없이 적는다 — AI초안이 빠져
+    # 합이 100%에 못 미치던 헤더를 고정한다(§5-1).
+    ws["A2"] = summary_line(sheet)
     ws["A2"].font = Font(size=10, color="555555")
 
     # ── 헤더 ──
@@ -151,9 +128,10 @@ def export_response_sheet(sheet: ResponseSheet, out_dir: str | Path) -> str:
             ws.cell(row=r, column=4, value=answer_text).alignment = Alignment(wrap_text=True)
         else:
             ws.cell(row=r, column=4, value=a.display_value).alignment = Alignment(wrap_text=True)
-        badge = ws.cell(row=r, column=5, value=a.badge)
+        ws.cell(row=r, column=5, value=scope_line(a) or "—").alignment = Alignment(wrap_text=True)
+        badge = ws.cell(row=r, column=6, value=a.badge)
         badge.alignment = Alignment(horizontal="center")
-        ws.cell(row=r, column=6, value=_fmt_evidence(a)).alignment = Alignment(wrap_text=True)
+        ws.cell(row=r, column=7, value=_fmt_evidence(a)).alignment = Alignment(wrap_text=True)
         f = status_fill.get(a.status)
         if f:
             for col in range(1, len(_HEADER) + 1):
@@ -227,7 +205,7 @@ def export_response_sheet(sheet: ResponseSheet, out_dir: str | Path) -> str:
         for col, width in enumerate((48, 54, 54, 60), start=1):
             iw.column_dimensions[iw.cell(row=4, column=col).column_letter].width = width
 
-    widths = [14, 14, 50, 24, 12, 60]
+    widths = [14, 14, 46, 22, 34, 12, 58]
     for col, w in enumerate(widths, start=1):
         ws.column_dimensions[ws.cell(row=header_row, column=col).column_letter].width = w
 
