@@ -38,6 +38,12 @@ DISTINCTIVE_DF_RATIO = 0.15
 # 최고 청크 대비 이 비율 미만인 청크는 버린다 — 관련 청크 하나가 무관한 청크 전체를
 # 끌고 들어오지 않게(§6).
 RELATIVE_FLOOR = 0.34
+# 고유 어휘 하나만 겹치는 것은 우연이다. 실측(시연 증빙 31개 × 222문항 = 양수 3,083쌍)에서
+# 어휘 하나만 맞은 1,574쌍은 전수가 오탐이었다 — '근로시간관리규정'이 '자발적 이직률'
+# 문항에, '책임광물실사정책'이 '환경 법규 위반 건수' 문항에 걸리는 식이다. 반대로 실제로
+# 답하는 문서는 어휘를 여러 개 담았다(의사소통 절차서 → E-7 15개 중 13개).
+# 고유 어휘가 2개뿐인 문항(222개 중 4개, 모두 수치 문항)에서는 1개로 완화한다.
+MIN_DISTINCTIVE_HITS = 2
 
 _TOKEN = re.compile(r"[0-9A-Za-z가-힣]+")
 # 조사·어미 — 문항의 '성과를'과 근거의 '성과는'을 같은 말로 본다.
@@ -134,6 +140,21 @@ class QuestionFitness:
         """근거가 실제로 담은 고유 어휘 — 보류 사유·감사 로그용."""
         return _matched(text, self.distinctive)
 
+    def assess(self, text: str) -> tuple[float, int]:
+        """(적합도, 맞은 고유 어휘 수). 판정에 필요한 두 값을 한 번에 계산한다."""
+        if not self.distinctive:
+            return 0.0, 0
+        total = sum(self.weights.get(t, 1.0) for t in self.distinctive)
+        hit = _matched(text, self.distinctive)
+        if total <= 0:
+            return 0.0, len(hit)
+        return sum(self.weights.get(t, 1.0) for t in hit) / total, len(hit)
+
+    @property
+    def required_hits(self) -> int:
+        """이 문항에서 요구하는 최소 고유 어휘 일치 수."""
+        return min(MIN_DISTINCTIVE_HITS, len(self.distinctive))
+
 
 def build_fitness_map(questions: Sequence[Any], requirement_of: Any) -> dict[str, QuestionFitness]:
     """양식의 문항들로 qid→QuestionFitness 맵을 만든다.
@@ -189,9 +210,12 @@ def select_fit_chunks(
     if fitness is None or not fitness.usable:
         return list(chunks), ""
 
-    scored = [(c, fitness.score(c.get("text", ""))) for c in chunks]
-    best = max(s for _, s in scored)
-    if best <= 0.0:
-        return [], "문항 고유 어휘와 겹치는 근거 없음"
-    kept = [c for c, s in scored if s > 0.0 and s >= best * RELATIVE_FLOOR]
+    need = fitness.required_hits
+    scored = [(c, *fitness.assess(c.get("text", ""))) for c in chunks]
+    # 어휘 하나만 겹치는 근거는 후보에서 뺀다 — 우연한 낱말 하나로 초안이 시작되지 않게.
+    eligible = [(c, s) for c, s, hits in scored if hits >= need and s > 0.0]
+    if not eligible:
+        return [], f"문항 고유 어휘가 {need}개 이상 겹치는 근거 없음"
+    best = max(s for _, s in eligible)
+    kept = [c for c, s in eligible if s >= best * RELATIVE_FLOOR]
     return kept, ""

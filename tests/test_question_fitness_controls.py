@@ -329,6 +329,71 @@ class TestTheRuleIsGenericNotQuestionSpecific:
         assert "절차서" in terms_for("의사소통", ("이해관계자 의사소통 절차서",))
 
 
+class TestOneWordOverlapIsNotEnough:
+    """고유 어휘 하나만 겹치는 근거는 후보에서 뺀다.
+
+    실제 원문 재생(시연 증빙 PDF 31개 × 6양식 222문항)에서 어휘 하나만 맞은 1,574쌍은
+    전수가 오탐이었다 — '근로시간관리규정'이 '자발적 이직률' 문항에 54.5%로, '책임광물
+    실사정책'이 '환경 법규 위반 건수' 문항에 50.0%로 걸렸다. 점수만 보면 높다. 점수는
+    문항의 고유 어휘 수로 정규화되므로, 어휘가 둘뿐인 문항은 우연한 한 낱말로 절반을
+    먹는다. 그래서 점수 하한이 아니라 '몇 개 겹쳤는가'를 기준으로 둔다.
+    """
+
+    def _fitness(self, framework_key: str, qid: str):
+        from esgenie.knowledge.kesg_evidence_requirements import requirement_for_question
+        fw = get_framework(framework_key)
+        return build_fitness_map(
+            fw.questions,
+            lambda q: requirement_for_question(
+                q.kesg_codes, quantitative=q.qtype == "numeric"),
+        )[qid]
+
+    def test_a_single_incidental_word_is_held(self):
+        f = self._fitness("kesg28", "KESG-S-4-1")
+        text = "안전보건 관련 게시물을 부착한다."
+        assert f.matched_terms(text) == {"안전보건"}
+        kept, hold = select_fit_chunks([{"id": "A", "text": text}], f)
+        assert kept == [] and "2개" in hold
+
+    def test_two_distinctive_words_pass(self):
+        f = self._fitness("kesg28", "KESG-S-4-1")
+        text = "제1조 안전보건 경영방침을 수립하고 안전보건 조직을 구성해 운영한다."
+        assert len(f.matched_terms(text)) >= 2
+        kept, hold = select_fit_chunks([{"id": "A", "text": text}], f)
+        assert hold == "" and [c["id"] for c in kept] == ["A"]
+
+    def test_the_bar_never_exceeds_what_the_question_can_supply(self):
+        """고유 어휘가 하나뿐인 문항에 2개를 요구하면 그 문항은 영구 보류가 된다."""
+        from esgenie.supplychain.question_fitness import QuestionFitness
+        one = QuestionFitness("Q1", frozenset({"가"}), frozenset({"가"}), {"가": 1.0})
+        assert one.required_hits == 1
+        kept, hold = select_fit_chunks([{"id": "A", "text": "가 항목이 있다"}], one)
+        assert hold == "" and [c["id"] for c in kept] == ["A"]
+
+    def test_a_two_term_question_needs_both(self):
+        """어휘가 둘뿐인 문항(222개 중 4개, 모두 수치)은 둘을 다 요구한다 —
+        '자발적 이직률'에 '자발적'만 있는 문서가 걸리던 자리다."""
+        f = self._fitness("kesg61", "KESG-S-2-3")
+        assert f.required_hits == 2
+        kept, hold = select_fit_chunks(
+            [{"id": "A", "text": "자발적 퇴직 신청은 인사팀에 제출한다"}], f)
+        assert kept == [] and hold
+
+    def test_the_real_communication_procedure_still_passes(self):
+        """실제 의사소통 절차서는 E-7 고유 어휘 15개 중 13개를 담는다 — 과차단 방지."""
+        f = self._fitness("hmc", "HMC-E-7")
+        real = (
+            "이해관계자 의사소통 절차서. ESG 방침·관행·기대·성과를 근로자·공급사·고객에 "
+            "명확하고 정확하게 전달하는 프로세스를 규정한다. 월간 안전보건 게시판 "
+            "업데이트, 분기별 ESG 뉴스레터 배포, 연 1회 공급사 ESG 설명회 개최."
+        )
+        score, hits = f.assess(real)
+        assert hits >= 8, f"실제 절차서가 {hits}개만 맞음"
+        assert score > 0.5
+        kept, hold = select_fit_chunks([{"id": "A", "text": real}], f)
+        assert hold == "" and len(kept) == 1
+
+
 class TestTermMatching:
     """어휘 일치 규칙 — 낱말 앞머리만 일치로 본다."""
 

@@ -149,7 +149,7 @@ def test_draft_normal_accept(mock_llm_cls, mock_eval):
     # S-4-1 (안전보건 방침) 항목에 매칭되는 TextNode 생성
     text_node = _make_text_node(
         "TXT_0001",
-        "제1조 안전보건 경영방침에 따라 산업안전보건위원회를 분기별 운영한다.",
+        _S41_EVIDENCE,
         "S-4-1",
     )
     graph = _make_evidence_graph([text_node])
@@ -368,7 +368,7 @@ def test_insufficient_policy_becomes_draft_ready(mock_llm_cls, mock_eval):
     # E-1-1 코드에 매칭되는 TextNode
     text_node = _make_text_node(
         "TXT_0001",
-        "당사는 2030년까지 탄소 배출량 30% 감축을 목표로 설정하였다.",
+        "당사는 중장기 환경경영 전략에 따라 2030년까지 탄소 배출량 30% 감축을 목표로 설정하였다.",
         "E-1-1",
         source_file="환경방침서.pdf",
     )
@@ -439,7 +439,7 @@ def test_draft_citations_contain_source_file_and_page(mock_llm_cls, mock_eval):
     sheet = _make_sheet_with_hitl()
     text_node = _make_text_node(
         "TXT_0001",
-        "안전보건 방침에 따라 위원회를 운영한다.",
+        _S41_EVIDENCE,
         "S-4-1",
         source_file="안전보건규정_2025.pdf",
     )
@@ -538,7 +538,7 @@ def test_gaps_recalculated_after_drafts(mock_llm_cls, mock_eval):
     fw = get_framework(FW_KEY)
     extraction = SimpleNamespace(mapped={}, missing=[], corp_name="테스트사")
     # S-4-1에 매칭되는 TextNode만 제공 → S-4-1은 초안 성공, S-7-1은 실패(청크 없음)
-    text_node = _make_text_node("TXT_0001", "안전보건 경영방침 조항", "S-4-1")
+    text_node = _make_text_node("TXT_0001", _S41_EVIDENCE, "S-4-1")
     graph = _make_evidence_graph([text_node])
 
     sheet = build_response_sheet(
@@ -588,7 +588,7 @@ def test_bm25_fallback_cross_pillar_rejected(mock_llm_cls, mock_eval):
     # S-4-1(사회 pillar) 청크만 존재
     text_node = _make_text_node(
         "TXT_0001",
-        "제1조 안전보건 경영방침에 따라 산업안전보건위원회를 분기별 운영한다.",
+        _S41_EVIDENCE,
         "S-4-1",
     )
     graph = _make_evidence_graph([text_node])
@@ -657,7 +657,7 @@ def test_code_match_path_still_works(mock_llm_cls, mock_eval):
     sheet = _make_sheet_with_hitl()
     text_node = _make_text_node(
         "TXT_0001",
-        "산업안전보건위원회를 분기별 운영한다. ISO 45001 인증 취득.",
+        _S41_EVIDENCE + " ISO 45001 인증을 취득했다.",
         "S-4-1",
     )
     graph = _make_evidence_graph([text_node])
@@ -683,7 +683,7 @@ def test_draft_citations_have_retrieval_field(mock_llm_cls, mock_eval):
     mock_eval.return_value = _grounding_accept()
 
     sheet = _make_sheet_with_hitl()
-    text_node = _make_text_node("TXT_0001", "안전보건 방침 조항", "S-4-1")
+    text_node = _make_text_node("TXT_0001", _S41_EVIDENCE, "S-4-1")
     graph = _make_evidence_graph([text_node])
 
     sheet = generate_drafts(sheet, graph)
@@ -722,7 +722,7 @@ def test_classified_chunk_not_leaked_to_same_pillar(mock_llm_cls, mock_eval):
     # S-4-1(안전보건)으로 분류된 청크 1개만 존재
     text_node = _make_text_node(
         "TXT_0001",
-        "제1조 안전보건 경영방침에 따라 산업안전보건위원회를 분기별 운영한다.",
+        _S41_EVIDENCE,
         "S-4-1",
     )
     graph = _make_evidence_graph([text_node])
@@ -848,7 +848,7 @@ def test_insufficient_sentinel_aborts_immediately(mock_llm_cls, mock_eval):
     mock_llm_cls.return_value = mock_llm
 
     sheet = _make_sheet_with_hitl()
-    text_node = _make_text_node("TXT_0001", "안전보건 방침 조항", "S-4-1")
+    text_node = _make_text_node("TXT_0001", _S41_EVIDENCE, "S-4-1")
     graph = _make_evidence_graph([text_node])
 
     sheet = generate_drafts(sheet, graph, max_retries=2)
@@ -1097,7 +1097,7 @@ def test_code_match_skips_relevance_gate(mock_llm_cls, mock_eval):
         corp_name="테스트사", answers=answers,
     )
 
-    text_node = _make_text_node("TXT_0001", "안전보건 방침 조항", "S-4-1")
+    text_node = _make_text_node("TXT_0001", _S41_EVIDENCE, "S-4-1")
     graph = _make_evidence_graph([text_node])
 
     sheet = generate_drafts(sheet, graph)
@@ -1261,7 +1261,7 @@ def test_retrieval_constants_used_consistently(mock_llm_cls, mock_eval):
     mock_eval.return_value = _grounding_accept()
 
     sheet = _make_sheet_with_hitl()
-    text_node = _make_text_node("TXT_0001", "안전보건 방침 조항", "S-4-1")
+    text_node = _make_text_node("TXT_0001", _S41_EVIDENCE, "S-4-1")
     graph = _make_evidence_graph([text_node])
 
     sheet = generate_drafts(sheet, graph)
