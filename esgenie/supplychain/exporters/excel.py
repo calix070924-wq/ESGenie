@@ -8,7 +8,7 @@ from __future__ import annotations
 from pathlib import Path
 
 from ..frameworks import get_framework
-from ..render import note_lines, scope_line, summary_line
+from ..render import draft_lines, note_lines, scope_line, summary_line
 from ..schema import ResponseSheet
 
 _HEADER = ["문항 ID", "섹션", "문항", "답변", "측정 범위 / 검토", "신뢰", "근거 / 비고"]
@@ -118,14 +118,10 @@ def export_response_sheet(sheet: ResponseSheet, out_dir: str | Path) -> str:
         ws.cell(row=r, column=1, value=a.qid)
         ws.cell(row=r, column=2, value=a.section)
         ws.cell(row=r, column=3, value=a.question_text).alignment = Alignment(wrap_text=True)
-        if a.status == "draft_ready" and getattr(a, "draft_text", ""):
-            answer_text = f"[AI 초안 — 승인 전]\n{a.draft_text}"
-            citations = getattr(a, "draft_citations", []) or []
-            if citations:
-                cite_lines = [f"{c.get('source_file', '')} · {c.get('node_id', '')} · p.{(c.get('page') or 0) + 1}"
-                              for c in citations]
-                answer_text += "\n\n출처: " + " / ".join(cite_lines)
-            ws.cell(row=r, column=4, value=answer_text).alignment = Alignment(wrap_text=True)
+        draft = draft_lines(a) if a.status == "draft_ready" else []
+        if draft:
+            # 본문 인용은 [1]·문서명·실제 페이지로 — 내부 노드 ID를 제출본에 싣지 않는다(§5-3).
+            ws.cell(row=r, column=4, value="\n".join(draft)).alignment = Alignment(wrap_text=True)
         else:
             ws.cell(row=r, column=4, value=a.display_value).alignment = Alignment(wrap_text=True)
         ws.cell(row=r, column=5, value=scope_line(a) or "—").alignment = Alignment(wrap_text=True)

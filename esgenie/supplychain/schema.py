@@ -193,6 +193,14 @@ class Answer:
         d["display_value"] = self.display_value
         d["comparison_label"] = self.comparison_label
         d["review_note"] = self.review_note
+        # 사용자용 초안 표기(번호 인용 + 출처 목록)를 함께 싣는다. 내부 draft_text와
+        # draft_citations의 node_id는 위 asdict에 그대로 남아 감사 추적이 끊기지 않는다(§5-3).
+        if self.draft_text:
+            from .render import draft_body, source_lines
+            body, notes = draft_body(self)
+            d["draft_display"] = body
+            d["draft_sources"] = source_lines(self)
+            d["draft_review_notes"] = notes
         return d
 
 

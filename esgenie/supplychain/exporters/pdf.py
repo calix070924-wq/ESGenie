@@ -27,7 +27,7 @@ from pathlib import Path
 from typing import Any
 
 from ..frameworks import get_framework
-from ..render import note_lines, scope_line, summary_line
+from ..render import draft_lines, note_lines, page_text, scope_line, summary_line
 from ..schema import ResponseSheet
 from ._fonts import resolve_korean_font, pdf_safe_text
 
@@ -248,14 +248,11 @@ def export_response_sheet_pdf(
             style_cmds.append(("BACKGROUND", (0, ri), (-1, ri), colors.HexColor("#D9E1F2")))
         ri += 1
         label, bg = _STATUS_STYLE.get(a.status, (a.status, "#FFFFFF"))
-        if a.status == "draft_ready" and getattr(a, "draft_text", ""):
-            draft_display = "[AI 초안 — 승인 전]<br/>" + a.draft_text.replace("\n", "<br/>")
-            citations = getattr(a, "draft_citations", []) or []
-            if citations:
-                cite_parts = [f"{c.get('source_file', '')} {c.get('node_id', '')} p.{(c.get('page') or 0) + 1}"
-                              for c in citations]
-                draft_display += "<br/>출처: " + " / ".join(cite_parts)
-            answer_para = Paragraph(draft_display, cell)
+        draft = draft_lines(a) if a.status == "draft_ready" else []
+        if draft:
+            # 엑셀과 같은 render.draft_lines — 줄 구분자만 다르다(§5-3).
+            answer_para = Paragraph("<br/>".join(
+                x.replace("\n", "<br/>") for x in draft), cell)
         else:
             answer_para = Paragraph(a.display_value, cell)
         data.append([
@@ -336,7 +333,8 @@ def export_response_sheet_pdf(
             scale = min(max_w / iw, max_h / ih)
             w, h = iw * scale, ih * scale
             a = fig["answer"]
-            loc = f" p.{(e.page or 0) + 1}" if e.page is not None else ""
+            page = page_text(e.page)
+            loc = f" {page}" if page else ""
             caption = (f"[{fig['fig_id']}] {e.file_name}{loc} · "
                        f"{a.qid} {a.question_text} → {a.display_value}")
             flow.append(KeepTogether([

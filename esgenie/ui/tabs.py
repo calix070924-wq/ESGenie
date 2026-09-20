@@ -1371,6 +1371,49 @@ def _render_supplychain_evidence_preview(evidence, *, evidence_dir: str = "") ->
     )
 
 
+def _render_supplychain_drafts(draft_answers) -> None:
+    """AI 초안 목록을 그린다(§5-3).
+
+    본문 인용과 출처 목록은 제출본(Excel/PDF)과 같은 render 모듈을 쓴다 — 화면에는
+    내부 노드 ID를 쓰지 않고 [1]·문서명·실제 페이지로 적는다. 감사 추적용 node_id는
+    '근거 발췌' 안에 남긴다(원문 draft_text와 JSON도 그대로다).
+    """
+    from esgenie.supplychain.render import draft_body, page_text, source_lines
+
+    for da in draft_answers:
+        st.markdown(f"**{da.question_text}**")
+        body, review_notes = draft_body(da)
+        st.markdown(body)
+        sources = source_lines(da)
+        if sources:
+            st.markdown("**출처**")
+            for line in sources:
+                st.markdown(f"- {line}")
+        for note in review_notes:
+            st.warning(note)
+        if da.draft_citations:
+            with st.expander("근거 발췌 (감사 추적용 node_id 포함)", expanded=False):
+                for cit in da.draft_citations:
+                    page = page_text(cit.get("page"))
+                    st.markdown(
+                        f"- {cit.get('source_file') or '문서명 미확인'}"
+                        f"{' · ' + page if page else ''} · "
+                        f"node_id: {cit.get('node_id', '')} · "
+                        f"retrieval: {cit.get('retrieval', 'code_match')}"
+                    )
+        if da.draft_grounding:
+            hard = da.draft_grounding.get("hard_fails", [])
+            soft = da.draft_grounding.get("soft_flags", [])
+            faith = da.draft_grounding.get("faithfulness", 0.0)
+            gates = []
+            for g in ("G1", "G2", "G4", "G5"):
+                failed = any(g.lower() in h.lower() for h in hard + soft)
+                gates.append(f"{g} {'✗' if failed else '✓'}")
+            st.markdown(f"게이트: {' · '.join(gates)} · faithfulness {faith:.2f}")
+        st.caption("이 초안은 담당자 검토·승인 후 사용하세요.")
+        st.markdown("---")
+
+
 def _render_supplychain_answer_detail(result, answer, *, question_map: dict[str, Any]) -> None:
     from esgenie.provenance import primary_evidence, verification_view
     from esgenie.supplychain.render import (
@@ -1547,30 +1590,7 @@ def _render_responder_workspace(
     draft_answers = [a for a in sheet.answers if a.status == "draft_ready"]
     if draft_answers:
         with st.expander(f"🤖 AI 초안 항목 ({len(draft_answers)}건)", expanded=True):
-            for da in draft_answers:
-                st.markdown(f"**{da.question_text}**")
-                st.markdown(da.draft_text)
-                if da.draft_citations:
-                    st.markdown("**근거 발췌**")
-                    for cit in da.draft_citations:
-                        retrieval_tag = cit.get("retrieval", "code_match")
-                        st.markdown(
-                            f"- {cit.get('source_file', '—')} · "
-                            f"{cit.get('node_id', '')} · "
-                            f"p.{(cit.get('page') or 0) + 1} · "
-                            f"retrieval: {retrieval_tag}"
-                        )
-                if da.draft_grounding:
-                    hard = da.draft_grounding.get("hard_fails", [])
-                    soft = da.draft_grounding.get("soft_flags", [])
-                    faith = da.draft_grounding.get("faithfulness", 0.0)
-                    gates = []
-                    for g in ("G1", "G2", "G4", "G5"):
-                        failed = any(g.lower() in h.lower() for h in hard + soft)
-                        gates.append(f"{g} {'✗' if failed else '✓'}")
-                    st.markdown(f"게이트: {' · '.join(gates)} · faithfulness {faith:.2f}")
-                st.caption("이 초안은 담당자 검토·승인 후 사용하세요.")
-                st.markdown("---")
+            _render_supplychain_drafts(draft_answers)
 
     detail_answers = [a for a in sheet.answers if a.evidence_links or a.flags or a.rationale]
     if detail_answers:
