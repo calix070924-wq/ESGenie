@@ -60,10 +60,18 @@ class DataPoint:
     value_role: str = "unknown"
     confidence_flags: list[str] = field(default_factory=list)
     d1_evaluation: dict[str, Any] = field(default_factory=dict)
+    # ── 측정 경계(2026-09-20, 작업지시서 §2) ────────────────────────────
+    completeness: str = "unknown"          # total | partial | unknown
+    boundary: dict[str, Any] = field(default_factory=dict)
+    boundary_label: str = ""               # 출력이 그대로 쓰는 기간·사업장·측정 대상 요약
+    scope_notes: list[str] = field(default_factory=list)   # 검토 사유
+    # 합산·비교에 쓰이지 않은 보완 대상 근거. evidence_files와 섞지 않는다.
+    reference_files: list[EvidenceLink] = field(default_factory=list)
 
     def to_dict(self) -> dict[str, Any]:
         d = asdict(self)
         d["evidence_files"] = [e.to_dict() for e in self.evidence_files]
+        d["reference_files"] = [e.to_dict() for e in self.reference_files]
         return d
 
 
@@ -106,7 +114,8 @@ def build_data_points(
     d1_evaluations: dict[str, dict[str, Any]] | None = None,
 ) -> list[DataPoint]:
     """최종 원장 선택을 소비한다. 결정 메타데이터가 없는 구버전만 공용 규칙으로 선택."""
-    from .selection import resolve_fact, finite_number
+    from .boundary import Boundary
+    from .selection import WHOLE_SCOPE_CODES, resolve_fact, finite_number
     points = []
     for code in target_codes:
         fact = resolve_fact(graph, code)
@@ -114,24 +123,34 @@ def build_data_points(
             continue
         links = [_to_link(graph.nodes[nid]) for nid in fact.representative_node_ids
                  if nid in graph.nodes]
+        refs = [_to_link(graph.nodes[nid]) for nid in fact.reference_node_ids
+                if nid in graph.nodes]
         d1 = d1_scores.get(code, 0.0)
         evaluation = (d1_evaluations or {}).get(code, {})
         incomplete = evaluation.get("status") in {"partial", "unavailable"}
         valid = bool(links) and all(e.resolved and e.independent and e.quote for e in links)
         flags = set(fact.flags)
+        # 전사·연간·전체 범위 총량 항목은 완결성이 입증돼야 verified가 된다(§2-2/§3).
+        # 부분합·상반기값·에너지원별 구성비가 총량 자리에서 자동 검증되는 경로를 막는다.
+        # 'unknown'(구버전 입력·경계 미기록)은 강등 대상이 아니다 — 부분값과 구분한다.
+        scope_incomplete = code in WHOLE_SCOPE_CODES and fact.completeness == "partial"
         if incomplete or finite_number(fact.value) is None or d1 >= 0.5 or "unit_suspect" in flags:
             verification = "unverified"
-        elif not valid or flags.intersection({"period_inferred", "partial_aggregate", "partial_value", "derived", "no_representative_node"}):
+        elif scope_incomplete or not valid or flags.intersection({"period_inferred", "partial_aggregate", "partial_value", "derived", "no_representative_node"}):
             verification = "estimated"
         else:
             verification = "verified" if d1 < 0.2 else "estimated"
+        boundary = Boundary.from_dict(fact.boundary)
         points.append(DataPoint(
             kesg_code=code, kesg_name=_kesg_name(code), value=fact.value,
             unit=fact.unit, period=fact.period, confidence=round(fact.confidence, 3),
             verification=verification, d1_risk=None if evaluation.get("status") == "unavailable" else round(d1, 3), evidence_files=links,
             d1_evaluation=evaluation,
             source_tier=fact.source_tier, representative_node_ids=fact.representative_node_ids,
-            value_role=fact.value_role, confidence_flags=fact.flags))
+            value_role=fact.value_role, confidence_flags=fact.flags,
+            completeness=fact.completeness, boundary=fact.boundary,
+            boundary_label=boundary.label(), scope_notes=list(fact.scope_notes),
+            reference_files=refs))
     return points
 
 

@@ -5,12 +5,23 @@ resolved_facts에 코드가 없으면 구버전 입력, None이면 명시적 미
 """
 from __future__ import annotations
 
-from dataclasses import dataclass, field, asdict
+from dataclasses import dataclass, field, asdict, replace
 from math import isclose, isfinite
 from typing import Any
 
+from .boundary import Boundary, SumDecision, covers_full_year, merge_boundaries, plan_sum
 from .node_select import classify_value_role, is_partial_aggregate, normalize_to_item_unit, select_representative_node
 from ..rag_gates.units import normalize_unit, convert_to_common
+
+# 실측 에너지원을 공용 단위로 합산해야 하는 코드(작업지시서 §2-2).
+# 전기 고지서와 도시가스 고지서는 서로 다른 에너지원이라 각각 별개 문서로 올라온다.
+# 대표 노드 하나만 고르면 '총 에너지 사용량' 자리에 전력만 앉는다. 이중계상 방어
+# (단위 차원·계열 총량+구성요소·같은 측정 대상 중복)는 boundary.plan_sum이 담당한다.
+ADDITIVE_ENERGY_CODES: frozenset[str] = frozenset({"E-4-1"})
+
+# 전사·연간·전체 범위 총량을 묻는 코드 — 완결성이 입증돼야 verified가 된다.
+# 부분값 하나가 총량 자리에 앉는 것을 막는다(작업지시서 §2-2 마지막 항, §3 마지막 항).
+WHOLE_SCOPE_CODES: frozenset[str] = frozenset({"E-3-1", "E-3-2", "E-4-1", "E-4-2"})
 
 
 @dataclass(frozen=True)
@@ -24,6 +35,18 @@ class ResolvedFact:
     confidence: float = 0.0
     value_role: str = "unknown"
     flags: list[str] = field(default_factory=list)
+    # ── 측정 경계(2026-09-20, 작업지시서 §2) ────────────────────────────
+    # completeness: 이 값이 전사·연간·전체 에너지원 총량을 덮는가.
+    #   합산으로는 절대 'total'이 되지 않는다(boundary.plan_sum 6단계).
+    #   'unknown'은 구버전 입력이며 부분값과 구분한다 — 일괄 강등하지 않는다.
+    completeness: str = "unknown"
+    # boundary: 채택값의 경계 dict 표현. 출력이 기간·사업장·측정 대상을 표기한다.
+    boundary: dict[str, Any] = field(default_factory=dict)
+    # reference_node_ids: 합산에서 제외된 참고·보완 대상 근거. 산정 근거와 섞지 않는다
+    #   — 쓰지 않은 가스 문서를 전력 단독값의 산정 근거로 붙이면 안 된다(§2-2 마지막 항).
+    reference_node_ids: list[str] = field(default_factory=list)
+    # scope_notes: 검토 사유(단위 차원 상이·목표값 제외·부분합 등) 사람 읽는 문장.
+    scope_notes: list[str] = field(default_factory=list)
 
     def to_dict(self):
         return asdict(self)
@@ -66,6 +89,120 @@ def select_fact_nodes(graph, code):
     return [selected] if selected else []
 
 
+def plan_energy_sum(graph, code, nodes=None) -> SumDecision | None:
+    """실측 에너지원 제한적 합산 계획. 합산 대상이 2개 이상일 때만 결정을 돌려준다.
+
+    ssot_pipeline(값 채움)과 finalize_ledger(원장 확정)가 **같은 함수를 같은 풀로**
+    호출한다. 각자 따로 판단하면 합산 여부가 갈려 원장 불일치가 난다.
+    이중계상 방어 3종은 boundary.plan_sum이 담당한다 — 같은 고지서 중복 업로드,
+    계열 총량 + 그 구성요소, 도시가스 m³ + MJ 같은 단위만 다른 같은 물리량.
+    """
+    if code not in ADDITIVE_ENERGY_CODES:
+        return None
+    from ..survey import is_survey
+    pool = [n for n in (nodes if nodes is not None else graph.nodes_by_metric(code))
+            if finite_number(n.value) is not None and not _is_derived(n) and not is_survey(n)]
+    if len(pool) < 2:
+        return None
+    decision = plan_sum(sorted(pool, key=lambda n: n.id),
+                        boundary_of=lambda n: n.boundary,
+                        unit_of=lambda n: normalize_unit(n.unit) or n.unit)
+    return decision if decision.ok else None
+
+
+def energy_sum_value(code, nodes):
+    """합산값을 항목 정의 단위로 환산해 (값, 단위, 단위플래그)를 돌려준다.
+
+    원장값은 표시 목적으로 반올림하지 않는다 — 0.513216 TJ가 0.5로 뭉개지면 안 된다.
+    round(…, 9)는 부동소수 잡음만 지운다(0.8739879999… → 0.873988).
+    """
+    if not nodes:
+        return None
+    base = normalize_unit(nodes[0].unit) or nodes[0].unit
+    values = [convert_to_common(n.value, normalize_unit(n.unit) or n.unit, base)
+              for n in nodes]
+    if any(v is None for v in values):
+        return None
+    value, unit, unit_flag = normalize_to_item_unit(code, sum(values), base)
+    number = finite_number(value)
+    if number is None:
+        return None
+    return round(number, 9), unit, unit_flag
+
+
+def apply_energy_sum(result, graph) -> None:
+    """총 에너지 항목의 값을 제한적 합산으로 채운다(작업지시서 §2-2).
+
+    대표 노드 하나를 고르는 기존 경로 **뒤에** 붙는다. 합산이 성립하지 않으면
+    (단일 문서, 목표·계획값, 단위 차원 상이, 계열 총량 + 구성요소) 기존 선택이
+    그대로 남는다. 합산이 성립해도 완결성은 별도 판정이다 — 부분합은 부분값이다.
+    """
+    for code in sorted(ADDITIVE_ENERGY_CODES):
+        entry = result.mapped.get(code)
+        if not entry or entry.get("data_type") == "정성":
+            continue
+        if finite_number(entry.get("value")) is None:
+            continue
+        decision = plan_energy_sum(graph, code)
+        if decision is None:
+            continue
+        summed = energy_sum_value(code, list(decision.summable))
+        if summed is None:
+            continue
+        value, unit, unit_flag = summed
+        old_value, old_unit = entry.get("value"), entry.get("unit") or ""
+        entry["value"] = value
+        entry["unit"] = unit or old_unit
+        sources = [n.source_file or n.source for n in decision.summable]
+        entry["note"] = (
+            f"실측 에너지원 제한적 합산 — {', '.join(dict.fromkeys(sources))} "
+            f"(단독 대표값 {old_value}{old_unit} → 합산 {value}{unit or old_unit})")
+        flags = result.confidence_flags.get(code, [])
+        for flag in ("partial_value", *(("unit_suspect",) if unit_flag else ())):
+            if flag not in flags:
+                flags = flags + [flag]
+        result.confidence_flags[code] = flags
+        # 합산은 대표 노드가 여럿이다 — 단일 대표 슬롯은 비운다(E-3-1 파생 합산과 같은 규약).
+        graph.representative_node_ids.pop(code, None)
+        result.notes.append(
+            f"[제한적 합산] {code}: {len(decision.summable)}개 에너지원 합산 = "
+            f"{value}{unit or old_unit} — 전체 에너지원을 덮었다는 근거는 없으므로 부분값")
+        for reason in decision.reasons:
+            result.notes.append(f"[합산 판정] {code}: {reason}")
+        for node, why in (*decision.blocked, *decision.reference):
+            result.notes.append(
+                f"[합산 제외] {code}: {node.source_file or node.id} — {why}")
+
+
+def resolve_completeness(boundary, *, summed: bool = False) -> str:
+    """원장 완결성 — 경계의 총량/부분 판정에 '대상 기간이 1년을 덮는가'를 더한다.
+
+    K-ESG 정량 항목은 연간값을 묻는다. 연간 총량·연간 비율 자리에 상반기 값 하나가
+    앉으면 숫자는 맞아도 전체성이 입증되지 않는다(작업지시서 §2-2 마지막 항, §3 마지막 항).
+    합산 결과는 구성요소를 몇 개 더했는지와 무관하게 절대 total이 되지 않는다.
+    근거가 없으면 'unknown'으로 남긴다 — 구버전 입력을 부분값으로 일괄 강등하지 않는다.
+    """
+    b = Boundary.from_dict(boundary)
+    if summed or b.completeness == "partial":
+        return "partial"
+    full = covers_full_year(b)
+    if full is False:
+        return "partial"
+    if b.completeness == "total":
+        return "total" if full is True else "unknown"
+    return b.completeness
+
+
+def _scope_note(code, boundary, completeness) -> str:
+    """부분값·미확정 경계의 검토 사유 — 배지만으로는 알 수 없는 기간·사업장을 적는다."""
+    b = Boundary.from_dict(boundary)
+    label = b.label()
+    if completeness == "partial":
+        return (f"{code}: 부분값 — {label or '경계 미기록'}. "
+                "전사·연간·전체 범위 총량임이 입증되지 않아 검증 보류")
+    return f"{code}: 경계 확인 필요 — {label or '경계 미기록'}"
+
+
 def _from_nodes(graph, code, nodes):
     if not nodes:
         return None
@@ -82,10 +219,22 @@ def _from_nodes(graph, code, nodes):
         flags.append("period_inferred")
     if not derived and is_partial_aggregate(first, code, report_year=graph.report_year):
         flags.append("partial_aggregate")
+    boundary = (merge_boundaries([n.boundary for n in nodes]) if len(nodes) > 1
+                else Boundary.from_dict(first.boundary))
+    completeness = resolve_completeness(boundary, summed=len(nodes) > 1)
+    # 원장에 싣는 경계는 판정된 완전성을 그대로 반영한다 — label()이 '총량'이라고
+    # 찍으면서 fact.completeness가 'partial'인 자기모순 출력을 막는다.
+    boundary = replace(boundary, completeness=completeness)
+    notes = []
+    if code in WHOLE_SCOPE_CODES and completeness != "total":
+        flags.append("incomplete_scope")
+        notes.append(_scope_note(code, boundary, completeness))
     return ResolvedFact(code, round(sum(values), 3) if derived else first.value,
                         first.unit, first.period, "derived" if derived else first.origin,
                         [n.id for n in nodes], min(n.confidence for n in nodes),
-                        classify_value_role(code, first, report_year=graph.report_year), flags)
+                        classify_value_role(code, first, report_year=graph.report_year),
+                        flags, completeness=completeness,
+                        boundary=boundary.to_dict(), scope_notes=notes)
 
 
 def resolve_fact(graph, code):
@@ -110,9 +259,23 @@ def finalize_ledger(result, graph):
         pool = graph.nodes_by_metric(code)
         tier = entry.get("source_tier", "")
         flags = list(result.confidence_flags.get(code, []))
+        reference: list[Any] = []
+        sum_notes: list[str] = []
+        # 제한적 합산이 이 값을 만들었는지 먼저 확인한다(§2-2). 합산값은 어떤 단일
+        # 노드와도 일치하지 않으므로 아래 일치 검사로는 대표 노드를 찾지 못하고
+        # 'no_representative_node'로 떨어진다.
+        decision = plan_energy_sum(graph, code)
+        summed = energy_sum_value(code, list(decision.summable)) if decision else None
         # 전력 Scope2 + 가스 Scope1의 정당한 파생값 합산도 원장에서 확정한다.
         derived = [n for n in pool if _is_derived(n)]
-        if code == "E-3-1" and derived and len(derived) == len(pool) and tier == "ocr_node_gated":
+        if (summed and decision and isclose(summed[0], value, rel_tol=1e-9, abs_tol=1e-9)
+                and (summed[1] or unit) == unit):
+            chosen = list(decision.summable)
+            reference = [n for n, _ in (*decision.blocked, *decision.reference)]
+            sum_notes = [f"{code}: {r}" for r in decision.reasons]
+            sum_notes += [f"{code}: 합산 제외 — {n.source_file or n.id} — {why}"
+                          for n, why in (*decision.blocked, *decision.reference)]
+        elif code == "E-3-1" and derived and len(derived) == len(pool) and tier == "ocr_node_gated":
             fact = _from_nodes(graph, code, select_fact_nodes(graph, code))
             if fact:
                 value, unit, unit_flag = normalize_to_item_unit(code, fact.value, fact.unit)
@@ -149,18 +312,35 @@ def finalize_ledger(result, graph):
             flags.append("no_representative_node")
         if any(n.period_inferred for n in chosen):
             flags.append("period_inferred")
+        if len(chosen) > 1:
+            boundary = merge_boundaries([n.boundary for n in chosen], completeness="partial")
+        elif chosen:
+            boundary = Boundary.from_dict(chosen[0].boundary)
+        else:
+            boundary = Boundary()
+        completeness = resolve_completeness(boundary, summed=len(chosen) > 1)
+        boundary = replace(boundary, completeness=completeness)
+        scope_notes = list(sum_notes)
+        if code in WHOLE_SCOPE_CODES and completeness != "total":
+            flags.append("incomplete_scope")
+            scope_notes.append(_scope_note(code, boundary, completeness))
         fact = ResolvedFact(code, value, unit,
                             chosen[0].period if chosen else getattr(graph, "report_year", None),
                             entry.get("source_tier") or "dart", ids,
                             min((n.confidence for n in chosen), default=0.0),
                             entry.get("value_role") or (chosen[0].value_role if chosen else "unknown"),
-                            sorted(set(flags)))
+                            sorted(set(flags)), completeness=completeness,
+                            boundary=boundary.to_dict(),
+                            reference_node_ids=[n.id for n in reference],
+                            scope_notes=scope_notes)
         graph.resolved_facts[code] = fact
         if len(ids) == 1:
             graph.representative_node_ids[code] = ids[0]
         else:
             graph.representative_node_ids.pop(code, None)
         entry.update(period=fact.period, representative_node_ids=ids,
+                     completeness=fact.completeness,
+                     reference_node_ids=fact.reference_node_ids,
                      resolved_fact=fact.to_dict())
         result.confidence_flags[code] = fact.flags
 
@@ -178,4 +358,6 @@ def comparison_node(graph, code):
                                if nid in graph.nodes and graph.nodes[nid].source_file)) or None,
         source=fact.source_tier,
         raw_text="", confidence=fact.confidence, value_role=fact.value_role,
-        period_inferred="period_inferred" in fact.flags)
+        period_inferred="period_inferred" in fact.flags,
+        # D1이 '같은 것끼리' 비교하려면 원장 뷰도 경계를 들고 있어야 한다(§4).
+        boundary=Boundary.from_dict(fact.boundary), completeness=fact.completeness)
