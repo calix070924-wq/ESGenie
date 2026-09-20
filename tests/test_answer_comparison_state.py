@@ -128,6 +128,79 @@ class TestClaimReconciliationStates:
         assert ans.comparison == "not_comparable"
 
 
+class TestEquivalentUnitsAgree:
+    """환산 가능한 단위의 동등값은 불일치가 아니다(§8 회귀).
+
+    비교 불가(차원 상이)만 검증하면, 환산 경로가 망가져도 아무 테스트가 울지 않는다 —
+    142.56 MWh와 142,560 kWh를 불일치로 찍으면 협력사가 맞는 답에 소명을 쓴다.
+    """
+
+    def _energy(self, claim_value, claim_unit):
+        q = Question(qid="E-4-1", section="환경", text="총 에너지 사용량",
+                     qtype="numeric", kesg_codes=("E-4-1",), unit_hint="kWh")
+        link = EvidenceLink(
+            file_name="01_전기요금고지서_2026-05.pdf",
+            relative_path="evidence_pack/01_전기요금고지서_2026-05.pdf",
+            origin="ocr_unstructured", page=0, node_id="OCR_0001",
+            kesg_codes=["E-4-1"], quote="사용전력량 142,560 kWh",
+            resolved=True, independent=True)
+        dp = DataPoint(kesg_code="E-4-1", kesg_name="총 에너지 사용량",
+                       value=142560.0, unit="kWh", period=2026, confidence=0.9,
+                       verification="verified", d1_risk=0.0, evidence_files=[link],
+                       completeness="total")
+        claim = SupplierClaim(code="E-4-1", value=claim_value, unit=claim_unit,
+                              raw=f"{claim_value}{claim_unit}",
+                              source="saq:OEM_ESG자가진단설문.pdf")
+        return derive_answer(q, mapped={}, missing=set(), dp_by_code={"E-4-1": dp},
+                             evidence_index={link.node_id: link},
+                             claims={"E-4-1": claim})
+
+    def test_mwh_claim_matches_a_kwh_bill_of_the_same_scope(self):
+        ans = self._energy(142.56, "MWh")
+        assert ans.comparison == "compared"
+        assert ans.status != "flagged"
+
+    @pytest.mark.parametrize("value", [200000, 90000])
+    def test_a_real_gap_is_caught_in_both_directions(self, value):
+        """과대 주장만 잡으면 절반이다 — 과소 신고도 D1 불일치다."""
+        ans = self._energy(value, "kWh")
+        assert ans.comparison == "mismatch"
+        assert ans.status == "flagged"
+
+
+class TestMismatchReachesTheChecklist:
+    def test_flagged_answer_becomes_a_checklist_action(self):
+        """불일치는 제출 전 체크리스트의 '검토·보완' 행으로 내려간다."""
+        from esgenie.supplychain.checklist import build_checklist
+        from esgenie.supplychain.schema import ResponseSheet
+
+        ans = _answer(_dp(completeness="total"),
+                      SupplierClaim(code="E-4-2", value=92.0, unit="%",
+                                    raw="재생에너지 비율 92%", source="saq:설문.pdf"))
+        items = build_checklist(ResponseSheet("hmc", "라벨", "한울정밀공업", [ans]))
+        assert [i.action for i in items] == ["검토·보완"]
+        assert "D1 불일치" in items[0].request
+
+
+class TestLegacyLedgerStillReads:
+    """옛 JSON(경계·완결성 키 없음)은 읽히고, 없는 범위를 발명하지 않는다(§8 회귀)."""
+
+    def test_missing_boundary_keys_stay_empty_not_company_wide(self):
+        ans = _answer(_dp(verification="verified", completeness="",
+                          boundary_label="", scope_notes=[]))
+        assert ans.completeness == ""
+        assert ans.boundary_label == ""
+        assert "전사" not in ans.review_note and "연간" not in ans.review_note
+
+    def test_a_proven_whole_ratio_is_still_verified(self):
+        """경계 게이트를 넣었다고 정상 전체 비율까지 막지 않는다(과차단 방지)."""
+        ans = _answer(_dp(verification="verified", completeness="total"),
+                      SupplierClaim(code="E-4-2", value=10.6, unit="%",
+                                    raw="재생에너지 비율 10.6%", source="saq:설문.pdf"))
+        assert ans.status == "verified"
+        assert ans.comparison == "compared"
+
+
 class TestSerialization:
     """Excel/PDF/체크리스트/JSON이 같은 키를 본다."""
 
