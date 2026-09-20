@@ -13,7 +13,7 @@ from __future__ import annotations
 from typing import Any
 import re
 
-from ..knowledge.kesg_evidence_requirements import requirement_for
+from ..knowledge.kesg_evidence_requirements import requirement_for_question
 from .schema import Answer, Question
 
 # DataPoint.verification → Answer.status 1차 매핑
@@ -58,13 +58,16 @@ def _unresolved(q: Question, fallback: str) -> tuple[str, str, list[str]]:
     · 정성·서술필요(human_narrative) → hitl_required(증빙 올려도 사람이 서술해야 함)
     · 그 외(정량/공시존재형/정성-증빙형) → insufficient(증빙 올리면 풀림)
     안내문은 kesg_evidence_requirements의 구체적 request를 쓴다(없으면 fallback).
-    olril문서(evidence_needed)는 체크리스트/exporter/UI가 재사용한다.
+    올릴 문서(evidence_needed)는 체크리스트/exporter/UI가 재사용한다 — 여기 한 곳에서
+    정하면 화면·엑셀·PDF·체크리스트가 같은 안내를 쓴다(§5-2).
     새 검출은 하지 않는다 — 룩업 조회만.
+
+    코드 하나가 아니라 문항 유형까지 넘겨 고른다. primary_code만 보면 정성 조항이
+    크로스워크된 정량 코드의 폴백('고지서·명세서·산정표')을 물려받는다.
     """
-    code = q.primary_code
-    if not code:
+    if not q.kesg_codes:
         return "insufficient", fallback, []
-    req = requirement_for(code)
+    req = requirement_for_question(q.kesg_codes, quantitative=q.qtype == "numeric")
     status = "hitl_required" if req.human_narrative else "insufficient"
     return status, (req.request or fallback), list(req.evidence_types)
 

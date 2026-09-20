@@ -97,13 +97,19 @@ class _Link:
 
 
 def _hmc_sheet() -> ResponseSheet:
-    """입력 없는 HMC 응답서 — 47문항 커버리지 골격을 고정한다."""
+    """입력 없는 HMC 응답서 — 커버리지 4분할 골격을 고정한다."""
     return build_response_sheet("hmc", corp_name="한울정밀공업")
 
 
 class TestFourWayHeader:
-    def test_hmc_has_47_questions(self):
-        assert len(get_framework("hmc").questions) == 47
+    def test_hmc_question_count_matches_the_expanded_clauses(self):
+        """RBA 42조항 + 지표 수치행 6개 = 48문항.
+
+        수치행: C-4(재활용률·배출량 2) + C-5(대기 배출량 1) + C-8(GHG·에너지·재생 3).
+        C-5 분리(2026-09-20, §5-2) 전에는 47문항이었다 — 대기배출 관리체계 존재 여부와
+        배출량 수치를 한 칸에서 묻던 문항을 C-4/C-8 패턴으로 나눈 결과다.
+        """
+        assert len(get_framework("hmc").questions) == 48
 
     def test_all_four_shares_are_reported_and_sum_to_one_hundred(self):
         """4분할은 상호배타 집계다 — 하나가 빠지면 합이 100%에 못 미친다.

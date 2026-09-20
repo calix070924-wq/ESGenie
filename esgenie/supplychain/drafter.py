@@ -10,7 +10,10 @@ import re
 from typing import Any
 
 from ..embeddings import BM25Index, IndexedDoc
-from ..knowledge.kesg_evidence_requirements import requirement_for
+from ..knowledge.kesg_evidence_requirements import (
+    requirement_for,
+    requirement_for_question,
+)
 from ..llm import LLMClient, LLMResponse
 from ..rag_gates.grounding_gate import evaluate_grounding, grounding_feedback
 from .schema import Answer, ResponseSheet
@@ -102,14 +105,14 @@ def generate_drafts(
     if not text_nodes:
         return sheet
 
-    code_map, qtext_map = _build_code_map(sheet, framework=framework)
+    code_map, qtext_map, kind_map = _build_code_map(sheet, framework=framework)
 
     bm25 = _build_bm25_index(text_nodes)
     llm = LLMClient()
 
     for answer in sheet.answers:
         primary_code = code_map.get(answer.qid, "")
-        if not _is_draft_candidate(answer, primary_code):
+        if not _is_draft_candidate(answer, kind_map.get(answer.qid, "")):
             continue
 
         if not primary_code:
@@ -136,28 +139,40 @@ def _build_code_map(
     sheet: ResponseSheet,
     *,
     framework: Any | None = None,
-) -> tuple[dict[str, str], dict[str, str]]:
-    """framework를 한 번 역조회해 qid→primary_code, qid→question_text 맵을 구축."""
+) -> tuple[dict[str, str], dict[str, str], dict[str, str]]:
+    """framework를 한 번 역조회해 qid→primary_code / 문항텍스트 / 도출유형 맵을 구축.
+
+    도출유형은 문항 단위로 해석한다(mapping._unresolved와 같은 규칙) — 안내문과
+    초안 게이트가 서로 다른 유형을 보지 않게.
+    """
     fw = framework
     if fw is None:
         from .frameworks import get_framework
         try:
             fw = get_framework(sheet.framework_key)
         except (KeyError, ValueError):
-            return {}, {}
+            return {}, {}, {}
     code_map = {q.qid: q.primary_code for q in fw.questions}
     qtext_map = {q.qid: q.text for q in fw.questions}
-    return code_map, qtext_map
+    kind_map = {
+        q.qid: requirement_for_question(
+            q.kesg_codes, quantitative=q.qtype == "numeric").kind
+        for q in fw.questions
+    }
+    return code_map, qtext_map, kind_map
 
 
-def _is_draft_candidate(answer: Answer, primary_code: str) -> bool:
-    """초안 대상 여부: hitl_required, 또는 insufficient 중 policy kind."""
+def _is_draft_candidate(answer: Answer, kind: str) -> bool:
+    """초안 대상 여부: hitl_required, 또는 insufficient 중 policy kind.
+
+    kind는 문항 단위로 해석한 도출유형이다(mapping._unresolved와 같은 규칙).
+    primary_code만 보면 정성 조항(D-5 공정거래 등)이 크로스워크된 정량 코드 때문에
+    quantitative로 읽혀 초안 대상에서 빠졌다 — 안내문과 초안 게이트가 어긋난 자리다.
+    """
     if answer.status == "hitl_required":
         return True
     if answer.status == "insufficient":
-        if primary_code:
-            req = requirement_for(primary_code)
-            return req.kind == "policy"
+        return kind == "policy"
     return False
 
 
