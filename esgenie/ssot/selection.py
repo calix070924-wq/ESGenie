@@ -9,7 +9,8 @@ from dataclasses import dataclass, field, asdict, replace
 from math import isclose, isfinite
 from typing import Any
 
-from .boundary import Boundary, SumDecision, covers_full_year, merge_boundaries, plan_sum
+from .boundary import (Boundary, SOURCE_CONFLICT_REASON, SumDecision, covers_full_year,
+                       merge_boundaries, plan_sum)
 from .node_select import classify_value_role, is_partial_aggregate, normalize_to_item_unit, select_representative_node
 from ..rag_gates.units import normalize_unit, convert_to_common
 
@@ -79,31 +80,89 @@ def _derived_parent(graph, node):
     return graph.nodes.get(source.split("derived_from:", 1)[1])
 
 
-def derived_source_exclusions(graph, nodes):
-    """원측정값이 합산에서 제외된 파생 후보와 그 사유.
+def _parent_comparisons(graph, ids):
+    """원측정값 노드 사이에 **기록된** 비교 판정. {노드 id: {판정, …}}.
 
-    파생 배출량은 환산 결과일 뿐이므로 **원측정값의 채택·중복·상충 판정을 따라야**
-    한다. 같은 사용전력량을 담은 별도 문서 두 건을 E-4-1에서는 중복·상충으로 걸러
-    0.00036 TJ를 유지하면서 E-3-1에서는 두 환산값을 더해 0.096 tCO2eq를 만들던
-    결함(2026-09-21 재검토 R1)이 여기서 갈린다. 계수 불확실성과는 별개 문제다.
+    합산 제외와 수치 모순은 다른 판단이다. plan_sum은 같은 측정 대상의 값이 정확히
+    같지 않으면 합산을 막지만(오차 1%도, 범위가 달라 비교 불가한 값도), 그 사유
+    문자열만으로 파생 배출량을 불일치로 올리면 교차검증이 `compared`·`not_comparable`인
+    사례까지 mismatch가 된다(2026-09-21 3차 검토 R1-b). 그래서 그래프에 실제로
+    기록된 판정만 본다 — 허용 오차와 범위 자격은 이미 그 판정이 담고 있다.
     """
-    from .boundary import SOURCE_CONFLICT_REASON
+    states: dict[str, set[str]] = {}
+    for edge in graph.edges:
+        state = getattr(edge, "comparison", None)
+        if not state or not {edge.source_id, edge.target_id} <= set(ids):
+            continue
+        for nid in (edge.source_id, edge.target_id):
+            states.setdefault(nid, set()).add(state)
+    return states
+
+
+def _same_quantity(node, others):
+    """단위만 다른 같은 양인가 — 100 kWh와 0.1 MWh는 같은 측정값이다."""
+    if node is None:
+        return False
+    for other in others:
+        value = convert_to_common(node.value, normalize_unit(node.unit) or node.unit,
+                                  normalize_unit(other.unit) or other.unit)
+        if value is not None and isclose(value, other.value, rel_tol=1e-9, abs_tol=1e-12):
+            return True
+    return False
+
+
+def plan_derived_emissions(graph, nodes):
+    """파생 배출량 후보의 채택·제외 계획과 원측정값 상충 여부.
+
+    파생 배출량은 환산 결과일 뿐이므로 **원측정값의 채택·중복 판정을 따라야** 한다.
+    같은 사용전력량을 담은 별도 문서 두 건을 E-4-1에서는 중복으로 걸러 0.00036 TJ를
+    유지하면서 E-3-1에서는 두 환산값을 더해 0.096 tCO2eq를 만들던 결함(재검토 R1)이
+    여기서 갈린다.
+
+    채택된 원측정값이 환산 대상 단위가 아닐 수 있다 — 배출량 환산은 kWh·MJ에만 붙는다.
+    100 kWh·100 kWh·0.1 MWh 세 문서에서 대표가 MWh 문서로 뽑히면 환산 후보가 전부
+    중복으로 빠진다. 그때 제외 목록을 통째로 되돌리면 0.096이 되살아난다(3차 검토
+    R1-a). 동등한 중복 **하나**만 대표로 남기고, 그 노드는 제외 목록에서 뺀다 —
+    산정에 쓴 근거와 제외 근거가 겹치면 설명 자체가 모순이다.
+
+    Returns:
+        usable   — 환산에 쓸 파생 노드
+        excluded — [(노드, 사유)] 원측정값이 합산에서 빠진 후보
+        conflict — 원측정값 사이에 실제 수치 불일치가 기록됐는가
+    """
     parents = {n.id: _derived_parent(graph, n) for n in nodes}
     blocked: dict[str, str] = {}
+    selected: list[Any] = []
     for metric in sorted({p.metric for p in parents.values() if p}):
         decision = plan_energy_selection(graph, metric)
-        for node, why in (decision.blocked if decision else ()):
-            blocked[node.id] = why
+        if not decision:
+            continue
+        blocked.update({node.id: why for node, why in decision.blocked})
+        selected.extend(decision.summable)
+    dropped = {n.id: blocked[parents[n.id].id] for n in nodes
+               if parents.get(n.id) and parents[n.id].id in blocked}
+    usable = [n for n in nodes if n.id not in dropped]
+    if not usable:
+        usable = [n for n in sorted(nodes, key=lambda n: n.id)
+                  if _same_quantity(parents.get(n.id), selected)][:1]
+    kept = {n.id for n in usable}
+    states = _parent_comparisons(graph, [p.id for p in parents.values() if p])
     excluded = []
     for node in nodes:
-        parent = parents.get(node.id)
-        why = blocked.get(parent.id) if parent else None
-        if not why:
+        why = dropped.get(node.id)
+        if why is None or node.id in kept:
             continue
+        parent = parents[node.id]
         label = parent.source_file or parent.id
-        excluded.append((node, f"{label} {SOURCE_CONFLICT_NOTE} — {why}"
-                         if why == SOURCE_CONFLICT_REASON else f"{label} 원측정값 {why}"))
-    return excluded
+        recorded = states.get(parent.id, set())
+        note = f"{label} 원측정값 {why}"
+        if "mismatch" in recorded:
+            note = f"{label} {SOURCE_CONFLICT_NOTE} — {why}"
+        elif why == SOURCE_CONFLICT_REASON:
+            # 합산은 막았지만 수치 모순은 아니다 — 기록된 판정을 함께 적는다.
+            note += f" (교차검증 {'/'.join(sorted(recorded)) or '기록 없음'})"
+        excluded.append((node, note))
+    return usable, excluded, any("mismatch" in s for s in states.values())
 
 
 def select_fact_nodes(graph, code):
@@ -117,9 +176,10 @@ def select_fact_nodes(graph, code):
         derived = [n for n in nodes if _is_derived(n)
                    and classify_value_role(code, n, report_year=year) != "target"]
         if derived:
-            # 원측정값이 중복·상충으로 제외됐으면 그 환산값도 더하지 않는다.
-            dropped = {n.id for n, _ in derived_source_exclusions(graph, derived)}
-            derived = [n for n in derived if n.id not in dropped] or derived
+            # 원측정값이 중복·상충으로 제외됐으면 그 환산값도 더하지 않는다. 남는
+            # 후보가 없으면 그대로 비워 둔다 — 제외한 중복을 되돌리지 않는다(R1-a).
+            derived = plan_derived_emissions(graph, derived)[0]
+        if derived:
             period = min({n.period for n in derived}, key=lambda p: (abs(p-year), -p)) if year else max(n.period for n in derived)
             from .boundary import same_period, compatible_sites
             candidates = sorted((n for n in derived if n.period == period), key=lambda n: n.id)
@@ -375,18 +435,19 @@ def finalize_ledger(result, graph):
             sum_notes += [f"{code}: 합산 제외 — {n.source_file or n.id} — {why}"
                           for n, why in (*decision.blocked, *decision.reference)]
         elif code == "E-3-1" and derived and len(derived) == len(pool) and tier == "ocr_node_gated":
+            # 원측정값 쪽 제외 사유와 실제 상충 판정을 파생 배출량에 남긴다. 환산할
+            # 후보가 남지 않아도 사유는 적는다 — 근거 없이 값만 남기지 않는다.
+            _, excluded, conflict = plan_derived_emissions(graph, derived)
+            reference = [n for n, _ in excluded]
+            sum_notes = [f"{code}: 파생 배출량 제외 — {why}" for _, why in excluded]
+            if conflict:
+                flags.append("source_conflict")
             fact = _from_nodes(graph, code, select_fact_nodes(graph, code))
             if fact:
                 value, unit, unit_flag = normalize_to_item_unit(code, fact.value, fact.unit)
                 entry.update(value=value, unit=unit, source_tier="derived")
                 flags = sorted(set(flags + fact.flags + ([unit_flag] if unit_flag else [])))
                 chosen = [graph.nodes[nid] for nid in fact.representative_node_ids]
-                # 원측정값 쪽 제외·상충 사유를 파생 배출량의 근거와 검토 사유에 남긴다.
-                excluded = derived_source_exclusions(graph, derived)
-                reference = [n for n, _ in excluded]
-                sum_notes = [f"{code}: 파생 배출량 제외 — {why}" for _, why in excluded]
-                if any(SOURCE_CONFLICT_NOTE in why for _, why in excluded):
-                    flags.append("source_conflict")
             else:
                 chosen = []
         else:

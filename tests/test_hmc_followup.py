@@ -340,6 +340,72 @@ def test_followup_R4_difference_is_order_independent_and_signed(a, b, expected):
     assert _signed_pct_diff(a, b) == pytest.approx(expected)
 
 
+# ====================================================================
+# 2026-09-21 3차 검토(0fb6df2) R1-a·R1-b·R3-a·R3-b — 남은 입력 조합의 정상 동작
+# ====================================================================
+
+def certification_draft(answer_text, source):
+    """원문 하나를 인용한 고정 답변을 실제 게이트에 통과시키고 상태를 돌려준다."""
+    from unittest.mock import MagicMock
+    from esgenie.supplychain.drafter import _attempt_draft
+    from esgenie.supplychain.schema import Answer
+    cited = answer_text + " [S]"
+    chunks = [{"id": "S", "text": source, "source_file": "policy.pdf", "page": 0}]
+    answer = Answer("controlled-cert", "정책", "인증 현황", None, "insufficient")
+    llm = MagicMock()
+    llm.complete.return_value = SimpleNamespace(content=cited)
+    _attempt_draft(answer, chunks, llm, max_retries=0)
+    return answer.status
+
+
+def test_followup_R1a_equivalent_unit_duplicates_are_converted_once():
+    """대표 원측정값이 환산 대상 단위가 아니어도 중복을 되돌려 더하지 않는다."""
+    rows = [extraction("a.pdf", "사용전력량", 100, "kWh"),
+            extraction("b.pdf", "사용전력량", 100, "kWh"),
+            extraction("total.pdf", "사용전력량", .1, "MWh")]
+    for i, row in enumerate(rows):
+        row.raw_text = f"사업장: 제1공장\n문서번호: 문서 {i + 1}"
+    single = pipeline([extraction("single.pdf", "사용전력량", 100, "kWh")])[1]["E-3-1"].value
+    for order in (rows, rows[::-1]):
+        dp = pipeline(order)[1]["E-3-1"]
+        assert dp.value == pytest.approx(single)          # 0.096으로 되살아나지 않는다
+        assert {e.node_id for e in dp.evidence_files}.isdisjoint(
+            {e.node_id for e in dp.reference_files})      # 쓴 근거와 제외 근거가 겹치지 않는다
+        assert dp.comparison != "mismatch"
+
+
+@pytest.mark.parametrize("second,site", [(101, "제1공장"), (50, "제1공장 도장라인")])
+def test_followup_R1b_sum_exclusion_is_not_a_mismatch(second, site):
+    """허용 오차 안의 대조와 범위가 다른 대조는 환산 뒤에도 불일치가 되지 않는다."""
+    _, points, _ = pipeline([extraction("a.pdf", "사용전력량", 100, "kWh"),
+                             extraction("b.pdf", "사용전력량", second, "kWh", site=site)])
+    assert points["E-3-1"].value == pytest.approx(.048)
+    assert points["E-3-1"].comparison != "mismatch"
+    assert points["E-3-1"].verification != "unverified"
+    assert any("파생 배출량 제외" in n for n in points["E-3-1"].scope_notes)
+
+
+@pytest.mark.parametrize("answer,source,supported", [
+    ("ISMS-P 인증을 취득했다.", "ISMS 인증을 취득했다.", False),
+    ("ISO 27001 인증을 취득했다.", "ISO 인증을 취득했다. ISO 27001은 준비 중이다.", False),
+    ("ISO 9001 인증을 취득했다.", "ISO 인증을 취득했다.", False),
+    ("당사는 ISMS 인증을 취득했다.", "회사는 ISMS 인증을 취득했다.", True),
+    ("ISMS 인증을 취득했다.", "2025년 정보보호 ISMS 인증을 취득하여 운영 중이다.", True),
+    ("ISMS 인증을 취득했다.", "ISMS 인증을 취득하지 않았다.", False),
+    ("ISMS 인증을 취득했다.", "ISO 인증을 취득했다. ISMS 인증은 준비 중이다.", False),
+])
+def test_followup_R3a_certification_identity_is_compared_exactly(answer, source, supported):
+    assert (certification_draft(answer, source) == "draft_ready") is supported
+
+
+@pytest.mark.parametrize("answer,supported", [("ISMS 인증을 취득할 예정이다.", True),
+                                              ("ISMS 인증을 준비 중이다.", True),
+                                              ("이미 ISMS 인증을 취득했다.", False)])
+def test_followup_R3b_future_plan_is_not_a_completion_claim(answer, supported):
+    """계획 원문을 그대로 인용한 계획 진술은 허용하고, 완료 주장은 계속 막는다."""
+    assert (certification_draft(answer, "ISMS 인증을 취득할 예정이다.") == "draft_ready") is supported
+
+
 def test_R27_single_page_still_requires_located_quote(tmp_path):
     import fitz
     from esgenie.ssot.ocr_router import ExtractedClause, _resolve_clause_pages

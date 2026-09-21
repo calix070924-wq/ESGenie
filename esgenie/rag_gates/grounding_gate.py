@@ -112,32 +112,42 @@ def evaluate_grounding(answer_text: str, cited_chunks: list[dict[str, Any]]) -> 
     )
 
 
-def _certification_claims(sentence: str) -> list[str]:
-    """문장이 '어떤 인증을 취득했다'고 주장하는지 — 인증 종류를 정규화해 돌려준다."""
+def _certification_claims(sentence: str) -> list[frozenset[str]]:
+    """문장이 '어떤 인증을 취득했다'고 주장하는지 — 인증 식별자 집합으로 돌려준다.
+
+    부정형(`취득하지 않았다`)과 **계획 진술**(`취득할 예정이다`)은 완료 주장이 아니다.
+    계획 진술을 완료 주장으로 세면 원문과 답변이 같은 `취득할 예정이다`인 정상 답변이
+    미입증 취득으로 막힌다(2026-09-21 3차 검토 R3-b). 계획 진술에 대한 인용·숫자 등
+    다른 grounding 검사는 그대로 적용된다.
+    """
     names = []
     for m in _CERT_COMPLETION_RE.finditer(sentence):
-        if _CERT_NOT_DONE_RE.search(_cert_context(m, sentence)):
-            continue            # 주장 자체가 '취득하지 않았다'면 완료 주장이 아니다.
-        name = _normalize_certification(m.group("name") or "")
+        context = _cert_context(m, sentence)
+        if _CERT_NOT_DONE_RE.search(context) or _CERT_PENDING_RE.search(context):
+            continue
+        name = _certification_identity(m.group("name") or "")
         if name and name not in names:
             names.append(name)
     return names
 
 
-def _certification_acquired(name: str, text: str) -> bool:
+def _certification_acquired(name: frozenset[str], text: str) -> bool:
     """청크 원문이 **같은 인증의 실제 취득**을 진술하는가.
 
     종전에는 인용 청크 어디든 `인증 … 취득`이 있으면 인정했다. 그래서
     `ISMS 인증을 취득하지 않았다`(부정형)와 `ISO 인증을 취득했다`(다른 인증)가
-    `ISMS 인증을 취득했다`의 근거로 통과했다(2026-09-21 재검토 R3). 준비·신청
-    예정 진술을 막는 기존 방어는 유지한다.
+    `ISMS 인증을 취득했다`의 근거로 통과했다(2026-09-21 재검토 R3). 이어 부분 문자열
+    비교로 종류를 맞추던 방식은 ISMS와 ISMS-P를 같다고 보고, 문장 주어까지 인증명에
+    넣어 `당사는 ↔ 회사는`을 다른 인증으로 보았다(3차 검토 R3-a). 그래서 식별자
+    집합으로 비교한다 — 주장의 식별자가 원문 식별자에 모두 있어야 근거가 된다.
+    `ISO 27001` 주장은 포괄적인 `ISO` 취득 진술로 입증되지 않는다.
     """
     for m in _CERT_COMPLETION_RE.finditer(text):
         context = _cert_context(m, text)
         if _CERT_NOT_DONE_RE.search(context) or _CERT_PENDING_RE.search(context):
             continue
-        source = _normalize_certification(m.group("name") or "")
-        if source and (source in name or name in source):
+        source = _certification_identity(m.group("name") or "")
+        if source and name <= source:
             return True
     return False
 
@@ -147,9 +157,26 @@ def _cert_context(match: re.Match[str], text: str) -> str:
     return match.group(0) + text[match.end():match.end() + 12]
 
 
-def _normalize_certification(name: str) -> str:
-    """인증명 비교용 정규화. 공백·기호를 지우고 대문자로 맞춘다."""
-    return re.sub(r"[\s\-_()·,]", "", name).upper()
+# 인증명이 아닌 수식어 — 문장 주어, 연·월 표기, 시점·일반 서술. 식별자에서 분리한다.
+# 인증 번호는 지우지 않는다 — `\d{4}년`처럼 단위가 붙은 표기만 연도로 본다.
+_CERT_SUBJECT_RE = re.compile(r"^(당사|본사|회사|우리|그룹|법인|저희)[은는이가의]?$")
+_CERT_GENERIC_RE = re.compile(r"^(\d{4}년|\d{1,2}월|현재|기준|이미|국제|국내|해외|관련|주요)$")
+
+
+def _certification_identity(name: str) -> frozenset[str]:
+    """인증명 → 식별자 집합. 주어·연월·일반 수식어는 뺀다.
+
+    `2025년 정보보호 ISMS` → {정보보호, ISMS}, `당사는 ISMS` → {ISMS},
+    `ISO 27001` → {ISO, 27001}. 확장 접미사와 인증 번호는 식별자로 남는다 —
+    `ISMS-P`는 `ISMS`와 다른 종류이고, `ISO 27001`은 `ISO`만으로 입증되지 않는다.
+    """
+    tokens = []
+    for raw in re.split(r"[\s,·]+", name.strip()):
+        token = re.sub(r"[()]", "", raw).upper()
+        if not token or _CERT_SUBJECT_RE.match(token) or _CERT_GENERIC_RE.match(token):
+            continue
+        tokens.append(token)
+    return frozenset(tokens)
 
 
 def _check_numbers_and_units(
