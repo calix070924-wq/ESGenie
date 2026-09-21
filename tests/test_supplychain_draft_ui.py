@@ -407,3 +407,33 @@ def test_regression_no_draft_checklist():
     items = build_checklist(sheet)
     # verified answer는 체크리스트에 안 잡힘
     assert len(items) == 0
+
+
+def test_R30_c5_old_numeric_cache_is_invalidated(tabs_module, monkeypatch):
+    from dataclasses import replace
+    from esgenie.supplychain import get_framework, build_response_sheet
+    from esgenie.ssot.audit_trace import DataPoint
+    fw=get_framework('hmc')
+    old_questions=tuple(replace(q,qtype='numeric',unit_hint='kg') if q.qid=='HMC-C-5' else q
+                        for q in fw.questions if q.qid!='HMC-C-5-E-7-1')
+    old=replace(fw,questions=old_questions)
+    ext=SimpleNamespace(mapped={'E-7-1':{'value':12.3,'unit':'kg','evidence_node_ids':[]}},missing=[])
+    points=[DataPoint('E-7-1','대기배출량',12.3,'kg',2026,.9,'estimated',0,[])]
+    result=SimpleNamespace(extraction=ext,v15_trace=SimpleNamespace(data_points=points))
+    calls=[]
+    # 문항 정의에 맞춰 기존 derive 진입점을 사용한다.
+    from esgenie.supplychain.mapping import derive_answer
+    def respond(r,f,**kwargs):
+        calls.append(f)
+        return ResponseSheet(f.key,f.label,'cache contract',[
+            derive_answer(q,mapped=ext.mapped,missing=set(),dp_by_code={p.kesg_code:p for p in points}) for q in f.questions])
+    monkeypatch.setattr(tabs_module,'respond_from_pipeline',respond)
+    tabs_module.st.session_state={}
+    prior=tabs_module._get_cached_response_sheet(result,old)
+    assert next(a for a in prior.answers if a.qid=='HMC-C-5').value==12.3
+    current=tabs_module._get_cached_response_sheet(result,fw)
+    assert len(calls)==2 and current is not prior
+    assert next(a for a in current.answers if a.qid=='HMC-C-5').value is None
+    assert next(a for a in current.answers if a.qid=='HMC-C-5-E-7-1').value==12.3
+    assert tabs_module._get_cached_response_sheet(result,fw) is current
+    assert len(calls)==2

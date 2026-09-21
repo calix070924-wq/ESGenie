@@ -251,7 +251,7 @@ def _scope_note(code, boundary, completeness) -> str:
     """부분값·미확정 경계의 검토 사유 — 배지만으로는 알 수 없는 기간·사업장을 적는다."""
     b = Boundary.from_dict(boundary)
     label = b.label()
-    detail = "; ".join(scope_gaps(code, b))
+    detail = "; ".join(n for n in scope_gaps(code, b) if n not in b.review_notes)
     if completeness == "partial":
         return (f"{code}: 부분값 — {label or '경계 미기록'}. "
                 f"전사·연간·전체 범위 총량임이 입증되지 않아 검증 보류. {detail}")

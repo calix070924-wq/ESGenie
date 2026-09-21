@@ -102,7 +102,7 @@ def test_R10_independent_same_origin_mismatch_and_checklist():
 
 
 def test_R11_units_equivalent():
-    g, _, _ = pipeline([extraction("a.pdf", "使用 전력 사용량", 142560, "kWh"),
+    g, _, _ = pipeline([extraction("a.pdf", "전력 사용량", 142560, "kWh"),
                          extraction("b.pdf", "전력 사용량", 142.56, "MWh")])
     assert cross_check_status("E-4-1", g)[0] == "compared"
 
@@ -207,3 +207,60 @@ def test_R29_empty_flagged_is_pending_not_auto():
     sheet = ResponseSheet("x", "x", "x", [Answer("x", "E", "x", None, "flagged")])
     assert not sheet.answers[0].answered
     assert sheet.auto_pct == 0 and sheet.pending_pct == 100 and sheet.flagged_count == 1
+
+
+def test_other_site_or_target_total_does_not_displace_components():
+    rows = [extraction("power.pdf", "전력 사용량", 6, "TJ"),
+            extraction("gas.pdf", "도시가스 사용량", 4, "TJ"),
+            extraction("other.pdf", "총 에너지 사용량", 100, "TJ", site="제2공장"),
+            extraction("plan.pdf", "총 에너지 목표", 200, "TJ")]
+    for values in (rows, rows[::-1]):
+        assert energy(values).value == 10
+
+
+def test_construction_date_is_not_annual_generation_target():
+    from esgenie.ssot.boundary_conflicts import renewable_review_notes
+    ext = extraction("solar.pdf", "태양광 사용 실적", 45, "MWh", "2026년 상반기")
+    ext.raw_text = "태양광 패널 설치 — 2026년 하반기 착공, 연간 약 540MWh 발전 목표"
+    assert any("설비 동일성" in n for n in renewable_review_notes(ext))
+
+
+def test_labeled_reporting_period_is_preserved():
+    b = derive_boundary("총 폐기물 위탁량", "", doc_context="배출사업장 제1공장\n대상 기간 2026-04-01 ~ 2026-04-30\n1. 폐기물 현황")
+    assert (b.period_start, b.period_end) == ("2026-04-01", "2026-04-30")
+
+
+def test_R27_real_multipage_clause_locator_and_unknown(tmp_path):
+    import fitz
+    from esgenie.ssot.ocr_router import ExtractedClause, _resolve_clause_pages
+    from esgenie.supplychain.schema import Answer
+    from esgenie.supplychain.render import source_lines, draft_body
+    path=tmp_path/'multipage.pdf'
+    with fitz.open() as doc:
+        doc.new_page().insert_text((72,72),'First page introduction.')
+        doc.new_page().insert_text((72,72),'Employees submit grievances through a protected hotline.')
+        doc.save(path)
+    ext=OcrExtraction(path.name,DocChannel.UNSTRUCTURED,'controlled_pdf',clauses=[
+        ExtractedClause('process','Employees submit grievances through a protected hotline.',page=9),
+        ExtractedClause('unknown','Unlocated sentence.',page=1)])
+    _resolve_clause_pages(ext,str(path))
+    assert [c.page for c in ext.clauses]==[1,None]
+    a=Answer('q','s','q',None,'draft_ready',draft_text='내용 [N1] [N2]',draft_citations=[
+        {'node_id':'N1','source_file':path.name,'page':ext.clauses[0].page},
+        {'node_id':'N2','source_file':path.name,'page':ext.clauses[1].page}])
+    assert source_lines(a)==['[1] multipage.pdf p.2','[2] multipage.pdf (위치 미확인)']
+    assert '위치' in ' '.join(draft_body(a)[1])
+
+
+def test_R27_single_page_still_requires_located_quote(tmp_path):
+    import fitz
+    from esgenie.ssot.ocr_router import ExtractedClause, _resolve_clause_pages
+    path=tmp_path/'one.pdf'
+    with fitz.open() as doc:
+        doc.new_page().insert_text((72,72),'Actual source sentence.')
+        doc.save(path)
+    ext=OcrExtraction(path.name,DocChannel.UNSTRUCTURED,'controlled_pdf',clauses=[
+        ExtractedClause('known','Actual source sentence.',page=1),
+        ExtractedClause('missing','Invented claim.',page=1)])
+    _resolve_clause_pages(ext,str(path))
+    assert [c.page for c in ext.clauses]==[0,None]

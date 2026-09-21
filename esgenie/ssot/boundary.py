@@ -854,9 +854,19 @@ def plan_sum(items: Iterable[Any], *, boundary_of=None, unit_of=None, report_yea
     if not eligible:
         return decision
     # 한 후보를 기준으로 호환 그룹을 만든다. 다른 그룹은 참고 근거로 보존한다.
-    anchor, ab = eligible[0]
+    def group_rank(entry):
+        _, eb = entry
+        peers = [(n, b) for n, b in eligible if same_period(eb, b)[0] == "compared"
+                 and compatible_sites(eb, b, inclusion=True)]
+        kinds = {b.measure_kind for _, b in peers}
+        # 다른 사업장의 단독 총량이 확인된 여러 에너지원의 그룹을 밀어내지 않는다.
+        # 복사본 개수는 그룹 선택에 영향을 주지 않는다.
+        return (-len(kinds), rank(entry))
+    anchor, ab = min(eligible, key=group_rank)
     staged = [(anchor, ab)]
-    for n, b in eligible[1:]:
+    for n, b in eligible:
+        if n is anchor:
+            continue
         ps, why = same_period(ab, b)
         if ps != "compared":
             decision.reference.append((n, why + " — 합산 보류"))

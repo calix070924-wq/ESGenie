@@ -56,7 +56,7 @@ def period_bounds(text):
     return year, start.isoformat(), end.isoformat(), agg, count
 
 
-_HEADER = re.compile(r"(?:사용기간|집계기간|보고기간|산정기간|보고\s*범위|산정\s*범위|조직\s*범위|사업장\s*(?:명|주소)?|고객명|사용자명|분모)\s*[:：]?")
+_HEADER = re.compile(r"(?:사용\s*기간|집계\s*기간|보고\s*기간|산정\s*기간|대상\s*기간|보고\s*범위|산정\s*범위|조직\s*범위|사업장\s*(?:명|주소)?|고객명|사용자명|분모)\s*[:：]?")
 _SECTION = re.compile(r"^(?:\d+[.)]|제\d+조|구분(?:$|\s*\|)|에너지원(?:$|\s*\|)|전월지침|항목$)")
 
 

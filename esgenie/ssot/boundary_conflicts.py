@@ -11,13 +11,17 @@ def renewable_review_notes(extraction):
     단정하는 검출기가 아니므로 원문 위치와 확인할 일을 반환한다.
     """
     notes = []
+    seen_conflicts = set()
     plans = []
     text = extraction.raw_text or "\n".join(c.text for c in extraction.clauses)
     for line in text.splitlines():
         if not re.search(r"착공|건설\s*예정|설치\s*예정", line):
             continue
         kind, _ = detect_measure(line)
-        plans.append((line, kind, derive_boundary(line, line)))
+        # 착공 이후의 '연간 발전 목표'는 착공일이 아니다. 행 전체의 기간어를
+        # 합치지 않고 실제 착공 절까지를 사용한다.
+        construction = re.split(r"착공|건설\s*예정|설치\s*예정", line, maxsplit=1)[0]
+        plans.append((line, kind, derive_boundary(construction, construction)))
     for metric in extraction.metrics:
         actual = derive_boundary(metric.metric_hint, metric.period, unit=metric.unit)
         if actual.basis != "actual" or not actual.measure_kind.startswith("electricity_"):
@@ -32,6 +36,11 @@ def renewable_review_notes(extraction):
             existing, future = re.search(pattern, metric.metric_hint), re.search(pattern, line)
             if existing and future and existing[1] != future[1]:
                 continue
+            key = (actual.measure_kind, actual.period_start, actual.period_end, line,
+                   existing[1] if existing else "")
+            if key in seen_conflicts:
+                continue
+            seen_conflicts.add(key)
             page = f"p.{metric.page+1}" if metric.page is not None else "위치 미확인"
             notes.append(f"실적/계획·설비 동일성 확인 필요 ({extraction.source_file} {page}): "
                          f"{metric.metric_hint} {metric.value}{metric.unit} ({metric.period}) / {line.strip()}. "

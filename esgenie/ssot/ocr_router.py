@@ -278,9 +278,7 @@ def _resolve_clause_pages(ext: OcrExtraction, file_path: str) -> None:
         for clause in ext.clauses:
             quote = re.sub(r"\s+", "", clause.text)
             matches = [i for i, text in enumerate(pages) if quote and quote in text]
-            if len(pages) == 1:
-                clause.page = 0
-            elif len(matches) == 1:
+            if len(matches) == 1:
                 clause.page = matches[0]
             else:
                 # Unknown/ambiguous location must not become a fabricated page link.

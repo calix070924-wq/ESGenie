@@ -78,7 +78,7 @@ class TestBoundaryReachesTheAnswer:
 
     def test_no_comparison_leaves_the_fields_empty(self):
         """판정이 없으면 빈 값이다 — 없는 대조를 있었던 것처럼 쓰지 않는다."""
-        ans = _answer(_dp())
+        ans = _answer(_dp(completeness="total"))  # 전달 계약: 검증 자격은 별도 원장 회귀에서 확인
         assert ans.comparison == ""
         assert ans.comparison_label == ""
         assert ans.review_note == ""
@@ -190,7 +190,10 @@ class TestLegacyLedgerStillReads:
                           boundary_label="", scope_notes=[]))
         assert ans.completeness == ""
         assert ans.boundary_label == ""
-        assert "전사" not in ans.review_note and "연간" not in ans.review_note
+        assert ans.boundary == {}  # 경계를 채운 것이 아니라 확인할 일을 안내한다.
+        assert ans.status != "verified"
+        assert ans.comparison == "scope_unconfirmed"
+        assert "분모 미상" in ans.review_note
 
     def test_a_proven_whole_ratio_is_still_verified(self):
         """경계 게이트를 넣었다고 정상 전체 비율까지 막지 않는다(과차단 방지)."""

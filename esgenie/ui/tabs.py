@@ -1485,6 +1485,7 @@ def _get_cached_response_sheet(result, framework, *, supplier_claims=None):
             return asdict(value)
         return vars(value) if hasattr(value, "__dict__") else str(value)
     content = {
+        "response_contract": "hmc-integrity-20260921",
         "corp": corp_name, "framework": framework,
         "claims": supplier_claims or {},
         **{key: getattr(result, key, None) for key in (
@@ -1548,7 +1549,7 @@ def _render_responder_workspace(
         f"문항 {len(sheet.answers)}개 (분모 {sheet.denominator}개, 해당없음 제외) · "
         "자동응답=기계가 답 채움 / AI초안=근거게이트 통과 초안(담당자 승인 전) / "
         "작성필요=사람 서술 / 증빙대기=증빙 업로드 시 자동화 · "
-        "검토필요는 자동응답 안에 포함된 중첩 지표입니다"
+        "검토필요는 별도 지표이며 자동응답과 중복될 수 있습니다"
     )
 
     if supplier_claims:

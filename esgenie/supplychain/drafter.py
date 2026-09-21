@@ -144,7 +144,7 @@ def generate_drafts(
             )
             continue
 
-        _attempt_draft(answer, chunks, llm, max_retries=max_retries)
+        _attempt_draft(answer, chunks, llm, max_retries=max_retries, fitness=plan.fitness)
 
     return sheet
 
@@ -347,6 +347,7 @@ def _attempt_draft(
     llm: LLMClient,
     *,
     max_retries: int,
+    fitness: QuestionFitness | None = None,
 ) -> None:
     """초안 생성 → 근거게이트 검증 → 통과 시 draft_ready, 실패 시 재시도."""
     chunks_text = _format_chunks(chunks)
@@ -380,6 +381,9 @@ def _attempt_draft(
             return
 
         result = evaluate_grounding(draft_text, chunks)
+        if fitness and fitness.intent and not fitness.relevant_text(draft_text):
+            feedback_constraint = "질문의 대상·내용·행동에 직접 답하는 확인된 내용만 쓰세요. 부족하면 INSUFFICIENT_EVIDENCE를 반환하세요."
+            continue
 
         if result.decision == "ACCEPT" and not result.soft_flags:
             answer.status = "draft_ready"

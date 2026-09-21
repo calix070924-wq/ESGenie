@@ -104,4 +104,4 @@ def test_clause_pages_are_resolved_against_actual_pdf(tmp_path):
     with fitz.open() as doc:
         doc.new_page().insert_text((50,50),'Single-page policy');doc.save(single)
     _resolve_clause_pages(ext,str(single))
-    assert all(c.page==0 for c in ext.clauses)
+    assert all(c.page is None for c in ext.clauses)  # 한 쪽이어도 존재하지 않는 인용 위치를 만들지 않는다.

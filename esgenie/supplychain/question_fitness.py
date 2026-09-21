@@ -38,10 +38,8 @@ DISTINCTIVE_DF_RATIO = 0.15
 # 최고 청크 대비 이 비율 미만인 청크는 버린다 — 관련 청크 하나가 무관한 청크 전체를
 # 끌고 들어오지 않게(§6).
 RELATIVE_FLOOR = 0.34
-# 고유 어휘 하나만 겹치는 것은 우연이다. 실측(시연 증빙 31개 × 222문항 = 양수 3,083쌍)에서
-# 어휘 하나만 맞은 1,574쌍은 전수가 오탐이었다 — '근로시간관리규정'이 '자발적 이직률'
-# 문항에, '책임광물실사정책'이 '환경 법규 위반 건수' 문항에 걸리는 식이다. 반대로 실제로
-# 답하는 문서는 어휘를 여러 개 담았다(의사소통 절차서 → E-7 15개 중 13개).
+# 고유 어휘 하나의 우연한 일치를 줄인다. 전수 라벨링 결과가 아니므로 이 구조
+# 검사에서 얻은 쌍의 수를 정확도나 전수 오탐 수로 해석하지 않는다.
 # 고유 어휘가 2개뿐인 문항(222개 중 4개, 모두 수치 문항)에서는 1개로 완화한다.
 MIN_DISTINCTIVE_HITS = 2
 
@@ -120,6 +118,30 @@ class QuestionFitness:
     terms: frozenset[str]
     distinctive: frozenset[str]
     weights: dict[str, float]
+    intent: str = ""
+
+    def relevant_text(self, text):
+        """대상-내용-행동 관계가 있는 절만 선택한다. 후보 집합의 상대 점수와 독립."""
+        if not self.intent:
+            return text
+        blocks = re.split(r"\n(?=(?:제\d+조|\d+[.]\s))|(?<=[.!?])\s+", text)
+        kept = []
+        for block in blocks:
+            flat = " ".join(block.split())
+            if self.intent == "communication":
+                topic = re.search(r"ESG|환경.{0,8}방침|인권.{0,8}방침|행동규범|경영\s*성과|지속가능|방침.{0,30}(?:관행|기대|성과)", flat, re.I)
+                audience = re.search(r"근로자|직원|임직원|종업원|공급[사업]|협력사|고객|이해관계자", flat)
+                action = re.search(r"전달|공유|배포|공개|공지|설명회|뉴스레터|게시|교육|안내", flat)
+                ok = topic and audience and action
+            else:
+                grievance = re.search(r"고충|구제|보복|신고자|익명\s*(?:신고|핫라인)", flat)
+                mechanism = re.search(r"접수|상담|조사|처리|해결|보호|신고|핫라인|이의|통보", flat)
+                actor = re.search(r"근로자|노동자|직원|임직원|이해관계자|종업원|노사", flat)
+                exchange = re.search(r"양방향|간담회|협의|의견.{0,30}(?:반영|표명|수렴)|선출.{0,20}대표|대표.{0,20}선출", flat)
+                ok = grievance and mechanism or actor and exchange
+            if ok:
+                kept.append(block.strip())
+        return "\n".join(kept)
 
     @property
     def usable(self) -> bool:
@@ -190,9 +212,13 @@ def build_fitness_map(questions: Sequence[Any], requirement_of: Any) -> dict[str
         return d == 1 or d < cutoff
 
     out: dict[str, QuestionFitness] = {}
+    question_texts = {q.qid: q.text for q in questions}
     for qid, terms in per_q.items():
         distinctive = {t for t in terms if is_distinctive(t)}
-        out[qid] = QuestionFitness(qid, frozenset(terms), frozenset(distinctive), weights)
+        text = question_texts[qid]
+        intent = ("participation" if re.search(r"참여.*구제|양방향|고충.*접근", text) else
+                  "communication" if re.search(r"의사소통|방침.*전달", text) else "")
+        out[qid] = QuestionFitness(qid, frozenset(terms), frozenset(distinctive), weights, intent)
     return out
 
 
@@ -211,7 +237,15 @@ def select_fit_chunks(
         return list(chunks), ""
 
     need = fitness.required_hits
-    scored = [(c, *fitness.assess(c.get("text", ""))) for c in chunks]
+    candidates = []
+    for c in chunks:
+        relevant = fitness.relevant_text(c.get("text", ""))
+        if relevant:
+            candidates.append(dict(c, text=relevant))
+    if fitness.intent:
+        # 관계가 입증된 부분 근거를 최고 점수가 높은 다른 문서 때문에 버리지 않는다.
+        return sorted(candidates, key=lambda c: c["id"]), "" if candidates else "질문의 대상·내용·행동 관계를 뒷받침하는 근거 없음"
+    scored = [(c, *fitness.assess(c.get("text", ""))) for c in candidates]
     # 어휘 하나만 겹치는 근거는 후보에서 뺀다 — 우연한 낱말 하나로 초안이 시작되지 않게.
     eligible = [(c, s) for c, s, hits in scored if hits >= need and s > 0.0]
     if not eligible:

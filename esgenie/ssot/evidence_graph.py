@@ -274,15 +274,7 @@ def build_from_dart(report: Any) -> EvidenceGraph:
 
 
 def _dart_boundary(v10_node: Any) -> Boundary:
-    """DART 공시값의 경계 — 공시 규약에서 나오는 값이므로 추론임을 명시한다.
-
-    지속가능경영보고서/사업보고서의 정량 공시는 정의상 **연간·법인 전체·실적**이다.
-    이 규약을 적지 않으면 단월 고지서(2026-05, 142,560 kWh)와 연간 공시값이
-    '연도만 같다'는 이유로 교차검증 오차를 만든다.
-
-    읽어서 확인한 값이 아니라 규약에서 가정한 값이므로 세 축 전부 `inferred`에
-    남긴다 — 하류가 '원문에서 확인된 경계'와 구분할 수 있어야 한다.
-    """
+    """공시 원문의 명시된 경계를 읽는다. DART 출처만으로 연간·전사를 가정하지 않는다."""
     return derive_boundary(getattr(v10_node, "raw_text", ""),
                            str(getattr(v10_node, "period", "") or ""),
                            unit=getattr(v10_node, "unit", ""),
@@ -485,10 +477,6 @@ _GUARD_TERMS: tuple[str, ...] = (
 # 2로 둔다: report_year+1(최신 증빙)은 실적, +2 이상(2030/2035/2040 목표축)은 전망.
 _PROJECTION_YEAR_GAP: int = 2
 
-# 경계 판정에 넘기는 문서 머리말 길이. 표 제목·사업장 표기는 문서 앞머리에 있다.
-# 본문 전체를 넘기면 뒤쪽 무관한 사업장 표기가 모든 metric에 붙는다.
-_DOC_CONTEXT_CHARS: int = 400
-
 
 def _resolve_kesg_code(
     m: ExtractedMetric, *, allow_fuzzy: bool = False
@@ -631,11 +619,14 @@ def _emit_derived_emission(
 
     tco2: float | None = None
     scope = ""
+    factor_key = ""
     if node.unit.lower() == "kwh" and node.metric == "E-4-1":
-        tco2 = node.value * factors["kWh_to_tco2"]
+        factor_key = "kWh_to_tco2"
+        tco2 = node.value * factors[factor_key]
         scope = "emission_scope2"          # 구매 전력 → 간접배출
     elif node.unit.lower() == "mj" and node.metric == "E-4-1":
-        tco2 = node.value * factors["MJ_gas_to_tco2"]
+        factor_key = "MJ_gas_to_tco2"
+        tco2 = node.value * factors[factor_key]
         scope = "emission_scope1"          # 연료 연소 → 직접배출
     if tco2 is None:
         return
@@ -644,7 +635,11 @@ def _emit_derived_emission(
     derived_boundary = Boundary(
         period_year=node.boundary.period_year,
         period_start=node.boundary.period_start, period_end=node.boundary.period_end,
-        site_path=node.boundary.site_path, provenance=node.boundary.provenance,
+        site_path=node.boundary.site_path, provenance=node.boundary.provenance + ({
+            "rule": "emission_factor", "factor_key": factor_key, "factor": factors[factor_key],
+            "source": "industry_module" if industry_module else "_EMISSION_FACTORS (기존 예시 계수)",
+            "formula": f"{node.value} {node.unit} × {factors[factor_key]} = {round(tco2, 3)} tCO2eq",
+        },),
         period_text=node.boundary.period_text,
         aggregation=node.boundary.aggregation,
         coverage_months=node.boundary.coverage_months,
@@ -672,9 +667,10 @@ def _emit_derived_emission(
         unit="tCO2eq",
         period=node.period,
         source=f"derived_from:{node.id}",
-        raw_text=f"{node.raw_text} → 배출계수 환산",
+        raw_text=f"{node.raw_text} → 배출계수 환산: {node.value} {node.unit} × {factors[factor_key]} = {round(tco2, 3)} tCO2eq (추정)",
         origin=node.origin,
         source_file=node.source_file,
+        page=node.page, bbox=node.bbox,
         confidence=node.confidence * 0.95,   # 환산 불확실성 반영
         # 파생 노드는 원 노드의 period를 그대로 쓰므로 추론여부도 함께 물려받는다.
         period_inferred=node.period_inferred,

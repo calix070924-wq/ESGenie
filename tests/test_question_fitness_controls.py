@@ -106,7 +106,7 @@ def _accept() -> GroundingResult:
                            faithfulness=1.0)
 
 
-def _llm(content: str = "초안 텍스트 [N_OK]") -> MagicMock:
+def _llm(content: str = DOC_COMMUNICATION + " [N_OK]") -> MagicMock:
     llm = MagicMock()
     llm.complete.return_value = SimpleNamespace(content=content)
     return llm
@@ -225,7 +225,9 @@ class TestQuestionsAreNotGivenTheSameAnswer:
     @patch("esgenie.supplychain.drafter.LLMClient")
     def test_e7_and_e8_get_different_evidence(self, cls, ev):
         """E-7(의사소통)과 E-8(참여·구제)은 같은 근거로 같은 답을 받지 않는다."""
-        cls.return_value = _llm()
+        llm = _llm()
+        llm.complete.side_effect = lambda **kw: SimpleNamespace(content=(DOC_GRIEVANCE + " [N_GRIEV]") if "구제" in kw.get("user", "").split("아래 발췌")[0] else DOC_COMMUNICATION + " [N_COMM]")
+        cls.return_value = llm
         ev.return_value = _accept()
 
         fw = get_framework("hmc")
@@ -245,7 +247,9 @@ class TestQuestionsAreNotGivenTheSameAnswer:
     @patch("esgenie.supplychain.drafter.LLMClient")
     def test_communication_document_does_not_answer_the_remedy_question(self, cls, ev):
         """의사소통 절차서만 있으면 E-8은 부족 상태로 남는다(같은 근거 재사용 금지)."""
-        cls.return_value = _llm()
+        llm = _llm()
+        llm.complete.side_effect = lambda **kw: SimpleNamespace(content=(DOC_GRIEVANCE + " [N_GRIEV]") if "구제" in kw.get("user", "").split("아래 발췌")[0] else DOC_COMMUNICATION + " [N_COMM]")
+        cls.return_value = llm
         ev.return_value = _accept()
 
         fw = get_framework("hmc")
@@ -427,3 +431,16 @@ class TestFailOpenOnlyWhenJudgementIsImpossible:
     def test_empty_evidence_is_reported_as_such(self):
         kept, hold = select_fit_chunks([], None)
         assert kept == [] and hold == "근거 없음"
+
+
+def test_non_hmc_communication_and_remedy_synonyms():
+    from esgenie.supplychain import get_framework
+    from esgenie.knowledge.kesg_evidence_requirements import requirement_for_question
+    from esgenie.supplychain.question_fitness import build_fitness_map, select_fit_chunks
+    fw=get_framework('rba42')
+    fm=build_fitness_map(fw.questions,lambda q:requirement_for_question(q.kesg_codes,quantitative=q.qtype=='numeric'))
+    communication={'id':'renamed_a','text':'협력사와 종업원에게 행동규범을 배포하고 지속가능경영 성과를 교육한다.'}
+    remedy={'id':'renamed_b','text':'노동자위원은 노사 간담회에서 의견을 표명하고 협의에 참여한다. 익명 신고자의 고충을 접수·조사하고 보복으로부터 보호한다.'}
+    for qid,chunk in [('RBA-E-7',communication),('RBA-E-8',remedy)]:
+        kept,why=select_fit_chunks([chunk],fm[qid])
+        assert kept,why

@@ -128,8 +128,9 @@ def _derive_numeric(q, mapped, missing, dp_by_code, claims=None, evidence_index=
                 ans.status = "self_reported"
             from ..ssot.selection import scope_gaps
             gaps = scope_gaps(code, ans.boundary)
-            ans.scope_notes = list(dict.fromkeys([*ans.scope_notes, *gaps]))
-            _merge_comparison(ans, "scope_unconfirmed", "; ".join(gaps))
+            ans.scope_notes.extend(g for g in gaps if not any(g in n for n in ans.scope_notes))
+            if ans.comparison not in {"scope_unconfirmed", "mismatch"}:
+                _merge_comparison(ans, "scope_unconfirmed", "; ".join(gaps))
         refs = [evidence_index.get(e.node_id) if evidence_index is not None else e
                 for e in getattr(dp, "reference_files", [])]
         ans.reference_links = [e for e in refs if e is not None]
@@ -302,11 +303,20 @@ def _valid_link(link, code):
 
 
 def _derive_presence(q, mapped, missing, evidence_index) -> Answer:
+    req = requirement_for_question(q.kesg_codes, quantitative=False)
+    def presence(entry):
+        value = entry.get("value")
+        # 관리체계 존재형으로 바뀐 문항(C-5 등)에 구형 배출량 수치를 True/False로
+        # 재해석하지 않는다. 명시적인 설문 응답·정성 근거는 기존 경로를 유지한다.
+        if (req.kind == "policy" and not entry.get("survey_answer")
+                and not isinstance(value, bool) and _as_number(value) is not None):
+            return None
+        return _entry_presence(entry)
     present = [c for c in q.kesg_codes if c in mapped
-               and _entry_presence(mapped[c]) is not None]
+               and presence(mapped[c]) is not None]
     if present:
         ev = _collect_evidence(present, mapped, evidence_index)
-        values = [_entry_presence(mapped[c]) for c in present]
+        values = [presence(mapped[c]) for c in present]
         surveys = [mapped[c]["survey_answer"] for c in present if mapped[c].get("survey_answer")]
         # 명시적인 부정은 항상 보존한다. 독립 문서와의 모순은 별도 검토 대상이다.
         value = False if False in values else True
