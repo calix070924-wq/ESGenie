@@ -591,7 +591,8 @@ def _link_cross_check(graph: EvidenceGraph, node: EvidenceNode) -> None:
                 status, reason = "not_comparable", f"단위 차원 상이({node.unit} ↔ {other.unit})"
             else:
                 # 순서가 바뀌어도 같은 분모: 독립 증빙 비교는 더 작은 절댓값 기준.
-                diff_pct = _pct_diff(max(abs(value), abs(other.value)), min(abs(value), abs(other.value)))
+                # 분자는 부호를 보존한 원값의 차이다 — -10 TJ와 +10 TJ는 오차 0%가 아니다.
+                diff_pct = _signed_pct_diff(value, other.value)
                 status = "mismatch" if diff_pct > 5.0 else "compared"
                 reason = f"교차검증 오차 {diff_pct:.1f}%"
         graph.add_edge(EvidenceEdge(
@@ -680,10 +681,17 @@ def _emit_derived_emission(
     graph.add_node(derived)
 
 
-def _pct_diff(a: float, b: float) -> float:
-    if b == 0:
-        return 0.0 if a == 0 else 100.0
-    return abs(a - b) / abs(b) * 100.0
+def _signed_pct_diff(a: float, b: float) -> float:
+    """순서에 무관한 분모(더 작은 절댓값)와 부호를 보존한 분자로 오차율을 낸다.
+
+    종전에는 분자·분모 모두 절댓값으로 바꿔 넣어 부호가 지워졌다. 그래서 같은 범위의
+    `-10 TJ`와 `+10 TJ`가 '오차 0% · 대조 완료'로 기록되고 채택값이 verified까지
+    갔다(2026-09-21 재검토 R4). 같은 부호의 과대·과소 비교값은 종전과 같다.
+    """
+    base = min(abs(a), abs(b))
+    if base == 0:
+        return 0.0 if a == b else 100.0
+    return abs(a - b) / base * 100.0
 
 
 def _make_ocr_node_id(

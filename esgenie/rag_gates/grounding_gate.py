@@ -34,6 +34,15 @@ _G5_100_PERCENT_RE = re.compile(
     r"100\s*%\s*(" + "|".join(re.escape(w) for w in _100_PERCENT_ABSOLUTES) + r")"
 )
 
+# 인증 취득 주장 — 인증 종류(name)와 부정·계획 문맥(gap 이후)을 함께 본다.
+# name은 '인증' 바로 앞의 어휘 묶음이다(ISMS, ISO 14001, 정보보호 관리체계 …).
+_CERT_COMPLETION_RE = re.compile(
+    r"(?P<name>[0-9A-Za-z가-힣][0-9A-Za-z가-힣\s\-()·]{0,24}?)?인증"
+    r"(?P<gap>[^.!?\n]{0,12}?)(?:취득|획득|완료|받았|받아)"
+)
+_CERT_NOT_DONE_RE = re.compile(r"않|못|미취득|없|불가|취소|반납|실패")
+_CERT_PENDING_RE = re.compile(r"예정|준비|계획|목표|추진|신청")
+
 
 def evaluate_grounding(answer_text: str, cited_chunks: list[dict[str, Any]]) -> GroundingResult:
     sentences = parse_cited_sentences(answer_text)
@@ -71,14 +80,14 @@ def evaluate_grounding(answer_text: str, cited_chunks: list[dict[str, Any]]) -> 
 
     hard_fails: list[str] = []
     soft_flags: list[str] = []
-    if re.search(r"인증.{0,12}(?:취득|획득|완료|받았|받아)", strip_citation_markers(answer_text)):
-        completed = re.compile(r"인증.{0,12}(?:취득|획득|완료|받았|받아)")
-        for sent in sentences:
-            if not completed.search(sent.clean_text):
-                continue
-            cited_texts = [chunk_map[cid] for cid in sent.cited_chunk_ids if cid in chunk_map]
-            if not any(completed.search(t) and not re.search(r"인증.{0,12}(?:취득|획득).{0,10}(?:예정|준비|계획|목표)", t) for t in cited_texts):
-                soft_flags.append("G5_unproven_certification_completion")
+    for sent in sentences:
+        claimed = _certification_claims(sent.clean_text)
+        if not claimed:
+            continue
+        cited_texts = [chunk_map[cid] for cid in sent.cited_chunk_ids if cid in chunk_map]
+        if (not all(any(_certification_acquired(name, t) for t in cited_texts) for name in claimed)
+                and "G5_unproven_certification_completion" not in soft_flags):
+            soft_flags.append("G5_unproven_certification_completion")
     if uncited:
         hard_fails.append("G1_uncited_claims")
     if orphan_numbers:
@@ -101,6 +110,46 @@ def evaluate_grounding(answer_text: str, cited_chunks: list[dict[str, Any]]) -> 
         soft_flags=soft_flags,
         faithfulness=faithfulness,
     )
+
+
+def _certification_claims(sentence: str) -> list[str]:
+    """문장이 '어떤 인증을 취득했다'고 주장하는지 — 인증 종류를 정규화해 돌려준다."""
+    names = []
+    for m in _CERT_COMPLETION_RE.finditer(sentence):
+        if _CERT_NOT_DONE_RE.search(_cert_context(m, sentence)):
+            continue            # 주장 자체가 '취득하지 않았다'면 완료 주장이 아니다.
+        name = _normalize_certification(m.group("name") or "")
+        if name and name not in names:
+            names.append(name)
+    return names
+
+
+def _certification_acquired(name: str, text: str) -> bool:
+    """청크 원문이 **같은 인증의 실제 취득**을 진술하는가.
+
+    종전에는 인용 청크 어디든 `인증 … 취득`이 있으면 인정했다. 그래서
+    `ISMS 인증을 취득하지 않았다`(부정형)와 `ISO 인증을 취득했다`(다른 인증)가
+    `ISMS 인증을 취득했다`의 근거로 통과했다(2026-09-21 재검토 R3). 준비·신청
+    예정 진술을 막는 기존 방어는 유지한다.
+    """
+    for m in _CERT_COMPLETION_RE.finditer(text):
+        context = _cert_context(m, text)
+        if _CERT_NOT_DONE_RE.search(context) or _CERT_PENDING_RE.search(context):
+            continue
+        source = _normalize_certification(m.group("name") or "")
+        if source and (source in name or name in source):
+            return True
+    return False
+
+
+def _cert_context(match: re.Match[str], text: str) -> str:
+    """취득 진술과 그 뒤 어미 — '취득하지 않았다', '취득 예정'을 같은 창에서 읽는다."""
+    return match.group(0) + text[match.end():match.end() + 12]
+
+
+def _normalize_certification(name: str) -> str:
+    """인증명 비교용 정규화. 공백·기호를 지우고 대문자로 맞춘다."""
+    return re.sub(r"[\s\-_()·,]", "", name).upper()
 
 
 def _check_numbers_and_units(

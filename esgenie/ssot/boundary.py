@@ -751,6 +751,23 @@ def compatible_sites(a, b, *, inclusion=False):
     return bool(a.site and b.site) and (pa == pb or inclusion and (pa == pb[:len(pa)] or pb == pa[:len(pb)]))
 
 
+def site_covers(total, part):
+    """total의 조직 범위가 part의 범위를 실제로 포괄하는가 — 포함 판정은 방향이 있다.
+
+    `compatible_sites(..., inclusion=True)`는 '같은 공장 계통인지'만 본다(제한적
+    합산에서 공장 전력 + 그 공장 라인 가스를 허용하는 용도). 어떤 총량이 다른 자료를
+    구성요소로 **제외**할 수 있는지는 방향이 있어서 같은 판정을 쓸 수 없다. 라인 총량
+    3 TJ가 공장 전체 전력 6 TJ·가스 4 TJ를 '총량에 포함된 구성요소'로 지우던 결함
+    (2026-09-21 재검토 R2)이 이 방향 판정에서 갈린다.
+    """
+    if "unknown" in (total.site_scope, part.site_scope) or total.site_scope != part.site_scope:
+        return False                    # 전사 ↔ 사업장 혼재는 포괄 관계를 입증하지 않는다.
+    if total.site_scope == "entity":
+        return True
+    tp, pp = total.site_path or (total.site,), part.site_path or (part.site,)
+    return bool(total.site and part.site) and tp == pp[:len(tp)]
+
+
 def contains_measure(total, part):
     if total == "energy_total":
         return part.startswith(("electricity_", "fuel_")) or part.startswith("renewable_")
@@ -780,6 +797,11 @@ def claim_scope_status(code, boundary, completeness, raw="", claim_boundary=None
 # ====================================================================
 # 합산 가능성 — 이중계상 방어
 # ====================================================================
+
+# 독립 증빙의 같은 측정 대상 값이 어긋난 경우의 제외 사유. 파생 배출량 선택(selection)이
+# 같은 문자열을 보고 상충 사실을 이어받는다 — 두 곳에 나눠 적으면 다시 갈린다.
+SOURCE_CONFLICT_REASON = "독립 증빙의 같은 측정 대상 값 상충 — 비교 판정 확인, 합산 제외"
+
 
 @dataclass
 class SumDecision:
@@ -837,6 +859,9 @@ def plan_sum(items: Iterable[Any], *, boundary_of=None, unit_of=None, report_yea
         energy_unit = convert_to_common(1, normalize_unit(unit_get(n)) or unit_get(n), "TJ") is not None
         return (not energy_unit, b.site_scope == "unknown", not b.period_start,
                 b.aggregation in ("monthly_average", "daily_average"),
+                # 넓은 조직 범위를 먼저 본다. 라인 총량이 공장 전체 자료보다 앞서면
+                # 좁은 범위 값이 기준이 되어 넓은 범위 자료가 밀려난다(재검토 R2).
+                len(b.site_path),
                 b.measure_kind != "energy_total", b.measure_kind != "electricity_total",
                 abs((b.period_year or 0) - report_year) if report_year else -(b.period_year or 0),
                 b.period_start, getattr(n, "id", ""))
@@ -880,16 +905,26 @@ def plan_sum(items: Iterable[Any], *, boundary_of=None, unit_of=None, report_yea
     for n, b in staged:
         parent = next(((x, xb) for x, xb in staged if x is not n and
                        contains_measure(xb.measure_kind, b.measure_kind) and
-                       compatible_sites(xb, b, inclusion=True) and same_period(xb, b)[0] == "compared"), None)
+                       site_covers(xb, b) and same_period(xb, b)[0] == "compared"), None)
         if parent:
             decision.blocked.append((n, f"{parent[0].id} 총량에 포함된 구성요소 — 이중계상 방지"))
+            continue
+        # 포괄 관계가 없는데 측정 대상이 겹치는 값은 서로 더할 수 없다. 라인 총에너지와
+        # 공장 전체 전력·가스는 어느 쪽도 상대를 포괄하지 않으므로 3 TJ로 대체하는 것도,
+        # 13 TJ로 더하는 것도 틀렸다 — 좁은 범위 값은 참고 근거로 남긴다(재검토 R2).
+        overlap = next(((x, xb) for x, xb in selected
+                        if contains_measure(xb.measure_kind, b.measure_kind)
+                        or contains_measure(b.measure_kind, xb.measure_kind)), None)
+        if overlap:
+            decision.blocked.append((n, f"{overlap[0].id}와 측정 대상이 겹치고 조직 범위 포괄 "
+                                        f"관계 미확인 — 이중계상 방지, 합산 제외"))
             continue
         prior = next(((x, xb) for x, xb in selected if xb.measure_kind == b.measure_kind), None)
         if prior:
             x, xb = prior
             nv = convert_to_common(float(n.value), normalize_unit(unit_get(n)) or unit_get(n), normalize_unit(unit_get(x)) or unit_get(x))
             same = nv is not None and abs(nv-float(x.value)) <= max(abs(float(x.value))*1e-9, 1e-9)
-            why = "동일 측정값 중복 — 합산 제외" if same else "독립 증빙의 같은 측정 대상 값 상충 — 비교 판정 확인, 합산 제외"
+            why = "동일 측정값 중복 — 합산 제외" if same else SOURCE_CONFLICT_REASON
             decision.blocked.append((n, why))
             continue
         if b.measure_kind in procurement:
@@ -930,6 +965,9 @@ __all__ = [
     "merge_boundaries",
     "is_ratio",
     "comparable",
+    "compatible_sites",
+    "site_covers",
     "plan_sum",
+    "SOURCE_CONFLICT_REASON",
     "SumDecision",
 ]

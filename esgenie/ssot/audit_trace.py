@@ -119,7 +119,7 @@ def build_data_points(
 ) -> list[DataPoint]:
     """최종 원장 선택을 소비한다. 결정 메타데이터가 없는 구버전만 공용 규칙으로 선택."""
     from .boundary import Boundary
-    from .selection import WHOLE_SCOPE_CODES, resolve_fact, finite_number
+    from .selection import SOURCE_CONFLICT_NOTE, WHOLE_SCOPE_CODES, resolve_fact, finite_number
     points = []
     for code in target_codes:
         fact = resolve_fact(graph, code)
@@ -148,6 +148,11 @@ def build_data_points(
             comparison, comparison_reason = cross, detail
         if scope_incomplete and _COMPARISON_RANK.get(comparison, -1) < _COMPARISON_RANK["scope_unconfirmed"]:
             comparison, comparison_reason = "scope_unconfirmed", "; ".join(fact.scope_notes)
+        # 파생값은 원측정값의 상충을 물려받는다 — 환산했다는 이유로 상충이 사라지면
+        # 같은 사실이 E-4-1(불일치)과 E-3-1(범위 확인)로 갈린다(§4-2, 재검토 R1).
+        if "source_conflict" in flags and _COMPARISON_RANK.get(comparison, -1) < _COMPARISON_RANK["mismatch"]:
+            conflicts = [n for n in fact.scope_notes if SOURCE_CONFLICT_NOTE in n]
+            comparison, comparison_reason = "mismatch", "; ".join(conflicts) or comparison_reason
         # 실제 불일치는 위험 점수가 0.4라는 이유만으로 자가신고에 머물 수 없다(§4-2).
         # 비교 불가·범위 확인 필요는 불일치가 아니므로 unverified로 올리지 않는다.
         if (incomplete and not scope_only or finite_number(fact.value) is None or d1 >= 0.5

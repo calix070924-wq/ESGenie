@@ -252,6 +252,94 @@ def test_R27_real_multipage_clause_locator_and_unknown(tmp_path):
     assert '위치' in ' '.join(draft_body(a)[1])
 
 
+# ====================================================================
+# 2026-09-21 후속 재검토(ba0ea8c) R1~R4 — 검토자가 고정한 결함의 정상 동작 회귀
+# ====================================================================
+
+def separate_documents(second_value):
+    """같은 측정 대상을 담은 별도 발행 문서 두 건. 내용 지문이 달라 복사본이 아니다."""
+    a = extraction("a.pdf", "사용전력량", 100, "kWh")
+    b = extraction("b.pdf", "사용전력량", second_value, "kWh")
+    a.raw_text = "사업장: 제1공장\n문서번호: 원본 고지서 A"
+    b.raw_text = "사업장: 제1공장\n문서번호: 검토용 집계 B"
+    return [a, b]
+
+
+@pytest.mark.parametrize("second,comparison", [(100, "scope_unconfirmed"), (200, "mismatch")])
+def test_followup_R1_derived_emission_follows_source_measurement(second, comparison):
+    _, points, _ = pipeline(separate_documents(second))
+    single = pipeline([extraction("single.pdf", "사용전력량", 100, "kWh")])[1]
+    assert points["E-4-1"].value == pytest.approx(.00036)
+    assert points["E-3-1"].value == pytest.approx(single["E-3-1"].value)   # 두 번 더하지 않는다
+    assert points["E-3-1"].comparison == comparison
+    assert any("원측정값" in n for n in points["E-3-1"].scope_notes)
+    if second != 100:
+        assert points["E-3-1"].verification == "unverified"
+
+
+def test_followup_R2_line_total_does_not_absorb_factory_rows():
+    factory = [extraction("b_power.pdf", "총 전력 사용량", 6, "TJ", "2026년 연간", "제1공장"),
+               extraction("c_gas.pdf", "도시가스 사용량", 4, "TJ", "2026년 연간", "제1공장")]
+    line = extraction("a_total.pdf", "총 에너지 사용량", 3, "TJ", "2026년 연간", "제1공장 도장라인")
+    for order in ([line, *factory], [*factory[::-1], line]):
+        dp = energy(order)
+        assert dp.value == 10                                    # 3 TJ 대체도 13 TJ 합산도 금지
+        assert [e.file_name for e in dp.evidence_files] == ["b_power.pdf", "c_gas.pdf"]
+        assert any("포괄 관계 미확인" in n for n in dp.scope_notes)
+
+
+def test_followup_R2_site_containment_has_direction():
+    from esgenie.ssot.boundary import compatible_sites, site_covers
+    factory = derive_boundary("총 전력 사용량", "2026년 연간", doc_context="제1공장")
+    line = derive_boundary("총 에너지 사용량", "2026년 연간", doc_context="제1공장 도장라인")
+    assert compatible_sites(factory, line, inclusion=True)       # 제한적 합산 자격은 유지
+    assert site_covers(factory, line) and not site_covers(line, factory)
+
+
+@pytest.mark.parametrize("source,supported", [
+    ("ISMS 인증을 취득했다.", True),
+    ("2025년 정보보호 ISMS 인증을 취득하여 운영 중이다.", True),
+    ("ISMS 인증을 취득하지 않았다.", False),
+    ("ISMS 인증 미취득 상태다.", False),
+    ("ISO 인증을 취득했다. ISMS 인증은 준비 중이다.", False),
+    ("ISMS 인증을 준비하며 하반기 신청 예정이다.", False),
+])
+def test_followup_R3_certification_completion_needs_same_certificate(source, supported):
+    from esgenie.rag_gates.grounding_gate import evaluate_grounding
+    gate = evaluate_grounding("ISMS 인증을 취득했다. [S]", [{"id": "S", "text": source}])
+    assert bool(gate.soft_flags) is not supported
+
+
+@pytest.mark.parametrize("source", ["ISMS 인증을 취득하지 않았다.",
+                                    "ISO 인증을 취득했다. ISMS 인증은 준비 중이다."])
+def test_followup_R3_unproven_certification_is_not_draft_ready(source):
+    from unittest.mock import MagicMock
+    from esgenie.supplychain.drafter import _attempt_draft
+    from esgenie.supplychain.schema import Answer
+    answer = Answer("controlled-q", "정책", "인증 현황", None, "insufficient")
+    llm = MagicMock()
+    llm.complete.return_value = SimpleNamespace(content="ISMS 인증을 취득했다. [S]")
+    _attempt_draft(answer, [{"id": "S", "text": source, "source_file": "policy.pdf", "page": 0}],
+                   llm, max_retries=0)
+    assert answer.status != "draft_ready"
+
+
+def test_followup_R4_opposite_signs_are_not_zero_difference():
+    g, points, _ = pipeline([extraction("a.pdf", "총 에너지 사용량", -10, "TJ", "2026년 연간", "전사"),
+                             extraction("b.pdf", "총 에너지 사용량", 10, "TJ", "2026년 연간", "전사")])
+    edge = next(e for e in g.edges if e.edge_type == "cross_check")
+    assert (edge.comparison, edge.difference_pct) == ("mismatch", 200.0)
+    assert points["E-4-1"].verification != "verified"
+
+
+@pytest.mark.parametrize("a,b,expected", [(0, 0, 0.), (0, 10, 100.), (10, 0, 100.),
+                                          (-10, 10, 200.), (10, -10, 200.), (10, 10, 0.),
+                                          (100, 200, 100.), (200, 100, 100.)])
+def test_followup_R4_difference_is_order_independent_and_signed(a, b, expected):
+    from esgenie.ssot.evidence_graph import _signed_pct_diff
+    assert _signed_pct_diff(a, b) == pytest.approx(expected)
+
+
 def test_R27_single_page_still_requires_located_quote(tmp_path):
     import fitz
     from esgenie.ssot.ocr_router import ExtractedClause, _resolve_clause_pages

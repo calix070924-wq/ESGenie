@@ -66,6 +66,46 @@ def _is_derived(node):
     return str(node.source).startswith("derived_from:")
 
 
+# 파생 배출량이 원측정값의 상충을 물려받았음을 알리는 검토 사유 표지.
+# audit_trace가 이 표지로 파생 배출량의 비교 상태를 원측정값과 맞춘다.
+SOURCE_CONFLICT_NOTE = "원측정값 상충"
+
+
+def _derived_parent(graph, node):
+    """파생 노드의 원측정값 노드. `source='derived_from:<node_id>'` 계약을 읽는다."""
+    source = str(node.source)
+    if not source.startswith("derived_from:"):
+        return None
+    return graph.nodes.get(source.split("derived_from:", 1)[1])
+
+
+def derived_source_exclusions(graph, nodes):
+    """원측정값이 합산에서 제외된 파생 후보와 그 사유.
+
+    파생 배출량은 환산 결과일 뿐이므로 **원측정값의 채택·중복·상충 판정을 따라야**
+    한다. 같은 사용전력량을 담은 별도 문서 두 건을 E-4-1에서는 중복·상충으로 걸러
+    0.00036 TJ를 유지하면서 E-3-1에서는 두 환산값을 더해 0.096 tCO2eq를 만들던
+    결함(2026-09-21 재검토 R1)이 여기서 갈린다. 계수 불확실성과는 별개 문제다.
+    """
+    from .boundary import SOURCE_CONFLICT_REASON
+    parents = {n.id: _derived_parent(graph, n) for n in nodes}
+    blocked: dict[str, str] = {}
+    for metric in sorted({p.metric for p in parents.values() if p}):
+        decision = plan_energy_selection(graph, metric)
+        for node, why in (decision.blocked if decision else ()):
+            blocked[node.id] = why
+    excluded = []
+    for node in nodes:
+        parent = parents.get(node.id)
+        why = blocked.get(parent.id) if parent else None
+        if not why:
+            continue
+        label = parent.source_file or parent.id
+        excluded.append((node, f"{label} {SOURCE_CONFLICT_NOTE} — {why}"
+                         if why == SOURCE_CONFLICT_REASON else f"{label} 원측정값 {why}"))
+    return excluded
+
+
 def select_fact_nodes(graph, code):
     """원장 미실행/구버전의 공용 대체 선택. 총량 우선, 합산 허용 코드는 Scope1+2뿐."""
     from ..survey import is_survey
@@ -77,6 +117,9 @@ def select_fact_nodes(graph, code):
         derived = [n for n in nodes if _is_derived(n)
                    and classify_value_role(code, n, report_year=year) != "target"]
         if derived:
+            # 원측정값이 중복·상충으로 제외됐으면 그 환산값도 더하지 않는다.
+            dropped = {n.id for n, _ in derived_source_exclusions(graph, derived)}
+            derived = [n for n in derived if n.id not in dropped] or derived
             period = min({n.period for n in derived}, key=lambda p: (abs(p-year), -p)) if year else max(n.period for n in derived)
             from .boundary import same_period, compatible_sites
             candidates = sorted((n for n in derived if n.period == period), key=lambda n: n.id)
@@ -338,6 +381,12 @@ def finalize_ledger(result, graph):
                 entry.update(value=value, unit=unit, source_tier="derived")
                 flags = sorted(set(flags + fact.flags + ([unit_flag] if unit_flag else [])))
                 chosen = [graph.nodes[nid] for nid in fact.representative_node_ids]
+                # 원측정값 쪽 제외·상충 사유를 파생 배출량의 근거와 검토 사유에 남긴다.
+                excluded = derived_source_exclusions(graph, derived)
+                reference = [n for n, _ in excluded]
+                sum_notes = [f"{code}: 파생 배출량 제외 — {why}" for _, why in excluded]
+                if any(SOURCE_CONFLICT_NOTE in why for _, why in excluded):
+                    flags.append("source_conflict")
             else:
                 chosen = []
         else:
