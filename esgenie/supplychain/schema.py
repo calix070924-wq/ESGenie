@@ -142,6 +142,8 @@ class Answer:
     completeness: str = ""            # total | partial | unknown | ""
     comparison: str = ""              # compared|mismatch|not_comparable|scope_unconfirmed
     comparison_reason: str = ""
+    boundary: dict[str, Any] = field(default_factory=dict)
+    comparisons: list[dict[str, Any]] = field(default_factory=list)
     scope_notes: list[str] = field(default_factory=list)
     # 보완 대상 근거 — 값 산정에 쓰이지 않았다. evidence_links와 섞지 않는다.
     reference_links: list[EvidenceLink] = field(default_factory=list)
@@ -183,7 +185,8 @@ class Answer:
     @property
     def answered(self) -> bool:
         """집계용 — 실제로 응답이 채워졌는가(부족/미채움 제외)."""
-        return self.status in ("verified", "self_reported", "flagged")
+        return (self.status in ("verified", "self_reported", "flagged")
+                and self.value is not None and self.value != "" and self.value != [])
 
     def to_dict(self) -> dict[str, Any]:
         d = asdict(self)
@@ -222,7 +225,9 @@ class ResponseSheet:
         denom = self.denominator
         if denom == 0:
             return 0.0
-        n = sum(1 for a in self.answers if a.status in statuses)
+        n = sum(1 for a in self.answers if
+                (a.answered if statuses == _AUTO_STATUSES else
+                 a.status in statuses or statuses == _PENDING_STATUSES and a.status in _AUTO_STATUSES and not a.answered))
         return round(100.0 * n / denom, 1)
 
     @property

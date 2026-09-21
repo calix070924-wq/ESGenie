@@ -42,6 +42,7 @@ from __future__ import annotations
 import re
 from dataclasses import dataclass, field, asdict, fields
 from typing import Any, Iterable, Literal
+from .measurement_context import period_bounds, header_context, site_path
 
 # ====================================================================
 # 축 값 집합
@@ -235,6 +236,12 @@ class Boundary:
     denominator_kind: str = "unknown"
     inferred: tuple[str, ...] = ()
     source_quote: str = ""
+    period_year: int | None = None
+    period_start: str = ""
+    period_end: str = ""
+    site_path: tuple[str, ...] = ()
+    provenance: tuple[dict[str, Any], ...] = ()
+    review_notes: tuple[str, ...] = ()
 
     # ── 직렬화 ───────────────────────────────────────────────────────
     def to_dict(self) -> dict[str, Any]:
@@ -251,8 +258,9 @@ class Boundary:
             return cls()
         names = {f.name for f in fields(cls)}
         kw = {k: v for k, v in d.items() if k in names}
-        if "inferred" in kw:
-            kw["inferred"] = tuple(kw["inferred"] or ())
+        for name in ("inferred", "site_path", "provenance", "review_notes"):
+            if name in kw:
+                kw[name] = tuple(kw[name] or ())
         return cls(**kw)
 
     # ── 조회 ─────────────────────────────────────────────────────────
@@ -286,6 +294,8 @@ class Boundary:
             parts.append("전사")
         if self.measure:
             parts.append(self.measure)
+        if self.denominator:
+            parts.append(f"분모: {self.denominator}")
         if self.completeness == "partial":
             parts.append("부분")
         elif self.completeness == "total":
@@ -389,8 +399,9 @@ def _detect_aggregation_one(text: str) -> tuple[str, int | None]:
         return "period_total", months or 6
     if _QUARTER_RE.search(normalized):
         return "period_total", months or 3
-    if _BILL_RANGE_RE.search(normalized) or _MONTH_ONLY_RE.search(normalized):
-        return "monthly", 1
+    _, start, end, agg, span = period_bounds(text)
+    if start and end:
+        return agg, span
     if months:
         return "period_total", months
     return "unknown", months
@@ -515,7 +526,8 @@ def merge_boundaries(
         aggregation=_same("aggregation", "unknown"),
         coverage_months=_same("coverage_months", None),
         basis=_same("basis", "unknown"),
-        site=_same("site", ""),
+        site=(_same("site", "") or (" / ".join(dict.fromkeys(b.site for b in pool))
+              if all(compatible_sites(pool[0], b, inclusion=True) for b in pool) else "")),
         site_scope=_same("site_scope", "unknown"),
         measure=measure or " + ".join(dict.fromkeys(b.measure for b in pool if b.measure)),
         measure_kind=measure_kind or _same("measure_kind", "unknown"),
@@ -524,6 +536,11 @@ def merge_boundaries(
         denominator_kind=_same("denominator_kind", "unknown"),
         inferred=tuple(sorted({axis for b in pool for axis in b.inferred})),
         source_quote=" / ".join(dict.fromkeys(quotes)),
+        period_year=_same("period_year", None),
+        period_start=_same("period_start", ""), period_end=_same("period_end", ""),
+        site_path=_same("site_path", ()),
+        provenance=tuple(p for b in pool for p in b.provenance),
+        review_notes=tuple(dict.fromkeys(n for b in pool for n in b.review_notes)),
     )
 
 
@@ -543,21 +560,51 @@ def derive_boundary(
     """
     hint = str(metric_hint or "")
     period_text = str(period_raw or "").strip()
-    context = str(doc_context or "")
+    context = header_context(doc_context)
     joined = f"{hint} {period_text} {context}"
 
-    measure_kind, measure = detect_measure(f"{hint} {context}")
+    # 분모의 어휘를 분자의 측정 대상으로 고르지 않는다.
+    numerator = re.split(r"대비|중\s", hint)[-1] if is_ratio(unit, hint) else hint
+    measure_kind, measure = detect_measure(numerator)
+    if not measure_kind:
+        measure_kind, measure = detect_measure(context)
     # 고지서의 '사용열량'은 그 문서가 도시가스 고지서일 때 도시가스 사용량과 **같은
     # 물리량의 다른 표기**다. 같은 kind로 묶어야 m³ + MJ 이중계상이 막힌다.
     if measure_kind == "fuel_heat" and re.search(r"(?:도시가스|가스|lng|천연가스)",
-                                                 _norm(f"{hint} {context}")):
+                                                 _norm(f"{hint} {context} {doc_type}")):
         measure_kind = "fuel_city_gas"
+    if measure_kind == "fuel_heat" and doc_type == "gas_bill":
+        measure_kind = "fuel_city_gas"
+    # 고지서의 청구월보다 명시적 사용기간 우선. 미래 목표 행에는 적용하지 않는다.
+    usage = re.search(r"사용기간[^\n]*\n?([^\n]*)", context)
+    if usage and detect_basis(f"{hint} {period_text}") == "actual":
+        y, start, end, _, _ = period_bounds(usage[0])
+        if start and end:
+            period_text = f"{start}~{end}"
+    elif not period_bounds(period_text)[1] and context and not re.search(r"목표|계획|이후|예정", hint + period_text):
+        y, start, end, _, _ = period_bounds(context)
+        if start and end and (not period_bounds(period_text)[0] or period_bounds(period_text)[0] == y):
+            period_text = f"{start}~{end}"
+    year, start, end, date_agg, date_months = period_bounds(period_text)
+    if not start:
+        hinted = period_bounds(f"{period_text} {hint}")
+        if hinted[1]:
+            year, start, end, date_agg, date_months = hinted
     aggregation, months = detect_aggregation(period_text, also=hint)
+    if aggregation == "unknown" and start:
+        aggregation, months = date_agg, date_months
     basis = detect_basis(f"{period_text} {hint}")
-    site, site_scope = detect_site(f"{hint} {context}")
+    site, site_scope = detect_site(hint)
+    site_text = hint
+    if site_scope == "unknown":
+        site, site_scope = detect_site(context)
+        site_text = context
+    path = site_path(site_text)
+    if path and site_scope == "site":
+        site = " ".join(path)
     ratio = is_ratio(unit, hint)
     denominator, denominator_kind = detect_denominator(joined)
-    completeness = detect_completeness(f"{hint} {context}", measure_kind=measure_kind)
+    completeness = detect_completeness(hint, measure_kind=measure_kind)
 
     # 비율은 분모가 곧 완전성 판정의 근거다. 분모를 읽지 못한 구성비는 부분이다.
     if ratio and completeness == "unknown" and measure_kind in COMPONENT_SOURCE_KINDS:
@@ -565,7 +612,7 @@ def derive_boundary(
 
     # '기타 재생에너지'는 계열 이름을 쓰지만 표의 잔여 행이다. 계열 총량으로 남기면
     # 구성요소 합산 차단(§plan_sum 4단계)이 거꾸로 걸린다 — 잔여 kind로 내린다.
-    if measure_kind in FAMILY_TOTAL_KINDS and _has_residual(_norm(f"{hint} {context}")):
+    if measure_kind in FAMILY_TOTAL_KINDS and _has_residual(_norm(hint)):
         measure_kind = measure_kind[: -len("_total")] + "_residual"
         completeness = "partial"
 
@@ -595,6 +642,9 @@ def derive_boundary(
         denominator_kind=denominator_kind,
         inferred=tuple(inferred),
         source_quote=f"{hint} ({period_text})".strip() if hint else period_text,
+        period_year=year, period_start=start, period_end=end, site_path=path,
+        provenance=({"source": "row", "quote": hint, "period": str(period_raw or ""), "method": "rule"},
+                    *(({"source": "document_header", "quote": context, "method": "rule"},) if context else ())),
     )
     if base is None:
         return derived
@@ -652,6 +702,13 @@ def comparable(a: Boundary | dict | None, b: Boundary | dict | None) -> tuple[st
                 f"{_AGG_LABEL.get(bb.aggregation, bb.aggregation)})")
     if ba.coverage_months and bb.coverage_months and ba.coverage_months != bb.coverage_months:
         return "not_comparable", f"대상 기간 길이 상이({ba.coverage_months}개월 ↔ {bb.coverage_months}개월)"
+    period_status, period_reason = same_period(ba, bb)
+    if period_status != "compared":
+        return period_status, period_reason
+    if ba.denominator_kind != bb.denominator_kind:
+        if "unknown" in (ba.denominator_kind, bb.denominator_kind):
+            return "scope_unconfirmed", "비율 분모 미상 — 총전력/총에너지 분모 확인 필요"
+        return "not_comparable", f"비율 분모 상이({ba.denominator_kind} ↔ {bb.denominator_kind})"
 
     # (4) 사업장 범위 — 다르면 비교 불가, 한쪽이라도 미상이면 확인 필요.
     if ba.site and bb.site and ba.site != bb.site:
@@ -664,8 +721,60 @@ def comparable(a: Boundary | dict | None, b: Boundary | dict | None) -> tuple[st
     # (5) 총량 ↔ 부분값.
     if {ba.completeness, bb.completeness} == {"total", "partial"}:
         return "not_comparable", "총량 ↔ 부분값"
+    if ba.aggregation == "unknown" or bb.aggregation == "unknown":
+        return "scope_unconfirmed", "기간 집계 방식 미상"
+    if ba.measure_kind == "unknown" or bb.measure_kind == "unknown":
+        return "scope_unconfirmed", "측정 대상 미상"
 
     return "compared", "경계 일치"
+
+
+def same_period(a, b):
+    a, b = Boundary.from_dict(a), Boundary.from_dict(b)
+    if a.period_year and b.period_year and a.period_year != b.period_year:
+        return "not_comparable", f"실제 대상 기간 상이({a.period_text} ↔ {b.period_text})"
+    if not all((a.period_start, a.period_end, b.period_start, b.period_end)):
+        return "scope_unconfirmed", "실제 사용기간 시작·종료 미상 — 기간 확인 필요"
+    if (a.period_start, a.period_end, a.aggregation) != (b.period_start, b.period_end, b.aggregation):
+        return "not_comparable", f"실제 대상 기간·집계 상이({a.period_text} ↔ {b.period_text})"
+    return "compared", "실제 사용기간 일치"
+
+
+def compatible_sites(a, b, *, inclusion=False):
+    if "unknown" in (a.site_scope, b.site_scope):
+        return False
+    if a.site_scope != b.site_scope:
+        return False
+    if a.site_scope == "entity":
+        return True
+    pa, pb = a.site_path or (a.site,), b.site_path or (b.site,)
+    return bool(a.site and b.site) and (pa == pb or inclusion and (pa == pb[:len(pa)] or pb == pa[:len(pb)]))
+
+
+def contains_measure(total, part):
+    if total == "energy_total":
+        return part.startswith(("electricity_", "fuel_")) or part.startswith("renewable_")
+    if total == "electricity_total":
+        return part.startswith("electricity_") and part != total or part.startswith("renewable_")
+    # 재생에너지 조달수단과 실물 사용량의 포함/상쇄는 이름만으로 입증할 수 없다.
+    return False
+
+
+def claim_scope_status(code, boundary, completeness, raw="", claim_boundary=None):
+    """주장값 계산 전에 질문의 전체 범위와 증빙 경계가 호환되는지 판정한다."""
+    b = Boundary.from_dict(boundary)
+    c = derive_boundary(raw, raw, base=claim_boundary)
+    for attr in ("period_year", "period_start", "period_end", "denominator_kind"):
+        cv, bv = getattr(c, attr), getattr(b, attr)
+        if cv not in (None, "", "unknown") and bv not in (None, "", "unknown") and cv != bv:
+            return "not_comparable", f"주장·증빙 {attr} 상이({cv} ↔ {bv})"
+    if c.site_scope != "unknown" and b.site_scope != "unknown" and not compatible_sites(c, b):
+        return "not_comparable", "주장·증빙 조직/사업장 범위 상이"
+    if completeness == "partial" or code in {"E-4-1", "E-4-2"} and completeness != "total":
+        if claim_boundary and comparable(b, c)[0] == "compared":
+            return "compared", "명시된 동일 부분 범위"
+        return "scope_unconfirmed", f"전체 주장에 필요한 기간·사업장·분모 미확인 — {'부분값' if completeness == 'partial' else '미확정값'} 증빙 {b.label() or '경계 미기록'}"
+    return "compared", ""
 
 
 # ====================================================================
@@ -716,109 +825,73 @@ def _unit_groups(pool: list[tuple[Any, Boundary]], unit_of) -> list[list[tuple[A
     return groups
 
 
-def plan_sum(items: Iterable[Any], *, boundary_of=None, unit_of=None) -> SumDecision:
-    """합산해도 되는 값만 골라낸다. 나머지는 '참고 부분값'으로 남긴다.
-
-    방어하는 이중계상 3종(작업지시서 §2-2):
-      · 같은 고지서/같은 측정 대상이 두 번 들어온 경우
-      · 계열 총량과 그 구성요소를 함께 더하는 경우(총 전력 + 태양광)
-      · 같은 물리량을 단위만 달리 적은 경우(도시가스 m³ + MJ)
-
-    합산 결과의 `completeness`는 **절대 total이 되지 않는다** — 구성요소를 몇 개
-    더했는지는 전체를 덮었다는 증거가 아니다. 완전성은 별도 근거로만 total이 된다.
-    """
+def plan_sum(items: Iterable[Any], *, boundary_of=None, unit_of=None, report_year=None) -> SumDecision:
+    """동기간·호환 사업장 그룹 안에서 포함 관계를 제거한 제한적 합산."""
+    from ..rag_gates.units import normalize_unit, convert_to_common
     get = boundary_of or (lambda x: getattr(x, "boundary", None))
     unit_get = unit_of or (lambda x: getattr(x, "unit", ""))
-    pool = [(x, Boundary.from_dict(get(x))) for x in items]
     decision = SumDecision()
-    if not pool:
-        return decision
-
-    # 0) 단위 환산군 — 가장 큰 군만 합산 대상으로 남긴다. 나머지는 참고값이다.
-    groups = _unit_groups(pool, unit_get)
-    if len(groups) > 1:
-        groups.sort(key=len, reverse=True)
-        for group in groups[1:]:
-            for item, b in group:
-                decision.reference.append(
-                    (item, f"단위 차원 상이({unit_get(item)}) — 합산 불가"))
-        decision.reasons.append(
-            "단위 환산군 혼재: "
-            + ", ".join(sorted({str(unit_get(i)) for g in groups for i, _ in g}))
-            + " — 같은 물리량의 다른 표기일 수 있어 합산 제외")
-        pool = groups[0]
-
-    # 1) 실적이 아닌 값은 합산 제외(목표·계획).
-    kept: list[tuple[Any, Boundary]] = []
-    for item, b in pool:
-        if b.basis in ("target", "plan"):
-            decision.reference.append((item, f"{_BASIS_LABEL[b.basis]}값 — 실적 합산 제외"))
+    pool = [(n, Boundary.from_dict(get(n))) for n in items]
+    def rank(entry):
+        n, b = entry
+        energy_unit = convert_to_common(1, normalize_unit(unit_get(n)) or unit_get(n), "TJ") is not None
+        return (not energy_unit, b.site_scope == "unknown", not b.period_start,
+                b.aggregation in ("monthly_average", "daily_average"),
+                b.measure_kind != "energy_total", b.measure_kind != "electricity_total",
+                abs((b.period_year or 0) - report_year) if report_year else -(b.period_year or 0),
+                b.period_start, getattr(n, "id", ""))
+    pool.sort(key=rank)
+    eligible = []
+    for n, b in pool:
+        if b.basis != "actual":
+            decision.reference.append((n, "목표·계획 또는 실적 미상 — 실적 합산 제외"))
+        elif b.measure_kind == "unknown":
+            decision.blocked.append((n, "측정 대상 미상 — 중복 여부 확인 필요"))
+        elif convert_to_common(1, normalize_unit(unit_get(n)) or unit_get(n), "TJ") is None:
+            decision.reference.append((n, "열량 단위 미확보 — 체적은 근거 없는 계수로 환산하지 않음"))
         else:
-            kept.append((item, b))
-
-    # 2) 집계 방식/구간이 섞이면 합산 불가(월간 + 연간).
-    aggs = {b.aggregation for _, b in kept if b.aggregation != "unknown"}
-    spans = {b.coverage_months for _, b in kept if b.coverage_months}
-    if len(aggs) > 1 or len(spans) > 1:
-        for item, b in kept:
-            decision.reference.append((item, "집계 방식·대상 기간이 달라 합산 불가"))
-        decision.reasons.append(
-            "집계 방식/대상 기간 혼재: "
-            + ", ".join(sorted(_AGG_LABEL.get(a, a) for a in aggs))
-            + (f" · {sorted(spans)}개월" if len(spans) > 1 else ""))
-        decision.completeness = "unknown"
+            eligible.append((n, b))
+    if not eligible:
         return decision
-
-    # 3) 사업장 범위가 다르면 합산 불가. 미상은 확인 필요로 통과시키되 기록한다.
-    sites = {b.site for _, b in kept if b.site}
-    if len(sites) > 1:
-        decision.reasons.append(f"사업장 범위 혼재: {', '.join(sorted(sites))} — 합산 보류")
-        for item, b in kept:
-            decision.reference.append((item, "사업장 범위가 달라 합산 불가"))
-        return decision
-    if any(b.site_scope == "unknown" for _, b in kept):
-        decision.reasons.append("사업장 범위 미기록 — 같은 범위라는 확인 필요")
-
-    # 4) 계열 총량 + 같은 계열 구성요소 → 총량만 남기고 구성요소는 참고값.
-    total_families = {b.family for _, b in kept if b.is_family_total and b.family}
-    staged: list[tuple[Any, Boundary]] = []
-    for item, b in kept:
-        if not b.is_family_total and b.family and b.family in total_families:
-            decision.blocked.append((
-                item,
-                f"{b.measure or b.measure_kind} — {family_label(b.family)} 총량의 "
-                "구성요소이므로 이중계상 방지"))
+    # 한 후보를 기준으로 호환 그룹을 만든다. 다른 그룹은 참고 근거로 보존한다.
+    anchor, ab = eligible[0]
+    staged = [(anchor, ab)]
+    for n, b in eligible[1:]:
+        ps, why = same_period(ab, b)
+        if ps != "compared":
+            decision.reference.append((n, why + " — 합산 보류"))
+        elif not compatible_sites(ab, b, inclusion=True):
+            decision.reference.append((n, "사업장 범위 미상 또는 상이 — 합산 보류"))
+        else:
+            staged.append((n, b))
+    # 미상 경계의 단독값은 참고값으로 유지하되 다른 항목을 더하지 않는다.
+    selected = []
+    procurement = {"electricity_rec", "electricity_ppa", "electricity_green_tariff"}
+    for n, b in staged:
+        parent = next(((x, xb) for x, xb in staged if x is not n and
+                       contains_measure(xb.measure_kind, b.measure_kind) and
+                       compatible_sites(xb, b, inclusion=True) and same_period(xb, b)[0] == "compared"), None)
+        if parent:
+            decision.blocked.append((n, f"{parent[0].id} 총량에 포함된 구성요소 — 이중계상 방지"))
             continue
-        staged.append((item, b))
-
-    # 5) 측정 대상을 못 읽었거나 같은 대상이 두 번 이상 → 합산 제외.
-    #    측정 대상 미상은 '서로 중복되지 않는 별개 에너지원'이라는 확인이 없다는 뜻이다.
-    #    같은 고지서를 두 번 올린 경우와 구분할 수 없으므로 fail-closed로 막는다(§2-2 첫 항).
-    #    이 규칙이 구버전 노드·경계 미기록 입력이 조용히 합산되는 경로도 함께 닫는다.
-    seen: dict[str, Any] = {}
-    for item, b in staged:
-        if b.measure_kind == "unknown":
-            decision.blocked.append(
-                (item, "측정 대상 미상 — 중복 여부를 확인할 수 없어 합산 제외"))
+        prior = next(((x, xb) for x, xb in selected if xb.measure_kind == b.measure_kind), None)
+        if prior:
+            x, xb = prior
+            nv = convert_to_common(float(n.value), normalize_unit(unit_get(n)) or unit_get(n), normalize_unit(unit_get(x)) or unit_get(x))
+            same = nv is not None and abs(nv-float(x.value)) <= max(abs(float(x.value))*1e-9, 1e-9)
+            why = "동일 측정값 중복 — 합산 제외" if same else "독립 증빙의 같은 측정 대상 값 상충 — 비교 판정 확인, 합산 제외"
+            decision.blocked.append((n, why))
             continue
-        if b.measure_kind in seen:
-            decision.blocked.append(
-                (item, f"같은 측정 대상({b.measure or b.measure_kind}) 중복 — 이중계상 방지"))
+        if b.measure_kind in procurement:
+            decision.reference.append((n, "조달수단과 실물 사용량의 중복·포함 관계 확인 필요 — 합산 제외"))
             continue
-        seen[b.measure_kind] = item
-        decision.summable.append(item)
-
-    # 6) 완전성 — 합산만으로는 절대 total이 되지 않는다.
-    if any(Boundary.from_dict(get(x)).is_family_total for x in decision.summable) and len(decision.summable) == 1:
-        decision.completeness = Boundary.from_dict(get(decision.summable[0])).completeness
-    else:
-        decision.completeness = "partial"
-    if len(decision.summable) > 1:
-        decision.reasons.append(
-            "제한적 합산: " + " + ".join(
-                Boundary.from_dict(get(x)).measure or Boundary.from_dict(get(x)).measure_kind
-                for x in decision.summable)
-            + " — 전체 에너지원을 덮었다는 근거는 없으므로 부분값")
+        selected.append((n, b))
+    decision.summable = [n for n, _ in selected]
+    decision.reasons.extend(dict.fromkeys(why for _, why in decision.reference + decision.blocked))
+    decision.completeness = selected[0][1].completeness if len(selected) == 1 else "partial"
+    if len(selected) > 1:
+        decision.reasons.append("제한적 합산: " + " + ".join(b.measure for _, b in selected)
+                                + " — 확인된 기간·사업장의 일부 에너지원, 전사 연간 총량 입증 아님")
     return decision
 
 

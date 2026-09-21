@@ -520,6 +520,12 @@ def _compare_numeric_claims(sentence: str, evidence_graph: Any, claims: list[Num
                           getattr(getattr(evidence_graph, 'nodes', {}).get(nid), 'source_file', None)
                           for nid in ids if getattr(getattr(evidence_graph, 'nodes', {}).get(nid), 'source_file', None)))
                       or ([node.source_file] if getattr(node, 'source_file', None) else []))
+        from .ssot.boundary import claim_scope_status
+        scope, scope_reason = claim_scope_status(code, getattr(node, 'boundary', None),
+            getattr(fact, 'completeness', 'unknown') if fact else getattr(node, 'completeness', 'unknown'), sentence)
+        if scope != 'compared':
+            record.update(reason='scope_unconfirmed', comparison=scope, comparison_reason=scope_reason)
+            continue
         cu = normalize_unit(claim.unit or '') or claim.unit
         nu = normalize_unit(node.unit or '') or node.unit
         cv = convert_to_common(claim.number, cu, nu) if cu and nu else None
@@ -585,8 +591,9 @@ def _numeric_axis(records: list[dict[str, Any]], score: float) -> AxisScore:
     reasons = dict(Counter(r['reason'] for r in unverified))
     status = ('partial' if compared else 'unavailable') if unverified else ('complete' if compared else 'not_applicable')
     # Historical experiment switches no longer suppress the fact of non-verification.
-    reason = next((r for r in ('no_evidence', 'unit_mismatch', 'ambiguous_topic', 'invalid_number') if r in reasons), None)
+    reason = next((r for r in ('no_evidence', 'unit_mismatch', 'ambiguous_topic', 'invalid_number', 'scope_unconfirmed') if r in reasons), None)
     labels = {'no_evidence': '근거 노드 없음', 'unit_mismatch': '단위 비교 불가',
+              'scope_unconfirmed': '기간·사업장·분모 범위 확인 필요',
               'ambiguous_topic': '지표 연결 모호', 'invalid_number': '부적합 숫자',
               'target': '목표/전망 문맥, 실적 비교 제외'}
     details = []

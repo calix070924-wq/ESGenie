@@ -78,7 +78,20 @@ def select_fact_nodes(graph, code):
                    and classify_value_role(code, n, report_year=year) != "target"]
         if derived:
             period = min({n.period for n in derived}, key=lambda p: (abs(p-year), -p)) if year else max(n.period for n in derived)
-            return sorted((n for n in derived if n.period == period), key=lambda n: n.id)
+            from .boundary import same_period, compatible_sites
+            candidates = sorted((n for n in derived if n.period == period), key=lambda n: n.id)
+            chosen, seen = [], set()
+            for n in candidates:
+                b = Boundary.from_dict(n.boundary)
+                identity = (n.document_id or n.source, b.measure_kind, n.value, b.period_start, b.period_end)
+                if identity in seen:
+                    continue
+                if chosen and (same_period(chosen[0].boundary, b)[0] != "compared"
+                               or not compatible_sites(Boundary.from_dict(chosen[0].boundary), b, inclusion=True)):
+                    continue
+                seen.add(identity)
+                chosen.append(n)
+            return chosen
     preferred_id = getattr(graph, "representative_node_ids", {}).get(code)
     if preferred_id:
         preferred = [n for n in reported if n.id == preferred_id]
@@ -89,7 +102,7 @@ def select_fact_nodes(graph, code):
     return [selected] if selected else []
 
 
-def plan_energy_sum(graph, code, nodes=None) -> SumDecision | None:
+def plan_energy_selection(graph, code, nodes=None) -> SumDecision | None:
     """실측 에너지원 제한적 합산 계획. 합산 대상이 2개 이상일 때만 결정을 돌려준다.
 
     ssot_pipeline(값 채움)과 finalize_ledger(원장 확정)가 **같은 함수를 같은 풀로**
@@ -104,10 +117,15 @@ def plan_energy_sum(graph, code, nodes=None) -> SumDecision | None:
             if finite_number(n.value) is not None and not _is_derived(n) and not is_survey(n)]
     if len(pool) < 2:
         return None
-    decision = plan_sum(sorted(pool, key=lambda n: n.id),
+    decision = plan_sum(sorted(pool, key=lambda n: n.id), report_year=graph.report_year,
                         boundary_of=lambda n: n.boundary,
                         unit_of=lambda n: normalize_unit(n.unit) or n.unit)
-    return decision if decision.ok else None
+    return decision
+
+
+def plan_energy_sum(graph, code, nodes=None) -> SumDecision | None:
+    decision = plan_energy_selection(graph, code, nodes)
+    return decision if decision and decision.ok else None
 
 
 def energy_sum_value(code, nodes):
@@ -143,9 +161,22 @@ def apply_energy_sum(result, graph) -> None:
             continue
         if finite_number(entry.get("value")) is None:
             continue
-        decision = plan_energy_sum(graph, code)
+        if entry.get("source_tier") != "ocr_node_gated":
+            continue  # 구조화 공시의 확정 총량은 OCR 부분합으로 대체하지 않는다.
+        decision = plan_energy_selection(graph, code)
         if decision is None:
             continue
+        if not decision.ok:
+            # 포함 관계 제거로 남은 확실한 총량만 단독 대표를 대체할 수 있다.
+            # 미상 경계의 단독 후보가 기존 248.5 총량을 61.2 부분값으로 바꾸면 안 된다.
+            if not decision.summable:
+                continue
+            candidate = decision.summable[0]
+            cb = Boundary.from_dict(candidate.boundary)
+            if not (cb.period_start and cb.period_end and cb.site_scope != "unknown"
+                    and cb.measure_kind == "energy_total"
+                    and classify_value_role(code, candidate, report_year=graph.report_year) == "total"):
+                continue
         summed = energy_sum_value(code, list(decision.summable))
         if summed is None:
             continue
@@ -153,12 +184,13 @@ def apply_energy_sum(result, graph) -> None:
         old_value, old_unit = entry.get("value"), entry.get("unit") or ""
         entry["value"] = value
         entry["unit"] = unit or old_unit
+        entry["energy_selection_ids"] = [n.id for n in decision.summable]
         sources = [n.source_file or n.source for n in decision.summable]
         entry["note"] = (
             f"실측 에너지원 제한적 합산 — {', '.join(dict.fromkeys(sources))} "
             f"(단독 대표값 {old_value}{old_unit} → 합산 {value}{unit or old_unit})")
         flags = result.confidence_flags.get(code, [])
-        for flag in ("partial_value", *(("unit_suspect",) if unit_flag else ())):
+        for flag in (*(("partial_value",) if decision.ok else ()), *(("unit_suspect",) if unit_flag else ())):
             if flag not in flags:
                 flags = flags + [flag]
         result.confidence_flags[code] = flags
@@ -174,7 +206,7 @@ def apply_energy_sum(result, graph) -> None:
                 f"[합산 제외] {code}: {node.source_file or node.id} — {why}")
 
 
-def resolve_completeness(boundary, *, summed: bool = False) -> str:
+def resolve_completeness(boundary, *, summed: bool = False, code: str = "") -> str:
     """원장 완결성 — 경계의 총량/부분 판정에 '대상 기간이 1년을 덮는가'를 더한다.
 
     K-ESG 정량 항목은 연간값을 묻는다. 연간 총량·연간 비율 자리에 상반기 값 하나가
@@ -188,19 +220,42 @@ def resolve_completeness(boundary, *, summed: bool = False) -> str:
     full = covers_full_year(b)
     if full is False:
         return "partial"
+    if code in {"E-4-1", "E-4-2"} and scope_gaps(code, b):
+        return "unknown"
     if b.completeness == "total":
         return "total" if full is True else "unknown"
     return b.completeness
+
+
+def scope_gaps(code, boundary):
+    b = Boundary.from_dict(boundary)
+    gaps = []
+    if not b.period_start or not b.period_end or covers_full_year(b) is not True:
+        gaps.append("연간 실적의 실제 사용기간·집계 방식 확인")
+    if b.site_scope != "entity":
+        gaps.append("전사/공장 조직·사업장 범위 확인")
+    if b.basis != "actual":
+        gaps.append("실적/계획 여부 확인")
+    if code == "E-4-1" and b.measure_kind != "energy_total":
+        gaps.append("전체 에너지원 포함 여부 확인")
+    if code == "E-4-2":
+        if b.measure_kind != "renewable_total" or b.completeness != "total":
+            gaps.append("전체 재생에너지 분자·조달수단 포함 관계 확인")
+        if b.denominator_kind != "total_energy":
+            gaps.append("총에너지 분모 확인" + (" (증빙은 총전력 분모)" if b.denominator_kind == "total_electricity" else " (분모 미상)"))
+    gaps.extend(b.review_notes)
+    return gaps
 
 
 def _scope_note(code, boundary, completeness) -> str:
     """부분값·미확정 경계의 검토 사유 — 배지만으로는 알 수 없는 기간·사업장을 적는다."""
     b = Boundary.from_dict(boundary)
     label = b.label()
+    detail = "; ".join(scope_gaps(code, b))
     if completeness == "partial":
         return (f"{code}: 부분값 — {label or '경계 미기록'}. "
-                "전사·연간·전체 범위 총량임이 입증되지 않아 검증 보류")
-    return f"{code}: 경계 확인 필요 — {label or '경계 미기록'}"
+                f"전사·연간·전체 범위 총량임이 입증되지 않아 검증 보류. {detail}")
+    return f"{code}: 경계 확인 필요 — {label or '경계 미기록'}; {detail}"
 
 
 def _from_nodes(graph, code, nodes):
@@ -221,7 +276,7 @@ def _from_nodes(graph, code, nodes):
         flags.append("partial_aggregate")
     boundary = (merge_boundaries([n.boundary for n in nodes]) if len(nodes) > 1
                 else Boundary.from_dict(first.boundary))
-    completeness = resolve_completeness(boundary, summed=len(nodes) > 1)
+    completeness = resolve_completeness(boundary, summed=len(nodes) > 1, code=code)
     # 원장에 싣는 경계는 판정된 완전성을 그대로 반영한다 — label()이 '총량'이라고
     # 찍으면서 fact.completeness가 'partial'인 자기모순 출력을 막는다.
     boundary = replace(boundary, completeness=completeness)
@@ -264,11 +319,12 @@ def finalize_ledger(result, graph):
         # 제한적 합산이 이 값을 만들었는지 먼저 확인한다(§2-2). 합산값은 어떤 단일
         # 노드와도 일치하지 않으므로 아래 일치 검사로는 대표 노드를 찾지 못하고
         # 'no_representative_node'로 떨어진다.
-        decision = plan_energy_sum(graph, code)
+        decision = plan_energy_selection(graph, code)
         summed = energy_sum_value(code, list(decision.summable)) if decision else None
         # 전력 Scope2 + 가스 Scope1의 정당한 파생값 합산도 원장에서 확정한다.
         derived = [n for n in pool if _is_derived(n)]
-        if (summed and decision and isclose(summed[0], value, rel_tol=1e-9, abs_tol=1e-9)
+        if (summed and decision and entry.get("energy_selection_ids") == [n.id for n in decision.summable]
+                and isclose(summed[0], value, rel_tol=1e-9, abs_tol=1e-9)
                 and (summed[1] or unit) == unit):
             chosen = list(decision.summable)
             reference = [n for n, _ in (*decision.blocked, *decision.reference)]
@@ -307,6 +363,9 @@ def finalize_ledger(result, graph):
                 if node is None and value == 0:
                     node = min(matching, key=lambda n: n.id)
                 chosen = [node] if node else []
+        if decision and not sum_notes:
+            reference = [n for n, _ in (*decision.blocked, *decision.reference)]
+            sum_notes = [f"{code}: {r}" for r in decision.reasons]
         ids = [n.id for n in chosen]
         if not ids:
             flags.append("no_representative_node")
@@ -318,9 +377,10 @@ def finalize_ledger(result, graph):
             boundary = Boundary.from_dict(chosen[0].boundary)
         else:
             boundary = Boundary()
-        completeness = resolve_completeness(boundary, summed=len(chosen) > 1)
+        completeness = resolve_completeness(boundary, summed=len(chosen) > 1, code=code)
         boundary = replace(boundary, completeness=completeness)
         scope_notes = list(sum_notes)
+        scope_notes.extend(boundary.review_notes)
         if code in WHOLE_SCOPE_CODES and completeness != "total":
             flags.append("incomplete_scope")
             scope_notes.append(_scope_note(code, boundary, completeness))

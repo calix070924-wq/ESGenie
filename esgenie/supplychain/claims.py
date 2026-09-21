@@ -32,6 +32,7 @@ class SupplierClaim:
     status: str = "reported"
     diagnostics: list[str] = field(default_factory=list)
     candidates: list[dict[str, Any]] = field(default_factory=list)
+    boundary: dict[str, Any] = field(default_factory=dict)
 
 
 class ClaimSet(dict):

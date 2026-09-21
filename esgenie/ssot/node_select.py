@@ -417,7 +417,11 @@ def classify_value_role(
 
 def is_derived_hint(hint: str | None) -> bool:
     """파생·비실적 hint 판정 — 우선순위 1단계(hard 배제). 공개(테스트·감사용)."""
-    return _has_any(_norm(hint), _DERIVED_TERMS)
+    normalized = _norm(hint)
+    if _is_ratio_hint(normalized):
+        # '총에너지 대비 재생에너지 비율'은 정상 분모, '전년 대비 증감'과 다르다.
+        normalized = re.sub(r"(?:총|전체)\s*(?:에너지|전력|폐기물|취수량)\s*대비", "", normalized)
+    return _has_any(normalized, _DERIVED_TERMS)
 
 
 def _conflicts_metric(code: str, hint: str) -> bool:

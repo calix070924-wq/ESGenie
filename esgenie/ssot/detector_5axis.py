@@ -286,42 +286,44 @@ def _cross_check_risk(kesg_code: str, graph: EvidenceGraph) -> float:
     수치 불일치가 아니므로 위험을 올리지 않는다 — 대신 cross_check_status()가
     '비교 불가/범위 확인 필요'로 끝까지 전달한다(작업지시서 §4-2).
     """
-    risk = 0.0
-    for e in graph.edges:
-        if e.edge_type != "cross_check":
+    return 0.4 if any(r["effective"] and r["comparison"] == "mismatch"
+                      for r in cross_check_records(kesg_code, graph)) else 0.0
+
+
+def cross_check_records(kesg_code, graph):
+    """비교 쌍과 출처를 보존하되 무관 범위는 대표값 상태에 영향을 주지 않는다."""
+    fact = getattr(graph, "resolved_facts", {}).get(kesg_code)
+    selected = set(fact.representative_node_ids) if fact else set()
+    records = []
+    for edge in graph.edges:
+        if edge.edge_type not in ("cross_check", "scope_gap"):
             continue
-        if kesg_code in e.source_id or kesg_code in e.target_id:
-            mobj = re.search(r"([0-9\.]+)%", e.detail)
-            if mobj and float(mobj.group(1)) > 5.0:
-                risk = max(risk, 0.4)
-    return risk
+        nodes = [graph.nodes.get(edge.source_id), graph.nodes.get(edge.target_id)]
+        if not any(n and n.metric == kesg_code for n in nodes):
+            continue
+        status = edge.comparison
+        if not status:
+            m = re.search(r"([0-9.]+)%", edge.detail)
+            status = ("not_comparable" if edge.edge_type == "scope_gap" else
+                      "mismatch" if m and float(m[1]) > 5 else "compared")
+        relevant = not selected or bool(selected.intersection((edge.source_id, edge.target_id)))
+        effective = relevant and status != "not_comparable"
+        if status == "scope_unconfirmed" and fact and fact.completeness == "total":
+            effective = False
+        records.append(dict(source_id=edge.source_id, target_id=edge.target_id,
+            comparison=status, comparison_reason=edge.detail, effective=effective,
+            difference_pct=edge.difference_pct,
+            files=[n.source_file for n in nodes if n]))
+    return sorted(records, key=lambda r: tuple(sorted((r["source_id"], r["target_id"]))))
 
 
 def cross_check_status(kesg_code: str, graph: EvidenceGraph) -> tuple[str, str]:
-    """증빙 간 교차검증의 4상태 판정 → (상태, 사유). 엣지가 없으면 ('', '').
-
-    관련 없는 범위의 문서를 많이 넣었다고 경고가 쏟아지지 않게, 범위 차이는
-    '비교 불가'로만 남기고 수치 불일치와 구분한다(§4-2).
-    """
-    from .boundary import COMPARISON_LABEL
-
-    best: tuple[int, str, str] = (-1, "", "")
-    rank = {"compared": 0, "scope_unconfirmed": 1, "not_comparable": 2, "mismatch": 3}
-    for e in graph.edges:
-        if e.edge_type not in ("cross_check", "scope_gap"):
-            continue
-        if kesg_code not in e.source_id and kesg_code not in e.target_id:
-            continue
-        if e.edge_type == "scope_gap":
-            status = "not_comparable"
-        elif COMPARISON_LABEL["scope_unconfirmed"] in e.detail:
-            status = "scope_unconfirmed"
-        else:
-            mobj = re.search(r"([0-9\.]+)%", e.detail)
-            status = "mismatch" if mobj and float(mobj.group(1)) > 5.0 else "compared"
-        if rank[status] > best[0]:
-            best = (rank[status], status, e.detail)
-    return best[1], best[2]
+    from ..layer3_detect import _COMPARISON_RANK
+    active = [r for r in cross_check_records(kesg_code, graph) if r["effective"]]
+    if not active:
+        return "", ""
+    status = max((r["comparison"] for r in active), key=lambda x: _COMPARISON_RANK[x])
+    return status, "; ".join(dict.fromkeys(r["comparison_reason"] for r in active if r["comparison"] == status))
 
 
 def _safe_json(text: str) -> dict[str, Any]:

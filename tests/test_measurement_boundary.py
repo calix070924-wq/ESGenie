@@ -63,7 +63,7 @@ def _extraction(metrics, *, source_file, doc_type="kepco_bill",
 
     ext = OcrExtraction(
         source_file=source_file, channel=channel, doc_type=doc_type,
-        metrics=list(metrics), clauses=[], raw_text="",
+        metrics=list(metrics), clauses=[], raw_text="제1공장",
         router_meta={"source": "reconstructed_input"},
     )
     _backfill_kesg_codes(ext)
@@ -201,12 +201,12 @@ class TestRatioRole:
 
 class TestLimitedSum:
     def _node(self, hint, value, unit, period="2026-05", doc_type="kepco_bill",
-              context=""):
+              context="제1공장"):
         from types import SimpleNamespace
         return SimpleNamespace(
             id=f"n_{hint}", value=value, unit=unit,
             boundary=derive_boundary(hint, period, unit=unit, doc_type=doc_type,
-                                     doc_context=context))
+                                     doc_context="제1공장" if "gas_bill" in context else context))
 
     def test_same_physical_quantity_in_two_units_is_not_summed(self):
         """도시가스 m³ + MJ 이중계상 — 단위 차원과 측정 대상 양쪽에서 막힌다."""

@@ -68,6 +68,7 @@ class DataPoint:
     # 비교 4상태(§4-2) — compared | mismatch | not_comparable | scope_unconfirmed | ""
     comparison: str = ""
     comparison_reason: str = ""
+    comparisons: list[dict[str, Any]] = field(default_factory=list)
     # 합산·비교에 쓰이지 않은 보완 대상 근거. evidence_files와 섞지 않는다.
     reference_files: list[EvidenceLink] = field(default_factory=list)
 
@@ -131,17 +132,25 @@ def build_data_points(
         d1 = d1_scores.get(code, 0.0)
         evaluation = (d1_evaluations or {}).get(code, {})
         incomplete = evaluation.get("status") in {"partial", "unavailable"}
+        scope_only = incomplete and set(evaluation.get("reasons", {})) == {"scope_unconfirmed"}
         valid = bool(links) and all(e.resolved and e.independent and e.quote for e in links)
         flags = set(fact.flags)
         # 전사·연간·전체 범위 총량 항목은 완결성이 입증돼야 verified가 된다(§2-2/§3).
         # 부분합·상반기값·에너지원별 구성비가 총량 자리에서 자동 검증되는 경로를 막는다.
         # 'unknown'(구버전 입력·경계 미기록)은 강등 대상이 아니다 — 부분값과 구분한다.
-        scope_incomplete = code in WHOLE_SCOPE_CODES and fact.completeness == "partial"
+        scope_incomplete = code in WHOLE_SCOPE_CODES and fact.completeness != "total"
         comparison = str(evaluation.get("comparison") or "")
         comparison_reason = str(evaluation.get("comparison_reason") or "")
+        from .detector_5axis import cross_check_status, cross_check_records
+        from ..layer3_detect import _COMPARISON_RANK
+        cross, detail = cross_check_status(code, graph)
+        if _COMPARISON_RANK.get(cross, -1) > _COMPARISON_RANK.get(comparison, -1):
+            comparison, comparison_reason = cross, detail
+        if scope_incomplete and _COMPARISON_RANK.get(comparison, -1) < _COMPARISON_RANK["scope_unconfirmed"]:
+            comparison, comparison_reason = "scope_unconfirmed", "; ".join(fact.scope_notes)
         # 실제 불일치는 위험 점수가 0.4라는 이유만으로 자가신고에 머물 수 없다(§4-2).
         # 비교 불가·범위 확인 필요는 불일치가 아니므로 unverified로 올리지 않는다.
-        if (incomplete or finite_number(fact.value) is None or d1 >= 0.5
+        if (incomplete and not scope_only or finite_number(fact.value) is None or d1 >= 0.5
                 or "unit_suspect" in flags or comparison == "mismatch"):
             verification = "unverified"
         elif (scope_incomplete or not valid
@@ -161,6 +170,7 @@ def build_data_points(
             completeness=fact.completeness, boundary=fact.boundary,
             boundary_label=boundary.label(), scope_notes=list(fact.scope_notes),
             comparison=comparison, comparison_reason=comparison_reason,
+            comparisons=list(evaluation.get("claims", [])) + cross_check_records(code, graph),
             reference_files=refs))
     return points
 

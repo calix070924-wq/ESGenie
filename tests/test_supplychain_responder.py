@@ -292,7 +292,7 @@ from esgenie.supplychain.schema import Answer, ResponseSheet  # noqa: E402
 
 
 def _answer(qid: str, status: str) -> Answer:
-    return Answer(qid=qid, section="X", question_text=qid, value=None, status=status)
+    return Answer(qid=qid, section="X", question_text=qid, value=True if status in ("verified", "self_reported", "flagged") else None, status=status)
 
 
 def test_new_statuses_have_badges():

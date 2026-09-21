@@ -71,6 +71,14 @@ def evaluate_grounding(answer_text: str, cited_chunks: list[dict[str, Any]]) -> 
 
     hard_fails: list[str] = []
     soft_flags: list[str] = []
+    if re.search(r"인증.{0,12}(?:취득|획득|완료|받았|받아)", strip_citation_markers(answer_text)):
+        completed = re.compile(r"인증.{0,12}(?:취득|획득|완료|받았|받아)")
+        for sent in sentences:
+            if not completed.search(sent.clean_text):
+                continue
+            cited_texts = [chunk_map[cid] for cid in sent.cited_chunk_ids if cid in chunk_map]
+            if not any(completed.search(t) and not re.search(r"인증.{0,12}(?:취득|획득).{0,10}(?:예정|준비|계획|목표)", t) for t in cited_texts):
+                soft_flags.append("G5_unproven_certification_completion")
     if uncited:
         hard_fails.append("G1_uncited_claims")
     if orphan_numbers:

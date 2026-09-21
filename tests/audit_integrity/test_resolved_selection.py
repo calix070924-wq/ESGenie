@@ -1,4 +1,5 @@
 import pytest
+from tests.boundary_fixtures import confirmed_boundary
 
 from esgenie.dart_client import CompanyReport
 from esgenie.pipeline import _build_risk_rows
@@ -15,7 +16,7 @@ def report(data=None):
 
 def node(nid, value, unit='TJ', code='E-4-1', source='ocr', **kwargs):
     return EvidenceNode(nid, code, value, unit, 2025, source, origin='ocr_structured',
-                        source_file='energy.pdf', raw_text=f'{code} 전사 합계 {value}{unit}', **kwargs)
+                        boundary=confirmed_boundary(code), source_file='energy.pdf', raw_text=f'{code} 전사 합계 {value}{unit}', **kwargs)
 
 
 def test_structured_dart_value_survives_ocr_representative():

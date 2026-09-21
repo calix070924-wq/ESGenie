@@ -15,6 +15,7 @@
   - 정성 조항(ExtractedClause)은 TextNode로 별도 보관 → 사내규정 검증(detector)에서 사용.
 """
 from __future__ import annotations
+import re
 
 import hashlib
 from dataclasses import dataclass, field, asdict
@@ -61,6 +62,7 @@ class EvidenceNode:
     # period(연도 정수)만으로는 월간값과 연간값을 가를 수 없어 별도 축으로 둔다.
     # 기본값은 빈 Boundary이고, 빈 Boundary는 '모른다'로 취급된다(같다고 보지 않는다).
     boundary: Boundary = field(default_factory=Boundary)
+    document_id: str = ""
 
     def to_dict(self) -> dict[str, Any]:
         return asdict(self)
@@ -91,6 +93,8 @@ class EvidenceEdge:
     cagr: float | None = None
     years_gap: int = 1
     detail: str = ""
+    comparison: str = ""
+    difference_pct: float | None = None
 
     def to_dict(self) -> dict[str, Any]:
         return asdict(self)
@@ -279,19 +283,10 @@ def _dart_boundary(v10_node: Any) -> Boundary:
     읽어서 확인한 값이 아니라 규약에서 가정한 값이므로 세 축 전부 `inferred`에
     남긴다 — 하류가 '원문에서 확인된 경계'와 구분할 수 있어야 한다.
     """
-    measure_kind, measure = detect_measure(getattr(v10_node, "raw_text", "") or "")
-    return Boundary(
-        period_text=str(getattr(v10_node, "period", "") or ""),
-        aggregation="annual",
-        coverage_months=12,
-        basis="actual",
-        site_scope="entity",
-        measure=measure,
-        measure_kind=measure_kind or "unknown",
-        completeness="total",
-        inferred=("aggregation", "site_scope", "completeness", "basis"),
-        source_quote="DART 공시 규약(연간·법인 전체·실적)",
-    )
+    return derive_boundary(getattr(v10_node, "raw_text", ""),
+                           str(getattr(v10_node, "period", "") or ""),
+                           unit=getattr(v10_node, "unit", ""),
+                           base=getattr(v10_node, "boundary", None))
 
 
 # ====================================================================
@@ -331,11 +326,19 @@ def merge_ocr_extraction(
 
     # 문서 수준 문맥 — 파일명·문서종류·본문 머리말. 표 제목/머리말에 있는 사업장·
     # 에너지원 표기를 metric마다 다시 읽지 않고 한 번만 만들어 경계 판정에 넘긴다.
-    doc_context = " ".join(filter(None, (
-        extraction.source_file or "",
-        extraction.doc_type or "",
-        (extraction.raw_text or "")[:_DOC_CONTEXT_CHARS],
-    )))
+    doc_context = extraction.raw_text or ""
+    from dataclasses import replace
+    from .boundary_conflicts import renewable_review_notes
+    renewable_notes = renewable_review_notes(extraction)
+    import hashlib
+    import json
+    # 해시가 제공되면 원문 바이트 식별자를 우선한다. 캐시/재구성 입력은 정규화한
+    # 내용 지문을 사용하며 파일명 변경만으로 독립 근거가 늘어나지 않는다.
+    document_id = extraction.router_meta.get("source_sha256") or extraction.router_meta.get("document_sha256")
+    if not document_id:
+        fingerprint = {"text": " ".join(doc_context.split()), "metrics": sorted(
+            (m.metric_hint, str(m.value), m.unit, m.period) for m in extraction.metrics)}
+        document_id = hashlib.sha256(json.dumps(fingerprint, ensure_ascii=False, sort_keys=True).encode()).hexdigest()
 
     for idx, m in enumerate(extraction.metrics):
         code = _resolve_kesg_code(m)
@@ -346,6 +349,11 @@ def merge_ocr_extraction(
             doc_type=extraction.doc_type, doc_context=doc_context,
             base=getattr(m, "boundary", None),
         )
+        provenance = tuple(dict(p, page=m.page, bbox=m.bbox, source_file=extraction.source_file) for p in boundary.provenance)
+        boundary = replace(boundary, provenance=provenance,
+                           review_notes=renewable_notes if code == "E-4-2" else boundary.review_notes)
+        if period_inferred and boundary.period_year:
+            period, period_inferred = boundary.period_year, False
         confidence = m.confidence
         # G4. 미래 기간 분리 — 보고 연도보다 '충분히' 미래(2030/2035/2040 목표·전망 등)인
         # 확정 코드 노드는 실적 코드에서 떼어내 '{code}__projection'으로 보존. search_nodes
@@ -388,6 +396,7 @@ def merge_ocr_extraction(
             confidence=confidence,
             period_inferred=period_inferred,
             boundary=boundary,
+            document_id=document_id,
         )
         # 역할은 노드에 영속화하되 선택 시에도 재계산한다. 구버전 덤프를 리플레이해도
         # 같은 규칙을 적용하고, 신규 산출물은 역할을 감사할 수 있게 하기 위함이다.
@@ -498,7 +507,8 @@ def _resolve_kesg_code(
     from ..layer1_extract import _unit_suspect
 
     hint = m.metric_hint.lower().replace(" ", "")
-    alias_code, _alias_score, alias_method = resolve_kesg_code(m.metric_hint)
+    alias_hint = re.split(r"대비|중\s", m.metric_hint)[-1] if m.unit in {"%", "％"} else m.metric_hint
+    alias_code, _alias_score, alias_method = resolve_kesg_code(alias_hint)
     code = alias_code if alias_method == "exact" or allow_fuzzy else None
 
     if getattr(m, "_kesg_backfill_blocked", False):
@@ -580,41 +590,27 @@ def _link_cross_check(graph: EvidenceGraph, node: EvidenceNode) -> None:
     for other in graph.nodes_by_metric(node.metric):
         if other.id == node.id or other.period != node.period:
             continue
-        if not (other.origin == "dart" or other.origin != node.origin):
+        if (other.document_id and other.document_id == node.document_id
+                or not other.document_id and not node.document_id and other.source_file == node.source_file):
             continue
         status, reason = comparable(other.boundary, node.boundary)
-        # 'not_comparable'만 수치 비교를 막는다. 'scope_unconfirmed'(한쪽 경계 미기록)는
-        # **비교는 하되 확인이 필요하다**는 뜻이므로 오차율을 그대로 계산한다 —
-        # 두 상태를 하나로 합치면 경계를 못 읽은 구버전 입력의 교차검증이 통째로 사라진다.
-        if status == "not_comparable":
-            graph.add_edge(EvidenceEdge(
-                source_id=other.id,
-                target_id=node.id,
-                edge_type="scope_gap",
-                detail=f"{COMPARISON_LABEL[status]}: {reason} ({other.origin}↔{node.origin})",
-            ))
-            continue
-        caveat = f" · {COMPARISON_LABEL[status]}({reason})" if status != "compared" else ""
-        # 단위가 다르면 환산 후 비교한다. 환산군이 다르면 그것도 비교 불가다.
-        nu, ou = normalize_unit(str(node.unit or "")), normalize_unit(str(other.unit or ""))
-        value = node.value
-        if nu and ou and nu != ou:
-            converted = convert_to_common(float(node.value), nu, ou)
-            if converted is None:
-                graph.add_edge(EvidenceEdge(
-                    source_id=other.id, target_id=node.id, edge_type="scope_gap",
-                    detail=(f"{COMPARISON_LABEL['not_comparable']}: 단위 차원 상이"
-                            f"({node.unit} ↔ {other.unit}) ({other.origin}↔{node.origin})"),
-                ))
-                continue
-            value = converted
-        diff_pct = _pct_diff(value, other.value)
+        # 미확인 범위는 수치 오차를 계산하지 않는다.
+        diff_pct = None
+        if status == "compared":
+            nu, ou = normalize_unit(str(node.unit or "")), normalize_unit(str(other.unit or ""))
+            value = convert_to_common(float(node.value), nu, ou) if nu and ou else None
+            if value is None:
+                status, reason = "not_comparable", f"단위 차원 상이({node.unit} ↔ {other.unit})"
+            else:
+                # 순서가 바뀌어도 같은 분모: 독립 증빙 비교는 더 작은 절댓값 기준.
+                diff_pct = _pct_diff(max(abs(value), abs(other.value)), min(abs(value), abs(other.value)))
+                status = "mismatch" if diff_pct > 5.0 else "compared"
+                reason = f"교차검증 오차 {diff_pct:.1f}%"
         graph.add_edge(EvidenceEdge(
-            source_id=other.id,
-            target_id=node.id,
-            edge_type="cross_check",
-            detail=f"교차검증 오차 {diff_pct:.1f}% ({other.origin}↔{node.origin}){caveat}",
-        ))
+            source_id=other.id, target_id=node.id,
+            edge_type="cross_check" if diff_pct is not None else "scope_gap",
+            comparison=status, difference_pct=diff_pct,
+            detail=f"{COMPARISON_LABEL[status]}: {reason} ({other.source_file} ↔ {node.source_file})"))
 
 
 def _emit_derived_emission(
@@ -646,6 +642,9 @@ def _emit_derived_emission(
     # 파생 노드의 경계는 원 노드의 기간·사업장·실적여부를 그대로 물려받고, 측정 대상만
     # 배출량으로 바꾼다. 에너지원 하나에서 나온 값이므로 완전성은 항상 부분이다.
     derived_boundary = Boundary(
+        period_year=node.boundary.period_year,
+        period_start=node.boundary.period_start, period_end=node.boundary.period_end,
+        site_path=node.boundary.site_path, provenance=node.boundary.provenance,
         period_text=node.boundary.period_text,
         aggregation=node.boundary.aggregation,
         coverage_months=node.boundary.coverage_months,
@@ -680,6 +679,7 @@ def _emit_derived_emission(
         # 파생 노드는 원 노드의 period를 그대로 쓰므로 추론여부도 함께 물려받는다.
         period_inferred=node.period_inferred,
         boundary=derived_boundary,
+        document_id=node.document_id,
     )
     graph.add_node(derived)
 

@@ -121,6 +121,15 @@ def _derive_numeric(q, mapped, missing, dp_by_code, claims=None, evidence_index=
         ans.comparison = getattr(dp, "comparison", "") or ""
         ans.comparison_reason = getattr(dp, "comparison_reason", "") or ""
         ans.scope_notes = list(getattr(dp, "scope_notes", []) or [])
+        ans.boundary = dict(getattr(dp, "boundary", {}) or {})
+        ans.comparisons = list(getattr(dp, "comparisons", []) or [])
+        if code in {"E-4-1", "E-4-2"} and ans.completeness != "total":
+            if ans.status == "verified":
+                ans.status = "self_reported"
+            from ..ssot.selection import scope_gaps
+            gaps = scope_gaps(code, ans.boundary)
+            ans.scope_notes = list(dict.fromkeys([*ans.scope_notes, *gaps]))
+            _merge_comparison(ans, "scope_unconfirmed", "; ".join(gaps))
         refs = [evidence_index.get(e.node_id) if evidence_index is not None else e
                 for e in getattr(dp, "reference_files", [])]
         ans.reference_links = [e for e in refs if e is not None]
@@ -156,20 +165,16 @@ def _comparison_from_claim(ans: Answer, mismatch: bool, description: str) -> Non
     전체 비율과 에너지원별 구성비를 같은 값으로 취급하던 경로가 여기였다. 기존 임계값
     (비율 10%p / D1_THRESHOLD)은 그대로 쓰고, 여기서 정하는 것은 '무엇과 비교했는지'다.
     """
-    if mismatch:
-        ans.comparison = "mismatch"
-        ans.comparison_reason = description
-        return
-    if ans.completeness == "partial":
-        ans.comparison = "scope_unconfirmed"
-        ans.comparison_reason = (
-            f"증빙값이 부분값 — {ans.boundary_label or '경계 미기록'} · 숫자는 {description}")
-        return
-    # 이미 상위 레이어(D1·교차검증)가 더 심한 상태를 실었으면 낮추지 않는다.
+    _merge_comparison(ans, "mismatch" if mismatch else "compared", description)
+
+
+def _merge_comparison(ans, status, reason, **detail):
     from ..layer3_detect import _COMPARISON_RANK
-    if _COMPARISON_RANK.get(ans.comparison, -1) < _COMPARISON_RANK["compared"]:
-        ans.comparison = "compared"
-        ans.comparison_reason = ""
+    ans.comparisons.append(dict(comparison=status, comparison_reason=reason, **detail))
+    if _COMPARISON_RANK.get(status, -1) > _COMPARISON_RANK.get(ans.comparison, -1):
+        ans.comparison, ans.comparison_reason = status, reason
+    elif status == ans.comparison and reason and reason not in ans.comparison_reason:
+        ans.comparison_reason = "; ".join(filter(None, [ans.comparison_reason, reason]))
 
 
 def _as_number(v: Any) -> float | None:
@@ -230,11 +235,20 @@ def _reconcile_claim(ans: Answer, claim: Any, evid_value: Any, evid_unit: str, *
         ans.flags.append(f"증빙값 검토필요: {reason}")
         return ans
     evid_num = _as_number(evid_value)
+    from ..ssot.boundary import claim_scope_status
+    scope_status, scope_reason = claim_scope_status(code, ans.boundary, ans.completeness,
+                                                   craw, getattr(claim, "boundary", None))
+    if scope_status != "compared":
+        _merge_comparison(ans, scope_status, scope_reason, source=csrc, claim_value=cval, evidence_value=evid_num)
+        ans.flags.append(f"범위 확인 필요: {scope_reason}")
+        if ans.status == "verified":
+            ans.status = "self_reported"
+        return ans
     claim_is_rate, evid_is_rate = _looks_like_rate_unit(cunit), _looks_like_rate_unit(evid_unit)
     if code in _RATE_KESG_CODES and not (claim_is_rate and evid_is_rate):
         ans.status = "flagged"
         ans.flags.append(f"비율(%) 미확보: 자가신고 {cval}{cunit} ↔ 증빙 {evid_num}{evid_unit} — 단위 비교 불가")
-        ans.comparison, ans.comparison_reason = "not_comparable", f"비율 단위 미확보({cunit or '미상'} ↔ {evid_unit or '미상'})"
+        _merge_comparison(ans, "not_comparable", f"비율 단위 미확보({cunit or '미상'} ↔ {evid_unit or '미상'})")
         return ans
     cu = "%" if claim_is_rate else normalize_unit(cunit) or cunit.strip()
     eu = "%" if evid_is_rate else normalize_unit(evid_unit) or evid_unit.strip()
@@ -242,7 +256,7 @@ def _reconcile_claim(ans: Answer, claim: Any, evid_value: Any, evid_unit: str, *
     if converted is None or _as_number(converted) is None:
         ans.status = "flagged"
         ans.flags.append(f"D1 비교 불가: 단위 {cunit or '미상'} ↔ {evid_unit or '미상'} (차원/환산 확인 필요)")
-        ans.comparison, ans.comparison_reason = "not_comparable", f"단위 차원 상이({cunit or '미상'} ↔ {evid_unit or '미상'})"
+        _merge_comparison(ans, "not_comparable", f"단위 차원 상이({cunit or '미상'} ↔ {evid_unit or '미상'})")
         return ans
     if claim_is_rate and evid_is_rate:
         difference = abs(converted - evid_num)
