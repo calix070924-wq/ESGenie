@@ -10,6 +10,7 @@ from scripts.hmc_integrity_validation import sha256, dump, OUT_DIR, LOG_DIR
 
 def main():
     from openpyxl import load_workbook
+    from openpyxl.styles import Alignment
     import fitz
     parser=argparse.ArgumentParser()
     parser.add_argument('--original-root',type=Path,required=True)
@@ -46,6 +47,10 @@ def main():
                                 new=pattern.sub('ISMS 인증을 준비',old)
                                 new += '\n[수동 정정] 원문 18번 p.1: ISMS 인증 준비 중, 2026년 하반기 신청 예정.'
                             cell.value=new
+                            for updated_cell in ws[cell.row]:
+                                updated_cell.alignment=Alignment(wrap_text=True,vertical="top")
+                            if misplaced:
+                                ws.cell(cell.row,5).value="수동 정정 · 검토필요"
                             ws.row_dimensions[cell.row].height=240
                             edits.append({'sheet':ws.title,'cell':cell.coordinate,'qid':qid,'issue':'unrelated ISMS paragraph / wrong p.2 citation' if misplaced else 'unsupported acquisition claim','old_text':old,'new_text':new})
                 if edits:
