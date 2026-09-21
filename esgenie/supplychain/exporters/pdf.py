@@ -218,7 +218,7 @@ def export_response_sheet_pdf(
         if a.status == "not_applicable":
             continue
         sec_total[a.section] += 1
-        if a.status in ("verified", "self_reported", "flagged"):
+        if a.answered:
             sec_auto[a.section] += 1
         if a.status == "flagged":
             sec_flag[a.section] += 1

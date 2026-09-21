@@ -35,7 +35,7 @@ def summary_line(sheet: Any, *, with_corp: bool = True) -> str:
     head = f"기업: {sheet.corp_name or '—'}  |  " if with_corp else ""
     return (
         f"{head}{coverage_text(sheet)}"
-        f"  |  검토필요 {sheet.flagged_count}건(자동응답 안에 중복 집계)"
+        f"  |  검토필요 {sheet.flagged_count}건(별도 지표, 자동응답과 중복 가능)"
         f"  |  문항 {len(sheet.answers)}개 (분모 {sheet.denominator}개, 해당없음 제외)"
     )
 
@@ -73,7 +73,9 @@ def scope_line(answer: Any) -> str:
     label = getattr(answer, "boundary_label", "")
     if label:
         bits.append(f"측정 범위: {label}")
-    note = getattr(answer, "review_note", "")
+    # 상세 사유는 근거/비고에 한 번만 표시한다. 좁은 범위 열에서 같은 장문을
+    # 반복하면 한 답변이 페이지 높이를 넘거나 Excel에서 잘린다.
+    note = getattr(answer, "comparison_label", "")
     if note:
         bits.append(note)
     return " · ".join(bits)
@@ -100,9 +102,10 @@ UNRESOLVED_MARK = "[출처 미확인]"
 def citation_numbering(answer: Any) -> dict[str, int]:
     """node_id → 본문 표기 번호(1부터, 출처 목록 순서와 동일)."""
     out: dict[str, int] = {}
-    for cit in getattr(answer, "draft_citations", None) or []:
-        nid = str(cit.get("node_id") or "").strip()
-        if nid and nid not in out:
+    available = {str(c.get("node_id") or "").strip() for c in getattr(answer, "draft_citations", None) or []}
+    for nid in _BRACKET_TOKEN.findall(getattr(answer, "draft_text", "") or ""):
+        nid = nid.strip()
+        if nid in available and nid not in out:
             out[nid] = len(out) + 1
     return out
 
@@ -123,8 +126,8 @@ def source_lines(answer: Any) -> list[str]:
         seen.add(n)
         name = (cit.get("source_file") or "").strip() or "문서명 미확인"
         page = page_text(cit.get("page"))
-        lines.append(f"[{n}] {name}{' ' + page if page else ''}")
-    return lines
+        lines.append(f"[{n}] {name}{' ' + page if page else ' (위치 미확인)'}")
+    return sorted(lines, key=lambda line: int(line.split(']')[0][1:]))
 
 
 def draft_body(answer: Any) -> tuple[str, list[str]]:
@@ -156,6 +159,8 @@ def draft_body(answer: Any) -> tuple[str, list[str]]:
     if unresolved:
         notes.append(f"출처 미해소: 본문 인용 {len(unresolved)}건이 출처 목록과 "
                      "연결되지 않음 — 승인 전 원문 확인 필요")
+    if any(c.get("node_id") in numbering and c.get("page") is None for c in getattr(answer, "draft_citations", []) or []):
+        notes.append("인용 위치 미확인 — 원문 페이지 확인 필요")
     return body, notes
 
 
@@ -178,9 +183,9 @@ def note_lines(answer: Any, *, fig_map: dict[int, str] | None = None,
     lines: list[str] = []
     if getattr(answer, "rationale", ""):
         lines.append(answer.rationale)
-    scope = scope_line(answer)
-    if scope:
-        lines.append(scope)
+    review = getattr(answer, "review_note", "")
+    if review:
+        lines.append(review)
     lines.extend(getattr(answer, "flags", None) or [])
     parts: list[str] = []
     for e in getattr(answer, "evidence_links", None) or []:

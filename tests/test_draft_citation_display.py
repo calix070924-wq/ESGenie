@@ -70,22 +70,22 @@ class TestBodyUsesNumbersNotNodeIds:
 
 class TestSourceList:
     def test_numbers_document_names_and_real_pages(self):
-        lines = source_lines(_answer("x", _CITATIONS))
+        lines = source_lines(_answer("본문 [LOCAL_TXT_0043] [LOCAL_TXT_0051]", _CITATIONS))
         assert lines == ["[1] 노사협의회_운영규정.pdf p.3",
                          "[2] 사내공지_2026.pdf p.1"]
 
     def test_unknown_page_is_omitted_not_guessed_as_page_one(self):
-        lines = source_lines(_answer("x", [
+        lines = source_lines(_answer("본문 [N1]", [
             {"node_id": "N1", "source_file": "의사소통절차서.pdf", "page": None}]))
-        assert lines == ["[1] 의사소통절차서.pdf"]
+        assert lines == ["[1] 의사소통절차서.pdf (위치 미확인)"]
 
     def test_unknown_document_name_is_said_out_loud(self):
-        lines = source_lines(_answer("x", [{"node_id": "N1", "source_file": "", "page": 4}]))
+        lines = source_lines(_answer("본문 [N1]", [{"node_id": "N1", "source_file": "", "page": 4}]))
         assert lines == ["[1] 문서명 미확인 p.5"]
 
     def test_repeated_node_id_shares_one_number(self):
         cits = [*_CITATIONS, dict(_CITATIONS[0])]
-        assert len(source_lines(_answer("x", cits))) == 2
+        assert len(source_lines(_answer("본문 [LOCAL_TXT_0043] [LOCAL_TXT_0051] [LOCAL_TXT_0043]", cits))) == 2
 
 
 class TestUnresolvedCitations:
@@ -163,3 +163,7 @@ _render_supplychain_drafts(st.session_state.answers)
         # 감사 추적용 node_id는 '근거 발췌' 안에 남는다.
         assert "node_id: LOCAL_TXT_0043" in text
         assert any("출처 미해소" in w.value for w in app.warning)
+
+
+def test_uncited_sources_are_not_listed():
+    assert source_lines(_answer("인용 없는 본문", _CITATIONS)) == []

@@ -126,7 +126,7 @@ class TestFourWayHeader:
         line = summary_line(_hmc_sheet())
         for label, _ in FOUR_WAY:
             assert label in line
-        assert "검토필요" in line and "중복 집계" in line
+        assert "검토필요" in line and "자동응답과 중복 가능" in line
 
     def test_excel_and_pdf_share_the_header_sentence(self, tmp_path):
         sheet = _hmc_sheet()
