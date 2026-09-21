@@ -1,0 +1,225 @@
+........................................................................ [ 35%]
+........................................................................ [ 71%]
+..........................................................               [100%]
+=============================== warnings summary ===============================
+tests/test_hmc_followup.py::test_R27_real_multipage_clause_locator_and_unknown
+tests/test_hmc_followup.py::test_R27_real_multipage_clause_locator_and_unknown
+  <frozen importlib._bootstrap>:488: DeprecationWarning: builtin type SwigPyPacked has no __module__ attribute
+
+tests/test_hmc_followup.py::test_R27_real_multipage_clause_locator_and_unknown
+tests/test_hmc_followup.py::test_R27_real_multipage_clause_locator_and_unknown
+  <frozen importlib._bootstrap>:488: DeprecationWarning: builtin type SwigPyObject has no __module__ attribute
+
+tests/test_hmc_followup.py::test_R27_real_multipage_clause_locator_and_unknown
+  <frozen importlib._bootstrap>:488: DeprecationWarning: builtin type swigvarlink has no __module__ attribute
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+==================================== PASSES ====================================
+______ TestProviderCache.test_strict_failure_does_not_become_mock_success ______
+------------------------------ Captured log call -------------------------------
+WARNING  esgenie.llm:llm.py:169 OpenAI 호출 실패 (strict, attempts=1): Synthetic provider failure
+=========================== short test summary info ============================
+PASSED tests/test_hmc_followup.py::test_R01_R02_total_contains_components_stable
+PASSED tests/test_hmc_followup.py::test_R03_same_usage_period_limited_sum
+PASSED tests/test_hmc_followup.py::test_R04_R05_different_periods_do_not_sum[2026-05-2026-06]
+PASSED tests/test_hmc_followup.py::test_R04_R05_different_periods_do_not_sum[2025\ub144 \uc5f0\uac04-2026\ub144 \uc5f0\uac04]
+PASSED tests/test_hmc_followup.py::test_R06_different_months_no_mismatch
+PASSED tests/test_hmc_followup.py::test_R07_period_normalization
+PASSED tests/test_hmc_followup.py::test_R08_unknown_axes_do_not_sum[2026-\uc81c1\uacf5\uc7a5]
+PASSED tests/test_hmc_followup.py::test_R08_unknown_axes_do_not_sum[2026-05-]
+PASSED tests/test_hmc_followup.py::test_R10_independent_same_origin_mismatch_and_checklist
+PASSED tests/test_hmc_followup.py::test_R11_units_equivalent
+PASSED tests/test_hmc_followup.py::test_R14_R15_incomplete_ratio_not_verified[2026]
+PASSED tests/test_hmc_followup.py::test_R14_R15_incomplete_ratio_not_verified[2026\ub144 \uc5f0\uac04]
+PASSED tests/test_hmc_followup.py::test_R16_confirmed_total_ratio_verified
+PASSED tests/test_hmc_followup.py::test_R17_different_denominators_not_equal
+PASSED tests/test_hmc_followup.py::test_R18_row_measure_not_overwritten
+PASSED tests/test_hmc_followup.py::test_R19_R21_partial_claim_scope_precedes_difference
+PASSED tests/test_hmc_followup.py::test_R09_duplicate_content_does_not_add_independent_checks_or_emissions
+PASSED tests/test_hmc_followup.py::test_R12_verified_same_scope_bidirectional[0]
+PASSED tests/test_hmc_followup.py::test_R12_verified_same_scope_bidirectional[80]
+PASSED tests/test_hmc_followup.py::test_R20_upstream_mismatch_survives_matching_claim
+PASSED tests/test_hmc_followup.py::test_R23_facility_conflict_and_explicit_distinct_facilities[False]
+PASSED tests/test_hmc_followup.py::test_R23_facility_conflict_and_explicit_distinct_facilities[True]
+PASSED tests/test_hmc_followup.py::test_R24_scope12_estimated_with_period_and_sources
+PASSED tests/test_hmc_followup.py::test_R26_grounding_preparation_does_not_prove_certification
+PASSED tests/test_hmc_followup.py::test_R29_empty_flagged_is_pending_not_auto
+PASSED tests/test_hmc_followup.py::test_other_site_or_target_total_does_not_displace_components
+PASSED tests/test_hmc_followup.py::test_construction_date_is_not_annual_generation_target
+PASSED tests/test_hmc_followup.py::test_labeled_reporting_period_is_preserved
+PASSED tests/test_hmc_followup.py::test_R27_real_multipage_clause_locator_and_unknown
+PASSED tests/test_hmc_followup.py::test_R27_single_page_still_requires_located_quote
+PASSED tests/test_measurement_boundary.py::TestBoundaryDerivation::test_aggregation_and_span[\ud0dc\uc591\uad11 \uc6d4\ud3c9\uade0 \uc0ac\uc6a9\ub7c9-2026\ub144 1~6\uc6d4 \uc6d4\ud3c9\uade0-monthly_average-6]
+PASSED tests/test_measurement_boundary.py::TestBoundaryDerivation::test_aggregation_and_span[\uc0ac\uc6a9\uc804\ub825\ub7c9-2026-05-monthly-1]
+PASSED tests/test_measurement_boundary.py::TestBoundaryDerivation::test_aggregation_and_span[\ud0dc\uc591\uad11 \uc5f0\uac04 \ubc1c\uc804 \ubaa9\ud45c-2026\ub144 \ud558\ubc18\uae30 \uc774\ud6c4 \uc5f0\uac04-annual-12]
+PASSED tests/test_measurement_boundary.py::TestBoundaryDerivation::test_aggregation_and_span[\uc7ac\uc0dd\uc5d0\ub108\uc9c0 \ube44\uc728 \ud604\uc7ac-2026\ub144 \uc0c1\ubc18\uae30-period_total-6]
+PASSED tests/test_measurement_boundary.py::TestBoundaryDerivation::test_measure_kind[\ud0dc\uc591\uad11 \uc6d4\ud3c9\uade0 \uc0ac\uc6a9\ub7c9-electricity_solar]
+PASSED tests/test_measurement_boundary.py::TestBoundaryDerivation::test_measure_kind[\uadf8\ub9b0 \ud504\ub9ac\ubbf8\uc5c4 \uc6d4\ud3c9\uade0 \uc0ac\uc6a9\ub7c9-electricity_green_tariff]
+PASSED tests/test_measurement_boundary.py::TestBoundaryDerivation::test_measure_kind[\ud654\uc11d\uc5f0\ub8cc \uae30\ubc18 \uc804\ub825 \ube44\uc728-electricity_fossil]
+PASSED tests/test_measurement_boundary.py::TestBoundaryDerivation::test_measure_kind[\ucd1d \uc804\ub825 \uc0ac\uc6a9\ub7c9 \uc6d4\ud3c9\uade0-electricity_total]
+PASSED tests/test_measurement_boundary.py::TestBoundaryDerivation::test_measure_kind[\uc0ac\uc6a9\uc804\ub825\ub7c9-electricity_total]
+PASSED tests/test_measurement_boundary.py::TestBoundaryDerivation::test_measure_kind[\uae30\ud0c0 \uc7ac\uc0dd\uc5d0\ub108\uc9c0 \ube44\uc728-renewable_residual]
+PASSED tests/test_measurement_boundary.py::TestBoundaryDerivation::test_city_gas_heat_shares_kind_with_volume
+PASSED tests/test_measurement_boundary.py::TestBoundaryDerivation::test_basis[\ud0dc\uc591\uad11 \uc5f0\uac04 \ubc1c\uc804 \ubaa9\ud45c-2026\ub144 \ud558\ubc18\uae30 \uc774\ud6c4 \uc5f0\uac04-target]
+PASSED tests/test_measurement_boundary.py::TestBoundaryDerivation::test_basis[\uc7ac\uc0dd\uc5d0\ub108\uc9c0 \ube44\uc728 \ubaa9\ud45c-2030\ub144 \ubaa9\ud45c-target]
+PASSED tests/test_measurement_boundary.py::TestBoundaryDerivation::test_basis[\uc0ac\uc6a9\uc804\ub825\ub7c9-2026-05-actual]
+PASSED tests/test_measurement_boundary.py::TestBoundaryDerivation::test_unknown_axes_are_marked_not_defaulted
+PASSED tests/test_measurement_boundary.py::TestBoundaryDerivation::test_empty_boundary_is_unknown_not_equal
+PASSED tests/test_measurement_boundary.py::TestBoundaryDerivation::test_doc12_every_hint_reads_at_least_one_axis
+PASSED tests/test_measurement_boundary.py::TestRatioRole::test_source_ratio_is_component[\ud0dc\uc591\uad11 \ube44\uc728]
+PASSED tests/test_measurement_boundary.py::TestRatioRole::test_source_ratio_is_component[\uadf8\ub9b0 \ud504\ub9ac\ubbf8\uc5c4 \ube44\uc728]
+PASSED tests/test_measurement_boundary.py::TestRatioRole::test_source_ratio_is_component[\ud654\uc11d\uc5f0\ub8cc \uae30\ubc18 \uc804\ub825 \ube44\uc728]
+PASSED tests/test_measurement_boundary.py::TestRatioRole::test_source_ratio_is_component[\uae30\ud0c0 \uc7ac\uc0dd\uc5d0\ub108\uc9c0 \ube44\uc728]
+PASSED tests/test_measurement_boundary.py::TestRatioRole::test_whole_ratio_stays_total[\uc7ac\uc0dd\uc5d0\ub108\uc9c0 \ube44\uc728 \ud604\uc7ac]
+PASSED tests/test_measurement_boundary.py::TestRatioRole::test_whole_ratio_stays_total[\uc7ac\uc0dd\uc5d0\ub108\uc9c0 \uc0ac\uc6a9\xb7\uc804\ud658\uc728]
+PASSED tests/test_measurement_boundary.py::TestRatioRole::test_whole_ratio_stays_total[\ud3d0\uae30\ubb3c \uc7ac\ud65c\uc6a9\ub960]
+PASSED tests/test_measurement_boundary.py::TestRatioRole::test_whole_ratio_stays_total[\uc5ec\uc131 \uad00\ub9ac\uc790 \ube44\uc728]
+PASSED tests/test_measurement_boundary.py::TestRatioRole::test_whole_ratio_stays_total[\uc7ac\uc0dd\uc5d0\ub108\uc9c0 \ube44\uc728(\ud0dc\uc591\uad11 \ud3ec\ud568)]
+PASSED tests/test_measurement_boundary.py::TestLimitedSum::test_same_physical_quantity_in_two_units_is_not_summed
+PASSED tests/test_measurement_boundary.py::TestLimitedSum::test_family_total_plus_component_is_blocked
+PASSED tests/test_measurement_boundary.py::TestLimitedSum::test_duplicate_upload_of_same_bill_is_blocked
+PASSED tests/test_measurement_boundary.py::TestLimitedSum::test_target_is_excluded_from_actual_sum
+PASSED tests/test_measurement_boundary.py::TestLimitedSum::test_unknown_measure_target_fails_closed
+PASSED tests/test_measurement_boundary.py::TestLimitedSum::test_sum_never_claims_total_completeness
+PASSED tests/test_measurement_boundary.py::TestLimitedSum::test_merge_boundaries_drops_axes_that_disagree
+PASSED tests/test_measurement_boundary.py::TestComparable::test_actual_vs_target_is_not_comparable
+PASSED tests/test_measurement_boundary.py::TestComparable::test_monthly_bill_vs_annual_disclosure_is_not_comparable
+PASSED tests/test_measurement_boundary.py::TestComparable::test_different_energy_source_is_not_comparable
+PASSED tests/test_measurement_boundary.py::TestComparable::test_missing_scope_is_confirmation_needed_not_blocked
+PASSED tests/test_measurement_boundary.py::TestComparable::test_same_boundary_compares
+PASSED tests/test_measurement_boundary.py::TestLedgerCarriesBoundary::test_two_energy_sources_are_summed_with_both_evidence
+PASSED tests/test_measurement_boundary.py::TestLedgerCarriesBoundary::test_partial_sum_is_not_verified_and_says_why
+PASSED tests/test_measurement_boundary.py::TestLedgerCarriesBoundary::test_single_electricity_bill_does_not_attach_gas_document
+PASSED tests/test_measurement_boundary.py::TestLedgerCarriesBoundary::test_gas_volume_does_not_double_count_with_heat
+PASSED tests/test_measurement_boundary.py::TestLedgerCarriesBoundary::test_monthly_value_is_not_scaled_to_annual
+PASSED tests/test_measurement_boundary.py::TestRenewableRatioEligibility::test_stated_whole_ratio_wins_but_is_not_verified
+PASSED tests/test_measurement_boundary.py::TestRenewableRatioEligibility::test_source_ratio_alone_is_component_not_verified[keep0-5.6]
+PASSED tests/test_measurement_boundary.py::TestRenewableRatioEligibility::test_source_ratio_alone_is_component_not_verified[keep1-1.2]
+PASSED tests/test_measurement_boundary.py::TestRenewableRatioEligibility::test_whole_ratio_removed_does_not_promote_a_component
+PASSED tests/test_measurement_boundary.py::TestRenewableRatioEligibility::test_green_premium_ratio_alone_does_not_fill_the_answer
+PASSED tests/test_measurement_boundary.py::TestRenewableRatioEligibility::test_target_ratio_never_becomes_the_answer
+PASSED tests/test_hmc_validation_contract.py::test_validator_accepts_complete_contract
+PASSED tests/test_hmc_validation_contract.py::test_R28_validator_rejects_each_corruption[missing_question]
+PASSED tests/test_hmc_validation_contract.py::test_R28_validator_rejects_each_corruption[empty_boundary]
+PASSED tests/test_hmc_validation_contract.py::test_R28_validator_rejects_each_corruption[changed_value]
+PASSED tests/test_hmc_validation_contract.py::test_R28_validator_rejects_each_corruption[wrong_page]
+PASSED tests/test_hmc_validation_contract.py::test_R28_validator_rejects_each_corruption[missing_checklist]
+PASSED tests/test_hmc_validation_contract.py::test_empty_input_cannot_pass
+PASSED tests/test_question_fitness_controls.py::TestPositiveControl::test_real_procedure_document_produces_a_draft
+PASSED tests/test_question_fitness_controls.py::TestNegativeControl::test_adjacent_topics_only_stays_pending
+PASSED tests/test_question_fitness_controls.py::TestNegativeControl::test_stitching_adjacent_sentences_does_not_complete_the_answer
+PASSED tests/test_question_fitness_controls.py::TestNegativeControl::test_the_gate_applies_on_the_code_match_path
+PASSED tests/test_question_fitness_controls.py::TestOneRelevantChunkDoesNotCarryTheRest::test_irrelevant_chunks_are_dropped_from_the_citation_set
+PASSED tests/test_question_fitness_controls.py::TestQuestionsAreNotGivenTheSameAnswer::test_e7_and_e8_get_different_evidence
+PASSED tests/test_question_fitness_controls.py::TestQuestionsAreNotGivenTheSameAnswer::test_communication_document_does_not_answer_the_remedy_question
+PASSED tests/test_question_fitness_controls.py::TestGroundingAndFitnessAreSeparateGates::test_fitness_blocks_before_grounding_is_ever_consulted
+PASSED tests/test_question_fitness_controls.py::TestGroundingAndFitnessAreSeparateGates::test_fit_evidence_still_faces_grounding
+PASSED tests/test_question_fitness_controls.py::TestTheRuleIsGenericNotQuestionSpecific::test_common_words_are_not_distinctive
+PASSED tests/test_question_fitness_controls.py::TestTheRuleIsGenericNotQuestionSpecific::test_the_same_word_can_be_distinctive_in_another_form
+PASSED tests/test_question_fitness_controls.py::TestTheRuleIsGenericNotQuestionSpecific::test_other_frameworks_discriminate_too
+PASSED tests/test_question_fitness_controls.py::TestTheRuleIsGenericNotQuestionSpecific::test_evidence_types_join_the_question_vocabulary
+PASSED tests/test_question_fitness_controls.py::TestOneWordOverlapIsNotEnough::test_a_single_incidental_word_is_held
+PASSED tests/test_question_fitness_controls.py::TestOneWordOverlapIsNotEnough::test_two_distinctive_words_pass
+PASSED tests/test_question_fitness_controls.py::TestOneWordOverlapIsNotEnough::test_the_bar_never_exceeds_what_the_question_can_supply
+PASSED tests/test_question_fitness_controls.py::TestOneWordOverlapIsNotEnough::test_a_two_term_question_needs_both
+PASSED tests/test_question_fitness_controls.py::TestOneWordOverlapIsNotEnough::test_the_real_communication_procedure_still_passes
+PASSED tests/test_question_fitness_controls.py::TestTermMatching::test_a_term_does_not_match_inside_a_longer_word
+PASSED tests/test_question_fitness_controls.py::TestTermMatching::test_particles_and_compound_heads_still_match
+PASSED tests/test_question_fitness_controls.py::TestTermMatching::test_matching_survives_punctuation_boundaries
+PASSED tests/test_question_fitness_controls.py::TestFailOpenOnlyWhenJudgementIsImpossible::test_no_fitness_means_no_filtering
+PASSED tests/test_question_fitness_controls.py::TestFailOpenOnlyWhenJudgementIsImpossible::test_empty_evidence_is_reported_as_such
+PASSED tests/test_question_fitness_controls.py::test_non_hmc_communication_and_remedy_synonyms
+PASSED tests/test_evidence_guidance_by_question.py::TestQualitativeClausesDoNotGetBillGuidance::test_no_bill_or_invoice_request_on_a_yes_no_clause[HMC-D-5]
+PASSED tests/test_evidence_guidance_by_question.py::TestQualitativeClausesDoNotGetBillGuidance::test_no_bill_or_invoice_request_on_a_yes_no_clause[HMC-C-1]
+PASSED tests/test_evidence_guidance_by_question.py::TestQualitativeClausesDoNotGetBillGuidance::test_no_bill_or_invoice_request_on_a_yes_no_clause[HMC-C-5]
+PASSED tests/test_evidence_guidance_by_question.py::TestQualitativeClausesDoNotGetBillGuidance::test_fair_trade_asks_for_a_compliance_programme
+PASSED tests/test_evidence_guidance_by_question.py::TestQualitativeClausesDoNotGetBillGuidance::test_environmental_permit_asks_for_the_permit_itself
+PASSED tests/test_evidence_guidance_by_question.py::TestQualitativeClausesDoNotGetBillGuidance::test_air_emission_clause_points_the_number_at_its_own_question
+PASSED tests/test_evidence_guidance_by_question.py::TestNumericQuestionsKeepQuantitativeGuidance::test_metric_rows_still_ask_for_the_number[HMC-C-5-E-7-1-\ubc30\ucd9c\ub7c9]
+PASSED tests/test_evidence_guidance_by_question.py::TestNumericQuestionsKeepQuantitativeGuidance::test_metric_rows_still_ask_for_the_number[HMC-C-4-E-6-2-\uc7ac\ud65c\uc6a9]
+PASSED tests/test_evidence_guidance_by_question.py::TestNumericQuestionsKeepQuantitativeGuidance::test_metric_rows_still_ask_for_the_number[HMC-C-8-E-4-1-\uc5d0\ub108\uc9c0]
+PASSED tests/test_evidence_guidance_by_question.py::TestNumericQuestionsKeepQuantitativeGuidance::test_metric_rows_still_ask_for_the_number[HMC-C-8-E-3-1-Scope]
+PASSED tests/test_evidence_guidance_by_question.py::TestNumericQuestionsKeepQuantitativeGuidance::test_kesg_frameworks_are_untouched
+PASSED tests/test_evidence_guidance_by_question.py::TestRuleOrder::test_explicit_requirement_wins_over_a_crosswalk_fallback
+PASSED tests/test_evidence_guidance_by_question.py::TestRuleOrder::test_same_codes_resolve_differently_for_a_numeric_question
+PASSED tests/test_evidence_guidance_by_question.py::TestRuleOrder::test_unknown_codes_fall_back_to_the_question_type
+PASSED tests/test_evidence_guidance_by_question.py::TestChecklistSharesTheSameSentence::test_checklist_row_repeats_the_answer_guidance
+PASSED tests/test_supplychain_draft_ui.py::test_five_column_metrics
+PASSED tests/test_supplychain_draft_ui.py::test_draft_expander_contents
+PASSED tests/test_supplychain_draft_ui.py::test_caching_prevents_duplicate_calls
+PASSED tests/test_supplychain_draft_ui.py::test_cache_invalidates_on_supplier_claims_change
+PASSED tests/test_supplychain_draft_ui.py::test_checklist_draft_ready_action
+PASSED tests/test_supplychain_draft_ui.py::test_excel_draft_label
+PASSED tests/test_supplychain_draft_ui.py::test_excel_sec_auto_excludes_draft
+PASSED tests/test_supplychain_draft_ui.py::test_pdf_no_crash
+PASSED tests/test_supplychain_draft_ui.py::test_regression_no_draft_excel
+PASSED tests/test_supplychain_draft_ui.py::test_regression_no_draft_pdf
+PASSED tests/test_supplychain_draft_ui.py::test_regression_no_draft_checklist
+PASSED tests/test_supplychain_draft_ui.py::test_R30_c5_old_numeric_cache_is_invalidated
+PASSED tests/audit_integrity/test_resolved_selection.py::test_structured_dart_value_survives_ocr_representative
+PASSED tests/audit_integrity/test_resolved_selection.py::test_normalized_units_and_inferred_year_are_preserved
+PASSED tests/audit_integrity/test_resolved_selection.py::test_scope12_sum_is_finalized_in_ledger_with_both_sources
+PASSED tests/audit_integrity/test_resolved_selection.py::test_reported_total_has_priority_over_derived_sum
+PASSED tests/audit_integrity/test_resolved_selection.py::test_declared_no_selection_cannot_be_resurrected
+PASSED tests/audit_integrity/test_resolved_selection.py::test_decoy_cannot_justify_d1_pass
+PASSED tests/audit_integrity/test_fresh_contracts.py::TestSurveyAndEvidence::test_survey_only_stays_self_reported[yes]
+PASSED tests/audit_integrity/test_fresh_contracts.py::TestSurveyAndEvidence::test_survey_only_stays_self_reported[no]
+PASSED tests/audit_integrity/test_fresh_contracts.py::TestSurveyAndEvidence::test_survey_only_stays_self_reported[yes-with-note]
+PASSED tests/audit_integrity/test_fresh_contracts.py::TestSurveyAndEvidence::test_survey_only_stays_self_reported[no-with-note]
+PASSED tests/audit_integrity/test_fresh_contracts.py::TestSurveyAndEvidence::test_unanswered_survey_stays_unanswered
+PASSED tests/audit_integrity/test_fresh_contracts.py::TestSurveyAndEvidence::test_policy_requires_resolvable_relevant_evidence[valid-verified]
+PASSED tests/audit_integrity/test_fresh_contracts.py::TestSurveyAndEvidence::test_policy_requires_resolvable_relevant_evidence[unlinked-self_reported]
+PASSED tests/audit_integrity/test_fresh_contracts.py::TestSurveyAndEvidence::test_policy_requires_resolvable_relevant_evidence[dangling-not_verified]
+PASSED tests/audit_integrity/test_fresh_contracts.py::TestSurveyAndEvidence::test_policy_requires_resolvable_relevant_evidence[wrong-topic-not_verified]
+PASSED tests/audit_integrity/test_fresh_contracts.py::TestSurveyAndEvidence::test_one_valid_link_cannot_verify_other_unsupported_options
+PASSED tests/audit_integrity/test_fresh_contracts.py::TestNumericalClaims::test_valid_values_and_documented_threshold[43.8-43.8-verified]
+PASSED tests/audit_integrity/test_fresh_contracts.py::TestNumericalClaims::test_valid_values_and_documented_threshold[43.8-90.2-flagged]
+PASSED tests/audit_integrity/test_fresh_contracts.py::TestNumericalClaims::test_valid_values_and_documented_threshold[0-0-verified]
+PASSED tests/audit_integrity/test_fresh_contracts.py::TestNumericalClaims::test_valid_values_and_documented_threshold[100-100-verified]
+PASSED tests/audit_integrity/test_fresh_contracts.py::TestNumericalClaims::test_valid_values_and_documented_threshold[40-49.9-verified]
+PASSED tests/audit_integrity/test_fresh_contracts.py::TestNumericalClaims::test_valid_values_and_documented_threshold[40-50-flagged]
+PASSED tests/audit_integrity/test_fresh_contracts.py::TestNumericalClaims::test_rounding_does_not_cross_ten_percentage_point_threshold
+PASSED tests/audit_integrity/test_fresh_contracts.py::TestNumericalClaims::test_invalid_rates_are_never_reported_as_a_match[evidence-negative]
+PASSED tests/audit_integrity/test_fresh_contracts.py::TestNumericalClaims::test_invalid_rates_are_never_reported_as_a_match[evidence-over-100]
+PASSED tests/audit_integrity/test_fresh_contracts.py::TestNumericalClaims::test_invalid_rates_are_never_reported_as_a_match[evidence-nan]
+PASSED tests/audit_integrity/test_fresh_contracts.py::TestNumericalClaims::test_invalid_rates_are_never_reported_as_a_match[evidence-infinite]
+PASSED tests/audit_integrity/test_fresh_contracts.py::TestNumericalClaims::test_invalid_rates_are_never_reported_as_a_match[claim-negative]
+PASSED tests/audit_integrity/test_fresh_contracts.py::TestNumericalClaims::test_invalid_rates_are_never_reported_as_a_match[claim-over-100]
+PASSED tests/audit_integrity/test_fresh_contracts.py::TestNumericalClaims::test_invalid_rates_are_never_reported_as_a_match[claim-nan]
+PASSED tests/audit_integrity/test_fresh_contracts.py::TestNumericalClaims::test_invalid_rates_are_never_reported_as_a_match[claim-infinite]
+PASSED tests/audit_integrity/test_fresh_contracts.py::TestNumericalClaims::test_energy_claims_respect_units[convert-mwh-to-kwh]
+PASSED tests/audit_integrity/test_fresh_contracts.py::TestNumericalClaims::test_energy_claims_respect_units[convert-kwh-to-mwh]
+PASSED tests/audit_integrity/test_fresh_contracts.py::TestNumericalClaims::test_energy_claims_respect_units[same-number-wrong-scale]
+PASSED tests/audit_integrity/test_fresh_contracts.py::TestNumericalClaims::test_energy_claims_respect_units[incompatible-dimensions]
+PASSED tests/audit_integrity/test_fresh_contracts.py::TestNumericalClaims::test_energy_claims_respect_units[same-unit-control]
+PASSED tests/audit_integrity/test_fresh_contracts.py::TestActualSaqPdfParsing::test_embedded_pdf_text_yields_only_valid_actual[actual]
+PASSED tests/audit_integrity/test_fresh_contracts.py::TestActualSaqPdfParsing::test_embedded_pdf_text_yields_only_valid_actual[target-before-actual]
+PASSED tests/audit_integrity/test_fresh_contracts.py::TestActualSaqPdfParsing::test_embedded_pdf_text_yields_only_valid_actual[actual-before-target]
+PASSED tests/audit_integrity/test_fresh_contracts.py::TestActualSaqPdfParsing::test_embedded_pdf_text_yields_only_valid_actual[target-only]
+PASSED tests/audit_integrity/test_fresh_contracts.py::TestActualSaqPdfParsing::test_embedded_pdf_text_yields_only_valid_actual[postfix-target]
+PASSED tests/audit_integrity/test_fresh_contracts.py::TestActualSaqPdfParsing::test_embedded_pdf_text_yields_only_valid_actual[negative]
+PASSED tests/audit_integrity/test_fresh_contracts.py::TestActualSaqPdfParsing::test_embedded_pdf_text_yields_only_valid_actual[over-100]
+PASSED tests/audit_integrity/test_fresh_contracts.py::TestActualSaqPdfParsing::test_embedded_pdf_text_yields_only_valid_actual[zero]
+PASSED tests/audit_integrity/test_fresh_contracts.py::TestActualSaqPdfParsing::test_embedded_pdf_text_yields_only_valid_actual[hundred]
+PASSED tests/audit_integrity/test_fresh_contracts.py::TestActualSaqPdfParsing::test_embedded_pdf_text_yields_only_valid_actual[complement]
+PASSED tests/audit_integrity/test_fresh_contracts.py::TestLedgerToResponse::test_selected_ledger_value_survives_export[single]
+PASSED tests/audit_integrity/test_fresh_contracts.py::TestLedgerToResponse::test_selected_ledger_value_survives_export[component]
+PASSED tests/audit_integrity/test_fresh_contracts.py::TestLedgerToResponse::test_selected_ledger_value_survives_export[target]
+PASSED tests/audit_integrity/test_fresh_contracts.py::TestLedgerToResponse::test_selected_ledger_value_survives_export[future-target]
+PASSED tests/audit_integrity/test_fresh_contracts.py::TestLedgerToResponse::test_selected_ledger_value_survives_export[older-total]
+PASSED tests/audit_integrity/test_fresh_contracts.py::TestLedgerToResponse::test_target_only_cannot_reappear_as_verified_actual
+PASSED tests/audit_integrity/test_fresh_contracts.py::TestLedgerToResponse::test_superseded_dart_regex_does_not_return_in_export
+PASSED tests/audit_integrity/test_fresh_contracts.py::TestLedgerToResponse::test_risk_rows_describe_the_selected_total[total-first]
+PASSED tests/audit_integrity/test_fresh_contracts.py::TestLedgerToResponse::test_risk_rows_describe_the_selected_total[total-last]
+PASSED tests/audit_integrity/test_fresh_contracts.py::TestProviderCache::test_identical_request_reuses_success
+PASSED tests/audit_integrity/test_fresh_contracts.py::TestProviderCache::test_changed_request_identity_requires_provider[prompt]
+PASSED tests/audit_integrity/test_fresh_contracts.py::TestProviderCache::test_changed_request_identity_requires_provider[model]
+PASSED tests/audit_integrity/test_fresh_contracts.py::TestProviderCache::test_changed_request_identity_requires_provider[json-mode]
+PASSED tests/audit_integrity/test_fresh_contracts.py::TestProviderCache::test_changed_request_identity_requires_provider[temperature]
+PASSED tests/audit_integrity/test_fresh_contracts.py::TestProviderCache::test_changed_request_identity_requires_provider[endpoint]
+PASSED tests/audit_integrity/test_fresh_contracts.py::TestProviderCache::test_cache_disabled_always_calls_provider
+PASSED tests/audit_integrity/test_fresh_contracts.py::TestProviderCache::test_strict_failure_does_not_become_mock_success
+PASSED tests/audit_integrity/test_fresh_contracts.py::TestProposedD3Requirement::test_missing_evidence_is_explicit_abstention[no-chunks]
+PASSED tests/audit_integrity/test_fresh_contracts.py::TestProposedD3Requirement::test_missing_evidence_is_explicit_abstention[empty-index]
+202 passed, 5 warnings in 0.85s
+<sys>:0: DeprecationWarning: builtin type swigvarlink has no __module__ attribute

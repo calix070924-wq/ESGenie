@@ -1,0 +1,188 @@
+F.FF.FFFFFFFFFFF                                                         [100%]
+=================================== FAILURES ===================================
+________________ test_R01_R02_total_contains_components_stable _________________
+
+    def test_R01_R02_total_contains_components_stable():
+        rows = [extraction("total.pdf", "총 에너지 사용량", 10, "TJ", "2026년 연간", "전사"),
+                extraction("power.pdf", "총 전력 사용량", 6, "TJ", "2026년 연간", "전사"),
+                extraction("gas.pdf", "도시가스 사용량", 4, "TJ", "2026년 연간", "전사")]
+        for order in (rows, rows[::-1], rows + [rows[1]]):
+            dp = energy(order)
+>           assert dp.value == 10
+E           AssertionError: assert 20.0 == 10
+E            +  where 20.0 = DataPoint(kesg_code='E-4-1', kesg_name='에너지 사용량', value=20.0, unit='TJ', period=2026, confidence=0.95, verification='e...n='scope_unconfirmed', comparison_reason='원장값이 부분값 — 2026년 연간 · 전사 · 전력 사용량 + 도시가스 + 에너지 사용량 · 부분', reference_files=[]).value
+
+tests/test_hmc_followup.py:51: AssertionError
+__________ test_R04_R05_different_periods_do_not_sum[2026-05-2026-06] __________
+
+p1 = '2026-05', p2 = '2026-06'
+
+    @pytest.mark.parametrize("p1,p2", [("2026-05", "2026-06"), ("2025년 연간", "2026년 연간")])
+    def test_R04_R05_different_periods_do_not_sum(p1, p2):
+        dp = energy([extraction("power.pdf", "총 전력 사용량", 6, "TJ", p1),
+                     extraction("gas.pdf", "도시가스 사용량", 4, "TJ", p2)])
+>       assert dp.value in (6, 4)
+E       AssertionError: assert 10.0 in (6, 4)
+E        +  where 10.0 = DataPoint(kesg_code='E-4-1', kesg_name='에너지 사용량', value=10.0, unit='TJ', period=2026, confidence=0.95, verification='e...pe_unconfirmed', comparison_reason='원장값이 부분값 — 2026-05 / 2026-06 · 월간 · 제1공장 · 전력 사용량 + 도시가스 · 부분', reference_files=[]).value
+
+tests/test_hmc_followup.py:68: AssertionError
+_ test_R04_R05_different_periods_do_not_sum[2025\ub144 \uc5f0\uac04-2026\ub144 \uc5f0\uac04] _
+
+p1 = '2025년 연간', p2 = '2026년 연간'
+
+    @pytest.mark.parametrize("p1,p2", [("2026-05", "2026-06"), ("2025년 연간", "2026년 연간")])
+    def test_R04_R05_different_periods_do_not_sum(p1, p2):
+        dp = energy([extraction("power.pdf", "총 전력 사용량", 6, "TJ", p1),
+                     extraction("gas.pdf", "도시가스 사용량", 4, "TJ", p2)])
+>       assert dp.value in (6, 4)
+E       AssertionError: assert 10.0 in (6, 4)
+E        +  where 10.0 = DataPoint(kesg_code='E-4-1', kesg_name='에너지 사용량', value=10.0, unit='TJ', period=2025, confidence=0.95, verification='e...scope_unconfirmed', comparison_reason='원장값이 부분값 — 2025년 연간 / 2026년 연간 · 제1공장 · 전력 사용량 + 도시가스 · 부분', reference_files=[]).value
+
+tests/test_hmc_followup.py:68: AssertionError
+________________________ test_R07_period_normalization _________________________
+
+    def test_R07_period_normalization():
+        a = derive_boundary("사용전력량", "2026-05", doc_context="제1공장")
+        b = derive_boundary("사용전력량", "2026년 5월", doc_context="제1공장")
+        assert comparable(a, b)[0] == "compared"
+        annual = derive_boundary("총 에너지 사용량", "2026-01-01~2026-12-31", doc_context="전사")
+>       assert annual.aggregation == "annual"
+E       AssertionError: assert 'monthly' == 'annual'
+E         
+E         - annual
+E         + monthly
+
+tests/test_hmc_followup.py:84: AssertionError
+__________ test_R08_unknown_axes_do_not_sum[2026-\uc81c1\uacf5\uc7a5] __________
+
+period = '2026', site = '제1공장'
+
+    @pytest.mark.parametrize("period,site", [("2026", "제1공장"), ("2026-05", "")])
+    def test_R08_unknown_axes_do_not_sum(period, site):
+        dp = energy([extraction("a.pdf", "전력 사용량", 6, "TJ", period, site),
+                     extraction("b.pdf", "도시가스 사용량", 4, "TJ", period, site)])
+>       assert dp.value in (6, 4)
+E       AssertionError: assert 10.0 in (6, 4)
+E        +  where 10.0 = DataPoint(kesg_code='E-4-1', kesg_name='에너지 사용량', value=10.0, unit='TJ', period=2026, confidence=0.95, verification='e...], comparison='scope_unconfirmed', comparison_reason='원장값이 부분값 — 2026 · 제1공장 · 전력 사용량 + 도시가스 · 부분', reference_files=[]).value
+
+tests/test_hmc_followup.py:92: AssertionError
+__________________ test_R08_unknown_axes_do_not_sum[2026-05-] __________________
+
+period = '2026-05', site = ''
+
+    @pytest.mark.parametrize("period,site", [("2026", "제1공장"), ("2026-05", "")])
+    def test_R08_unknown_axes_do_not_sum(period, site):
+        dp = energy([extraction("a.pdf", "전력 사용량", 6, "TJ", period, site),
+                     extraction("b.pdf", "도시가스 사용량", 4, "TJ", period, site)])
+>       assert dp.value in (6, 4)
+E       AssertionError: assert 10.0 in (6, 4)
+E        +  where 10.0 = DataPoint(kesg_code='E-4-1', kesg_name='에너지 사용량', value=10.0, unit='TJ', period=2026, confidence=0.95, verification='e..., comparison='scope_unconfirmed', comparison_reason='원장값이 부분값 — 2026-05 · 월간 · 전력 사용량 + 도시가스 · 부분', reference_files=[]).value
+
+tests/test_hmc_followup.py:92: AssertionError
+___________ test_R10_independent_same_origin_mismatch_and_checklist ____________
+
+    def test_R10_independent_same_origin_mismatch_and_checklist():
+        g, points, sheet = pipeline([extraction("a.pdf", "사용전력량", 100, "kWh"),
+                                     extraction("b.pdf", "사용전력량", 200, "kWh")])
+>       assert cross_check_status("E-4-1", g)[0] == "mismatch"
+E       AssertionError: assert '' == 'mismatch'
+E         
+E         - mismatch
+
+tests/test_hmc_followup.py:99: AssertionError
+__________________________ test_R11_units_equivalent ___________________________
+
+    def test_R11_units_equivalent():
+        g, _, _ = pipeline([extraction("a.pdf", "使用 전력 사용량", 142560, "kWh"),
+                             extraction("b.pdf", "전력 사용량", 142.56, "MWh")])
+>       assert cross_check_status("E-4-1", g)[0] == "compared"
+E       AssertionError: assert '' == 'compared'
+E         
+E         - compared
+
+tests/test_hmc_followup.py:107: AssertionError
+_______________ test_R14_R15_incomplete_ratio_not_verified[2026] _______________
+
+period = '2026'
+
+    @pytest.mark.parametrize("period", ["2026", "2026년 연간"])
+    def test_R14_R15_incomplete_ratio_not_verified(period):
+        _, points, sheet = pipeline([extraction("ratio.pdf", "재생에너지 비율", 10.6, "%", period, "", "E-4-2")])
+>       assert points["E-4-2"].verification != "verified"
+E       AssertionError: assert 'verified' != 'verified'
+E        +  where 'verified' = DataPoint(kesg_code='E-4-2', kesg_name='재생에너지 사용 비율', value=10.6, unit='%', period=2026, confidence=0.95, verification...생에너지', scope_notes=['E-4-2: 경계 확인 필요 — 2026 · 재생에너지'], comparison='compared', comparison_reason='', reference_files=[]).verification
+
+tests/test_hmc_followup.py:113: AssertionError
+_____ test_R14_R15_incomplete_ratio_not_verified[2026\ub144 \uc5f0\uac04] ______
+
+period = '2026년 연간'
+
+    @pytest.mark.parametrize("period", ["2026", "2026년 연간"])
+    def test_R14_R15_incomplete_ratio_not_verified(period):
+        _, points, sheet = pipeline([extraction("ratio.pdf", "재생에너지 비율", 10.6, "%", period, "", "E-4-2")])
+>       assert points["E-4-2"].verification != "verified"
+E       AssertionError: assert 'verified' != 'verified'
+E        +  where 'verified' = DataPoint(kesg_code='E-4-2', kesg_name='재생에너지 사용 비율', value=10.6, unit='%', period=2026, confidence=0.95, verification...oundary_label='2026년 연간 · 재생에너지 · 총량', scope_notes=[], comparison='compared', comparison_reason='', reference_files=[]).verification
+
+tests/test_hmc_followup.py:113: AssertionError
+___________________ test_R16_confirmed_total_ratio_verified ____________________
+
+    def test_R16_confirmed_total_ratio_verified():
+        _, points, _ = pipeline([extraction("ratio.pdf", "총 에너지 대비 전체 재생에너지 사용 비율 실적", 10.6, "%", "2026년 연간", "전사", "E-4-2")])
+>       assert points["E-4-2"].verification == "verified"
+               ^^^^^^^^^^^^^^^
+E       KeyError: 'E-4-2'
+
+tests/test_hmc_followup.py:121: KeyError
+__________________ test_R17_different_denominators_not_equal ___________________
+
+    def test_R17_different_denominators_not_equal():
+        a = derive_boundary("총 에너지 대비 재생에너지 비율", "2026년 연간", unit="%", doc_context="전사")
+        b = derive_boundary("총 전력 대비 재생에너지 비율", "2026년 연간", unit="%", doc_context="전사")
+>       assert comparable(a, b)[0] == "not_comparable"
+E       AssertionError: assert 'compared' == 'not_comparable'
+E         
+E         - not_comparable
+E         + compared
+
+tests/test_hmc_followup.py:128: AssertionError
+_____________________ test_R18_row_measure_not_overwritten _____________________
+
+    def test_R18_row_measure_not_overwritten():
+        b = derive_boundary("총 전력 사용량", "2026-05", doc_context="도시가스 사용량 500MJ 전사")
+>       assert b.measure_kind == "electricity_total"
+E       AssertionError: assert 'fuel_city_gas' == 'electricity_total'
+E         
+E         - electricity_total
+E         + fuel_city_gas
+
+tests/test_hmc_followup.py:133: AssertionError
+_____________ test_R19_R21_partial_claim_scope_precedes_difference _____________
+
+    def test_R19_R21_partial_claim_scope_precedes_difference():
+        _, points, sheet = pipeline([extraction("ratio.pdf", "재생에너지 비율", 10.6, "%", "2026년 상반기", "전사", "E-4-2")],
+            claims={"E-4-2": SupplierClaim(code="E-4-2", value=92, unit="%", raw="재생에너지 비율 92%", source="survey")})
+        a = next(a for a in sheet.answers if a.qid == "HMC-C-8-E-4-2")
+>       assert a.comparison == "scope_unconfirmed"
+E       AssertionError: assert 'mismatch' == 'scope_unconfirmed'
+E         
+E         - scope_unconfirmed
+E         + mismatch
+
+tests/test_hmc_followup.py:140: AssertionError
+=========================== short test summary info ============================
+FAILED tests/test_hmc_followup.py::test_R01_R02_total_contains_components_stable
+FAILED tests/test_hmc_followup.py::test_R04_R05_different_periods_do_not_sum[2026-05-2026-06]
+FAILED tests/test_hmc_followup.py::test_R04_R05_different_periods_do_not_sum[2025\ub144 \uc5f0\uac04-2026\ub144 \uc5f0\uac04]
+FAILED tests/test_hmc_followup.py::test_R07_period_normalization - AssertionE...
+FAILED tests/test_hmc_followup.py::test_R08_unknown_axes_do_not_sum[2026-\uc81c1\uacf5\uc7a5]
+FAILED tests/test_hmc_followup.py::test_R08_unknown_axes_do_not_sum[2026-05-]
+FAILED tests/test_hmc_followup.py::test_R10_independent_same_origin_mismatch_and_checklist
+FAILED tests/test_hmc_followup.py::test_R11_units_equivalent - AssertionError...
+FAILED tests/test_hmc_followup.py::test_R14_R15_incomplete_ratio_not_verified[2026]
+FAILED tests/test_hmc_followup.py::test_R14_R15_incomplete_ratio_not_verified[2026\ub144 \uc5f0\uac04]
+FAILED tests/test_hmc_followup.py::test_R16_confirmed_total_ratio_verified - ...
+FAILED tests/test_hmc_followup.py::test_R17_different_denominators_not_equal
+FAILED tests/test_hmc_followup.py::test_R18_row_measure_not_overwritten - Ass...
+FAILED tests/test_hmc_followup.py::test_R19_R21_partial_claim_scope_precedes_difference
+14 failed, 2 passed in 0.17s
