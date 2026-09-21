@@ -1,0 +1,19 @@
+{
+  "checks": {
+    "R1a_equivalent_units_normal_no_double_count": true,
+    "R1a_equivalent_units_normal_used_not_also_excluded": true,
+    "R1a_equivalent_units_reversed_no_double_count": true,
+    "R1a_equivalent_units_reversed_used_not_also_excluded": true,
+    "R1b_within_tolerance_no_invented_mismatch": true,
+    "R1b_different_scope_no_invented_mismatch": true,
+    "R3a_distinct_certification": true,
+    "R3a_generic_iso_not_specific": true,
+    "R3a_same_identity_different_subject": true,
+    "R3b_truthful_future_plan": true,
+    "control_negated_source": true,
+    "control_other_source": true,
+    "control_actual_acquisition": true,
+    "control_preparation": true
+  },
+  "failed": []
+}
