@@ -802,6 +802,11 @@ def claim_scope_status(code, boundary, completeness, raw="", claim_boundary=None
 # 같은 문자열을 보고 상충 사실을 이어받는다 — 두 곳에 나눠 적으면 다시 갈린다.
 SOURCE_CONFLICT_REASON = "독립 증빙의 같은 측정 대상 값 상충 — 비교 판정 확인, 합산 제외"
 
+# 같은 측정 대상·기간·사업장의 값이 정확히 같아 합산에서 뺀 중복. 상충과 달리 **동등성이
+# 입증된** 제외이므로, 파생 배출량 선택이 이 사유를 보고 채택 대표의 환산 근거를 찾는다
+# (selection._equivalent_basis). 두 곳에 문자열을 나눠 적으면 다시 갈린다.
+DUPLICATE_MEASURE_REASON = "동일 측정값 중복 — 합산 제외"
+
 
 @dataclass
 class SumDecision:
@@ -924,7 +929,7 @@ def plan_sum(items: Iterable[Any], *, boundary_of=None, unit_of=None, report_yea
             x, xb = prior
             nv = convert_to_common(float(n.value), normalize_unit(unit_get(n)) or unit_get(n), normalize_unit(unit_get(x)) or unit_get(x))
             same = nv is not None and abs(nv-float(x.value)) <= max(abs(float(x.value))*1e-9, 1e-9)
-            why = "동일 측정값 중복 — 합산 제외" if same else SOURCE_CONFLICT_REASON
+            why = DUPLICATE_MEASURE_REASON if same else SOURCE_CONFLICT_REASON
             decision.blocked.append((n, why))
             continue
         if b.measure_kind in procurement:
@@ -969,5 +974,6 @@ __all__ = [
     "site_covers",
     "plan_sum",
     "SOURCE_CONFLICT_REASON",
+    "DUPLICATE_MEASURE_REASON",
     "SumDecision",
 ]

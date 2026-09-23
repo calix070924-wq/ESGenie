@@ -42,6 +42,9 @@ _CERT_COMPLETION_RE = re.compile(
 )
 _CERT_NOT_DONE_RE = re.compile(r"않|못|미취득|없|불가|취소|반납|실패")
 _CERT_PENDING_RE = re.compile(r"예정|준비|계획|목표|추진|신청")
+# 취득 술어에 바로 붙어 '이미 취득했다'로 끝내는 어미. 이 어미가 있으면 그 절에서
+# 상태가 확정되므로 뒤따르는 다른 행위의 어휘는 읽지 않는다.
+_CERT_DONE_TAIL_RE = re.compile(r"^(?:했|하였|하여|해서|해|되었|되어|됐|돼|완료)")
 
 
 def evaluate_grounding(answer_text: str, cited_chunks: list[dict[str, Any]]) -> GroundingResult:
@@ -122,8 +125,7 @@ def _certification_claims(sentence: str) -> list[frozenset[str]]:
     """
     names = []
     for m in _CERT_COMPLETION_RE.finditer(sentence):
-        context = _cert_context(m, sentence)
-        if _CERT_NOT_DONE_RE.search(context) or _CERT_PENDING_RE.search(context):
+        if not _cert_completed(m, sentence):
             continue
         name = _certification_identity(m.group("name") or "")
         if name and name not in names:
@@ -143,8 +145,7 @@ def _certification_acquired(name: frozenset[str], text: str) -> bool:
     `ISO 27001` 주장은 포괄적인 `ISO` 취득 진술로 입증되지 않는다.
     """
     for m in _CERT_COMPLETION_RE.finditer(text):
-        context = _cert_context(m, text)
-        if _CERT_NOT_DONE_RE.search(context) or _CERT_PENDING_RE.search(context):
+        if not _cert_completed(m, text):
             continue
         source = _certification_identity(m.group("name") or "")
         if source and name <= source:
@@ -152,9 +153,22 @@ def _certification_acquired(name: frozenset[str], text: str) -> bool:
     return False
 
 
-def _cert_context(match: re.Match[str], text: str) -> str:
-    """취득 진술과 그 뒤 어미 — '취득하지 않았다', '취득 예정'을 같은 창에서 읽는다."""
-    return match.group(0) + text[match.end():match.end() + 12]
+def _cert_completed(match: re.Match[str], text: str) -> bool:
+    """이 인증 취득 술어가 **이미 취득**을 진술하는가 — 부정·계획이면 False.
+
+    뒤 12글자를 통째로 읽으면 `취득했고 준비 자료를 보관한다`의 '준비'가 완료 주장을
+    지운다. 그러면 미입증 취득이 soft flag 없이 통과한다(4차 검토 C). 그래서 술어에
+    바로 붙은 어미를 먼저 읽는다 — `취득했다/취득하여`처럼 완료로 끝나면 그 절에서
+    상태가 확정되고, 뒤에 이어지는 별도 행위의 '준비·계획'은 이 인증의 상태가 아니다.
+    완료 어미가 없을 때만(`취득을 준비 중`, `취득할 예정`, `취득하지 않았다`) 창을
+    넓혀 부정·계획을 판정한다.
+    """
+    tail = text[match.end():match.end() + 12]
+    if _CERT_DONE_TAIL_RE.match(tail):
+        # 완료 어미 앞의 `미취득`처럼 술어 자체의 부정은 그대로 막는다.
+        return not _CERT_NOT_DONE_RE.search(match.group(0))
+    context = match.group(0) + tail
+    return not (_CERT_NOT_DONE_RE.search(context) or _CERT_PENDING_RE.search(context))
 
 
 # 인증명이 아닌 수식어 — 문장 주어, 연·월 표기, 시점·일반 서술. 식별자에서 분리한다.

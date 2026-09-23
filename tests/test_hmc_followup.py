@@ -418,3 +418,69 @@ def test_R27_single_page_still_requires_located_quote(tmp_path):
         ExtractedClause('missing','Invented claim.',page=1)])
     _resolve_clause_pages(ext,str(path))
     assert [c.page for c in ext.clauses]==[0,None]
+
+
+# ====================================================================
+# 2026-09-21 4차 검토(6351381) A·B·C — 조합 입력에서 남은 결함의 정상 동작
+# ====================================================================
+
+def power_and_gas(duplicates, mwh):
+    """같은 100 kWh 전력 문서 (1+duplicates)건과 같은 값의 MWh 표기, 그리고 정상 가스."""
+    rows = [extraction(f"p{i}.pdf", "사용전력량", 100, "kWh") for i in range(1 + duplicates)]
+    if mwh:
+        rows.append(extraction("total.pdf", "사용전력량", .1, "MWh"))
+    for i, row in enumerate(rows):
+        row.raw_text = f"사업장: 제1공장\n문서번호: 문서 {i + 1}"
+    return rows
+
+
+@pytest.mark.parametrize("mwh", [False, True])
+@pytest.mark.parametrize("duplicates", [0, 1, 2])
+def test_review4_A_conversion_basis_is_recovered_per_measurement(duplicates, mwh):
+    """정상 가스 자료가 함께 있어도 중복 전력의 배출량이 빠지지 않는다.
+
+    복구가 '전체 usable 목록이 비었을 때만' 돌면 남아 있는 가스 후보 때문에 전력
+    0.048 tCO2eq가 통째로 사라졌다(4차 검토 A: 0.104 → 0.056).
+    """
+    power = power_and_gas(duplicates, mwh)
+    for rows in ([*power, extraction("gas.pdf", "도시가스 사용열량", 1000, "MJ")],
+                 [extraction("gas.pdf", "도시가스 사용열량", 1000, "MJ"), *power[::-1]]):
+        points = pipeline(rows)[1]
+        assert points["E-4-1"].value == pytest.approx(.00136)     # 전력 0.00036 + 가스 0.001
+        dp = points["E-3-1"]
+        assert dp.value == pytest.approx(.104)                    # 전력 0.048 + 가스 0.056
+        assert len(dp.evidence_files) == 2                        # 전력·가스 두 사용 근거
+        assert {e.node_id for e in dp.evidence_files}.isdisjoint(
+            {e.node_id for e in dp.reference_files})              # 쓴 근거 ∩ 제외 근거 = ∅
+
+
+def test_review4_B_past_period_conflict_does_not_reach_current_value():
+    """다른 기간 문서끼리의 불일치가 현재 채택값의 상태를 바꾸지 않는다."""
+    control = pipeline([extraction("current.pdf", "사용전력량", 300, "kWh")])[1]["E-3-1"]
+    graph, points, _ = pipeline([extraction("old_a.pdf", "사용전력량", 100, "kWh", "2025-05"),
+                                 extraction("old_b.pdf", "사용전력량", 200, "kWh", "2025-05"),
+                                 extraction("current.pdf", "사용전력량", 300, "kWh")])
+    dp = points["E-3-1"]
+    assert (dp.value, dp.comparison, dp.verification) == (
+        control.value, control.comparison, control.verification)
+    # 과거 자료의 불일치는 그 자료의 기록으로 남는다.
+    assert [e.comparison for e in graph.edges if e.edge_type == "cross_check"] == ["mismatch"]
+    same_period_conflict = pipeline(separate_documents(200))[1]["E-3-1"]
+    assert same_period_conflict.comparison == "mismatch"          # 같은 범위면 계속 전달
+
+
+@pytest.mark.parametrize("answer,supported", [
+    ("ISMS 인증을 취득했다.", False),
+    ("ISMS 인증을 취득했고 준비 자료를 보관한다.", False),
+    ("ISMS 인증을 취득하여 준비 자료를 보관 중이다.", False),
+    ("ISMS 인증을 취득할 예정이다.", True),
+])
+def test_review4_C_adjacent_preparation_does_not_erase_completion_claim(answer, supported):
+    """뒤 절의 '준비'가 완료 주장 목록을 비우면 미입증 취득이 통과한다(4차 검토 C)."""
+    assert (certification_draft(answer, "ISMS 인증 취득을 준비 중이다.") == "draft_ready") is supported
+
+
+def test_review4_C_real_acquisition_allows_adjacent_preparation_clause():
+    """실제 취득 근거가 있으면 별도 준비·보관 서술이 함께 있어도 정상 처리한다."""
+    statement = "ISMS 인증을 취득했고 갱신 자료를 준비한다."
+    assert certification_draft(statement, statement) == "draft_ready"
