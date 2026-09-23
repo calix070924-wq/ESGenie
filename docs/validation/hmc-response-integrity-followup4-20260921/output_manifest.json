@@ -1,0 +1,117 @@
+{
+  "note": "Git 제외 산출물. xlsx·pdf는 경로·생성 시각을 담아 실행마다 해시가 달라진다 — 내용 동일성은 response_sheet.json 해시로 판단한다.",
+  "out_dir": "/private/tmp/ESGenie-hmc-response-integrity-20260920/outputs/validation/hmc-response-integrity-followup4-20260921",
+  "count": 22,
+  "files": [
+    {
+      "path": "/private/tmp/ESGenie-hmc-response-integrity-20260920/outputs/validation/hmc-response-integrity-followup4-20260921/actual/response_sheet.json",
+      "size": 124665,
+      "sha256": "11fdb408cc6564abb8fac3e9e30723c9a2537f475183964c25f0d7e22e1da726"
+    },
+    {
+      "path": "/private/tmp/ESGenie-hmc-response-integrity-20260920/outputs/validation/hmc-response-integrity-followup4-20260921/actual/실사응답서_hmc_한울정밀공업_실제자료.pdf",
+      "size": 108601,
+      "sha256": "e7ba0786d19732d4f9ff974206c9be12a7284a2726a73661ca8e1c74082aa1ba"
+    },
+    {
+      "path": "/private/tmp/ESGenie-hmc-response-integrity-20260920/outputs/validation/hmc-response-integrity-followup4-20260921/actual/실사응답서_hmc_한울정밀공업_실제자료.xlsx",
+      "size": 28046,
+      "sha256": "4490526b6813601c0741cfb10538b6825dafd478ad4774ac30f1bc3828439c16"
+    },
+    {
+      "path": "/private/tmp/ESGenie-hmc-response-integrity-20260920/outputs/validation/hmc-response-integrity-followup4-20260921/controlled/pdf_p1.png",
+      "size": 174790,
+      "sha256": "03e9a5c2c4a5a213ac8a1faf3b3aa58f8ae1b70540041cb075f599815197d20e"
+    },
+    {
+      "path": "/private/tmp/ESGenie-hmc-response-integrity-20260920/outputs/validation/hmc-response-integrity-followup4-20260921/controlled/pdf_p10.png",
+      "size": 154564,
+      "sha256": "35b0a36233fc8bb7b5983324b8955811bf5d995af2aabd5ea9a0ab19953d173d"
+    },
+    {
+      "path": "/private/tmp/ESGenie-hmc-response-integrity-20260920/outputs/validation/hmc-response-integrity-followup4-20260921/controlled/pdf_p11.png",
+      "size": 202433,
+      "sha256": "a61e3e40e3df71e88ed1b7b4458d1d459d8def0de93dbfb8e9f6e40033dbf6b5"
+    },
+    {
+      "path": "/private/tmp/ESGenie-hmc-response-integrity-20260920/outputs/validation/hmc-response-integrity-followup4-20260921/controlled/pdf_p12.png",
+      "size": 234154,
+      "sha256": "17ac2ea98db7345964f5f28ffe87849748847fb76fe0cb4e2a1adfe49c47c7a3"
+    },
+    {
+      "path": "/private/tmp/ESGenie-hmc-response-integrity-20260920/outputs/validation/hmc-response-integrity-followup4-20260921/controlled/pdf_p13.png",
+      "size": 288554,
+      "sha256": "3ac85be4e8d63ed77535b4470df84c3c6db5756518bc32bc926c2ec48598194a"
+    },
+    {
+      "path": "/private/tmp/ESGenie-hmc-response-integrity-20260920/outputs/validation/hmc-response-integrity-followup4-20260921/controlled/pdf_p14.png",
+      "size": 343448,
+      "sha256": "97c703b4da03d13fd401a5d15765f92ef0896c49bc98e30a39a6d1b6ee449acc"
+    },
+    {
+      "path": "/private/tmp/ESGenie-hmc-response-integrity-20260920/outputs/validation/hmc-response-integrity-followup4-20260921/controlled/pdf_p15.png",
+      "size": 40008,
+      "sha256": "177fdc52d39ce901d07fb371e9da57666f212310bfe6463a209ea71a87d9c45b"
+    },
+    {
+      "path": "/private/tmp/ESGenie-hmc-response-integrity-20260920/outputs/validation/hmc-response-integrity-followup4-20260921/controlled/pdf_p2.png",
+      "size": 187896,
+      "sha256": "9f682329438516aa5e944a4d9415d9b7d8625f59f7a1994285c33e200e86b744"
+    },
+    {
+      "path": "/private/tmp/ESGenie-hmc-response-integrity-20260920/outputs/validation/hmc-response-integrity-followup4-20260921/controlled/pdf_p3.png",
+      "size": 141483,
+      "sha256": "8f6497b5273905031d2ec9d0ee1e634d30c81640943cf7b5cb46b3713e5b33b2"
+    },
+    {
+      "path": "/private/tmp/ESGenie-hmc-response-integrity-20260920/outputs/validation/hmc-response-integrity-followup4-20260921/controlled/pdf_p4.png",
+      "size": 106274,
+      "sha256": "bba3c92c310f2579b60a81d0e7665c6d598eee4f8c3465a3dda3a675141ed1a3"
+    },
+    {
+      "path": "/private/tmp/ESGenie-hmc-response-integrity-20260920/outputs/validation/hmc-response-integrity-followup4-20260921/controlled/pdf_p5.png",
+      "size": 171293,
+      "sha256": "a66a5f53670917e5fe673ed5ad9cb784b12a29ec658299848921d92e62ecf188"
+    },
+    {
+      "path": "/private/tmp/ESGenie-hmc-response-integrity-20260920/outputs/validation/hmc-response-integrity-followup4-20260921/controlled/pdf_p6.png",
+      "size": 180394,
+      "sha256": "ba6cff472829a74bd9a77b9692e855d0691a4160dbf82c97fb18de5f1f0eb6d7"
+    },
+    {
+      "path": "/private/tmp/ESGenie-hmc-response-integrity-20260920/outputs/validation/hmc-response-integrity-followup4-20260921/controlled/pdf_p7.png",
+      "size": 188321,
+      "sha256": "e2580f42120179825452f41b5a7cce5634e4c4f500531a5e955e92b7d428aa12"
+    },
+    {
+      "path": "/private/tmp/ESGenie-hmc-response-integrity-20260920/outputs/validation/hmc-response-integrity-followup4-20260921/controlled/pdf_p8.png",
+      "size": 198068,
+      "sha256": "fd8dd794f52209fd006f79db9c4da248de1324c51f6a4f4b9ec458373b03c834"
+    },
+    {
+      "path": "/private/tmp/ESGenie-hmc-response-integrity-20260920/outputs/validation/hmc-response-integrity-followup4-20260921/controlled/pdf_p9.png",
+      "size": 219575,
+      "sha256": "d1c5f01b82089c34206587d0a91d368d722a517284f8001a7f558f32a9985259"
+    },
+    {
+      "path": "/private/tmp/ESGenie-hmc-response-integrity-20260920/outputs/validation/hmc-response-integrity-followup4-20260921/controlled/response_sheet.json",
+      "size": 126353,
+      "sha256": "7bed37001ebecc379b69990f8b81e9b249c0f61fe7181d5c945344050519aebd"
+    },
+    {
+      "path": "/private/tmp/ESGenie-hmc-response-integrity-20260920/outputs/validation/hmc-response-integrity-followup4-20260921/controlled/실사응답서_hmc_한울정밀공업_동일범위주장통제.pdf",
+      "size": 109300,
+      "sha256": "49560b779882dbbb33f99c212d0469731d9f8568d0df0b1d41f471d1180365fb"
+    },
+    {
+      "path": "/private/tmp/ESGenie-hmc-response-integrity-20260920/outputs/validation/hmc-response-integrity-followup4-20260921/controlled/실사응답서_hmc_한울정밀공업_동일범위주장통제.xlsx",
+      "size": 28439,
+      "sha256": "f138421a87303a838af47eaae27d5c3fb3cff013b2e0210a23e0d758302095cd"
+    },
+    {
+      "path": "/private/tmp/ESGenie-hmc-response-integrity-20260920/outputs/validation/hmc-response-integrity-followup4-20260921/pipeline.json",
+      "size": 183884,
+      "sha256": "29b2b33cff0b9110b26f4e232612497f63db7bfa4e370ee107af9bc0b8014506"
+    }
+  ]
+}
