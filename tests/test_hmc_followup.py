@@ -484,3 +484,119 @@ def test_review4_C_real_acquisition_allows_adjacent_preparation_clause():
     """실제 취득 근거가 있으면 별도 준비·보관 서술이 함께 있어도 정상 처리한다."""
     statement = "ISMS 인증을 취득했고 갱신 자료를 준비한다."
     assert certification_draft(statement, statement) == "draft_ready"
+
+
+# ====================================================================
+# 5차 검토(6b55c2a) — 단위 표기에 따른 상충 누락, 연결 어미의 완료 오판
+# ====================================================================
+
+def unit_documents(second_value, unit, period="2026-05"):
+    """separate_documents와 같되 두 번째 문서의 표기 단위와 기간을 바꾼다."""
+    a, b = separate_documents(100)
+    b.metrics[0] = ExtractedMetric("사용전력량", second_value, unit, period, "E-4-1", page=0, confidence=.95)
+    a.metrics[0] = ExtractedMetric("사용전력량", 100, "kWh", period, "E-4-1", page=0, confidence=.95)
+    return [a, b]
+
+
+@pytest.mark.parametrize("reverse", [False, True])
+def test_review5_1_conflict_reaches_emission_regardless_of_unit_notation(reverse):
+    """상충 문서가 MWh로 쓰여 파생 노드가 없어도 실제 불일치는 E-3-1까지 간다.
+
+    비교 양 끝 모두에 파생 배출량 노드를 요구하면 100 kWh ↔ 0.2 MWh의 mismatch
+    엣지가 조회에서 빠져 scope_unconfirmed/estimated가 됐다(5차 검토 1).
+    """
+    order = (lambda rows: rows[::-1]) if reverse else (lambda rows: rows)
+    kwh = pipeline(order(unit_documents(200, "kWh")))[1]["E-3-1"]
+    mwh = pipeline(order(unit_documents(.2, "MWh")))[1]["E-3-1"]
+    assert (kwh.comparison, kwh.verification) == ("mismatch", "unverified")
+    assert (mwh.value, mwh.comparison, mwh.verification) == (kwh.value, "mismatch", "unverified")
+    same = pipeline(order(unit_documents(.1, "MWh")))[1]["E-3-1"]
+    assert same.comparison != "mismatch"                          # 동등값은 상충이 아니다
+    assert same.value == pytest.approx(.048)
+
+
+def test_review5_1_past_mwh_conflict_does_not_reach_current_value():
+    """2025년끼리의 kWh ↔ MWh 불일치는 2026년 채택값에 전파되지 않는다."""
+    control = pipeline([extraction("current.pdf", "사용전력량", 300, "kWh")])[1]["E-3-1"]
+    rows = [*unit_documents(.2, "MWh", "2025-05"), extraction("current.pdf", "사용전력량", 300, "kWh")]
+    dp = pipeline(rows)[1]["E-3-1"]
+    assert (dp.value, dp.comparison, dp.verification) == (
+        control.value, control.comparison, control.verification)
+
+
+PLANNED = "ISMS 인증은 미취득 상태이며, 향후 ISMS 인증을 취득{} 제출할 예정이다."
+
+
+@pytest.mark.parametrize("ending", ["해서", "하여", "해"])
+def test_review5_2_connective_ending_is_not_completion(ending):
+    """연결 어미 뒤 계획 절이 있으면 원문은 취득 근거가 아니다(5차 검토 2)."""
+    source = PLANNED.format(ending)
+    assert certification_draft("ISMS 인증을 취득했다.", source) != "draft_ready"
+    honest = source.split(", ", 1)[1]                              # 계획을 사실대로 옮긴 답변
+    assert certification_draft(honest, source) == "draft_ready"
+
+
+@pytest.mark.parametrize("source", [
+    "2025년 정보보호 ISMS 인증을 취득하여 운영 중이다.",
+    "ISMS 인증을 취득해 보유하고 있다.",
+    "ISMS 인증을 취득했고 갱신 자료를 준비한다.",
+])
+def test_review5_2_connective_completion_still_grounds_claim(source):
+    """연결 어미 뒤가 현재 운영·보유면 기존처럼 취득 근거로 인정한다."""
+    assert certification_draft("ISMS 인증을 취득했다.", source) == "draft_ready"
+
+
+def test_review5_2_ambiguous_preparation_clause_is_conservative():
+    """`취득해 … 준비 중이다`는 완료 여부가 불분명하다 — 답변은 주장으로 세고 원문은 근거가 아니다."""
+    ambiguous = "ISMS 인증을 취득해 갱신을 준비 중이다."
+    assert certification_draft(ambiguous, "ISMS 인증 취득을 준비 중이다.") != "draft_ready"
+    assert certification_draft("ISMS 인증을 취득했다.", ambiguous) != "draft_ready"
+
+
+# ====================================================================
+# 6차 검토 — MWh 상충 상대의 출처·사유 보존, 쉼표 뒤 계획 문맥
+# ====================================================================
+
+@pytest.mark.parametrize("second,unit", [(200, "kWh"), (.2, "MWh")])
+@pytest.mark.parametrize("reverse", [False, True])
+def test_review6_1_conflict_counterpart_reaches_response_and_checklist(second, unit, reverse):
+    """파생 노드가 없는 MWh 상충 상대도 E-3-1·응답서·체크리스트에 근거로 남는다.
+
+    상태만 mismatch로 올리고 excluded가 파생 노드만 돌면 b.pdf와 상충 사유가 빠지고
+    범위 미확인 사유만 표시됐다(6차 검토 1).
+    """
+    import json
+    rows = unit_documents(second, unit)
+    _, points, sheet = pipeline(rows[::-1] if reverse else rows)
+    dp = points["E-3-1"]
+    assert (dp.comparison, dp.verification) == ("mismatch", "unverified")
+    assert "b.pdf" in {e.file_name for e in dp.reference_files}
+    assert "b.pdf" not in {e.file_name for e in dp.evidence_files}   # 산정 근거와 구분
+    assert "원측정값 상충" in dp.comparison_reason
+    answer = next(a for a in sheet.answers if a.qid == "HMC-C-8-E-3-1")
+    assert "b.pdf" in json.dumps(answer.to_dict(), ensure_ascii=False)
+    item = next(c for c in build_checklist(sheet) if c.qid == answer.qid)
+    assert "원측정값 상충" in item.request
+    assert "범위" in item.request                                  # 범위 사유는 별도로 유지
+
+
+@pytest.mark.parametrize("comma", ["", ","])
+@pytest.mark.parametrize("ending", ["해서", "하여", "해"])
+def test_review6_2_comma_does_not_cut_plan_context(ending, comma):
+    """쉼표 뒤의 `운영할 예정이다`를 버리면 미취득 원문이 취득 근거가 됐다(6차 검토 2)."""
+    source = f"ISMS 인증은 미취득 상태이며, ISMS 인증을 취득{ending} 제출하고{comma} 운영할 예정이다."
+    assert certification_draft("ISMS 인증을 취득했다.", source) != "draft_ready"
+
+
+def test_review6_2_honest_plan_with_comma_is_allowed():
+    plan = "향후 ISMS 인증을 취득해서 제출하고, 운영할 예정이다."
+    assert certification_draft(plan, plan) == "draft_ready"
+
+
+@pytest.mark.parametrize("source,supported", [
+    ("ISMS 인증은 미취득 상태이며, ISMS 인증을 취득하여 운영 중이다.", False),   # 같은 문장의 미취득
+    ("ISMS-P 인증은 미취득이며, ISMS 인증을 취득하여 운영 중이다.", True),      # 다른 인증의 미취득
+    ("2023년에는 ISMS 인증을 받지 못했다. 2025년 ISMS 인증을 취득했다.", True),  # 다른 문장의 과거
+])
+def test_review6_2_explicit_non_acquisition_in_same_sentence(source, supported):
+    assert (certification_draft("ISMS 인증을 취득했다.", source) == "draft_ready") is supported

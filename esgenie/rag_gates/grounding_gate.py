@@ -44,7 +44,20 @@ _CERT_NOT_DONE_RE = re.compile(r"않|못|미취득|없|불가|취소|반납|실�
 _CERT_PENDING_RE = re.compile(r"예정|준비|계획|목표|추진|신청")
 # 취득 술어에 바로 붙어 '이미 취득했다'로 끝내는 어미. 이 어미가 있으면 그 절에서
 # 상태가 확정되므로 뒤따르는 다른 행위의 어휘는 읽지 않는다.
-_CERT_DONE_TAIL_RE = re.compile(r"^(?:했|하였|하여|해서|해|되었|되어|됐|돼|완료)")
+_CERT_DONE_TAIL_RE = re.compile(r"^(?:했|하였|되었|됐|완료)")
+# 뒤 절로 이어 주는 연결 어미. `취득하여 운영 중이다`(완료)와 `취득해서 제출할
+# 예정이다`(계획)에 똑같이 쓰이므로 이것만으로 완료를 확정하지 않는다(5차 검토 2).
+_CERT_LINK_TAIL_RE = re.compile(r"^(?:하여|해서|해|되어|돼)")
+# 연결 어미가 이어 주는 뒤 절의 끝 — 문장 종결 부호. `-고 `나 쉼표에서 자르면
+# `취득해서 제출하고, 운영할 예정이다`의 계획 표지가 잘려 완료로 읽힌다(6차 검토 2).
+_CERT_CLAUSE_END_RE = re.compile(r"[.!?\n]")
+# 연결 어미 뒤 절의 계획·의무 표지 — 문장 전체를 계획으로 만든다.
+_CERT_LINK_PENDING_RE = re.compile(r"예정|계획|목표|향후|앞으로|추후|^(?:하여|해)야")
+# 연결 어미 뒤 절의 `준비·추진·신청` 술어. `취득해 갱신을 준비 중이다`(완료+별도 행위)와
+# `취득해 제출을 준비 중이다`를 어휘로 가를 수 없다 — 판정은 호출 쪽에 맡긴다.
+# 술어일 때만 센다 — `취득하여 준비 자료를 보관 중이다`의 '준비'는 명사 수식어다.
+_CERT_LINK_PREPARING_RE = re.compile(
+    r"(?:준비|추진|신청)\s*(?:중|할|하고\s*있|합니다|한다|이다|입니다)")
 
 
 def evaluate_grounding(answer_text: str, cited_chunks: list[dict[str, Any]]) -> GroundingResult:
@@ -125,7 +138,7 @@ def _certification_claims(sentence: str) -> list[frozenset[str]]:
     """
     names = []
     for m in _CERT_COMPLETION_RE.finditer(sentence):
-        if not _cert_completed(m, sentence):
+        if not _cert_completed(m, sentence, as_claim=True):
             continue
         name = _certification_identity(m.group("name") or "")
         if name and name not in names:
@@ -144,16 +157,37 @@ def _certification_acquired(name: frozenset[str], text: str) -> bool:
     집합으로 비교한다 — 주장의 식별자가 원문 식별자에 모두 있어야 근거가 된다.
     `ISO 27001` 주장은 포괄적인 `ISO` 취득 진술로 입증되지 않는다.
     """
-    for m in _CERT_COMPLETION_RE.finditer(text):
+    matches = list(_CERT_COMPLETION_RE.finditer(text))
+    for m in matches:
         if not _cert_completed(m, text):
             continue
         source = _certification_identity(m.group("name") or "")
-        if source and name <= source:
+        if source and name <= source and not _cert_denied_nearby(name, m, matches, text):
             return True
     return False
 
 
-def _cert_completed(match: re.Match[str], text: str) -> bool:
+def _cert_denied_nearby(name: frozenset[str], match: re.Match[str],
+                        matches: list[re.Match[str]], text: str) -> bool:
+    """같은 문장이 같은 인증의 **미취득**을 명시하는가.
+
+    `ISMS 인증은 미취득 상태이며, … 취득해서 …`처럼 한 문장이 현재 미취득을 밝혔다면
+    뒤 술어를 어떻게 읽든 완료 근거가 될 수 없다(6차 검토 2). 다른 문장의 과거
+    미취득(`2023년에는 받지 못했다. 2025년 취득했다.`)은 막지 않는다.
+    """
+    start = max(text.rfind(ch, 0, match.start()) for ch in ".!?\n") + 1
+    end = _CERT_CLAUSE_END_RE.search(text, match.end())
+    stop = end.start() if end else len(text)
+    for other in matches:
+        if other is match or other.start() < start or other.start() >= stop:
+            continue
+        if (name <= _certification_identity(other.group("name") or "")
+                and _CERT_NOT_DONE_RE.search(other.group(0))):
+            return True
+    return False
+
+
+def _cert_completed(match: re.Match[str], text: str, *, as_claim: bool = False) -> bool:
     """이 인증 취득 술어가 **이미 취득**을 진술하는가 — 부정·계획이면 False.
 
     뒤 12글자를 통째로 읽으면 `취득했고 준비 자료를 보관한다`의 '준비'가 완료 주장을
@@ -162,11 +196,25 @@ def _cert_completed(match: re.Match[str], text: str) -> bool:
     상태가 확정되고, 뒤에 이어지는 별도 행위의 '준비·계획'은 이 인증의 상태가 아니다.
     완료 어미가 없을 때만(`취득을 준비 중`, `취득할 예정`, `취득하지 않았다`) 창을
     넓혀 부정·계획을 판정한다.
+
+    `하여·해서·해` 같은 연결 어미는 완료가 아니다 — 뒤 절이 상태를 정한다. 이것을
+    완료로 확정하면 `향후 … 취득해서 제출할 예정이다`가 취득 근거로 통과했다(5차 검토
+    2). 그래서 연결 어미 뒤 절의 끝까지 읽어 부정·계획이 없을 때만 완료로 본다.
+    뒤 절이 `준비 중` 같은 술어로 끝나 완료 여부가 불분명하면 양쪽 모두 보수적으로
+    판정한다 — 답변(`as_claim=True`)은 취득 주장으로 세고, 원문은 근거로 쓰지 않는다.
     """
     tail = text[match.end():match.end() + 12]
     if _CERT_DONE_TAIL_RE.match(tail):
         # 완료 어미 앞의 `미취득`처럼 술어 자체의 부정은 그대로 막는다.
         return not _CERT_NOT_DONE_RE.search(match.group(0))
+    if _CERT_LINK_TAIL_RE.match(tail):
+        rest = text[match.end():]
+        end = _CERT_CLAUSE_END_RE.search(rest)
+        clause = rest[:end.start()] if end else rest
+        if (_CERT_NOT_DONE_RE.search(match.group(0))
+                or _CERT_LINK_PENDING_RE.search(clause) or _CERT_LINK_PENDING_RE.search(match.group(0))):
+            return False
+        return as_claim or not _CERT_LINK_PREPARING_RE.search(clause)
     context = match.group(0) + tail
     return not (_CERT_NOT_DONE_RE.search(context) or _CERT_PENDING_RE.search(context))
 

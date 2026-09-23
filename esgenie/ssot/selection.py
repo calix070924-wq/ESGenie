@@ -88,13 +88,19 @@ def _parent_comparisons(graph, ids):
     문자열만으로 파생 배출량을 불일치로 올리면 교차검증이 `compared`·`not_comparable`인
     사례까지 mismatch가 된다(2026-09-21 3차 검토 R1-b). 그래서 그래프에 실제로
     기록된 판정만 본다 — 허용 오차와 범위 자격은 이미 그 판정이 담고 있다.
+
+    비교 상대가 `ids` 밖이어도 그 판정은 `ids` 쪽 노드에 남긴다. 배출량 환산은 kWh·MJ
+    에만 붙어 0.2 MWh 상충 문서에는 파생 노드가 없다 — 양 끝을 모두 요구하면 100 kWh
+    ↔ 0.2 MWh의 실제 불일치가 조회에서 빠진다(5차 검토 1). 교차검증 엣지는 같은
+    지표·기간끼리만 생기므로 다른 기간의 판정은 여기로 들어오지 않는다.
     """
+    wanted = set(ids)
     states: dict[str, set[str]] = {}
     for edge in graph.edges:
         state = getattr(edge, "comparison", None)
-        if not state or not {edge.source_id, edge.target_id} <= set(ids):
+        if not state or not {edge.source_id, edge.target_id} & wanted:
             continue
-        for nid in (edge.source_id, edge.target_id):
+        for nid in {edge.source_id, edge.target_id} & wanted:
             states.setdefault(nid, set()).add(state)
     return states
 
@@ -151,7 +157,8 @@ def plan_derived_emissions(graph, nodes, adopted=None):
 
     Returns:
         usable   — 환산에 쓸 파생 노드
-        excluded — [(노드, 사유)] 원측정값이 합산에서 빠진 후보
+        excluded — [(노드, 사유)] 원측정값이 합산에서 빠진 후보. 파생 노드가 없는
+            상충 상대는 그 원측정값 노드 자체가 들어간다.
         conflict — 채택된 원측정값에 관련된 실제 수치 불일치가 기록됐는가
     """
     parents = {n.id: _derived_parent(graph, n) for n in nodes}
@@ -167,6 +174,9 @@ def plan_derived_emissions(graph, nodes, adopted=None):
                if parents.get(n.id) and parents[n.id].id in blocked}
     usable = [n for n in nodes if n.id not in dropped]
     covered = {parents[n.id].id for n in usable if parents.get(n.id)}
+    # 동등 문서로 대신 환산한 경우 {환산 근거 파생 노드 id: 채택 원측정값}.
+    # 상충 전파는 환산 근거뿐 아니라 채택 원측정값의 비교 판정도 따라야 한다.
+    substituted: dict[str, Any] = {}
     for target in sorted(selected, key=lambda n: n.id):
         if target.id in covered:
             continue                      # 이 원측정값의 환산 근거는 이미 남아 있다.
@@ -176,9 +186,11 @@ def plan_derived_emissions(graph, nodes, adopted=None):
         if equivalent is not None:
             usable.append(equivalent)
             covered.add(target.id)
+            substituted[equivalent.id] = target
     usable = sorted(usable, key=lambda n: n.id)
     kept = {n.id for n in usable}
-    states = _parent_comparisons(graph, [p.id for p in parents.values() if p])
+    states = _parent_comparisons(graph, [p.id for p in parents.values() if p]
+                                 + [t.id for t in substituted.values()])
     excluded = []
     for node in nodes:
         why = dropped.get(node.id)
@@ -195,8 +207,23 @@ def plan_derived_emissions(graph, nodes, adopted=None):
             note += f" (교차검증 {'/'.join(sorted(recorded)) or '기록 없음'})"
         excluded.append((node, note))
     # 상충 전파 범위 — 채택값을 모르면 환산에 쓸 후보 전체가 기준이다.
-    anchors = [parents[n.id] for n in (usable if adopted is None else adopted)
-               if parents.get(n.id)]
+    anchors = [p for n in (usable if adopted is None else adopted)
+               for p in (parents.get(n.id), substituted.get(n.id)) if p]
+    # 파생 노드가 없는 상충 상대(0.2 MWh 문서)는 위 순회에 들어오지 않는다. 상태만
+    # mismatch로 올리고 상대 문서와 사유를 잃으면 응답서·체크리스트가 범위 사유만
+    # 보여 준다(6차 검토 1). 그 원측정값을 상충 근거로 직접 남긴다.
+    anchor_ids = {p.id for p in anchors}
+    known = {p.id for p in parents.values() if p} | anchor_ids
+    for edge in graph.edges:
+        if getattr(edge, "comparison", None) != "mismatch":
+            continue
+        for mine, other_id in ((edge.source_id, edge.target_id), (edge.target_id, edge.source_id)):
+            other = graph.nodes.get(other_id)
+            if mine not in anchor_ids or other is None or other_id in known:
+                continue
+            known.add(other_id)
+            why = blocked.get(other_id) or "교차검증 불일치"
+            excluded.append((other, f"{other.source_file or other.id} {SOURCE_CONFLICT_NOTE} — {why}"))
     return usable, excluded, any("mismatch" in states.get(p.id, set()) for p in anchors)
 
 
