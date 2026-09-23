@@ -1,0 +1,1750 @@
+{
+  "head": "6b55c2a533c6204fb871b34f0da1640cc996bca9",
+  "diff_sha256": "b40cce1d4c985407f75c9e33d69c2900c2a72de29feaf129db4044155427f168",
+  "checks": {
+    "A_kWh_forward_status": true,
+    "A_kWh_forward_trace": true,
+    "A_kWh_reverse_status": true,
+    "A_kWh_reverse_trace": true,
+    "A_MWh_forward_status": true,
+    "A_MWh_forward_trace": true,
+    "A_MWh_reverse_status": true,
+    "A_MWh_reverse_trace": true,
+    "B_해서_no_comma": true,
+    "B_해서_comma": true,
+    "B_하여_no_comma": true,
+    "B_하여_comma": true,
+    "B_해_no_comma": true,
+    "B_해_comma": true,
+    "control_noun_preparation": true,
+    "control_actual_operation": true,
+    "control_honest_plan": true,
+    "control_completed_then_preparation": true,
+    "control_ambiguous_source": true,
+    "control_ambiguous_answer": true
+  },
+  "failed": [],
+  "observations": {
+    "A_kWh_forward": {
+      "inputs": [
+        {
+          "source_file": "a.pdf",
+          "channel": "structured",
+          "doc_type": "controlled_fixture",
+          "metrics": [
+            {
+              "metric_hint": "사용전력량",
+              "value": 100,
+              "unit": "kWh",
+              "period": "2026-05",
+              "kesg_code_guess": "E-4-1",
+              "bbox": null,
+              "page": 0,
+              "confidence": 0.95,
+              "boundary": {}
+            }
+          ],
+          "clauses": [],
+          "tables": [],
+          "raw_text": "사업장: 제1공장\n문서번호: 원본 고지서 A",
+          "router_meta": {}
+        },
+        {
+          "source_file": "b.pdf",
+          "channel": "structured",
+          "doc_type": "controlled_fixture",
+          "metrics": [
+            {
+              "metric_hint": "사용전력량",
+              "value": 200,
+              "unit": "kWh",
+              "period": "2026-05",
+              "kesg_code_guess": "E-4-1",
+              "bbox": null,
+              "page": 0,
+              "confidence": 0.95,
+              "boundary": {}
+            }
+          ],
+          "clauses": [],
+          "tables": [],
+          "raw_text": "사업장: 제1공장\n문서번호: 검토용 집계 B",
+          "router_meta": {}
+        }
+      ],
+      "parent_comparisons": [
+        {
+          "source_id": "TEST_E-4-1_2026__ocr_structured__6063fc6363",
+          "target_id": "TEST_E-4-1_2026__ocr_structured__741d72006f",
+          "edge_type": "cross_check",
+          "yoy": null,
+          "cagr": null,
+          "years_gap": 1,
+          "detail": "실제 불일치: 교차검증 오차 100.0% (a.pdf ↔ b.pdf)",
+          "comparison": "mismatch",
+          "difference_pct": 100.0
+        }
+      ],
+      "point": {
+        "kesg_code": "E-3-1",
+        "kesg_name": "온실가스 배출량 (Scope1 + Scope2)",
+        "value": 0.048,
+        "unit": "tCO2eq",
+        "period": 2026,
+        "confidence": 0.902,
+        "verification": "unverified",
+        "d1_risk": null,
+        "evidence_files": [
+          {
+            "file_name": "a.pdf",
+            "relative_path": "evidence_pack/a.pdf",
+            "origin": "ocr_structured",
+            "bbox": null,
+            "page": 0,
+            "node_id": "TEST_E-3-1_2026__derived_ocr_structured__3d2fdc8625",
+            "kesg_codes": [
+              "E-3-1"
+            ],
+            "quote": "사용전력량=100kWh (a.pdf) → 배출계수 환산: 100 kWh × 0.0004781 = 0.048 tCO2eq (추정)",
+            "resolved": true,
+            "independent": true
+          }
+        ],
+        "source_tier": "derived",
+        "representative_node_ids": [
+          "TEST_E-3-1_2026__derived_ocr_structured__3d2fdc8625"
+        ],
+        "value_role": "unknown",
+        "confidence_flags": [
+          "derived",
+          "incomplete_scope",
+          "partial_value",
+          "source_conflict"
+        ],
+        "d1_evaluation": {
+          "status": "unavailable",
+          "compared_claims": 0,
+          "unverified_claims": 1,
+          "excluded_claims": 0,
+          "comparison": "scope_unconfirmed",
+          "comparison_reason": "전체 주장에 필요한 기간·사업장·분모 미확인 — 부분값 증빙 2026-05 · 월간 · 제1공장 · 사용전력량 환산 배출량 · 부분",
+          "reasons": {
+            "scope_unconfirmed": 1
+          },
+          "claims": [
+            {
+              "raw": "0.048tCO2eq",
+              "start": 27,
+              "end": 38,
+              "code": "E-3-1",
+              "claim_value": 0.048,
+              "claim_unit": "tCO2eq",
+              "evidence_ids": [
+                "TEST_E-3-1_2026__derived_ocr_structured__3d2fdc8625"
+              ],
+              "evidence_value": 0.048,
+              "evidence_unit": "tCO2eq",
+              "evidence_period": 2026,
+              "status": "unverified",
+              "reason": "scope_unconfirmed",
+              "evidence_files": [
+                "a.pdf"
+              ],
+              "comparison": "scope_unconfirmed",
+              "comparison_reason": "전체 주장에 필요한 기간·사업장·분모 미확인 — 부분값 증빙 2026-05 · 월간 · 제1공장 · 사용전력량 환산 배출량 · 부분"
+            }
+          ]
+        },
+        "completeness": "partial",
+        "boundary": {
+          "period_text": "2026-05",
+          "aggregation": "monthly",
+          "coverage_months": 1,
+          "basis": "actual",
+          "site": "제1공장",
+          "site_scope": "site",
+          "measure": "사용전력량 환산 배출량",
+          "measure_kind": "emission_scope2",
+          "completeness": "partial",
+          "denominator": "",
+          "denominator_kind": "unknown",
+          "inferred": [
+            "measure_kind"
+          ],
+          "source_quote": "사용전력량 (2026-05)",
+          "period_year": 2026,
+          "period_start": "2026-05-01",
+          "period_end": "2026-05-31",
+          "site_path": [
+            "제1공장"
+          ],
+          "provenance": [
+            {
+              "source": "row",
+              "quote": "사용전력량",
+              "period": "2026-05",
+              "method": "rule",
+              "page": 0,
+              "bbox": null,
+              "source_file": "a.pdf"
+            },
+            {
+              "source": "document_header",
+              "quote": "사업장: 제1공장\n문서번호: 원본 고지서 A",
+              "method": "rule",
+              "page": 0,
+              "bbox": null,
+              "source_file": "a.pdf"
+            },
+            {
+              "rule": "emission_factor",
+              "factor_key": "kWh_to_tco2",
+              "factor": 0.0004781,
+              "source": "_EMISSION_FACTORS (기존 예시 계수)",
+              "formula": "100 kWh × 0.0004781 = 0.048 tCO2eq"
+            }
+          ],
+          "review_notes": []
+        },
+        "boundary_label": "2026-05 · 월간 · 제1공장 · 사용전력량 환산 배출량 · 부분",
+        "scope_notes": [
+          "E-3-1: 파생 배출량 제외 — b.pdf 원측정값 상충 — 독립 증빙의 같은 측정 대상 값 상충 — 비교 판정 확인, 합산 제외",
+          "E-3-1: 부분값 — 2026-05 · 월간 · 제1공장 · 사용전력량 환산 배출량 · 부분. 전사·연간·전체 범위 총량임이 입증되지 않아 검증 보류. 연간 실적의 실제 사용기간·집계 방식 확인; 전사/공장 조직·사업장 범위 확인"
+        ],
+        "comparison": "mismatch",
+        "comparison_reason": "E-3-1: 파생 배출량 제외 — b.pdf 원측정값 상충 — 독립 증빙의 같은 측정 대상 값 상충 — 비교 판정 확인, 합산 제외",
+        "comparisons": [
+          {
+            "raw": "0.048tCO2eq",
+            "start": 27,
+            "end": 38,
+            "code": "E-3-1",
+            "claim_value": 0.048,
+            "claim_unit": "tCO2eq",
+            "evidence_ids": [
+              "TEST_E-3-1_2026__derived_ocr_structured__3d2fdc8625"
+            ],
+            "evidence_value": 0.048,
+            "evidence_unit": "tCO2eq",
+            "evidence_period": 2026,
+            "status": "unverified",
+            "reason": "scope_unconfirmed",
+            "evidence_files": [
+              "a.pdf"
+            ],
+            "comparison": "scope_unconfirmed",
+            "comparison_reason": "전체 주장에 필요한 기간·사업장·분모 미확인 — 부분값 증빙 2026-05 · 월간 · 제1공장 · 사용전력량 환산 배출량 · 부분"
+          }
+        ],
+        "reference_files": [
+          {
+            "file_name": "b.pdf",
+            "relative_path": "evidence_pack/b.pdf",
+            "origin": "ocr_structured",
+            "bbox": null,
+            "page": 0,
+            "node_id": "TEST_E-3-1_2026__derived_ocr_structured__fb16a367f0",
+            "kesg_codes": [
+              "E-3-1"
+            ],
+            "quote": "사용전력량=200kWh (b.pdf) → 배출계수 환산: 200 kWh × 0.0004781 = 0.096 tCO2eq (추정)",
+            "resolved": true,
+            "independent": true
+          }
+        ]
+      },
+      "answer": {
+        "qid": "HMC-C-8-E-3-1",
+        "section": "환경",
+        "question_text": "[C-8·수치] 온실가스 배출량 (Scope 1+2)",
+        "value": 0.048,
+        "status": "flagged",
+        "evidence_links": [
+          {
+            "file_name": "a.pdf",
+            "relative_path": "evidence_pack/a.pdf",
+            "origin": "ocr_structured",
+            "bbox": null,
+            "page": 0,
+            "node_id": "TEST_E-3-1_2026__derived_ocr_structured__3d2fdc8625",
+            "kesg_codes": [
+              "E-3-1"
+            ],
+            "quote": "사용전력량=100kWh (a.pdf) → 배출계수 환산: 100 kWh × 0.0004781 = 0.048 tCO2eq (추정)",
+            "resolved": true,
+            "independent": true
+          }
+        ],
+        "flags": [],
+        "rationale": "온실가스 배출량 (Scope1 + Scope2) = 0.048tCO2eq (보고 연도 2026, D1 위험 평가불가, 검증=unverified) · 평가불가 · 비교 0건 · 미검증 1건 · 범위 확인 필요 1건 · 신뢰 정보: derived, incomplete_scope, partial_value, source_conflict",
+        "evidence_needed": [],
+        "draft_text": "",
+        "draft_citations": [],
+        "draft_grounding": null,
+        "unit": "tCO2eq",
+        "period": 2026,
+        "confidence_flags": [
+          "derived",
+          "incomplete_scope",
+          "partial_value",
+          "source_conflict"
+        ],
+        "self_reports": [],
+        "option_evidence": {},
+        "boundary_label": "2026-05 · 월간 · 제1공장 · 사용전력량 환산 배출량 · 부분",
+        "completeness": "partial",
+        "comparison": "mismatch",
+        "comparison_reason": "E-3-1: 파생 배출량 제외 — b.pdf 원측정값 상충 — 독립 증빙의 같은 측정 대상 값 상충 — 비교 판정 확인, 합산 제외",
+        "boundary": {
+          "period_text": "2026-05",
+          "aggregation": "monthly",
+          "coverage_months": 1,
+          "basis": "actual",
+          "site": "제1공장",
+          "site_scope": "site",
+          "measure": "사용전력량 환산 배출량",
+          "measure_kind": "emission_scope2",
+          "completeness": "partial",
+          "denominator": "",
+          "denominator_kind": "unknown",
+          "inferred": [
+            "measure_kind"
+          ],
+          "source_quote": "사용전력량 (2026-05)",
+          "period_year": 2026,
+          "period_start": "2026-05-01",
+          "period_end": "2026-05-31",
+          "site_path": [
+            "제1공장"
+          ],
+          "provenance": [
+            {
+              "source": "row",
+              "quote": "사용전력량",
+              "period": "2026-05",
+              "method": "rule",
+              "page": 0,
+              "bbox": null,
+              "source_file": "a.pdf"
+            },
+            {
+              "source": "document_header",
+              "quote": "사업장: 제1공장\n문서번호: 원본 고지서 A",
+              "method": "rule",
+              "page": 0,
+              "bbox": null,
+              "source_file": "a.pdf"
+            },
+            {
+              "rule": "emission_factor",
+              "factor_key": "kWh_to_tco2",
+              "factor": 0.0004781,
+              "source": "_EMISSION_FACTORS (기존 예시 계수)",
+              "formula": "100 kWh × 0.0004781 = 0.048 tCO2eq"
+            }
+          ],
+          "review_notes": []
+        },
+        "comparisons": [
+          {
+            "raw": "0.048tCO2eq",
+            "start": 27,
+            "end": 38,
+            "code": "E-3-1",
+            "claim_value": 0.048,
+            "claim_unit": "tCO2eq",
+            "evidence_ids": [
+              "TEST_E-3-1_2026__derived_ocr_structured__3d2fdc8625"
+            ],
+            "evidence_value": 0.048,
+            "evidence_unit": "tCO2eq",
+            "evidence_period": 2026,
+            "status": "unverified",
+            "reason": "scope_unconfirmed",
+            "evidence_files": [
+              "a.pdf"
+            ],
+            "comparison": "scope_unconfirmed",
+            "comparison_reason": "전체 주장에 필요한 기간·사업장·분모 미확인 — 부분값 증빙 2026-05 · 월간 · 제1공장 · 사용전력량 환산 배출량 · 부분"
+          }
+        ],
+        "scope_notes": [
+          "E-3-1: 파생 배출량 제외 — b.pdf 원측정값 상충 — 독립 증빙의 같은 측정 대상 값 상충 — 비교 판정 확인, 합산 제외",
+          "E-3-1: 부분값 — 2026-05 · 월간 · 제1공장 · 사용전력량 환산 배출량 · 부분. 전사·연간·전체 범위 총량임이 입증되지 않아 검증 보류. 연간 실적의 실제 사용기간·집계 방식 확인; 전사/공장 조직·사업장 범위 확인"
+        ],
+        "reference_links": [
+          {
+            "file_name": "b.pdf",
+            "relative_path": "evidence_pack/b.pdf",
+            "origin": "ocr_structured",
+            "bbox": null,
+            "page": 0,
+            "node_id": "TEST_E-3-1_2026__derived_ocr_structured__fb16a367f0",
+            "kesg_codes": [
+              "E-3-1"
+            ],
+            "quote": "사용전력량=200kWh (b.pdf) → 배출계수 환산: 200 kWh × 0.0004781 = 0.096 tCO2eq (추정)",
+            "resolved": true,
+            "independent": true
+          }
+        ],
+        "badge": "🚩 검토필요",
+        "display_value": "0.048 tCO2eq (2026년)",
+        "comparison_label": "실제 불일치",
+        "review_note": "실제 불일치: E-3-1: 파생 배출량 제외 — b.pdf 원측정값 상충 — 독립 증빙의 같은 측정 대상 값 상충 — 비교 판정 확인, 합산 제외 · E-3-1: 파생 배출량 제외 — b.pdf 원측정값 상충 — 독립 증빙의 같은 측정 대상 값 상충 — 비교 판정 확인, 합산 제외 · E-3-1: 부분값 — 2026-05 · 월간 · 제1공장 · 사용전력량 환산 배출량 · 부분. 전사·연간·전체 범위 총량임이 입증되지 않아 검증 보류. 연간 실적의 실제 사용기간·집계 방식 확인; 전사/공장 조직·사업장 범위 확인"
+      },
+      "checklist": {
+        "qid": "HMC-C-8-E-3-1",
+        "section": "환경",
+        "question_text": "[C-8·수치] 온실가스 배출량 (Scope 1+2)",
+        "status": "flagged",
+        "action": "검토·보완",
+        "evidence_needed": [],
+        "request": "온실가스 배출량 (Scope1 + Scope2) = 0.048tCO2eq (보고 연도 2026, D1 위험 평가불가, 검증=unverified) · 평가불가 · 비교 0건 · 미검증 1건 · 범위 확인 필요 1건 · 신뢰 정보: derived, incomplete_scope, partial_value, source_conflict; E-3-1: 파생 배출량 제외 — b.pdf 원측정값 상충 — 독립 증빙의 같은 측정 대상 값 상충 — 비교 판정 확인, 합산 제외; E-3-1: 부분값 — 2026-05 · 월간 · 제1공장 · 사용전력량 환산 배출량 · 부분. 전사·연간·전체 범위 총량임이 입증되지 않아 검증 보류. 연간 실적의 실제 사용기간·집계 방식 확인; 전사/공장 조직·사업장 범위 확인"
+      }
+    },
+    "A_kWh_reverse": {
+      "inputs": [
+        {
+          "source_file": "b.pdf",
+          "channel": "structured",
+          "doc_type": "controlled_fixture",
+          "metrics": [
+            {
+              "metric_hint": "사용전력량",
+              "value": 200,
+              "unit": "kWh",
+              "period": "2026-05",
+              "kesg_code_guess": "E-4-1",
+              "bbox": null,
+              "page": 0,
+              "confidence": 0.95,
+              "boundary": {}
+            }
+          ],
+          "clauses": [],
+          "tables": [],
+          "raw_text": "사업장: 제1공장\n문서번호: 검토용 집계 B",
+          "router_meta": {}
+        },
+        {
+          "source_file": "a.pdf",
+          "channel": "structured",
+          "doc_type": "controlled_fixture",
+          "metrics": [
+            {
+              "metric_hint": "사용전력량",
+              "value": 100,
+              "unit": "kWh",
+              "period": "2026-05",
+              "kesg_code_guess": "E-4-1",
+              "bbox": null,
+              "page": 0,
+              "confidence": 0.95,
+              "boundary": {}
+            }
+          ],
+          "clauses": [],
+          "tables": [],
+          "raw_text": "사업장: 제1공장\n문서번호: 원본 고지서 A",
+          "router_meta": {}
+        }
+      ],
+      "parent_comparisons": [
+        {
+          "source_id": "TEST_E-4-1_2026__ocr_structured__741d72006f",
+          "target_id": "TEST_E-4-1_2026__ocr_structured__6063fc6363",
+          "edge_type": "cross_check",
+          "yoy": null,
+          "cagr": null,
+          "years_gap": 1,
+          "detail": "실제 불일치: 교차검증 오차 100.0% (b.pdf ↔ a.pdf)",
+          "comparison": "mismatch",
+          "difference_pct": 100.0
+        }
+      ],
+      "point": {
+        "kesg_code": "E-3-1",
+        "kesg_name": "온실가스 배출량 (Scope1 + Scope2)",
+        "value": 0.048,
+        "unit": "tCO2eq",
+        "period": 2026,
+        "confidence": 0.902,
+        "verification": "unverified",
+        "d1_risk": null,
+        "evidence_files": [
+          {
+            "file_name": "a.pdf",
+            "relative_path": "evidence_pack/a.pdf",
+            "origin": "ocr_structured",
+            "bbox": null,
+            "page": 0,
+            "node_id": "TEST_E-3-1_2026__derived_ocr_structured__3d2fdc8625",
+            "kesg_codes": [
+              "E-3-1"
+            ],
+            "quote": "사용전력량=100kWh (a.pdf) → 배출계수 환산: 100 kWh × 0.0004781 = 0.048 tCO2eq (추정)",
+            "resolved": true,
+            "independent": true
+          }
+        ],
+        "source_tier": "derived",
+        "representative_node_ids": [
+          "TEST_E-3-1_2026__derived_ocr_structured__3d2fdc8625"
+        ],
+        "value_role": "unknown",
+        "confidence_flags": [
+          "derived",
+          "incomplete_scope",
+          "partial_value",
+          "source_conflict"
+        ],
+        "d1_evaluation": {
+          "status": "unavailable",
+          "compared_claims": 0,
+          "unverified_claims": 1,
+          "excluded_claims": 0,
+          "comparison": "scope_unconfirmed",
+          "comparison_reason": "전체 주장에 필요한 기간·사업장·분모 미확인 — 부분값 증빙 2026-05 · 월간 · 제1공장 · 사용전력량 환산 배출량 · 부분",
+          "reasons": {
+            "scope_unconfirmed": 1
+          },
+          "claims": [
+            {
+              "raw": "0.048tCO2eq",
+              "start": 27,
+              "end": 38,
+              "code": "E-3-1",
+              "claim_value": 0.048,
+              "claim_unit": "tCO2eq",
+              "evidence_ids": [
+                "TEST_E-3-1_2026__derived_ocr_structured__3d2fdc8625"
+              ],
+              "evidence_value": 0.048,
+              "evidence_unit": "tCO2eq",
+              "evidence_period": 2026,
+              "status": "unverified",
+              "reason": "scope_unconfirmed",
+              "evidence_files": [
+                "a.pdf"
+              ],
+              "comparison": "scope_unconfirmed",
+              "comparison_reason": "전체 주장에 필요한 기간·사업장·분모 미확인 — 부분값 증빙 2026-05 · 월간 · 제1공장 · 사용전력량 환산 배출량 · 부분"
+            }
+          ]
+        },
+        "completeness": "partial",
+        "boundary": {
+          "period_text": "2026-05",
+          "aggregation": "monthly",
+          "coverage_months": 1,
+          "basis": "actual",
+          "site": "제1공장",
+          "site_scope": "site",
+          "measure": "사용전력량 환산 배출량",
+          "measure_kind": "emission_scope2",
+          "completeness": "partial",
+          "denominator": "",
+          "denominator_kind": "unknown",
+          "inferred": [
+            "measure_kind"
+          ],
+          "source_quote": "사용전력량 (2026-05)",
+          "period_year": 2026,
+          "period_start": "2026-05-01",
+          "period_end": "2026-05-31",
+          "site_path": [
+            "제1공장"
+          ],
+          "provenance": [
+            {
+              "source": "row",
+              "quote": "사용전력량",
+              "period": "2026-05",
+              "method": "rule",
+              "page": 0,
+              "bbox": null,
+              "source_file": "a.pdf"
+            },
+            {
+              "source": "document_header",
+              "quote": "사업장: 제1공장\n문서번호: 원본 고지서 A",
+              "method": "rule",
+              "page": 0,
+              "bbox": null,
+              "source_file": "a.pdf"
+            },
+            {
+              "rule": "emission_factor",
+              "factor_key": "kWh_to_tco2",
+              "factor": 0.0004781,
+              "source": "_EMISSION_FACTORS (기존 예시 계수)",
+              "formula": "100 kWh × 0.0004781 = 0.048 tCO2eq"
+            }
+          ],
+          "review_notes": []
+        },
+        "boundary_label": "2026-05 · 월간 · 제1공장 · 사용전력량 환산 배출량 · 부분",
+        "scope_notes": [
+          "E-3-1: 파생 배출량 제외 — b.pdf 원측정값 상충 — 독립 증빙의 같은 측정 대상 값 상충 — 비교 판정 확인, 합산 제외",
+          "E-3-1: 부분값 — 2026-05 · 월간 · 제1공장 · 사용전력량 환산 배출량 · 부분. 전사·연간·전체 범위 총량임이 입증되지 않아 검증 보류. 연간 실적의 실제 사용기간·집계 방식 확인; 전사/공장 조직·사업장 범위 확인"
+        ],
+        "comparison": "mismatch",
+        "comparison_reason": "E-3-1: 파생 배출량 제외 — b.pdf 원측정값 상충 — 독립 증빙의 같은 측정 대상 값 상충 — 비교 판정 확인, 합산 제외",
+        "comparisons": [
+          {
+            "raw": "0.048tCO2eq",
+            "start": 27,
+            "end": 38,
+            "code": "E-3-1",
+            "claim_value": 0.048,
+            "claim_unit": "tCO2eq",
+            "evidence_ids": [
+              "TEST_E-3-1_2026__derived_ocr_structured__3d2fdc8625"
+            ],
+            "evidence_value": 0.048,
+            "evidence_unit": "tCO2eq",
+            "evidence_period": 2026,
+            "status": "unverified",
+            "reason": "scope_unconfirmed",
+            "evidence_files": [
+              "a.pdf"
+            ],
+            "comparison": "scope_unconfirmed",
+            "comparison_reason": "전체 주장에 필요한 기간·사업장·분모 미확인 — 부분값 증빙 2026-05 · 월간 · 제1공장 · 사용전력량 환산 배출량 · 부분"
+          }
+        ],
+        "reference_files": [
+          {
+            "file_name": "b.pdf",
+            "relative_path": "evidence_pack/b.pdf",
+            "origin": "ocr_structured",
+            "bbox": null,
+            "page": 0,
+            "node_id": "TEST_E-3-1_2026__derived_ocr_structured__fb16a367f0",
+            "kesg_codes": [
+              "E-3-1"
+            ],
+            "quote": "사용전력량=200kWh (b.pdf) → 배출계수 환산: 200 kWh × 0.0004781 = 0.096 tCO2eq (추정)",
+            "resolved": true,
+            "independent": true
+          }
+        ]
+      },
+      "answer": {
+        "qid": "HMC-C-8-E-3-1",
+        "section": "환경",
+        "question_text": "[C-8·수치] 온실가스 배출량 (Scope 1+2)",
+        "value": 0.048,
+        "status": "flagged",
+        "evidence_links": [
+          {
+            "file_name": "a.pdf",
+            "relative_path": "evidence_pack/a.pdf",
+            "origin": "ocr_structured",
+            "bbox": null,
+            "page": 0,
+            "node_id": "TEST_E-3-1_2026__derived_ocr_structured__3d2fdc8625",
+            "kesg_codes": [
+              "E-3-1"
+            ],
+            "quote": "사용전력량=100kWh (a.pdf) → 배출계수 환산: 100 kWh × 0.0004781 = 0.048 tCO2eq (추정)",
+            "resolved": true,
+            "independent": true
+          }
+        ],
+        "flags": [],
+        "rationale": "온실가스 배출량 (Scope1 + Scope2) = 0.048tCO2eq (보고 연도 2026, D1 위험 평가불가, 검증=unverified) · 평가불가 · 비교 0건 · 미검증 1건 · 범위 확인 필요 1건 · 신뢰 정보: derived, incomplete_scope, partial_value, source_conflict",
+        "evidence_needed": [],
+        "draft_text": "",
+        "draft_citations": [],
+        "draft_grounding": null,
+        "unit": "tCO2eq",
+        "period": 2026,
+        "confidence_flags": [
+          "derived",
+          "incomplete_scope",
+          "partial_value",
+          "source_conflict"
+        ],
+        "self_reports": [],
+        "option_evidence": {},
+        "boundary_label": "2026-05 · 월간 · 제1공장 · 사용전력량 환산 배출량 · 부분",
+        "completeness": "partial",
+        "comparison": "mismatch",
+        "comparison_reason": "E-3-1: 파생 배출량 제외 — b.pdf 원측정값 상충 — 독립 증빙의 같은 측정 대상 값 상충 — 비교 판정 확인, 합산 제외",
+        "boundary": {
+          "period_text": "2026-05",
+          "aggregation": "monthly",
+          "coverage_months": 1,
+          "basis": "actual",
+          "site": "제1공장",
+          "site_scope": "site",
+          "measure": "사용전력량 환산 배출량",
+          "measure_kind": "emission_scope2",
+          "completeness": "partial",
+          "denominator": "",
+          "denominator_kind": "unknown",
+          "inferred": [
+            "measure_kind"
+          ],
+          "source_quote": "사용전력량 (2026-05)",
+          "period_year": 2026,
+          "period_start": "2026-05-01",
+          "period_end": "2026-05-31",
+          "site_path": [
+            "제1공장"
+          ],
+          "provenance": [
+            {
+              "source": "row",
+              "quote": "사용전력량",
+              "period": "2026-05",
+              "method": "rule",
+              "page": 0,
+              "bbox": null,
+              "source_file": "a.pdf"
+            },
+            {
+              "source": "document_header",
+              "quote": "사업장: 제1공장\n문서번호: 원본 고지서 A",
+              "method": "rule",
+              "page": 0,
+              "bbox": null,
+              "source_file": "a.pdf"
+            },
+            {
+              "rule": "emission_factor",
+              "factor_key": "kWh_to_tco2",
+              "factor": 0.0004781,
+              "source": "_EMISSION_FACTORS (기존 예시 계수)",
+              "formula": "100 kWh × 0.0004781 = 0.048 tCO2eq"
+            }
+          ],
+          "review_notes": []
+        },
+        "comparisons": [
+          {
+            "raw": "0.048tCO2eq",
+            "start": 27,
+            "end": 38,
+            "code": "E-3-1",
+            "claim_value": 0.048,
+            "claim_unit": "tCO2eq",
+            "evidence_ids": [
+              "TEST_E-3-1_2026__derived_ocr_structured__3d2fdc8625"
+            ],
+            "evidence_value": 0.048,
+            "evidence_unit": "tCO2eq",
+            "evidence_period": 2026,
+            "status": "unverified",
+            "reason": "scope_unconfirmed",
+            "evidence_files": [
+              "a.pdf"
+            ],
+            "comparison": "scope_unconfirmed",
+            "comparison_reason": "전체 주장에 필요한 기간·사업장·분모 미확인 — 부분값 증빙 2026-05 · 월간 · 제1공장 · 사용전력량 환산 배출량 · 부분"
+          }
+        ],
+        "scope_notes": [
+          "E-3-1: 파생 배출량 제외 — b.pdf 원측정값 상충 — 독립 증빙의 같은 측정 대상 값 상충 — 비교 판정 확인, 합산 제외",
+          "E-3-1: 부분값 — 2026-05 · 월간 · 제1공장 · 사용전력량 환산 배출량 · 부분. 전사·연간·전체 범위 총량임이 입증되지 않아 검증 보류. 연간 실적의 실제 사용기간·집계 방식 확인; 전사/공장 조직·사업장 범위 확인"
+        ],
+        "reference_links": [
+          {
+            "file_name": "b.pdf",
+            "relative_path": "evidence_pack/b.pdf",
+            "origin": "ocr_structured",
+            "bbox": null,
+            "page": 0,
+            "node_id": "TEST_E-3-1_2026__derived_ocr_structured__fb16a367f0",
+            "kesg_codes": [
+              "E-3-1"
+            ],
+            "quote": "사용전력량=200kWh (b.pdf) → 배출계수 환산: 200 kWh × 0.0004781 = 0.096 tCO2eq (추정)",
+            "resolved": true,
+            "independent": true
+          }
+        ],
+        "badge": "🚩 검토필요",
+        "display_value": "0.048 tCO2eq (2026년)",
+        "comparison_label": "실제 불일치",
+        "review_note": "실제 불일치: E-3-1: 파생 배출량 제외 — b.pdf 원측정값 상충 — 독립 증빙의 같은 측정 대상 값 상충 — 비교 판정 확인, 합산 제외 · E-3-1: 파생 배출량 제외 — b.pdf 원측정값 상충 — 독립 증빙의 같은 측정 대상 값 상충 — 비교 판정 확인, 합산 제외 · E-3-1: 부분값 — 2026-05 · 월간 · 제1공장 · 사용전력량 환산 배출량 · 부분. 전사·연간·전체 범위 총량임이 입증되지 않아 검증 보류. 연간 실적의 실제 사용기간·집계 방식 확인; 전사/공장 조직·사업장 범위 확인"
+      },
+      "checklist": {
+        "qid": "HMC-C-8-E-3-1",
+        "section": "환경",
+        "question_text": "[C-8·수치] 온실가스 배출량 (Scope 1+2)",
+        "status": "flagged",
+        "action": "검토·보완",
+        "evidence_needed": [],
+        "request": "온실가스 배출량 (Scope1 + Scope2) = 0.048tCO2eq (보고 연도 2026, D1 위험 평가불가, 검증=unverified) · 평가불가 · 비교 0건 · 미검증 1건 · 범위 확인 필요 1건 · 신뢰 정보: derived, incomplete_scope, partial_value, source_conflict; E-3-1: 파생 배출량 제외 — b.pdf 원측정값 상충 — 독립 증빙의 같은 측정 대상 값 상충 — 비교 판정 확인, 합산 제외; E-3-1: 부분값 — 2026-05 · 월간 · 제1공장 · 사용전력량 환산 배출량 · 부분. 전사·연간·전체 범위 총량임이 입증되지 않아 검증 보류. 연간 실적의 실제 사용기간·집계 방식 확인; 전사/공장 조직·사업장 범위 확인"
+      }
+    },
+    "A_MWh_forward": {
+      "inputs": [
+        {
+          "source_file": "a.pdf",
+          "channel": "structured",
+          "doc_type": "controlled_fixture",
+          "metrics": [
+            {
+              "metric_hint": "사용전력량",
+              "value": 100,
+              "unit": "kWh",
+              "period": "2026-05",
+              "kesg_code_guess": "E-4-1",
+              "bbox": null,
+              "page": 0,
+              "confidence": 0.95,
+              "boundary": {}
+            }
+          ],
+          "clauses": [],
+          "tables": [],
+          "raw_text": "사업장: 제1공장\n문서번호: 원본 고지서 A",
+          "router_meta": {}
+        },
+        {
+          "source_file": "b.pdf",
+          "channel": "structured",
+          "doc_type": "controlled_fixture",
+          "metrics": [
+            {
+              "metric_hint": "사용전력량",
+              "value": 0.2,
+              "unit": "MWh",
+              "period": "2026-05",
+              "kesg_code_guess": "E-4-1",
+              "bbox": null,
+              "page": 0,
+              "confidence": 0.95,
+              "boundary": {}
+            }
+          ],
+          "clauses": [],
+          "tables": [],
+          "raw_text": "사업장: 제1공장\n문서번호: 검토용 집계 B",
+          "router_meta": {}
+        }
+      ],
+      "parent_comparisons": [
+        {
+          "source_id": "TEST_E-4-1_2026__ocr_structured__6063fc6363",
+          "target_id": "TEST_E-4-1_2026__ocr_structured__741d72006f",
+          "edge_type": "cross_check",
+          "yoy": null,
+          "cagr": null,
+          "years_gap": 1,
+          "detail": "실제 불일치: 교차검증 오차 100.0% (a.pdf ↔ b.pdf)",
+          "comparison": "mismatch",
+          "difference_pct": 100.0
+        }
+      ],
+      "point": {
+        "kesg_code": "E-3-1",
+        "kesg_name": "온실가스 배출량 (Scope1 + Scope2)",
+        "value": 0.048,
+        "unit": "tCO2eq",
+        "period": 2026,
+        "confidence": 0.902,
+        "verification": "unverified",
+        "d1_risk": null,
+        "evidence_files": [
+          {
+            "file_name": "a.pdf",
+            "relative_path": "evidence_pack/a.pdf",
+            "origin": "ocr_structured",
+            "bbox": null,
+            "page": 0,
+            "node_id": "TEST_E-3-1_2026__derived_ocr_structured__3d2fdc8625",
+            "kesg_codes": [
+              "E-3-1"
+            ],
+            "quote": "사용전력량=100kWh (a.pdf) → 배출계수 환산: 100 kWh × 0.0004781 = 0.048 tCO2eq (추정)",
+            "resolved": true,
+            "independent": true
+          }
+        ],
+        "source_tier": "derived",
+        "representative_node_ids": [
+          "TEST_E-3-1_2026__derived_ocr_structured__3d2fdc8625"
+        ],
+        "value_role": "unknown",
+        "confidence_flags": [
+          "derived",
+          "incomplete_scope",
+          "partial_value",
+          "source_conflict"
+        ],
+        "d1_evaluation": {
+          "status": "unavailable",
+          "compared_claims": 0,
+          "unverified_claims": 1,
+          "excluded_claims": 0,
+          "comparison": "scope_unconfirmed",
+          "comparison_reason": "전체 주장에 필요한 기간·사업장·분모 미확인 — 부분값 증빙 2026-05 · 월간 · 제1공장 · 사용전력량 환산 배출량 · 부분",
+          "reasons": {
+            "scope_unconfirmed": 1
+          },
+          "claims": [
+            {
+              "raw": "0.048tCO2eq",
+              "start": 27,
+              "end": 38,
+              "code": "E-3-1",
+              "claim_value": 0.048,
+              "claim_unit": "tCO2eq",
+              "evidence_ids": [
+                "TEST_E-3-1_2026__derived_ocr_structured__3d2fdc8625"
+              ],
+              "evidence_value": 0.048,
+              "evidence_unit": "tCO2eq",
+              "evidence_period": 2026,
+              "status": "unverified",
+              "reason": "scope_unconfirmed",
+              "evidence_files": [
+                "a.pdf"
+              ],
+              "comparison": "scope_unconfirmed",
+              "comparison_reason": "전체 주장에 필요한 기간·사업장·분모 미확인 — 부분값 증빙 2026-05 · 월간 · 제1공장 · 사용전력량 환산 배출량 · 부분"
+            }
+          ]
+        },
+        "completeness": "partial",
+        "boundary": {
+          "period_text": "2026-05",
+          "aggregation": "monthly",
+          "coverage_months": 1,
+          "basis": "actual",
+          "site": "제1공장",
+          "site_scope": "site",
+          "measure": "사용전력량 환산 배출량",
+          "measure_kind": "emission_scope2",
+          "completeness": "partial",
+          "denominator": "",
+          "denominator_kind": "unknown",
+          "inferred": [
+            "measure_kind"
+          ],
+          "source_quote": "사용전력량 (2026-05)",
+          "period_year": 2026,
+          "period_start": "2026-05-01",
+          "period_end": "2026-05-31",
+          "site_path": [
+            "제1공장"
+          ],
+          "provenance": [
+            {
+              "source": "row",
+              "quote": "사용전력량",
+              "period": "2026-05",
+              "method": "rule",
+              "page": 0,
+              "bbox": null,
+              "source_file": "a.pdf"
+            },
+            {
+              "source": "document_header",
+              "quote": "사업장: 제1공장\n문서번호: 원본 고지서 A",
+              "method": "rule",
+              "page": 0,
+              "bbox": null,
+              "source_file": "a.pdf"
+            },
+            {
+              "rule": "emission_factor",
+              "factor_key": "kWh_to_tco2",
+              "factor": 0.0004781,
+              "source": "_EMISSION_FACTORS (기존 예시 계수)",
+              "formula": "100 kWh × 0.0004781 = 0.048 tCO2eq"
+            }
+          ],
+          "review_notes": []
+        },
+        "boundary_label": "2026-05 · 월간 · 제1공장 · 사용전력량 환산 배출량 · 부분",
+        "scope_notes": [
+          "E-3-1: 파생 배출량 제외 — b.pdf 원측정값 상충 — 독립 증빙의 같은 측정 대상 값 상충 — 비교 판정 확인, 합산 제외",
+          "E-3-1: 부분값 — 2026-05 · 월간 · 제1공장 · 사용전력량 환산 배출량 · 부분. 전사·연간·전체 범위 총량임이 입증되지 않아 검증 보류. 연간 실적의 실제 사용기간·집계 방식 확인; 전사/공장 조직·사업장 범위 확인"
+        ],
+        "comparison": "mismatch",
+        "comparison_reason": "E-3-1: 파생 배출량 제외 — b.pdf 원측정값 상충 — 독립 증빙의 같은 측정 대상 값 상충 — 비교 판정 확인, 합산 제외",
+        "comparisons": [
+          {
+            "raw": "0.048tCO2eq",
+            "start": 27,
+            "end": 38,
+            "code": "E-3-1",
+            "claim_value": 0.048,
+            "claim_unit": "tCO2eq",
+            "evidence_ids": [
+              "TEST_E-3-1_2026__derived_ocr_structured__3d2fdc8625"
+            ],
+            "evidence_value": 0.048,
+            "evidence_unit": "tCO2eq",
+            "evidence_period": 2026,
+            "status": "unverified",
+            "reason": "scope_unconfirmed",
+            "evidence_files": [
+              "a.pdf"
+            ],
+            "comparison": "scope_unconfirmed",
+            "comparison_reason": "전체 주장에 필요한 기간·사업장·분모 미확인 — 부분값 증빙 2026-05 · 월간 · 제1공장 · 사용전력량 환산 배출량 · 부분"
+          }
+        ],
+        "reference_files": [
+          {
+            "file_name": "b.pdf",
+            "relative_path": "evidence_pack/b.pdf",
+            "origin": "ocr_structured",
+            "bbox": null,
+            "page": 0,
+            "node_id": "TEST_E-4-1_2026__ocr_structured__741d72006f",
+            "kesg_codes": [
+              "E-4-1"
+            ],
+            "quote": "사용전력량=0.2MWh (b.pdf)",
+            "resolved": true,
+            "independent": true
+          }
+        ]
+      },
+      "answer": {
+        "qid": "HMC-C-8-E-3-1",
+        "section": "환경",
+        "question_text": "[C-8·수치] 온실가스 배출량 (Scope 1+2)",
+        "value": 0.048,
+        "status": "flagged",
+        "evidence_links": [
+          {
+            "file_name": "a.pdf",
+            "relative_path": "evidence_pack/a.pdf",
+            "origin": "ocr_structured",
+            "bbox": null,
+            "page": 0,
+            "node_id": "TEST_E-3-1_2026__derived_ocr_structured__3d2fdc8625",
+            "kesg_codes": [
+              "E-3-1"
+            ],
+            "quote": "사용전력량=100kWh (a.pdf) → 배출계수 환산: 100 kWh × 0.0004781 = 0.048 tCO2eq (추정)",
+            "resolved": true,
+            "independent": true
+          }
+        ],
+        "flags": [],
+        "rationale": "온실가스 배출량 (Scope1 + Scope2) = 0.048tCO2eq (보고 연도 2026, D1 위험 평가불가, 검증=unverified) · 평가불가 · 비교 0건 · 미검증 1건 · 범위 확인 필요 1건 · 신뢰 정보: derived, incomplete_scope, partial_value, source_conflict",
+        "evidence_needed": [],
+        "draft_text": "",
+        "draft_citations": [],
+        "draft_grounding": null,
+        "unit": "tCO2eq",
+        "period": 2026,
+        "confidence_flags": [
+          "derived",
+          "incomplete_scope",
+          "partial_value",
+          "source_conflict"
+        ],
+        "self_reports": [],
+        "option_evidence": {},
+        "boundary_label": "2026-05 · 월간 · 제1공장 · 사용전력량 환산 배출량 · 부분",
+        "completeness": "partial",
+        "comparison": "mismatch",
+        "comparison_reason": "E-3-1: 파생 배출량 제외 — b.pdf 원측정값 상충 — 독립 증빙의 같은 측정 대상 값 상충 — 비교 판정 확인, 합산 제외",
+        "boundary": {
+          "period_text": "2026-05",
+          "aggregation": "monthly",
+          "coverage_months": 1,
+          "basis": "actual",
+          "site": "제1공장",
+          "site_scope": "site",
+          "measure": "사용전력량 환산 배출량",
+          "measure_kind": "emission_scope2",
+          "completeness": "partial",
+          "denominator": "",
+          "denominator_kind": "unknown",
+          "inferred": [
+            "measure_kind"
+          ],
+          "source_quote": "사용전력량 (2026-05)",
+          "period_year": 2026,
+          "period_start": "2026-05-01",
+          "period_end": "2026-05-31",
+          "site_path": [
+            "제1공장"
+          ],
+          "provenance": [
+            {
+              "source": "row",
+              "quote": "사용전력량",
+              "period": "2026-05",
+              "method": "rule",
+              "page": 0,
+              "bbox": null,
+              "source_file": "a.pdf"
+            },
+            {
+              "source": "document_header",
+              "quote": "사업장: 제1공장\n문서번호: 원본 고지서 A",
+              "method": "rule",
+              "page": 0,
+              "bbox": null,
+              "source_file": "a.pdf"
+            },
+            {
+              "rule": "emission_factor",
+              "factor_key": "kWh_to_tco2",
+              "factor": 0.0004781,
+              "source": "_EMISSION_FACTORS (기존 예시 계수)",
+              "formula": "100 kWh × 0.0004781 = 0.048 tCO2eq"
+            }
+          ],
+          "review_notes": []
+        },
+        "comparisons": [
+          {
+            "raw": "0.048tCO2eq",
+            "start": 27,
+            "end": 38,
+            "code": "E-3-1",
+            "claim_value": 0.048,
+            "claim_unit": "tCO2eq",
+            "evidence_ids": [
+              "TEST_E-3-1_2026__derived_ocr_structured__3d2fdc8625"
+            ],
+            "evidence_value": 0.048,
+            "evidence_unit": "tCO2eq",
+            "evidence_period": 2026,
+            "status": "unverified",
+            "reason": "scope_unconfirmed",
+            "evidence_files": [
+              "a.pdf"
+            ],
+            "comparison": "scope_unconfirmed",
+            "comparison_reason": "전체 주장에 필요한 기간·사업장·분모 미확인 — 부분값 증빙 2026-05 · 월간 · 제1공장 · 사용전력량 환산 배출량 · 부분"
+          }
+        ],
+        "scope_notes": [
+          "E-3-1: 파생 배출량 제외 — b.pdf 원측정값 상충 — 독립 증빙의 같은 측정 대상 값 상충 — 비교 판정 확인, 합산 제외",
+          "E-3-1: 부분값 — 2026-05 · 월간 · 제1공장 · 사용전력량 환산 배출량 · 부분. 전사·연간·전체 범위 총량임이 입증되지 않아 검증 보류. 연간 실적의 실제 사용기간·집계 방식 확인; 전사/공장 조직·사업장 범위 확인"
+        ],
+        "reference_links": [
+          {
+            "file_name": "b.pdf",
+            "relative_path": "evidence_pack/b.pdf",
+            "origin": "ocr_structured",
+            "bbox": null,
+            "page": 0,
+            "node_id": "TEST_E-4-1_2026__ocr_structured__741d72006f",
+            "kesg_codes": [
+              "E-4-1"
+            ],
+            "quote": "사용전력량=0.2MWh (b.pdf)",
+            "resolved": true,
+            "independent": true
+          }
+        ],
+        "badge": "🚩 검토필요",
+        "display_value": "0.048 tCO2eq (2026년)",
+        "comparison_label": "실제 불일치",
+        "review_note": "실제 불일치: E-3-1: 파생 배출량 제외 — b.pdf 원측정값 상충 — 독립 증빙의 같은 측정 대상 값 상충 — 비교 판정 확인, 합산 제외 · E-3-1: 파생 배출량 제외 — b.pdf 원측정값 상충 — 독립 증빙의 같은 측정 대상 값 상충 — 비교 판정 확인, 합산 제외 · E-3-1: 부분값 — 2026-05 · 월간 · 제1공장 · 사용전력량 환산 배출량 · 부분. 전사·연간·전체 범위 총량임이 입증되지 않아 검증 보류. 연간 실적의 실제 사용기간·집계 방식 확인; 전사/공장 조직·사업장 범위 확인"
+      },
+      "checklist": {
+        "qid": "HMC-C-8-E-3-1",
+        "section": "환경",
+        "question_text": "[C-8·수치] 온실가스 배출량 (Scope 1+2)",
+        "status": "flagged",
+        "action": "검토·보완",
+        "evidence_needed": [],
+        "request": "온실가스 배출량 (Scope1 + Scope2) = 0.048tCO2eq (보고 연도 2026, D1 위험 평가불가, 검증=unverified) · 평가불가 · 비교 0건 · 미검증 1건 · 범위 확인 필요 1건 · 신뢰 정보: derived, incomplete_scope, partial_value, source_conflict; E-3-1: 파생 배출량 제외 — b.pdf 원측정값 상충 — 독립 증빙의 같은 측정 대상 값 상충 — 비교 판정 확인, 합산 제외; E-3-1: 부분값 — 2026-05 · 월간 · 제1공장 · 사용전력량 환산 배출량 · 부분. 전사·연간·전체 범위 총량임이 입증되지 않아 검증 보류. 연간 실적의 실제 사용기간·집계 방식 확인; 전사/공장 조직·사업장 범위 확인"
+      }
+    },
+    "A_MWh_reverse": {
+      "inputs": [
+        {
+          "source_file": "b.pdf",
+          "channel": "structured",
+          "doc_type": "controlled_fixture",
+          "metrics": [
+            {
+              "metric_hint": "사용전력량",
+              "value": 0.2,
+              "unit": "MWh",
+              "period": "2026-05",
+              "kesg_code_guess": "E-4-1",
+              "bbox": null,
+              "page": 0,
+              "confidence": 0.95,
+              "boundary": {}
+            }
+          ],
+          "clauses": [],
+          "tables": [],
+          "raw_text": "사업장: 제1공장\n문서번호: 검토용 집계 B",
+          "router_meta": {}
+        },
+        {
+          "source_file": "a.pdf",
+          "channel": "structured",
+          "doc_type": "controlled_fixture",
+          "metrics": [
+            {
+              "metric_hint": "사용전력량",
+              "value": 100,
+              "unit": "kWh",
+              "period": "2026-05",
+              "kesg_code_guess": "E-4-1",
+              "bbox": null,
+              "page": 0,
+              "confidence": 0.95,
+              "boundary": {}
+            }
+          ],
+          "clauses": [],
+          "tables": [],
+          "raw_text": "사업장: 제1공장\n문서번호: 원본 고지서 A",
+          "router_meta": {}
+        }
+      ],
+      "parent_comparisons": [
+        {
+          "source_id": "TEST_E-4-1_2026__ocr_structured__741d72006f",
+          "target_id": "TEST_E-4-1_2026__ocr_structured__6063fc6363",
+          "edge_type": "cross_check",
+          "yoy": null,
+          "cagr": null,
+          "years_gap": 1,
+          "detail": "실제 불일치: 교차검증 오차 100.0% (b.pdf ↔ a.pdf)",
+          "comparison": "mismatch",
+          "difference_pct": 100.0
+        }
+      ],
+      "point": {
+        "kesg_code": "E-3-1",
+        "kesg_name": "온실가스 배출량 (Scope1 + Scope2)",
+        "value": 0.048,
+        "unit": "tCO2eq",
+        "period": 2026,
+        "confidence": 0.902,
+        "verification": "unverified",
+        "d1_risk": null,
+        "evidence_files": [
+          {
+            "file_name": "a.pdf",
+            "relative_path": "evidence_pack/a.pdf",
+            "origin": "ocr_structured",
+            "bbox": null,
+            "page": 0,
+            "node_id": "TEST_E-3-1_2026__derived_ocr_structured__3d2fdc8625",
+            "kesg_codes": [
+              "E-3-1"
+            ],
+            "quote": "사용전력량=100kWh (a.pdf) → 배출계수 환산: 100 kWh × 0.0004781 = 0.048 tCO2eq (추정)",
+            "resolved": true,
+            "independent": true
+          }
+        ],
+        "source_tier": "derived",
+        "representative_node_ids": [
+          "TEST_E-3-1_2026__derived_ocr_structured__3d2fdc8625"
+        ],
+        "value_role": "unknown",
+        "confidence_flags": [
+          "derived",
+          "incomplete_scope",
+          "partial_value",
+          "source_conflict"
+        ],
+        "d1_evaluation": {
+          "status": "unavailable",
+          "compared_claims": 0,
+          "unverified_claims": 1,
+          "excluded_claims": 0,
+          "comparison": "scope_unconfirmed",
+          "comparison_reason": "전체 주장에 필요한 기간·사업장·분모 미확인 — 부분값 증빙 2026-05 · 월간 · 제1공장 · 사용전력량 환산 배출량 · 부분",
+          "reasons": {
+            "scope_unconfirmed": 1
+          },
+          "claims": [
+            {
+              "raw": "0.048tCO2eq",
+              "start": 27,
+              "end": 38,
+              "code": "E-3-1",
+              "claim_value": 0.048,
+              "claim_unit": "tCO2eq",
+              "evidence_ids": [
+                "TEST_E-3-1_2026__derived_ocr_structured__3d2fdc8625"
+              ],
+              "evidence_value": 0.048,
+              "evidence_unit": "tCO2eq",
+              "evidence_period": 2026,
+              "status": "unverified",
+              "reason": "scope_unconfirmed",
+              "evidence_files": [
+                "a.pdf"
+              ],
+              "comparison": "scope_unconfirmed",
+              "comparison_reason": "전체 주장에 필요한 기간·사업장·분모 미확인 — 부분값 증빙 2026-05 · 월간 · 제1공장 · 사용전력량 환산 배출량 · 부분"
+            }
+          ]
+        },
+        "completeness": "partial",
+        "boundary": {
+          "period_text": "2026-05",
+          "aggregation": "monthly",
+          "coverage_months": 1,
+          "basis": "actual",
+          "site": "제1공장",
+          "site_scope": "site",
+          "measure": "사용전력량 환산 배출량",
+          "measure_kind": "emission_scope2",
+          "completeness": "partial",
+          "denominator": "",
+          "denominator_kind": "unknown",
+          "inferred": [
+            "measure_kind"
+          ],
+          "source_quote": "사용전력량 (2026-05)",
+          "period_year": 2026,
+          "period_start": "2026-05-01",
+          "period_end": "2026-05-31",
+          "site_path": [
+            "제1공장"
+          ],
+          "provenance": [
+            {
+              "source": "row",
+              "quote": "사용전력량",
+              "period": "2026-05",
+              "method": "rule",
+              "page": 0,
+              "bbox": null,
+              "source_file": "a.pdf"
+            },
+            {
+              "source": "document_header",
+              "quote": "사업장: 제1공장\n문서번호: 원본 고지서 A",
+              "method": "rule",
+              "page": 0,
+              "bbox": null,
+              "source_file": "a.pdf"
+            },
+            {
+              "rule": "emission_factor",
+              "factor_key": "kWh_to_tco2",
+              "factor": 0.0004781,
+              "source": "_EMISSION_FACTORS (기존 예시 계수)",
+              "formula": "100 kWh × 0.0004781 = 0.048 tCO2eq"
+            }
+          ],
+          "review_notes": []
+        },
+        "boundary_label": "2026-05 · 월간 · 제1공장 · 사용전력량 환산 배출량 · 부분",
+        "scope_notes": [
+          "E-3-1: 파생 배출량 제외 — b.pdf 원측정값 상충 — 독립 증빙의 같은 측정 대상 값 상충 — 비교 판정 확인, 합산 제외",
+          "E-3-1: 부분값 — 2026-05 · 월간 · 제1공장 · 사용전력량 환산 배출량 · 부분. 전사·연간·전체 범위 총량임이 입증되지 않아 검증 보류. 연간 실적의 실제 사용기간·집계 방식 확인; 전사/공장 조직·사업장 범위 확인"
+        ],
+        "comparison": "mismatch",
+        "comparison_reason": "E-3-1: 파생 배출량 제외 — b.pdf 원측정값 상충 — 독립 증빙의 같은 측정 대상 값 상충 — 비교 판정 확인, 합산 제외",
+        "comparisons": [
+          {
+            "raw": "0.048tCO2eq",
+            "start": 27,
+            "end": 38,
+            "code": "E-3-1",
+            "claim_value": 0.048,
+            "claim_unit": "tCO2eq",
+            "evidence_ids": [
+              "TEST_E-3-1_2026__derived_ocr_structured__3d2fdc8625"
+            ],
+            "evidence_value": 0.048,
+            "evidence_unit": "tCO2eq",
+            "evidence_period": 2026,
+            "status": "unverified",
+            "reason": "scope_unconfirmed",
+            "evidence_files": [
+              "a.pdf"
+            ],
+            "comparison": "scope_unconfirmed",
+            "comparison_reason": "전체 주장에 필요한 기간·사업장·분모 미확인 — 부분값 증빙 2026-05 · 월간 · 제1공장 · 사용전력량 환산 배출량 · 부분"
+          }
+        ],
+        "reference_files": [
+          {
+            "file_name": "b.pdf",
+            "relative_path": "evidence_pack/b.pdf",
+            "origin": "ocr_structured",
+            "bbox": null,
+            "page": 0,
+            "node_id": "TEST_E-4-1_2026__ocr_structured__741d72006f",
+            "kesg_codes": [
+              "E-4-1"
+            ],
+            "quote": "사용전력량=0.2MWh (b.pdf)",
+            "resolved": true,
+            "independent": true
+          }
+        ]
+      },
+      "answer": {
+        "qid": "HMC-C-8-E-3-1",
+        "section": "환경",
+        "question_text": "[C-8·수치] 온실가스 배출량 (Scope 1+2)",
+        "value": 0.048,
+        "status": "flagged",
+        "evidence_links": [
+          {
+            "file_name": "a.pdf",
+            "relative_path": "evidence_pack/a.pdf",
+            "origin": "ocr_structured",
+            "bbox": null,
+            "page": 0,
+            "node_id": "TEST_E-3-1_2026__derived_ocr_structured__3d2fdc8625",
+            "kesg_codes": [
+              "E-3-1"
+            ],
+            "quote": "사용전력량=100kWh (a.pdf) → 배출계수 환산: 100 kWh × 0.0004781 = 0.048 tCO2eq (추정)",
+            "resolved": true,
+            "independent": true
+          }
+        ],
+        "flags": [],
+        "rationale": "온실가스 배출량 (Scope1 + Scope2) = 0.048tCO2eq (보고 연도 2026, D1 위험 평가불가, 검증=unverified) · 평가불가 · 비교 0건 · 미검증 1건 · 범위 확인 필요 1건 · 신뢰 정보: derived, incomplete_scope, partial_value, source_conflict",
+        "evidence_needed": [],
+        "draft_text": "",
+        "draft_citations": [],
+        "draft_grounding": null,
+        "unit": "tCO2eq",
+        "period": 2026,
+        "confidence_flags": [
+          "derived",
+          "incomplete_scope",
+          "partial_value",
+          "source_conflict"
+        ],
+        "self_reports": [],
+        "option_evidence": {},
+        "boundary_label": "2026-05 · 월간 · 제1공장 · 사용전력량 환산 배출량 · 부분",
+        "completeness": "partial",
+        "comparison": "mismatch",
+        "comparison_reason": "E-3-1: 파생 배출량 제외 — b.pdf 원측정값 상충 — 독립 증빙의 같은 측정 대상 값 상충 — 비교 판정 확인, 합산 제외",
+        "boundary": {
+          "period_text": "2026-05",
+          "aggregation": "monthly",
+          "coverage_months": 1,
+          "basis": "actual",
+          "site": "제1공장",
+          "site_scope": "site",
+          "measure": "사용전력량 환산 배출량",
+          "measure_kind": "emission_scope2",
+          "completeness": "partial",
+          "denominator": "",
+          "denominator_kind": "unknown",
+          "inferred": [
+            "measure_kind"
+          ],
+          "source_quote": "사용전력량 (2026-05)",
+          "period_year": 2026,
+          "period_start": "2026-05-01",
+          "period_end": "2026-05-31",
+          "site_path": [
+            "제1공장"
+          ],
+          "provenance": [
+            {
+              "source": "row",
+              "quote": "사용전력량",
+              "period": "2026-05",
+              "method": "rule",
+              "page": 0,
+              "bbox": null,
+              "source_file": "a.pdf"
+            },
+            {
+              "source": "document_header",
+              "quote": "사업장: 제1공장\n문서번호: 원본 고지서 A",
+              "method": "rule",
+              "page": 0,
+              "bbox": null,
+              "source_file": "a.pdf"
+            },
+            {
+              "rule": "emission_factor",
+              "factor_key": "kWh_to_tco2",
+              "factor": 0.0004781,
+              "source": "_EMISSION_FACTORS (기존 예시 계수)",
+              "formula": "100 kWh × 0.0004781 = 0.048 tCO2eq"
+            }
+          ],
+          "review_notes": []
+        },
+        "comparisons": [
+          {
+            "raw": "0.048tCO2eq",
+            "start": 27,
+            "end": 38,
+            "code": "E-3-1",
+            "claim_value": 0.048,
+            "claim_unit": "tCO2eq",
+            "evidence_ids": [
+              "TEST_E-3-1_2026__derived_ocr_structured__3d2fdc8625"
+            ],
+            "evidence_value": 0.048,
+            "evidence_unit": "tCO2eq",
+            "evidence_period": 2026,
+            "status": "unverified",
+            "reason": "scope_unconfirmed",
+            "evidence_files": [
+              "a.pdf"
+            ],
+            "comparison": "scope_unconfirmed",
+            "comparison_reason": "전체 주장에 필요한 기간·사업장·분모 미확인 — 부분값 증빙 2026-05 · 월간 · 제1공장 · 사용전력량 환산 배출량 · 부분"
+          }
+        ],
+        "scope_notes": [
+          "E-3-1: 파생 배출량 제외 — b.pdf 원측정값 상충 — 독립 증빙의 같은 측정 대상 값 상충 — 비교 판정 확인, 합산 제외",
+          "E-3-1: 부분값 — 2026-05 · 월간 · 제1공장 · 사용전력량 환산 배출량 · 부분. 전사·연간·전체 범위 총량임이 입증되지 않아 검증 보류. 연간 실적의 실제 사용기간·집계 방식 확인; 전사/공장 조직·사업장 범위 확인"
+        ],
+        "reference_links": [
+          {
+            "file_name": "b.pdf",
+            "relative_path": "evidence_pack/b.pdf",
+            "origin": "ocr_structured",
+            "bbox": null,
+            "page": 0,
+            "node_id": "TEST_E-4-1_2026__ocr_structured__741d72006f",
+            "kesg_codes": [
+              "E-4-1"
+            ],
+            "quote": "사용전력량=0.2MWh (b.pdf)",
+            "resolved": true,
+            "independent": true
+          }
+        ],
+        "badge": "🚩 검토필요",
+        "display_value": "0.048 tCO2eq (2026년)",
+        "comparison_label": "실제 불일치",
+        "review_note": "실제 불일치: E-3-1: 파생 배출량 제외 — b.pdf 원측정값 상충 — 독립 증빙의 같은 측정 대상 값 상충 — 비교 판정 확인, 합산 제외 · E-3-1: 파생 배출량 제외 — b.pdf 원측정값 상충 — 독립 증빙의 같은 측정 대상 값 상충 — 비교 판정 확인, 합산 제외 · E-3-1: 부분값 — 2026-05 · 월간 · 제1공장 · 사용전력량 환산 배출량 · 부분. 전사·연간·전체 범위 총량임이 입증되지 않아 검증 보류. 연간 실적의 실제 사용기간·집계 방식 확인; 전사/공장 조직·사업장 범위 확인"
+      },
+      "checklist": {
+        "qid": "HMC-C-8-E-3-1",
+        "section": "환경",
+        "question_text": "[C-8·수치] 온실가스 배출량 (Scope 1+2)",
+        "status": "flagged",
+        "action": "검토·보완",
+        "evidence_needed": [],
+        "request": "온실가스 배출량 (Scope1 + Scope2) = 0.048tCO2eq (보고 연도 2026, D1 위험 평가불가, 검증=unverified) · 평가불가 · 비교 0건 · 미검증 1건 · 범위 확인 필요 1건 · 신뢰 정보: derived, incomplete_scope, partial_value, source_conflict; E-3-1: 파생 배출량 제외 — b.pdf 원측정값 상충 — 독립 증빙의 같은 측정 대상 값 상충 — 비교 판정 확인, 합산 제외; E-3-1: 부분값 — 2026-05 · 월간 · 제1공장 · 사용전력량 환산 배출량 · 부분. 전사·연간·전체 범위 총량임이 입증되지 않아 검증 보류. 연간 실적의 실제 사용기간·집계 방식 확인; 전사/공장 조직·사업장 범위 확인"
+      }
+    },
+    "B_해서_no_comma": {
+      "source": "ISMS 인증은 미취득 상태이며, ISMS 인증을 취득해서 제출하고 운영할 예정이다.",
+      "answer": "ISMS 인증을 취득했다. [S]",
+      "gate": {
+        "decision": "ACCEPT",
+        "g1_uncited_sentences": [],
+        "g2_orphan_numbers": [],
+        "g4_unit_mismatches": [],
+        "g5_overclaim": false,
+        "hard_fails": [],
+        "soft_flags": [
+          "G5_unproven_certification_completion"
+        ],
+        "faithfulness": 1.0
+      },
+      "draft_status": "insufficient",
+      "expected_supported": false
+    },
+    "B_해서_comma": {
+      "source": "ISMS 인증은 미취득 상태이며, ISMS 인증을 취득해서 제출하고, 운영할 예정이다.",
+      "answer": "ISMS 인증을 취득했다. [S]",
+      "gate": {
+        "decision": "ACCEPT",
+        "g1_uncited_sentences": [],
+        "g2_orphan_numbers": [],
+        "g4_unit_mismatches": [],
+        "g5_overclaim": false,
+        "hard_fails": [],
+        "soft_flags": [
+          "G5_unproven_certification_completion"
+        ],
+        "faithfulness": 1.0
+      },
+      "draft_status": "insufficient",
+      "expected_supported": false
+    },
+    "B_하여_no_comma": {
+      "source": "ISMS 인증은 미취득 상태이며, ISMS 인증을 취득하여 제출하고 운영할 예정이다.",
+      "answer": "ISMS 인증을 취득했다. [S]",
+      "gate": {
+        "decision": "ACCEPT",
+        "g1_uncited_sentences": [],
+        "g2_orphan_numbers": [],
+        "g4_unit_mismatches": [],
+        "g5_overclaim": false,
+        "hard_fails": [],
+        "soft_flags": [
+          "G5_unproven_certification_completion"
+        ],
+        "faithfulness": 1.0
+      },
+      "draft_status": "insufficient",
+      "expected_supported": false
+    },
+    "B_하여_comma": {
+      "source": "ISMS 인증은 미취득 상태이며, ISMS 인증을 취득하여 제출하고, 운영할 예정이다.",
+      "answer": "ISMS 인증을 취득했다. [S]",
+      "gate": {
+        "decision": "ACCEPT",
+        "g1_uncited_sentences": [],
+        "g2_orphan_numbers": [],
+        "g4_unit_mismatches": [],
+        "g5_overclaim": false,
+        "hard_fails": [],
+        "soft_flags": [
+          "G5_unproven_certification_completion"
+        ],
+        "faithfulness": 1.0
+      },
+      "draft_status": "insufficient",
+      "expected_supported": false
+    },
+    "B_해_no_comma": {
+      "source": "ISMS 인증은 미취득 상태이며, ISMS 인증을 취득해 제출하고 운영할 예정이다.",
+      "answer": "ISMS 인증을 취득했다. [S]",
+      "gate": {
+        "decision": "ACCEPT",
+        "g1_uncited_sentences": [],
+        "g2_orphan_numbers": [],
+        "g4_unit_mismatches": [],
+        "g5_overclaim": false,
+        "hard_fails": [],
+        "soft_flags": [
+          "G5_unproven_certification_completion"
+        ],
+        "faithfulness": 1.0
+      },
+      "draft_status": "insufficient",
+      "expected_supported": false
+    },
+    "B_해_comma": {
+      "source": "ISMS 인증은 미취득 상태이며, ISMS 인증을 취득해 제출하고, 운영할 예정이다.",
+      "answer": "ISMS 인증을 취득했다. [S]",
+      "gate": {
+        "decision": "ACCEPT",
+        "g1_uncited_sentences": [],
+        "g2_orphan_numbers": [],
+        "g4_unit_mismatches": [],
+        "g5_overclaim": false,
+        "hard_fails": [],
+        "soft_flags": [
+          "G5_unproven_certification_completion"
+        ],
+        "faithfulness": 1.0
+      },
+      "draft_status": "insufficient",
+      "expected_supported": false
+    },
+    "control_noun_preparation": {
+      "source": "ISMS 인증을 취득하여 준비 자료를 보관 중이다.",
+      "answer": "ISMS 인증을 취득했다. [S]",
+      "gate": {
+        "decision": "ACCEPT",
+        "g1_uncited_sentences": [],
+        "g2_orphan_numbers": [],
+        "g4_unit_mismatches": [],
+        "g5_overclaim": false,
+        "hard_fails": [],
+        "soft_flags": [],
+        "faithfulness": 1.0
+      },
+      "draft_status": "draft_ready",
+      "expected_supported": true
+    },
+    "control_actual_operation": {
+      "source": "2025년 정보보호 ISMS 인증을 취득하여 운영 중이다.",
+      "answer": "ISMS 인증을 취득했다. [S]",
+      "gate": {
+        "decision": "ACCEPT",
+        "g1_uncited_sentences": [],
+        "g2_orphan_numbers": [],
+        "g4_unit_mismatches": [],
+        "g5_overclaim": false,
+        "hard_fails": [],
+        "soft_flags": [],
+        "faithfulness": 1.0
+      },
+      "draft_status": "draft_ready",
+      "expected_supported": true
+    },
+    "control_honest_plan": {
+      "source": "향후 ISMS 인증을 취득해서 제출하고, 운영할 예정이다.",
+      "answer": "향후 ISMS 인증을 취득해서 제출하고, 운영할 예정이다. [S]",
+      "gate": {
+        "decision": "ACCEPT",
+        "g1_uncited_sentences": [],
+        "g2_orphan_numbers": [],
+        "g4_unit_mismatches": [],
+        "g5_overclaim": false,
+        "hard_fails": [],
+        "soft_flags": [],
+        "faithfulness": 1.0
+      },
+      "draft_status": "draft_ready",
+      "expected_supported": true
+    },
+    "control_completed_then_preparation": {
+      "source": "ISMS 인증을 취득했다.",
+      "answer": "ISMS 인증을 취득했고 준비 자료를 보관한다. [S]",
+      "gate": {
+        "decision": "ACCEPT",
+        "g1_uncited_sentences": [],
+        "g2_orphan_numbers": [],
+        "g4_unit_mismatches": [],
+        "g5_overclaim": false,
+        "hard_fails": [],
+        "soft_flags": [],
+        "faithfulness": 1.0
+      },
+      "draft_status": "draft_ready",
+      "expected_supported": true
+    },
+    "control_ambiguous_source": {
+      "source": "ISMS 인증을 취득해 갱신을 준비 중이다.",
+      "answer": "ISMS 인증을 취득했다. [S]",
+      "gate": {
+        "decision": "ACCEPT",
+        "g1_uncited_sentences": [],
+        "g2_orphan_numbers": [],
+        "g4_unit_mismatches": [],
+        "g5_overclaim": false,
+        "hard_fails": [],
+        "soft_flags": [
+          "G5_unproven_certification_completion"
+        ],
+        "faithfulness": 1.0
+      },
+      "draft_status": "insufficient",
+      "expected_supported": false
+    },
+    "control_ambiguous_answer": {
+      "source": "ISMS 인증 취득을 준비 중이다.",
+      "answer": "ISMS 인증을 취득해 갱신을 준비 중이다. [S]",
+      "gate": {
+        "decision": "ACCEPT",
+        "g1_uncited_sentences": [],
+        "g2_orphan_numbers": [],
+        "g4_unit_mismatches": [],
+        "g5_overclaim": false,
+        "hard_fails": [],
+        "soft_flags": [
+          "G5_unproven_certification_completion"
+        ],
+        "faithfulness": 1.0
+      },
+      "draft_status": "insufficient",
+      "expected_supported": false
+    }
+  },
+  "input_class": "synthetic extracted metrics; fixed generation responses; production gates and downstream data"
+}
