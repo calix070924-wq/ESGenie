@@ -53,6 +53,58 @@ def test_embedding_parts_cover_source_and_preserve_location_without_mutation():
     assert parent.chunk_id == "parent_9" and parent.text == source
 
 
+def test_embedding_split_finds_tail_and_returns_parent_document():
+    """토큰 한도 뒤에 있는 대목으로 검색해도 부모 문서가 한 번만 회수된다.
+
+    종전에는 encode()가 한도 뒤를 조용히 버려 이 질의로 문서를 찾을 수 없었다.
+    회수 단위는 부모 문서여야 한다 — 게이트가 보는 본문과 감사 기록의 청크 id가
+    달라지면 안 된다.
+    """
+    index = _split_index(limit=40)
+    index._faiss = None
+    index._index = None
+    index._docs = []
+    index._row_docs = []
+    index._vectors = None
+    index._st_model.encode = lambda texts, **kwargs: index._fallback_embed(list(texts))
+
+    head = "경영 방침을 설명한다. " * 12
+    long_doc = IndexedDoc(head + "\n산업재해 사망 2건을 보고했다.", {"node_id": "n9"}, "long")
+    short_doc = IndexedDoc("교육 과정을 운영한다.", {"node_id": "n1"}, "short")
+    index.build([long_doc, short_doc], embedding_split=True)
+
+    assert len(index._row_docs) > len(index._docs)
+    assert [d.chunk_id for d in index._docs] == ["long", "short"]
+
+    hits = index.search("산업재해 사망 2건을 보고했다.", k=2)
+    ids = [doc.chunk_id for doc, _ in hits]
+    assert ids[0] == "long"
+    assert len(ids) == len(set(ids)), "같은 부모가 상위 k를 중복 점유하면 안 된다"
+    assert hits[0][0].text == long_doc.text  # 조각이 아니라 부모 원문
+
+
+def test_resplitting_parts_keeps_original_parent_and_offsets():
+    """이미 조각난 문서를 다시 나눠도 원래 부모와 원문 위치를 잃지 않는다.
+
+    영역 검색 인덱스를 분할한 뒤 `retrieve_for_items`가 같은 문서를 한 번 더
+    통과시킨다. 그때 부모가 조각 자신으로 덮어써지면 원장·감사 기록에서 원문을
+    되짚을 수 없다.
+    """
+    source = "경영 방침을 설명한다. " * 12 + "\n산업재해 사망 2건을 보고했다."
+    parent = IndexedDoc(source, {"node_id": "node_9"}, "parent_9")
+    first = _split_index().split_documents([parent])
+    assert len(first) > 1
+
+    second = _split_index().split_documents(first)
+
+    assert [d.chunk_id for d in second] == [d.chunk_id for d in first]
+    for part in second:
+        assert part.meta["parent_chunk_id"] == "parent_9"
+        assert part.meta["node_id"] == "node_9"
+        start, end = part.meta["char_start"], part.meta["char_end"]
+        assert part.text == source[start:end]
+
+
 def test_short_document_keeps_id_and_text():
     parent = IndexedDoc("짧은 근거", {"node_id": "n1"}, "original")
     parts = _split_index().split_documents([parent])

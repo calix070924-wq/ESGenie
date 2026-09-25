@@ -57,6 +57,9 @@ class VectorIndex:
         self._faiss = _get_faiss()
         self._index = None
         self._docs: list[IndexedDoc] = []
+        #: 벡터 한 줄에 대응하는 문서. 임베딩 분할을 쓰면 한 부모 문서가 여러 줄을
+        #: 갖는다(같은 IndexedDoc 객체가 반복 등장). 기본값은 _docs와 동일.
+        self._row_docs: list[IndexedDoc] = []
         self._vectors: np.ndarray | None = None
 
     def _embed(self, texts: list[str]) -> np.ndarray:
@@ -79,11 +82,16 @@ class VectorIndex:
         return vectors
 
     def split_documents(self, docs: list[IndexedDoc]) -> list[IndexedDoc]:
-        """추가 근거 검색용 조각을 만들고 원문 ID·문자 위치를 보존한다.
+        """검색용 조각을 만들고 원문 ID·문자 위치를 보존한다.
 
-        기존 보고서와 D3의 검색/점수는 바꾸지 않도록 build()에서 자동 적용하지
-        않는다. 호출자가 만든 별도 인덱스에만 사용한다. 토큰 수는 현재 모델의
-        tokenizer로 직접 재서 encode()의 조용한 뒷부분 잘림을 피한다.
+        build()에서 자동 적용하지 않는다 — 인덱스를 만드는 쪽이 정할 일이다.
+        토큰 수는 현재 모델의 tokenizer로 직접 재서 encode()의 조용한 뒷부분
+        잘림을 피한다.
+
+        이미 조각난 문서를 다시 넣어도 부모 추적이 끊기지 않는다. 한도 안에 들어가는
+        조각은 id가 그대로 유지되고, `parent_chunk_id`는 조각 자신이 아니라 **원래
+        부모**를 계속 가리킨다. 영역 검색 인덱스를 분할한 뒤 `retrieve_for_items`가
+        같은 문서를 한 번 더 통과시키기 때문에 필요하다.
         """
         tokenizer = getattr(self._st_model, "tokenizer", None)
         limit = getattr(self._st_model, "max_seq_length", None)
@@ -93,23 +101,42 @@ class VectorIndex:
         result: list[IndexedDoc] = []
         for doc in parents:
             spans = _embedding_text_spans(doc.text, tokenizer, limit)
+            root_id = doc.meta.get("parent_chunk_id") or doc.chunk_id
+            # 이미 조각인 문서를 다시 나눌 때 문자 위치가 조각 기준으로 덮어써지면
+            # 부모 원문에서 어디였는지 잃는다. 조각의 기존 시작 위치를 더해 둔다.
+            base = doc.meta.get("char_start") or 0 if doc.meta.get("parent_chunk_id") else 0
             for part, (start, end) in enumerate(spans):
                 chunk_id = doc.chunk_id if len(spans) == 1 else f"{doc.chunk_id}__part_{part:04d}"
                 meta = dict(doc.meta)
                 meta.update({
                     "id": chunk_id,
-                    "parent_chunk_id": doc.chunk_id,
+                    "parent_chunk_id": root_id,
                     # 원본 PDF의 좌표가 아니라 부모 IndexedDoc.text의 문자 위치다.
-                    "char_start": start,
-                    "char_end": end,
+                    "char_start": base + start,
+                    "char_end": base + end,
                 })
                 result.append(IndexedDoc(doc.text[start:end], meta, chunk_id))
         return result
 
     # ---- public API ---------------------------------------------------
-    def build(self, docs: list[IndexedDoc]) -> None:
+    def build(self, docs: list[IndexedDoc], *, embedding_split: bool = False) -> None:
+        """문서를 임베딩해 인덱스를 만든다.
+
+        `embedding_split=True`면 토큰 한도를 넘는 문서를 조각내 **조각마다** 벡터를
+        만들고, 검색 결과로는 **부모 문서를 그대로** 돌려준다. 모델의 max_seq_length가
+        128이어서 encode()가 긴 문서의 뒷부분을 조용히 버리는 문제만 없애고, 청크 id·
+        본문·게이트가 보는 근거 단위는 종전과 같게 유지한다. 인덱스에 담기는 문서
+        집합(`_docs`)도 바뀌지 않으므로 BM25·감사 기록·원장 대조는 영향이 없다.
+        """
         self._docs = _assign_chunk_ids(docs)
-        texts = [d.text for d in docs]
+        if embedding_split:
+            parts = self.split_documents(self._docs)
+            by_id = {doc.chunk_id: doc for doc in self._docs}
+            self._row_docs = [by_id[p.meta["parent_chunk_id"]] for p in parts]
+            texts = [p.text for p in parts]
+        else:
+            self._row_docs = self._docs
+            texts = [d.text for d in self._docs]
         self._vectors = self._embed(texts)
         if self._faiss is not None and self._vectors.size > 0:
             d = self._vectors.shape[1]
@@ -119,13 +146,27 @@ class VectorIndex:
     def search(self, query: str, k: int = 3) -> list[tuple[IndexedDoc, float]]:
         if not self._docs or self._vectors is None:
             return []
+        rows = self._row_docs or self._docs
         qv = self._embed([query])
-        if self._index is not None:
-            scores, idx = self._index.search(qv, min(k, len(self._docs)))
-            return [(self._docs[i], float(scores[0, j])) for j, i in enumerate(idx[0]) if i >= 0]
+        if len(rows) == len(self._docs):
+            if self._index is not None:
+                scores, idx = self._index.search(qv, min(k, len(self._docs)))
+                return [(self._docs[i], float(scores[0, j])) for j, i in enumerate(idx[0]) if i >= 0]
+            sims = (self._vectors @ qv[0])
+            order = np.argsort(-sims)[:k]
+            return [(self._docs[int(i)], float(sims[int(i)])) for i in order]
+        # 한 부모가 여러 줄을 갖는 경우: 같은 문서가 상위 k를 중복 점유하지 않도록
+        # 문서별 최고 점수만 남긴다. faiss에 k를 늘려 요청하면 중복 제거 후 k를 못
+        # 채울 수 있으므로 전체를 훑는다(수천 줄 규모에서 비용이 문제되지 않는다).
         sims = (self._vectors @ qv[0])
-        order = np.argsort(-sims)[:k]
-        return [(self._docs[int(i)], float(sims[int(i)])) for i in order]
+        best: dict[str, tuple[int, float]] = {}
+        for i, score in enumerate(sims):
+            doc = rows[i]
+            current = best.get(doc.chunk_id)
+            if current is None or score > current[1]:
+                best[doc.chunk_id] = (i, float(score))
+        ranked = sorted(best.values(), key=lambda pair: -pair[1])[:k]
+        return [(rows[i], score) for i, score in ranked]
 
 
 class BM25Index:

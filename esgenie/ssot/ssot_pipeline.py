@@ -478,7 +478,41 @@ def build_rag_with_ssot(
     if extra:
         corp = _extend_corp_index(corp, extra)
 
-    return corp
+    return _split_for_embedding_limit(corp)
+
+
+def _split_for_embedding_limit(corp: CorpIndex) -> CorpIndex:
+    """영역 검색 인덱스의 벡터만 조각 단위로 임베딩해 뒷부분 잘림을 없앤다.
+
+    `paraphrase-multilingual-MiniLM-L12-v2`의 max_seq_length는 128이고, encode()는
+    그보다 긴 문서의 뒷부분을 **조용히 버린 채** 임베딩한다. 그래서 긴 조항의 뒷부분은
+    벡터 검색에 아예 보이지 않았다(2026-09-25 실측, 현대모비스 9/20 전량 추출물:
+    인덱스 1,206건 중 315건이 한도 초과, 전체 228,788자 중 61,052자가 임베딩에서
+    잘려 나갔다. 초과 문서는 전부 `ssot_text` 조항문이고 `ssot_ocr` 수치 청크는 0건).
+
+    **인덱스에 담기는 문서와 회수되는 청크는 바꾸지 않는다.** 조각은 임베딩 입력일
+    뿐이고 검색 결과로는 부모 문서가 그대로 나온다. 처음에는 조각 자체를 인덱스
+    문서로 넣었는데, 그러면 두 가지가 망가진다(2026-09-25 실측):
+
+    - tier 0은 BM25 단독이고 BM25에는 토큰 한도가 없다. 조각을 넣으면 잘림 문제와
+      무관한 tier 0의 순위까지 흔들린다.
+    - 검색 게이트의 수치 근거 확인(`R3_numeric_evidence_missing`)은 상위 1건의 본문을
+      본다. 조각은 조항의 앞 128토큰뿐이어서 뒤에 있던 수치가 사라지고, E 영역이
+      ACCEPT → HUMAN으로 뒤집혔다. 근거가 없어진 것이 아니라 게이트가 보는 단위가
+      줄어든 것이었다.
+
+    그래서 벡터 한 줄 = 조각, 검색 결과 = 부모 문서로 둔다. BM25·chunk id·게이트가
+    보는 본문·감사 기록·원장 대조는 종전과 같다. 달라지는 것은 벡터 검색이 조항
+    뒷부분도 찾을 수 있다는 점뿐이며, 판정 기준·임계값·점수식은 건드리지 않았다.
+    """
+    from esgenie.embeddings import VectorIndex
+
+    docs = list(getattr(corp.vector, "_docs", []) or [])
+    if not docs:
+        return corp
+    vector = VectorIndex(model_name=corp.vector.model_name)
+    vector.build(docs, embedding_split=True)
+    return CorpIndex(vector=vector, bm25=corp.bm25)
 
 
 def _extend_corp_index(corp: CorpIndex, extra_docs: list[Any]) -> CorpIndex:

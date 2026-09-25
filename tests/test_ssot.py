@@ -390,6 +390,65 @@ class TestSsotPipeline:
         assert any(d.meta.get("source") == "ssot_ocr" for d in docs)
         assert any(d.meta.get("source") == "ssot_text" for d in docs)
 
+    def test_area_index_embeds_long_clause_tail_without_changing_chunks(self, setup):
+        """긴 조항의 뒷부분까지 임베딩되지만 인덱스 문서·청크 id는 그대로여야 한다.
+
+        토큰 한도를 넘는 문서는 조각마다 벡터를 갖는다(벡터 줄 수 > 문서 수).
+        회수 단위는 부모 문서이므로 조각 id가 인덱스에 노출되면 안 된다 — 게이트가
+        보는 본문과 감사 기록의 청크 id가 달라지기 때문이다.
+        """
+        from esgenie.layer2_rag import HybridRAG
+        report, graph = setup
+        long_clause = OcrExtraction(
+            source_file="취업규칙.pdf",
+            channel=DocChannel.UNSTRUCTURED,
+            doc_type="policy_manual",
+            clauses=[ExtractedClause(
+                section="제8장 안전보건",
+                text=("회사는 안전보건 목표를 수립하고 이행 실적을 점검한다. " * 20
+                      + "특히 협력사 재해율을 연 1회 공개한다."),
+                kesg_code_guess="S-4-1", page=11,
+            )],
+        )
+        merge_ocr_extraction(graph, long_clause, report_year=report.report_year)
+
+        corp = build_rag_with_ssot(HybridRAG(), report, graph)
+        model = corp.vector._st_model
+        tokenizer = getattr(model, "tokenizer", None)
+        limit = getattr(model, "max_seq_length", None)
+        if tokenizer is None or not limit:
+            pytest.skip("임베딩 모델을 불러오지 못해 토큰 한도를 잴 수 없다")
+
+        docs = corp.vector._docs
+        rows = corp.vector._row_docs
+        over_limit = [
+            d for d in docs
+            if len(tokenizer(d.text, add_special_tokens=True,
+                             truncation=False)["input_ids"]) > limit
+        ]
+        assert over_limit, "한도를 넘는 긴 조항이 있어야 이 검사가 의미를 갖는다"
+        assert len(rows) > len(docs), "한도를 넘는 문서는 조각마다 벡터를 가져야 한다"
+        assert corp.vector._vectors is not None
+        assert corp.vector._vectors.shape[0] == len(rows)
+
+        # 조각은 임베딩 입력일 뿐이다 — 인덱스 문서와 청크 id는 종전 그대로여야 한다.
+        assert all("__part_" not in (d.chunk_id or "") for d in docs)
+        assert {id(d) for d in rows} <= {id(d) for d in docs}
+        assert any("협력사 재해율" in d.text for d in docs)
+
+    def test_area_index_keeps_vector_and_bm25_on_same_documents(self, setup):
+        """벡터와 BM25가 같은 문서 집합이어야 한다.
+
+        tier 0은 BM25 단독이고 BM25에는 토큰 한도가 없다. 임베딩 분할이 검색 대상
+        문서 집합까지 바꾸면 잘림과 무관한 tier 0의 순위가 함께 흔들린다.
+        """
+        from esgenie.layer2_rag import HybridRAG
+        report, graph = setup
+        corp = build_rag_with_ssot(HybridRAG(), report, graph)
+        vector_ids = [d.chunk_id for d in corp.vector._docs]
+        bm25_ids = [d.chunk_id for d in corp.bm25._docs]
+        assert vector_ids == bm25_ids
+
     def test_local_rag_excludes_freeform_ocr_metrics(self):
         """비상장 생성 인덱스에서 자유형 OCR 수치가 유효 S 조항을 밀어내지 않는다."""
         from esgenie.layer2_rag import HybridRAG
