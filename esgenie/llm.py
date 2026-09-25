@@ -10,6 +10,7 @@ from __future__ import annotations
 
 import json
 import logging
+import math
 import random
 import re
 import time
@@ -46,6 +47,30 @@ def _is_retryable(exc: Exception) -> bool:
         return True
     name = type(exc).__name__
     return any(kw in name for kw in ("Timeout", "Connection", "RateLimit", "InternalServer"))
+
+
+def _retry_delay(exc: Exception, attempt: int) -> float:
+    """서버가 지정한 대기 시간을 존중하고, 없으면 기존 지수 백오프를 쓴다."""
+    from email.utils import parsedate_to_datetime
+
+    headers = getattr(getattr(exc, "response", None), "headers", {}) or {}
+    for name, scale in (("retry-after-ms", 0.001), ("x-ms-retry-after-ms", 0.001),
+                        ("retry-after", 1.0)):
+        value = headers.get(name)
+        if value is None:
+            continue
+        try:
+            delay = float(value) * scale
+        except (TypeError, ValueError):
+            if name != "retry-after":
+                continue
+            try:
+                delay = parsedate_to_datetime(str(value)).timestamp() - time.time()
+            except (TypeError, ValueError, OverflowError):
+                continue
+        if math.isfinite(delay) and delay >= 0:
+            return delay + random.uniform(0, 0.1)
+    return LLM_BACKOFF_BASE * (2 ** (attempt - 1)) + random.uniform(0, 0.1)
 
 
 @dataclass
@@ -158,7 +183,7 @@ class LLMClient:
                     llm_cache.record_failure()
                     exc = call_exc
                     if attempt < LLM_MAX_ATTEMPTS and _is_retryable(exc):
-                        delay = LLM_BACKOFF_BASE * (2 ** (attempt - 1)) + random.uniform(0, 0.1)
+                        delay = _retry_delay(exc, attempt)
                         logger.warning(
                             "OpenAI 호출 일시 오류, 재시도 %d/%d: %s", attempt, LLM_MAX_ATTEMPTS, exc,
                         )
@@ -217,7 +242,7 @@ class LLMClient:
                     llm_cache.record_failure()
                     exc = call_exc
                     if attempt < LLM_MAX_ATTEMPTS and _is_retryable(exc):
-                        delay = LLM_BACKOFF_BASE * (2 ** (attempt - 1)) + random.uniform(0, 0.1)
+                        delay = _retry_delay(exc, attempt)
                         logger.warning(
                             "Anthropic 호출 일시 오류, 재시도 %d/%d: %s", attempt, LLM_MAX_ATTEMPTS, exc,
                         )
