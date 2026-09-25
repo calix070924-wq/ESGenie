@@ -193,9 +193,18 @@ def evidence_coverage_pct(extraction: "ExtractionResult") -> float:
     return 100.0 * linked / denom
 
 
+# 전각 ASCII(U+FF01~U+FF5E) → 반각. 한국어 보고서 표의 단위 칸은 전각 '％'를 쓰는 곳이
+# 있는데 K-ESG 항목 정의는 반각 '%'라서, 같은 퍼센트가 '명백히 다른 단위'로 기각됐다
+# (2026-09-20 실측: 현대모비스 2025 보고서 p.68 '재생 원부자재 사용(구매) 비율'
+# 2.0/3.5/2.8 ％ 3건 → E-2-2 코드 미부여 → 원장 누락. 같은 문서의 반각 '%' 838건은 정상).
+# 전각은 반각의 타이포그래피 변형이므로 축약해도 단위 의미가 바뀌지 않는다.
+# ‰(퍼밀)은 %와 다른 단위이므로 여기서 건드리지 않는다 — 1,000배 오차가 된다.
+_FULLWIDTH_TO_ASCII = {c: c - 0xFEE0 for c in range(0xFF01, 0xFF5F)}
+
+
 def _relaxed_unit(u: str) -> str:
-    """공백 제거·소문자화 + 흔한 동의 표기 축약 ('ton CO2eq'→'tco2eq')."""
-    s = re.sub(r"\s+", "", str(u)).lower()
+    """공백 제거·소문자화 + 전각 반각화 + 흔한 동의 표기 축약 ('ton CO2eq'→'tco2eq')."""
+    s = re.sub(r"\s+", "", str(u)).translate(_FULLWIDTH_TO_ASCII).lower()
     s = s.replace("co₂", "co2").replace("톤", "t")
     s = re.sub(r"^tons?(?=co2|$)", "t", s)
     # 보고서 표기의 tCO2e와 원장 정의의 tCO2eq는 같은 CO2 환산톤이다.

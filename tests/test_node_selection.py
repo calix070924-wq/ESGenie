@@ -165,12 +165,12 @@ class TestRealWorldCases:
         assert picked is not None
         assert picked.value == 72_463.0
 
-    def test_e4_1_prefers_item_unit_tj_over_mwh_breakdown(self) -> None:
-        """E-4-1: 'PPA' 4,654 MWh를 골랐다 → '전력 사용량' 7,497 TJ.
+    def test_e4_1_prefers_recent_power_over_procurement_breakdown(self) -> None:
+        """저장된 후보의 전력 전체 범위를 PPA 내역보다 우선한다.
 
-        E-4-1은 24개 노드 중 '합계' 어휘가 **0개**다(집계어휘 실태 §코드별 비율).
-        집계 축만으로는 안 갈리므로 세부 분해 축(조달방식별 PPA/vPPA/녹색요금제)과
-        단위 정합 축(항목 단위 TJ)이 함께 작동해야 한다.
+        2026-09-18: 종전 기대는 TJ라는 이유로 2023년 7,497을 골랐다. 같은 전력
+        범위의 명시된 2024년 값은 환산 가능하므로 먼저 선택해야 한다. 이 저장 입력의
+        전력 후보를 회사 전체 에너지 정답으로 주장하지 않는다(전부 component).
         """
         pool = [
             _n("E-4-1", 827_967.0, "MWh", 2024, "전력 사용량"),
@@ -184,8 +184,9 @@ class TestRealWorldCases:
         ]
         picked = select_representative_node("E-4-1", pool, report_year=REPORT_YEAR)
         assert picked is not None
-        assert picked.value == 7_497.0
-        assert picked.unit == "TJ"
+        assert picked.value == 827_967.0
+        assert picked.unit == "MWh"
+        assert picked.value_role == "component"
 
 
 # =====================================================================
@@ -347,7 +348,7 @@ class TestNoOverBlocking:
         ]
         picked = select_representative_node("E-4-1", pool, report_year=REPORT_YEAR)
         assert picked is not None, "총량 어휘가 없다고 미공시가 되면 안 된다"
-        assert picked.value == 7_497.0
+        assert picked.value == 827_967.0, "동일 범위에서 확정 연도를 단위 표기보다 먼저 본다"
 
     def test_e6_2_recycling_rate_not_blocked_by_e6_1_negative(self) -> None:
         """E-6-1의 negative('재활용')가 E-6-2로 새면 재활용률 항목이 통째로 막힌다.
@@ -508,18 +509,18 @@ class TestPartialValueFlagging:
         assert result.mapped["E-3-2"]["value"] == 71_385.0, "유일 증빙을 버리지 않는다"
         assert "partial_value" in result.confidence_flags.get("E-3-2", [])
 
-    def test_total_candidate_present_means_no_flag(self) -> None:
-        """★ (a) 총량이 있으면 그걸 고르고 플래그가 안 붙는다 — 과표기 방지."""
+    def test_electricity_aggregate_still_has_partial_energy_flag(self) -> None:
+        """전력 합계는 전력 내 부분값보다 우선해도 E-4-1 전체 에너지의 총량은 아니다."""
         pool = [
             _n("E-4-1", 24_506.0, "TJ", 2025, "전력 소비량 합계 2025"),
             _n("E-4-1", 5_104.0, "TJ", 2025, "비재생 전력 소비량 해외 2025"),
         ]
         picked = select_representative_node("E-4-1", pool, report_year=REPORT_YEAR)
         assert picked is not None and picked.value == 24_506.0
-        assert not is_partial_aggregate(picked)
+        assert is_partial_aggregate(picked, "E-4-1")
 
         result = extract_with_ssot(_empty_report(), _graph(*pool))
-        assert "partial_value" not in result.confidence_flags.get("E-4-1", [])
+        assert "partial_value" in result.confidence_flags.get("E-4-1", [])
 
     def test_flag_reaches_ledger_table_status_string(self) -> None:
         """★ 완료 기준 1 — 플래그가 원장 표 상태 문자열('·부분값')까지 노출된다.
@@ -882,7 +883,7 @@ class TestValueModeTieBreaker:
         cases.test_e3_1_picks_scope1_plus_2_total_not_reduction_effect()
         cases.test_e5_1_picks_total_not_domestic_separate()
         cases.test_e6_1_picks_generation_total_not_disposal_partial()
-        cases.test_e4_1_prefers_item_unit_tj_over_mwh_breakdown()
+        cases.test_e4_1_prefers_recent_power_over_procurement_breakdown()
 
 
 # =====================================================================

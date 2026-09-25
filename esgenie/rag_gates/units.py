@@ -114,7 +114,11 @@ def normalize_unit(raw: str) -> str | None:
     붙고 값이 환산되지 않았다(모비스 S-2-4 교육훈련비 21,116 백만 원 → 21,116원,
     10억 배 축소). 별칭 30개를 공백 제거 후 대조했을 때 충돌하는 키가 없어 안전하다.
     """
-    key = re.sub(r"\s+", "", raw).lower()
+    from ..layer1_extract import _FULLWIDTH_TO_ASCII
+
+    # 전각 표기도 같은 단위로 본다(layer1_extract._relaxed_unit과 같은 표를 쓴다).
+    # 두 경로가 갈리면 `_unit_suspect`는 통과하는데 환산은 실패해 값이 안 실린다.
+    key = re.sub(r"\s+", "", raw).translate(_FULLWIDTH_TO_ASCII).lower()
     return _UNIT_ALIASES.get(key)
 
 
