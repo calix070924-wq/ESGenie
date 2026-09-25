@@ -70,6 +70,86 @@ _PILLAR_LABELS: dict[str, dict[str, str]] = {
 }
 
 
+def ocr_upload_statuses(result, uploaded_names: list[str]) -> dict[str, str]:
+    """업로드 접수와 실제 문서 읽기 결과를 구분한다. 자가주장 응답서는 제외한다."""
+    claims = set(getattr(result, "supplier_claim_files", []) or [])
+    extractions = {ext.source_file: ext for ext in getattr(result, "ocr_extractions", []) or []}
+    statuses = {}
+    for name in dict.fromkeys(uploaded_names):
+        if name in claims:
+            continue
+        ext = extractions.get(name)
+        meta = getattr(ext, "router_meta", {}) or {}
+        status = meta.get("extraction_status")
+        if meta.get("mock"):
+            status = "mock"
+        elif status not in {"complete", "partial", "failed", "mock"}:
+            has_content = any(getattr(ext, key, None) for key in ("raw_text", "metrics", "clauses", "tables"))
+            if meta.get("chunk_failures") or getattr(ext, "doc_type", "") == "extraction_failed":
+                status = "partial" if has_content else "failed"
+            else:
+                # 정형 문서와 기존 결과에는 extraction_status가 없을 수 있다.
+                status = "complete" if has_content or meta.get("engine") else "unknown"
+        statuses[name] = status
+    return statuses
+
+
+def _ocr_upload_summary(result, uploaded_names: list[str]) -> str:
+    statuses = ocr_upload_statuses(result, uploaded_names)
+    counts = Counter(statuses.values())
+    labels = {"complete": "읽기 완료", "partial": "일부 처리", "failed": "처리 실패",
+              "mock": "시연 결과", "unknown": "처리 상태 미확인"}
+    parts = [f"{label} {counts[status]}건" for status, label in labels.items() if counts[status]]
+    summary = f"업로드 증빙 {len(statuses)}건: " + " · ".join(parts) + "." if parts else ""
+    claims_count = len(set(uploaded_names) - statuses.keys())
+    if claims_count:
+        summary += f" 자가진단 응답 파일 {claims_count}건이 업로드되어 있습니다."
+    return summary.strip()
+
+
+def ocr_upload_messages(result, uploaded_names: list[str], *,
+                        upstage_key_present: bool | None = None) -> list[tuple[str, str]]:
+    """추출 실패/일부 처리/시연 결과를 파일명과 사유와 함께 안내한다."""
+    extractions = {ext.source_file: ext for ext in getattr(result, "ocr_extractions", []) or []}
+    messages = []
+    for name, status in ocr_upload_statuses(result, uploaded_names).items():
+        ext = extractions.get(name)
+        meta = getattr(ext, "router_meta", {}) or {}
+        labels = {"partial": "문서 일부만 처리되었습니다. 누락된 부분을 확인하세요.",
+                  "failed": "문서를 읽지 못했습니다. 해당 증빙으로 판단할 수 없습니다.",
+                  "mock": "시연용 결과입니다. 실제 문서를 읽은 결과로 사용할 수 없습니다.",
+                  "unknown": "문서 처리 상태가 확인되지 않습니다. 분석에 사용된 파일을 확인하세요."}
+        if status in labels:
+            failures = meta.get("chunk_failures") or []
+            pages = sorted({f["page"] + 1 for f in failures
+                            if type(f.get("page")) is int and f["page"] >= 0})
+            detail = meta.get("failure_detail") or meta.get("failure_reason")
+            if failures:
+                detail = failures[0].get("detail") or failures[0].get("reason") or detail
+            message = f"{name} — {labels[status]}"
+            if pages:
+                message += " 확인할 페이지: " + ", ".join(map(str, pages[:10])) + "쪽."
+            if detail:
+                message += f" 사유: {str(detail)[:200]}"
+            messages.append(("error" if status == "failed" else "warning", message))
+        if meta.get("upstage_error") and status not in {"failed", "mock"}:
+            messages.append(("warning", f"{name} — 문서를 대체 방식으로 읽었습니다. 원본 표와 수치를 확인하세요. "
+                             f"사유: {str(meta['upstage_error'])[:200]}"))
+        elif status not in {"failed", "mock"} and getattr(ext, "channel", None) == "structured" and (
+            str(meta.get("fallback", "")).startswith("pymupdf")
+            or meta.get("engine") in {"pymupdf", "pymupdf_text"}
+        ):
+            reason = " 문서 인식 서비스의 연결 키가 설정되지 않았습니다." if upstage_key_present is False else ""
+            messages.append(("warning", f"{name} — 정형 증빙을 로컬 방식으로 읽었습니다.{reason} "
+                             "원본 표와 추출한 수치가 일치하는지 확인하세요."))
+        empty_pages = meta.get("empty_source_pages") or []
+        if empty_pages and status not in {"failed", "mock"}:
+            page_label = ", ".join(str(p + 1) for p in empty_pages[:10])
+            messages.append(("warning", f"{name} — 텍스트가 없는 페이지 {len(empty_pages)}개가 있습니다 "
+                             f"({page_label}쪽). 빈 페이지인지 이미지로 된 내용인지 원본을 확인하세요."))
+    return messages
+
+
 def _issb_badge_text(code: str) -> str:
     badges: list[str] = []
     seen: set[tuple[str, str]] = set()
@@ -359,7 +439,7 @@ def render_overview_workspace(
     if getattr(result, "policy_drafts", None):
         actions.append(f"사내 규정 보완 초안 {len(result.policy_drafts)}건이 준비되었습니다.")
     if uploaded_names:
-        actions.append(f"업로드 증빙 {len(uploaded_names)}건이 결과에 반영되었습니다.")
+        actions.append(_ocr_upload_summary(result, uploaded_names))
     else:
         actions.append("전기요금, 폐기물, 규정집 증빙을 업로드하면 검증 신뢰도가 크게 좋아집니다.")
 
@@ -463,12 +543,13 @@ def render_evidence_workspace(
 def _get_assembled_report(result):
     """통합 보고서(ReportDoc)와 PDF 경로를 세션 캐시로 1회만 생성한다.
 
-    섹션 구성/기업명이 같으면 재실행 시 재생성하지 않는다(LLM 호출 절약).
+    같은 분석 결과의 재실행 시 재생성하지 않는다(LLM 호출 절약).
     PDF 생성 실패 시 pdf_path=None으로 두고 MD는 그대로 제공한다.
     """
     from esgenie.layer6_report import assemble_report
 
     sig = (
+        id(result),
         tuple(sorted(result.sections.keys())),
         getattr(getattr(result, "report", None), "corp_name", ""),
         len(getattr(result, "risk_rows", []) or []),
@@ -477,20 +558,43 @@ def _get_assembled_report(result):
     if cached and cached[0] == sig:
         return cached[1], cached[2]
 
+    saved_export = getattr(result, "report_export", {}) or {}
     try:
         doc = assemble_report(result)
-    except Exception:
+    except Exception as exc:
         logger.exception("assemble_report 실패 — 보고서 조립 중단")
+        result.report_export = {**saved_export, "preview": {
+            "status": "failed", "stage": "assemble", "reason": type(exc).__name__, "detail": str(exc)}}
+        if SETTINGS.strict_llm:
+            raise
         return None, None
 
     pdf_path = None
     try:
         from esgenie.exporters.report_pdf import export_report_pdf
         pdf_path = export_report_pdf(doc, os.path.join("outputs", "report_preview"))
-    except Exception:
+        result.report_export = {**saved_export, "preview": {"status": "complete"}}
+    except Exception as exc:
+        logger.exception("통합 보고서 PDF 생성 실패")
+        result.report_export = {**saved_export, "preview": {
+            "status": "partial", "stage": "pdf", "reason": type(exc).__name__, "detail": str(exc)}}
+        if SETTINGS.strict_llm:
+            raise
         pdf_path = None
     st.session_state["_assembled_report"] = (sig, doc, pdf_path)
     return doc, pdf_path
+
+
+def _report_export_notice(result) -> str:
+    status = getattr(result, "report_export", {}) or {}
+    status = status.get("preview") or status
+    stages = {"assemble": "보고서 내용을 구성", "markdown": "보고서 문서 파일을 저장", "pdf": "PDF 파일을 생성"}
+    message = f"{stages.get(status.get('stage'), '보고서를 생성')}하지 못했습니다."
+    if status.get("status") == "partial":
+        message += " 문서(.md)는 내려받을 수 있습니다."
+    if status.get("detail"):
+        message += f" 사유: {status['detail']}"
+    return message
 
 
 def _download_if_exists(label, path, mime, *, container=None, **kw) -> None:
@@ -524,8 +628,10 @@ def render_deliverables_workspace(result, active_area: str, gradient: str) -> No
 
     doc, pdf_path = _get_assembled_report(result)
     if doc is None:
-        render_empty_state("보고서 조립 실패", "로그를 확인해 주세요.")
+        render_empty_state("보고서 생성 실패", _report_export_notice(result))
         return
+    if not pdf_path:
+        st.warning(_report_export_notice(result))
 
     render_download_tiles([
         {
@@ -632,6 +738,13 @@ def render_diagnosis_workspace(
     extraction = getattr(result, "extraction", None)
     render_stat_row(_result_status_meta(result, active_area), columns=3)
 
+    findings = getattr(result, "review_findings", [])
+    if findings:
+        from esgenie.source_review import review_markdown
+        st.markdown("## 확인 필요 사항")
+        st.markdown(review_markdown([finding for finding in findings
+                                    if not finding.area or finding.area == active_area]))
+
     actions: list[str] = []
     if extraction is not None and extraction.missing:
         actions.append(f"공시 항목 {len(extraction.missing)}건이 비어 있습니다. 아래 '부족한 항목'에서 확인하세요.")
@@ -640,7 +753,7 @@ def render_diagnosis_workspace(
     if getattr(result, "policy_drafts", None):
         actions.append(f"사내 규정 보완 초안 {len(result.policy_drafts)}건이 준비되었습니다. 아래 '법규·사내 규정 점검'에서 확인하세요.")
     if uploaded_names:
-        actions.append(f"업로드한 증빙 {len(uploaded_names)}건이 결과에 반영되었습니다.")
+        actions.append(_ocr_upload_summary(result, uploaded_names))
     else:
         actions.append("전기요금 고지서, 폐기물 대장, 규정집을 올리면 진단 신뢰도가 크게 좋아집니다.")
 
@@ -727,8 +840,10 @@ def render_submission_workspace(result, active_area: str, *, focus: str = "both"
     export_paths = getattr(result, "export_paths", {}) or {}
     doc, pdf_path = _get_assembled_report(result)
     if doc is None:
-        render_empty_state("보고서 조립 실패", "로그를 확인해 주세요.")
+        render_empty_state("보고서 생성 실패", _report_export_notice(result))
         return
+    if not pdf_path:
+        st.warning(_report_export_notice(result))
 
     render_download_tiles([
         {
