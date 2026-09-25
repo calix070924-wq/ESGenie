@@ -386,6 +386,27 @@ G2에 남는다**(종전 `1600`, 지금 `211억 1600만`). 자릿수 묶기는 `
 관련될 수 있으나 **추정이며 실측하지 않았다**). `signals.py` 주석을 이 사실에 맞게 고쳤다 —
 종전 주석은 이 사례가 해소된 것처럼 읽혔다.
 
+## 커밋 내역 (2026-09-23 정리, 8개)
+
+`fa81817`(= `origin/main`, 이동 없음) 위에 논리 단위로 8개를 쌓았다. 파일을 하나씩
+골라 스테이징했고 `git add -A`는 쓰지 않았다 — 미추적 사용자 자료(`data/sample_dart/*`,
+개인 PDF, 진단 출력)가 섞이기 때문이다. **푸시·PR 게시·병합은 하지 않았다.**
+
+| # | 커밋 | 파일 | 무엇을 왜 |
+| --- | --- | --- | --- |
+| 1 | `0d8243c` feat(ocr) | `ssot/ocr_router.py`, `ssot/prompts.py`, `ssot/evidence_graph.py`, 테스트 3 | 엄격 모드가 값 미보고 표 행에서 중단되고 수치의 페이지·표 행을 되짚을 수 없었다. 페이지 보존 분할(92 → 176청크), 행 라벨·연도 문맥 전달, 인용 문구와 페이지 확인 경로 보존, 실패·중복·캐시 상태 표시 |
+| 2 | `e0b0615` fix(ledger) | `ssot/node_select.py`, `ssot/ssot_pipeline.py`, `layer1_extract.py`, `rag_gates/units.py`, 테스트 5 | ① 범위·확정 연도·단위 호환을 보지 않아 성격이 다른 값이 대표로 올라갔다 ② 전각 `％`를 한쪽만 읽어 의심 판정은 통과하는데 환산이 실패해 값이 실리지 않았다(E-2-2) ③ 근거가 있어도 승격 실패가 사유 없이 사라졌다 → 보류 사유 기록. **원장 확정값 17 → 18, 보류 사유 7항목** |
+| 3 | `7612d2d` feat(rag) | `embeddings.py`, `layer2_rag.py`, `rag_gates/cascade.py`, 테스트 1 | 영역 단위 검색만으로는 항목별 근거가 상위에서 밀렸다. 항목별 별도 인덱스·hit별 게이트·판단 기록. `split_documents`는 이 경로에만 쓰고 `build()`에서 자동 적용하지 않았다 |
+| 4 | `a27431b` fix(gate) | `rag_gates/signals.py`, `tests/test_grounding_gate.py` | `211억 1,600만`을 211·1600으로 쪼개 맞는 금액을 오탐했다 → 한 토큰으로 묶음. 그 과정에서 **우리가 만든 결함**을 찾아 고쳤다: `제388조`의 `조`를 25조 원으로 읽음(조항문 9·보고서 문장 12) |
+| 5 | `d3382b9` feat(review) | `source_review.py`(신규), `layer4_verify.py`, `pipeline.py`, `layer6_report.py`, 테스트 1 | "확인이 필요하다"만 말하고 사유·출처·행동이 없었다. 항목 구조화, 직접 근거/주변 설명 구분, 값 못 읽은 항목 노출, **G2·G4 사유 분리** |
+| 6 | `aeaa010` fix(ui,export) | `app.py`, `ui/tabs.py`, `exporters/report_pdf.py`, 테스트 2 | 파일별 실패 사유가 일반 안내로 뭉개졌다. 상태·사유·부분 성공 구분, 엄격 모드 예외 전달, 캐시 구분. PDF는 이스케이프된 원문 기호 보존 |
+| 7 | `a78304d` fix(llm) | `llm.py`, `tests/test_llm.py` | 429에서 고정 백오프만 써서 서버가 알려 준 대기보다 일찍 재시도했다. `retry-after-ms`·`x-ms-retry-after-ms`·`retry-after`(초/HTTP 날짜) 존중, 없으면 기존 백오프 |
+| 8 | `1bf6661` docs | 이 문서, `proposal_long_input_truncation.md` | 코드 수정 완료와 전체 검증 완료를 분리해 기록. 미측정 칸은 추정으로 채우지 않음 |
+
+커밋 총합 **35파일 / +4,234 / −202** (추적 수정 25 + 신규 10). 커밋 후 확인:
+`git diff --check` 통과, 전체 회귀 **1,525 passed / 12 skipped / 0 failed**,
+`.env`·`outputs/`·`data/sample_dart/*`·개인 PDF는 **커밋에 포함되지 않음**(경로 검사로 확인).
+
 ## 모듈별 변경 목록
 
 | 파일 | 변경 목적 |
