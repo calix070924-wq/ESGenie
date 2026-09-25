@@ -222,6 +222,13 @@ class HybridRAG:
         self.kesg_bm25_index = BM25Index()
         self.industry_index = VectorIndex()
         self.industry_bm25_index = BM25Index()
+        # 영역 질의는 동의어를 붙여 128토큰을 넘고 뒤쪽 용어가 임베딩 질의에서 통째로
+        # 빠진다(2026-09-26 실측: E 37개 중 10개, S 45개 중 16개, G 36개 중 12개).
+        # 그래서 `VectorIndex.split_query`를 만들어 켜 봤지만 **실측이 이득을 지지하지
+        # 않아 켜지 않았다** — 잘리던 용어를 담은 문서의 최고 순위가 상승 2건·하락 8건이고,
+        # 잘린 용어 절반 이상은 이 코퍼스에 해당 문서가 아예 없었다. 질의를 조각내 문서별
+        # 최고값을 쓰면 짧은 조각이 순위 분포를 흔든다. 근거:
+        # outputs/diagnostics/20260925_area_search_split/query_split_term_ranks.json
         self._load_kesg()
         self._load_industry()
 

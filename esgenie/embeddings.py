@@ -51,6 +51,16 @@ def _get_faiss() -> Any:
 class VectorIndex:
     """FAISS 기반 벡터 인덱스 (모델 로딩 실패 시 해시 기반 폴백)."""
 
+    #: 토큰 한도를 넘는 **질의**를 조각내 각각 임베딩하고 문서별 최고 유사도를 쓴다.
+    #: 영역 질의는 동의어를 붙여 길어지며 뒤쪽 용어가 임베딩에서 빠진다(2026-09-26
+    #: 실측: E 37개 중 10개, S 45개 중 16개, G 36개 중 12개 용어가 잘려 나갔다).
+    #: **제품에서는 켜지 않는다.** 실측이 이득을 지지하지 않았다 — 잘리던 용어를 담은
+    #: 문서의 최고 순위가 상승 2건·하락 8건이었다(`layer2_rag.HybridRAG.__init__`
+    #: 주석과 outputs/diagnostics/20260925_area_search_split/ 참조). 측정 재현과
+    #: 향후 판단을 위해 기능만 남겨 둔다. 클래스 속성으로 두어 `__init__`을 거치지
+    #: 않는 인스턴스에서도 기본값이 보장된다.
+    split_query = False
+
     def __init__(self, model_name: str | None = None) -> None:
         self.model_name = model_name or SETTINGS.embed_model
         self._st_model = _get_st_model(self.model_name)
@@ -143,22 +153,35 @@ class VectorIndex:
             self._index = self._faiss.IndexFlatIP(d)
             self._index.add(self._vectors)
 
+    def _query_vectors(self, query: str) -> np.ndarray:
+        """질의 임베딩. 한도를 넘고 `split_query`가 켜져 있으면 조각마다 만든다."""
+        if not self.split_query:
+            return self._embed([query])
+        tokenizer = getattr(self._st_model, "tokenizer", None)
+        limit = getattr(self._st_model, "max_seq_length", None)
+        spans = _embedding_text_spans(query, tokenizer, limit)
+        if len(spans) == 1:
+            return self._embed([query])
+        return self._embed([query[start:end] for start, end in spans])
+
     def search(self, query: str, k: int = 3) -> list[tuple[IndexedDoc, float]]:
         if not self._docs or self._vectors is None:
             return []
         rows = self._row_docs or self._docs
-        qv = self._embed([query])
-        if len(rows) == len(self._docs):
+        qvs = self._query_vectors(query)
+        if len(rows) == len(self._docs) and len(qvs) == 1:
             if self._index is not None:
-                scores, idx = self._index.search(qv, min(k, len(self._docs)))
+                scores, idx = self._index.search(qvs, min(k, len(self._docs)))
                 return [(self._docs[i], float(scores[0, j])) for j, i in enumerate(idx[0]) if i >= 0]
-            sims = (self._vectors @ qv[0])
+            sims = (self._vectors @ qvs[0])
             order = np.argsort(-sims)[:k]
             return [(self._docs[int(i)], float(sims[int(i)])) for i in order]
-        # 한 부모가 여러 줄을 갖는 경우: 같은 문서가 상위 k를 중복 점유하지 않도록
-        # 문서별 최고 점수만 남긴다. faiss에 k를 늘려 요청하면 중복 제거 후 k를 못
-        # 채울 수 있으므로 전체를 훑는다(수천 줄 규모에서 비용이 문제되지 않는다).
-        sims = (self._vectors @ qv[0])
+        # 한 부모가 여러 줄을 갖거나 질의가 여러 조각인 경우: 같은 문서가 상위 k를
+        # 중복 점유하지 않도록 문서별 최고 점수만 남긴다. faiss에 k를 늘려 요청하면
+        # 중복 제거 후 k를 못 채울 수 있으므로 전체를 훑는다(수천 줄 규모에서 비용이
+        # 문제되지 않는다). 질의 조각 사이에서도 최고값을 쓴다 — 뒤쪽 용어에만 걸리는
+        # 근거가 앞쪽 조각의 낮은 점수에 묻히지 않게 하는 것이 이 수정의 목적이다.
+        sims = (self._vectors @ qvs.T).max(axis=1)
         best: dict[str, tuple[int, float]] = {}
         for i, score in enumerate(sims):
             doc = rows[i]

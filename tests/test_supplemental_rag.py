@@ -23,6 +23,25 @@ def _split_index(limit=40):
     return index
 
 
+def _buildable_split_index(limit=40):
+    """build()·search()까지 돌 수 있는 인덱스. encode()가 **한도에서 자른다**.
+
+    실모델의 encode()는 max_seq_length를 넘는 입력의 뒷부분을 조용히 버린다. 그
+    동작을 재현하지 않으면 '뒷부분이 사라진다'는 전제 자체가 없어져 분할의 효과를
+    검증할 수 없다. 특수 토큰 2개를 뺀 나머지 문자만 임베딩한다.
+    """
+    index = _split_index(limit)
+    index._faiss = None
+    index._index = None
+    index._docs = []
+    index._row_docs = []
+    index._vectors = None
+    index._st_model.encode = lambda texts, **kwargs: index._fallback_embed(
+        [text[:limit - 2] for text in texts]
+    )
+    return index
+
+
 def _corp(docs):
     vector, bm25 = VectorIndex(), BM25Index()
     vector.build(docs)
@@ -60,13 +79,7 @@ def test_embedding_split_finds_tail_and_returns_parent_document():
     회수 단위는 부모 문서여야 한다 — 게이트가 보는 본문과 감사 기록의 청크 id가
     달라지면 안 된다.
     """
-    index = _split_index(limit=40)
-    index._faiss = None
-    index._index = None
-    index._docs = []
-    index._row_docs = []
-    index._vectors = None
-    index._st_model.encode = lambda texts, **kwargs: index._fallback_embed(list(texts))
+    index = _buildable_split_index(limit=40)
 
     head = "경영 방침을 설명한다. " * 12
     long_doc = IndexedDoc(head + "\n산업재해 사망 2건을 보고했다.", {"node_id": "n9"}, "long")
@@ -81,6 +94,31 @@ def test_embedding_split_finds_tail_and_returns_parent_document():
     assert ids[0] == "long"
     assert len(ids) == len(set(ids)), "같은 부모가 상위 k를 중복 점유하면 안 된다"
     assert hits[0][0].text == long_doc.text  # 조각이 아니라 부모 원문
+
+
+def test_query_split_is_off_by_default_and_uses_all_query_windows_when_on():
+    """질의 분할은 기본 꺼짐이며, 켜면 한도 뒤 용어로도 문서를 찾는다.
+
+    실측이 이득을 지지하지 않아 제품에서는 켜지 않는다. 기본값이 켜지는 쪽으로
+    바뀌면 영역 검색 점수 분포가 조용히 달라지므로 기본값을 고정해 둔다.
+    """
+    index = _buildable_split_index(limit=40)
+    assert index.split_query is False  # __init__을 거치지 않아도 기본값이 있어야 한다
+
+    target = IndexedDoc("산업재해 사망 2건을 보고했다.", {}, "target")
+    other = IndexedDoc("배당 정책을 설명한다.", {}, "other")
+    index.build([target, other])
+
+    long_query = "배당, 주주환원, 이사회, 출석률, 감사기구, " * 3 + "산업재해 사망 2건"
+    assert len(index._st_model.tokenizer(long_query)["input_ids"]) > 40
+
+    index.split_query = False
+    truncated = index.search(long_query, k=2)
+    index.split_query = True
+    windowed = index.search(long_query, k=2)
+
+    assert truncated[0][0].chunk_id == "other"  # 뒤쪽 용어가 임베딩에서 빠진다
+    assert windowed[0][0].chunk_id == "target"
 
 
 def test_resplitting_parts_keeps_original_parent_and_offsets():
