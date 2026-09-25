@@ -17,6 +17,27 @@ class CascadeResult:
     bm25_hits: list[tuple[IndexedDoc, float]] = field(default_factory=list)
     embed_hits: list[tuple[IndexedDoc, float]] = field(default_factory=list)
     queries_tried: list[str] = field(default_factory=list)
+    #: 이 cascade가 실제로 통과한 각 tier의 답안 묶음(최종 tier 우선, 중복 제거).
+    #: 판정(`decision`)과 최종 `hits`는 바꾸지 않는다. tier 판정은 top 1 문서만 보므로,
+    #: 무관한 top 1 때문에 escalate된 tier의 개별 유효 근거가 그대로 버려진다. 항목별
+    #: 추가 검색(`retrieve_for_items`)이 그 근거에 기존 개별 게이트를 다시 적용할 수
+    #: 있도록, 이미 계산해 둔 답안 묶음을 기록만 해 둔다. k를 키우는 것이 아니다.
+    tier_hits: list[tuple[IndexedDoc, float]] = field(default_factory=list)
+
+
+def _dedup_tier_hits(
+    *groups: list[tuple[IndexedDoc, float]],
+) -> list[tuple[IndexedDoc, float]]:
+    """각 tier의 답안을 순서대로 합치되 chunk_id 기준 첫 등장만 남긴다."""
+    seen: set[str] = set()
+    merged: list[tuple[IndexedDoc, float]] = []
+    for group in groups:
+        for doc, score in group:
+            if doc.chunk_id in seen:
+                continue
+            seen.add(doc.chunk_id)
+            merged.append((doc, score))
+    return merged
 
 
 def run_retrieval_cascade(
@@ -45,6 +66,7 @@ def run_retrieval_cascade(
         return CascadeResult(
             hits=hybrid, decision=decision, tier=1,
             bm25_hits=bm25_hits, embed_hits=embed_hits, queries_tried=[query],
+            tier_hits=_dedup_tier_hits(hybrid),
         )
 
     tier0_bm25 = bm25_index.search(query, k=max(k, 8))
@@ -66,6 +88,7 @@ def run_retrieval_cascade(
             tier=0,
             bm25_hits=tier0_bm25,
             queries_tried=[query],
+            tier_hits=_dedup_tier_hits(tier0_hits),
         )
 
     tier1_embed = vector_index.search(query, k=max(k, 8))
@@ -88,6 +111,7 @@ def run_retrieval_cascade(
             bm25_hits=tier0_bm25,
             embed_hits=tier1_embed,
             queries_tried=[query],
+            tier_hits=_dedup_tier_hits(tier1_hybrid, tier0_hits),
         )
 
     queries = _query_variants(query)
@@ -116,6 +140,7 @@ def run_retrieval_cascade(
         bm25_hits=tier2_bm25,
         embed_hits=tier2_embed,
         queries_tried=queries,
+        tier_hits=_dedup_tier_hits(tier2_hybrid, tier1_hybrid, tier0_hits),
     )
 
 

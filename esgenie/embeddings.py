@@ -78,6 +78,34 @@ class VectorIndex:
                 vectors[i] /= norm
         return vectors
 
+    def split_documents(self, docs: list[IndexedDoc]) -> list[IndexedDoc]:
+        """추가 근거 검색용 조각을 만들고 원문 ID·문자 위치를 보존한다.
+
+        기존 보고서와 D3의 검색/점수는 바꾸지 않도록 build()에서 자동 적용하지
+        않는다. 호출자가 만든 별도 인덱스에만 사용한다. 토큰 수는 현재 모델의
+        tokenizer로 직접 재서 encode()의 조용한 뒷부분 잘림을 피한다.
+        """
+        tokenizer = getattr(self._st_model, "tokenizer", None)
+        limit = getattr(self._st_model, "max_seq_length", None)
+        parents = _assign_chunk_ids([
+            IndexedDoc(doc.text, dict(doc.meta), doc.chunk_id) for doc in docs
+        ])
+        result: list[IndexedDoc] = []
+        for doc in parents:
+            spans = _embedding_text_spans(doc.text, tokenizer, limit)
+            for part, (start, end) in enumerate(spans):
+                chunk_id = doc.chunk_id if len(spans) == 1 else f"{doc.chunk_id}__part_{part:04d}"
+                meta = dict(doc.meta)
+                meta.update({
+                    "id": chunk_id,
+                    "parent_chunk_id": doc.chunk_id,
+                    # 원본 PDF의 좌표가 아니라 부모 IndexedDoc.text의 문자 위치다.
+                    "char_start": start,
+                    "char_end": end,
+                })
+                result.append(IndexedDoc(doc.text[start:end], meta, chunk_id))
+        return result
+
     # ---- public API ---------------------------------------------------
     def build(self, docs: list[IndexedDoc]) -> None:
         self._docs = _assign_chunk_ids(docs)
@@ -153,6 +181,46 @@ class BM25Index:
             for i in order
             if scores[int(i)] > 0
         ]
+
+
+def _embedding_text_spans(text: str, tokenizer: Any, limit: int | None) -> list[tuple[int, int]]:
+    """모든 문자를 덮는 겹친 구간. 분할 결과도 특수 토큰을 포함해 한도 검증."""
+    if tokenizer is None or not limit:
+        return [(0, len(text))]
+
+    def fits(value: str) -> bool:
+        return len(tokenizer(value, add_special_tokens=True, truncation=False)["input_ids"]) <= limit
+
+    if fits(text):
+        return [(0, len(text))]
+    spans: list[tuple[int, int]] = []
+    start = 0
+    while start < len(text):
+        low, high = start + 1, len(text)
+        end = start
+        while low <= high:
+            middle = (low + high) // 2
+            if fits(text[start:middle]):
+                end = middle
+                low = middle + 1
+            else:
+                high = middle - 1
+        if end == start:
+            raise ValueError("Embedding token limit cannot fit one input character")
+        # 문장·줄·단어 경계가 가까우면 그곳에서 자른다. 토큰 한도는 다시 확인한다.
+        boundaries = list(re.finditer(r"[.!?。]\s+|\n+|\s+", text[start:end]))
+        if end < len(text) and boundaries:
+            boundary = start + boundaries[-1].end()
+            if boundary > start + (end - start) // 2 and fits(text[start:boundary]):
+                end = boundary
+        spans.append((start, end))
+        if end == len(text):
+            break
+        # 짧은 겹침으로 경계의 수치·단위를 함께 찾을 여지를 남긴다.
+        # 문자 수를 명시해 토큰 수와 혼동하지 않으며 항상 전진한다.
+        overlap_chars = min(48, (end - start) // 4)
+        start = end - overlap_chars
+    return spans
 
 
 def _tokenize(text: str) -> list[str]:
