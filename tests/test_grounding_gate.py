@@ -280,6 +280,46 @@ def test_grounding_gate_accepts_korean_scale_amount_backed_by_evidence() -> None
     assert result.g2_orphan_numbers == []
 
 
+# ---- 원장의 축약 금액 표기 대조 (2026-09-26 실측) -------------------------------
+
+def test_ledger_abbreviated_amount_matches_the_korean_scale_notation() -> None:
+    """원장이 '21116.0백만 원'으로 축약한 금액을 본문이 '211억 1,600만 원'으로 적는다.
+
+    자릿수 수정을 촉발한 사례다(현대모비스 S-2-4 교육훈련비). 종전에는 근거 쪽 숫자만
+    읽고 배율 단위를 무시해 21116과 21,116,000,000을 다른 값으로 봤고, 같은 금액인데
+    G2 미확인 숫자로 보고됐다. 청크 문구는 `ssot_pipeline`이 실제로 만드는 형태다.
+    """
+    answer = "2024년 임직원 교육훈련비는 211억 1,600만 원입니다. [c1]"
+    chunks = [{"id": "c1", "text": "[S-2-4] 21116.0백만 원 (2024년, 출처: mobis.pdf, 신뢰도: 0.75)"}]
+
+    result = evaluate_grounding(answer, chunks)
+
+    assert result.g2_orphan_numbers == []
+    assert result.decision == "ACCEPT"
+
+
+def test_ledger_abbreviated_amount_still_accepts_the_same_notation() -> None:
+    """본문이 근거와 같은 축약 표기를 쓰는 기존 동작을 잃지 않는다."""
+    answer = "2024년 임직원 교육훈련비는 21,116백만 원입니다. [c1]"
+    chunks = [{"id": "c1", "text": "[S-2-4] 21116.0백만 원 (2024년)"}]
+
+    assert evaluate_grounding(answer, chunks).g2_orphan_numbers == []
+
+
+def test_ledger_abbreviated_amount_still_fails_on_a_wrong_amount() -> None:
+    """배율을 반영해도 틀린 금액은 걸린다 — 느슨해지기만 한 것이 아니다."""
+    from esgenie.rag_gates.signals import number_in_text
+
+    assert number_in_text("211억 1,600만", "[S-2-4] 2111.6백만 원") is False
+
+
+def test_scale_word_without_a_currency_is_not_read_as_a_multiplier() -> None:
+    """통화 단위가 없으면 배율로 읽지 않는다 — '2,100 만 명'은 21,000,000이 아니다."""
+    from esgenie.rag_gates.signals import number_in_text
+
+    assert number_in_text("21000000", "누적 회원 2,100 만 명을 확보했다") is False
+
+
 # ---- '조'는 자릿수이기도 하고 조항 번호이기도 하다 (2026-09-23 실측) -------------
 
 def test_article_number_is_not_read_as_trillions() -> None:

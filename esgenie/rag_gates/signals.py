@@ -21,7 +21,18 @@ _KR_SCALE_PART_RE = re.compile(r"(\d[\d,]*(?:\.\d+)?)\s*(조|억|만)")
 # 조항문 647건 중 9건, 보고서 문장 484건 중 12건이 여기에 해당). 금액으로 확신할 수 있는
 # 문맥에서만 자릿수로 읽고, 아니면 종전처럼 숫자 부분만 본다.
 _ARTICLE_PREFIX_RE = re.compile(r"제\s*$")
-_AMOUNT_SUFFIX_RE = re.compile(r"^[^\S\r\n]*(?:원|달러|엔|위안|USD|KRW|JPY|CNY|EUR|유로)")
+_CURRENCY = r"원|달러|엔|위안|USD|KRW|JPY|CNY|EUR|유로"
+_AMOUNT_SUFFIX_RE = re.compile(rf"^[^\S\r\n]*(?:{_CURRENCY})")
+# 원장·표가 쓰는 축약 배율('21,116 백만 원'). 통화 단위가 뒤따를 때만 배율로 읽는다 —
+# '백만'만 보고 곱하면 '백만 개 이상' 같은 문구를 금액으로 오독한다. 개행은 허용하지
+# 않는다(표·줄바꿈이 끼어든 것은 한 금액이 아니다).
+_AMOUNT_SCALES = {
+    "조": 1e12, "천억": 1e11, "백억": 1e10, "십억": 1e9,
+    "억": 1e8, "천만": 1e7, "백만": 1e6, "십만": 1e5, "만": 1e4, "천": 1e3,
+}
+_SCALED_CURRENCY_RE = re.compile(
+    rf"^[^\S\r\n]*(조|천억|백억|십억|억|천만|백만|십만|만|천)[^\S\r\n]*(?:{_CURRENCY})"
+)
 
 
 @dataclass
@@ -123,6 +134,40 @@ def extract_numbers(text: str) -> list[str]:
     return values
 
 
+def _text_number_values(text: str) -> list[float]:
+    """근거 본문에서 비교 후보 값을 모은다. 축약 배율 표기는 **두 값 모두** 담는다.
+
+    원장·표는 금액을 축약해 적는다('21,116 백만 원'). 종전에는 숫자만 읽어 21116으로
+    봤기 때문에, 본문이 같은 금액을 '211억 1,600만 원'(21,116,000,000)으로 적으면
+    G2가 근거에서 찾지 못해 미확인 숫자로 보고했다(2026-09-20·09-23 실측: S-2-4
+    교육훈련비). 배율을 곱한 값을 후보로 추가해 이 대조를 통하게 한다.
+
+    축약 전 값(21116)도 후보로 남긴다. 본문이 근거와 **같은 축약 표기**를 쓰는 경우가
+    이미 통과하고 있었고, 그 동작을 잃으면 안 된다. 두 값을 모두 허용하는 것이
+    느슨해 보이지만, 같은 표기를 두 가지로 읽을 수 있다는 사실 자체가 원문에 있다.
+    """
+    from .units import parse_number as _parse
+
+    values: list[float] = []
+    runs = [m for m in _KR_SCALE_RUN_RE.finditer(text) if _is_amount_scale_run(text, m)]
+    covered = [m.span() for m in runs]
+    for match in runs:
+        value = _parse_kr_scale_run(match.group(0))
+        if value is not None:
+            values.append(value)
+    for match in _NUMBER_RE.finditer(text):
+        if any(start <= match.start() and match.end() <= end for start, end in covered):
+            continue
+        base = _parse(match.group(0).replace(",", ""))
+        if base is None:
+            continue
+        values.append(base)
+        scale = _SCALED_CURRENCY_RE.match(text[match.end():])
+        if scale is not None:
+            values.append(base * _AMOUNT_SCALES[scale.group(1)])
+    return values
+
+
 def number_in_text(number: str, text: str) -> bool:
     """Check if a number appears in text using normalized comparison."""
     from .units import numeric_equal, parse_number as _parse
@@ -132,11 +177,7 @@ def number_in_text(number: str, text: str) -> bool:
         target = _parse(number.replace(",", ""))
     if target is None:
         return False
-    for token, value in _number_tokens(text):
-        candidate = value if value is not None else _parse(token.replace(",", ""))
-        if candidate is not None and numeric_equal(target, candidate):
-            return True
-    return False
+    return any(numeric_equal(target, candidate) for candidate in _text_number_values(text))
 
 
 def is_claim_sentence(text: str) -> bool:
