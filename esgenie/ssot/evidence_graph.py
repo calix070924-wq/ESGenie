@@ -54,6 +54,8 @@ class EvidenceNode:
     period_inferred: bool = False
     # 코드 배정(근거 보존)과 대표값 자격을 분리한다. unknown은 구버전 노드 호환 기본값.
     value_role: ValueRole = "unknown"
+    quote: str = ""                   # 추출기가 원문에서 확인한 인용(요약과 분리)
+    page_source: str = ""             # chunk / quote 등 페이지 확인 경로
 
     def to_dict(self) -> dict[str, Any]:
         return asdict(self)
@@ -70,6 +72,8 @@ class TextNode:
     page: int | None = None
     origin: Origin = "ocr_unstructured"
     rba_code: str | None = None    # RBA 자가진단 substrate 매칭(고유 조항용)
+    quote: str = ""
+    page_source: str = ""
 
     def to_dict(self) -> dict[str, Any]:
         return asdict(self)
@@ -341,6 +345,8 @@ def merge_ocr_extraction(
             page=m.page,
             confidence=confidence,
             period_inferred=period_inferred,
+            quote=getattr(m, "quote", ""),
+            page_source=getattr(m, "page_source", ""),
         )
         # 역할은 노드에 영속화하되 선택 시에도 재계산한다. 구버전 덤프를 리플레이해도
         # 같은 규칙을 적용하고, 신규 산출물은 역할을 감사할 수 있게 하기 위함이다.
@@ -368,6 +374,8 @@ def merge_ocr_extraction(
             page=c.page,
             origin=origin,
             rba_code=getattr(c, "rba_code_guess", None),
+            quote=getattr(c, "quote", ""),
+            page_source=getattr(c, "page_source", ""),
         )
         graph.add_text_node(tnode)
 

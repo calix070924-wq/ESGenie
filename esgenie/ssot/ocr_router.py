@@ -18,6 +18,7 @@ from __future__ import annotations
 import os
 import re
 import logging
+import math
 from dataclasses import dataclass, field, fields, asdict
 from enum import Enum
 from html.parser import HTMLParser
@@ -53,6 +54,8 @@ class ExtractedMetric:
     bbox: list[float] | None = None      # [x0,y0,x1,y1] 정규화 위치(0~1, 감사 추적용)
     page: int | None = None              # 0-기준 페이지 인덱스 (원본 렌더용)
     confidence: float = 0.0
+    quote: str = ""                     # 추출 입력에서 확인한 원문 인용
+    page_source: str = ""               # chunk(실제 페이지 입력) | quote(원본 대조)
 
 
 @dataclass
@@ -63,6 +66,8 @@ class ExtractedClause:
     kesg_code_guess: str | None = None
     page: int | None = None
     rba_code_guess: str | None = None    # RBA 자가진단 substrate 매칭(고유 조항용)
+    quote: str = ""
+    page_source: str = ""
 
 
 @dataclass
@@ -268,18 +273,26 @@ def _resolve_clause_pages(ext: OcrExtraction, file_path: str) -> None:
             return
         unresolved = 0
         for clause in ext.clauses:
-            quote = re.sub(r"\s+", "", clause.text)
+            # 요약문은 PDF 전문의 부분 문자열이 아닐 수 있다. 실제 단일 페이지에서
+            # 만든 호출의 출처를 모델이 적은 페이지 번호와 구분해 보존한다.
+            if clause.page_source == "chunk" and clause.page is not None and 0 <= clause.page < len(pages):
+                continue
+            quote = re.sub(r"\s+", "", clause.quote or clause.text)
             matches = [i for i, text in enumerate(pages) if quote and quote in text]
             if len(pages) == 1:
                 clause.page = 0
+                clause.page_source = "single_page"
             elif len(matches) == 1:
                 clause.page = matches[0]
+                clause.page_source = "quote"
             else:
                 # Unknown/ambiguous location must not become a fabricated page link.
                 clause.page = None
+                clause.page_source = ""
                 unresolved += 1
         ext.router_meta["clause_page_resolution"] = {
             "source": "actual_pdf", "page_count": len(pages), "unresolved": unresolved}
+        ext.router_meta["unresolved_clause_pages"] = unresolved
     except (ImportError, OSError, RuntimeError, ValueError):
         return
 
@@ -1305,30 +1318,26 @@ def _extract_text_pymupdf(file_path: str, max_pages: int = 5) -> str:
 
     예외 시 기존 page.get_text()로 폴백 — 회귀 안전장치.
     """
+    return "\n".join(_extract_pages_pymupdf(file_path, max_pages=max_pages))
+
+
+def _extract_pages_pymupdf(file_path: str, max_pages: int) -> list[str]:
+    """원본의 빈 페이지도 유지해 실제 0-기준 페이지와 텍스트를 연결한다."""
     try:
         import fitz
-        doc = fitz.open(file_path)
-    except Exception:
-        return ""
-    try:
-        pages_text: list[str] = []
-        for i, page in enumerate(doc):
-            if i >= max_pages:
-                break
-            try:
-                pages_text.append(_reconstruct_rows_from_dict(page))
-            except Exception:
-                # 페이지 단위 폴백 — 한 페이지 파싱 실패가 전체를 버리지 않게.
-                pages_text.append(page.get_text())
-        return "\n".join(pages_text)
-    except Exception:
-        # 전체 폴백(구버전 pymupdf 등) — 최소한 평탄화 텍스트라도 반환.
-        try:
-            return "\n".join(
-                page.get_text() for i, page in enumerate(doc) if i < max_pages
-            )
-        except Exception:
-            return ""
+        with fitz.open(file_path) as doc:
+            pages_text = []
+            for i, page in enumerate(doc):
+                if i >= max_pages:
+                    break
+                try:
+                    pages_text.append(_reconstruct_rows_from_dict(page))
+                except Exception:
+                    # 페이지 단위 폴백 — 한 페이지 파싱 실패가 전체를 버리지 않게.
+                    pages_text.append(page.get_text())
+            return pages_text
+    except (ImportError, OSError, RuntimeError, ValueError):
+        return []
 
 
 def _reconstruct_rows_from_dict(page: Any) -> str:
@@ -1393,9 +1402,9 @@ _UNIT_LEAD_RE = __import__("re").compile(
 _FOOTNOTE_MARK_RE = __import__("re").compile(r"^\d+\)$")
 # 컬럼 헤더 행으로 인식할 라벨 키워드(연도는 4자리 숫자로 별도 판정).
 _COL_HEADER_KEYWORDS = ("합계", "전사", "국내", "해외", "자회사", "별도", "본사", "연결")
-# 순수 연도 셀('2024'). 2단 헤더의 위쪽 행을 식별한다 — '2024년 목표'처럼 수식어가
-# 붙은 셀은 연도 컬럼이 아니므로(값 성격이 다르다) fullmatch로 배제한다.
-_PURE_YEAR_RE = __import__("re").compile(r"20\d{2}")
+# 2단 헤더의 연도 셀. 목표/실적 혼합 표도 매핑하되 성격을 버리지 않는다.
+# 예: '2030 목표'를 단순 '2030'으로 바꾸지 않고 '연결|2030 목표'로 보존한다.
+_YEAR_HEADER_RE = re.compile(r"20\d{2}(?:년)?(?:\s*(?:목표|실적|계획|전망))?")
 # 레이블 상속이 건너뛸 수 있는 최대 행 수(과잉 상속 방지).
 _LABEL_INHERIT_MAX_SPAN = 2
 
@@ -1412,16 +1421,17 @@ def _inherit_label_rows(rows: list[list[tuple[float, str]]]) -> list[list[tuple[
     없어, 행 복원만으로는 어느 지표의 값인지 알 수 없다(PRESENT).
 
     규칙:
-      · '레이블 행' = 셀 1개, 숫자 없음, 단위도 아님(예: '에너지 사용량').
+      · '레이블 행' = 각주 마커를 제외한 셀 1개, 숫자 없음, 단위도 아님.
       · '단위 선두 값 행' = 첫 셀이 단위이고 숫자 셀을 포함(예: 'TJ | 1,918 | …').
       · 레이블 행을 기준으로 위·아래 _LABEL_INHERIT_MAX_SPAN 행 내의 '단위 선두 값 행'에
         `[레이블]`을 접두 상속. (rowspan 레이블이 값 행들 사이에 오는 구조 대응)
     과잉 상속 방지:
       · 상속 대상은 '단위 선두 값 행'으로 한정(일반 텍스트·다른 레이블 행 제외).
-      · 새 레이블 행을 만나면 그 행이 기준이 되어 자연히 갱신된다(각 레이블은 자기 주변만).
+      · 가까운 레이블을 우선한다. 서로 다른 이름이 같은 거리에 있으면 상속하지 않는다.
     부작용 억제: 이미 지표명이 붙은 값 행(첫 셀이 단위가 아닌 행)은 건드리지 않는다.
     """
     def is_label_row(cells: list[str]) -> bool:
+        cells = [c for c in cells if not _FOOTNOTE_MARK_RE.fullmatch(c.strip())]
         if len(cells) != 1:
             return False
         c = cells[0].strip()
@@ -1438,16 +1448,20 @@ def _inherit_label_rows(rows: list[list[tuple[float, str]]]) -> list[list[tuple[
 
     texts = [[t for _x, t in r] for r in rows]
     prefixes: list[str | None] = [None] * len(rows)
-    for i, cells in enumerate(texts):
-        if not is_label_row(cells):
+    for j, cells in enumerate(texts):
+        if not is_unit_led_value_row(cells):
             continue
-        label = cells[0].strip()
-        # 위·아래로 근접한 '단위 선두 값 행'에 상속(레이블 행 자체는 원본 유지).
-        for j in range(max(0, i - _LABEL_INHERIT_MAX_SPAN), min(len(rows), i + _LABEL_INHERIT_MAX_SPAN + 1)):
-            if j == i:
-                continue
-            if is_unit_led_value_row(texts[j]) and prefixes[j] is None:
-                prefixes[j] = label
+        candidates = [
+            (abs(i - j), next(t.strip() for t in texts[i]
+                             if not _FOOTNOTE_MARK_RE.fullmatch(t.strip())))
+            for i in range(max(0, j - _LABEL_INHERIT_MAX_SPAN), min(len(rows), j + _LABEL_INHERIT_MAX_SPAN + 1))
+            if i != j and is_label_row(texts[i]) and rows[i][0][0] < rows[j][0][0]
+        ]
+        if candidates:
+            distance = min(d for d, _label in candidates)
+            labels = {label for d, label in candidates if d == distance}
+            if len(labels) == 1:
+                prefixes[j] = labels.pop()
 
     out: list[list[tuple[float, str]]] = []
     for i, r in enumerate(rows):
@@ -1502,7 +1516,7 @@ def _attach_column_headers(rows: list[list[tuple[float, str]]]) -> list[list[tup
     """
     def is_header_row(cells: list[str]) -> bool:
         kw = sum(1 for c in cells if any(k in c for k in _COL_HEADER_KEYWORDS))
-        yr = sum(1 for c in cells if _PURE_YEAR_RE.fullmatch(c.strip()))
+        yr = sum(1 for c in cells if _YEAR_HEADER_RE.fullmatch(c.strip()))
         return (kw + yr) >= 2  # 컬럼 라벨/연도가 2개 이상이면 헤더 행
 
     # 헤더 컬럼: (x중심, 라벨). 각주 마커·빈 셀 제외.
@@ -1512,10 +1526,10 @@ def _attach_column_headers(rows: list[list[tuple[float, str]]]) -> list[list[tup
                 and any(k in t for k in _COL_HEADER_KEYWORDS)]
         return cols
 
-    # 연도 전용 헤더 행인가 — 순수 연도 셀 2개 이상 + 집계 키워드 0개.
+    # 연도 헤더 행인가 — 연도(목표/실적 수식어 보존) 2개 이상 + 집계 키워드 0개.
     # 집계 키워드가 섞인 행('지표 | 단위 | 2023 | 2024')은 1단 헤더이므로 대상이 아니다.
     def year_cols(row: list[tuple[float, str]]) -> list[tuple[float, str]]:
-        years = [(x, t.strip()) for x, t in row if _PURE_YEAR_RE.fullmatch(t.strip())]
+        years = [(x, t.strip()) for x, t in row if _YEAR_HEADER_RE.fullmatch(t.strip())]
         if len(years) < 2:
             return []
         if any(any(k in t for k in _COL_HEADER_KEYWORDS) for _x, t in row):
@@ -1652,7 +1666,7 @@ def _split_text_chunks(text: str, chunk_chars: int) -> list[str]:
     chunks: list[str] = []
     buf: list[str] = []
     size = 0
-    for line in text.splitlines():
+    for _line_no, line in _bounded_text_lines(text, chunk_chars):
         if size + len(line) + 1 > chunk_chars and buf:
             chunks.append("\n".join(buf))
             buf, size = [], 0
@@ -1661,6 +1675,79 @@ def _split_text_chunks(text: str, chunk_chars: int) -> list[str]:
     if buf:
         chunks.append("\n".join(buf))
     return chunks or [text]
+
+
+def _bounded_text_lines(text: str, limit: int):
+    """긴 산문은 공백에서 나누며 숫자 토큰 중간은 자르지 않는다."""
+    if limit <= 0:
+        raise ValueError("OCR chunk limit must be positive")
+    for line_no, line in enumerate(text.splitlines(), 1):
+        while len(line) > limit:
+            spaces = list(re.finditer(r"\s+", line[:limit + 1]))
+            end = spaces[-1].start() if spaces else limit
+            if end == 0:
+                end = limit
+            # 공백 없는 문장도 처리하되 숫자를 두 호출의 별개 값으로 바꾸지 않는다.
+            if end < len(line) and re.fullmatch(r"[-+\d,.]{2}", line[end - 1:end + 1]):
+                number = re.search(r"[-+\d,.]+$", line[:end])
+                if number:
+                    end = number.start()
+            if end <= 0:
+                raise ValueError(f"OCR line {line_no}: numeric token exceeds chunk limit")
+            yield line_no, line[:end]
+            line = line[end:]
+        yield line_no, line
+
+
+def _unstructured_chunks(raw_text: str, page_texts: list[tuple[int, str]] | None = None) -> list[dict[str, Any]]:
+    """실제 페이지 경계에서 나누고, 큰 표의 다음 청크에는 헤더만 반복한다."""
+    limit = _UNSTRUCTURED_CHUNK_CHARS
+    result = []
+    for page, text in page_texts if page_texts is not None else [(None, raw_text)]:
+        headers: list[str] = []
+        buf: list[str] = []
+        context = ""
+        start = end = 0
+        last_table_line = -_LABEL_INHERIT_MAX_SPAN - 1
+
+        def flush():
+            if buf:
+                body = "\n".join(buf)
+                result.append({"text": context + body, "body": body, "page": page,
+                               "line_start": start, "line_end": end,
+                               "context_repeated": bool(context)})
+
+        for line_no, line in _bounded_text_lines(text, limit):
+            cells = [c.strip() for c in line.split(" | ")]
+            years = sum(bool(_YEAR_HEADER_RE.fullmatch(c)) for c in cells)
+            scopes = sum(any(k in c for k in _COL_HEADER_KEYWORDS) and not re.search(r"\d", c)
+                         for c in cells)
+            header = years >= 2 or scopes >= 2
+            data_row = len(cells) > 1 and any(re.match(r"^-?[\d,]+(?:\.\d+)?(?:\(|$)", c)
+                                             for c in cells) and not header
+            size = len(context) + len("\n".join(buf)) + (1 if buf else 0) + len(line)
+            if buf and size > limit:
+                flush()
+                buf, context = [], ""
+                if data_row and headers and line_no - last_table_line <= _LABEL_INHERIT_MAX_SPAN + 1:
+                    prefix = "[표 머리글 문맥: 아래 본문 값 해석에만 사용]\n" + "\n".join(headers) + "\n[본문]\n"
+                    if len(prefix) + len(line) <= limit:
+                        context = prefix
+            if not buf:
+                start = line_no
+            buf.append(line)
+            end = line_no
+            if years >= 2:
+                headers = [line]
+            elif header:
+                # 연도·구분·집계의 최대 3줄만 문맥으로 반복하며 수치 행은 복제하지 않는다.
+                headers = (headers + [line])[-(_LABEL_INHERIT_MAX_SPAN + 1):]
+            elif headers and set(cells) <= {"구분", "단위", "기준연도", ""}:
+                headers.append(line)
+            if header or data_row:
+                last_table_line = line_no
+        flush()
+    return result
 
 
 def extract_unstructured(file_path: str, *, doc_type: str) -> OcrExtraction:
@@ -1674,10 +1761,12 @@ def extract_unstructured(file_path: str, *, doc_type: str) -> OcrExtraction:
     """
     openai_key = _get_openai_key()
     if not openai_key:
-        return _mock_unstructured(file_path, doc_type)
+        return _unstructured_fallback(file_path, doc_type, "missing_api_key")
 
     # 1) 디지털 PDF 텍스트
-    raw_text = _extract_text_pymupdf(file_path, max_pages=_UNSTRUCTURED_MAX_PAGES)
+    pages = _extract_pages_pymupdf(file_path, max_pages=_UNSTRUCTURED_MAX_PAGES)
+    page_texts = list(enumerate(pages)) if pages else None
+    raw_text = "\n".join(pages)
     raw_text_source = "pymupdf" if raw_text.strip() else None
     upstage_error = None
 
@@ -1687,35 +1776,67 @@ def extract_unstructured(file_path: str, *, doc_type: str) -> OcrExtraction:
             try:
                 tokens = _call_upstage_dp(file_path, ocr_mode="force")
                 raw_text = "\n".join(t["text"] for t in tokens)
+                # DP가 준 실제 page 메타데이터가 모두 유효할 때만 페이지 출처로 신뢰한다.
+                page_texts = None
+                if tokens and all(type(t.get("page")) is int and t["page"] >= 0 for t in tokens):
+                    grouped: dict[int, list[str]] = {}
+                    for token in tokens:
+                        grouped.setdefault(token["page"], []).append(token["text"])
+                    page_texts = [(page, "\n".join(lines)) for page, lines in grouped.items()]
                 raw_text_source = "upstage"
             except Exception as e:
                 upstage_error = str(e)
                 raw_text = ""
 
     if not raw_text.strip():
-        return _mock_unstructured(file_path, doc_type)
+        return _unstructured_fallback(file_path, doc_type, "text_extraction_failed", upstage_error)
 
     return _extract_unstructured_text(
         file_path, doc_type=doc_type, raw_text=raw_text,
         raw_text_source=raw_text_source, upstage_error=upstage_error,
+        page_texts=page_texts,
     )
+
+
+def _unstructured_fallback(file_path: str, doc_type: str, reason: str, detail: str | None = None) -> OcrExtraction:
+    from ..config import SETTINGS
+    from ..llm import LLMUnavailableError
+    if SETTINGS.strict_llm:
+        raise LLMUnavailableError(f"OCR extraction failed ({reason}): {detail or Path(file_path).name}")
+    ext = _mock_unstructured(file_path, doc_type)
+    ext.router_meta.update({"extraction_status": "mock", "failure_reason": reason})
+    if detail:
+        ext.router_meta["failure_detail"] = detail
+    return ext
 
 
 def _extract_unstructured_text(
     file_path: str, *, doc_type: str, raw_text: str,
     raw_text_source: str | None = None, upstage_error: str | None = None,
+    page_texts: list[tuple[int, str]] | None = None,
 ) -> OcrExtraction:
     """텍스트 비정형 문서 → LLM(gpt-4.1-mini via Azure)으로 정량·정성 추출.
 
     대형 문서(지속가능경영보고서 등)는 청크로 나눠 전량 순회한다.
-    4,000자 이하 문서는 기존과 동일하게 단일 호출.
+    실제 페이지별로 4,000자 이내에서 읽고 페이지 출처를 각 수치·조항에 붙인다.
     """
     import json as _json, re
     from . import ocr_cache
     from ..llm import LLMClient
     from .prompts import VLM_EXTRACT_SYSTEM, VLM_EXTRACT_PROMPT
 
-    chunks = _split_text_chunks(raw_text, _UNSTRUCTURED_CHUNK_CHARS)
+    from ..config import SETTINGS
+    from ..llm import LLMUnavailableError
+    try:
+        chunks = _unstructured_chunks(raw_text, page_texts)
+    except ValueError as exc:
+        if SETTINGS.strict_llm:
+            raise LLMUnavailableError(str(exc)) from exc
+        return OcrExtraction(
+            source_file=Path(file_path).name, channel=DocChannel.UNSTRUCTURED,
+            doc_type=doc_type, raw_text=raw_text,
+            router_meta={"extraction_status": "failed", "failure_reason": "chunking_failed",
+                         "failure_detail": str(exc), "chunks": 0})
     client = LLMClient()
     metrics: list = []
     clauses: list[ExtractedClause] = []
@@ -1732,9 +1853,17 @@ def _extract_unstructured_text(
     cache_connection = client.cache_connection() if hasattr(client, "cache_connection") else {"provider": "test-double"}
     cache_prompt = VLM_EXTRACT_SYSTEM + "\n" + VLM_EXTRACT_PROMPT
     hits = misses = 0
+    failures: list[dict[str, Any]] = []
+    chunk_runs: list[dict[str, Any]] = []
+    # 모델이 라벨만 읽고 수치를 보고하지 못한 행 — 실패가 아니라 미확인으로 남긴다.
+    unvalued_records: list[dict[str, Any]] = []
+    used_mock = False
 
-    for chunk in chunks:
-        prompt = VLM_EXTRACT_PROMPT.format(doc_type=doc_type) + f"\n\n문서 텍스트:\n{chunk}"
+    for chunk_index, chunk in enumerate(chunks):
+        page = chunk["page"]
+        page_label = str(page) if page is not None else "미상"
+        prompt = (VLM_EXTRACT_PROMPT.format(doc_type=doc_type)
+                  + f"\n\n[원본 페이지 인덱스(0부터): {page_label}]\n문서 텍스트:\n{chunk['text']}")
         key = ""
         if mode != ocr_cache.MODE_DISABLED:
             key = ocr_cache.make_key(
@@ -1742,6 +1871,7 @@ def _extract_unstructured_text(
                 doc_type=doc_type, llm_input=prompt, connection=cache_connection,
             )
         data: dict | None = None
+        cache_write = False
         if mode == ocr_cache.MODE_ON and key:
             data = ocr_cache.load_response(key)
             if data is not None:
@@ -1749,39 +1879,97 @@ def _extract_unstructured_text(
 
         if data is None:
             misses += 1
-            resp = client.complete(
-                system=VLM_EXTRACT_SYSTEM,
-                user=prompt,
-                json_mode=True,
-                temperature=0.0,
-                mock_hint="ocr_unstructured",
-            )
-            m = re.search(r'\{.*\}', resp.content, re.DOTALL)
             try:
-                data = _json.loads(m.group() if m else "{}")
-            except _json.JSONDecodeError:
+                resp = client.complete(
+                    system=VLM_EXTRACT_SYSTEM,
+                    user=prompt,
+                    json_mode=True,
+                    temperature=0.0,
+                    mock_hint="ocr_unstructured",
+                )
+                response_mock = bool(resp.used_mock)
+                used_mock |= response_mock
+                chunk_runs.append({"chunk_index": chunk_index, "page": page, "cache_hit": False,
+                                   "used_mock": response_mock, "model": resp.meta.get("model"),
+                                   "provider": resp.meta.get("provider")})
+                if response_mock and (SETTINGS.strict_llm or not SETTINGS.force_mock):
+                    raise LLMUnavailableError("OCR LLM returned a mock fallback")
+                m = re.search(r'\{.*\}', resp.content, re.DOTALL)
+                data = _json.loads(m.group() if m else resp.content)
+                if not isinstance(data, dict) or not all(isinstance(data.get(k), list) for k in ("metrics", "clauses")):
+                    raise ValueError("OCR response must contain metrics and clauses arrays")
+            except Exception as exc:
+                if SETTINGS.strict_llm:
+                    raise LLMUnavailableError(f"OCR chunk {chunk_index} failed: {exc}") from exc
                 # 청크 하나의 JSON이 깨져도 문서 전체를 버리지 않는다.
                 # 깨진 응답은 캐시하지 않는다 — 재시도 여지를 남긴다.
-                logger.warning("비정형 청크 JSON 파싱 실패 — 건너뜀 [%s]", Path(file_path).name)
+                reason = "invalid_response" if isinstance(exc, (ValueError, TypeError)) else "llm_failed"
+                failures.append({"chunk_index": chunk_index, "page": page,
+                                 "reason": reason, "detail": str(exc)})
+                logger.warning("비정형 청크 추출 실패 — 건너뜀 [%s]: %s", Path(file_path).name, exc)
                 continue
-            if key and isinstance(data, dict):
-                ocr_cache.store_response(
-                    key, data,
-                    model=cache_model, prompt=cache_prompt, doc_type=doc_type,
-                    source_file=Path(file_path).name, llm_input=prompt, connection=cache_connection,
-                )
+            cache_write = bool(key and not response_mock)
+        else:
+            chunk_runs.append({"chunk_index": chunk_index, "page": page, "cache_hit": True})
 
         # 히트·미스 공통 경로 — 결정적 후처리는 캐시에 굳히지 않는다(G6 등이 여기 있다).
-        chunk_metrics, chunk_clauses = _map_vlm_json(data)
+        if not isinstance(data, dict) or not all(isinstance(data.get(k), list) for k in ("metrics", "clauses")):
+            if SETTINGS.strict_llm:
+                raise LLMUnavailableError(f"OCR cached chunk {chunk_index}: invalid response schema")
+            failures.append({"chunk_index": chunk_index, "page": page, "reason": "invalid_cached_response"})
+            continue
+        record_issues: list[dict[str, Any]] = []
+        chunk_metrics, chunk_clauses = _map_vlm_json(
+            data, page_no=page, source_text=chunk["body"], issues=record_issues)
+        # 깨진 레코드(스키마 위반·비유한 수·불리언·라벨 없음)와 "수치를 보고하지 못한
+        # 레코드"를 구분한다. 후자까지 strict 중단으로 처리하면 라벨만 있는 표 행 한 줄이
+        # 176청크 문서 전체를 실패시켜 strict 모드로 실제 보고서를 처리할 수 없다(실측).
+        fatal_issues = [issue for issue in record_issues if issue.get("fatal", True)]
+        unvalued_issues = [issue for issue in record_issues if not issue.get("fatal", True)]
+        if unvalued_issues:
+            unvalued_records.append({"chunk_index": chunk_index, "page": page,
+                                     "records": unvalued_issues})
+        if fatal_issues:
+            if SETTINGS.strict_llm:
+                raise LLMUnavailableError(f"OCR chunk {chunk_index}: invalid records {fatal_issues}")
+            failures.append({"chunk_index": chunk_index, "page": page,
+                             "reason": "invalid_records", "records": fatal_issues})
+        elif cache_write:
+            ocr_cache.store_response(
+                key, data,
+                model=cache_model, prompt=cache_prompt, doc_type=doc_type,
+                source_file=Path(file_path).name, llm_input=prompt, connection=cache_connection,
+            )
         metrics.extend(chunk_metrics)
         clauses.extend(chunk_clauses)
 
-    # 존재형 조항 보강은 원래대로 전체 텍스트 기준 1회 — 청크별 수행 시 중복 발생
-    clauses = _augment_unstructured_clauses(
-        clauses,
-        raw_text=raw_text,
-        doc_type=doc_type,
-    )
+    # 존재형 조항은 문서의 기존 코드 여부로 중복을 막되 실제 페이지 출처를 유지한다.
+    if page_texts is None:
+        clauses = _augment_unstructured_clauses(clauses, raw_text=raw_text, doc_type=doc_type)
+    else:
+        for page, text in page_texts:
+            before = len(clauses)
+            clauses = _augment_unstructured_clauses(clauses, raw_text=text, doc_type=doc_type)
+            for clause in clauses[before:]:
+                clause.page, clause.page_source = page, "chunk"
+    # 반복되는 머리글은 추출 대상이 아니다. 동일 페이지·인용의 완전 중복만 제거한다.
+    seen_metrics: set[tuple] = set()
+    unique_metrics = []
+    for metric in metrics:
+        key = (metric.metric_hint, metric.value, metric.unit, metric.period,
+               metric.kesg_code_guess, metric.page, metric.quote)
+        if metric.page is None or not metric.quote or key not in seen_metrics:
+            unique_metrics.append(metric)
+        seen_metrics.add(key)
+    metrics = unique_metrics
+    seen_clauses: set[tuple] = set()
+    unique_clauses = []
+    for clause in clauses:
+        key = (clause.section, clause.text, clause.kesg_code_guess, clause.page, clause.quote)
+        if clause.page is None or not clause.quote or key not in seen_clauses:
+            unique_clauses.append(clause)
+        seen_clauses.add(key)
+    clauses = unique_clauses
 
     if mode != ocr_cache.MODE_DISABLED:
         logger.info("[OCR] 캐시 %s — hit %d / miss %d [%s]",
@@ -1801,6 +1989,23 @@ def _extract_unstructured_text(
         "raw_text_source": raw_text_source or "unknown",
         "raw_text_len": len(raw_text),
         "chunks": len(chunks),
+        "extraction_status": ("mock" if used_mock and SETTINGS.force_mock else
+                              "partial" if failures and (metrics or clauses or len(failures) < len(chunks)) else
+                              "failed" if failures or not chunks else "complete"),
+        "chunk_failures": failures,
+        # 수치 미보고 행은 성공/실패와 별도로 보고한다. 문서를 전부 읽었다는 인상을 주지
+        # 않도록 개수와 라벨을 남기되, 추출 상태를 partial/failed로 바꾸지는 않는다.
+        "unvalued_records": unvalued_records,
+        "unvalued_record_count": sum(len(entry["records"]) for entry in unvalued_records),
+        "chunk_sources": [{k: chunk[k] for k in ("page", "line_start", "line_end", "context_repeated")}
+                          | {"chunk_index": i} for i, chunk in enumerate(chunks)],
+        "chunk_runs": chunk_runs,
+        "unresolved_metric_pages": sum(m.page is None for m in metrics),
+        "unresolved_clause_pages": sum(c.page is None for c in clauses),
+        "missing_metric_quotes": sum(not m.quote for m in metrics),
+        "missing_clause_quotes": sum(not c.quote for c in clauses),
+        "source_page_count": len(page_texts) if page_texts is not None else None,
+        "empty_source_pages": [page for page, text in (page_texts or []) if not text.strip()],
         # 캐시 히트를 감추지 않는다 — 원장 스크립트 헤더·pipeline 로그가 이걸 읽는다.
         "ocr_cache": cache_state,
         "ocr_cache_hits": hits,
@@ -1808,6 +2013,8 @@ def _extract_unstructured_text(
     }
     if upstage_error:
         meta["upstage_error"] = upstage_error
+    if used_mock:
+        meta["mock"] = True
 
     return OcrExtraction(
         source_file=Path(file_path).name,
@@ -1888,7 +2095,7 @@ def _is_footnote_marker_value(metric_hint: str, value: float) -> bool:
 
 # 2단 헤더 부착 라벨의 연도 꼬리 — '합계|2024', '국내(별도)|2022'.
 # `_attach_column_headers`가 만든 형식이다(그 함수 docstring §2단 헤더).
-_HINT_YEAR_TAIL_RE = re.compile(r"\|\s*(20\d{2})\s*\)?\s*$")
+_HINT_YEAR_TAIL_RE = re.compile(r"\|\s*(20\d{2})(?:년)?\s*(목표|실적|계획|전망)?\s*\)?\s*$")
 
 
 def _split_hint_year(hint: str, period: str) -> tuple[str, str]:
@@ -1906,43 +2113,87 @@ def _split_hint_year(hint: str, period: str) -> tuple[str, str]:
     if not m:
         return hint, period
     cleaned = _HINT_YEAR_TAIL_RE.sub("", hint).strip()
+    if m.group(2):
+        cleaned += " " + m.group(2)
     # '(합계' 처럼 여는 괄호만 남으면 정리한다.
     if cleaned.count("(") > cleaned.count(")"):
         cleaned = cleaned.rstrip("(").strip()
+        if cleaned.count("(") > cleaned.count(")"):
+            cleaned += ")"
     return (cleaned or hint), (period or m.group(1))
 
 
-def _map_vlm_json(data: dict[str, Any], *, page_no: int = 1) -> tuple[list[ExtractedMetric], list[ExtractedClause]]:
-    """VLM 응답 JSON → ExtractedMetric[] + ExtractedClause[]."""
+def _map_vlm_json(
+    data: dict[str, Any], *, page_no: int | None = None, source_text: str | None = None,
+    issues: list[dict[str, Any]] | None = None,
+) -> tuple[list[ExtractedMetric], list[ExtractedClause]]:
+    """LLM 응답을 매핑하되 페이지는 실제 호출 입력에서만 부여한다."""
     metrics: list[ExtractedMetric] = []
     clauses: list[ExtractedClause] = []
 
-    for m in data.get("metrics", []):
+    def source_quote(value: Any) -> str:
+        quote = str(value or "")
+        if source_text is None:
+            return ""  # 모델이 작성한 인용을 원문 검증 없이 증빙으로 승격하지 않는다.
+        compact = re.sub(r"\s+", "", quote)
+        return quote if compact and compact in re.sub(r"\s+", "", source_text) else ""
+
+    for index, m in enumerate(data.get("metrics", [])):
+        if not isinstance(m, dict):
+            if issues is not None:
+                issues.append({"record_type": "metric", "record_index": index,
+                               "reason": "not_an_object", "fatal": True})
+            continue
+        if m.get("value") is None and str(m.get("metric_hint") or "").strip():
+            # 라벨은 읽혔지만 수치가 그래픽·빈 칸에 있어 모델이 값을 보고하지 못한 행이다.
+            # (실측: 현대모비스 2025 p.16 '젠더 다양성(여성 비율)' 등 3건)
+            # 모델이 숫자를 만들어내지 않고 없다고 답한 정직한 응답이므로 깨진 응답과 같이
+            # 취급하지 않는다. 0으로 채우지도 않고 미확인으로 버리며 사유만 남긴다.
+            if issues is not None:
+                issues.append({"record_type": "metric", "record_index": index,
+                               "reason": "value_not_reported", "fatal": False,
+                               "metric_hint": str(m.get("metric_hint") or "")})
+            continue
         try:
-            hint = str(m.get("metric_hint", ""))
-            value = float(m.get("value", 0))
+            hint = str(m.get("metric_hint") or "")
+            value = float(m["value"])
+            if not hint or isinstance(m["value"], bool) or not math.isfinite(value):
+                raise ValueError("metric hint and finite source value are required")
             if _is_footnote_marker_value(hint, value):
                 continue  # G6: 각주 마커('재해율 4)')를 값(4.0)으로 오파싱한 노드 배제
             # 2단 헤더 라벨이 hint에 통째로 들어온 경우 연도를 period로 되돌린다.
-            hint, period = _split_hint_year(hint, str(m.get("period", "")))
+            hint, period = _split_hint_year(hint, str(m.get("period") or ""))
             metrics.append(ExtractedMetric(
                 metric_hint=hint,
                 value=value,
-                unit=str(m.get("unit", "")),
+                unit=str(m.get("unit") or ""),
                 period=period,
-                kesg_code_guess=m.get("kesg_code") or None,
+                kesg_code_guess=str(m.get("kesg_code") or "") or None,
                 confidence=0.75,   # VLM 추출 기본 신뢰도
+                page=page_no,
+                page_source="chunk" if page_no is not None else "",
+                quote=source_quote(m.get("quote")),
             ))
-        except (TypeError, ValueError):
+        except (KeyError, TypeError, ValueError) as exc:
+            if issues is not None:
+                issues.append({"record_type": "metric", "record_index": index,
+                               "reason": str(exc), "fatal": True})
             continue
 
-    for c in data.get("clauses", []):
+    for index, c in enumerate(data.get("clauses", [])):
+        if not isinstance(c, dict) or not isinstance(c.get("text"), str) or not c["text"].strip():
+            if issues is not None:
+                issues.append({"record_type": "clause", "record_index": index,
+                               "reason": "missing_text", "fatal": True})
+            continue
         try:
             clauses.append(ExtractedClause(
                 section=str(c.get("section", "")),
                 text=str(c.get("text", "")),
-                kesg_code_guess=c.get("kesg_code") or None,
-                page=int(c.get("page", page_no)),
+                kesg_code_guess=str(c.get("kesg_code") or "") or None,
+                page=page_no,
+                page_source="chunk" if page_no is not None else "",
+                quote=source_quote(c.get("quote") or c.get("text")),
             ))
         except (TypeError, ValueError):
             continue
@@ -1988,7 +2239,7 @@ def _augment_unstructured_clauses(
             section=section,
             text=" ".join(matched[:2]),
             kesg_code_guess=code,
-            page=1,
+            quote=matched[0],
         ))
     return augmented
 
