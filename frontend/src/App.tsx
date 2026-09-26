@@ -4,8 +4,9 @@ import {
   ArrowRight,
   ArrowUpRight,
   CircleHelp,
-  FileCheck2,
   FileSearch,
+  Check,
+  Layers3,
   FileText,
   Files,
   FolderOpen,
@@ -20,6 +21,7 @@ import {
 import { api, download, lastProject, rememberProject } from './api';
 import type { Company, Config, Project, ProjectSummary } from './types';
 import { Review, AnswerList, Submission } from './Review';
+import { WorkspaceNav } from './WorkspaceNav';
 
 export default function App() {
   const [config, setConfig] = useState<Config | null>(null);
@@ -108,6 +110,10 @@ export default function App() {
     };
   }, [project?.id, processing]);
 
+  useEffect(() => {
+    window.scrollTo({ top: 0, behavior: 'instant' });
+  }, [project?.id, selected, step, creating]);
+
   const home = () =>
     act(async () => {
       setRecent(await api<ProjectSummary[]>('/projects'));
@@ -149,242 +155,250 @@ export default function App() {
       <a href="#main-content" className="skip-link">
         본문으로 이동
       </a>
-      <header className="appbar">
-        <button
-          type="button"
-          className="brand"
-          onClick={home}
-          disabled={busy}
-          aria-label="ESGenie 시작 화면"
-        >
-          <span className="brand-mark">E</span>ESGenie
-        </button>
-        <span className="appbar-divider" />
-        <span className="appbar-caption">서류에서 답을 찾는 실사 준비</span>
-        <div className="appbar-actions">
-          <Help />
-          {project && (
-            <button
-              className="quiet"
-              onClick={() => {
-                setCreating(true);
-                setSelected(null);
-              }}
-              disabled={busy || processing}
-            >
-              <Plus />새 작업
-            </button>
-          )}
-        </div>
-      </header>
-      <main id="main-content" className={`page ${selected ? 'page-review' : ''}`}>
-        {error && (
-          <div className="feedback error" role="alert">
-            <span>{error}</span>
-            <div>
-              {!config && (
-                <button onClick={() => act(load)} className="text-button">
-                  다시 연결
+      <WorkspaceNav
+        project={project}
+        step={step}
+        busy={busy || !!processing}
+        creating={creating}
+        onHome={home}
+        onCreate={() => {
+          setCreating(true);
+          setSelected(null);
+        }}
+        onGo={(next) => {
+          setCreating(false);
+          go(next);
+        }}
+        onExample={startExample}
+      />
+      <div className="main-shell">
+        <header className="appbar">
+          <div className="breadcrumb">
+            <span>워크스페이스</span>
+            <span>/</span>
+            <strong>
+              {creating ? '새 응답 작업' : project ? project.company_name : '작업 홈'}
+            </strong>
+          </div>
+          <div className="appbar-actions">
+            <span className="private-label">
+              <ShieldCheck />
+              고객사 자동 전송 없음
+            </span>
+            <Help />
+          </div>
+        </header>
+        <main id="main-content" className={`page ${selected ? 'page-review' : ''}`}>
+          {error && (
+            <div className="feedback error" role="alert">
+              <span>{error}</span>
+              <div>
+                {!config && (
+                  <button onClick={() => act(load)} className="text-button">
+                    다시 연결
+                  </button>
+                )}
+                <button className="icon-button" aria-label="알림 닫기" onClick={() => setError('')}>
+                  <X />
                 </button>
-              )}
-              <button className="icon-button" aria-label="알림 닫기" onClick={() => setError('')}>
-                <X />
+              </div>
+            </div>
+          )}
+          {booting ? (
+            <div className="loading">
+              <LoaderCircle className="spin" />
+              <h1>작업 공간을 열고 있어요</h1>
+            </div>
+          ) : !config ? (
+            <div className="empty-state">
+              <h1>작업 공간에 연결하지 못했어요</h1>
+              <button className="primary" onClick={() => act(load)}>
+                다시 연결하기
               </button>
             </div>
-          </div>
-        )}
-        {booting ? (
-          <div className="loading">
-            <LoaderCircle className="spin" />
-            <h1>작업 공간을 열고 있어요</h1>
-          </div>
-        ) : !config ? (
-          <div className="empty-state">
-            <h1>작업 공간에 연결하지 못했어요</h1>
-            <button className="primary" onClick={() => act(load)}>
-              다시 연결하기
-            </button>
-          </div>
-        ) : creating ? (
-          <CreateProject
-            config={config}
-            busy={busy}
-            onBack={() => setCreating(false)}
-            onCreate={(values) =>
-              act(async () => {
-                accept(await api<Project>('/projects', 'POST', values));
-                setCreating(false);
-                setStep(1);
-              })
-            }
-          />
-        ) : !project ? (
-          <Welcome
-            recent={recent}
-            busy={busy}
-            onCreate={() => setCreating(true)}
-            onExample={startExample}
-            onOpen={(id) => act(() => openProject(id))}
-          />
-        ) : (
-          <>
-            {project.mode === 'example' && (
-              <div className="example-banner">
-                <Sparkles />
-                <span>
-                  <strong>사용법 예시</strong> · 대표 질문 3개를 살펴보는 화면이에요. 실제 회사 분석
-                  결과가 아니에요.
-                </span>
-                <button className="text-button" onClick={() => setCreating(true)}>
-                  내 회사로 시작
-                  <ArrowRight />
-                </button>
-              </div>
-            )}
-            <div className="project-heading">
-              <div>
-                <p className="eyebrow">
-                  {project.year} ·{' '}
-                  {project.industry === '기타' ? '회사 실사 준비' : project.industry}
-                </p>
-                <h1>
-                  {project.company_name}의<br className="mobile-break" /> 실사 응답 준비
-                </h1>
-                <p>지금 가진 서류부터 시작하세요. 모르는 내용은 나중에 채워도 괜찮아요.</p>
-              </div>
-              {project.result && (
-                <button className="secondary" onClick={() => go(3)} disabled={busy}>
-                  응답서 보기
-                  <ArrowUpRight />
-                </button>
-              )}
-            </div>
-            <nav className="steps" aria-label="실사 응답 준비 단계">
-              {[
-                ['자료 올리기', '가지고 있는 서류부터'],
-                ['내용 확인하기', '필요한 부분만 하나씩'],
-                ['응답서 받기', '근거와 메모까지 함께'],
-              ].map(([label, help], index) => (
-                <button
-                  key={label}
-                  aria-current={step === index + 1 ? 'step' : undefined}
-                  onClick={() => go(index + 1)}
-                  disabled={index > 0 && !project.result}
-                >
-                  <span className="step-number">0{index + 1}</span>
+          ) : creating ? (
+            <CreateProject
+              config={config}
+              busy={busy}
+              onBack={() => setCreating(false)}
+              onCreate={(values) =>
+                act(async () => {
+                  accept(await api<Project>('/projects', 'POST', values));
+                  setCreating(false);
+                  setStep(1);
+                })
+              }
+            />
+          ) : !project ? (
+            <Welcome
+              recent={recent}
+              busy={busy}
+              onCreate={() => setCreating(true)}
+              onExample={startExample}
+              onOpen={(id) => act(() => openProject(id))}
+            />
+          ) : (
+            <>
+              {project.mode === 'example' && (
+                <div className="example-banner">
+                  <Sparkles />
                   <span>
-                    {label}
-                    <small>{help}</small>
+                    <strong>사용법 예시</strong> · 대표 질문 3개를 살펴보는 화면이에요. 실제 회사
+                    분석 결과가 아니에요.
                   </span>
-                  <ArrowRight />
-                </button>
-              ))}
-            </nav>
-            {project.stale && (
-              <div className="feedback warning" role="status">
-                <FileSearch />
-                <div>
-                  <strong>서류나 회사 정보가 바뀌었어요.</strong>
-                  <p>아래 답변은 변경 전 결과예요. 새 내용으로 다시 준비해 주세요.</p>
+                  <button className="text-button" onClick={() => setCreating(true)}>
+                    내 회사로 시작
+                    <ArrowRight />
+                  </button>
                 </div>
-                <button
-                  className="secondary"
-                  onClick={analyze}
-                  disabled={busy || processing || !config.analysis_available}
-                >
-                  새 자료로 다시 준비
-                </button>
-              </div>
-            )}
-            {processing && (
-              <div className="feedback processing" role="status">
-                <LoaderCircle className="spin" />
+              )}
+              <div className="project-heading">
                 <div>
-                  <strong>{project.job.stage}</strong>
-                  <p>파일에 따라 시간이 걸릴 수 있어요. 결과가 준비되면 알려드릴게요.</p>
+                  <p className="eyebrow">
+                    {project.year} · {project.industry} · 실사 응답 준비
+                  </p>
+                  <h1>
+                    {step === 1
+                      ? '답변의 근거를 모으세요.'
+                      : step === 3
+                        ? '검토한 내용을 한 묶음으로.'
+                        : '제출 전, 확인할 것부터.'}
+                  </h1>
+                  <p>
+                    {step === 1
+                      ? '고지서와 규정집, 작성해 둔 답변을 모아 문항별로 연결합니다.'
+                      : step === 3
+                        ? '응답 초안과 근거, 남은 확인 사항을 함께 내려받으세요.'
+                        : '답변과 원문을 비교하고, 부족한 자료와 확인할 범위를 정리하세요.'}
+                  </p>
                 </div>
+                {project.result && step !== 3 && (
+                  <button className="secondary" onClick={() => go(3)} disabled={busy}>
+                    응답서 미리보기
+                    <ArrowUpRight />
+                  </button>
+                )}
               </div>
-            )}
-            {project.job.status === 'failed' && (
-              <div className="feedback error" role="alert">
-                <span>{project.job.error}</span>
-                <button
-                  className="secondary"
-                  onClick={analyze}
-                  disabled={busy || !config.analysis_available}
-                >
-                  다시 시도
-                </button>
-              </div>
-            )}
-            {step === 1 ? (
-              <Documents
-                project={project}
-                config={config}
-                busy={busy || processing}
-                onUpdate={accept}
-                act={act}
-                onAnalyze={analyze}
-                onMessage={setMessage}
-              />
-            ) : selected && project.result ? (
-              <Review
-                key={selected}
-                project={project}
-                answer={project.result.answers.find((a) => a.id === selected)!}
-                busy={busy || processing}
-                onBack={() => setSelected(null)}
-                onSelect={setSelected}
-                onDocuments={() => go(1)}
-                onSave={(id, values) =>
-                  act(async () =>
-                    updateProject(
-                      await api<Project>(
-                        `/projects/${project.id}/notes/${encodeURIComponent(id)}`,
-                        'PUT',
-                        values,
+              <nav className="steps" aria-label="실사 응답 준비 단계">
+                {['자료 올리기', '내용 확인하기', '응답서 받기'].map((label, i) => (
+                  <button
+                    key={label}
+                    aria-current={step === i + 1 ? 'step' : undefined}
+                    onClick={() => go(i + 1)}
+                    disabled={i > 0 && !project.result}
+                  >
+                    <span className="step-number">{i + 1}</span>
+                    {label}
+                    <ArrowRight />
+                  </button>
+                ))}
+              </nav>
+              {project.stale && (
+                <div className="feedback warning" role="status">
+                  <FileSearch />
+                  <div>
+                    <strong>서류나 회사 정보가 바뀌었어요.</strong>
+                    <p>아래 답변은 변경 전 결과예요. 새 내용으로 다시 준비해 주세요.</p>
+                  </div>
+                  <button
+                    className="secondary"
+                    onClick={analyze}
+                    disabled={busy || processing || !config.analysis_available}
+                  >
+                    새 자료로 다시 준비
+                  </button>
+                </div>
+              )}
+              {processing && (
+                <div className="feedback processing" role="status">
+                  <LoaderCircle className="spin" />
+                  <div>
+                    <strong>{project.job.stage}</strong>
+                    <p>파일에 따라 시간이 걸릴 수 있어요. 결과가 준비되면 알려드릴게요.</p>
+                  </div>
+                </div>
+              )}
+              {project.job.status === 'failed' && (
+                <div className="feedback error" role="alert">
+                  <span>{project.job.error}</span>
+                  <button
+                    className="secondary"
+                    onClick={analyze}
+                    disabled={busy || !config.analysis_available}
+                  >
+                    다시 시도
+                  </button>
+                </div>
+              )}
+              {step === 1 ? (
+                <Documents
+                  project={project}
+                  config={config}
+                  busy={busy || processing}
+                  onUpdate={accept}
+                  act={act}
+                  onAnalyze={analyze}
+                  onMessage={setMessage}
+                />
+              ) : selected && project.result ? (
+                <Review
+                  key={selected}
+                  project={project}
+                  answer={project.result.answers.find((a) => a.id === selected)!}
+                  busy={busy || processing}
+                  onBack={() => setSelected(null)}
+                  onSelect={setSelected}
+                  onDocuments={() => go(1)}
+                  onSave={(id, values) =>
+                    act(async () =>
+                      updateProject(
+                        await api<Project>(
+                          `/projects/${project.id}/notes/${encodeURIComponent(id)}`,
+                          'PUT',
+                          values,
+                        ),
                       ),
-                    ),
-                  )
-                }
-              />
-            ) : (
-              <div className="workspace-grid">
-                <section>
-                  {step === 2 ? (
-                    <AnswerList
-                      project={project}
-                      onSelect={setSelected}
-                      onDocuments={() => go(1)}
-                    />
-                  ) : (
-                    <Submission
-                      project={project}
-                      busy={busy || processing}
-                      onDownload={exportFile}
-                      onSelect={(id) => {
-                        setStep(2);
-                        setSelected(id);
-                      }}
-                    />
-                  )}
-                </section>
-                <PackageSummary project={project} onPreview={() => go(3)} />
-              </div>
-            )}
-            <footer className="project-footer">
-              <span>
-                <ShieldCheck />
-                답변과 연결된 자료, 아직 확인하지 못한 내용을 함께 남깁니다.
-              </span>
-              <span>{project.mode === 'example' ? '사용법 예시' : '이 컴퓨터에 작업 저장'}</span>
-            </footer>
-          </>
-        )}
-        <div className="save-feedback" role="status" aria-live="polite">
-          {message}
-        </div>
-      </main>
+                    )
+                  }
+                />
+              ) : (
+                <div className="workspace-grid">
+                  <section>
+                    {step === 2 ? (
+                      <AnswerList
+                        project={project}
+                        onSelect={setSelected}
+                        onDocuments={() => go(1)}
+                      />
+                    ) : (
+                      <Submission
+                        project={project}
+                        busy={busy || processing}
+                        onDownload={exportFile}
+                        onSelect={(id) => {
+                          setStep(2);
+                          setSelected(id);
+                        }}
+                      />
+                    )}
+                  </section>
+                  <PackageSummary project={project} onPreview={() => go(3)} />
+                </div>
+              )}
+              <footer className="project-footer">
+                <span>
+                  <ShieldCheck />
+                  답변과 연결된 자료, 아직 확인하지 못한 내용을 함께 남깁니다.
+                </span>
+                <span>{project.mode === 'example' ? '사용법 예시' : '이 컴퓨터에 작업 저장'}</span>
+              </footer>
+            </>
+          )}
+          <div className="save-feedback" role="status" aria-live="polite">
+            {message}
+          </div>
+        </main>
+      </div>
     </div>
   );
 }
@@ -404,57 +418,129 @@ function Welcome({
 }) {
   return (
     <div className="welcome">
-      <section className="welcome-copy">
-        <p className="eyebrow">ESG, 처음이어도 괜찮아요</p>
-        <h1>
-          가지고 있는 서류로,
-          <br />
-          답변 준비를 시작하세요.
-        </h1>
-        <p className="welcome-description">
-          고객사가 보낸 질문이 어렵게 느껴지나요?
-          <br />
-          서류에서 답을 찾고, 확인이 필요한 부분을 쉬운 말로 안내해 드려요.
-        </p>
-        <div className="welcome-actions">
-          <button className="primary" onClick={onCreate} disabled={busy}>
-            우리 회사로 시작하기
-            <ArrowRight />
-          </button>
-          <button className="text-button" onClick={onExample} disabled={busy}>
-            {busy ? <LoaderCircle className="spin" /> : <Sparkles />}예시로 먼저 둘러보기
-          </button>
+      <div className="home-heading">
+        <div>
+          <p className="eyebrow">YOUR SUPPLIER WORKSPACE</p>
+          <h1>실사 응답, 근거부터 차근차근.</h1>
         </div>
-        <p className="welcome-note">
-          전기요금 고지서, 사내 규정, 고객사 질문서처럼 익숙한 서류면 돼요.
-        </p>
-      </section>
-      <section className="welcome-route" aria-label="사용 순서">
-        <div className="route-label">복잡한 용어 대신, 세 가지 순서</div>
-        {[
-          [UploadCloud, '서류를 올려 주세요', '어떤 질문에 쓸 수 있는지 살펴볼게요.'],
-          [FileSearch, '확인할 것만 하나씩', '왜 필요한지, 무엇을 찾으면 되는지 알려드려요.'],
-          [FileCheck2, '응답서로 받아보세요', '근거와 남은 확인 사항까지 함께 담아요.'],
-        ].map(([Icon, title, body], i) => {
-          const RouteIcon = Icon as typeof UploadCloud;
-          return (
-            <div className="route-row" key={String(title)}>
-              <span className="route-number">0{i + 1}</span>
+        <span className="edition-label">ESG RESPONSE WORKSPACE</span>
+      </div>
+      <section className="welcome-hero">
+        <div className="welcome-copy">
+          <span className="hero-kicker">
+            <span />
+            자동차 공급업체를 위한 실사 준비
+          </span>
+          <h2>
+            답변은 빠르게.
+            <br />
+            근거는 <span>분명하게.</span>
+          </h2>
+          <p className="welcome-description">
+            고객사에 보낼 답변, 어디서부터 시작할지 막막하다면.
+            <br />
+            우리 회사 서류에서 초안을 찾고,
+            <br />
+            다른 값과 부족한 자료를 제출 전에 확인하세요.
+          </p>
+          <div className="welcome-actions">
+            <button className="primary" onClick={onCreate} disabled={busy}>
+              우리 회사로 시작하기
+              <ArrowRight />
+            </button>
+            <button className="text-button" onClick={onExample} disabled={busy}>
+              예시로 먼저 둘러보기
+              <ArrowUpRight />
+            </button>
+          </div>
+          <div className="hero-assurance">
+            <Check />
+            응답 초안
+            <Check />
+            원문 근거
+            <Check />
+            보완할 내용
+          </div>
+        </div>
+        <div className="hero-preview" aria-label="답변과 근거 비교 예시">
+          <div className="preview-caption">
+            <span className="preview-live-dot" />
+            답변과 근거를 나란히<span>사용법 예시</span>
+          </div>
+          <div className="preview-document">
+            <div className="mini-document-head">
+              <FileText />
+              <span>환경 · 폐기물</span>
+              <span className="badge review">범위 확인 필요</span>
+            </div>
+            <h3>폐기물 재활용 비율</h3>
+            <div className="preview-values">
               <div>
-                <RouteIcon />
-                <h2>{String(title)}</h2>
+                <span>직접 작성한 답변</span>
+                <strong>
+                  92<small>%</small>
+                </strong>
+                <p>대상 기간 미확인</p>
+              </div>
+              <ArrowRight />
+              <div>
+                <span>자료에서 계산한 값</span>
+                <strong>
+                  29.3<small>%</small>
+                </strong>
+                <p>일부 처리 내역</p>
+              </div>
+            </div>
+            <div className="preview-insight">
+              <FileSearch />
+              <p>
+                두 값의 기간과 범위부터 확인하세요.
+                <br />
+                <strong>같은 기준인지 확인하기 전에는 오류로 단정하지 않습니다.</strong>
+              </p>
+            </div>
+          </div>
+          <div className="preview-source">
+            <span className="source-file-icon">
+              <Files />
+            </span>
+            <div>
+              <strong>폐기물 처리 내역.pdf</strong>
+              <span>답변에 연결된 자료 · 예시</span>
+            </div>
+            <span className="source-line" />
+            <Check />
+          </div>
+          <span className="preview-footnote">가상 자료로 구성한 화면입니다.</span>
+        </div>
+      </section>
+      <section className="journey" aria-label="사용 순서">
+        {[
+          [FolderOpen, '01', '서류를 모으고', '고지서·규정집·기존 답변을 올리세요.'],
+          [FileSearch, '02', '근거를 확인하고', '값, 기간, 범위를 원문과 비교하세요.'],
+          [Layers3, '03', '응답서를 준비하세요', '초안과 남은 확인 사항을 함께 받으세요.'],
+        ].map(([Icon, n, title, body]) => {
+          const JourneyIcon = Icon as typeof FolderOpen;
+          return (
+            <div key={String(n)}>
+              <span className="journey-icon">
+                <JourneyIcon />
+              </span>
+              <div>
+                <span className="journey-number">{String(n)}</span>
+                <h3>{String(title)}</h3>
                 <p>{String(body)}</p>
               </div>
             </div>
           );
         })}
       </section>
-      {recent.length > 0 && (
-        <section className="recent">
-          <div className="section-heading">
-            <h2>이어서 할 작업</h2>
-            <span>이 컴퓨터에 저장된 작업</span>
-          </div>
+      <section className="recent">
+        <div className="section-heading">
+          <h2>이어서 할 작업</h2>
+          <span>이 컴퓨터에 저장된 작업 · {recent.length}개</span>
+        </div>
+        {recent.length ? (
           <div className="recent-list">
             {recent.slice(0, 6).map((item) => (
               <button
@@ -463,19 +549,40 @@ function Welcome({
                 onClick={() => onOpen(item.id)}
                 disabled={busy}
               >
-                <FolderOpen />
+                <span className="recent-icon">
+                  <FolderOpen />
+                </span>
                 <span>
                   <strong>{item.company_name}</strong>
                   <small>
                     {item.year}년 · {item.mode === 'example' ? '사용법 예시' : '회사 자료'}
                   </small>
                 </span>
+                <span className="recent-date">
+                  {new Date(item.updated_at).toLocaleDateString('ko-KR')}
+                </span>
                 <ArrowUpRight />
               </button>
             ))}
           </div>
-        </section>
-      )}
+        ) : (
+          <div className="recent-empty">
+            <FolderOpen />
+            <div>
+              <strong>첫 응답 작업을 시작해 보세요.</strong>
+              <p>올린 자료와 검토 기록을 저장해, 다음에 이어갈 수 있습니다.</p>
+            </div>
+            <button className="text-button" onClick={onCreate} disabled={busy}>
+              새 작업 만들기
+              <Plus />
+            </button>
+          </div>
+        )}
+      </section>
+      <footer className="home-footer">
+        <span>한 번의 답변에도, 확인할 수 있는 근거를.</span>
+        <span>ESGenie · 공급망 ESG 실사 준비</span>
+      </footer>
     </div>
   );
 }
@@ -494,8 +601,8 @@ function CreateProject({
   const [values, setValues] = useState<Company>({
     company_name: '',
     year: new Date().getFullYear(),
-    industry: '기타',
-    framework: 'rba42',
+    industry: '자동차부품',
+    framework: 'hmc',
   });
   return (
     <div className="create-page">
@@ -505,7 +612,10 @@ function CreateProject({
       </button>
       <p className="eyebrow">새 작업 시작</p>
       <h1>회사 이름부터 알려주세요.</h1>
-      <p className="intro">전문적인 설정은 필요 없어요. 나머지는 기본값으로 시작할 수 있어요.</p>
+      <p className="intro">
+        회사의 자료 연도와 준비할 참고양식을 선택하세요. 고객사 공식 질문지와는 별도로 대조가
+        필요합니다.
+      </p>
       <form
         className="company-form"
         onSubmit={(event) => {
@@ -701,6 +811,10 @@ function Documents({ project, config, busy, onUpdate, act, onAnalyze, onMessage 
             ))}
           </div>
         )}
+        <p className="data-use-note">
+          작업은 이 컴퓨터에 저장됩니다. 분석 시 문서 내용이 연결된 AI 서비스로 전달되며, 고객사로
+          자동 전송되지는 않습니다.
+        </p>
         <div className="document-note">
           <ShieldCheck />
           <p>
@@ -794,7 +908,10 @@ function Documents({ project, config, busy, onUpdate, act, onAnalyze, onMessage 
         {[
           ['전기·가스 고지서', '얼마나 사용했는지, 어느 기간의 자료인지 확인해요.'],
           ['취업규칙·안전·윤리 규정', '회사가 사람을 보호하고 운영하는 방법을 살펴봐요.'],
-          ['고객사 질문서와 기존 답변', '회사가 직접 적은 답변과 서류 내용이 맞는지 비교해요.'],
+          [
+            '직접 작성한 자가진단 답변',
+            '기존 답변을 근거 자료와 구분해 올리고, 같은 기간과 범위인지 확인해요.',
+          ],
         ].map(([title, body], i) => (
           <div className="guide-row" key={title}>
             <span>0{i + 1}</span>
@@ -818,7 +935,7 @@ function PackageSummary({ project, onPreview }: { project: Project; onPreview: (
   return (
     <aside className="package-summary">
       <div className="section-heading">
-        <h2>응답서에 담길 내용</h2>
+        <h2>검토 후 받는 결과물</h2>
         <span className="badge neutral">검토용 초안</span>
       </div>
       {[

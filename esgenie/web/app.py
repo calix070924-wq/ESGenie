@@ -92,10 +92,10 @@ def create_app(*, data_root: Path | None = None, runner=None, available=None, st
     @app.get("/api/config")
     def config():
         return {"analysis_available": available(), "max_file_mb": 20, "max_project_mb": 100,
-                "frameworks": [{"key": "rba42", "label": "고객사 실사 답변 준비", "description": "무엇을 골라야 할지 모르면 여기서 시작하세요. 기본 실사 질문에 답합니다."},
-                               {"key": "hmc", "label": "현대차 협력사 질문", "description": "현대차 공급망 질문으로 응답서를 준비합니다."},
+                "frameworks": [{"key": "rba42", "label": "RBA 기반 자가점검 · 참고양식", "description": "RBA 기반 내부 점검용입니다. 고객사 공식 질문지와 제출 요건은 별도로 대조해 주세요."},
+                               {"key": "hmc", "label": "현대차 공급망 ESG · 참고양식", "description": "공개 행동규범을 바탕으로 구성한 참고양식입니다. 재단의 공식 자가진단 질문지를 대체하지 않습니다."},
                                {"key": "kesg28", "label": "우리 회사 기본 현황 정리", "description": "중소기업에 맞춘 기본 질문으로 환경·사회·경영 현황을 정리합니다."},
-                               {"key": "saq5_env", "label": "환경 질문부터 준비", "description": "에너지와 폐기물 등 환경 질문부터 살펴봅니다."}]}
+                               {"key": "saq5_env", "label": "SAQ 5.0 환경 · 매핑 시제품", "description": "SAQ 5.0 기반의 환경 증빙 매핑 시제품입니다. 최신 공식 양식과 대조가 필요합니다."}]}
 
     @app.get("/api/projects")
     def projects():

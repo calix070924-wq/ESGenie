@@ -19,6 +19,10 @@ export type Answer = {
   next_step: string;
   value_text: string;
   period_label: string;
+  scope_label: string;
+  comparison_label: string;
+  draft_sources: string[];
+  reference_sources: Source[];
   draft_text: string;
   notices: string[];
   evidence_needed: string[];

@@ -54,4 +54,4 @@ def run_analysis(project: dict, directory: Path) -> dict:
         limitations.append("연결할 수 있는 자료 내용을 찾지 못했어요. 문서가 잘 보이는지 확인해 주세요.")
     raw = sheet.to_dict()
     return {"sheet": raw, "answers": present_sheet(raw, project["documents"], pending),
-            "limitations": limitations, "generated_at": timestamp(), "mode": "live"}
+            "limitations": limitations, "generated_at": timestamp(), "mode": "live", "pending_files": sorted(pending)}

@@ -4,6 +4,9 @@ from __future__ import annotations
 from datetime import datetime, timezone
 from typing import Any
 
+from esgenie.supplychain.schema import format_amount
+from esgenie.ssot.boundary import COMPARISON_LABEL
+
 
 FLAG_HELP = {
     "period_inferred": "서류에서 연도를 확인하지 못해 추정한 값이에요.",
@@ -45,8 +48,14 @@ def present_sheet(sheet: dict, documents: list[dict], pending_files: set[str] | 
             })
             if link.get("file_name") in pending_files:
                 notices.append("표를 읽은 결과에 확인할 부분이 있어요. 원본의 행과 열을 대조해 주세요.")
+        reference_sources = []
+        for link in answer.get("reference_links", []):
+            doc = by_name.get(link.get("file_name"))
+            reference_sources.append({"name": link.get("file_name") or "보완 대상 자료", "quote": link.get("quote", ""),
+                                      "page": link.get("page"), "bbox": link.get("bbox"), "independent": bool(link.get("independent")),
+                                      "document_id": doc["id"] if doc else None, "preview_available": bool(doc and not doc.get("example") and link.get("page") is not None)})
         flags = answer.get("flags", [])
-        if any("D1 불일치" in f for f in flags):
+        if not answer.get("comparison") and any("D1 불일치" in f for f in flags):
             why = "회사가 적은 답변과 자료에서 계산한 값이 달라요."
         if any("단위" in f and any(s in f for s in ("불가", "검토", "범위")) for f in flags):
             notices.append("숫자를 비교하기 전에 단위와 값의 범위를 확인해야 해요.")
@@ -57,6 +66,17 @@ def present_sheet(sheet: dict, documents: list[dict], pending_files: set[str] | 
             why = notices[0]
         if original == "verified" and not any(s["independent"] and s["quote"] for s in sources):
             state, label, why, action = STATUS["self_reported"]
+        comparison = answer.get("comparison", "")
+        if comparison in {"scope_unconfirmed", "not_comparable", "mismatch"}:
+            state, label = "review", "확인 필요"
+            why = {"scope_unconfirmed": "두 값의 기간과 범위를 먼저 확인해야 합니다.",
+                   "not_comparable": "기간이나 범위가 달라 지금은 두 값을 비교할 수 없습니다.",
+                   "mismatch": "같은 기준으로 비교한 회사 답변과 근거의 값이 다릅니다."}[comparison]
+            action = answer.get("comparison_reason") or "원문의 기간·사업장·단위를 확인하고, 같은 기준의 자료를 모아 주세요."
+        notices.extend(answer.get("scope_notes", []))
+        if answer.get("comparison_reason"):
+            notices.append(answer["comparison_reason"])
+        notices.extend(answer.get("draft_review_notes", []))
         value = answer.get("value")
         if value is None:
             value_text = "아직 확인하지 못했어요"
@@ -65,7 +85,7 @@ def present_sheet(sheet: dict, documents: list[dict], pending_files: set[str] | 
         elif isinstance(value, list):
             value_text = ", ".join(str(v) for v in value) or "선택된 항목 없음"
         else:
-            value_text = str(value) + (f" {answer['unit']}" if answer.get("unit") else "")
+            value_text = format_amount(value) + (f" {answer['unit']}" if answer.get("unit") else "")
         period = answer.get("period")
         period_label = f"{period}년" if period is not None else ""
         if period_label and "period_inferred" in answer.get("confidence_flags", []):
@@ -75,7 +95,11 @@ def present_sheet(sheet: dict, documents: list[dict], pending_files: set[str] | 
             "status": state, "status_label": label, "original_status": original,
             "needs_attention": state not in {"linked", "excluded"},
             "why": why, "next_step": action, "value_text": value_text, "period_label": period_label,
-            "draft_text": answer.get("draft_text", ""), "notices": list(dict.fromkeys(notices)),
+            "scope_label": answer.get("boundary_label", ""),
+            "comparison_label": COMPARISON_LABEL.get(comparison, ""),
+            "reference_sources": reference_sources,
+            "draft_sources": answer.get("draft_sources", []),
+            "draft_text": answer.get("draft_display", answer.get("draft_text", "")), "notices": list(dict.fromkeys(notices)),
             "evidence_needed": answer.get("evidence_needed", []), "sources": sources,
             "company_answers": answer.get("self_reports", []), "flags": flags,
             "technical_reason": answer.get("rationale", ""),
@@ -83,11 +107,26 @@ def present_sheet(sheet: dict, documents: list[dict], pending_files: set[str] | 
     return result
 
 
+def presented_answers(project: dict) -> list[dict]:
+    """Reproject saved engine results without changing their original assessment."""
+    result = project.get("result")
+    if not result:
+        return []
+    pending = set(result.get("pending_files", []))
+    # Results saved before pending_files was introduced retain their table warnings.
+    for shown in result.get("answers", []):
+        if any("표를 읽은 결과" in note for note in shown.get("notices", [])):
+            pending.update(source["name"] for source in shown.get("sources", []))
+    return present_sheet(result["sheet"], project["documents"], pending)
+
+
 def public_project(project: dict[str, Any]) -> dict[str, Any]:
     result = project.get("result")
     public = {key: value for key, value in project.items() if key != "result"}
     public["stale"] = bool(result and project["input_revision"] != project.get("result_revision"))
     public["result"] = {key: value for key, value in result.items() if key != "sheet"} if result else None
+    if result:
+        public["result"]["answers"] = presented_answers(project)
     return public
 
 

@@ -18,9 +18,7 @@ test('beginner can explore, compare evidence, save, resume and download', async 
   const errors: string[] = [];
   page.on('pageerror', (error) => errors.push(error.message));
   await page.goto('/');
-  await expect(
-    page.getByRole('heading', { name: '가지고 있는 서류로, 답변 준비를 시작하세요.' }),
-  ).toBeVisible();
+  await expect(page.getByRole('heading', { name: '실사 응답, 근거부터 차근차근.' })).toBeVisible();
   await page.screenshot({ path: info.outputPath('01-welcome.png'), fullPage: true });
   await page.getByRole('button', { name: '예시로 먼저 둘러보기' }).click();
   await expect(page.getByRole('heading', { name: '지금 확인할 내용' })).toBeVisible();
@@ -28,7 +26,7 @@ test('beginner can explore, compare evidence, save, resume and download', async 
   await page
     .getByRole('button', { name: '폐기물 중 재활용하는 비율은 얼마인가요? 살펴보기' })
     .click();
-  await expect(page.getByText('회사가 적은 답변과 자료에서 계산한 값이 달라요.')).toBeVisible();
+  await expect(page.getByText('두 값의 기간과 범위를 먼저 확인해야 합니다.')).toBeVisible();
   await expect(page.getByText('2026년 · 추정', { exact: false }).first()).toBeVisible();
   await page.getByText('이 질문은 어떤 뜻인가요?', { exact: true }).click();
   await expect(
@@ -56,7 +54,10 @@ test('beginner can explore, compare evidence, save, resume and download', async 
   await page.getByLabel('직접 작성한 답변').fill('분기별로 직원 윤리 교육을 진행합니다.');
   await page.getByRole('button', { name: '작성 내용 저장' }).click();
   await expect(page.getByText('저장됨 · 확인 상태는 유지돼요.')).toBeVisible();
-  await page.getByRole('button', { name: /응답서 받기/ }).click();
+  await page
+    .getByRole('navigation', { name: '실사 응답 준비 단계' })
+    .getByRole('button', { name: /응답서 받기/ })
+    .click();
   await expect(
     page.getByText('분기별로 직원 윤리 교육을 진행합니다.', { exact: true }),
   ).toBeVisible();

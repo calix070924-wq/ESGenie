@@ -9,12 +9,10 @@ import {
   ChevronRight,
   CircleHelp,
   FileQuestion,
-  FileSearch,
   FileText,
   Image,
   Info,
   LoaderCircle,
-  NotebookPen,
   Package,
   Plus,
   Search,
@@ -45,24 +43,25 @@ export function AnswerList({
   onSelect: (id: string) => void;
   onDocuments: () => void;
 }) {
-  const [showAll, setShowAll] = useState(false);
+  const [filter, setFilter] = useState('attention');
   const [search, setSearch] = useState('');
   const [page, setPage] = useState(0);
   const answers = project.result?.answers || [];
-  const attention = answers.filter((answer) => answer.needs_attention);
-  const filtered = (showAll ? answers : attention).filter((answer) =>
-    `${answer.question} ${answer.section} ${answer.why} ${answer.evidence_needed.join(' ')}`.includes(
-      search.trim(),
-    ),
+  const attention = answers.filter((a) => a.needs_attention);
+  const matches = (a: Answer) =>
+    filter === 'all' || (filter === 'attention' ? a.needs_attention : a.status === filter);
+  const filtered = answers.filter(
+    (a) =>
+      matches(a) &&
+      `${a.question} ${a.section} ${a.why} ${a.evidence_needed.join(' ')}`.includes(search.trim()),
   );
-  const visible = filtered.slice(page * 6, page * 6 + 6);
-  useEffect(() => setPage(0), [search, showAll, project.result_revision]);
+  const visible = filtered.slice(page * 8, page * 8 + 8);
+  useEffect(() => setPage(0), [search, filter, project.result_revision]);
   if (!project.result)
     return (
       <div className="empty-state">
-        <FileSearch />
-        <h2>서류를 읽으면 질문별 안내가 생겨요</h2>
-        <p>지금 가지고 있는 자료를 한 개 이상 올려 주세요.</p>
+        <FileQuestion />
+        <h2>자료를 올리면 질문별 안내가 생깁니다.</h2>
         <button className="primary" onClick={onDocuments}>
           서류 올리기
           <ArrowRight />
@@ -71,111 +70,165 @@ export function AnswerList({
     );
   return (
     <>
-      <div className="section-heading">
-        <h2>{showAll ? '질문별 답변' : '지금 확인할 내용'}</h2>
-        <span>{showAll ? answers.length : attention.length}개 항목</span>
+      <div className="review-metrics" aria-label="응답 준비 현황">
+        {[
+          ['all', '전체 문항', answers.length, '이번 작업의 질문'],
+          [
+            'review',
+            '확인 필요',
+            answers.filter((a) => ['review', 'unconfirmed', 'draft'].includes(a.status)).length,
+            '값·기간·내용 대조',
+          ],
+          [
+            'missing',
+            '자료 필요',
+            answers.filter((a) => a.status === 'missing').length,
+            '근거 자료 보완',
+          ],
+          [
+            'write',
+            '직접 작성',
+            answers.filter((a) => a.status === 'write').length,
+            '담당자 설명 필요',
+          ],
+        ].map(([key, label, count, note]) => (
+          <div className={`review-metric ${key}`} key={String(key)}>
+            <span>{label}</span>
+            <strong>
+              {count}
+              <small>개</small>
+            </strong>
+            <p>{note}</p>
+          </div>
+        ))}
       </div>
-      <p className="intro">
-        {attention.length
-          ? '모르는 질문도 괜찮아요. 필요한 이유와 자료를 하나씩 알려드릴게요.'
-          : '자료와 연결된 답변을 읽고, 회사 상황과 맞는지 확인해 주세요.'}
-      </p>
-      <div className="list-tools">
-        <div className="list-tabs" aria-label="질문 보기">
-          <button aria-pressed={!showAll} onClick={() => setShowAll(false)}>
-            확인할 내용 {attention.length}
-          </button>
-          <button aria-pressed={showAll} onClick={() => setShowAll(true)}>
-            전체 답변 {answers.length}
-          </button>
+      <div className="answer-table-panel">
+        <div className="section-heading">
+          <h2>지금 확인할 내용</h2>
+          <span>
+            확인할 항목 {attention.length}개 / 전체 {answers.length}개
+          </span>
         </div>
-        {answers.length > 6 && (
+        <p className="intro">
+          질문을 열면 응답 초안, 원문 근거와 보완할 내용을 함께 볼 수 있습니다.
+        </p>
+        <div className="list-tools">
+          <div className="list-tabs" aria-label="질문 보기">
+            {[
+              ['attention', '확인할 내용'],
+              ['all', '전체 답변'],
+              ['missing', '자료 필요'],
+              ['write', '작성 필요'],
+            ].map(([key, label]) => (
+              <button key={key} aria-pressed={filter === key} onClick={() => setFilter(key)}>
+                {label}
+              </button>
+            ))}
+          </div>
           <label className="question-search">
             <Search />
             <span className="sr-only">질문 찾기</span>
             <input
               value={search}
-              onChange={(event) => setSearch(event.target.value)}
-              placeholder="찾고 싶은 말 · 전기, 안전"
+              onChange={(e) => setSearch(e.target.value)}
+              placeholder="질문·자료 검색"
             />
           </label>
-        )}
-      </div>
-      <ul className="answer-list">
-        {visible.map((answer) => (
-          <li key={answer.id}>
-            <span className={`answer-symbol ${answer.status}`}>
-              {answer.status === 'linked' ? (
-                <Check />
-              ) : answer.status === 'missing' ? (
-                <FileQuestion />
-              ) : answer.status === 'write' ? (
-                <NotebookPen />
-              ) : (
-                <FileSearch />
-              )}
+        </div>
+        <div className="answer-table" role="table" aria-label="실사 응답 목록">
+          <div className="answer-table-head" role="row">
+            <span role="columnheader">질문</span>
+            <span role="columnheader">응답 초안</span>
+            <span role="columnheader">확인 상태</span>
+            <span role="columnheader">근거</span>
+            <span role="columnheader" className="sr-only">
+              열기
             </span>
-            <div>
-              <div className="answer-overline">
-                <span>{answer.section}</span>
+          </div>
+          {visible.map((answer, i) => (
+            <div className="answer-table-row" role="row" key={answer.id}>
+              <div role="cell" className="question-cell">
+                <span className="row-index">{String(page * 8 + i + 1).padStart(2, '0')}</span>
+                <div>
+                  <span className="answer-section">{answer.section}</span>
+                  <button
+                    className="question-link"
+                    onClick={() => onSelect(answer.id)}
+                    aria-label={`${answer.question} 살펴보기`}
+                  >
+                    {answer.question}
+                  </button>
+                  {project.notes[answer.id] && (
+                    <small className="note-present">
+                      {project.notes[answer.id].revision === project.result_revision
+                        ? '검토 기록 저장됨'
+                        : '이전 분석 기록 · 재확인 필요'}
+                    </small>
+                  )}
+                </div>
+              </div>
+              <div role="cell" className="table-value">
+                <strong>{answer.draft_text ? '작성된 초안 있음' : answer.value_text}</strong>
+                <small>{answer.scope_label || answer.period_label || '기간·범위 미확인'}</small>
+              </div>
+              <div role="cell">
                 <Badge answer={answer} />
               </div>
-              <h3>{answer.question}</h3>
-              <p>{answer.why}</p>
-              {project.notes[answer.id] && (
-                <span className="note-present">
-                  <NotebookPen />
-                  {project.notes[answer.id].revision === project.result_revision
-                    ? '작성한 내용 있음'
-                    : '이전 분석 기록 · 다시 확인해 주세요'}
-                </span>
-              )}
+              <div role="cell" className="table-sources">
+                <FileText />
+                {answer.sources.length ? `${answer.sources.length}개` : '없음'}
+              </div>
+              <div role="cell">
+                <button
+                  className="icon-button"
+                  aria-label={`${answer.question} 자세히`}
+                  onClick={() => onSelect(answer.id)}
+                >
+                  <ArrowUpRight />
+                </button>
+              </div>
             </div>
+          ))}
+        </div>
+        {!filtered.length && (
+          <div className="empty-list">
+            <CircleHelp />
+            <p>
+              {search
+                ? '검색 결과가 없습니다. 다른 단어로 찾아보세요.'
+                : '이 목록에는 남은 항목이 없습니다.'}
+            </p>
+          </div>
+        )}
+        {filtered.length > 8 && (
+          <div className="pagination">
+            <span>
+              {page * 8 + 1}–{Math.min(page * 8 + 8, filtered.length)} / {filtered.length}개
+            </span>
             <button
-              className="text-button"
-              onClick={() => onSelect(answer.id)}
-              aria-label={`${answer.question} 살펴보기`}
+              className="icon-button"
+              aria-label="이전 질문 목록"
+              disabled={!page}
+              onClick={() => setPage(page - 1)}
             >
-              살펴보기
-              <ArrowUpRight />
+              <ChevronLeft />
             </button>
-          </li>
-        ))}
-      </ul>
-      {!filtered.length && (
-        <div className="empty-list">
-          <CircleHelp />
-          <p>
-            {search
-              ? '이 말과 관련된 질문을 찾지 못했어요. 다른 말로 찾아보세요.'
-              : '이 목록에는 남은 항목이 없어요. 전체 답변을 살펴보세요.'}
-          </p>
+            <button
+              className="icon-button"
+              aria-label="다음 질문 목록"
+              disabled={(page + 1) * 8 >= filtered.length}
+              onClick={() => setPage(page + 1)}
+            >
+              <ChevronRight />
+            </button>
+          </div>
+        )}
+        <div className="table-footnote">
+          <Info />
+          자료 연결은 최종 승인이 아닙니다. 기간과 범위를 확인한 뒤 제출해 주세요.
         </div>
-      )}
-      {filtered.length > 6 && (
-        <div className="pagination">
-          <span>
-            {page * 6 + 1}–{Math.min(page * 6 + 6, filtered.length)} / {filtered.length}개
-          </span>
-          <button
-            className="icon-button"
-            aria-label="이전 질문 목록"
-            disabled={!page}
-            onClick={() => setPage(page - 1)}
-          >
-            <ChevronLeft />
-          </button>
-          <button
-            className="icon-button"
-            aria-label="다음 질문 목록"
-            disabled={(page + 1) * 6 >= filtered.length}
-            onClick={() => setPage(page + 1)}
-          >
-            <ChevronRight />
-          </button>
-        </div>
-      )}
-      {project.result.limitations.length > 0 && (
+      </div>
+      {!!project.result.limitations.length && (
         <details className="more-details limitations">
           <summary>이번 자료에서 더 확인할 내용</summary>
           <ul>
@@ -293,13 +346,23 @@ export function Review({
       <div className="review-columns">
         <section className="answer-paper" aria-label="답변 검토">
           <div className="section-heading">
-            <h3>현재 답변</h3>
+            <h3>응답 초안</h3>
             <Badge answer={answer} />
           </div>
           <div className="answer-value">{answer.draft_text || answer.value_text}</div>
           {answer.period_label && (
             <div className="period-label">자료 연도 · {answer.period_label}</div>
           )}
+          <div className="answer-scope">
+            <span>기간과 범위</span>
+            <strong>{answer.scope_label || '기간·사업장 범위 미확인'}</strong>
+            {answer.comparison_label && <span>{answer.comparison_label}</span>}
+          </div>
+          {answer.draft_sources?.map((source) => (
+            <p className="draft-source" key={source}>
+              {source}
+            </p>
+          ))}
           {answer.company_answers.length > 0 && (
             <div className="claim-comparison">
               <div>
@@ -311,7 +374,7 @@ export function Review({
                 ))}
               </div>
               <div>
-                <span>현재 자료로 찾은 답변</span>
+                <span>현재 자료로 찾은 값</span>
                 <strong>{answer.value_text}</strong>
               </div>
             </div>
@@ -596,6 +659,17 @@ function EvidencePanel({ project, answer }: { project: Project; answer: Answer }
           )}
         </>
       )}
+      {!!answer.reference_sources?.length && (
+        <details className="company-claims">
+          <summary>보완 대상 자료 · 값 산정에 사용하지 않음</summary>
+          {answer.reference_sources.map((source, i) => (
+            <div key={i}>
+              <strong>{source.name}</strong>
+              <p>{source.quote}</p>
+            </div>
+          ))}
+        </details>
+      )}
       {answer.company_answers.length > 0 && (
         <details className="company-claims">
           <summary>회사가 직접 적은 답변 보기</summary>
@@ -683,6 +757,10 @@ export function Submission({
             <p>
               {answer.draft_text || answer.value_text}
               {answer.period_label && <small> · {answer.period_label}</small>}
+            </p>
+            <p className="preview-scope">
+              {answer.scope_label || '기간·사업장 범위 미확인'}
+              {answer.comparison_label ? ` · ${answer.comparison_label}` : ''}
             </p>
             {answer.notices.length > 0 && (
               <p className="preview-caution">{answer.notices.join(' ')}</p>

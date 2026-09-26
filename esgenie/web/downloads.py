@@ -11,6 +11,7 @@ from tempfile import TemporaryDirectory
 from zipfile import ZipFile, ZIP_DEFLATED
 
 from .store import WorkspaceError
+from .presenter import presented_answers
 
 
 def build_download(project: dict, directory: Path, kind: str) -> tuple[bytes, str, str]:
@@ -30,11 +31,20 @@ def build_download(project: dict, directory: Path, kind: str) -> tuple[bytes, st
     answer_fields = {f.name for f in fields(Answer)}
     link_fields = {f.name for f in fields(EvidenceLink)}
     answers = []
-    presented = {a["id"]: a for a in result["answers"]}
+    presented = {a["id"]: a for a in presented_answers(project)}
+    status_labels = {qid: answer["status_label"] for qid, answer in presented.items()}
+    attention_count = sum(a["needs_attention"] for a in presented.values())
+    summary_text = (f"기업: {project['company_name']} · 전체 {len(presented)}개 문항 · 확인할 항목 {attention_count}개 · "
+                    "자료 연결은 최종 승인이 아닙니다. 담당자 검토 후 제출해 주세요.")
+    review_status = {"linked": "verified", "review": "flagged", "missing": "insufficient", "write": "hitl_required",
+                     "unconfirmed": "self_reported", "draft": "draft_ready", "excluded": "not_applicable"}
     for item in raw["answers"]:
         item = {k: v for k, v in item.items() if k in answer_fields}
         item["evidence_links"] = [EvidenceLink(**{k: v for k, v in link.items() if k in link_fields}) for link in item.get("evidence_links", [])]
-        item["flags"] = list(item.get("flags", [])) + presented[item["qid"]]["notices"]
+        shown = presented[item["qid"]]
+        item["status"] = review_status[shown["status"]]
+        item["flags"] = list(dict.fromkeys(list(item.get("flags", [])) + shown["notices"] + [shown["why"], shown["next_step"]]))
+        item["reference_links"] = [EvidenceLink(**{k: v for k, v in link.items() if k in link_fields}) for link in item.get("reference_links", [])]
         answers.append(Answer(**item))
     name = re.sub(r'[\\/:*?"<>|\x00-\x1f]', "_", project["company_name"])[:80]
     prefix = "사용법 예시" if project["mode"] == "example" else "검토용 초안"
@@ -49,7 +59,7 @@ def build_download(project: dict, directory: Path, kind: str) -> tuple[bytes, st
     notes += ["## 추가 확인 사항", ""] + [f"- {message}" for message in result.get("limitations", [])]
     with TemporaryDirectory(prefix="download-", dir=directory) as temporary:
         out = Path(temporary)
-        excel_path = Path(export_response_sheet(sheet, out))
+        excel_path = Path(export_response_sheet(sheet, out, status_labels=status_labels, summary_text=summary_text))
         workbook = load_workbook(excel_path)
         review = workbook.create_sheet("담당자 작성")
         review.append(["질문", "직접 작성한 답변 (확인 전)", "검토 메모", "기록 기준"])
@@ -73,9 +83,9 @@ def build_download(project: dict, directory: Path, kind: str) -> tuple[bytes, st
         paths = {doc["name"]: str(directory / "uploads" / doc["id"] / doc["name"])
                  for doc in project["documents"] if not doc.get("example")}
         copy_evidence_pack(sheet, out, paths)
-        export_response_sheet_pdf(sheet, out, evidence_base_dir=out, embed_evidence=project["mode"] != "example")
+        export_response_sheet_pdf(sheet, out, evidence_base_dir=out, embed_evidence=project["mode"] != "example", status_labels=status_labels, summary_text=summary_text)
         (out / "담당자_작성_및_확인사항.md").write_text("\n".join(notes), encoding="utf-8")
-        (out / "검증_근거.json").write_text(json.dumps(result, ensure_ascii=False, indent=2, allow_nan=False), encoding="utf-8")
+        (out / "검증_근거.json").write_text(json.dumps({**result, "answers": list(presented.values())}, ensure_ascii=False, indent=2, allow_nan=False), encoding="utf-8")
         archive = BytesIO()
         with ZipFile(archive, "w", ZIP_DEFLATED) as bundle:
             for path in sorted(out.rglob("*")):

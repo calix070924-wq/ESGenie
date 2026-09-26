@@ -29,7 +29,9 @@ def pdf_bytes():
 
 def fixture_result(project, directory):
     example = populate_example(deepcopy(project))
-    return example["result"]
+    result = example["result"]
+    result["answers"] = present_sheet(result["sheet"], project["documents"], {"폐기물 처리 내역.pdf", "전력 사용 내역.pdf"})
+    return result
 
 
 @pytest.fixture
@@ -224,3 +226,64 @@ def test_engine_adapter_separates_company_answers_and_disallows_fallback(monkeyp
     assert calls["save_traces"] is False
     assert SETTINGS.strict_llm == previous
     assert any("회사 운영" in item for item in result["limitations"])
+
+
+def test_review_status_scope_and_sources_match_screen_excel_pdf(client):
+    """Web cautions must survive both exports without altering the stored engine verdict."""
+    project = client.post('/api/examples').json()
+    pid = project['id']
+    stored = client.app.state.store.read(pid)
+    link = {'file_name': '근거.pdf', 'relative_path': '', 'origin': 'ocr_structured', 'quote': '확인한 값 0', 'independent': True, 'page': 0}
+    cases = [
+        ('no-source', {}, '자료 확인 전'),
+        ('partial', {'evidence_links': [link], 'confidence_flags': ['partial_value']}, '확인 필요'),
+        ('inferred', {'evidence_links': [link], 'confidence_flags': ['period_inferred'], 'period': 2026}, '확인 필요'),
+        ('table', {'evidence_links': [{**link, 'file_name': '표.pdf'}]}, '확인 필요'),
+        ('scope', {'evidence_links': [link], 'comparison': 'scope_unconfirmed', 'boundary_label': '제1공장 · 월간', 'comparison_reason': '연간 자료 추가 확인'}, '확인 필요'),
+        ('linked', {'evidence_links': [link]}, '자료 연결됨'),
+    ]
+    stored['result']['sheet']['answers'] = [
+        {'qid': key, 'question_text': key, 'section': '환경', 'value': 0, 'status': 'verified', **extra}
+        for key, extra, _ in cases
+    ]
+    stored['result']['sheet']['answers'][4]['reference_links'] = [{**link, 'file_name': '보완.pdf'}]
+    stored['result']['pending_files'] = ['표.pdf']
+    client.app.state.store.save(stored)
+    before = deepcopy(stored['result']['sheet'])
+    shown = client.get(f'/api/projects/{pid}').json()['result']['answers']
+    assert [a['status_label'] for a in shown] == [label for _, _, label in cases]
+    assert shown[4]['scope_label'] == '제1공장 · 월간'
+    assert shown[4]['reference_sources'][0]['name'] == '보완.pdf'
+    client.put(f'/api/projects/{pid}/notes/scope', json={'text': '자료 요청 기록', 'answer': '직접 작성'})
+    response = client.get(f'/api/projects/{pid}/download/bundle')
+    assert response.status_code == 200
+    with ZipFile(BytesIO(response.content)) as bundle:
+        workbook = load_workbook(BytesIO(bundle.read(next(n for n in bundle.namelist() if n.endswith('.xlsx')))))
+        rows = {row[0]: row for row in workbook['응답서'].iter_rows(values_only=True) if row[0] in {key for key, _, _ in cases}}
+        for key, _, label in cases:
+            assert rows[key][5] == label
+        assert '제1공장 · 월간' in rows['scope'][4]
+        assert '보완.pdf' in rows['scope'][6]
+        with fitz.open(stream=bundle.read(next(n for n in bundle.namelist() if n.endswith('.pdf'))), filetype='pdf') as pdf:
+            text = '\n'.join(page.get_text() for page in pdf)
+        assert '증빙검증' not in text
+        for label in {label for _, _, label in cases}:
+            assert "".join(label.split()) in "".join(text.split())
+        assert '제1공장' in text and '연간 자료 추가 확인' in text
+        audit = json.loads(bundle.read('검증_근거.json'))
+        assert audit['sheet'] == before
+        assert [a['status_label'] for a in audit['answers']] == [label for _, _, label in cases]
+    assert client.app.state.store.read(pid)['result']['sheet'] == before
+
+
+def test_comparison_state_overrides_legacy_mismatch_and_keeps_draft_citations():
+    sheet = {'answers': [{
+        'qid': 'scope', 'question_text': '재활용 비율', 'section': '환경', 'value': 29.3,
+        'status': 'flagged', 'flags': ['D1 불일치: 92 대 29.3'],
+        'comparison': 'not_comparable', 'comparison_reason': '월간과 연간',
+        'draft_text': '원문 [LOCAL_TXT_1]', 'draft_display': '원문 [1]',
+        'draft_sources': ['[1] 원문.pdf p.1'],
+    }]}
+    shown = present_sheet(sheet, [])[0]
+    assert shown['why'] == '기간이나 범위가 달라 지금은 두 값을 비교할 수 없습니다.'
+    assert shown['draft_text'] == '원문 [1]' and shown['draft_sources'] == ['[1] 원문.pdf p.1']
