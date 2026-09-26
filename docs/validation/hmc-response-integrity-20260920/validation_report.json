@@ -1,0 +1,569 @@
+{
+  "input_provenance": {
+    "evidence_dir": "/Users/heojeongmin/Documents/Claude/Projects/ESGenie/시연증빙세트_한울정밀공업",
+    "note": "읽기 전용으로만 접근했다. 원본 PDF·저장 OCR 캐시를 고치지 않았다.",
+    "inputs": [
+      {
+        "file": "의사소통절차서_2025.pdf",
+        "exists": true,
+        "sha256": "ea9b48f60738d1f10fc23e0608622a58cee0708abb1e3612c15e973a4b5c135a",
+        "bytes": 2090
+      },
+      {
+        "file": "15_노사협의회규정_2026-06.pdf",
+        "exists": true,
+        "sha256": "285587de243e950176d65dab5000992df979e2a8cbcadc3c93fc794931d34f76",
+        "bytes": 34930
+      },
+      {
+        "file": "17_고충처리및신원보호규정_2026-06.pdf",
+        "exists": true,
+        "sha256": "51ba2554cdf9639a93feac577b829635346718db64205f0c11dacd638dab1316",
+        "bytes": 35797
+      },
+      {
+        "file": "18_정보보호정책_2026-06.pdf",
+        "exists": true,
+        "sha256": "d8b71febc94335187d7eec0ed3e6b4db2a92154179a66f497628509aef090d02",
+        "bytes": 35285
+      },
+      {
+        "file": "16_부패방지윤리경영규정_2026-06.pdf",
+        "exists": true,
+        "sha256": "91efc1986b926c4590e561e2c92465c1423d2efcaf7f26dc6d4f80a3ec26f1d3",
+        "bytes": 35872
+      },
+      {
+        "file": "14_임금및복리후생규정_2026-06.pdf",
+        "exists": true,
+        "sha256": "3f61f73dabdbbb6106b61af73dd022341d81b1f791efcf3395d016f454e68fc7",
+        "bytes": 38655
+      },
+      {
+        "file": "근로시간관리규정_2025.pdf",
+        "exists": true,
+        "sha256": "2d48975e6d3f270e3be6982ee6512624ce945e503132c07ff31af86daa90e129",
+        "bytes": 2042
+      },
+      {
+        "file": "지식재산보호규정_2025.pdf",
+        "exists": true,
+        "sha256": "cef0359c867df21804b0de9a8979c8df329fe9e9414a27e0adaab06332815284",
+        "bytes": 2033
+      },
+      {
+        "file": "위생_기숙사관리규정_2025.pdf",
+        "exists": true,
+        "sha256": "fc8b64f95c8a1b98512141e79c74cbddd58c102fd72d9d84b259efe2f29dc691",
+        "bytes": 2154
+      },
+      {
+        "file": "책임광물실사정책_2025.pdf",
+        "exists": true,
+        "sha256": "d971832b035471ad2ac6408207ed80d156b48a4759a7b065521da145b1facbd1",
+        "bytes": 2162
+      }
+    ]
+  },
+  "real_document_replay": {
+    "all_documents_tagged_to_one_question": {
+      "HMC-E-7": {
+        "kept": [
+          "의사소통절차서_2025.pdf"
+        ],
+        "hold_reason": ""
+      },
+      "HMC-E-8": {
+        "kept": [
+          "의사소통절차서_2025.pdf",
+          "15_노사협의회규정_2026-06.pdf",
+          "17_고충처리및신원보호규정_2026-06.pdf",
+          "18_정보보호정책_2026-06.pdf",
+          "근로시간관리규정_2025.pdf",
+          "위생_기숙사관리규정_2025.pdf"
+        ],
+        "hold_reason": ""
+      }
+    },
+    "input_class": "real-document replay — 원본 시연 증빙 PDF의 텍스트 레이어를 PyMuPDF로 로컬 추출. OCR 호출·네트워크·LLM 없음. 원본은 읽기만 함.",
+    "questions": {
+      "HMC-E-7": {
+        "text": "[E-7] 의사소통 — 방침·관행·기대·성과를 근로자·공급사·고객에 명확·정확히 전달하는 프로세스.",
+        "primary_code": "E-7",
+        "distinctive_terms": [
+          "게시",
+          "고객",
+          "공급사",
+          "공지",
+          "관행",
+          "기대",
+          "방침",
+          "성과",
+          "소통",
+          "의사소통",
+          "이해관계자",
+          "전달",
+          "절차서",
+          "채널",
+          "프로세스"
+        ]
+      },
+      "HMC-E-8": {
+        "text": "[E-8] 근로자·이해관계자 참여·구제접근 — 근로자·대표·이해관계자와 양방향 소통, 보복 없는 고충·피드백 환경, 구제 접근 보장.",
+        "primary_code": "S-2-6",
+        "distinctive_terms": [
+          "고충",
+          "구제",
+          "구제접근",
+          "노사협의회",
+          "단체협약서",
+          "대표",
+          "보복",
+          "보장",
+          "소통",
+          "양방향",
+          "운영규정",
+          "이해관계자",
+          "접근",
+          "참여",
+          "피드백",
+          "회의록"
+        ]
+      }
+    },
+    "documents": [
+      {
+        "document": "의사소통절차서_2025.pdf",
+        "chars": 560,
+        "HMC-E-7": {
+          "score_pct": 82.6,
+          "distinctive_hits": 13,
+          "required_hits": 2,
+          "matched": [
+            "게시",
+            "고객",
+            "공급사",
+            "관행",
+            "기대",
+            "방침",
+            "성과",
+            "소통",
+            "의사소통",
+            "이해관계자",
+            "전달",
+            "절차서",
+            "프로세스"
+          ],
+          "alone_in_graph": "통과"
+        },
+        "HMC-E-8": {
+          "score_pct": 31.0,
+          "distinctive_hits": 5,
+          "required_hits": 2,
+          "matched": [
+            "고충",
+            "대표",
+            "소통",
+            "이해관계자",
+            "피드백"
+          ],
+          "alone_in_graph": "통과"
+        }
+      },
+      {
+        "document": "15_노사협의회규정_2026-06.pdf",
+        "chars": 740,
+        "HMC-E-7": {
+          "score_pct": 0.0,
+          "distinctive_hits": 0,
+          "required_hits": 2,
+          "matched": [],
+          "alone_in_graph": "보류(문항 고유 어휘가 2개 이상 겹치는 근거 없음)"
+        },
+        "HMC-E-8": {
+          "score_pct": 23.8,
+          "distinctive_hits": 4,
+          "required_hits": 2,
+          "matched": [
+            "노사협의회",
+            "대표",
+            "보복",
+            "참여"
+          ],
+          "alone_in_graph": "통과"
+        }
+      },
+      {
+        "document": "17_고충처리및신원보호규정_2026-06.pdf",
+        "chars": 719,
+        "HMC-E-7": {
+          "score_pct": 0.0,
+          "distinctive_hits": 0,
+          "required_hits": 2,
+          "matched": [],
+          "alone_in_graph": "보류(문항 고유 어휘가 2개 이상 겹치는 근거 없음)"
+        },
+        "HMC-E-8": {
+          "score_pct": 17.8,
+          "distinctive_hits": 3,
+          "required_hits": 2,
+          "matched": [
+            "고충",
+            "대표",
+            "보복"
+          ],
+          "alone_in_graph": "통과"
+        }
+      },
+      {
+        "document": "18_정보보호정책_2026-06.pdf",
+        "chars": 696,
+        "HMC-E-7": {
+          "score_pct": 10.2,
+          "distinctive_hits": 2,
+          "required_hits": 2,
+          "matched": [
+            "고객",
+            "공급사"
+          ],
+          "alone_in_graph": "통과"
+        },
+        "HMC-E-8": {
+          "score_pct": 11.9,
+          "distinctive_hits": 2,
+          "required_hits": 2,
+          "matched": [
+            "대표",
+            "접근"
+          ],
+          "alone_in_graph": "통과"
+        }
+      },
+      {
+        "document": "16_부패방지윤리경영규정_2026-06.pdf",
+        "chars": 766,
+        "HMC-E-7": {
+          "score_pct": 8.7,
+          "distinctive_hits": 1,
+          "required_hits": 2,
+          "matched": [
+            "채널"
+          ],
+          "alone_in_graph": "보류(문항 고유 어휘가 2개 이상 겹치는 근거 없음)"
+        },
+        "HMC-E-8": {
+          "score_pct": 5.9,
+          "distinctive_hits": 1,
+          "required_hits": 2,
+          "matched": [
+            "대표"
+          ],
+          "alone_in_graph": "보류(문항 고유 어휘가 2개 이상 겹치는 근거 없음)"
+        }
+      },
+      {
+        "document": "14_임금및복리후생규정_2026-06.pdf",
+        "chars": 903,
+        "HMC-E-7": {
+          "score_pct": 6.3,
+          "distinctive_hits": 1,
+          "required_hits": 2,
+          "matched": [
+            "성과"
+          ],
+          "alone_in_graph": "보류(문항 고유 어휘가 2개 이상 겹치는 근거 없음)"
+        },
+        "HMC-E-8": {
+          "score_pct": 5.9,
+          "distinctive_hits": 1,
+          "required_hits": 2,
+          "matched": [
+            "대표"
+          ],
+          "alone_in_graph": "보류(문항 고유 어휘가 2개 이상 겹치는 근거 없음)"
+        }
+      },
+      {
+        "document": "근로시간관리규정_2025.pdf",
+        "chars": 564,
+        "HMC-E-7": {
+          "score_pct": 0.0,
+          "distinctive_hits": 0,
+          "required_hits": 2,
+          "matched": [],
+          "alone_in_graph": "보류(문항 고유 어휘가 2개 이상 겹치는 근거 없음)"
+        },
+        "HMC-E-8": {
+          "score_pct": 11.9,
+          "distinctive_hits": 2,
+          "required_hits": 2,
+          "matched": [
+            "대표",
+            "보장"
+          ],
+          "alone_in_graph": "통과"
+        }
+      },
+      {
+        "document": "지식재산보호규정_2025.pdf",
+        "chars": 508,
+        "HMC-E-7": {
+          "score_pct": 4.9,
+          "distinctive_hits": 1,
+          "required_hits": 2,
+          "matched": [
+            "고객"
+          ],
+          "alone_in_graph": "보류(문항 고유 어휘가 2개 이상 겹치는 근거 없음)"
+        },
+        "HMC-E-8": {
+          "score_pct": 5.9,
+          "distinctive_hits": 1,
+          "required_hits": 2,
+          "matched": [
+            "대표"
+          ],
+          "alone_in_graph": "보류(문항 고유 어휘가 2개 이상 겹치는 근거 없음)"
+        }
+      },
+      {
+        "document": "위생_기숙사관리규정_2025.pdf",
+        "chars": 594,
+        "HMC-E-7": {
+          "score_pct": 0.0,
+          "distinctive_hits": 0,
+          "required_hits": 2,
+          "matched": [],
+          "alone_in_graph": "보류(문항 고유 어휘가 2개 이상 겹치는 근거 없음)"
+        },
+        "HMC-E-8": {
+          "score_pct": 11.9,
+          "distinctive_hits": 2,
+          "required_hits": 2,
+          "matched": [
+            "대표",
+            "보장"
+          ],
+          "alone_in_graph": "통과"
+        }
+      },
+      {
+        "document": "책임광물실사정책_2025.pdf",
+        "chars": 586,
+        "HMC-E-7": {
+          "score_pct": 10.2,
+          "distinctive_hits": 2,
+          "required_hits": 2,
+          "matched": [
+            "고객",
+            "공급사"
+          ],
+          "alone_in_graph": "통과"
+        },
+        "HMC-E-8": {
+          "score_pct": 5.9,
+          "distinctive_hits": 1,
+          "required_hits": 2,
+          "matched": [
+            "대표"
+          ],
+          "alone_in_graph": "보류(문항 고유 어휘가 2개 이상 겹치는 근거 없음)"
+        }
+      }
+    ],
+    "missing_documents": []
+  },
+  "framework_survey": {
+    "kesg28": {
+      "label": "K-ESG 자가진단 — 중소기업 기본형 (28항목)",
+      "questions": 28,
+      "distinctive_min": 4,
+      "distinctive_median": 8,
+      "distinctive_max": 15,
+      "questions_without_distinctive_terms": [],
+      "most_shared_primary_code": {
+        "code": "P-1-1",
+        "question_count": 1
+      }
+    },
+    "kesg61": {
+      "label": "K-ESG 자가진단 — 전체 (61항목)",
+      "questions": 61,
+      "distinctive_min": 2,
+      "distinctive_median": 6,
+      "distinctive_max": 12,
+      "questions_without_distinctive_terms": [],
+      "most_shared_primary_code": {
+        "code": "P-1-1",
+        "question_count": 1
+      }
+    },
+    "rba42": {
+      "label": "RBA 행동규범 자가진단 (v8.0, 42항목)",
+      "questions": 48,
+      "distinctive_min": 7,
+      "distinctive_median": 16,
+      "distinctive_max": 26,
+      "questions_without_distinctive_terms": [],
+      "most_shared_primary_code": {
+        "code": "S-4-1",
+        "question_count": 6
+      }
+    },
+    "saq5": {
+      "label": "Drive Sustainability SAQ 5.0 — 핵심 전체본",
+      "questions": 26,
+      "distinctive_min": 3,
+      "distinctive_median": 9,
+      "distinctive_max": 19,
+      "questions_without_distinctive_terms": [],
+      "most_shared_primary_code": {
+        "code": "E-1-1",
+        "question_count": 2
+      }
+    },
+    "saq5_env": {
+      "label": "Drive Sustainability SAQ 5.0 — 환경 섹션",
+      "questions": 11,
+      "distinctive_min": 2,
+      "distinctive_median": 6,
+      "distinctive_max": 13,
+      "questions_without_distinctive_terms": [],
+      "most_shared_primary_code": {
+        "code": "E-1-1",
+        "question_count": 2
+      }
+    },
+    "hmc": {
+      "label": "현대차 협력사 ESG 사전점검 (RBA v8.0 매핑 참고양식)",
+      "questions": 48,
+      "distinctive_min": 7,
+      "distinctive_median": 16,
+      "distinctive_max": 26,
+      "questions_without_distinctive_terms": [],
+      "most_shared_primary_code": {
+        "code": "S-4-1",
+        "question_count": 6
+      }
+    }
+  },
+  "output_crosscheck": {
+    "input_class": "controlled experiment + real-document replay — 정량값은 scripts/demo_hmc_sheet.py의 재구성 입력, E-7 정성 근거는 의사소통절차서_2025.pdf 원문 로컬 추출. 초안 LLM은 mock.",
+    "files": {
+      "json": "response_sheet.json",
+      "xlsx": "실사응답서_hmc_한울정밀공업㈜.xlsx",
+      "pdf": "실사응답서_hmc_한울정밀공업㈜.pdf"
+    },
+    "pdf_pages": 11,
+    "status_counts": {
+      "hitl_required": 3,
+      "insufficient": 41,
+      "flagged": 1,
+      "self_reported": 2,
+      "draft_ready": 1
+    },
+    "header": {
+      "auto_pct": 6.2,
+      "hitl_pct": 6.2,
+      "pending_pct": 85.4,
+      "draft_pct": 2.1,
+      "flagged_count": 1
+    },
+    "checks": [
+      {
+        "check": "JSON 답변 수 = 양식 문항 수",
+        "pass": true,
+        "detail": "48개"
+      },
+      {
+        "check": "Excel에 모든 문항 ID가 있다",
+        "pass": true,
+        "detail": "[]"
+      },
+      {
+        "check": "PDF에 헤더 문장이 있다",
+        "pass": true,
+        "detail": ""
+      },
+      {
+        "check": "초안 승인 대기 문항이 있다",
+        "pass": true,
+        "detail": "['HMC-E-7']"
+      },
+      {
+        "check": "HMC-E-7: 출처 미해소 경고가 없다",
+        "pass": true,
+        "detail": "[]"
+      },
+      {
+        "check": "HMC-E-7: 본문에 내부 노드 ID가 없다",
+        "pass": true,
+        "detail": "ESG 방침·관행·기대·성과를 근로자·공급사·고객에 전달하는 프로세스를 규정하고 있습니다. [1]"
+      },
+      {
+        "check": "HMC-E-7: 본문 인용이 번호다",
+        "pass": true,
+        "detail": "ESG 방침·관행·기대·성과를 근로자·공급사·고객에 전달하는 프로세스를 규정하고 있습니다. [1]"
+      },
+      {
+        "check": "HMC-E-7: 출처 목록이 문서명·페이지를 준다",
+        "pass": true,
+        "detail": "['[1] 의사소통절차서_2025.pdf p.2']"
+      },
+      {
+        "check": "HMC-E-7: 감사 JSON이 node_id를 보존한다",
+        "pass": true,
+        "detail": ""
+      },
+      {
+        "check": "HMC-E-7: Excel에도 같은 번호 인용이 실린다",
+        "pass": true,
+        "detail": ""
+      },
+      {
+        "check": "HMC-E-7: PDF에 출처 문서명이 있다",
+        "pass": true,
+        "detail": ""
+      },
+      {
+        "check": "HMC-E-7: 근거 없는 ISMS 취득 문장이 없다",
+        "pass": true,
+        "detail": "ESG 방침·관행·기대·성과를 근로자·공급사·고객에 전달하는 프로세스를 규정하고 있습니다. [OCR_COMM_0001]"
+      },
+      {
+        "check": "PDF에 글리프 없는 문자가 없다",
+        "pass": true,
+        "detail": "[]"
+      },
+      {
+        "check": "범위 열이 Excel에 있다",
+        "pass": true,
+        "detail": ""
+      },
+      {
+        "check": "범위 라벨이 있는 답변은 Excel에 그 라벨을 싣는다",
+        "pass": true,
+        "detail": "[]"
+      }
+    ],
+    "failed": []
+  },
+  "rendering": {
+    "screenshots": [
+      "pdf_p1.png",
+      "pdf_p2.png",
+      "pdf_p3.png"
+    ],
+    "note": "Excel은 렌더러가 없어 셀 값·줄바꿈·열 너비를 재개봉 검사로 확인했다."
+  },
+  "output_hashes": {
+    "pdf_draft_p5.png": "8b1035c9e319b18de4f112eb24e5d5085cea6af60af88cd63c5c9cb3b4a0bffe",
+    "pdf_draft_p9.png": "d899ba39973d6003ca91f45189da9e97b68d4a5db6c6a0ee19fba7a7de63d59b",
+    "pdf_p1.png": "a6e9e923ae88126410d007c1b0b75b9a660589247052189cab733898a4cb00e4",
+    "pdf_p2.png": "4900c4678bbdaab36fea6f7b9582a92783c6c461dbb1d2ef45d019abb270e2ae",
+    "pdf_p3.png": "4f3cd61f05dada526d475a803b5a91eb8201ef9cf0c67801372e2d1faa8092c0",
+    "response_sheet.json": "8157fbae0bc00a72593731d6b5506ed63a62a864dd13d075cfffc029b72b787c",
+    "실사응답서_hmc_한울정밀공업㈜.pdf": "13bc23e2605d95943c7f5dacdd4066b1b7ea10e41223f7520dfc749ce80acece",
+    "실사응답서_hmc_한울정밀공업㈜.xlsx": "9905fee5d309a8b4bf0a0820b93d1f3452c20303a88056a36929ef4f31bee5bf"
+  }
+}

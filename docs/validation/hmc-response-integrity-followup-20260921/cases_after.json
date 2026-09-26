@@ -1,0 +1,2027 @@
+{
+  "input_class": "synthetic OCR extraction fixtures -> graph -> resolved ledger -> D1 -> DataPoint -> ResponseSheet; same helpers exercised by named regression tests",
+  "cases": {
+    "total_plus_components": {
+      "data_point": {
+        "kesg_code": "E-4-1",
+        "kesg_name": "에너지 사용량",
+        "value": 10.0,
+        "unit": "TJ",
+        "period": 2026,
+        "confidence": 0.95,
+        "verification": "verified",
+        "d1_risk": 0.0,
+        "evidence_files": [
+          {
+            "file_name": "total.pdf",
+            "relative_path": "evidence_pack/total.pdf",
+            "origin": "ocr_structured",
+            "bbox": null,
+            "page": 0,
+            "node_id": "TEST_E-4-1_2026__ocr_structured__c5c7331b15",
+            "kesg_codes": [
+              "E-4-1"
+            ],
+            "quote": "총 에너지 사용량=10TJ (total.pdf)",
+            "resolved": true,
+            "independent": true
+          }
+        ],
+        "source_tier": "ocr_node_gated",
+        "representative_node_ids": [
+          "TEST_E-4-1_2026__ocr_structured__c5c7331b15"
+        ],
+        "value_role": "total",
+        "confidence_flags": [],
+        "d1_evaluation": {
+          "status": "complete",
+          "compared_claims": 1,
+          "unverified_claims": 0,
+          "excluded_claims": 0,
+          "comparison": "compared",
+          "comparison_reason": "",
+          "reasons": {},
+          "claims": [
+            {
+              "raw": "10.0TJ",
+              "start": 8,
+              "end": 14,
+              "code": "E-4-1",
+              "claim_value": 10.0,
+              "claim_unit": "TJ",
+              "evidence_ids": [
+                "TEST_E-4-1_2026__ocr_structured__c5c7331b15"
+              ],
+              "evidence_value": 10.0,
+              "evidence_unit": "TJ",
+              "evidence_period": 2026,
+              "status": "compared",
+              "reason": "match",
+              "evidence_files": [
+                "total.pdf"
+              ],
+              "compared_value": 10.0,
+              "delta_ratio": 0.0,
+              "nonzero_against_zero": false,
+              "comparison": "compared",
+              "comparison_reason": ""
+            }
+          ]
+        },
+        "completeness": "total",
+        "boundary": {
+          "period_text": "2026년 연간",
+          "aggregation": "annual",
+          "coverage_months": 12,
+          "basis": "actual",
+          "site": "",
+          "site_scope": "entity",
+          "measure": "에너지 사용량",
+          "measure_kind": "energy_total",
+          "completeness": "total",
+          "denominator": "총 에너지",
+          "denominator_kind": "total_energy",
+          "inferred": [],
+          "source_quote": "총 에너지 사용량 (2026년 연간)",
+          "period_year": 2026,
+          "period_start": "2026-01-01",
+          "period_end": "2026-12-31",
+          "site_path": [],
+          "provenance": [
+            {
+              "source": "row",
+              "quote": "총 에너지 사용량",
+              "period": "2026년 연간",
+              "method": "rule",
+              "page": 0,
+              "bbox": null,
+              "source_file": "total.pdf"
+            },
+            {
+              "source": "document_header",
+              "quote": "전사",
+              "method": "rule",
+              "page": 0,
+              "bbox": null,
+              "source_file": "total.pdf"
+            }
+          ],
+          "review_notes": []
+        },
+        "boundary_label": "2026년 연간 · 전사 · 에너지 사용량 · 분모: 총 에너지 · 총량",
+        "scope_notes": [
+          "E-4-1: TEST_E-4-1_2026__ocr_structured__c5c7331b15 총량에 포함된 구성요소 — 이중계상 방지",
+          "E-4-1: 합산 제외 — power.pdf — TEST_E-4-1_2026__ocr_structured__c5c7331b15 총량에 포함된 구성요소 — 이중계상 방지",
+          "E-4-1: 합산 제외 — gas.pdf — TEST_E-4-1_2026__ocr_structured__c5c7331b15 총량에 포함된 구성요소 — 이중계상 방지"
+        ],
+        "comparison": "compared",
+        "comparison_reason": "",
+        "comparisons": [
+          {
+            "raw": "10.0TJ",
+            "start": 8,
+            "end": 14,
+            "code": "E-4-1",
+            "claim_value": 10.0,
+            "claim_unit": "TJ",
+            "evidence_ids": [
+              "TEST_E-4-1_2026__ocr_structured__c5c7331b15"
+            ],
+            "evidence_value": 10.0,
+            "evidence_unit": "TJ",
+            "evidence_period": 2026,
+            "status": "compared",
+            "reason": "match",
+            "evidence_files": [
+              "total.pdf"
+            ],
+            "compared_value": 10.0,
+            "delta_ratio": 0.0,
+            "nonzero_against_zero": false,
+            "comparison": "compared",
+            "comparison_reason": ""
+          },
+          {
+            "source_id": "TEST_E-4-1_2026__ocr_structured__01ed819453",
+            "target_id": "TEST_E-4-1_2026__ocr_structured__283487cc05",
+            "comparison": "not_comparable",
+            "comparison_reason": "비교 불가: 측정 대상 상이(전력 사용량 ↔ 도시가스) (power.pdf ↔ gas.pdf)",
+            "effective": false,
+            "difference_pct": null,
+            "files": [
+              "power.pdf",
+              "gas.pdf"
+            ]
+          },
+          {
+            "source_id": "TEST_E-4-1_2026__ocr_structured__c5c7331b15",
+            "target_id": "TEST_E-4-1_2026__ocr_structured__01ed819453",
+            "comparison": "not_comparable",
+            "comparison_reason": "비교 불가: 측정 대상 상이(에너지 사용량 ↔ 전력 사용량) (total.pdf ↔ power.pdf)",
+            "effective": false,
+            "difference_pct": null,
+            "files": [
+              "total.pdf",
+              "power.pdf"
+            ]
+          },
+          {
+            "source_id": "TEST_E-4-1_2026__ocr_structured__c5c7331b15",
+            "target_id": "TEST_E-4-1_2026__ocr_structured__283487cc05",
+            "comparison": "not_comparable",
+            "comparison_reason": "비교 불가: 측정 대상 상이(에너지 사용량 ↔ 도시가스) (total.pdf ↔ gas.pdf)",
+            "effective": false,
+            "difference_pct": null,
+            "files": [
+              "total.pdf",
+              "gas.pdf"
+            ]
+          }
+        ],
+        "reference_files": [
+          {
+            "file_name": "power.pdf",
+            "relative_path": "evidence_pack/power.pdf",
+            "origin": "ocr_structured",
+            "bbox": null,
+            "page": 0,
+            "node_id": "TEST_E-4-1_2026__ocr_structured__01ed819453",
+            "kesg_codes": [
+              "E-4-1"
+            ],
+            "quote": "총 전력 사용량=6TJ (power.pdf)",
+            "resolved": true,
+            "independent": true
+          },
+          {
+            "file_name": "gas.pdf",
+            "relative_path": "evidence_pack/gas.pdf",
+            "origin": "ocr_structured",
+            "bbox": null,
+            "page": 0,
+            "node_id": "TEST_E-4-1_2026__ocr_structured__283487cc05",
+            "kesg_codes": [
+              "E-4-1"
+            ],
+            "quote": "도시가스 사용량=4TJ (gas.pdf)",
+            "resolved": true,
+            "independent": true
+          }
+        ]
+      },
+      "answer": {
+        "qid": "HMC-C-8-E-4-1",
+        "section": "환경",
+        "question_text": "[C-8·수치] 에너지 사용량",
+        "value": 10.0,
+        "status": "verified",
+        "evidence_links": [
+          {
+            "file_name": "total.pdf",
+            "relative_path": "evidence_pack/total.pdf",
+            "origin": "ocr_structured",
+            "bbox": null,
+            "page": 0,
+            "node_id": "TEST_E-4-1_2026__ocr_structured__c5c7331b15",
+            "kesg_codes": [
+              "E-4-1"
+            ],
+            "quote": "총 에너지 사용량=10TJ (total.pdf)",
+            "resolved": true,
+            "independent": true
+          }
+        ],
+        "flags": [],
+        "rationale": "에너지 사용량 = 10.0TJ (보고 연도 2026, D1 위험 0.0, 검증=verified) · 평가 완료 · 비교 1건 · 미검증 0건",
+        "evidence_needed": [],
+        "draft_text": "",
+        "draft_citations": [],
+        "draft_grounding": null,
+        "unit": "TJ",
+        "period": 2026,
+        "confidence_flags": [],
+        "self_reports": [],
+        "option_evidence": {},
+        "boundary_label": "2026년 연간 · 전사 · 에너지 사용량 · 분모: 총 에너지 · 총량",
+        "completeness": "total",
+        "comparison": "compared",
+        "comparison_reason": "",
+        "boundary": {
+          "period_text": "2026년 연간",
+          "aggregation": "annual",
+          "coverage_months": 12,
+          "basis": "actual",
+          "site": "",
+          "site_scope": "entity",
+          "measure": "에너지 사용량",
+          "measure_kind": "energy_total",
+          "completeness": "total",
+          "denominator": "총 에너지",
+          "denominator_kind": "total_energy",
+          "inferred": [],
+          "source_quote": "총 에너지 사용량 (2026년 연간)",
+          "period_year": 2026,
+          "period_start": "2026-01-01",
+          "period_end": "2026-12-31",
+          "site_path": [],
+          "provenance": [
+            {
+              "source": "row",
+              "quote": "총 에너지 사용량",
+              "period": "2026년 연간",
+              "method": "rule",
+              "page": 0,
+              "bbox": null,
+              "source_file": "total.pdf"
+            },
+            {
+              "source": "document_header",
+              "quote": "전사",
+              "method": "rule",
+              "page": 0,
+              "bbox": null,
+              "source_file": "total.pdf"
+            }
+          ],
+          "review_notes": []
+        },
+        "comparisons": [
+          {
+            "raw": "10.0TJ",
+            "start": 8,
+            "end": 14,
+            "code": "E-4-1",
+            "claim_value": 10.0,
+            "claim_unit": "TJ",
+            "evidence_ids": [
+              "TEST_E-4-1_2026__ocr_structured__c5c7331b15"
+            ],
+            "evidence_value": 10.0,
+            "evidence_unit": "TJ",
+            "evidence_period": 2026,
+            "status": "compared",
+            "reason": "match",
+            "evidence_files": [
+              "total.pdf"
+            ],
+            "compared_value": 10.0,
+            "delta_ratio": 0.0,
+            "nonzero_against_zero": false,
+            "comparison": "compared",
+            "comparison_reason": ""
+          },
+          {
+            "source_id": "TEST_E-4-1_2026__ocr_structured__01ed819453",
+            "target_id": "TEST_E-4-1_2026__ocr_structured__283487cc05",
+            "comparison": "not_comparable",
+            "comparison_reason": "비교 불가: 측정 대상 상이(전력 사용량 ↔ 도시가스) (power.pdf ↔ gas.pdf)",
+            "effective": false,
+            "difference_pct": null,
+            "files": [
+              "power.pdf",
+              "gas.pdf"
+            ]
+          },
+          {
+            "source_id": "TEST_E-4-1_2026__ocr_structured__c5c7331b15",
+            "target_id": "TEST_E-4-1_2026__ocr_structured__01ed819453",
+            "comparison": "not_comparable",
+            "comparison_reason": "비교 불가: 측정 대상 상이(에너지 사용량 ↔ 전력 사용량) (total.pdf ↔ power.pdf)",
+            "effective": false,
+            "difference_pct": null,
+            "files": [
+              "total.pdf",
+              "power.pdf"
+            ]
+          },
+          {
+            "source_id": "TEST_E-4-1_2026__ocr_structured__c5c7331b15",
+            "target_id": "TEST_E-4-1_2026__ocr_structured__283487cc05",
+            "comparison": "not_comparable",
+            "comparison_reason": "비교 불가: 측정 대상 상이(에너지 사용량 ↔ 도시가스) (total.pdf ↔ gas.pdf)",
+            "effective": false,
+            "difference_pct": null,
+            "files": [
+              "total.pdf",
+              "gas.pdf"
+            ]
+          }
+        ],
+        "scope_notes": [
+          "E-4-1: TEST_E-4-1_2026__ocr_structured__c5c7331b15 총량에 포함된 구성요소 — 이중계상 방지",
+          "E-4-1: 합산 제외 — power.pdf — TEST_E-4-1_2026__ocr_structured__c5c7331b15 총량에 포함된 구성요소 — 이중계상 방지",
+          "E-4-1: 합산 제외 — gas.pdf — TEST_E-4-1_2026__ocr_structured__c5c7331b15 총량에 포함된 구성요소 — 이중계상 방지"
+        ],
+        "reference_links": [
+          {
+            "file_name": "power.pdf",
+            "relative_path": "evidence_pack/power.pdf",
+            "origin": "ocr_structured",
+            "bbox": null,
+            "page": 0,
+            "node_id": "TEST_E-4-1_2026__ocr_structured__01ed819453",
+            "kesg_codes": [
+              "E-4-1"
+            ],
+            "quote": "총 전력 사용량=6TJ (power.pdf)",
+            "resolved": true,
+            "independent": true
+          },
+          {
+            "file_name": "gas.pdf",
+            "relative_path": "evidence_pack/gas.pdf",
+            "origin": "ocr_structured",
+            "bbox": null,
+            "page": 0,
+            "node_id": "TEST_E-4-1_2026__ocr_structured__283487cc05",
+            "kesg_codes": [
+              "E-4-1"
+            ],
+            "quote": "도시가스 사용량=4TJ (gas.pdf)",
+            "resolved": true,
+            "independent": true
+          }
+        ],
+        "badge": "✅ 증빙검증",
+        "display_value": "10 TJ (2026년)",
+        "comparison_label": "대조 완료",
+        "review_note": "대조 완료 · E-4-1: TEST_E-4-1_2026__ocr_structured__c5c7331b15 총량에 포함된 구성요소 — 이중계상 방지 · E-4-1: 합산 제외 — power.pdf — TEST_E-4-1_2026__ocr_structured__c5c7331b15 총량에 포함된 구성요소 — 이중계상 방지 · E-4-1: 합산 제외 — gas.pdf — TEST_E-4-1_2026__ocr_structured__c5c7331b15 총량에 포함된 구성요소 — 이중계상 방지"
+      }
+    },
+    "different_months": {
+      "data_point": {
+        "kesg_code": "E-4-1",
+        "kesg_name": "에너지 사용량",
+        "value": 0.513216,
+        "unit": "TJ",
+        "period": 2026,
+        "confidence": 0.95,
+        "verification": "estimated",
+        "d1_risk": null,
+        "evidence_files": [
+          {
+            "file_name": "power.pdf",
+            "relative_path": "evidence_pack/power.pdf",
+            "origin": "ocr_structured",
+            "bbox": null,
+            "page": 0,
+            "node_id": "TEST_E-4-1_2026__ocr_structured__35767f60ae",
+            "kesg_codes": [
+              "E-4-1"
+            ],
+            "quote": "전력 사용량=142560kWh (power.pdf)",
+            "resolved": true,
+            "independent": true
+          }
+        ],
+        "source_tier": "ocr_node_gated",
+        "representative_node_ids": [
+          "TEST_E-4-1_2026__ocr_structured__35767f60ae"
+        ],
+        "value_role": "total",
+        "confidence_flags": [
+          "incomplete_scope"
+        ],
+        "d1_evaluation": {
+          "status": "unavailable",
+          "compared_claims": 0,
+          "unverified_claims": 1,
+          "excluded_claims": 0,
+          "comparison": "scope_unconfirmed",
+          "comparison_reason": "전체 주장에 필요한 기간·사업장·분모 미확인 — 부분값 증빙 2026-05 · 월간 · 제1공장 · 전력 사용량 · 부분",
+          "reasons": {
+            "scope_unconfirmed": 1
+          },
+          "claims": [
+            {
+              "raw": "0.513216TJ",
+              "start": 8,
+              "end": 18,
+              "code": "E-4-1",
+              "claim_value": 0.513216,
+              "claim_unit": "TJ",
+              "evidence_ids": [
+                "TEST_E-4-1_2026__ocr_structured__35767f60ae"
+              ],
+              "evidence_value": 0.513216,
+              "evidence_unit": "TJ",
+              "evidence_period": 2026,
+              "status": "unverified",
+              "reason": "scope_unconfirmed",
+              "evidence_files": [
+                "power.pdf"
+              ],
+              "comparison": "scope_unconfirmed",
+              "comparison_reason": "전체 주장에 필요한 기간·사업장·분모 미확인 — 부분값 증빙 2026-05 · 월간 · 제1공장 · 전력 사용량 · 부분"
+            }
+          ]
+        },
+        "completeness": "partial",
+        "boundary": {
+          "period_text": "2026-05",
+          "aggregation": "monthly",
+          "coverage_months": 1,
+          "basis": "actual",
+          "site": "제1공장",
+          "site_scope": "site",
+          "measure": "전력 사용량",
+          "measure_kind": "electricity_total",
+          "completeness": "partial",
+          "denominator": "",
+          "denominator_kind": "unknown",
+          "inferred": [],
+          "source_quote": "전력 사용량 (2026-05)",
+          "period_year": 2026,
+          "period_start": "2026-05-01",
+          "period_end": "2026-05-31",
+          "site_path": [
+            "제1공장"
+          ],
+          "provenance": [
+            {
+              "source": "row",
+              "quote": "전력 사용량",
+              "period": "2026-05",
+              "method": "rule",
+              "page": 0,
+              "bbox": null,
+              "source_file": "power.pdf"
+            },
+            {
+              "source": "document_header",
+              "quote": "제1공장",
+              "method": "rule",
+              "page": 0,
+              "bbox": null,
+              "source_file": "power.pdf"
+            }
+          ],
+          "review_notes": []
+        },
+        "boundary_label": "2026-05 · 월간 · 제1공장 · 전력 사용량 · 부분",
+        "scope_notes": [
+          "E-4-1: 실제 대상 기간·집계 상이(2026-05 ↔ 2026-06) — 합산 보류",
+          "E-4-1: 부분값 — 2026-05 · 월간 · 제1공장 · 전력 사용량 · 부분. 전사·연간·전체 범위 총량임이 입증되지 않아 검증 보류. 연간 실적의 실제 사용기간·집계 방식 확인; 전사/공장 조직·사업장 범위 확인; 전체 에너지원 포함 여부 확인"
+        ],
+        "comparison": "scope_unconfirmed",
+        "comparison_reason": "전체 주장에 필요한 기간·사업장·분모 미확인 — 부분값 증빙 2026-05 · 월간 · 제1공장 · 전력 사용량 · 부분",
+        "comparisons": [
+          {
+            "raw": "0.513216TJ",
+            "start": 8,
+            "end": 18,
+            "code": "E-4-1",
+            "claim_value": 0.513216,
+            "claim_unit": "TJ",
+            "evidence_ids": [
+              "TEST_E-4-1_2026__ocr_structured__35767f60ae"
+            ],
+            "evidence_value": 0.513216,
+            "evidence_unit": "TJ",
+            "evidence_period": 2026,
+            "status": "unverified",
+            "reason": "scope_unconfirmed",
+            "evidence_files": [
+              "power.pdf"
+            ],
+            "comparison": "scope_unconfirmed",
+            "comparison_reason": "전체 주장에 필요한 기간·사업장·분모 미확인 — 부분값 증빙 2026-05 · 월간 · 제1공장 · 전력 사용량 · 부분"
+          },
+          {
+            "source_id": "TEST_E-4-1_2026__ocr_structured__35767f60ae",
+            "target_id": "TEST_E-4-1_2026__ocr_structured__283487cc05",
+            "comparison": "not_comparable",
+            "comparison_reason": "비교 불가: 측정 대상 상이(전력 사용량 ↔ 도시가스) (power.pdf ↔ gas.pdf)",
+            "effective": false,
+            "difference_pct": null,
+            "files": [
+              "power.pdf",
+              "gas.pdf"
+            ]
+          }
+        ],
+        "reference_files": [
+          {
+            "file_name": "gas.pdf",
+            "relative_path": "evidence_pack/gas.pdf",
+            "origin": "ocr_structured",
+            "bbox": null,
+            "page": 0,
+            "node_id": "TEST_E-4-1_2026__ocr_structured__283487cc05",
+            "kesg_codes": [
+              "E-4-1"
+            ],
+            "quote": "도시가스 사용량=360772MJ (gas.pdf)",
+            "resolved": true,
+            "independent": true
+          }
+        ]
+      },
+      "answer": {
+        "qid": "HMC-C-8-E-4-1",
+        "section": "환경",
+        "question_text": "[C-8·수치] 에너지 사용량",
+        "value": 0.513216,
+        "status": "self_reported",
+        "evidence_links": [
+          {
+            "file_name": "power.pdf",
+            "relative_path": "evidence_pack/power.pdf",
+            "origin": "ocr_structured",
+            "bbox": null,
+            "page": 0,
+            "node_id": "TEST_E-4-1_2026__ocr_structured__35767f60ae",
+            "kesg_codes": [
+              "E-4-1"
+            ],
+            "quote": "전력 사용량=142560kWh (power.pdf)",
+            "resolved": true,
+            "independent": true
+          }
+        ],
+        "flags": [],
+        "rationale": "에너지 사용량 = 0.513216TJ (보고 연도 2026, D1 위험 평가불가, 검증=estimated) · 평가불가 · 비교 0건 · 미검증 1건 · 범위 확인 필요 1건 · 신뢰 정보: incomplete_scope",
+        "evidence_needed": [],
+        "draft_text": "",
+        "draft_citations": [],
+        "draft_grounding": null,
+        "unit": "TJ",
+        "period": 2026,
+        "confidence_flags": [
+          "incomplete_scope"
+        ],
+        "self_reports": [],
+        "option_evidence": {},
+        "boundary_label": "2026-05 · 월간 · 제1공장 · 전력 사용량 · 부분",
+        "completeness": "partial",
+        "comparison": "scope_unconfirmed",
+        "comparison_reason": "전체 주장에 필요한 기간·사업장·분모 미확인 — 부분값 증빙 2026-05 · 월간 · 제1공장 · 전력 사용량 · 부분",
+        "boundary": {
+          "period_text": "2026-05",
+          "aggregation": "monthly",
+          "coverage_months": 1,
+          "basis": "actual",
+          "site": "제1공장",
+          "site_scope": "site",
+          "measure": "전력 사용량",
+          "measure_kind": "electricity_total",
+          "completeness": "partial",
+          "denominator": "",
+          "denominator_kind": "unknown",
+          "inferred": [],
+          "source_quote": "전력 사용량 (2026-05)",
+          "period_year": 2026,
+          "period_start": "2026-05-01",
+          "period_end": "2026-05-31",
+          "site_path": [
+            "제1공장"
+          ],
+          "provenance": [
+            {
+              "source": "row",
+              "quote": "전력 사용량",
+              "period": "2026-05",
+              "method": "rule",
+              "page": 0,
+              "bbox": null,
+              "source_file": "power.pdf"
+            },
+            {
+              "source": "document_header",
+              "quote": "제1공장",
+              "method": "rule",
+              "page": 0,
+              "bbox": null,
+              "source_file": "power.pdf"
+            }
+          ],
+          "review_notes": []
+        },
+        "comparisons": [
+          {
+            "raw": "0.513216TJ",
+            "start": 8,
+            "end": 18,
+            "code": "E-4-1",
+            "claim_value": 0.513216,
+            "claim_unit": "TJ",
+            "evidence_ids": [
+              "TEST_E-4-1_2026__ocr_structured__35767f60ae"
+            ],
+            "evidence_value": 0.513216,
+            "evidence_unit": "TJ",
+            "evidence_period": 2026,
+            "status": "unverified",
+            "reason": "scope_unconfirmed",
+            "evidence_files": [
+              "power.pdf"
+            ],
+            "comparison": "scope_unconfirmed",
+            "comparison_reason": "전체 주장에 필요한 기간·사업장·분모 미확인 — 부분값 증빙 2026-05 · 월간 · 제1공장 · 전력 사용량 · 부분"
+          },
+          {
+            "source_id": "TEST_E-4-1_2026__ocr_structured__35767f60ae",
+            "target_id": "TEST_E-4-1_2026__ocr_structured__283487cc05",
+            "comparison": "not_comparable",
+            "comparison_reason": "비교 불가: 측정 대상 상이(전력 사용량 ↔ 도시가스) (power.pdf ↔ gas.pdf)",
+            "effective": false,
+            "difference_pct": null,
+            "files": [
+              "power.pdf",
+              "gas.pdf"
+            ]
+          }
+        ],
+        "scope_notes": [
+          "E-4-1: 실제 대상 기간·집계 상이(2026-05 ↔ 2026-06) — 합산 보류",
+          "E-4-1: 부분값 — 2026-05 · 월간 · 제1공장 · 전력 사용량 · 부분. 전사·연간·전체 범위 총량임이 입증되지 않아 검증 보류. 연간 실적의 실제 사용기간·집계 방식 확인; 전사/공장 조직·사업장 범위 확인; 전체 에너지원 포함 여부 확인"
+        ],
+        "reference_links": [
+          {
+            "file_name": "gas.pdf",
+            "relative_path": "evidence_pack/gas.pdf",
+            "origin": "ocr_structured",
+            "bbox": null,
+            "page": 0,
+            "node_id": "TEST_E-4-1_2026__ocr_structured__283487cc05",
+            "kesg_codes": [
+              "E-4-1"
+            ],
+            "quote": "도시가스 사용량=360772MJ (gas.pdf)",
+            "resolved": true,
+            "independent": true
+          }
+        ],
+        "badge": "⚠️ 자가신고",
+        "display_value": "0.513216 TJ (2026년)",
+        "comparison_label": "범위 확인 필요",
+        "review_note": "범위 확인 필요: 전체 주장에 필요한 기간·사업장·분모 미확인 — 부분값 증빙 2026-05 · 월간 · 제1공장 · 전력 사용량 · 부분 · E-4-1: 실제 대상 기간·집계 상이(2026-05 ↔ 2026-06) — 합산 보류 · E-4-1: 부분값 — 2026-05 · 월간 · 제1공장 · 전력 사용량 · 부분. 전사·연간·전체 범위 총량임이 입증되지 않아 검증 보류. 연간 실적의 실제 사용기간·집계 방식 확인; 전사/공장 조직·사업장 범위 확인; 전체 에너지원 포함 여부 확인"
+      }
+    },
+    "different_years": {
+      "data_point": {
+        "kesg_code": "E-4-1",
+        "kesg_name": "에너지 사용량",
+        "value": 6,
+        "unit": "TJ",
+        "period": 2025,
+        "confidence": 0.95,
+        "verification": "estimated",
+        "d1_risk": null,
+        "evidence_files": [
+          {
+            "file_name": "power.pdf",
+            "relative_path": "evidence_pack/power.pdf",
+            "origin": "ocr_structured",
+            "bbox": null,
+            "page": 0,
+            "node_id": "TEST_E-4-1_2025__ocr_structured__35767f60ae",
+            "kesg_codes": [
+              "E-4-1"
+            ],
+            "quote": "전력 사용량=6TJ (power.pdf)",
+            "resolved": true,
+            "independent": true
+          }
+        ],
+        "source_tier": "ocr_node_gated",
+        "representative_node_ids": [
+          "TEST_E-4-1_2025__ocr_structured__35767f60ae"
+        ],
+        "value_role": "total",
+        "confidence_flags": [
+          "incomplete_scope"
+        ],
+        "d1_evaluation": {
+          "status": "unavailable",
+          "compared_claims": 0,
+          "unverified_claims": 1,
+          "excluded_claims": 0,
+          "comparison": "scope_unconfirmed",
+          "comparison_reason": "전체 주장에 필요한 기간·사업장·분모 미확인 — 미확정값 증빙 2025년 연간 · 전사 · 전력 사용량",
+          "reasons": {
+            "scope_unconfirmed": 1
+          },
+          "claims": [
+            {
+              "raw": "6TJ",
+              "start": 8,
+              "end": 11,
+              "code": "E-4-1",
+              "claim_value": 6.0,
+              "claim_unit": "TJ",
+              "evidence_ids": [
+                "TEST_E-4-1_2025__ocr_structured__35767f60ae"
+              ],
+              "evidence_value": 6,
+              "evidence_unit": "TJ",
+              "evidence_period": 2025,
+              "status": "unverified",
+              "reason": "scope_unconfirmed",
+              "evidence_files": [
+                "power.pdf"
+              ],
+              "comparison": "scope_unconfirmed",
+              "comparison_reason": "전체 주장에 필요한 기간·사업장·분모 미확인 — 미확정값 증빙 2025년 연간 · 전사 · 전력 사용량"
+            }
+          ]
+        },
+        "completeness": "unknown",
+        "boundary": {
+          "period_text": "2025년 연간",
+          "aggregation": "annual",
+          "coverage_months": 12,
+          "basis": "actual",
+          "site": "",
+          "site_scope": "entity",
+          "measure": "전력 사용량",
+          "measure_kind": "electricity_total",
+          "completeness": "unknown",
+          "denominator": "",
+          "denominator_kind": "unknown",
+          "inferred": [],
+          "source_quote": "전력 사용량 (2025년 연간)",
+          "period_year": 2025,
+          "period_start": "2025-01-01",
+          "period_end": "2025-12-31",
+          "site_path": [],
+          "provenance": [
+            {
+              "source": "row",
+              "quote": "전력 사용량",
+              "period": "2025년 연간",
+              "method": "rule",
+              "page": 0,
+              "bbox": null,
+              "source_file": "power.pdf"
+            },
+            {
+              "source": "document_header",
+              "quote": "전사",
+              "method": "rule",
+              "page": 0,
+              "bbox": null,
+              "source_file": "power.pdf"
+            }
+          ],
+          "review_notes": []
+        },
+        "boundary_label": "2025년 연간 · 전사 · 전력 사용량",
+        "scope_notes": [
+          "E-4-1: 실제 대상 기간 상이(2025년 연간 ↔ 2026년 연간) — 합산 보류",
+          "E-4-1: 경계 확인 필요 — 2025년 연간 · 전사 · 전력 사용량; 전체 에너지원 포함 여부 확인"
+        ],
+        "comparison": "scope_unconfirmed",
+        "comparison_reason": "전체 주장에 필요한 기간·사업장·분모 미확인 — 미확정값 증빙 2025년 연간 · 전사 · 전력 사용량",
+        "comparisons": [
+          {
+            "raw": "6TJ",
+            "start": 8,
+            "end": 11,
+            "code": "E-4-1",
+            "claim_value": 6.0,
+            "claim_unit": "TJ",
+            "evidence_ids": [
+              "TEST_E-4-1_2025__ocr_structured__35767f60ae"
+            ],
+            "evidence_value": 6,
+            "evidence_unit": "TJ",
+            "evidence_period": 2025,
+            "status": "unverified",
+            "reason": "scope_unconfirmed",
+            "evidence_files": [
+              "power.pdf"
+            ],
+            "comparison": "scope_unconfirmed",
+            "comparison_reason": "전체 주장에 필요한 기간·사업장·분모 미확인 — 미확정값 증빙 2025년 연간 · 전사 · 전력 사용량"
+          }
+        ],
+        "reference_files": [
+          {
+            "file_name": "gas.pdf",
+            "relative_path": "evidence_pack/gas.pdf",
+            "origin": "ocr_structured",
+            "bbox": null,
+            "page": 0,
+            "node_id": "TEST_E-4-1_2026__ocr_structured__283487cc05",
+            "kesg_codes": [
+              "E-4-1"
+            ],
+            "quote": "도시가스 사용량=4TJ (gas.pdf)",
+            "resolved": true,
+            "independent": true
+          }
+        ]
+      },
+      "answer": {
+        "qid": "HMC-C-8-E-4-1",
+        "section": "환경",
+        "question_text": "[C-8·수치] 에너지 사용량",
+        "value": 6,
+        "status": "self_reported",
+        "evidence_links": [
+          {
+            "file_name": "power.pdf",
+            "relative_path": "evidence_pack/power.pdf",
+            "origin": "ocr_structured",
+            "bbox": null,
+            "page": 0,
+            "node_id": "TEST_E-4-1_2025__ocr_structured__35767f60ae",
+            "kesg_codes": [
+              "E-4-1"
+            ],
+            "quote": "전력 사용량=6TJ (power.pdf)",
+            "resolved": true,
+            "independent": true
+          }
+        ],
+        "flags": [],
+        "rationale": "에너지 사용량 = 6TJ (보고 연도 2025, D1 위험 평가불가, 검증=estimated) · 평가불가 · 비교 0건 · 미검증 1건 · 범위 확인 필요 1건 · 신뢰 정보: incomplete_scope",
+        "evidence_needed": [],
+        "draft_text": "",
+        "draft_citations": [],
+        "draft_grounding": null,
+        "unit": "TJ",
+        "period": 2025,
+        "confidence_flags": [
+          "incomplete_scope"
+        ],
+        "self_reports": [],
+        "option_evidence": {},
+        "boundary_label": "2025년 연간 · 전사 · 전력 사용량",
+        "completeness": "unknown",
+        "comparison": "scope_unconfirmed",
+        "comparison_reason": "전체 주장에 필요한 기간·사업장·분모 미확인 — 미확정값 증빙 2025년 연간 · 전사 · 전력 사용량",
+        "boundary": {
+          "period_text": "2025년 연간",
+          "aggregation": "annual",
+          "coverage_months": 12,
+          "basis": "actual",
+          "site": "",
+          "site_scope": "entity",
+          "measure": "전력 사용량",
+          "measure_kind": "electricity_total",
+          "completeness": "unknown",
+          "denominator": "",
+          "denominator_kind": "unknown",
+          "inferred": [],
+          "source_quote": "전력 사용량 (2025년 연간)",
+          "period_year": 2025,
+          "period_start": "2025-01-01",
+          "period_end": "2025-12-31",
+          "site_path": [],
+          "provenance": [
+            {
+              "source": "row",
+              "quote": "전력 사용량",
+              "period": "2025년 연간",
+              "method": "rule",
+              "page": 0,
+              "bbox": null,
+              "source_file": "power.pdf"
+            },
+            {
+              "source": "document_header",
+              "quote": "전사",
+              "method": "rule",
+              "page": 0,
+              "bbox": null,
+              "source_file": "power.pdf"
+            }
+          ],
+          "review_notes": []
+        },
+        "comparisons": [
+          {
+            "raw": "6TJ",
+            "start": 8,
+            "end": 11,
+            "code": "E-4-1",
+            "claim_value": 6.0,
+            "claim_unit": "TJ",
+            "evidence_ids": [
+              "TEST_E-4-1_2025__ocr_structured__35767f60ae"
+            ],
+            "evidence_value": 6,
+            "evidence_unit": "TJ",
+            "evidence_period": 2025,
+            "status": "unverified",
+            "reason": "scope_unconfirmed",
+            "evidence_files": [
+              "power.pdf"
+            ],
+            "comparison": "scope_unconfirmed",
+            "comparison_reason": "전체 주장에 필요한 기간·사업장·분모 미확인 — 미확정값 증빙 2025년 연간 · 전사 · 전력 사용량"
+          }
+        ],
+        "scope_notes": [
+          "E-4-1: 실제 대상 기간 상이(2025년 연간 ↔ 2026년 연간) — 합산 보류",
+          "E-4-1: 경계 확인 필요 — 2025년 연간 · 전사 · 전력 사용량; 전체 에너지원 포함 여부 확인"
+        ],
+        "reference_links": [
+          {
+            "file_name": "gas.pdf",
+            "relative_path": "evidence_pack/gas.pdf",
+            "origin": "ocr_structured",
+            "bbox": null,
+            "page": 0,
+            "node_id": "TEST_E-4-1_2026__ocr_structured__283487cc05",
+            "kesg_codes": [
+              "E-4-1"
+            ],
+            "quote": "도시가스 사용량=4TJ (gas.pdf)",
+            "resolved": true,
+            "independent": true
+          }
+        ],
+        "badge": "⚠️ 자가신고",
+        "display_value": "6 TJ (2025년)",
+        "comparison_label": "범위 확인 필요",
+        "review_note": "범위 확인 필요: 전체 주장에 필요한 기간·사업장·분모 미확인 — 미확정값 증빙 2025년 연간 · 전사 · 전력 사용량 · E-4-1: 실제 대상 기간 상이(2025년 연간 ↔ 2026년 연간) — 합산 보류 · E-4-1: 경계 확인 필요 — 2025년 연간 · 전사 · 전력 사용량; 전체 에너지원 포함 여부 확인"
+      }
+    },
+    "independent_mismatch": {
+      "data_point": {
+        "kesg_code": "E-4-1",
+        "kesg_name": "에너지 사용량",
+        "value": 0.00036,
+        "unit": "TJ",
+        "period": 2026,
+        "confidence": 0.95,
+        "verification": "unverified",
+        "d1_risk": null,
+        "evidence_files": [
+          {
+            "file_name": "a.pdf",
+            "relative_path": "evidence_pack/a.pdf",
+            "origin": "ocr_structured",
+            "bbox": null,
+            "page": 0,
+            "node_id": "TEST_E-4-1_2026__ocr_structured__6063fc6363",
+            "kesg_codes": [
+              "E-4-1"
+            ],
+            "quote": "사용전력량=100kWh (a.pdf)",
+            "resolved": true,
+            "independent": true
+          }
+        ],
+        "source_tier": "ocr_node_gated",
+        "representative_node_ids": [
+          "TEST_E-4-1_2026__ocr_structured__6063fc6363"
+        ],
+        "value_role": "unknown",
+        "confidence_flags": [
+          "incomplete_scope",
+          "partial_value"
+        ],
+        "d1_evaluation": {
+          "status": "unavailable",
+          "compared_claims": 0,
+          "unverified_claims": 1,
+          "excluded_claims": 0,
+          "comparison": "mismatch",
+          "comparison_reason": "실제 불일치: 교차검증 오차 100.0% (a.pdf ↔ b.pdf)",
+          "reasons": {
+            "scope_unconfirmed": 1
+          },
+          "claims": [
+            {
+              "raw": "0.00036TJ",
+              "start": 8,
+              "end": 17,
+              "code": "E-4-1",
+              "claim_value": 0.00036,
+              "claim_unit": "TJ",
+              "evidence_ids": [
+                "TEST_E-4-1_2026__ocr_structured__6063fc6363"
+              ],
+              "evidence_value": 0.00036,
+              "evidence_unit": "TJ",
+              "evidence_period": 2026,
+              "status": "unverified",
+              "reason": "scope_unconfirmed",
+              "evidence_files": [
+                "a.pdf"
+              ],
+              "comparison": "scope_unconfirmed",
+              "comparison_reason": "전체 주장에 필요한 기간·사업장·분모 미확인 — 부분값 증빙 2026-05 · 월간 · 제1공장 · 사용전력량 · 부분"
+            }
+          ]
+        },
+        "completeness": "partial",
+        "boundary": {
+          "period_text": "2026-05",
+          "aggregation": "monthly",
+          "coverage_months": 1,
+          "basis": "actual",
+          "site": "제1공장",
+          "site_scope": "site",
+          "measure": "사용전력량",
+          "measure_kind": "electricity_total",
+          "completeness": "partial",
+          "denominator": "",
+          "denominator_kind": "unknown",
+          "inferred": [],
+          "source_quote": "사용전력량 (2026-05)",
+          "period_year": 2026,
+          "period_start": "2026-05-01",
+          "period_end": "2026-05-31",
+          "site_path": [
+            "제1공장"
+          ],
+          "provenance": [
+            {
+              "source": "row",
+              "quote": "사용전력량",
+              "period": "2026-05",
+              "method": "rule",
+              "page": 0,
+              "bbox": null,
+              "source_file": "a.pdf"
+            },
+            {
+              "source": "document_header",
+              "quote": "제1공장",
+              "method": "rule",
+              "page": 0,
+              "bbox": null,
+              "source_file": "a.pdf"
+            }
+          ],
+          "review_notes": []
+        },
+        "boundary_label": "2026-05 · 월간 · 제1공장 · 사용전력량 · 부분",
+        "scope_notes": [
+          "E-4-1: 독립 증빙의 같은 측정 대상 값 상충 — 비교 판정 확인, 합산 제외",
+          "E-4-1: 부분값 — 2026-05 · 월간 · 제1공장 · 사용전력량 · 부분. 전사·연간·전체 범위 총량임이 입증되지 않아 검증 보류. 연간 실적의 실제 사용기간·집계 방식 확인; 전사/공장 조직·사업장 범위 확인; 전체 에너지원 포함 여부 확인"
+        ],
+        "comparison": "mismatch",
+        "comparison_reason": "실제 불일치: 교차검증 오차 100.0% (a.pdf ↔ b.pdf)",
+        "comparisons": [
+          {
+            "raw": "0.00036TJ",
+            "start": 8,
+            "end": 17,
+            "code": "E-4-1",
+            "claim_value": 0.00036,
+            "claim_unit": "TJ",
+            "evidence_ids": [
+              "TEST_E-4-1_2026__ocr_structured__6063fc6363"
+            ],
+            "evidence_value": 0.00036,
+            "evidence_unit": "TJ",
+            "evidence_period": 2026,
+            "status": "unverified",
+            "reason": "scope_unconfirmed",
+            "evidence_files": [
+              "a.pdf"
+            ],
+            "comparison": "scope_unconfirmed",
+            "comparison_reason": "전체 주장에 필요한 기간·사업장·분모 미확인 — 부분값 증빙 2026-05 · 월간 · 제1공장 · 사용전력량 · 부분"
+          },
+          {
+            "source_id": "TEST_E-4-1_2026__ocr_structured__6063fc6363",
+            "target_id": "TEST_E-4-1_2026__ocr_structured__741d72006f",
+            "comparison": "mismatch",
+            "comparison_reason": "실제 불일치: 교차검증 오차 100.0% (a.pdf ↔ b.pdf)",
+            "effective": true,
+            "difference_pct": 100.0,
+            "files": [
+              "a.pdf",
+              "b.pdf"
+            ]
+          }
+        ],
+        "reference_files": [
+          {
+            "file_name": "b.pdf",
+            "relative_path": "evidence_pack/b.pdf",
+            "origin": "ocr_structured",
+            "bbox": null,
+            "page": 0,
+            "node_id": "TEST_E-4-1_2026__ocr_structured__741d72006f",
+            "kesg_codes": [
+              "E-4-1"
+            ],
+            "quote": "사용전력량=200kWh (b.pdf)",
+            "resolved": true,
+            "independent": true
+          }
+        ]
+      },
+      "answer": {
+        "qid": "HMC-C-8-E-4-1",
+        "section": "환경",
+        "question_text": "[C-8·수치] 에너지 사용량",
+        "value": 0.00036,
+        "status": "flagged",
+        "evidence_links": [
+          {
+            "file_name": "a.pdf",
+            "relative_path": "evidence_pack/a.pdf",
+            "origin": "ocr_structured",
+            "bbox": null,
+            "page": 0,
+            "node_id": "TEST_E-4-1_2026__ocr_structured__6063fc6363",
+            "kesg_codes": [
+              "E-4-1"
+            ],
+            "quote": "사용전력량=100kWh (a.pdf)",
+            "resolved": true,
+            "independent": true
+          }
+        ],
+        "flags": [],
+        "rationale": "에너지 사용량 = 0.00036TJ (보고 연도 2026, D1 위험 평가불가, 검증=unverified) · 평가불가 · 비교 0건 · 미검증 1건 · 범위 확인 필요 1건 · 신뢰 정보: incomplete_scope, partial_value",
+        "evidence_needed": [],
+        "draft_text": "",
+        "draft_citations": [],
+        "draft_grounding": null,
+        "unit": "TJ",
+        "period": 2026,
+        "confidence_flags": [
+          "incomplete_scope",
+          "partial_value"
+        ],
+        "self_reports": [],
+        "option_evidence": {},
+        "boundary_label": "2026-05 · 월간 · 제1공장 · 사용전력량 · 부분",
+        "completeness": "partial",
+        "comparison": "mismatch",
+        "comparison_reason": "실제 불일치: 교차검증 오차 100.0% (a.pdf ↔ b.pdf)",
+        "boundary": {
+          "period_text": "2026-05",
+          "aggregation": "monthly",
+          "coverage_months": 1,
+          "basis": "actual",
+          "site": "제1공장",
+          "site_scope": "site",
+          "measure": "사용전력량",
+          "measure_kind": "electricity_total",
+          "completeness": "partial",
+          "denominator": "",
+          "denominator_kind": "unknown",
+          "inferred": [],
+          "source_quote": "사용전력량 (2026-05)",
+          "period_year": 2026,
+          "period_start": "2026-05-01",
+          "period_end": "2026-05-31",
+          "site_path": [
+            "제1공장"
+          ],
+          "provenance": [
+            {
+              "source": "row",
+              "quote": "사용전력량",
+              "period": "2026-05",
+              "method": "rule",
+              "page": 0,
+              "bbox": null,
+              "source_file": "a.pdf"
+            },
+            {
+              "source": "document_header",
+              "quote": "제1공장",
+              "method": "rule",
+              "page": 0,
+              "bbox": null,
+              "source_file": "a.pdf"
+            }
+          ],
+          "review_notes": []
+        },
+        "comparisons": [
+          {
+            "raw": "0.00036TJ",
+            "start": 8,
+            "end": 17,
+            "code": "E-4-1",
+            "claim_value": 0.00036,
+            "claim_unit": "TJ",
+            "evidence_ids": [
+              "TEST_E-4-1_2026__ocr_structured__6063fc6363"
+            ],
+            "evidence_value": 0.00036,
+            "evidence_unit": "TJ",
+            "evidence_period": 2026,
+            "status": "unverified",
+            "reason": "scope_unconfirmed",
+            "evidence_files": [
+              "a.pdf"
+            ],
+            "comparison": "scope_unconfirmed",
+            "comparison_reason": "전체 주장에 필요한 기간·사업장·분모 미확인 — 부분값 증빙 2026-05 · 월간 · 제1공장 · 사용전력량 · 부분"
+          },
+          {
+            "source_id": "TEST_E-4-1_2026__ocr_structured__6063fc6363",
+            "target_id": "TEST_E-4-1_2026__ocr_structured__741d72006f",
+            "comparison": "mismatch",
+            "comparison_reason": "실제 불일치: 교차검증 오차 100.0% (a.pdf ↔ b.pdf)",
+            "effective": true,
+            "difference_pct": 100.0,
+            "files": [
+              "a.pdf",
+              "b.pdf"
+            ]
+          }
+        ],
+        "scope_notes": [
+          "E-4-1: 독립 증빙의 같은 측정 대상 값 상충 — 비교 판정 확인, 합산 제외",
+          "E-4-1: 부분값 — 2026-05 · 월간 · 제1공장 · 사용전력량 · 부분. 전사·연간·전체 범위 총량임이 입증되지 않아 검증 보류. 연간 실적의 실제 사용기간·집계 방식 확인; 전사/공장 조직·사업장 범위 확인; 전체 에너지원 포함 여부 확인"
+        ],
+        "reference_links": [
+          {
+            "file_name": "b.pdf",
+            "relative_path": "evidence_pack/b.pdf",
+            "origin": "ocr_structured",
+            "bbox": null,
+            "page": 0,
+            "node_id": "TEST_E-4-1_2026__ocr_structured__741d72006f",
+            "kesg_codes": [
+              "E-4-1"
+            ],
+            "quote": "사용전력량=200kWh (b.pdf)",
+            "resolved": true,
+            "independent": true
+          }
+        ],
+        "badge": "🚩 검토필요",
+        "display_value": "0.00036 TJ (2026년)",
+        "comparison_label": "실제 불일치",
+        "review_note": "실제 불일치: 실제 불일치: 교차검증 오차 100.0% (a.pdf ↔ b.pdf) · E-4-1: 독립 증빙의 같은 측정 대상 값 상충 — 비교 판정 확인, 합산 제외 · E-4-1: 부분값 — 2026-05 · 월간 · 제1공장 · 사용전력량 · 부분. 전사·연간·전체 범위 총량임이 입증되지 않아 검증 보류. 연간 실적의 실제 사용기간·집계 방식 확인; 전사/공장 조직·사업장 범위 확인; 전체 에너지원 포함 여부 확인"
+      }
+    },
+    "ratio_unknown": {
+      "data_point": {
+        "kesg_code": "E-4-2",
+        "kesg_name": "재생에너지 사용 비율",
+        "value": 10.6,
+        "unit": "%",
+        "period": 2026,
+        "confidence": 0.95,
+        "verification": "estimated",
+        "d1_risk": null,
+        "evidence_files": [
+          {
+            "file_name": "ratio.pdf",
+            "relative_path": "evidence_pack/ratio.pdf",
+            "origin": "ocr_structured",
+            "bbox": null,
+            "page": 0,
+            "node_id": "TEST_E-4-2_2026__ocr_structured__86003dcd1a",
+            "kesg_codes": [
+              "E-4-2"
+            ],
+            "quote": "재생에너지 비율=10.6% (ratio.pdf)",
+            "resolved": true,
+            "independent": true
+          }
+        ],
+        "source_tier": "ocr_node_gated",
+        "representative_node_ids": [
+          "TEST_E-4-2_2026__ocr_structured__86003dcd1a"
+        ],
+        "value_role": "total",
+        "confidence_flags": [
+          "incomplete_scope"
+        ],
+        "d1_evaluation": {
+          "status": "unavailable",
+          "compared_claims": 0,
+          "unverified_claims": 1,
+          "excluded_claims": 0,
+          "comparison": "scope_unconfirmed",
+          "comparison_reason": "전체 주장에 필요한 기간·사업장·분모 미확인 — 미확정값 증빙 2026년 연간 · 재생에너지",
+          "reasons": {
+            "scope_unconfirmed": 1
+          },
+          "claims": [
+            {
+              "raw": "10.6%",
+              "start": 12,
+              "end": 17,
+              "code": "E-4-2",
+              "claim_value": 10.6,
+              "claim_unit": "%",
+              "evidence_ids": [
+                "TEST_E-4-2_2026__ocr_structured__86003dcd1a"
+              ],
+              "evidence_value": 10.6,
+              "evidence_unit": "%",
+              "evidence_period": 2026,
+              "status": "unverified",
+              "reason": "scope_unconfirmed",
+              "evidence_files": [
+                "ratio.pdf"
+              ],
+              "comparison": "scope_unconfirmed",
+              "comparison_reason": "전체 주장에 필요한 기간·사업장·분모 미확인 — 미확정값 증빙 2026년 연간 · 재생에너지"
+            }
+          ]
+        },
+        "completeness": "unknown",
+        "boundary": {
+          "period_text": "2026년 연간",
+          "aggregation": "annual",
+          "coverage_months": 12,
+          "basis": "actual",
+          "site": "",
+          "site_scope": "unknown",
+          "measure": "재생에너지",
+          "measure_kind": "renewable_total",
+          "completeness": "unknown",
+          "denominator": "",
+          "denominator_kind": "unknown",
+          "inferred": [
+            "site_scope",
+            "denominator_kind"
+          ],
+          "source_quote": "재생에너지 비율 (2026년 연간)",
+          "period_year": 2026,
+          "period_start": "2026-01-01",
+          "period_end": "2026-12-31",
+          "site_path": [],
+          "provenance": [
+            {
+              "source": "row",
+              "quote": "재생에너지 비율",
+              "period": "2026년 연간",
+              "method": "rule",
+              "page": 0,
+              "bbox": null,
+              "source_file": "ratio.pdf"
+            }
+          ],
+          "review_notes": []
+        },
+        "boundary_label": "2026년 연간 · 재생에너지",
+        "scope_notes": [
+          "E-4-2: 경계 확인 필요 — 2026년 연간 · 재생에너지; 전사/공장 조직·사업장 범위 확인; 전체 재생에너지 분자·조달수단 포함 관계 확인; 총에너지 분모 확인 (분모 미상)"
+        ],
+        "comparison": "scope_unconfirmed",
+        "comparison_reason": "전체 주장에 필요한 기간·사업장·분모 미확인 — 미확정값 증빙 2026년 연간 · 재생에너지",
+        "comparisons": [
+          {
+            "raw": "10.6%",
+            "start": 12,
+            "end": 17,
+            "code": "E-4-2",
+            "claim_value": 10.6,
+            "claim_unit": "%",
+            "evidence_ids": [
+              "TEST_E-4-2_2026__ocr_structured__86003dcd1a"
+            ],
+            "evidence_value": 10.6,
+            "evidence_unit": "%",
+            "evidence_period": 2026,
+            "status": "unverified",
+            "reason": "scope_unconfirmed",
+            "evidence_files": [
+              "ratio.pdf"
+            ],
+            "comparison": "scope_unconfirmed",
+            "comparison_reason": "전체 주장에 필요한 기간·사업장·분모 미확인 — 미확정값 증빙 2026년 연간 · 재생에너지"
+          }
+        ],
+        "reference_files": []
+      },
+      "answer": {
+        "qid": "HMC-C-8-E-4-2",
+        "section": "환경",
+        "question_text": "[C-8·수치] 재생에너지 비율",
+        "value": 10.6,
+        "status": "self_reported",
+        "evidence_links": [
+          {
+            "file_name": "ratio.pdf",
+            "relative_path": "evidence_pack/ratio.pdf",
+            "origin": "ocr_structured",
+            "bbox": null,
+            "page": 0,
+            "node_id": "TEST_E-4-2_2026__ocr_structured__86003dcd1a",
+            "kesg_codes": [
+              "E-4-2"
+            ],
+            "quote": "재생에너지 비율=10.6% (ratio.pdf)",
+            "resolved": true,
+            "independent": true
+          }
+        ],
+        "flags": [],
+        "rationale": "재생에너지 사용 비율 = 10.6% (보고 연도 2026, D1 위험 평가불가, 검증=estimated) · 평가불가 · 비교 0건 · 미검증 1건 · 범위 확인 필요 1건 · 신뢰 정보: incomplete_scope",
+        "evidence_needed": [],
+        "draft_text": "",
+        "draft_citations": [],
+        "draft_grounding": null,
+        "unit": "%",
+        "period": 2026,
+        "confidence_flags": [
+          "incomplete_scope"
+        ],
+        "self_reports": [],
+        "option_evidence": {},
+        "boundary_label": "2026년 연간 · 재생에너지",
+        "completeness": "unknown",
+        "comparison": "scope_unconfirmed",
+        "comparison_reason": "전체 주장에 필요한 기간·사업장·분모 미확인 — 미확정값 증빙 2026년 연간 · 재생에너지",
+        "boundary": {
+          "period_text": "2026년 연간",
+          "aggregation": "annual",
+          "coverage_months": 12,
+          "basis": "actual",
+          "site": "",
+          "site_scope": "unknown",
+          "measure": "재생에너지",
+          "measure_kind": "renewable_total",
+          "completeness": "unknown",
+          "denominator": "",
+          "denominator_kind": "unknown",
+          "inferred": [
+            "site_scope",
+            "denominator_kind"
+          ],
+          "source_quote": "재생에너지 비율 (2026년 연간)",
+          "period_year": 2026,
+          "period_start": "2026-01-01",
+          "period_end": "2026-12-31",
+          "site_path": [],
+          "provenance": [
+            {
+              "source": "row",
+              "quote": "재생에너지 비율",
+              "period": "2026년 연간",
+              "method": "rule",
+              "page": 0,
+              "bbox": null,
+              "source_file": "ratio.pdf"
+            }
+          ],
+          "review_notes": []
+        },
+        "comparisons": [
+          {
+            "raw": "10.6%",
+            "start": 12,
+            "end": 17,
+            "code": "E-4-2",
+            "claim_value": 10.6,
+            "claim_unit": "%",
+            "evidence_ids": [
+              "TEST_E-4-2_2026__ocr_structured__86003dcd1a"
+            ],
+            "evidence_value": 10.6,
+            "evidence_unit": "%",
+            "evidence_period": 2026,
+            "status": "unverified",
+            "reason": "scope_unconfirmed",
+            "evidence_files": [
+              "ratio.pdf"
+            ],
+            "comparison": "scope_unconfirmed",
+            "comparison_reason": "전체 주장에 필요한 기간·사업장·분모 미확인 — 미확정값 증빙 2026년 연간 · 재생에너지"
+          }
+        ],
+        "scope_notes": [
+          "E-4-2: 경계 확인 필요 — 2026년 연간 · 재생에너지; 전사/공장 조직·사업장 범위 확인; 전체 재생에너지 분자·조달수단 포함 관계 확인; 총에너지 분모 확인 (분모 미상)"
+        ],
+        "reference_links": [],
+        "badge": "⚠️ 자가신고",
+        "display_value": "10.6 % (2026년)",
+        "comparison_label": "범위 확인 필요",
+        "review_note": "범위 확인 필요: 전체 주장에 필요한 기간·사업장·분모 미확인 — 미확정값 증빙 2026년 연간 · 재생에너지 · E-4-2: 경계 확인 필요 — 2026년 연간 · 재생에너지; 전사/공장 조직·사업장 범위 확인; 전체 재생에너지 분자·조달수단 포함 관계 확인; 총에너지 분모 확인 (분모 미상)"
+      }
+    },
+    "ratio_year_only": {
+      "data_point": {
+        "kesg_code": "E-4-2",
+        "kesg_name": "재생에너지 사용 비율",
+        "value": 10.6,
+        "unit": "%",
+        "period": 2026,
+        "confidence": 0.95,
+        "verification": "estimated",
+        "d1_risk": null,
+        "evidence_files": [
+          {
+            "file_name": "ratio.pdf",
+            "relative_path": "evidence_pack/ratio.pdf",
+            "origin": "ocr_structured",
+            "bbox": null,
+            "page": 0,
+            "node_id": "TEST_E-4-2_2026__ocr_structured__86003dcd1a",
+            "kesg_codes": [
+              "E-4-2"
+            ],
+            "quote": "재생에너지 비율=10.6% (ratio.pdf)",
+            "resolved": true,
+            "independent": true
+          }
+        ],
+        "source_tier": "ocr_node_gated",
+        "representative_node_ids": [
+          "TEST_E-4-2_2026__ocr_structured__86003dcd1a"
+        ],
+        "value_role": "total",
+        "confidence_flags": [
+          "incomplete_scope"
+        ],
+        "d1_evaluation": {
+          "status": "unavailable",
+          "compared_claims": 0,
+          "unverified_claims": 1,
+          "excluded_claims": 0,
+          "comparison": "scope_unconfirmed",
+          "comparison_reason": "전체 주장에 필요한 기간·사업장·분모 미확인 — 미확정값 증빙 2026 · 재생에너지",
+          "reasons": {
+            "scope_unconfirmed": 1
+          },
+          "claims": [
+            {
+              "raw": "10.6%",
+              "start": 12,
+              "end": 17,
+              "code": "E-4-2",
+              "claim_value": 10.6,
+              "claim_unit": "%",
+              "evidence_ids": [
+                "TEST_E-4-2_2026__ocr_structured__86003dcd1a"
+              ],
+              "evidence_value": 10.6,
+              "evidence_unit": "%",
+              "evidence_period": 2026,
+              "status": "unverified",
+              "reason": "scope_unconfirmed",
+              "evidence_files": [
+                "ratio.pdf"
+              ],
+              "comparison": "scope_unconfirmed",
+              "comparison_reason": "전체 주장에 필요한 기간·사업장·분모 미확인 — 미확정값 증빙 2026 · 재생에너지"
+            }
+          ]
+        },
+        "completeness": "unknown",
+        "boundary": {
+          "period_text": "2026",
+          "aggregation": "unknown",
+          "coverage_months": null,
+          "basis": "actual",
+          "site": "",
+          "site_scope": "unknown",
+          "measure": "재생에너지",
+          "measure_kind": "renewable_total",
+          "completeness": "unknown",
+          "denominator": "",
+          "denominator_kind": "unknown",
+          "inferred": [
+            "aggregation",
+            "site_scope",
+            "denominator_kind"
+          ],
+          "source_quote": "재생에너지 비율 (2026)",
+          "period_year": 2026,
+          "period_start": "",
+          "period_end": "",
+          "site_path": [],
+          "provenance": [
+            {
+              "source": "row",
+              "quote": "재생에너지 비율",
+              "period": "2026",
+              "method": "rule",
+              "page": 0,
+              "bbox": null,
+              "source_file": "ratio.pdf"
+            }
+          ],
+          "review_notes": []
+        },
+        "boundary_label": "2026 · 재생에너지",
+        "scope_notes": [
+          "E-4-2: 경계 확인 필요 — 2026 · 재생에너지; 연간 실적의 실제 사용기간·집계 방식 확인; 전사/공장 조직·사업장 범위 확인; 전체 재생에너지 분자·조달수단 포함 관계 확인; 총에너지 분모 확인 (분모 미상)"
+        ],
+        "comparison": "scope_unconfirmed",
+        "comparison_reason": "전체 주장에 필요한 기간·사업장·분모 미확인 — 미확정값 증빙 2026 · 재생에너지",
+        "comparisons": [
+          {
+            "raw": "10.6%",
+            "start": 12,
+            "end": 17,
+            "code": "E-4-2",
+            "claim_value": 10.6,
+            "claim_unit": "%",
+            "evidence_ids": [
+              "TEST_E-4-2_2026__ocr_structured__86003dcd1a"
+            ],
+            "evidence_value": 10.6,
+            "evidence_unit": "%",
+            "evidence_period": 2026,
+            "status": "unverified",
+            "reason": "scope_unconfirmed",
+            "evidence_files": [
+              "ratio.pdf"
+            ],
+            "comparison": "scope_unconfirmed",
+            "comparison_reason": "전체 주장에 필요한 기간·사업장·분모 미확인 — 미확정값 증빙 2026 · 재생에너지"
+          }
+        ],
+        "reference_files": []
+      },
+      "answer": {
+        "qid": "HMC-C-8-E-4-2",
+        "section": "환경",
+        "question_text": "[C-8·수치] 재생에너지 비율",
+        "value": 10.6,
+        "status": "self_reported",
+        "evidence_links": [
+          {
+            "file_name": "ratio.pdf",
+            "relative_path": "evidence_pack/ratio.pdf",
+            "origin": "ocr_structured",
+            "bbox": null,
+            "page": 0,
+            "node_id": "TEST_E-4-2_2026__ocr_structured__86003dcd1a",
+            "kesg_codes": [
+              "E-4-2"
+            ],
+            "quote": "재생에너지 비율=10.6% (ratio.pdf)",
+            "resolved": true,
+            "independent": true
+          }
+        ],
+        "flags": [],
+        "rationale": "재생에너지 사용 비율 = 10.6% (보고 연도 2026, D1 위험 평가불가, 검증=estimated) · 평가불가 · 비교 0건 · 미검증 1건 · 범위 확인 필요 1건 · 신뢰 정보: incomplete_scope",
+        "evidence_needed": [],
+        "draft_text": "",
+        "draft_citations": [],
+        "draft_grounding": null,
+        "unit": "%",
+        "period": 2026,
+        "confidence_flags": [
+          "incomplete_scope"
+        ],
+        "self_reports": [],
+        "option_evidence": {},
+        "boundary_label": "2026 · 재생에너지",
+        "completeness": "unknown",
+        "comparison": "scope_unconfirmed",
+        "comparison_reason": "전체 주장에 필요한 기간·사업장·분모 미확인 — 미확정값 증빙 2026 · 재생에너지",
+        "boundary": {
+          "period_text": "2026",
+          "aggregation": "unknown",
+          "coverage_months": null,
+          "basis": "actual",
+          "site": "",
+          "site_scope": "unknown",
+          "measure": "재생에너지",
+          "measure_kind": "renewable_total",
+          "completeness": "unknown",
+          "denominator": "",
+          "denominator_kind": "unknown",
+          "inferred": [
+            "aggregation",
+            "site_scope",
+            "denominator_kind"
+          ],
+          "source_quote": "재생에너지 비율 (2026)",
+          "period_year": 2026,
+          "period_start": "",
+          "period_end": "",
+          "site_path": [],
+          "provenance": [
+            {
+              "source": "row",
+              "quote": "재생에너지 비율",
+              "period": "2026",
+              "method": "rule",
+              "page": 0,
+              "bbox": null,
+              "source_file": "ratio.pdf"
+            }
+          ],
+          "review_notes": []
+        },
+        "comparisons": [
+          {
+            "raw": "10.6%",
+            "start": 12,
+            "end": 17,
+            "code": "E-4-2",
+            "claim_value": 10.6,
+            "claim_unit": "%",
+            "evidence_ids": [
+              "TEST_E-4-2_2026__ocr_structured__86003dcd1a"
+            ],
+            "evidence_value": 10.6,
+            "evidence_unit": "%",
+            "evidence_period": 2026,
+            "status": "unverified",
+            "reason": "scope_unconfirmed",
+            "evidence_files": [
+              "ratio.pdf"
+            ],
+            "comparison": "scope_unconfirmed",
+            "comparison_reason": "전체 주장에 필요한 기간·사업장·분모 미확인 — 미확정값 증빙 2026 · 재생에너지"
+          }
+        ],
+        "scope_notes": [
+          "E-4-2: 경계 확인 필요 — 2026 · 재생에너지; 연간 실적의 실제 사용기간·집계 방식 확인; 전사/공장 조직·사업장 범위 확인; 전체 재생에너지 분자·조달수단 포함 관계 확인; 총에너지 분모 확인 (분모 미상)"
+        ],
+        "reference_links": [],
+        "badge": "⚠️ 자가신고",
+        "display_value": "10.6 % (2026년)",
+        "comparison_label": "범위 확인 필요",
+        "review_note": "범위 확인 필요: 전체 주장에 필요한 기간·사업장·분모 미확인 — 미확정값 증빙 2026 · 재생에너지 · E-4-2: 경계 확인 필요 — 2026 · 재생에너지; 연간 실적의 실제 사용기간·집계 방식 확인; 전사/공장 조직·사업장 범위 확인; 전체 재생에너지 분자·조달수단 포함 관계 확인; 총에너지 분모 확인 (분모 미상)"
+      }
+    },
+    "ratio_proven": {
+      "data_point": {
+        "kesg_code": "E-4-2",
+        "kesg_name": "재생에너지 사용 비율",
+        "value": 10.6,
+        "unit": "%",
+        "period": 2026,
+        "confidence": 0.95,
+        "verification": "verified",
+        "d1_risk": 0.0,
+        "evidence_files": [
+          {
+            "file_name": "ratio.pdf",
+            "relative_path": "evidence_pack/ratio.pdf",
+            "origin": "ocr_structured",
+            "bbox": null,
+            "page": 0,
+            "node_id": "TEST_E-4-2_2026__ocr_structured__bfc9308f88",
+            "kesg_codes": [
+              "E-4-2"
+            ],
+            "quote": "총 에너지 대비 전체 재생에너지 비율 실적=10.6% (ratio.pdf)",
+            "resolved": true,
+            "independent": true
+          }
+        ],
+        "source_tier": "ocr_node_gated",
+        "representative_node_ids": [
+          "TEST_E-4-2_2026__ocr_structured__bfc9308f88"
+        ],
+        "value_role": "total",
+        "confidence_flags": [],
+        "d1_evaluation": {
+          "status": "complete",
+          "compared_claims": 1,
+          "unverified_claims": 0,
+          "excluded_claims": 0,
+          "comparison": "compared",
+          "comparison_reason": "",
+          "reasons": {},
+          "claims": [
+            {
+              "raw": "10.6%",
+              "start": 12,
+              "end": 17,
+              "code": "E-4-2",
+              "claim_value": 10.6,
+              "claim_unit": "%",
+              "evidence_ids": [
+                "TEST_E-4-2_2026__ocr_structured__bfc9308f88"
+              ],
+              "evidence_value": 10.6,
+              "evidence_unit": "%",
+              "evidence_period": 2026,
+              "status": "compared",
+              "reason": "match",
+              "evidence_files": [
+                "ratio.pdf"
+              ],
+              "compared_value": 10.6,
+              "delta_ratio": 0.0,
+              "nonzero_against_zero": false,
+              "comparison": "compared",
+              "comparison_reason": ""
+            }
+          ]
+        },
+        "completeness": "total",
+        "boundary": {
+          "period_text": "2026년 연간",
+          "aggregation": "annual",
+          "coverage_months": 12,
+          "basis": "actual",
+          "site": "",
+          "site_scope": "entity",
+          "measure": "재생에너지",
+          "measure_kind": "renewable_total",
+          "completeness": "total",
+          "denominator": "총 에너지",
+          "denominator_kind": "total_energy",
+          "inferred": [],
+          "source_quote": "총 에너지 대비 전체 재생에너지 비율 실적 (2026년 연간)",
+          "period_year": 2026,
+          "period_start": "2026-01-01",
+          "period_end": "2026-12-31",
+          "site_path": [],
+          "provenance": [
+            {
+              "source": "row",
+              "quote": "총 에너지 대비 전체 재생에너지 비율 실적",
+              "period": "2026년 연간",
+              "method": "rule",
+              "page": 0,
+              "bbox": null,
+              "source_file": "ratio.pdf"
+            },
+            {
+              "source": "document_header",
+              "quote": "전사",
+              "method": "rule",
+              "page": 0,
+              "bbox": null,
+              "source_file": "ratio.pdf"
+            }
+          ],
+          "review_notes": []
+        },
+        "boundary_label": "2026년 연간 · 전사 · 재생에너지 · 분모: 총 에너지 · 총량",
+        "scope_notes": [],
+        "comparison": "compared",
+        "comparison_reason": "",
+        "comparisons": [
+          {
+            "raw": "10.6%",
+            "start": 12,
+            "end": 17,
+            "code": "E-4-2",
+            "claim_value": 10.6,
+            "claim_unit": "%",
+            "evidence_ids": [
+              "TEST_E-4-2_2026__ocr_structured__bfc9308f88"
+            ],
+            "evidence_value": 10.6,
+            "evidence_unit": "%",
+            "evidence_period": 2026,
+            "status": "compared",
+            "reason": "match",
+            "evidence_files": [
+              "ratio.pdf"
+            ],
+            "compared_value": 10.6,
+            "delta_ratio": 0.0,
+            "nonzero_against_zero": false,
+            "comparison": "compared",
+            "comparison_reason": ""
+          }
+        ],
+        "reference_files": []
+      },
+      "answer": {
+        "qid": "HMC-C-8-E-4-2",
+        "section": "환경",
+        "question_text": "[C-8·수치] 재생에너지 비율",
+        "value": 10.6,
+        "status": "verified",
+        "evidence_links": [
+          {
+            "file_name": "ratio.pdf",
+            "relative_path": "evidence_pack/ratio.pdf",
+            "origin": "ocr_structured",
+            "bbox": null,
+            "page": 0,
+            "node_id": "TEST_E-4-2_2026__ocr_structured__bfc9308f88",
+            "kesg_codes": [
+              "E-4-2"
+            ],
+            "quote": "총 에너지 대비 전체 재생에너지 비율 실적=10.6% (ratio.pdf)",
+            "resolved": true,
+            "independent": true
+          }
+        ],
+        "flags": [],
+        "rationale": "재생에너지 사용 비율 = 10.6% (보고 연도 2026, D1 위험 0.0, 검증=verified) · 평가 완료 · 비교 1건 · 미검증 0건",
+        "evidence_needed": [],
+        "draft_text": "",
+        "draft_citations": [],
+        "draft_grounding": null,
+        "unit": "%",
+        "period": 2026,
+        "confidence_flags": [],
+        "self_reports": [],
+        "option_evidence": {},
+        "boundary_label": "2026년 연간 · 전사 · 재생에너지 · 분모: 총 에너지 · 총량",
+        "completeness": "total",
+        "comparison": "compared",
+        "comparison_reason": "",
+        "boundary": {
+          "period_text": "2026년 연간",
+          "aggregation": "annual",
+          "coverage_months": 12,
+          "basis": "actual",
+          "site": "",
+          "site_scope": "entity",
+          "measure": "재생에너지",
+          "measure_kind": "renewable_total",
+          "completeness": "total",
+          "denominator": "총 에너지",
+          "denominator_kind": "total_energy",
+          "inferred": [],
+          "source_quote": "총 에너지 대비 전체 재생에너지 비율 실적 (2026년 연간)",
+          "period_year": 2026,
+          "period_start": "2026-01-01",
+          "period_end": "2026-12-31",
+          "site_path": [],
+          "provenance": [
+            {
+              "source": "row",
+              "quote": "총 에너지 대비 전체 재생에너지 비율 실적",
+              "period": "2026년 연간",
+              "method": "rule",
+              "page": 0,
+              "bbox": null,
+              "source_file": "ratio.pdf"
+            },
+            {
+              "source": "document_header",
+              "quote": "전사",
+              "method": "rule",
+              "page": 0,
+              "bbox": null,
+              "source_file": "ratio.pdf"
+            }
+          ],
+          "review_notes": []
+        },
+        "comparisons": [
+          {
+            "raw": "10.6%",
+            "start": 12,
+            "end": 17,
+            "code": "E-4-2",
+            "claim_value": 10.6,
+            "claim_unit": "%",
+            "evidence_ids": [
+              "TEST_E-4-2_2026__ocr_structured__bfc9308f88"
+            ],
+            "evidence_value": 10.6,
+            "evidence_unit": "%",
+            "evidence_period": 2026,
+            "status": "compared",
+            "reason": "match",
+            "evidence_files": [
+              "ratio.pdf"
+            ],
+            "compared_value": 10.6,
+            "delta_ratio": 0.0,
+            "nonzero_against_zero": false,
+            "comparison": "compared",
+            "comparison_reason": ""
+          }
+        ],
+        "scope_notes": [],
+        "reference_links": [],
+        "badge": "✅ 증빙검증",
+        "display_value": "10.6 % (2026년)",
+        "comparison_label": "대조 완료",
+        "review_note": "대조 완료"
+      }
+    }
+  }
+}

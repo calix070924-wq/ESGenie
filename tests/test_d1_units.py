@@ -1,5 +1,6 @@
 """D1 단위 검증 + 연도/번호 오탐 필터 테스트 (단점 4 해소)."""
 from __future__ import annotations
+from tests.boundary_fixtures import confirmed_boundary
 
 import pytest
 
@@ -13,7 +14,7 @@ def _graph(value: float, unit: str, metric: str = "E-4-1") -> EvidenceGraph:
     g = EvidenceGraph("LOCAL", "테스트")
     g.add_node(EvidenceNode(
         id=f"LOCAL_{metric}_2025", metric=metric, value=value, unit=unit,
-        period=2025, source="dart", origin="dart",
+        period=2025, source="dart", origin="dart", boundary=confirmed_boundary(metric),
     ))
     return g
 

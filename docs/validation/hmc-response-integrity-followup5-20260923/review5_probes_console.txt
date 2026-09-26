@@ -1,0 +1,20 @@
+{
+  "checks": {
+    "A_100_kWh_forward": true,
+    "A_100_kWh_reverse": true,
+    "A_100_MWh_forward": true,
+    "A_100_MWh_reverse": true,
+    "A_200_kWh_forward": true,
+    "A_200_kWh_reverse": true,
+    "A_200_MWh_forward": true,
+    "A_200_MWh_reverse": true,
+    "B_future_source_해서": true,
+    "B_future_source_하여": true,
+    "B_future_source_해": true,
+    "B_honest_plan_control": true,
+    "B_honest_actual_control": true,
+    "B_actual_with_adjacent_preparation_control": true,
+    "B_bare_preparation_control": true
+  },
+  "failed": []
+}

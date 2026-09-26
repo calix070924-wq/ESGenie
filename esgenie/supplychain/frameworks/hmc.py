@@ -17,6 +17,8 @@ TODO(본선 후 정밀화): 현대차가 실제 송부하는 자가진단 질문
 """
 from __future__ import annotations
 
+import re
+
 from ...knowledge import rba_items
 from ..schema import Framework, Question
 from .rba_self import questions_for
@@ -25,11 +27,30 @@ from .rba_self import questions_for
 _HMC_AREA_ORDER = ["윤리", "환경", "노동·인권", "안전보건", "경영시스템"]
 
 
+def natural_code_key(code: str) -> tuple:
+    """'E-2'가 'E-10'보다 먼저 오게 하는 정렬 키.
+
+    문자열 정렬은 자릿수를 세지 않아 E-1 → E-10 → E-11 → E-12 → E-2 순서가 된다
+    (2026-09-20 HMC 응답서 실측). 숫자 조각은 숫자로, 글자 조각은 글자로 비교한다.
+    각 조각을 (0, 숫자, "") / (1, 0, 글자)로 감싸 숫자↔문자 비교 오류를 막는다.
+    """
+    parts: list[tuple[int, int, str]] = []
+    for chunk in re.split(r"(\d+)", str(code)):
+        if not chunk:
+            continue
+        if chunk.isdigit():
+            parts.append((0, int(chunk), ""))
+        else:
+            parts.append((1, 0, chunk))
+    return tuple(parts)
+
+
 def _hmc_questions() -> tuple[Question, ...]:
-    # 현대차 영역 순서로 정렬해 출력(영역 내부는 RBA 코드 순서 유지).
+    # 현대차 영역 순서로 정렬해 출력(영역 내부는 RBA 코드 자연 순서 유지).
+    # 항목 단위로 정렬하므로 한 항목의 하위 문항 묶음은 그대로 붙어 나온다.
     ordered = sorted(
         rba_items.RBA_ITEMS,
-        key=lambda it: (_HMC_AREA_ORDER.index(it.hmc_area), it.code),
+        key=lambda it: (_HMC_AREA_ORDER.index(it.hmc_area), natural_code_key(it.code)),
     )
     return tuple(
         q
@@ -40,7 +61,9 @@ def _hmc_questions() -> tuple[Question, ...]:
 
 HMC = Framework(
     key="hmc",
-    label="현대자동차 협력사 ESG 실사 응답서 (RBA v8.0 기반)",
+    # 현대차가 실제 송부하는 양식이 아니라 RBA v8.0 매핑으로 만든 참고 양식이다.
+    # 내부 키 'hmc'는 저장된 응답·설정 호환을 위해 그대로 둔다(2026-09-20 §7).
+    label="현대차 협력사 ESG 사전점검 (RBA v8.0 매핑 참고양식)",
     questions=_hmc_questions(),
     pillar="due_diligence",
 )

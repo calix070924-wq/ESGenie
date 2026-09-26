@@ -36,6 +36,13 @@ from esgenie.supplychain import build_response_sheet, get_framework
 
 FW_KEY = "kesg28"
 
+# S-4-1(안전보건 추진체계 — 안전보건 조직/정책)에 실제로 답하는 근거 문장.
+# 문항 적합성 게이트(question_fitness, 2026-09-20 §6) 도입 후로는 근거가 문항 고유
+# 어휘를 담아야 초안 경로에 들어간다. 예전 자리표시 문장("규정 텍스트")은 게이트에서
+# 보류되므로, 그 문장으로는 grounding·자백 감지·재시도 로직을 검증할 수 없다 —
+# 통과해서가 아니라 근거 선별에서 걸려 초안 자체가 생기지 않기 때문이다.
+_S41_EVIDENCE = "제1조 안전보건 경영방침을 수립하고 안전보건 조직을 구성해 운영한다."
+
 
 def _make_text_node(id: str, text: str, kesg_code: str, source_file: str = "사내규정.pdf"):
     return SimpleNamespace(
@@ -142,7 +149,7 @@ def test_draft_normal_accept(mock_llm_cls, mock_eval):
     # S-4-1 (안전보건 방침) 항목에 매칭되는 TextNode 생성
     text_node = _make_text_node(
         "TXT_0001",
-        "제1조 안전보건 경영방침에 따라 산업안전보건위원회를 분기별 운영한다.",
+        _S41_EVIDENCE,
         "S-4-1",
     )
     graph = _make_evidence_graph([text_node])
@@ -172,7 +179,7 @@ def test_draft_fail_closed_hard(mock_llm_cls, mock_eval):
     mock_eval.return_value = _grounding_escalate()
 
     sheet = _make_sheet_with_hitl()
-    text_node = _make_text_node("TXT_0001", "규정 텍스트", "S-4-1")
+    text_node = _make_text_node("TXT_0001", _S41_EVIDENCE, "S-4-1")
     graph = _make_evidence_graph([text_node])
 
     sheet = generate_drafts(sheet, graph, max_retries=2)
@@ -197,7 +204,7 @@ def test_draft_fail_closed_soft_flag(mock_llm_cls, mock_eval):
     mock_eval.return_value = _grounding_accept_with_soft_flag()
 
     sheet = _make_sheet_with_hitl()
-    text_node = _make_text_node("TXT_0001", "규정 텍스트", "S-4-1")
+    text_node = _make_text_node("TXT_0001", _S41_EVIDENCE, "S-4-1")
     graph = _make_evidence_graph([text_node])
 
     sheet = generate_drafts(sheet, graph, max_retries=2)
@@ -234,7 +241,7 @@ def test_enable_drafts_false_no_diff():
         mapped={"E-4-1": {"code": "E-4-1", "name": "에너지", "evidence_node_ids": []}},
         missing=[],
     )
-    text_node = _make_text_node("TXT_0001", "규정 텍스트", "S-4-1")
+    text_node = _make_text_node("TXT_0001", _S41_EVIDENCE, "S-4-1")
     graph = _make_evidence_graph([text_node])
 
     sheet_off = build_response_sheet(
@@ -271,7 +278,7 @@ def test_four_way_split_sums_to_100(mock_llm_cls, mock_eval):
         sheet.answers[0].value = True
         sheet.answers[1].status = "insufficient"
 
-    text_node = _make_text_node("TXT_0001", "규정 텍스트", "S-4-1")
+    text_node = _make_text_node("TXT_0001", _S41_EVIDENCE, "S-4-1")
     graph = _make_evidence_graph([text_node])
 
     sheet = generate_drafts(sheet, graph)
@@ -295,7 +302,7 @@ def test_draft_ready_not_in_answered(mock_llm_cls, mock_eval):
     mock_eval.return_value = _grounding_accept()
 
     sheet = _make_sheet_with_hitl()
-    text_node = _make_text_node("TXT_0001", "규정 텍스트", "S-4-1")
+    text_node = _make_text_node("TXT_0001", _S41_EVIDENCE, "S-4-1")
     graph = _make_evidence_graph([text_node])
 
     sheet = generate_drafts(sheet, graph)
@@ -319,7 +326,7 @@ def test_retry_count(mock_llm_cls, mock_eval):
 
     sheet = _make_sheet_with_hitl()
     # S-4-1 하나만 매칭되도록
-    text_node = _make_text_node("TXT_0001", "규정 텍스트", "S-4-1")
+    text_node = _make_text_node("TXT_0001", _S41_EVIDENCE, "S-4-1")
     graph = _make_evidence_graph([text_node])
 
     sheet = generate_drafts(sheet, graph, max_retries=2)
@@ -361,7 +368,7 @@ def test_insufficient_policy_becomes_draft_ready(mock_llm_cls, mock_eval):
     # E-1-1 코드에 매칭되는 TextNode
     text_node = _make_text_node(
         "TXT_0001",
-        "당사는 2030년까지 탄소 배출량 30% 감축을 목표로 설정하였다.",
+        "당사는 중장기 환경경영 전략에 따라 2030년까지 탄소 배출량 30% 감축을 목표로 설정하였다.",
         "E-1-1",
         source_file="환경방침서.pdf",
     )
@@ -432,7 +439,7 @@ def test_draft_citations_contain_source_file_and_page(mock_llm_cls, mock_eval):
     sheet = _make_sheet_with_hitl()
     text_node = _make_text_node(
         "TXT_0001",
-        "안전보건 방침에 따라 위원회를 운영한다.",
+        _S41_EVIDENCE,
         "S-4-1",
         source_file="안전보건규정_2025.pdf",
     )
@@ -502,7 +509,7 @@ def test_enable_drafts_false_to_dict_equality():
         mapped={"E-4-1": {"code": "E-4-1", "name": "에너지", "evidence_node_ids": []}},
         missing=[],
     )
-    text_node = _make_text_node("TXT_0001", "규정 텍스트", "S-4-1")
+    text_node = _make_text_node("TXT_0001", _S41_EVIDENCE, "S-4-1")
     graph = _make_evidence_graph([text_node])
 
     sheet_off = build_response_sheet(
@@ -531,7 +538,7 @@ def test_gaps_recalculated_after_drafts(mock_llm_cls, mock_eval):
     fw = get_framework(FW_KEY)
     extraction = SimpleNamespace(mapped={}, missing=[], corp_name="테스트사")
     # S-4-1에 매칭되는 TextNode만 제공 → S-4-1은 초안 성공, S-7-1은 실패(청크 없음)
-    text_node = _make_text_node("TXT_0001", "안전보건 경영방침 조항", "S-4-1")
+    text_node = _make_text_node("TXT_0001", _S41_EVIDENCE, "S-4-1")
     graph = _make_evidence_graph([text_node])
 
     sheet = build_response_sheet(
@@ -581,7 +588,7 @@ def test_bm25_fallback_cross_pillar_rejected(mock_llm_cls, mock_eval):
     # S-4-1(사회 pillar) 청크만 존재
     text_node = _make_text_node(
         "TXT_0001",
-        "제1조 안전보건 경영방침에 따라 산업안전보건위원회를 분기별 운영한다.",
+        _S41_EVIDENCE,
         "S-4-1",
     )
     graph = _make_evidence_graph([text_node])
@@ -650,7 +657,7 @@ def test_code_match_path_still_works(mock_llm_cls, mock_eval):
     sheet = _make_sheet_with_hitl()
     text_node = _make_text_node(
         "TXT_0001",
-        "산업안전보건위원회를 분기별 운영한다. ISO 45001 인증 취득.",
+        _S41_EVIDENCE + " ISO 45001 인증을 취득했다.",
         "S-4-1",
     )
     graph = _make_evidence_graph([text_node])
@@ -676,7 +683,7 @@ def test_draft_citations_have_retrieval_field(mock_llm_cls, mock_eval):
     mock_eval.return_value = _grounding_accept()
 
     sheet = _make_sheet_with_hitl()
-    text_node = _make_text_node("TXT_0001", "안전보건 방침 조항", "S-4-1")
+    text_node = _make_text_node("TXT_0001", _S41_EVIDENCE, "S-4-1")
     graph = _make_evidence_graph([text_node])
 
     sheet = generate_drafts(sheet, graph)
@@ -715,7 +722,7 @@ def test_classified_chunk_not_leaked_to_same_pillar(mock_llm_cls, mock_eval):
     # S-4-1(안전보건)으로 분류된 청크 1개만 존재
     text_node = _make_text_node(
         "TXT_0001",
-        "제1조 안전보건 경영방침에 따라 산업안전보건위원회를 분기별 운영한다.",
+        _S41_EVIDENCE,
         "S-4-1",
     )
     graph = _make_evidence_graph([text_node])
@@ -841,7 +848,7 @@ def test_insufficient_sentinel_aborts_immediately(mock_llm_cls, mock_eval):
     mock_llm_cls.return_value = mock_llm
 
     sheet = _make_sheet_with_hitl()
-    text_node = _make_text_node("TXT_0001", "안전보건 방침 조항", "S-4-1")
+    text_node = _make_text_node("TXT_0001", _S41_EVIDENCE, "S-4-1")
     graph = _make_evidence_graph([text_node])
 
     sheet = generate_drafts(sheet, graph, max_retries=2)
@@ -877,7 +884,7 @@ def test_confession_patterns_abort(mock_llm_cls, mock_eval):
         mock_eval.reset_mock()
 
         sheet = _make_sheet_with_hitl()
-        text_node = _make_text_node("TXT_0001", "규정 텍스트", "S-4-1")
+        text_node = _make_text_node("TXT_0001", _S41_EVIDENCE, "S-4-1")
         graph = _make_evidence_graph([text_node])
 
         sheet = generate_drafts(sheet, graph, max_retries=2)
@@ -898,7 +905,7 @@ def test_confession_patterns_abort(mock_llm_cls, mock_eval):
         mock_eval.reset_mock()
 
         sheet = _make_sheet_with_hitl()
-        text_node = _make_text_node("TXT_0001", "규정 텍스트", "S-4-1")
+        text_node = _make_text_node("TXT_0001", _S41_EVIDENCE, "S-4-1")
         graph = _make_evidence_graph([text_node])
 
         sheet = generate_drafts(sheet, graph, max_retries=2)
@@ -1090,7 +1097,7 @@ def test_code_match_skips_relevance_gate(mock_llm_cls, mock_eval):
         corp_name="테스트사", answers=answers,
     )
 
-    text_node = _make_text_node("TXT_0001", "안전보건 방침 조항", "S-4-1")
+    text_node = _make_text_node("TXT_0001", _S41_EVIDENCE, "S-4-1")
     graph = _make_evidence_graph([text_node])
 
     sheet = generate_drafts(sheet, graph)
@@ -1182,7 +1189,7 @@ def test_contextual_pattern_without_referent_passes(mock_llm_cls, mock_eval):
     mock_eval.return_value = _grounding_accept()
 
     sheet = _make_sheet_with_hitl()
-    text_node = _make_text_node("TXT_0001", "규정 텍스트", "S-4-1")
+    text_node = _make_text_node("TXT_0001", _S41_EVIDENCE, "S-4-1")
     graph = _make_evidence_graph([text_node])
 
     sheet = generate_drafts(sheet, graph, max_retries=2)
@@ -1254,7 +1261,7 @@ def test_retrieval_constants_used_consistently(mock_llm_cls, mock_eval):
     mock_eval.return_value = _grounding_accept()
 
     sheet = _make_sheet_with_hitl()
-    text_node = _make_text_node("TXT_0001", "안전보건 방침 조항", "S-4-1")
+    text_node = _make_text_node("TXT_0001", _S41_EVIDENCE, "S-4-1")
     graph = _make_evidence_graph([text_node])
 
     sheet = generate_drafts(sheet, graph)

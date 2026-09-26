@@ -53,6 +53,11 @@ class ExtractedMetric:
     bbox: list[float] | None = None      # [x0,y0,x1,y1] 정규화 위치(0~1, 감사 추적용)
     page: int | None = None              # 0-기준 페이지 인덱스 (원본 렌더용)
     confidence: float = 0.0
+    # 측정 경계(ssot.boundary.Boundary의 dict 표현) — 정형 파서가 표 제목·행/열에서
+    # 직접 읽은 축만 담는다. 비어 있으면 merge_ocr_extraction이 hint·기간 원문에서
+    # 규칙으로 도출한다. dict로 두는 이유는 캐시 JSON 왕복 호환이다(from_dict는
+    # 모르는 키를 무시하므로 구버전 캐시는 빈 dict로 읽힌다).
+    boundary: dict[str, Any] = field(default_factory=dict)
 
 
 @dataclass
@@ -252,6 +257,9 @@ def extract_document(file_path: str, decision: RouteDecision | None = None) -> O
     # 동의어 해소 backstop — 코드 미부여 metric을 사전 매칭으로 채움(전 채널 공통 합류점).
     _backfill_kesg_codes(ext)
     _resolve_clause_pages(ext, file_path)
+    if Path(file_path).is_file():
+        import hashlib
+        ext.router_meta["source_sha256"] = hashlib.sha256(Path(file_path).read_bytes()).hexdigest()
     return ext
 
 
@@ -270,9 +278,7 @@ def _resolve_clause_pages(ext: OcrExtraction, file_path: str) -> None:
         for clause in ext.clauses:
             quote = re.sub(r"\s+", "", clause.text)
             matches = [i for i, text in enumerate(pages) if quote and quote in text]
-            if len(pages) == 1:
-                clause.page = 0
-            elif len(matches) == 1:
+            if len(matches) == 1:
                 clause.page = matches[0]
             else:
                 # Unknown/ambiguous location must not become a fabricated page link.
@@ -691,8 +697,9 @@ def _pin_totals_from_raw(
             if numstr in str(t.get("text", "")):
                 bbox, page = t.get("bbox"), t.get("page"); break
         metrics = [mm for mm in metrics if mm.kesg_code_guess != code]
+        label = {"kepco_bill": "사용전력량", "gas_bill": "도시가스 사용열량", "waste_ledger": "총 위탁량"}.get(doc_type, code)
         metrics.append(ExtractedMetric(
-            metric_hint=f"{code} 본문확정", value=round(val, 3), unit=unit,
+            metric_hint=label, value=round(val, 3), unit=unit,
             period="", kesg_code_guess=code, bbox=bbox, page=page, confidence=0.92,
         ))
     return metrics
@@ -1932,6 +1939,8 @@ def _map_vlm_json(data: dict[str, Any], *, page_no: int = 1) -> tuple[list[Extra
                 period=period,
                 kesg_code_guess=m.get("kesg_code") or None,
                 confidence=0.75,   # VLM 추출 기본 신뢰도
+                page=page_no - 1,
+                boundary=m.get("boundary") or {},
             ))
         except (TypeError, ValueError):
             continue

@@ -17,7 +17,7 @@ CASES = [
 
 def make_evidence():
     report = CompanyReport('D1', '수치 검증 합성', '', 2025, {}, {
-        'E-4-2': {'value': 31, 'unit': '%'},
+        'E-4-2': {'value': 31, 'unit': '%', 'note': '2025년 연간 전사 총 에너지 대비 전체 재생에너지 비율 실적'},
         'E-6-2': {'value': 92, 'unit': '%'},
         'E-3-1': {'value': 100, 'unit': 'tCO2eq'},
     }, [], 'synthetic')

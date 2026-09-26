@@ -1,0 +1,656 @@
+{
+  "total_plus_components": {
+    "value": 10.0,
+    "verification": "verified",
+    "completeness": "total",
+    "boundary": {
+      "period_text": "2026년 연간",
+      "aggregation": "annual",
+      "coverage_months": 12,
+      "basis": "actual",
+      "site": "",
+      "site_scope": "entity",
+      "measure": "에너지 사용량",
+      "measure_kind": "energy_total",
+      "completeness": "total",
+      "denominator": "총 에너지",
+      "denominator_kind": "total_energy",
+      "inferred": [],
+      "source_quote": "총 에너지 사용량 (2026년 연간)",
+      "period_year": 2026,
+      "period_start": "2026-01-01",
+      "period_end": "2026-12-31",
+      "site_path": [],
+      "provenance": [
+        {
+          "source": "row",
+          "quote": "총 에너지 사용량",
+          "period": "2026년 연간",
+          "method": "rule",
+          "page": null,
+          "bbox": null,
+          "source_file": "energy_total.pdf"
+        },
+        {
+          "source": "document_header",
+          "quote": "전사",
+          "method": "rule",
+          "page": null,
+          "bbox": null,
+          "source_file": "energy_total.pdf"
+        }
+      ],
+      "review_notes": []
+    },
+    "sources": [
+      "energy_total.pdf"
+    ],
+    "scope_notes": [
+      "E-4-1: HANWOOL_E-4-1_2026__ocr_structured__34d9d04c56 총량에 포함된 구성요소 — 이중계상 방지",
+      "E-4-1: 합산 제외 — electricity.pdf — HANWOOL_E-4-1_2026__ocr_structured__34d9d04c56 총량에 포함된 구성요소 — 이중계상 방지",
+      "E-4-1: 합산 제외 — gas.pdf — HANWOOL_E-4-1_2026__ocr_structured__34d9d04c56 총량에 포함된 구성요소 — 이중계상 방지"
+    ],
+    "cross_edges": [
+      {
+        "source_id": "HANWOOL_E-4-1_2026__ocr_structured__34d9d04c56",
+        "target_id": "HANWOOL_E-4-1_2026__ocr_structured__a64581376a",
+        "edge_type": "scope_gap",
+        "yoy": null,
+        "cagr": null,
+        "years_gap": 1,
+        "detail": "비교 불가: 측정 대상 상이(에너지 사용량 ↔ 전력 사용량) (energy_total.pdf ↔ electricity.pdf)",
+        "comparison": "not_comparable",
+        "difference_pct": null
+      },
+      {
+        "source_id": "HANWOOL_E-4-1_2026__ocr_structured__34d9d04c56",
+        "target_id": "HANWOOL_E-4-1_2026__ocr_structured__283487cc05",
+        "edge_type": "scope_gap",
+        "yoy": null,
+        "cagr": null,
+        "years_gap": 1,
+        "detail": "비교 불가: 측정 대상 상이(에너지 사용량 ↔ 도시가스) (energy_total.pdf ↔ gas.pdf)",
+        "comparison": "not_comparable",
+        "difference_pct": null
+      },
+      {
+        "source_id": "HANWOOL_E-4-1_2026__ocr_structured__a64581376a",
+        "target_id": "HANWOOL_E-4-1_2026__ocr_structured__283487cc05",
+        "edge_type": "scope_gap",
+        "yoy": null,
+        "cagr": null,
+        "years_gap": 1,
+        "detail": "비교 불가: 측정 대상 상이(전력 사용량 ↔ 도시가스) (electricity.pdf ↔ gas.pdf)",
+        "comparison": "not_comparable",
+        "difference_pct": null
+      }
+    ],
+    "cross_status": [
+      "",
+      ""
+    ],
+    "cross_risk": 0.0
+  },
+  "different_months_sum": {
+    "value": 0.513216,
+    "verification": "estimated",
+    "completeness": "partial",
+    "boundary": {
+      "period_text": "2026-05",
+      "aggregation": "monthly",
+      "coverage_months": 1,
+      "basis": "actual",
+      "site": "제1공장",
+      "site_scope": "site",
+      "measure": "전력 사용량",
+      "measure_kind": "electricity_total",
+      "completeness": "partial",
+      "denominator": "총 전력",
+      "denominator_kind": "total_electricity",
+      "inferred": [],
+      "source_quote": "총 전력 사용량 (2026-05)",
+      "period_year": 2026,
+      "period_start": "2026-05-01",
+      "period_end": "2026-05-31",
+      "site_path": [
+        "제1공장"
+      ],
+      "provenance": [
+        {
+          "source": "row",
+          "quote": "총 전력 사용량",
+          "period": "2026-05",
+          "method": "rule",
+          "page": null,
+          "bbox": null,
+          "source_file": "electricity.pdf"
+        },
+        {
+          "source": "document_header",
+          "quote": "제1공장",
+          "method": "rule",
+          "page": null,
+          "bbox": null,
+          "source_file": "electricity.pdf"
+        }
+      ],
+      "review_notes": []
+    },
+    "sources": [
+      "electricity.pdf"
+    ],
+    "scope_notes": [
+      "E-4-1: 실제 대상 기간·집계 상이(2026-05 ↔ 2026-06) — 합산 보류",
+      "E-4-1: 부분값 — 2026-05 · 월간 · 제1공장 · 전력 사용량 · 분모: 총 전력 · 부분. 전사·연간·전체 범위 총량임이 입증되지 않아 검증 보류. 연간 실적의 실제 사용기간·집계 방식 확인; 전사/공장 조직·사업장 범위 확인; 전체 에너지원 포함 여부 확인"
+    ],
+    "cross_edges": [
+      {
+        "source_id": "HANWOOL_E-4-1_2026__ocr_structured__a64581376a",
+        "target_id": "HANWOOL_E-4-1_2026__ocr_structured__283487cc05",
+        "edge_type": "scope_gap",
+        "yoy": null,
+        "cagr": null,
+        "years_gap": 1,
+        "detail": "비교 불가: 측정 대상 상이(전력 사용량 ↔ 도시가스) (electricity.pdf ↔ gas.pdf)",
+        "comparison": "not_comparable",
+        "difference_pct": null
+      }
+    ],
+    "cross_status": [
+      "",
+      ""
+    ],
+    "cross_risk": 0.0
+  },
+  "different_years_sum": {
+    "value": 6,
+    "verification": "estimated",
+    "completeness": "unknown",
+    "boundary": {
+      "period_text": "2025년 연간",
+      "aggregation": "annual",
+      "coverage_months": 12,
+      "basis": "actual",
+      "site": "",
+      "site_scope": "entity",
+      "measure": "전력 사용량",
+      "measure_kind": "electricity_total",
+      "completeness": "unknown",
+      "denominator": "총 전력",
+      "denominator_kind": "total_electricity",
+      "inferred": [],
+      "source_quote": "총 전력 사용량 (2025년 연간)",
+      "period_year": 2025,
+      "period_start": "2025-01-01",
+      "period_end": "2025-12-31",
+      "site_path": [],
+      "provenance": [
+        {
+          "source": "row",
+          "quote": "총 전력 사용량",
+          "period": "2025년 연간",
+          "method": "rule",
+          "page": null,
+          "bbox": null,
+          "source_file": "electricity.pdf"
+        },
+        {
+          "source": "document_header",
+          "quote": "전사",
+          "method": "rule",
+          "page": null,
+          "bbox": null,
+          "source_file": "electricity.pdf"
+        }
+      ],
+      "review_notes": []
+    },
+    "sources": [
+      "electricity.pdf"
+    ],
+    "scope_notes": [
+      "E-4-1: 실제 대상 기간 상이(2025년 연간 ↔ 2026년 연간) — 합산 보류",
+      "E-4-1: 경계 확인 필요 — 2025년 연간 · 전사 · 전력 사용량 · 분모: 총 전력; 전체 에너지원 포함 여부 확인"
+    ],
+    "cross_edges": [],
+    "cross_status": [
+      "",
+      ""
+    ],
+    "cross_risk": 0.0
+  },
+  "renewable_without_denominator_or_site": {
+    "value": 10.6,
+    "verification": "estimated",
+    "completeness": "unknown",
+    "boundary": {
+      "period_text": "2026년 연간",
+      "aggregation": "annual",
+      "coverage_months": 12,
+      "basis": "actual",
+      "site": "",
+      "site_scope": "unknown",
+      "measure": "재생에너지",
+      "measure_kind": "renewable_total",
+      "completeness": "unknown",
+      "denominator": "",
+      "denominator_kind": "unknown",
+      "inferred": [
+        "site_scope",
+        "denominator_kind"
+      ],
+      "source_quote": "재생에너지 비율 (2026년 연간)",
+      "period_year": 2026,
+      "period_start": "2026-01-01",
+      "period_end": "2026-12-31",
+      "site_path": [],
+      "provenance": [
+        {
+          "source": "row",
+          "quote": "재생에너지 비율",
+          "period": "2026년 연간",
+          "method": "rule",
+          "page": null,
+          "bbox": null,
+          "source_file": "renewable.pdf"
+        }
+      ],
+      "review_notes": []
+    },
+    "sources": [
+      "renewable.pdf"
+    ],
+    "scope_notes": [
+      "E-4-2: 경계 확인 필요 — 2026년 연간 · 재생에너지; 전사/공장 조직·사업장 범위 확인; 전체 재생에너지 분자·조달수단 포함 관계 확인; 총에너지 분모 확인 (분모 미상)"
+    ],
+    "cross_edges": [],
+    "cross_status": [
+      "",
+      ""
+    ],
+    "cross_risk": 0.0
+  },
+  "renewable_year_only": {
+    "value": 10.6,
+    "verification": "estimated",
+    "completeness": "unknown",
+    "boundary": {
+      "period_text": "2026",
+      "aggregation": "unknown",
+      "coverage_months": null,
+      "basis": "actual",
+      "site": "",
+      "site_scope": "unknown",
+      "measure": "재생에너지",
+      "measure_kind": "renewable_total",
+      "completeness": "unknown",
+      "denominator": "",
+      "denominator_kind": "unknown",
+      "inferred": [
+        "aggregation",
+        "site_scope",
+        "denominator_kind"
+      ],
+      "source_quote": "재생에너지 비율 (2026)",
+      "period_year": 2026,
+      "period_start": "",
+      "period_end": "",
+      "site_path": [],
+      "provenance": [
+        {
+          "source": "row",
+          "quote": "재생에너지 비율",
+          "period": "2026",
+          "method": "rule",
+          "page": null,
+          "bbox": null,
+          "source_file": "renewable.pdf"
+        }
+      ],
+      "review_notes": []
+    },
+    "sources": [
+      "renewable.pdf"
+    ],
+    "scope_notes": [
+      "E-4-2: 경계 확인 필요 — 2026 · 재생에너지; 연간 실적의 실제 사용기간·집계 방식 확인; 전사/공장 조직·사업장 범위 확인; 전체 재생에너지 분자·조달수단 포함 관계 확인; 총에너지 분모 확인 (분모 미상)"
+    ],
+    "cross_edges": [],
+    "cross_status": [
+      "",
+      ""
+    ],
+    "cross_risk": 0.0
+  },
+  "independent_same_origin_mismatch": {
+    "value": 0.00072,
+    "verification": "unverified",
+    "completeness": "partial",
+    "boundary": {
+      "period_text": "2026-05",
+      "aggregation": "monthly",
+      "coverage_months": 1,
+      "basis": "actual",
+      "site": "제1공장",
+      "site_scope": "site",
+      "measure": "전력 사용량",
+      "measure_kind": "electricity_total",
+      "completeness": "partial",
+      "denominator": "총 전력",
+      "denominator_kind": "total_electricity",
+      "inferred": [],
+      "source_quote": "총 전력 사용량 (2026-05)",
+      "period_year": 2026,
+      "period_start": "2026-05-01",
+      "period_end": "2026-05-31",
+      "site_path": [
+        "제1공장"
+      ],
+      "provenance": [
+        {
+          "source": "row",
+          "quote": "총 전력 사용량",
+          "period": "2026-05",
+          "method": "rule",
+          "page": null,
+          "bbox": null,
+          "source_file": "electricity_b.pdf"
+        },
+        {
+          "source": "document_header",
+          "quote": "제1공장",
+          "method": "rule",
+          "page": null,
+          "bbox": null,
+          "source_file": "electricity_b.pdf"
+        }
+      ],
+      "review_notes": []
+    },
+    "sources": [
+      "electricity_b.pdf"
+    ],
+    "scope_notes": [
+      "E-4-1: 독립 증빙의 같은 측정 대상 값 상충 — 비교 판정 확인, 합산 제외",
+      "E-4-1: 부분값 — 2026-05 · 월간 · 제1공장 · 전력 사용량 · 분모: 총 전력 · 부분. 전사·연간·전체 범위 총량임이 입증되지 않아 검증 보류. 연간 실적의 실제 사용기간·집계 방식 확인; 전사/공장 조직·사업장 범위 확인; 전체 에너지원 포함 여부 확인"
+    ],
+    "cross_edges": [
+      {
+        "source_id": "HANWOOL_E-4-1_2026__ocr_structured__7ec4f4619a",
+        "target_id": "HANWOOL_E-4-1_2026__ocr_structured__767cd74492",
+        "edge_type": "cross_check",
+        "yoy": null,
+        "cagr": null,
+        "years_gap": 1,
+        "detail": "실제 불일치: 교차검증 오차 100.0% (electricity_a.pdf ↔ electricity_b.pdf)",
+        "comparison": "mismatch",
+        "difference_pct": 100.0
+      }
+    ],
+    "cross_status": [
+      "mismatch",
+      "실제 불일치: 교차검증 오차 100.0% (electricity_a.pdf ↔ electricity_b.pdf)"
+    ],
+    "cross_risk": 0.4
+  },
+  "different_months_crosscheck": {
+    "value": 0.00036,
+    "verification": "estimated",
+    "completeness": "partial",
+    "boundary": {
+      "period_text": "2026-05",
+      "aggregation": "monthly",
+      "coverage_months": 1,
+      "basis": "actual",
+      "site": "제1공장",
+      "site_scope": "site",
+      "measure": "전력 사용량",
+      "measure_kind": "electricity_total",
+      "completeness": "partial",
+      "denominator": "총 전력",
+      "denominator_kind": "total_electricity",
+      "inferred": [],
+      "source_quote": "총 전력 사용량 (2026-05)",
+      "period_year": 2026,
+      "period_start": "2026-05-01",
+      "period_end": "2026-05-31",
+      "site_path": [
+        "제1공장"
+      ],
+      "provenance": [
+        {
+          "source": "row",
+          "quote": "총 전력 사용량",
+          "period": "2026-05",
+          "method": "rule",
+          "page": null,
+          "bbox": null,
+          "source_file": "electricity_a.pdf"
+        },
+        {
+          "source": "document_header",
+          "quote": "제1공장",
+          "method": "rule",
+          "page": null,
+          "bbox": null,
+          "source_file": "electricity_a.pdf"
+        }
+      ],
+      "review_notes": []
+    },
+    "sources": [
+      "electricity_a.pdf"
+    ],
+    "scope_notes": [
+      "E-4-1: 실제 대상 기간·집계 상이(2026-05 ↔ 2026-06) — 합산 보류",
+      "E-4-1: 부분값 — 2026-05 · 월간 · 제1공장 · 전력 사용량 · 분모: 총 전력 · 부분. 전사·연간·전체 범위 총량임이 입증되지 않아 검증 보류. 연간 실적의 실제 사용기간·집계 방식 확인; 전사/공장 조직·사업장 범위 확인; 전체 에너지원 포함 여부 확인"
+    ],
+    "cross_edges": [
+      {
+        "source_id": "HANWOOL_E-4-1_2026__ocr_structured__7ec4f4619a",
+        "target_id": "HANWOOL_E-4-1_2026__ocr_unstructured__767cd74492",
+        "edge_type": "scope_gap",
+        "yoy": null,
+        "cagr": null,
+        "years_gap": 1,
+        "detail": "비교 불가: 실제 대상 기간·집계 상이(2026-05 ↔ 2026-06) (electricity_a.pdf ↔ electricity_b.pdf)",
+        "comparison": "not_comparable",
+        "difference_pct": null
+      }
+    ],
+    "cross_status": [
+      "",
+      ""
+    ],
+    "cross_risk": 0.0
+  },
+  "partial_large_claim": {
+    "status": "self_reported",
+    "comparison": "scope_unconfirmed",
+    "review_note": "범위 확인 필요: 연간 실적의 실제 사용기간·집계 방식 확인; 전사/공장 조직·사업장 범위 확인; 실적/계획 여부 확인; 전체 재생에너지 분자·조달수단 포함 관계 확인; 총에너지 분모 확인 (분모 미상); 전체 주장에 필요한 기간·사업장·분모 미확인 — 부분값 증빙 경계 미기록 · 연간 실적의 실제 사용기간·집계 방식 확인 · 전사/공장 조직·사업장 범위 확인 · 실적/계획 여부 확인 · 전체 재생에너지 분자·조달수단 포함 관계 확인 · 총에너지 분모 확인 (분모 미상)",
+    "flags": [
+      "범위 확인 필요: 전체 주장에 필요한 기간·사업장·분모 미확인 — 부분값 증빙 경계 미기록"
+    ],
+    "checklist": [
+      {
+        "qid": "E-4-2",
+        "section": "환경",
+        "question_text": "재생에너지 사용 비율",
+        "status": "self_reported",
+        "action": "범위 확인·보완",
+        "evidence_needed": [],
+        "request": "재생에너지 사용 비율 = 10.6% (보고 연도 2026, D1 위험 0.0, 검증=estimated); 연간 실적의 실제 사용기간·집계 방식 확인; 전사/공장 조직·사업장 범위 확인; 실적/계획 여부 확인; 전체 재생에너지 분자·조달수단 포함 관계 확인; 총에너지 분모 확인 (분모 미상); 전체 주장에 필요한 기간·사업장·분모 미확인 — 부분값 증빙 경계 미기록; 연간 실적의 실제 사용기간·집계 방식 확인; 전사/공장 조직·사업장 범위 확인; 실적/계획 여부 확인; 전체 재생에너지 분자·조달수단 포함 관계 확인; 총에너지 분모 확인 (분모 미상)"
+      }
+    ]
+  },
+  "upstream_mismatch_overwritten": {
+    "status": "flagged",
+    "comparison": "mismatch",
+    "review_note": "실제 불일치: 독립 증빙 간 불일치 · 연간 실적의 실제 사용기간·집계 방식 확인 · 전사/공장 조직·사업장 범위 확인 · 실적/계획 여부 확인 · 전체 재생에너지 분자·조달수단 포함 관계 확인 · 총에너지 분모 확인 (분모 미상)",
+    "flags": [
+      "범위 확인 필요: 전체 주장에 필요한 기간·사업장·분모 미확인 — 부분값 증빙 경계 미기록"
+    ],
+    "checklist": [
+      {
+        "qid": "E-4-2",
+        "section": "환경",
+        "question_text": "재생에너지 사용 비율",
+        "status": "flagged",
+        "action": "검토·보완",
+        "evidence_needed": [],
+        "request": "범위 확인 필요: 전체 주장에 필요한 기간·사업장·분모 미확인 — 부분값 증빙 경계 미기록; 독립 증빙 간 불일치; 연간 실적의 실제 사용기간·집계 방식 확인; 전사/공장 조직·사업장 범위 확인; 실적/계획 여부 확인; 전체 재생에너지 분자·조달수단 포함 관계 확인; 총에너지 분모 확인 (분모 미상)"
+      }
+    ]
+  },
+  "scope_missing_from_checklist": {
+    "status": "self_reported",
+    "comparison": "scope_unconfirmed",
+    "review_note": "범위 확인 필요: 연간 실적의 실제 사용기간·집계 방식 확인; 전사/공장 조직·사업장 범위 확인; 실적/계획 여부 확인; 전체 재생에너지 분자·조달수단 포함 관계 확인; 총에너지 분모 확인 (분모 미상); 전체 주장에 필요한 기간·사업장·분모 미확인 — 부분값 증빙 경계 미기록 · 연간 실적의 실제 사용기간·집계 방식 확인 · 전사/공장 조직·사업장 범위 확인 · 실적/계획 여부 확인 · 전체 재생에너지 분자·조달수단 포함 관계 확인 · 총에너지 분모 확인 (분모 미상)",
+    "flags": [
+      "범위 확인 필요: 전체 주장에 필요한 기간·사업장·분모 미확인 — 부분값 증빙 경계 미기록"
+    ],
+    "checklist": [
+      {
+        "qid": "E-4-2",
+        "section": "환경",
+        "question_text": "재생에너지 사용 비율",
+        "status": "self_reported",
+        "action": "범위 확인·보완",
+        "evidence_needed": [],
+        "request": "재생에너지 사용 비율 = 10.6% (보고 연도 2026, D1 위험 0.0, 검증=estimated); 연간 실적의 실제 사용기간·집계 방식 확인; 전사/공장 조직·사업장 범위 확인; 실적/계획 여부 확인; 전체 재생에너지 분자·조달수단 포함 관계 확인; 총에너지 분모 확인 (분모 미상); 전체 주장에 필요한 기간·사업장·분모 미확인 — 부분값 증빙 경계 미기록; 연간 실적의 실제 사용기간·집계 방식 확인; 전사/공장 조직·사업장 범위 확인; 실적/계획 여부 확인; 전체 재생에너지 분자·조달수단 포함 관계 확인; 총에너지 분모 확인 (분모 미상)"
+      }
+    ]
+  },
+  "document_context_contamination": {
+    "without_context": {
+      "period_text": "2026년 연간",
+      "aggregation": "annual",
+      "coverage_months": 12,
+      "basis": "actual",
+      "site": "",
+      "site_scope": "unknown",
+      "measure": "전력 사용량",
+      "measure_kind": "electricity_total",
+      "completeness": "total",
+      "denominator": "총 전력",
+      "denominator_kind": "total_electricity",
+      "inferred": [
+        "site_scope"
+      ],
+      "source_quote": "총 전력 사용량 (2026년 연간)",
+      "period_year": 2026,
+      "period_start": "2026-01-01",
+      "period_end": "2026-12-31",
+      "site_path": [],
+      "provenance": [
+        {
+          "source": "row",
+          "quote": "총 전력 사용량",
+          "period": "2026년 연간",
+          "method": "rule"
+        }
+      ],
+      "review_notes": []
+    },
+    "with_context": {
+      "period_text": "2026년 연간",
+      "aggregation": "annual",
+      "coverage_months": 12,
+      "basis": "actual",
+      "site": "",
+      "site_scope": "unknown",
+      "measure": "전력 사용량",
+      "measure_kind": "electricity_total",
+      "completeness": "total",
+      "denominator": "총 전력",
+      "denominator_kind": "total_electricity",
+      "inferred": [
+        "site_scope"
+      ],
+      "source_quote": "총 전력 사용량 (2026년 연간)",
+      "period_year": 2026,
+      "period_start": "2026-01-01",
+      "period_end": "2026-12-31",
+      "site_path": [],
+      "provenance": [
+        {
+          "source": "row",
+          "quote": "총 전력 사용량",
+          "period": "2026년 연간",
+          "method": "rule"
+        }
+      ],
+      "review_notes": []
+    }
+  },
+  "renewable_through_d1": [
+    {
+      "period": "2026년 연간",
+      "d1_risk": 0.0,
+      "status": "unavailable",
+      "comparison": "scope_unconfirmed",
+      "verification": "estimated",
+      "completeness": "unknown"
+    },
+    {
+      "period": "2026",
+      "d1_risk": 0.0,
+      "status": "unavailable",
+      "comparison": "scope_unconfirmed",
+      "verification": "estimated",
+      "completeness": "unknown"
+    }
+  ],
+  "renewable_d1_last": {
+    "value": 10.6,
+    "verification": "estimated",
+    "completeness": "unknown",
+    "boundary": {
+      "period_text": "2026",
+      "aggregation": "unknown",
+      "coverage_months": null,
+      "basis": "actual",
+      "site": "",
+      "site_scope": "unknown",
+      "measure": "재생에너지",
+      "measure_kind": "renewable_total",
+      "completeness": "unknown",
+      "denominator": "",
+      "denominator_kind": "unknown",
+      "inferred": [
+        "aggregation",
+        "site_scope",
+        "denominator_kind"
+      ],
+      "source_quote": "재생에너지 비율 (2026)",
+      "period_year": 2026,
+      "period_start": "",
+      "period_end": "",
+      "site_path": [],
+      "provenance": [
+        {
+          "source": "row",
+          "quote": "재생에너지 비율",
+          "period": "2026",
+          "method": "rule",
+          "page": null,
+          "bbox": null,
+          "source_file": "renewable.pdf"
+        }
+      ],
+      "review_notes": []
+    },
+    "sources": [
+      "renewable.pdf"
+    ],
+    "scope_notes": [
+      "E-4-2: 경계 확인 필요 — 2026 · 재생에너지; 연간 실적의 실제 사용기간·집계 방식 확인; 전사/공장 조직·사업장 범위 확인; 전체 재생에너지 분자·조달수단 포함 관계 확인; 총에너지 분모 확인 (분모 미상)"
+    ],
+    "cross_edges": [],
+    "cross_status": [
+      "",
+      ""
+    ],
+    "cross_risk": 0.0
+  }
+}

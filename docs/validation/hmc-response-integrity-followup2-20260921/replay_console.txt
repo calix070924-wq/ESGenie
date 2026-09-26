@@ -1,0 +1,25 @@
+{
+  "failed": [],
+  "actual_checks": 75,
+  "controlled_checks": 76,
+  "negative_controls": {
+    "missing_question": [
+      "all_question_ids",
+      "waste:required"
+    ],
+    "empty_boundary": [
+      "energy:boundary",
+      "energy:period_site"
+    ],
+    "changed_value": [
+      "energy:value_unit"
+    ],
+    "wrong_page": [
+      "communication:actual_page"
+    ],
+    "missing_checklist": [
+      "energy:scope_action"
+    ]
+  },
+  "out_dir": "outputs/validation/hmc-response-integrity-followup2-20260921"
+}

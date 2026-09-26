@@ -70,7 +70,7 @@ def _case_rows(records: list[dict[str, Any]], cfg: dict[str, float]) -> list[dic
 #      (아래 §3 risk_coverage 곡선과 구분 — 이쪽은 축의 abstain 플래그 기반)
 # ====================================================================
 
-_ABSTAIN_REASONS = ("no_evidence", "unit_mismatch", "low_confidence", "ambiguous_topic", "invalid_number")
+_ABSTAIN_REASONS = ("no_evidence", "unit_mismatch", "low_confidence", "ambiguous_topic", "invalid_number", "scope_unconfirmed")
 
 
 def abstain_coverage(rows: list[dict[str, Any]]) -> dict[str, Any]:

@@ -1,0 +1,85 @@
+import os
+os.environ['ESGENIE_FORCE_MOCK'] = '1'
+os.environ['HF_HUB_OFFLINE'] = '1'
+os.environ['TRANSFORMERS_OFFLINE'] = '1'
+import sys, json, importlib.util
+from pathlib import Path
+WT = Path('/private/tmp/ESGenie-hmc-response-integrity-20260920')
+sys.path.insert(0, str(WT))
+def module(name, path):
+    spec = importlib.util.spec_from_file_location(name, path)
+    mod = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(mod)
+    return mod
+t = module('boundary_tests', WT/'tests/test_measurement_boundary.py')
+c = module('comparison_tests', WT/'tests/test_answer_comparison_state.py')
+from esgenie.ssot.ocr_router import ExtractedMetric, DocChannel
+from esgenie.ssot.boundary import derive_boundary, comparable
+from esgenie.ssot.detector_5axis import cross_check_status, _cross_check_risk
+from esgenie.supplychain.claims import SupplierClaim
+from esgenie.supplychain.schema import ResponseSheet
+from esgenie.supplychain.checklist import build_checklist
+
+results = {}
+def ext(name, hint, value, unit, period, code='E-4-1', site='전사', channel=DocChannel.STRUCTURED):
+    e = t._extraction([ExtractedMetric(metric_hint=hint, value=value, unit=unit,
+                          period=period, kesg_code_guess=code, confidence=.95)],
+                          source_file=name, channel=channel)
+    e.raw_text = site
+    return e
+def run(label, es, code='E-4-1'):
+    graph, result, points = t._run(es, codes=(code,))
+    dp = t._dp(points, code)
+    results[label] = {'value': dp.value if dp else None,
+        'verification': dp.verification if dp else None,
+        'completeness': dp.completeness if dp else None,
+        'boundary': dp.boundary if dp else None,
+        'sources': [e.file_name for e in dp.evidence_files] if dp else [],
+        'scope_notes': dp.scope_notes if dp else [],
+        'cross_edges': [e.to_dict() for e in graph.edges if e.edge_type in ('cross_check','scope_gap')],
+        'cross_status': cross_check_status(code, graph),
+        'cross_risk': _cross_check_risk(code, graph)}
+    return graph, result, dp
+
+run('total_plus_components', [
+    ext('energy_total.pdf','총 에너지 사용량',10,'TJ','2026년 연간'),
+    ext('electricity.pdf','총 전력 사용량',6,'TJ','2026년 연간'),
+    ext('gas.pdf','도시가스 사용량',4,'TJ','2026년 연간')])
+run('different_months_sum', [
+    ext('electricity.pdf','총 전력 사용량',142560,'kWh','2026-05',site='제1공장'),
+    ext('gas.pdf','도시가스 사용량',360772,'MJ','2026-06',site='제1공장')])
+run('different_years_sum', [
+    ext('electricity.pdf','총 전력 사용량',6,'TJ','2025년 연간'),
+    ext('gas.pdf','도시가스 사용량',4,'TJ','2026년 연간')])
+run('renewable_without_denominator_or_site', [
+    ext('renewable.pdf','재생에너지 비율',10.6,'%','2026년 연간',code='E-4-2',site='')], 'E-4-2')
+run('renewable_year_only', [
+    ext('renewable.pdf','재생에너지 비율',10.6,'%','2026',code='E-4-2',site='')], 'E-4-2')
+run('independent_same_origin_mismatch', [
+    ext('electricity_a.pdf','총 전력 사용량',100,'kWh','2026-05',site='제1공장'),
+    ext('electricity_b.pdf','총 전력 사용량',200,'kWh','2026-05',site='제1공장')])
+run('different_months_crosscheck', [
+    ext('electricity_a.pdf','총 전력 사용량',100,'kWh','2026-05',site='제1공장'),
+    ext('electricity_b.pdf','총 전력 사용량',200,'kWh','2026-06',site='제1공장',channel=DocChannel.UNSTRUCTURED)])
+for label, kw, value in [
+    ('partial_large_claim', {'completeness':'partial','boundary_label':'2026년 상반기 · 부분'},92),
+    ('upstream_mismatch_overwritten', {'verification':'unverified','completeness':'partial','comparison':'mismatch','comparison_reason':'독립 증빙 간 불일치'},10.6),
+    ('scope_missing_from_checklist', {'completeness':'partial','boundary_label':'2026년 상반기 · 부분'},10.6),
+]:
+    a = c._answer(c._dp(**kw), SupplierClaim(code='E-4-2',value=value,unit='%',raw=f'{value}%',source='saq:survey.pdf'))
+    results[label] = {'status':a.status,'comparison':a.comparison,'review_note':a.review_note,
+                      'flags':a.flags,'checklist':[i.to_dict() for i in build_checklist(ResponseSheet('hmc','HMC','test',[a]))]}
+results['document_context_contamination'] = {
+    'without_context':derive_boundary('총 전력 사용량','2026년 연간',unit='MWh').to_dict(),
+    'with_context':derive_boundary('총 전력 사용량','2026년 연간',unit='MWh',doc_context='2026년 에너지 사용량 현황 전사 총 전력 사용량 100MWh 도시가스 사용량 500MJ').to_dict()}
+from esgenie.ssot.detector_5axis import detect_d1_numeric
+results['renewable_through_d1'] = []
+for period in ['2026년 연간','2026']:
+    g, r, dp = run('renewable_d1_last',[ext('renewable.pdf','재생에너지 비율',10.6,'%',period,code='E-4-2',site='')],'E-4-2')
+    axis = detect_d1_numeric('재생에너지 비율은 10.6%입니다.','E-4-2',g)
+    final = t.build_data_points(g,{'E-4-2':axis.score},target_codes=['E-4-2'],d1_evaluations={'E-4-2':axis.evaluation})[0]
+    results['renewable_through_d1'].append({'period':period,'d1_risk':axis.score,'status':axis.evaluation['status'],'comparison':axis.evaluation['comparison'],'verification':final.verification,'completeness':final.completeness})
+out=Path('/private/tmp/esgenie-hmc-review-20260921')
+out.mkdir(exist_ok=True)
+(out/'reproductions.json').write_text(json.dumps(results,ensure_ascii=False,indent=2))
+print(json.dumps(results,ensure_ascii=False,indent=2))

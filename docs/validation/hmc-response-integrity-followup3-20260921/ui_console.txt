@@ -1,0 +1,19 @@
+2026-09-21 15:35:59.356 WARNING streamlit.runtime.scriptrunner_utils.script_run_context: Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2026-09-21 15:35:59.356 WARNING streamlit.runtime.scriptrunner_utils.script_run_context: Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+{
+  "0.873988": true,
+  "88.397": true,
+  "29.3": true,
+  "10.6": true,
+  "2026-04-25": true,
+  "범위 확인": true,
+  "92": true,
+  "p.1": true,
+  "metrics": true,
+  "checklist": true,
+  "row:HMC-C-8-E-4-1": true,
+  "row:HMC-C-8-E-4-2": true,
+  "row:HMC-C-8-E-3-1": true,
+  "row:HMC-C-4-E-6-2": true,
+  "row:HMC-E-7": true
+}

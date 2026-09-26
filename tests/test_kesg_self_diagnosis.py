@@ -92,7 +92,7 @@ def _sample_supplier():
         DataPoint(
             kesg_code="E-4-1", kesg_name="에너지 사용량",
             value=128400.0, unit="kWh", period=2025, confidence=0.95,
-            verification="verified", d1_risk=0.05,
+            verification="verified", d1_risk=0.05, completeness="total",  # 단위 테스트의 명시적 전달 계약
             evidence_files=[EvidenceLink(
                 file_name="한전고지서_2025.pdf", relative_path="evidence_pack/x.pdf",
                 origin="ocr_structured", bbox=[0.08, 0.23, 0.3, 0.24], page=0,

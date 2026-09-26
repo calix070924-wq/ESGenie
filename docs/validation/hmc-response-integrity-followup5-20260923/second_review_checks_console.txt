@@ -1,0 +1,61 @@
+{
+  "head": "6b55c2a533c6204fb871b34f0da1640cc996bca9",
+  "findings_reproduced": 4,
+  "preservation": {
+    "original_files_checked": 175,
+    "original_files_changed": [],
+    "status_unchanged": true,
+    "stash_unchanged": true,
+    "output_manifest_files": 36,
+    "output_manifest_mismatches": [],
+    "worktree_clean": false,
+    "main": "fa818173cad7fd6fc2caac8eda4dc496a53cc27d"
+  },
+  "real_replay": {
+    "report": "/private/tmp/esgenie-hmc-review-ba0ea8c/log/validation_report.json",
+    "actual_checks": 75,
+    "controlled_checks": 76,
+    "failed": [],
+    "negative_controls": {
+      "missing_question": [
+        "all_question_ids",
+        "waste:required"
+      ],
+      "empty_boundary": [
+        "energy:boundary",
+        "energy:period_site"
+      ],
+      "changed_value": [
+        "energy:value_unit"
+      ],
+      "wrong_page": [
+        "communication:actual_page"
+      ],
+      "missing_checklist": [
+        "energy:scope_action"
+      ]
+    }
+  }
+}
+{
+  "R1_single_E31": true,
+  "R1_equal_E41": true,
+  "R1_equal_E31": true,
+  "R1_conflict_E41_comparison": true,
+  "R1_conflict_E31": true,
+  "R1_conflict_E31_comparison": true,
+  "R1_conflict_E31_verification": true,
+  "R1_conflict_E31_note": true,
+  "R2_factory_control": true,
+  "R2_narrow_total": true,
+  "R2_reversed": true,
+  "R2_narrow_total_note": true,
+  "R3_negated": true,
+  "R3_other_certificate": true,
+  "R3_preparation": true,
+  "R3_real_acquisition": true,
+  "R4_difference_pct": true,
+  "R4_comparison": true,
+  "R4_point_comparison": true,
+  "R4_point_verification": true
+}

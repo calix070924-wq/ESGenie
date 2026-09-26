@@ -35,7 +35,7 @@ def report(kesg_data=None):
 def numeric_answer(actual, claimed, *, unit='%', claim_unit='%', code='E-6-2'):
     point = DataPoint(code, code, actual, unit, 2025, .94, 'verified', 0,
         [EvidenceLink('audit.pdf', 'evidence_pack/audit.pdf', 'ocr_structured',
-            node_id='value', page=0)])
+            node_id='value', page=0)], completeness='total')
     graph = EvidenceGraph('AUDIT', 'Audit')
     graph.add_node(EvidenceNode('value', code, actual, unit, 2025, 'ocr',
         source_file='audit.pdf', origin='ocr_structured', raw_text=f'{code} {actual}{unit}', page=0))

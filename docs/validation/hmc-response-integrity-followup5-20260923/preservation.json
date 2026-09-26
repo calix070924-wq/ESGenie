@@ -1,0 +1,58 @@
+{
+  "original": {
+    "head": "fa818173cad7fd6fc2caac8eda4dc496a53cc27d",
+    "uncommitted_entries": 28,
+    "stash_entries": 4,
+    "note": "이번 회차는 원본 폴더를 읽기만 했다 — 증빙 PDF·OCR 캐시·검토 기록 모두 변경 없음.",
+    "digest_rule": "각 파일 sha256을 구해 \"<sha256>  <루트 기준 상대경로>\" 줄을 상대경로 오름차순으로 정렬하고 \"\\n\"으로 이은 UTF-8 문자열의 sha256",
+    "evidence": {
+      "root": "/Users/heojeongmin/Documents/Claude/Projects/ESGenie/시연증빙세트_한울정밀공업",
+      "count": 53,
+      "digest_of_digests": "a54d280f0174cea7b89239191403e048f9cd6316a9d41e4ba5260c9d2f2ccfb8"
+    },
+    "ocr_cache": {
+      "root": "/Users/heojeongmin/Documents/Claude/Projects/ESGenie/data/_cache/ocr",
+      "count": 859,
+      "digest_of_digests": "c2cc957c730ec44b0d1ce21f78eeb0eff99e9d3b530e92c5d3ed5b4975cff9fb"
+    }
+  },
+  "reviewer_records": {
+    "root": "/Users/heojeongmin/Documents/Claude/Projects/ESGenie/outputs/reviews",
+    "files": 62,
+    "unchanged_during_this_round": true,
+    "note": "검토자 probe는 출력 폴더 상수만 이 회차 폴더로 치환해 실행했다. 실행 전후 전체 파일 sha256 목록이 같다."
+  },
+  "previous_records_modified": [],
+  "previous_artifacts": {
+    "followup-20260921": {
+      "count": 36,
+      "mismatches": []
+    },
+    "followup2-20260921": {
+      "count": 22,
+      "mismatches": []
+    },
+    "followup3-20260921": {
+      "count": 22,
+      "mismatches": []
+    },
+    "followup4-20260921": {
+      "count": 22,
+      "mismatches": []
+    }
+  },
+  "worktree": {
+    "head": "6b55c2a533c6204fb871b34f0da1640cc996bca9",
+    "branch": "codex/fix-hmc-response-integrity-20260920",
+    "commits_since_main": 24,
+    "status": [
+      " M \"docs/HMC_\\354\\235\\221\\353\\213\\265\\354\\204\\234_\\352\\262\\200\\354\\246\\235\\354\\240\\225\\355\\225\\251\\354\\204\\261_\\355\\233\\204\\354\\206\\215\\354\\210\\230\\354\\240\\225\\352\\262\\260\\352\\263\\274_2026-09-21.md\"",
+      " M esgenie/rag_gates/grounding_gate.py",
+      " M esgenie/ssot/selection.py",
+      " M tests/test_hmc_followup.py",
+      "?? docs/validation/hmc-response-integrity-followup5-20260923/"
+    ],
+    "reviewed_patch_sha256": "39d456e058c59924999c49746ba9ba8c4c33d5f75564b11a049d5fcfd86c352d",
+    "final_diff_sha256": "4527577e305bc9dcd54e1921545c3ccf29b2087f7c4ed0f9fddc1ffdc9fc6e3f"
+  }
+}
