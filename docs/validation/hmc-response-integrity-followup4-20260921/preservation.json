@@ -1,0 +1,43 @@
+{
+  "original": {
+    "head": "fa818173cad7fd6fc2caac8eda4dc496a53cc27d",
+    "uncommitted_entries": 28,
+    "stash_entries": 4,
+    "note": "이번 회차는 원본 폴더를 읽기만 했다 — 증빙 PDF·OCR 캐시·검토 기록 모두 변경 없음.",
+    "evidence": {
+      "count": 53,
+      "digest_of_digests": "66d58e0eb06d099b93e9fadaf8700f7d7f2edb10290f4f9fdd8291e15ed9db3d"
+    },
+    "ocr_cache": {
+      "count": 859,
+      "digest_of_digests": "4e720d74dc1db968a9058d1ff7cd15a486931cebf908b5119f4ee5b2257cd407"
+    }
+  },
+  "previous_records_modified": [],
+  "previous_artifacts": {
+    "followup-20260921": {
+      "count": 36,
+      "mismatches": []
+    },
+    "followup2-20260921": {
+      "count": 22,
+      "mismatches": []
+    },
+    "followup3-20260921": {
+      "count": 22,
+      "mismatches": []
+    }
+  },
+  "worktree": {
+    "head": "635138131c51bdbbf12ef4df127a9368d48876ed",
+    "branch": "codex/fix-hmc-response-integrity-20260920",
+    "commits_since_main": 22,
+    "status": [
+      " M esgenie/rag_gates/grounding_gate.py",
+      " M esgenie/ssot/boundary.py",
+      " M esgenie/ssot/selection.py",
+      " M tests/test_hmc_followup.py",
+      "?? docs/validation/hmc-response-integrity-followup4-20260921/"
+    ]
+  }
+}

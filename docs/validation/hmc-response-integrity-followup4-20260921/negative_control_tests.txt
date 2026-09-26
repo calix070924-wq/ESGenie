@@ -1,0 +1,148 @@
+# 수정 전 제품 코드(6351381)로 이번 회귀만 실행한 결과 — 새 검사가 실제로 결함을 잡는지 확인
+# 명령: git stash push esgenie/ssot/{selection,boundary}.py esgenie/rag_gates/grounding_gate.py 후
+#       venv/bin/python -m pytest tests/test_hmc_followup.py -k review4 -p no:randomly
+
+.F.F.FF.FF..                                                             [100%]
+=================================== FAILURES ===================================
+_____ test_review4_A_conversion_basis_is_recovered_per_measurement[0-True] _____
+
+duplicates = 0, mwh = True
+
+    @pytest.mark.parametrize("mwh", [False, True])
+    @pytest.mark.parametrize("duplicates", [0, 1, 2])
+    def test_review4_A_conversion_basis_is_recovered_per_measurement(duplicates, mwh):
+        """정상 가스 자료가 함께 있어도 중복 전력의 배출량이 빠지지 않는다.
+    
+        복구가 '전체 usable 목록이 비었을 때만' 돌면 남아 있는 가스 후보 때문에 전력
+        0.048 tCO2eq가 통째로 사라졌다(4차 검토 A: 0.104 → 0.056).
+        """
+        power = power_and_gas(duplicates, mwh)
+        for rows in ([*power, extraction("gas.pdf", "도시가스 사용열량", 1000, "MJ")],
+                     [extraction("gas.pdf", "도시가스 사용열량", 1000, "MJ"), *power[::-1]]):
+            points = pipeline(rows)[1]
+            assert points["E-4-1"].value == pytest.approx(.00136)     # 전력 0.00036 + 가스 0.001
+            dp = points["E-3-1"]
+>           assert dp.value == pytest.approx(.104)                    # 전력 0.048 + 가스 0.056
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E           assert 0.056 == 0.104 ± 1.0e-07
+E             
+E             comparison failed
+E             Obtained: 0.056
+E             Expected: 0.104 ± 1.0e-07
+
+tests/test_hmc_followup.py:451: AssertionError
+_____ test_review4_A_conversion_basis_is_recovered_per_measurement[1-True] _____
+
+duplicates = 1, mwh = True
+
+    @pytest.mark.parametrize("mwh", [False, True])
+    @pytest.mark.parametrize("duplicates", [0, 1, 2])
+    def test_review4_A_conversion_basis_is_recovered_per_measurement(duplicates, mwh):
+        """정상 가스 자료가 함께 있어도 중복 전력의 배출량이 빠지지 않는다.
+    
+        복구가 '전체 usable 목록이 비었을 때만' 돌면 남아 있는 가스 후보 때문에 전력
+        0.048 tCO2eq가 통째로 사라졌다(4차 검토 A: 0.104 → 0.056).
+        """
+        power = power_and_gas(duplicates, mwh)
+        for rows in ([*power, extraction("gas.pdf", "도시가스 사용열량", 1000, "MJ")],
+                     [extraction("gas.pdf", "도시가스 사용열량", 1000, "MJ"), *power[::-1]]):
+            points = pipeline(rows)[1]
+            assert points["E-4-1"].value == pytest.approx(.00136)     # 전력 0.00036 + 가스 0.001
+            dp = points["E-3-1"]
+>           assert dp.value == pytest.approx(.104)                    # 전력 0.048 + 가스 0.056
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E           assert 0.056 == 0.104 ± 1.0e-07
+E             
+E             comparison failed
+E             Obtained: 0.056
+E             Expected: 0.104 ± 1.0e-07
+
+tests/test_hmc_followup.py:451: AssertionError
+_____ test_review4_A_conversion_basis_is_recovered_per_measurement[2-True] _____
+
+duplicates = 2, mwh = True
+
+    @pytest.mark.parametrize("mwh", [False, True])
+    @pytest.mark.parametrize("duplicates", [0, 1, 2])
+    def test_review4_A_conversion_basis_is_recovered_per_measurement(duplicates, mwh):
+        """정상 가스 자료가 함께 있어도 중복 전력의 배출량이 빠지지 않는다.
+    
+        복구가 '전체 usable 목록이 비었을 때만' 돌면 남아 있는 가스 후보 때문에 전력
+        0.048 tCO2eq가 통째로 사라졌다(4차 검토 A: 0.104 → 0.056).
+        """
+        power = power_and_gas(duplicates, mwh)
+        for rows in ([*power, extraction("gas.pdf", "도시가스 사용열량", 1000, "MJ")],
+                     [extraction("gas.pdf", "도시가스 사용열량", 1000, "MJ"), *power[::-1]]):
+            points = pipeline(rows)[1]
+            assert points["E-4-1"].value == pytest.approx(.00136)     # 전력 0.00036 + 가스 0.001
+            dp = points["E-3-1"]
+>           assert dp.value == pytest.approx(.104)                    # 전력 0.048 + 가스 0.056
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E           assert 0.056 == 0.104 ± 1.0e-07
+E             
+E             comparison failed
+E             Obtained: 0.056
+E             Expected: 0.104 ± 1.0e-07
+
+tests/test_hmc_followup.py:451: AssertionError
+_______ test_review4_B_past_period_conflict_does_not_reach_current_value _______
+
+    def test_review4_B_past_period_conflict_does_not_reach_current_value():
+        """다른 기간 문서끼리의 불일치가 현재 채택값의 상태를 바꾸지 않는다."""
+        control = pipeline([extraction("current.pdf", "사용전력량", 300, "kWh")])[1]["E-3-1"]
+        graph, points, _ = pipeline([extraction("old_a.pdf", "사용전력량", 100, "kWh", "2025-05"),
+                                     extraction("old_b.pdf", "사용전력량", 200, "kWh", "2025-05"),
+                                     extraction("current.pdf", "사용전력량", 300, "kWh")])
+        dp = points["E-3-1"]
+>       assert (dp.value, dp.comparison, dp.verification) == (
+            control.value, control.comparison, control.verification)
+E       AssertionError: assert (0.143, 'mism... 'unverified') == (0.143, 'scop..., 'estimated')
+E         
+E         At index 1 diff: 'mismatch' != 'scope_unconfirmed'
+E         Use -v to get more diff
+
+tests/test_hmc_followup.py:464: AssertionError
+_ test_review4_C_adjacent_preparation_does_not_erase_completion_claim[ISMS \uc778\uc99d\uc744 \ucde8\ub4dd\ud588\uace0 \uc900\ube44 \uc790\ub8cc\ub97c \ubcf4\uad00\ud55c\ub2e4.-False] _
+
+answer = 'ISMS 인증을 취득했고 준비 자료를 보관한다.', supported = False
+
+    @pytest.mark.parametrize("answer,supported", [
+        ("ISMS 인증을 취득했다.", False),
+        ("ISMS 인증을 취득했고 준비 자료를 보관한다.", False),
+        ("ISMS 인증을 취득하여 준비 자료를 보관 중이다.", False),
+        ("ISMS 인증을 취득할 예정이다.", True),
+    ])
+    def test_review4_C_adjacent_preparation_does_not_erase_completion_claim(answer, supported):
+        """뒤 절의 '준비'가 완료 주장 목록을 비우면 미입증 취득이 통과한다(4차 검토 C)."""
+>       assert (certification_draft(answer, "ISMS 인증 취득을 준비 중이다.") == "draft_ready") is supported
+E       AssertionError: assert ('draft_ready' == 'draft_ready'
+E         
+E           draft_ready) is False
+
+tests/test_hmc_followup.py:480: AssertionError
+_ test_review4_C_adjacent_preparation_does_not_erase_completion_claim[ISMS \uc778\uc99d\uc744 \ucde8\ub4dd\ud558\uc5ec \uc900\ube44 \uc790\ub8cc\ub97c \ubcf4\uad00 \uc911\uc774\ub2e4.-False] _
+
+answer = 'ISMS 인증을 취득하여 준비 자료를 보관 중이다.', supported = False
+
+    @pytest.mark.parametrize("answer,supported", [
+        ("ISMS 인증을 취득했다.", False),
+        ("ISMS 인증을 취득했고 준비 자료를 보관한다.", False),
+        ("ISMS 인증을 취득하여 준비 자료를 보관 중이다.", False),
+        ("ISMS 인증을 취득할 예정이다.", True),
+    ])
+    def test_review4_C_adjacent_preparation_does_not_erase_completion_claim(answer, supported):
+        """뒤 절의 '준비'가 완료 주장 목록을 비우면 미입증 취득이 통과한다(4차 검토 C)."""
+>       assert (certification_draft(answer, "ISMS 인증 취득을 준비 중이다.") == "draft_ready") is supported
+E       AssertionError: assert ('draft_ready' == 'draft_ready'
+E         
+E           draft_ready) is False
+
+tests/test_hmc_followup.py:480: AssertionError
+=========================== short test summary info ============================
+FAILED tests/test_hmc_followup.py::test_review4_A_conversion_basis_is_recovered_per_measurement[0-True]
+FAILED tests/test_hmc_followup.py::test_review4_A_conversion_basis_is_recovered_per_measurement[1-True]
+FAILED tests/test_hmc_followup.py::test_review4_A_conversion_basis_is_recovered_per_measurement[2-True]
+FAILED tests/test_hmc_followup.py::test_review4_B_past_period_conflict_does_not_reach_current_value
+FAILED tests/test_hmc_followup.py::test_review4_C_adjacent_preparation_does_not_erase_completion_claim[ISMS \uc778\uc99d\uc744 \ucde8\ub4dd\ud588\uace0 \uc900\ube44 \uc790\ub8cc\ub97c \ubcf4\uad00\ud55c\ub2e4.-False]
+FAILED tests/test_hmc_followup.py::test_review4_C_adjacent_preparation_does_not_erase_completion_claim[ISMS \uc778\uc99d\uc744 \ucde8\ub4dd\ud558\uc5ec \uc900\ube44 \uc790\ub8cc\ub97c \ubcf4\uad00 \uc911\uc774\ub2e4.-False]
+6 failed, 6 passed, 64 deselected in 0.15s

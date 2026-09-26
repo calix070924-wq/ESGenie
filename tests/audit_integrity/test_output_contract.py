@@ -16,6 +16,18 @@ from esgenie.supplychain.responder import build_response_sheet
 from esgenie.supplychain.exporters import export_response_sheet, export_response_sheet_pdf
 
 
+def sheet_cells(ws):
+    """응답서 시트를 {문항ID: {열 제목: 값}}으로 읽는다.
+
+    열 위치가 아니라 제목으로 찾는다 — 열이 하나 늘어도(2026-09-20 '측정 범위 / 검토')
+    보존해야 할 계약은 '무엇이 실렸는가'이지 몇 번째 칸인가가 아니다.
+    """
+    rows = list(ws.iter_rows(values_only=True))
+    header = next(r for r in rows if r[0] == '문항 ID')
+    names = [c for c in header if c]
+    return {r[0]: dict(zip(names, r)) for r in rows if r[0] and r[0] != '문항 ID'}
+
+
 def result_and_sheet(yn, note='', document=False):
     survey = {'E-1-1': {'yn':yn, 'text':note}}
     graph = build_unified_graph(None, _collect_ocr_extractions(None, survey_answers=survey),
@@ -40,8 +52,8 @@ def test_survey_json_excel_pdf_and_actual_ui(tmp_path, yn, note):
     assert payload['value'] is (yn == '예') and payload['status'] == 'self_reported'
     assert payload['display_value'] == yn
     wb = load_workbook(export_response_sheet(sheet, tmp_path))
-    row = next(r for r in wb['응답서'].iter_rows(values_only=True) if r[0] == answer.qid)
-    assert row[3] == yn and '자가신고' in row[4]
+    row = sheet_cells(wb['응답서'])[answer.qid]
+    assert row['답변'] == yn and '자가신고' in row['신뢰']
     with fitz.open(export_response_sheet_pdf(sheet,tmp_path,embed_evidence=False)) as doc:
         text = '\n'.join(page.get_text() for page in doc)
     assert yn in text and '자가신고' in text
@@ -66,10 +78,11 @@ def test_conflict_and_numeric_metadata_are_preserved_by_exporters(tmp_path):
     sheet.answers.append(Answer('energy','환경','에너지 사용량',248.5,'flagged',
                                 unit='TJ',period=2025,flags=['부분값 검토']))
     wb = load_workbook(export_response_sheet(sheet,tmp_path))
-    rows = {r[0]:r for r in wb['응답서'].iter_rows(values_only=True)}
-    assert rows[sheet.answers[0].qid][3] == '아니오'
-    assert '검토필요' in rows[sheet.answers[0].qid][4]
-    assert rows['energy'][3] == '248.5 TJ (2025년)' and '부분값 검토' in rows['energy'][5]
+    rows = sheet_cells(wb['응답서'])
+    assert rows[sheet.answers[0].qid]['답변'] == '아니오'
+    assert '검토필요' in rows[sheet.answers[0].qid]['신뢰']
+    assert rows['energy']['답변'] == '248.5 TJ (2025년)'
+    assert '부분값 검토' in rows['energy']['근거 / 비고']
     with fitz.open(export_response_sheet_pdf(sheet,tmp_path,embed_evidence=False)) as doc:
         text = '\n'.join(page.get_text() for page in doc)
     assert '아니오' in text and '검토필요' in text and '248.5 TJ (2025년)' in text

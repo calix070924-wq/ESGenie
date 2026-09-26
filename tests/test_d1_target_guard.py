@@ -16,7 +16,7 @@ class _FakeGraph:
 
     def __init__(self, value=72.0, unit="%"):
         self._node = SimpleNamespace(
-            id="n_e42", value=value, unit=unit, period=2025)
+            id="n_e42", value=value, unit=unit, period=2025, completeness="total")
 
     def search_nodes(self, keywords, period=None):
         return [self._node]

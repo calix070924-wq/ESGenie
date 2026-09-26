@@ -1,0 +1,155 @@
+{
+  "ticker": "D1",
+  "corp_name": "수치 검증 합성",
+  "area": "E",
+  "generated_at": "2026-09-14T04:49:46.529875+00:00",
+  "sentences": [
+    {
+      "sentence_id": "D1_E_000",
+      "sentence_text": "재생에너지 사용 비율은 92%이며 폐기물 재활용 비율은 31%였다.",
+      "kesg_item_id": "E-4-2",
+      "evidence_node_ids": [
+        "D1_E-4-2_2025",
+        "D1_E-6-2_2025"
+      ],
+      "retrieved_chunk_ids": [
+        "evidence"
+      ],
+      "retrieval_tier": null,
+      "retrieval_scores": [
+        1.0
+      ],
+      "grounding_status": "partial",
+      "risk_vector": {
+        "D1_numeric": {
+          "score": 1.0,
+          "evidence": [
+            "D1_E-4-2_2025",
+            "D1_E-6-2_2025"
+          ],
+          "detail": "E-4-2: claim=92.0 vs node=31 (Δ=196.8%); E-6-2: claim=31.0 vs node=92 (Δ=66.3%)",
+          "abstain": false,
+          "abstain_reason": null,
+          "evaluation": {
+            "status": "complete",
+            "compared_claims": 2,
+            "unverified_claims": 0,
+            "excluded_claims": 0,
+            "reasons": {},
+            "claims": [
+              {
+                "raw": "92%",
+                "start": 13,
+                "end": 16,
+                "code": "E-4-2",
+                "claim_value": 92.0,
+                "claim_unit": "%",
+                "evidence_ids": [
+                  "D1_E-4-2_2025"
+                ],
+                "evidence_value": 31,
+                "evidence_unit": "%",
+                "evidence_period": 2025,
+                "status": "compared",
+                "reason": "mismatch",
+                "evidence_files": [],
+                "compared_value": 92.0,
+                "delta_ratio": 1.967741935483871,
+                "nonzero_against_zero": false
+              },
+              {
+                "raw": "31%",
+                "start": 31,
+                "end": 34,
+                "code": "E-6-2",
+                "claim_value": 31.0,
+                "claim_unit": "%",
+                "evidence_ids": [
+                  "D1_E-6-2_2025"
+                ],
+                "evidence_value": 92,
+                "evidence_unit": "%",
+                "evidence_period": 2025,
+                "status": "compared",
+                "reason": "mismatch",
+                "evidence_files": [],
+                "compared_value": 31.0,
+                "delta_ratio": 0.6630434782608695,
+                "nonzero_against_zero": false
+              }
+            ]
+          }
+        },
+        "D2_modifier": {
+          "score": 0.0,
+          "evidence": [],
+          "detail": "모호어 없음",
+          "abstain": false,
+          "abstain_reason": null,
+          "evaluation": {}
+        },
+        "D3_semantic": {
+          "score": 0.0,
+          "evidence": [
+            "evidence"
+          ],
+          "detail": "최고 cos-sim=0.897 (임계치 0.35)",
+          "abstain": false,
+          "abstain_reason": null,
+          "evaluation": {}
+        },
+        "D5_timeseries": {
+          "score": 0.0,
+          "evidence": [],
+          "detail": "시계열 엣지 없음",
+          "abstain": false,
+          "abstain_reason": null,
+          "evaluation": {}
+        },
+        "aggregate": {
+          "risk_score": 0.4,
+          "level": "medium",
+          "top_axis": "D1_numeric",
+          "abstained_axes": [],
+          "evaluated_axes": [
+            "D1_numeric",
+            "D2_modifier",
+            "D3_semantic",
+            "D5_timeseries"
+          ],
+          "evaluated_weight": 1.0,
+          "incomplete_axes": [],
+          "evaluation_complete": true,
+          "evaluation_status": "complete"
+        }
+      },
+      "refinement_attempts": [],
+      "hitl_status": "HITL_REQUIRED",
+      "timestamps": {
+        "created": "2026-09-14T04:49:46.529875+00:00",
+        "finalized": "2026-09-14T04:49:46.529875+00:00"
+      },
+      "model_versions": {
+        "llm": "mock",
+        "embed": "paraphrase-multilingual-MiniLM-L12-v2",
+        "embed_backend": "sbert"
+      }
+    }
+  ],
+  "summary": {
+    "total_sentences": 1,
+    "hitl_count": 1,
+    "avg_risk_score": 0.4,
+    "evaluated_sentences": 1,
+    "complete_sentences": 1,
+    "numeric_compared_claims": 2,
+    "numeric_unverified_claims": 0,
+    "evaluation_complete": true,
+    "partial_sentences": 0,
+    "high_risk_axes": [
+      "D1_numeric"
+    ],
+    "refinement_total": 0,
+    "converged": false
+  }
+}

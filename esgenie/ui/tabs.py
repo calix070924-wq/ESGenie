@@ -684,7 +684,10 @@ def render_greenwash_workspace(result, active_area: str) -> None:
     ungrounded = len(getattr(grounding, "g1_uncited_sentences", None) or []) + len(
         getattr(grounding, "g2_orphan_numbers", None) or []
     )
-    if verify.converged:
+    rv = verify.final.detection.risk_vector
+    if rv is not None and not rv.evaluation_complete:
+        judgment, judgment_note = "담당자 이관", f"D1 {rv.numeric_coverage_label}"
+    elif verify.converged:
         judgment, judgment_note = "자동 통과", "근거 확인 완료"
     elif verify.hitl_required:
         judgment, judgment_note = "담당자 이관", f"근거 미확인 {ungrounded}건"
@@ -1046,6 +1049,8 @@ def render_verify_tab(
             f"⚠️ 자동 검증 {verify.iterations_used}회 후에도 근거를 확인하지 못했습니다 "
             f"— 담당자 확인으로 넘깁니다 (위험도 {format_score(before)} → {format_score(after)})"
         )
+    elif verify.final.detection.risk_vector is not None and not verify.final.detection.risk_vector.evaluation_complete:
+        st.warning(f"독립 증빙 확인 필요 · D1 {verify.final.detection.risk_vector.numeric_coverage_label}")
     elif after is not None and before is not None and after < before:
         st.success(f"✅ L4 재생성으로 위험도 {format_score(before)} → {format_score(after)} 감소")
     else:
@@ -1063,7 +1068,10 @@ def render_verify_tab(
     final_risk = verify.final.detection.risk_vector
     if final_risk is not None:
         if not final_risk.evaluation_complete:
-            st.warning(f"{final_risk.evaluation_label}: 기권 축 {', '.join(final_risk.abstained_axes())} — 독립 증빙 확인 필요")
+            st.warning(f"{final_risk.evaluation_label} · 미완료 축 {', '.join(final_risk.aggregate.get('incomplete_axes', final_risk.abstained_axes()))} · D1 {final_risk.numeric_coverage_label} — 독립 증빙 확인 필요")
+        st.caption(f"D1 수치 검증: {final_risk.numeric_coverage_label}")
+        if final_risk.numeric_evaluation.get("claims"):
+            st.dataframe(pd.DataFrame(final_risk.numeric_evaluation["claims"]), hide_index=True, width='stretch')
         axes = ["D1 수치오차", "D2 모호어", "D3 의미괴리", "D5 시계열모순"]
         scores = [
             None if final_risk.D1_numeric.abstain else final_risk.D1_numeric.score * 100,
@@ -1230,12 +1238,10 @@ def _fmt_answer_value(value) -> str:
 
 
 def _fmt_answer_evidence(answer) -> str:
-    parts: list[str] = []
-    for e in answer.evidence_links:
-        loc = f" p.{e.page + 1}" if e.page is not None else ""
-        if e.bbox:
-            loc += " 📍"
-        parts.append(f"{e.file_name}{loc}".strip())
+    """화면 표의 근거 칸 — Excel/PDF와 같은 표기 규칙(render.locator)을 쓴다(§5-1)."""
+    from esgenie.supplychain.render import locator
+
+    parts = [locator(e, bbox_mark="📍") for e in answer.evidence_links]
     return " / ".join(parts) or "—"
 
 
@@ -1365,8 +1371,55 @@ def _render_supplychain_evidence_preview(evidence, *, evidence_dir: str = "") ->
     )
 
 
+def _render_supplychain_drafts(draft_answers) -> None:
+    """AI 초안 목록을 그린다(§5-3).
+
+    본문 인용과 출처 목록은 제출본(Excel/PDF)과 같은 render 모듈을 쓴다 — 화면에는
+    내부 노드 ID를 쓰지 않고 [1]·문서명·실제 페이지로 적는다. 감사 추적용 node_id는
+    '근거 발췌' 안에 남긴다(원문 draft_text와 JSON도 그대로다).
+    """
+    from esgenie.supplychain.render import draft_body, page_text, source_lines
+
+    for da in draft_answers:
+        st.markdown(f"**{da.question_text}**")
+        body, review_notes = draft_body(da)
+        st.markdown(body)
+        sources = source_lines(da)
+        if sources:
+            st.markdown("**출처**")
+            for line in sources:
+                st.markdown(f"- {line}")
+        for note in review_notes:
+            st.warning(note)
+        if da.draft_citations:
+            with st.expander("근거 발췌 (감사 추적용 node_id 포함)", expanded=False):
+                for cit in da.draft_citations:
+                    page = page_text(cit.get("page"))
+                    st.markdown(
+                        f"- {cit.get('source_file') or '문서명 미확인'}"
+                        f"{' · ' + page if page else ''} · "
+                        f"node_id: {cit.get('node_id', '')} · "
+                        f"retrieval: {cit.get('retrieval', 'code_match')}"
+                    )
+        if da.draft_grounding:
+            hard = da.draft_grounding.get("hard_fails", [])
+            soft = da.draft_grounding.get("soft_flags", [])
+            faith = da.draft_grounding.get("faithfulness", 0.0)
+            gates = []
+            for g in ("G1", "G2", "G4", "G5"):
+                failed = any(g.lower() in h.lower() for h in hard + soft)
+                gates.append(f"{g} {'✗' if failed else '✓'}")
+            st.markdown(f"게이트: {' · '.join(gates)} · faithfulness {faith:.2f}")
+        st.caption("이 초안은 담당자 검토·승인 후 사용하세요.")
+        st.markdown("---")
+
+
 def _render_supplychain_answer_detail(result, answer, *, question_map: dict[str, Any]) -> None:
     from esgenie.provenance import primary_evidence, verification_view
+    from esgenie.supplychain.render import (
+        locator as _sc_locator,
+        scope_line as _sc_scope_line,
+    )
 
     code = _answer_primary_code(question_map, answer)
     data_point = _data_point_by_code(result).get(code)
@@ -1383,6 +1436,10 @@ def _render_supplychain_answer_detail(result, answer, *, question_map: dict[str,
         if data_point is not None:
             view = verification_view(getattr(data_point, "verification", ""))
             st.caption(f"{view['label']} · D1 위험 {float(getattr(data_point, 'd1_risk', 0.0) or 0.0):.2f}")
+        # 측정 범위·비교 판정 — 제출본과 같은 문장을 화면에서도 보여준다(§5-1).
+        scope = _sc_scope_line(answer)
+        if scope:
+            st.markdown(f"**측정 범위 / 검토**: {scope}")
         if answer.flags:
             st.markdown("**검토 포인트**")
             for flag in answer.flags:
@@ -1393,12 +1450,13 @@ def _render_supplychain_answer_detail(result, answer, *, question_map: dict[str,
         if answer.evidence_links:
             st.markdown("**연결된 증빙**")
             for evidence_link in answer.evidence_links:
-                label = evidence_link.file_name
-                if evidence_link.page is not None:
-                    label += f" · p.{evidence_link.page + 1}"
-                if getattr(evidence_link, "bbox", None):
-                    label += " · bbox"
-                st.markdown(f"- {label}")
+                st.markdown(f"- {_sc_locator(evidence_link, bbox_mark='· bbox')}")
+        refs = getattr(answer, "reference_links", None) or []
+        if refs:
+            # 값 산정에 쓰이지 않은 문서 — 산정 근거 목록과 섞지 않는다(§2-2).
+            st.markdown("**보완 대상 근거 (값 산정 미사용)**")
+            for ref in refs:
+                st.markdown(f"- {_sc_locator(ref, bbox_mark='· bbox')}")
 
     with right:
         st.markdown("**원본 위치 미리보기**")
@@ -1427,6 +1485,7 @@ def _get_cached_response_sheet(result, framework, *, supplier_claims=None):
             return asdict(value)
         return vars(value) if hasattr(value, "__dict__") else str(value)
     content = {
+        "response_contract": "hmc-integrity-20260921",
         "corp": corp_name, "framework": framework,
         "claims": supplier_claims or {},
         **{key: getattr(result, key, None) for key in (
@@ -1478,16 +1537,19 @@ def _render_responder_workspace(
     sheet = _get_cached_response_sheet(result, framework, supplier_claims=supplier_claims)
     question_map = {question.qid: question for question in framework.questions}
 
+    # 화면 수치는 Excel/PDF 헤더와 같은 소수 첫째자리로 적는다 — 68.1%가 68%로
+    # 보여 제출본과 어긋나던 표기를 맞춘다(§5-1).
     c1, c2, c3, c4, c5 = st.columns(5)
-    c1.metric("자동응답", f"{sheet.auto_pct:.0f}%")
-    c2.metric("AI초안 (🤖)", f"{sheet.draft_pct:.0f}%")
-    c3.metric("작성필요 (✍️)", f"{sheet.hitl_pct:.0f}%")
-    c4.metric("증빙대기 (❗)", f"{sheet.pending_pct:.0f}%")
+    c1.metric("자동응답", f"{sheet.auto_pct:.1f}%")
+    c2.metric("AI초안 (🤖)", f"{sheet.draft_pct:.1f}%")
+    c3.metric("작성필요 (✍️)", f"{sheet.hitl_pct:.1f}%")
+    c4.metric("증빙대기 (❗)", f"{sheet.pending_pct:.1f}%")
     c5.metric("검토 필요 (🚩)", f"{sheet.flagged_count}건")
     st.caption(
         f"문항 {len(sheet.answers)}개 (분모 {sheet.denominator}개, 해당없음 제외) · "
         "자동응답=기계가 답 채움 / AI초안=근거게이트 통과 초안(담당자 승인 전) / "
-        "작성필요=사람 서술 / 증빙대기=증빙 업로드 시 자동화"
+        "작성필요=사람 서술 / 증빙대기=증빙 업로드 시 자동화 · "
+        "검토필요는 별도 지표이며 자동응답과 중복될 수 있습니다"
     )
 
     if supplier_claims:
@@ -1510,12 +1572,16 @@ def _render_responder_workspace(
             st.dataframe(pd.DataFrame(upload_cta_rows), hide_index=True, width='stretch')
 
     st.markdown("#### 자동 응답")
+    from esgenie.supplychain.render import scope_line as _scope_line
+
     rows = [
         {
             "신뢰": a.badge,
             "섹션": a.section,
             "문항": a.question_text,
             "답변": a.display_value,
+            # 제출본(Excel/PDF)의 '측정 범위 / 검토' 열과 같은 문장.
+            "측정 범위 / 검토": _scope_line(a) or "—",
             "근거": _fmt_answer_evidence(a),
         }
         for a in sheet.answers
@@ -1525,30 +1591,7 @@ def _render_responder_workspace(
     draft_answers = [a for a in sheet.answers if a.status == "draft_ready"]
     if draft_answers:
         with st.expander(f"🤖 AI 초안 항목 ({len(draft_answers)}건)", expanded=True):
-            for da in draft_answers:
-                st.markdown(f"**{da.question_text}**")
-                st.markdown(da.draft_text)
-                if da.draft_citations:
-                    st.markdown("**근거 발췌**")
-                    for cit in da.draft_citations:
-                        retrieval_tag = cit.get("retrieval", "code_match")
-                        st.markdown(
-                            f"- {cit.get('source_file', '—')} · "
-                            f"{cit.get('node_id', '')} · "
-                            f"p.{(cit.get('page') or 0) + 1} · "
-                            f"retrieval: {retrieval_tag}"
-                        )
-                if da.draft_grounding:
-                    hard = da.draft_grounding.get("hard_fails", [])
-                    soft = da.draft_grounding.get("soft_flags", [])
-                    faith = da.draft_grounding.get("faithfulness", 0.0)
-                    gates = []
-                    for g in ("G1", "G2", "G4", "G5"):
-                        failed = any(g.lower() in h.lower() for h in hard + soft)
-                        gates.append(f"{g} {'✗' if failed else '✓'}")
-                    st.markdown(f"게이트: {' · '.join(gates)} · faithfulness {faith:.2f}")
-                st.caption("이 초안은 담당자 검토·승인 후 사용하세요.")
-                st.markdown("---")
+            _render_supplychain_drafts(draft_answers)
 
     detail_answers = [a for a in sheet.answers if a.evidence_links or a.flags or a.rationale]
     if detail_answers:
@@ -1664,6 +1707,7 @@ def render_benchmark_tab(gradient: str, *, show_header: bool = True) -> None:
             "F1": metrics["f1"],
             "Accuracy": metrics["accuracy"],
             "LLM 호출": metrics["llm_calls"],
+            "평가 완료": f"{metrics['complete_cases']}/{len(report.cases)}",
         })
     st.dataframe(pd.DataFrame(metric_rows), hide_index=True, width='stretch')
 
@@ -1710,8 +1754,10 @@ def render_benchmark_tab(gradient: str, *, show_header: bool = True) -> None:
                     }
                     for case in wrong
                 ]), hide_index=True, width='stretch')
-            else:
+            elif all(case.evaluation_complete for case in report.cases):
                 st.success("오답 없음")
+            else:
+                st.info("분류상 오답 없음 · 부분 평가가 있어 독립 증빙 확인 필요")
 
     report_md = bench_format(reports, n_cases=len(cases))
     st.download_button("📥 벤치마크 리포트 (.md)", report_md.encode(), file_name="benchmark_report.md", mime="text/markdown")
@@ -1882,7 +1928,13 @@ def _render_provenance_panel(result) -> None:
             with cc1:
                 st.badge(view["label"], color=tone_color[view["tone"]])
                 st.caption("D1 수치 위험도")
-                st.progress(min(1.0, float(data_point.d1_risk or 0.0)), text=f"{float(data_point.d1_risk or 0.0):.2f}")
+                if data_point.d1_risk is None:
+                    st.warning("평가불가 · 독립 증빙 확인 필요")
+                else:
+                    st.progress(min(1.0, data_point.d1_risk), text=f"{data_point.d1_risk:.2f}")
+                if data_point.d1_evaluation:
+                    from esgenie.schemas import AxisScore
+                    st.caption(AxisScore(0, evaluation=data_point.d1_evaluation).coverage_label)
             with cc2:
                 evidence = primary_evidence(data_point.evidence_files or [])
                 bbox = getattr(evidence, "bbox", None) if evidence else None
@@ -1952,6 +2004,7 @@ def _render_hitl_panel(sentence_trace) -> None:
                 st.markdown("**문장 원문**")
                 st.write(sentence.sentence_text)
                 if risk_vector is not None:
+                    st.caption(f"D1 수치 검증: {risk_vector.numeric_coverage_label}")
                     st.markdown("**4축 위험 분해**")
                     st.dataframe(pd.DataFrame([
                         {"축": axis, "점수": format_score(score, digits=3), "설명": detail}

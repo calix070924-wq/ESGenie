@@ -1,0 +1,62 @@
+[
+  {
+    "test": "test_actual_app_d1_status[normal]",
+    "observed": {
+      "case": "normal",
+      "compared": 2,
+      "unverified": 0,
+      "review_required": false,
+      "automatic_pass": true
+    }
+  },
+  {
+    "test": "test_actual_app_d1_status[swapped]",
+    "observed": {
+      "case": "swapped",
+      "compared": 2,
+      "unverified": 0,
+      "review_required": true,
+      "automatic_pass": false
+    }
+  },
+  {
+    "test": "test_actual_app_d1_status[plain_error]",
+    "observed": {
+      "case": "plain_error",
+      "compared": 1,
+      "unverified": 0,
+      "review_required": true,
+      "automatic_pass": false
+    }
+  },
+  {
+    "test": "test_actual_app_d1_status[missing]",
+    "observed": {
+      "case": "missing",
+      "compared": 0,
+      "unverified": 1,
+      "review_required": true,
+      "automatic_pass": false
+    }
+  },
+  {
+    "test": "test_actual_app_d1_status[normal_missing]",
+    "observed": {
+      "case": "normal_missing",
+      "compared": 1,
+      "unverified": 1,
+      "review_required": true,
+      "automatic_pass": false
+    }
+  },
+  {
+    "test": "test_actual_app_d1_status[error_missing]",
+    "observed": {
+      "case": "error_missing",
+      "compared": 1,
+      "unverified": 1,
+      "review_required": true,
+      "automatic_pass": false
+    }
+  }
+]

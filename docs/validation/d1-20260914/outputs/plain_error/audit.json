@@ -1,0 +1,133 @@
+{
+  "ticker": "D1",
+  "corp_name": "수치 검증 합성",
+  "area": "E",
+  "generated_at": "2026-09-14T04:49:46.565872+00:00",
+  "sentences": [
+    {
+      "sentence_id": "D1_E_000",
+      "sentence_text": "온실가스 배출량은 9999 tCO2eq이다.",
+      "kesg_item_id": "E-3-1",
+      "evidence_node_ids": [
+        "D1_E-3-1_2025"
+      ],
+      "retrieved_chunk_ids": [
+        "evidence"
+      ],
+      "retrieval_tier": null,
+      "retrieval_scores": [
+        1.0
+      ],
+      "grounding_status": "partial",
+      "risk_vector": {
+        "D1_numeric": {
+          "score": 1.0,
+          "evidence": [
+            "D1_E-3-1_2025"
+          ],
+          "detail": "E-3-1: claim=9999.0 vs node=100 (Δ=9899.0%)",
+          "abstain": false,
+          "abstain_reason": null,
+          "evaluation": {
+            "status": "complete",
+            "compared_claims": 1,
+            "unverified_claims": 0,
+            "excluded_claims": 0,
+            "reasons": {},
+            "claims": [
+              {
+                "raw": "9999 tCO2eq",
+                "start": 10,
+                "end": 21,
+                "code": "E-3-1",
+                "claim_value": 9999.0,
+                "claim_unit": "tCO2eq",
+                "evidence_ids": [
+                  "D1_E-3-1_2025"
+                ],
+                "evidence_value": 100,
+                "evidence_unit": "tCO2eq",
+                "evidence_period": 2025,
+                "status": "compared",
+                "reason": "mismatch",
+                "evidence_files": [],
+                "compared_value": 9999.0,
+                "delta_ratio": 98.99,
+                "nonzero_against_zero": false
+              }
+            ]
+          }
+        },
+        "D2_modifier": {
+          "score": 0.0,
+          "evidence": [],
+          "detail": "모호어 없음",
+          "abstain": false,
+          "abstain_reason": null,
+          "evaluation": {}
+        },
+        "D3_semantic": {
+          "score": 0.0,
+          "evidence": [
+            "evidence"
+          ],
+          "detail": "최고 cos-sim=0.642 (임계치 0.35)",
+          "abstain": false,
+          "abstain_reason": null,
+          "evaluation": {}
+        },
+        "D5_timeseries": {
+          "score": 0.0,
+          "evidence": [],
+          "detail": "시계열 엣지 없음",
+          "abstain": false,
+          "abstain_reason": null,
+          "evaluation": {}
+        },
+        "aggregate": {
+          "risk_score": 0.4,
+          "level": "medium",
+          "top_axis": "D1_numeric",
+          "abstained_axes": [],
+          "evaluated_axes": [
+            "D1_numeric",
+            "D2_modifier",
+            "D3_semantic",
+            "D5_timeseries"
+          ],
+          "evaluated_weight": 1.0,
+          "incomplete_axes": [],
+          "evaluation_complete": true,
+          "evaluation_status": "complete"
+        }
+      },
+      "refinement_attempts": [],
+      "hitl_status": "HITL_REQUIRED",
+      "timestamps": {
+        "created": "2026-09-14T04:49:46.565872+00:00",
+        "finalized": "2026-09-14T04:49:46.565872+00:00"
+      },
+      "model_versions": {
+        "llm": "mock",
+        "embed": "paraphrase-multilingual-MiniLM-L12-v2",
+        "embed_backend": "sbert"
+      }
+    }
+  ],
+  "summary": {
+    "total_sentences": 1,
+    "hitl_count": 1,
+    "avg_risk_score": 0.4,
+    "evaluated_sentences": 1,
+    "complete_sentences": 1,
+    "numeric_compared_claims": 1,
+    "numeric_unverified_claims": 0,
+    "evaluation_complete": true,
+    "partial_sentences": 0,
+    "high_risk_axes": [
+      "D1_numeric"
+    ],
+    "refinement_total": 0,
+    "converged": false
+  }
+}

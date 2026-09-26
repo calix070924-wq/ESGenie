@@ -1,0 +1,33 @@
+{
+  "original_head_before": "b1b1ce91ab38ac6ede8db02c6331292eec314c7e",
+  "original_head_after": "b1b1ce91ab38ac6ede8db02c6331292eec314c7e",
+  "status_identical": true,
+  "protected_file_count": 1205,
+  "changed_protected_files": [],
+  "original_changes": [
+    " M app.py",
+    " M docs/본선_시연영상_컷시나리오_v2.md",
+    " M esgenie/ui/tabs.py",
+    "?? docs/AI_ROOKIE_결선점검_2026-09-09.md",
+    "?? docs/결선_준비계획_2026-09-07.md",
+    "?? docs/녹화순서_화면소스_2026-08-05.md",
+    "?? docs/본선_시연영상_컷시나리오_v3.md",
+    "?? docs/본선_시연영상_컷시나리오_v4.md",
+    "?? docs/작업지시서_D1_수치검증_미탐개선_2026-09-14.md",
+    "?? docs/작업지시서_검증신뢰성_개선_2026-09-11.md",
+    "?? docs/작업지시서_컷4.4재구성_2026-08-03.md",
+    "?? docs/작업지시서_컷4.4재구성_후속_2026-08-03.md",
+    "?? docs/촬영_치트시트.md",
+    "?? docs/촬영전_체크리스트_2026-08-03.md",
+    "?? docs/해외_ESG_유사서비스_및_상용화_벤치마킹_2026-08-03.md",
+    "?? esgenie/memo.py",
+    "?? esgenie/ui/memo_tab.py",
+    "?? scripts/gen_hanwool_evidence.py",
+    "?? scripts/make_anon_covers.py",
+    "?? scripts/make_opening_stills.py",
+    ""
+  ],
+  "original_env_and_data_caches": "SHA-256 compared without printing contents",
+  "worktree": "/private/tmp/ESGenie-d1-validation-20260914",
+  "base_origin_main": "b1b1ce91ab38ac6ede8db02c6331292eec314c7e"
+}

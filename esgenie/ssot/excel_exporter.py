@@ -61,7 +61,7 @@ def export_datasheet(
     wb = Workbook()
     ws = wb.active
     ws.title = "DataSheet"
-    headers = ["K-ESG 코드", "항목명", "값", "단위", "연도", "검증상태", "D1 위험도", "증빙 파일"]
+    headers = ["K-ESG 코드", "항목명", "값", "단위", "연도", "검증상태", "D1 위험도", "증빙 파일", "D1 평가", "비교 주장", "미검증 주장", "미검증 사유"]
     ws.append(headers)
     for c in range(1, len(headers) + 1):
         cell = ws.cell(1, c)
@@ -70,10 +70,15 @@ def export_datasheet(
         cell.alignment = Alignment(horizontal="center")
 
     for dp in trace.data_points:
+        from ..schemas import AxisScore
+        evaluation = dp.d1_evaluation
         ev_name = dp.evidence_files[0].file_name if dp.evidence_files else "—"
         ws.append([
             dp.kesg_code, dp.kesg_name, dp.value, dp.unit, dp.period,
             dp.verification, dp.d1_risk, ev_name,
+            AxisScore(0, evaluation=evaluation).evaluation_label if evaluation else "이전 자료: 평가 범위 미기록",
+            evaluation.get("compared_claims"), evaluation.get("unverified_claims"),
+            ", ".join(evaluation.get("reasons", {})),
         ])
         row = ws.max_row
         # 검증상태 색상

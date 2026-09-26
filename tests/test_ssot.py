@@ -118,8 +118,11 @@ class TestSsotGraph:
         g.add_node(EvidenceNode(
             id="SME001_E-4-1_2025", metric="E-4-1", value=130000, unit="kWh",
             period=2025, source="dart", origin="dart",
+            boundary=__import__("esgenie.ssot.boundary", fromlist=["derive_boundary"]).derive_boundary("사용전력량", "2025-12", doc_context="제1공장"),
         ))
-        merge_ocr_extraction(g, _kepco_extraction(128400.0), report_year=2025)
+        ext = _kepco_extraction(128400.0)
+        ext.raw_text = "제1공장"
+        merge_ocr_extraction(g, ext, report_year=2025)
         xc = [e for e in g.edges if e.edge_type == "cross_check"]
         assert xc, "동일 metric/period DART↔OCR → cross_check 엣지 생성"
         assert "오차" in xc[0].detail
@@ -304,21 +307,22 @@ class TestDetector:
         r = det.detect_d1_numeric("수치가 없는 문장입니다.", "E-4-1", g)
         assert r.score == 0.0
 
-    def test_d1_no_kesg_code_is_risky(self):
+    def test_d1_no_kesg_code_is_unverified(self):
         g = self._graph_with_e41()
         r = det.detect_d1_numeric("사용량은 128,400 kWh였습니다.", None, g)
-        assert r.score >= 0.5
+        assert r.score == 0 and r.abstain_reason == "ambiguous_topic"
 
-    def test_d1_no_evidence_nodes_high_risk(self):
+    def test_d1_no_evidence_nodes_abstain(self):
         g = EvidenceGraph("LOCAL", "로컬")
         r = det.detect_d1_numeric("사용량은 128,400 kWh였습니다.", "E-4-1", g)
-        assert r.score >= 0.9
+        assert r.score == 0 and r.abstain_reason == "no_evidence"
 
     def test_d1_matching_value_low_risk(self):
         g = self._graph_with_e41(128400.0)
         r = det.detect_d1_numeric("당해 사용전력량은 128,400 kWh입니다.", "E-4-1", g)
         assert r.score < 0.5
-        assert "한전고지서_2025_12.pdf" in r.evidence  # 증빙 파일 추적
+        assert r.evaluation["status"] != "complete"  # 단월·사업장 미상은 숫자 일치만으로 검증 완료가 아니다.
+        assert r.evaluation["claims"][0]["reason"] == "scope_unconfirmed"
 
     def test_detect_risk_axes_aggregate(self):
         g = self._graph_with_e41()
@@ -770,13 +774,13 @@ def test_pin_totals_from_raw_fixes_billing_cells():
 def test_scope12_sums_electricity_and_gas():
     """E-3-1(Scope1+2)은 전력 파생 + 가스 파생을 합산한다(코드당 1노드 선택 → 합산)."""
     from esgenie.ssot.audit_trace import build_data_points
-    mk = lambda v, u: ExtractedMetric(metric_hint="E-4-1 본문확정", value=v, unit=u,
-                                      period="2026", kesg_code_guess="E-4-1")
+    mk = lambda v, u: ExtractedMetric(metric_hint="사용전력량" if u == "kWh" else "도시가스 사용열량", value=v, unit=u,
+                                      period="2026-04-25~2026-05-24", kesg_code_guess="E-4-1")
     g = EvidenceGraph(corp_code="HANUL", corp_name="한울정밀")
     merge_ocr_extraction(g, OcrExtraction(source_file="01.pdf", channel=DocChannel.STRUCTURED,
-        doc_type="kepco_bill", metrics=[mk(142560.0, "kWh")], raw_text="", router_meta={}), report_year=2026)
+        doc_type="kepco_bill", metrics=[mk(142560.0, "kWh")], raw_text="제1공장", router_meta={}), report_year=2026)
     merge_ocr_extraction(g, OcrExtraction(source_file="02.pdf", channel=DocChannel.STRUCTURED,
-        doc_type="gas_bill", metrics=[mk(360772.0, "MJ")], raw_text="", router_meta={}), report_year=2026)
+        doc_type="gas_bill", metrics=[mk(360772.0, "MJ")], raw_text="제1공장", router_meta={}), report_year=2026)
     dps = {d.kesg_code: d for d in build_data_points(g, {}, target_codes=["E-3-1"])}
     assert dps["E-3-1"].value == 88.397, dps["E-3-1"].value
 

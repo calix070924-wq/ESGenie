@@ -142,8 +142,46 @@ def resolve_korean_font() -> FontResult:
     )
 
 
+# 번들 폰트(서브셋 NotoSansKR)에 글리프가 없는 기호 → 읽을 수 있는 대체 표기.
+# 지우지 않고 바꾼다. 비교 기호를 조용히 빼면 "D1 불일치: 자가신고 92.0% 증빙 29.3%"가
+# 되어 무엇과 무엇을 견줬는지 사라진다. 실제로 U+2194가 빈 네모로 찍혀 나갔다
+# (2026-09-20 HMC 응답서 PDF 렌더 확인).
+_SUBSTITUTES = {
+    "㈜": "(주)", "Δ": "차이 ", "≥": ">=", "≤": "<=", "≠": "!=",
+    "↔": "vs", "⇄": "vs", "→": "->", "±": "+/-",
+    "─": "-", "―": "-", "×": "x", "÷": "/", "≈": "약 ",
+}
+
+
+def unsupported_chars(text: str, font_name: str) -> set[str]:
+    """이 폰트에 글리프가 없어 빈 네모로 찍힐 문자들. 판정 불가면 빈 집합.
+
+    Helvetica 폴백이나 charToGlyph를 노출하지 않는 폰트에서는 검사를 건너뛴다 —
+    확인할 수 없는 것을 문제라고 말하지 않는다.
+    """
+    try:
+        from reportlab.pdfbase import pdfmetrics
+        c2g = pdfmetrics.getFont(font_name).face.charToGlyph
+    except Exception:  # noqa: BLE001 — 폰트 미등록/폴백
+        return set()
+    if not c2g:
+        return set()
+    return {c for c in str(text) if not c.isascii() and ord(c) not in c2g}
+
+
 def pdf_safe_text(text: str) -> str:
-    """Render status words without unsupported emoji glyphs in the bundled font."""
+    """PDF에 실을 문자열을 번들 폰트가 그릴 수 있는 형태로 바꾼다.
+
+    1) 알려진 기호는 읽을 수 있는 ASCII 표기로 치환한다.
+    2) 상태 배지 이모지는 지운다 — 상태는 글자로도 적혀 있다.
+    3) 그래도 남은 미지원 문자는 지운다 — 새 기호가 들어와도 빈 네모로 나가지 않게.
+       여기서 지워지면 뜻이 조금 상하므로, 회귀 테스트가 실제 응답서 문자열에
+       미지원 문자가 남지 않는지 확인한다(tests/test_pdf_glyph_coverage.py).
+    """
     import re
-    text = str(text).replace("㈜", "(주)").replace("Δ", "차이 ").replace("≥", ">=")
-    return re.sub(r"[\U0001F000-\U0001FAFF\u2600-\u27BF\uFE0F\u258C]", "", text)
+    text = "".join(_SUBSTITUTES.get(c, c) for c in str(text))
+    text = re.sub(r"[\U0001F000-\U0001FAFF\u2600-\u27BF\uFE0F\u258C]", "", text)
+    leftover = unsupported_chars(text, REGULAR_NAME)
+    if leftover:
+        text = "".join(c for c in text if c not in leftover)
+    return text

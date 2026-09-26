@@ -1,0 +1,137 @@
+FFFFFFFF                                                                 [100%]
+=================================== FAILURES ===================================
+_________________________ test_required_cases[normal] __________________________
+
+name = 'normal', sentence = '재생에너지 사용 비율은 31%이며 폐기물 재활용 비율은 92%였다.', score = 0
+compared = 2, unverified = 0
+
+    @pytest.mark.parametrize('name,sentence,score,compared,unverified', CASES, ids=[c[0] for c in CASES])
+    def test_required_cases(name, sentence, score, compared, unverified):
+        _, graph, _ = make_evidence()
+        axis = score_d1_numeric(sentence, graph)
+        assert axis.score == score, axis.detail
+        assert axis.abstain == (compared == 0 and unverified > 0)
+>       assert axis.evaluation['compared_claims'] == compared
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       KeyError: 'compared_claims'
+
+tests/test_d1_validation_regression.py:36: KeyError
+_________________________ test_required_cases[swapped] _________________________
+
+name = 'swapped', sentence = '재생에너지 사용 비율은 92%이며 폐기물 재활용 비율은 31%였다.', score = 1
+compared = 2, unverified = 0
+
+    @pytest.mark.parametrize('name,sentence,score,compared,unverified', CASES, ids=[c[0] for c in CASES])
+    def test_required_cases(name, sentence, score, compared, unverified):
+        _, graph, _ = make_evidence()
+        axis = score_d1_numeric(sentence, graph)
+>       assert axis.score == score, axis.detail
+E       AssertionError: E-6-2: claim=92.0 vs node=92 (Δ=0.0%); E-4-2: claim=31.0 vs node=31 (Δ=0.0%)
+E       assert 0.0 == 1
+E        +  where 0.0 = AxisScore(score=0.0, evidence=['D1_E-6-2_2025', 'D1_E-4-2_2025'], detail='E-6-2: claim=92.0 vs node=92 (Δ=0.0%); E-4-2: claim=31.0 vs node=31 (Δ=0.0%)', abstain=False, abstain_reason=None, evaluation={}).score
+
+tests/test_d1_validation_regression.py:34: AssertionError
+______________________ test_required_cases[single_error] _______________________
+
+name = 'single_error', sentence = '재생에너지 사용 비율은 92%였다.', score = 1, compared = 1
+unverified = 0
+
+    @pytest.mark.parametrize('name,sentence,score,compared,unverified', CASES, ids=[c[0] for c in CASES])
+    def test_required_cases(name, sentence, score, compared, unverified):
+        _, graph, _ = make_evidence()
+        axis = score_d1_numeric(sentence, graph)
+        assert axis.score == score, axis.detail
+        assert axis.abstain == (compared == 0 and unverified > 0)
+>       assert axis.evaluation['compared_claims'] == compared
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       KeyError: 'compared_claims'
+
+tests/test_d1_validation_regression.py:36: KeyError
+_______________________ test_required_cases[comma_error] _______________________
+
+name = 'comma_error', sentence = '온실가스 배출량은 9,999 tCO2eq이다.', score = 1
+compared = 1, unverified = 0
+
+    @pytest.mark.parametrize('name,sentence,score,compared,unverified', CASES, ids=[c[0] for c in CASES])
+    def test_required_cases(name, sentence, score, compared, unverified):
+        _, graph, _ = make_evidence()
+        axis = score_d1_numeric(sentence, graph)
+        assert axis.score == score, axis.detail
+        assert axis.abstain == (compared == 0 and unverified > 0)
+>       assert axis.evaluation['compared_claims'] == compared
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       KeyError: 'compared_claims'
+
+tests/test_d1_validation_regression.py:36: KeyError
+_______________________ test_required_cases[plain_error] _______________________
+
+name = 'plain_error', sentence = '온실가스 배출량은 9999 tCO2eq이다.', score = 1
+compared = 1, unverified = 0
+
+    @pytest.mark.parametrize('name,sentence,score,compared,unverified', CASES, ids=[c[0] for c in CASES])
+    def test_required_cases(name, sentence, score, compared, unverified):
+        _, graph, _ = make_evidence()
+        axis = score_d1_numeric(sentence, graph)
+>       assert axis.score == score, axis.detail
+E       AssertionError: 수치 매칭 없음
+E       assert 0.0 == 1
+E        +  where 0.0 = AxisScore(score=0.0, evidence=[], detail='수치 매칭 없음', abstain=False, abstain_reason=None, evaluation={}).score
+
+tests/test_d1_validation_regression.py:34: AssertionError
+_________________________ test_required_cases[missing] _________________________
+
+name = 'missing', sentence = '용수 사용량은 100톤이다.', score = 0, compared = 0
+unverified = 1
+
+    @pytest.mark.parametrize('name,sentence,score,compared,unverified', CASES, ids=[c[0] for c in CASES])
+    def test_required_cases(name, sentence, score, compared, unverified):
+        _, graph, _ = make_evidence()
+        axis = score_d1_numeric(sentence, graph)
+        assert axis.score == score, axis.detail
+>       assert axis.abstain == (compared == 0 and unverified > 0)
+E       AssertionError: assert False == ((0 == 0 and 1 > 0))
+E        +  where False = AxisScore(score=0.0, evidence=[], detail='E-5-1: claim=100.0톤 — 근거 노드 없음', abstain=False, abstain_reason=None, evaluation={}).abstain
+
+tests/test_d1_validation_regression.py:35: AssertionError
+_____________________ test_required_cases[normal_missing] ______________________
+
+name = 'normal_missing', sentence = '재생에너지 사용 비율은 31%이며 용수 사용량은 100톤이다.'
+score = 0, compared = 1, unverified = 1
+
+    @pytest.mark.parametrize('name,sentence,score,compared,unverified', CASES, ids=[c[0] for c in CASES])
+    def test_required_cases(name, sentence, score, compared, unverified):
+        _, graph, _ = make_evidence()
+        axis = score_d1_numeric(sentence, graph)
+        assert axis.score == score, axis.detail
+        assert axis.abstain == (compared == 0 and unverified > 0)
+>       assert axis.evaluation['compared_claims'] == compared
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       KeyError: 'compared_claims'
+
+tests/test_d1_validation_regression.py:36: KeyError
+______________________ test_required_cases[error_missing] ______________________
+
+name = 'error_missing', sentence = '재생에너지 사용 비율은 92%이며 용수 사용량은 100톤이다.'
+score = 1, compared = 1, unverified = 1
+
+    @pytest.mark.parametrize('name,sentence,score,compared,unverified', CASES, ids=[c[0] for c in CASES])
+    def test_required_cases(name, sentence, score, compared, unverified):
+        _, graph, _ = make_evidence()
+        axis = score_d1_numeric(sentence, graph)
+        assert axis.score == score, axis.detail
+        assert axis.abstain == (compared == 0 and unverified > 0)
+>       assert axis.evaluation['compared_claims'] == compared
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       KeyError: 'compared_claims'
+
+tests/test_d1_validation_regression.py:36: KeyError
+=========================== short test summary info ============================
+FAILED tests/test_d1_validation_regression.py::test_required_cases[normal] - ...
+FAILED tests/test_d1_validation_regression.py::test_required_cases[swapped]
+FAILED tests/test_d1_validation_regression.py::test_required_cases[single_error]
+FAILED tests/test_d1_validation_regression.py::test_required_cases[comma_error]
+FAILED tests/test_d1_validation_regression.py::test_required_cases[plain_error]
+FAILED tests/test_d1_validation_regression.py::test_required_cases[missing]
+FAILED tests/test_d1_validation_regression.py::test_required_cases[normal_missing]
+FAILED tests/test_d1_validation_regression.py::test_required_cases[error_missing]
+8 failed in 0.16s

@@ -1,0 +1,287 @@
+{
+  "head": "0c26e52ebc181dba2d3b8c6a9905a64fbf24bcd0",
+  "worktree_clean": false,
+  "checks": {
+    "literal_non_acquisition_control": true,
+    "negated_acquisition_same_sentence": true,
+    "failed_acquisition_same_sentence": true,
+    "standalone_negation_control": true,
+    "standalone_failure_control": true,
+    "other_certificate_denial_control": true,
+    "past_denial_separate_sentence_control": true,
+    "actual_acquisition_control": true,
+    "documented_conservative_preparation_control": true,
+    "honest_plan_control": true
+  },
+  "failed": [],
+  "observations": {
+    "literal_non_acquisition_control": {
+      "source": "ISMS 인증은 미취득 상태이며, ISMS 인증을 취득하여 운영 중이다.",
+      "answer": "ISMS 인증을 취득했다. [S]",
+      "expected_supported": false,
+      "gate": {
+        "decision": "ACCEPT",
+        "g1_uncited_sentences": [],
+        "g2_orphan_numbers": [],
+        "g4_unit_mismatches": [],
+        "g5_overclaim": false,
+        "hard_fails": [],
+        "soft_flags": [
+          "G5_unproven_certification_completion"
+        ],
+        "faithfulness": 1.0
+      },
+      "draft_status": "insufficient",
+      "parsed_predicates": [
+        {
+          "matched": "ISMS 인증은 미취득",
+          "tail": " 상태이며, ISMS ",
+          "completed": false
+        },
+        {
+          "matched": "ISMS 인증을 취득",
+          "tail": "하여 운영 중이다.",
+          "completed": true
+        }
+      ]
+    },
+    "negated_acquisition_same_sentence": {
+      "source": "ISMS 인증을 취득하지 않았으며, ISMS 인증을 취득하여 운영 중이다.",
+      "answer": "ISMS 인증을 취득했다. [S]",
+      "expected_supported": false,
+      "gate": {
+        "decision": "ACCEPT",
+        "g1_uncited_sentences": [],
+        "g2_orphan_numbers": [],
+        "g4_unit_mismatches": [],
+        "g5_overclaim": false,
+        "hard_fails": [],
+        "soft_flags": [
+          "G5_unproven_certification_completion"
+        ],
+        "faithfulness": 1.0
+      },
+      "draft_status": "insufficient",
+      "parsed_predicates": [
+        {
+          "matched": "ISMS 인증을 취득",
+          "tail": "하지 않았으며, ISM",
+          "completed": false
+        },
+        {
+          "matched": "ISMS 인증을 취득",
+          "tail": "하여 운영 중이다.",
+          "completed": true
+        }
+      ]
+    },
+    "failed_acquisition_same_sentence": {
+      "source": "ISMS 인증을 취득하지 못했으며, ISMS 인증을 취득하여 운영 중이다.",
+      "answer": "ISMS 인증을 취득했다. [S]",
+      "expected_supported": false,
+      "gate": {
+        "decision": "ACCEPT",
+        "g1_uncited_sentences": [],
+        "g2_orphan_numbers": [],
+        "g4_unit_mismatches": [],
+        "g5_overclaim": false,
+        "hard_fails": [],
+        "soft_flags": [
+          "G5_unproven_certification_completion"
+        ],
+        "faithfulness": 1.0
+      },
+      "draft_status": "insufficient",
+      "parsed_predicates": [
+        {
+          "matched": "ISMS 인증을 취득",
+          "tail": "하지 못했으며, ISM",
+          "completed": false
+        },
+        {
+          "matched": "ISMS 인증을 취득",
+          "tail": "하여 운영 중이다.",
+          "completed": true
+        }
+      ]
+    },
+    "standalone_negation_control": {
+      "source": "ISMS 인증을 취득하지 않았다.",
+      "answer": "ISMS 인증을 취득했다. [S]",
+      "expected_supported": false,
+      "gate": {
+        "decision": "ACCEPT",
+        "g1_uncited_sentences": [],
+        "g2_orphan_numbers": [],
+        "g4_unit_mismatches": [],
+        "g5_overclaim": false,
+        "hard_fails": [],
+        "soft_flags": [
+          "G5_unproven_certification_completion"
+        ],
+        "faithfulness": 1.0
+      },
+      "draft_status": "insufficient",
+      "parsed_predicates": [
+        {
+          "matched": "ISMS 인증을 취득",
+          "tail": "하지 않았다.",
+          "completed": false
+        }
+      ]
+    },
+    "standalone_failure_control": {
+      "source": "ISMS 인증을 취득하지 못했다.",
+      "answer": "ISMS 인증을 취득했다. [S]",
+      "expected_supported": false,
+      "gate": {
+        "decision": "ACCEPT",
+        "g1_uncited_sentences": [],
+        "g2_orphan_numbers": [],
+        "g4_unit_mismatches": [],
+        "g5_overclaim": false,
+        "hard_fails": [],
+        "soft_flags": [
+          "G5_unproven_certification_completion"
+        ],
+        "faithfulness": 1.0
+      },
+      "draft_status": "insufficient",
+      "parsed_predicates": [
+        {
+          "matched": "ISMS 인증을 취득",
+          "tail": "하지 못했다.",
+          "completed": false
+        }
+      ]
+    },
+    "other_certificate_denial_control": {
+      "source": "ISMS-P 인증을 취득하지 않았으며, ISMS 인증을 취득하여 운영 중이다.",
+      "answer": "ISMS 인증을 취득했다. [S]",
+      "expected_supported": true,
+      "gate": {
+        "decision": "ACCEPT",
+        "g1_uncited_sentences": [],
+        "g2_orphan_numbers": [],
+        "g4_unit_mismatches": [],
+        "g5_overclaim": false,
+        "hard_fails": [],
+        "soft_flags": [],
+        "faithfulness": 1.0
+      },
+      "draft_status": "draft_ready",
+      "parsed_predicates": [
+        {
+          "matched": "ISMS-P 인증을 취득",
+          "tail": "하지 않았으며, ISM",
+          "completed": false
+        },
+        {
+          "matched": "ISMS 인증을 취득",
+          "tail": "하여 운영 중이다.",
+          "completed": true
+        }
+      ]
+    },
+    "past_denial_separate_sentence_control": {
+      "source": "2023년에는 ISMS 인증을 취득하지 못했다. 2025년 ISMS 인증을 취득했다.",
+      "answer": "ISMS 인증을 취득했다. [S]",
+      "expected_supported": true,
+      "gate": {
+        "decision": "ACCEPT",
+        "g1_uncited_sentences": [],
+        "g2_orphan_numbers": [],
+        "g4_unit_mismatches": [],
+        "g5_overclaim": false,
+        "hard_fails": [],
+        "soft_flags": [],
+        "faithfulness": 1.0
+      },
+      "draft_status": "draft_ready",
+      "parsed_predicates": [
+        {
+          "matched": "2023년에는 ISMS 인증을 취득",
+          "tail": "하지 못했다. 2025",
+          "completed": false
+        },
+        {
+          "matched": "2025년 ISMS 인증을 취득",
+          "tail": "했다.",
+          "completed": true
+        }
+      ]
+    },
+    "actual_acquisition_control": {
+      "source": "ISMS 인증을 취득했고 준비 자료를 보관한다.",
+      "answer": "ISMS 인증을 취득했다. [S]",
+      "expected_supported": true,
+      "gate": {
+        "decision": "ACCEPT",
+        "g1_uncited_sentences": [],
+        "g2_orphan_numbers": [],
+        "g4_unit_mismatches": [],
+        "g5_overclaim": false,
+        "hard_fails": [],
+        "soft_flags": [],
+        "faithfulness": 1.0
+      },
+      "draft_status": "draft_ready",
+      "parsed_predicates": [
+        {
+          "matched": "ISMS 인증을 취득",
+          "tail": "했고 준비 자료를 보관",
+          "completed": true
+        }
+      ]
+    },
+    "documented_conservative_preparation_control": {
+      "source": "ISMS 인증을 취득하여 운영 중이며, 갱신을 준비 중이다.",
+      "answer": "ISMS 인증을 취득했다. [S]",
+      "expected_supported": false,
+      "gate": {
+        "decision": "ACCEPT",
+        "g1_uncited_sentences": [],
+        "g2_orphan_numbers": [],
+        "g4_unit_mismatches": [],
+        "g5_overclaim": false,
+        "hard_fails": [],
+        "soft_flags": [
+          "G5_unproven_certification_completion"
+        ],
+        "faithfulness": 1.0
+      },
+      "draft_status": "insufficient",
+      "parsed_predicates": [
+        {
+          "matched": "ISMS 인증을 취득",
+          "tail": "하여 운영 중이며, 갱",
+          "completed": false
+        }
+      ]
+    },
+    "honest_plan_control": {
+      "source": "향후 ISMS 인증을 취득해서 제출하고, 운영할 예정이다.",
+      "answer": "향후 ISMS 인증을 취득해서 제출하고, 운영할 예정이다. [S]",
+      "expected_supported": true,
+      "gate": {
+        "decision": "ACCEPT",
+        "g1_uncited_sentences": [],
+        "g2_orphan_numbers": [],
+        "g4_unit_mismatches": [],
+        "g5_overclaim": false,
+        "hard_fails": [],
+        "soft_flags": [],
+        "faithfulness": 1.0
+      },
+      "draft_status": "draft_ready",
+      "parsed_predicates": [
+        {
+          "matched": "향후 ISMS 인증을 취득",
+          "tail": "해서 제출하고, 운영할",
+          "completed": false
+        }
+      ]
+    }
+  },
+  "input_class": "synthetic source text; fixed generation response; production grounding and draft decision"
+}

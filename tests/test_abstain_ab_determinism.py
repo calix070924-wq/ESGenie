@@ -50,8 +50,8 @@ def test_abstain_flag_does_not_change_rule_score_or_judgeable(monkeypatch):
     assert rv_off.D3_semantic == rv_on.D3_semantic
     assert rv_off.D5_timeseries == rv_on.D5_timeseries
 
-    # abstain 플래그 자체는 다르다(이게 유일한 차이).
-    assert rv_off.D1_numeric.abstain is False
+    # 2026-09-14: 과거 토글도 실제 미검증 상태를 지우지 않는다.
+    assert rv_off.D1_numeric.abstain is True
     assert rv_on.D1_numeric.abstain is True
 
     # judgeable(LLM 판정 대상 여부)도 abstain 래핑과 무관하게 동일해야 한다 —

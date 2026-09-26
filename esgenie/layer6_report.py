@@ -191,8 +191,8 @@ def _block_esg(output: Any, area: str) -> ReportBlock | None:
         axis_note = " · 4축(D1/D2/D3/D5): " + "/".join(
             "평가불가" if axis.abstain else format_score(axis.score, scale=100, digits=0)
             for axis in (rv.D1_numeric, rv.D2_modifier, rv.D3_semantic, rv.D5_timeseries))
-        axis_note += f" · {rv.evaluation_label}"
-        if not rv.evaluation_complete:
+        axis_note += f" · {rv.evaluation_label} · D1 {rv.numeric_coverage_label}"
+        if rv.abstained_axes():
             axis_note += " (기권 축: " + ", ".join(rv.abstained_axes()) + ")"
 
     lead = (

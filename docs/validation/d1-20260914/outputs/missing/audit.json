@@ -1,0 +1,122 @@
+{
+  "ticker": "D1",
+  "corp_name": "수치 검증 합성",
+  "area": "E",
+  "generated_at": "2026-09-14T04:49:46.601069+00:00",
+  "sentences": [
+    {
+      "sentence_id": "D1_E_000",
+      "sentence_text": "용수 사용량은 100톤이다.",
+      "kesg_item_id": "E-4-2",
+      "evidence_node_ids": [],
+      "retrieved_chunk_ids": [],
+      "retrieval_tier": null,
+      "retrieval_scores": [],
+      "grounding_status": "ungrounded",
+      "risk_vector": {
+        "D1_numeric": {
+          "score": 0.0,
+          "evidence": [],
+          "detail": "E-5-1: 100톤 — 근거 노드 없음",
+          "abstain": true,
+          "abstain_reason": "no_evidence",
+          "evaluation": {
+            "status": "unavailable",
+            "compared_claims": 0,
+            "unverified_claims": 1,
+            "excluded_claims": 0,
+            "reasons": {
+              "no_evidence": 1
+            },
+            "claims": [
+              {
+                "raw": "100톤",
+                "start": 8,
+                "end": 12,
+                "code": "E-5-1",
+                "claim_value": 100.0,
+                "claim_unit": "톤",
+                "evidence_ids": [],
+                "evidence_value": null,
+                "evidence_unit": null,
+                "evidence_period": null,
+                "status": "unverified",
+                "reason": "no_evidence"
+              }
+            ]
+          }
+        },
+        "D2_modifier": {
+          "score": 0.0,
+          "evidence": [],
+          "detail": "모호어 없음",
+          "abstain": false,
+          "abstain_reason": null,
+          "evaluation": {}
+        },
+        "D3_semantic": {
+          "score": 0.0,
+          "evidence": [
+            "evidence"
+          ],
+          "detail": "최고 cos-sim=0.467 (임계치 0.35)",
+          "abstain": false,
+          "abstain_reason": null,
+          "evaluation": {}
+        },
+        "D5_timeseries": {
+          "score": 0.0,
+          "evidence": [],
+          "detail": "시계열 엣지 없음",
+          "abstain": false,
+          "abstain_reason": null,
+          "evaluation": {}
+        },
+        "aggregate": {
+          "risk_score": 0.0,
+          "level": "low",
+          "top_axis": "",
+          "abstained_axes": [
+            "D1_numeric"
+          ],
+          "evaluated_axes": [
+            "D2_modifier",
+            "D3_semantic",
+            "D5_timeseries"
+          ],
+          "evaluated_weight": 0.6,
+          "incomplete_axes": [
+            "D1_numeric"
+          ],
+          "evaluation_complete": false,
+          "evaluation_status": "partial"
+        }
+      },
+      "refinement_attempts": [],
+      "hitl_status": "HITL_REQUIRED",
+      "timestamps": {
+        "created": "2026-09-14T04:49:46.601069+00:00",
+        "finalized": "2026-09-14T04:49:46.601069+00:00"
+      },
+      "model_versions": {
+        "llm": "mock",
+        "embed": "paraphrase-multilingual-MiniLM-L12-v2",
+        "embed_backend": "sbert"
+      }
+    }
+  ],
+  "summary": {
+    "total_sentences": 1,
+    "hitl_count": 1,
+    "avg_risk_score": 0.0,
+    "evaluated_sentences": 1,
+    "complete_sentences": 0,
+    "numeric_compared_claims": 0,
+    "numeric_unverified_claims": 1,
+    "evaluation_complete": false,
+    "partial_sentences": 1,
+    "high_risk_axes": [],
+    "refinement_total": 0,
+    "converged": false
+  }
+}

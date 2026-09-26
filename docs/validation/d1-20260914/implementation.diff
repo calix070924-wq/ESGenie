@@ -1,0 +1,1997 @@
+diff --git a/app.py b/app.py
+index c877973..cbb9b33 100644
+--- a/app.py
++++ b/app.py
+@@ -697 +697 @@ if result is not None:
+-        summary_cards.append({"label": "담당자 확인", "value": "필요" if verify.hitl_required else "완료", "note": f"검증 {verify.iterations_used}회"})
++        summary_cards.append({"label": "담당자 확인", "value": "필요" if verify.hitl_required else "완료", "note": verify.final.detection.risk_vector.numeric_coverage_label if verify.final.detection.risk_vector else f"검증 {verify.iterations_used}회"})
+diff --git a/data/d1_validation/real_excerpt.json b/data/d1_validation/real_excerpt.json
+new file mode 100644
+index 0000000..42e0f97
+--- /dev/null
++++ b/data/d1_validation/real_excerpt.json
+@@ -0,0 +1,35 @@
++{
++  "source_file": "012330_mobis_2025.pdf",
++  "pdf_sha256": "b7845ec3e1f9cf0087b3c9140c7f531cb9fc4ce6bfab80188f6f6c93fe75e8e0",
++  "source_type": "actual public report and previously saved extraction (read-only)",
++  "cache_file": "b16d54bf96efca738aa6d9294702c5d32eb0c9caacdde9f5d584e475be828cb8.json",
++  "cache_sha256": "fc33065f163f8b9d9f9adf8179de0864db575b121d7b21a991a3786f4198c79e",
++  "cached_model": "gpt-4.1-mini",
++  "cached_at": "2026-07-30T14:54:42+00:00",
++  "fresh_api_called": false,
++  "human_page_mapping": "페이지와 코드는 이번 원문 대조에서 수동 연결. 캐시 자체에 페이지/코드는 없음.",
++  "supporting_quote_page": 67,
++  "supporting_quote": "2024년에는 국내 사업장 기준 폐기물 재활용률 92.9%를 달성하였습니다.",
++  "metrics": [
++    {
++      "metric_hint": "폐기물 매립 제로화(재활용률)",
++      "value": 92.9,
++      "unit": "%",
++      "period": "2024",
++      "kesg_code": null,
++      "code": "E-6-2",
++      "source_page_index": 69,
++      "scope": "2024년 국내(별도) 연간"
++    },
++    {
++      "metric_hint": "폐기물 발생량 합계",
++      "value": 72463,
++      "unit": "ton",
++      "period": "2024",
++      "kesg_code": null,
++      "code": "E-6-1",
++      "source_page_index": 69,
++      "scope": "2024년 국내·해외 합계 연간"
++    }
++  ]
++}
+\ No newline at end of file
+diff --git a/esgenie/benchmark.py b/esgenie/benchmark.py
+index 7e97acf..88ce07e 100644
+--- a/esgenie/benchmark.py
++++ b/esgenie/benchmark.py
+@@ -73 +73 @@ class CaseResult:
+-    risk_score: float
++    risk_score: float | None
+@@ -77,0 +78,3 @@ class CaseResult:
++    evaluation_complete: bool = True
++    numeric_evaluation: dict[str, Any] = field(default_factory=dict)
++
+@@ -117 +120 @@ class DetectorReport:
+-        by_reason: dict[str, int] = {"no_evidence": 0, "unit_mismatch": 0, "low_confidence": 0}
++        by_reason: dict[str, int] = {"no_evidence": 0, "unit_mismatch": 0, "low_confidence": 0, "ambiguous_topic": 0, "invalid_number": 0}
+@@ -127,0 +131 @@ class DetectorReport:
++            "complete_cases": sum(c.evaluation_complete for c in self.cases),
+@@ -198 +202,2 @@ def _case_abstain_info(rv: RiskVector, flagged: bool) -> tuple[bool, list[str]]:
+-    return (bool(abstained_names) and not flagged), reasons
++    reasons = sorted(set(reasons) | set(rv.D1_numeric.evaluation.get("reasons", {})))
++    return (not rv.evaluation_complete and not flagged), reasons
+@@ -249,0 +255 @@ def run_benchmark(
++                evaluation_complete=rule_rv.evaluation_complete, numeric_evaluation=rule_rv.numeric_evaluation,
+@@ -261,0 +268 @@ def run_benchmark(
++                evaluation_complete=hyb_rv.evaluation_complete, numeric_evaluation=hyb_rv.numeric_evaluation,
+@@ -391,0 +399,4 @@ def format_report(reports: dict[str, DetectorReport], *, n_cases: int) -> str:
++    lines.append("## 평가 범위")
++    for name, report in reports.items():
++        lines.append(f"- {name}: 평가 완료 {sum(c.evaluation_complete for c in report.cases)}/{len(report.cases)}건. 분류 정확도와 전체 검증 완료 여부는 별도로 집계한다.")
++    lines.append("")
+diff --git a/esgenie/calibrate.py b/esgenie/calibrate.py
+index 772fb44..555741a 100644
+--- a/esgenie/calibrate.py
++++ b/esgenie/calibrate.py
+@@ -104 +104,2 @@ def capture(bench_path: Path = BENCH_PATH, cache_path: Path = CACHE_PATH) -> dic
+-                                     "abstain": a.abstain, "abstain_reason": a.abstain_reason}
++                                     "abstain": a.abstain, "abstain_reason": a.abstain_reason,
++                                     "evaluation": a.evaluation}
+@@ -144,0 +146,2 @@ def _simulate_vector(rec: dict[str, Any], *, trigger: float, rule_weight: float)
++        if n == "D1_numeric" and a.get("evaluation", {}).get("compared_claims", 0):
++            blended = max(rule, blended)
+@@ -148,0 +152 @@ def _simulate_vector(rec: dict[str, Any], *, trigger: float, rule_weight: float)
++            evaluation=a.get("evaluation", {}),
+diff --git a/esgenie/config.py b/esgenie/config.py
+index fef0dcb..024b77c 100644
+--- a/esgenie/config.py
++++ b/esgenie/config.py
+@@ -130,21 +130,4 @@ JUDGE_RULE_WEIGHT: float = float(os.getenv("JUDGE_RULE_WEIGHT", "0.4"))
+-# 기본 False — 꺼져 있으면 기존 동작 100% 그대로다.
+-#
+-# score 영향(경로별로 다름 — 정확히 기록):
+-#   - layer3_detect._score_d1_numeric(주 생성문 경로): 미검증 시 score는 원래도
+-#     0.0이라, 기권을 켜도 score는 불변이고 abstain/abstain_reason 플래그만 추가된다.
+-#   - ssot.detector_5axis.detect_d1_numeric(정합화 경로): 기존 legacy 반환값
+-#     0.6(코드 매핑 없음)/0.9(근거 노드 없음)를 abstain 시 score=0.0으로 **교체**한다.
+-#     즉 이 경로에서는 score가 바뀐다. 프로덕션 호출부(pipeline._build_risk_rows의
+-#     `if not nodes: continue`)는 이 분기에 닿지 않아 회귀는 없지만, 이는 설계된
+-#     안전이 아니라 우연한 안전이므로 활성화 전 검토가 필요하다.
+-# (게이트·HITL 반영은 후속 배치.)
+-ABSTAIN_ENABLED: bool = os.getenv("ABSTAIN_ENABLED", "0") == "1"
+-
+-# 2026-07-28 실키 A/B(scripts/abstain_ab_eval.py) 결과: test held-out에서
+-# 기권 7건이 전부 unit_mismatch였고 Overall/recall이 하락했다(no_evidence는
+-# 0건 — 단일 그래프로 여러 회사 문장을 검증하는 현 벤치 구조상 "근거 노드
+-# 자체가 없음"이 사실상 발생하지 않기 때문. docs/abstention_metrics_result.md
+-# 참조). 그 결과 unit_mismatch는 기본적으로 기권시키지 않는다 — 세분 스위치로
+-# 되돌릴 수 있게 남겨둔다(주 타깃인 no_evidence 기권 자체는 ABSTAIN_ENABLED로
+-# 계속 켤 수 있음). 기본 False.
+-ABSTAIN_UNIT_MISMATCH: bool = os.getenv("ABSTAIN_UNIT_MISMATCH", "0") == "1"
++# 2026-09-14: D1 미검증 범위는 항상 보존한다. 과거 A/B 설정은 읽기 호환용이며
++# False여도 D1의 기권/부분 평가를 비활성화하지 않는다. 가중치·임계값은 불변.
++ABSTAIN_ENABLED: bool = os.getenv("ABSTAIN_ENABLED", "1") == "1"
++ABSTAIN_UNIT_MISMATCH: bool = os.getenv("ABSTAIN_UNIT_MISMATCH", "1") == "1"
+diff --git a/esgenie/evaluate.py b/esgenie/evaluate.py
+index 49d6206..b1583cc 100644
+--- a/esgenie/evaluate.py
++++ b/esgenie/evaluate.py
+@@ -58 +58,2 @@ def _case_rows(records: list[dict[str, Any]], cfg: dict[str, float]) -> list[dic
+-        abstained = bool(abstained_axis_names) and not pred
++        abstain_reasons = sorted(set(abstain_reasons) | set(rv.D1_numeric.evaluation.get("reasons", {})))
++        abstained = not rv.evaluation_complete and not pred
+@@ -61 +62,3 @@ def _case_rows(records: list[dict[str, Any]], cfg: dict[str, float]) -> list[dic
+-                     "abstained": abstained, "abstain_reasons": abstain_reasons})
++                     "abstained": abstained, "abstain_reasons": abstain_reasons,
++                     "evaluation_complete": rv.evaluation_complete,
++                     "numeric_evaluation": rv.numeric_evaluation})
+@@ -70 +73 @@ def _case_rows(records: list[dict[str, Any]], cfg: dict[str, float]) -> list[dic
+-_ABSTAIN_REASONS = ("no_evidence", "unit_mismatch", "low_confidence")
++_ABSTAIN_REASONS = ("no_evidence", "unit_mismatch", "low_confidence", "ambiguous_topic", "invalid_number")
+diff --git a/esgenie/layer3_detect.py b/esgenie/layer3_detect.py
+index 1159f7c..ae67d02 100644
+--- a/esgenie/layer3_detect.py
++++ b/esgenie/layer3_detect.py
+@@ -28,8 +28,6 @@ from .schemas import AxisScore, RiskVector
+-# lookbehind: 글자에 붙은 숫자는 수치 주장이 아니다 — "Scope3 배출량"에서 3+'배',
+-# "RE100", "IFRS S2" 류가 가짜 claim으로 뽑히는 걸 막는다 (2026-07-27).
+-# 배(?!출): '배출'의 '배'를 배수 단위로 오인하지 않는다.
+-_NUMBER_PATTERN = re.compile(
+-    r"(?<![0-9A-Za-z가-힣])"
+-    r"(?P<num>\d{1,3}(?:,\d{3})*(?:\.\d+)?)\s*"
+-    r"(?P<unit>%|억원|조원|tCO2eq|만\s*tCO2eq|톤|ton|TJ|%p|건|명|배(?!출))",
+-)
++from .numeric_tokens import number_pattern, parse_number
++
++# Longest unit first: a percentage point is not a percent.
++_CORE_UNITS = r"%p|%|억원|조원|만\s*tCO2eq|tCO2eq|톤|ton|TJ|건|명|배(?!출)"
++_NUMBER_PATTERN = number_pattern(_CORE_UNITS)
++_NUMBER_CANDIDATE_PATTERN = number_pattern(_CORE_UNITS, candidates=True)
+@@ -101 +99 @@ class NumericClaim:
+-    number: float
++    number: float | None
+@@ -105,0 +104,3 @@ class NumericClaim:
++    start: int = 0
++    end: int = 0
++    issue: str | None = None
+@@ -139 +140,3 @@ def _normalize_number(num: str, unit: str) -> tuple[float, str]:
+-    n = float(num.replace(",", ""))
++    n = parse_number(num)
++    if n is None:
++        raise ValueError(f"Invalid numeric token: {num}")
+@@ -174,2 +177,4 @@ def _topic_spans(window_text: str) -> list[tuple[int, int, str, str]]:
+-def _match_topic_near(sentence: str, span_start: int, span_end: int, window: int = 25) -> tuple[str | None, str | None]:
+-    """수치 주변 창에서 가장 가까운 지표 용어를 찾아 (topic, code)를 돌린다.
++# Clause separators exclude decimal points and thousands-grouping commas.
++_CLAUSE_BREAK = re.compile(
++    r"(?<!\d)[,.]|[,.](?!\d)|[;!?。\n]|(?:이며|이고|으며|지만)\s*|\s+(?:그리고|반면|또한)\s+"
++)
+@@ -177,2 +181,0 @@ def _match_topic_near(sentence: str, span_start: int, span_end: int, window: int
+-    before 창(수치 앞)을 먼저 보고 **끝이 가장 뒤**(= 수치에 가장 가까운) 스팬을 택한다.
+-    before가 비면 after 창에서 가장 앞선 스팬을 택한다.
+@@ -180,10 +183,9 @@ def _match_topic_near(sentence: str, span_start: int, span_end: int, window: int
+-    2026-07-27: 창에 아무 용어도 없으면 **None을 돌린다.** 예전에는 문장 전체를 훑어
+-    아무 키워드나 붙였는데(`kw in sentence`), 다지표 문장에서는 사실상 임의 배정이라
+-    "원부자재 102,462톤"을 폐기물 노드 72,463과 비교하는 오탐을 만들었다.
+-    호출부(`_score_d1_numeric`)는 code가 없으면 비교를 건너뛴다 — 정밀도 우선.
+-    """
+-    before = _norm_topic_text(sentence[max(0, span_start - window):span_start])
+-    spans = _topic_spans(before)
+-    if spans:
+-        best = max(spans, key=lambda sp: sp[1])
+-        return best[2], best[3]
++def _clause_bounds(sentence: str, start: int, end: int) -> tuple[int, int]:
++    left, right = 0, len(sentence)
++    for match in _CLAUSE_BREAK.finditer(sentence):
++        if match.end() <= start:
++            left = match.end()
++        elif match.start() >= end:
++            right = match.start()
++            break
++    return left, right
+@@ -191,5 +192,0 @@ def _match_topic_near(sentence: str, span_start: int, span_end: int, window: int
+-    after = _norm_topic_text(sentence[span_end:span_end + window])
+-    spans = _topic_spans(after)
+-    if spans:
+-        best = min(spans, key=lambda sp: sp[0])
+-        return best[2], best[3]
+@@ -197 +194,23 @@ def _match_topic_near(sentence: str, span_start: int, span_end: int, window: int
+-    return None, None
++def _match_topic_near(sentence: str, span_start: int, span_end: int, window: int = 25) -> tuple[str | None, str | None]:
++    """Bind by clause and expression position, never by the numeric evidence value.
++
++    A preceding numeric claim closes its topic phrase. Enumerations with multiple
++    possible owners stay unresolved; an attached following phrase (31%인 비율)
++    can own a number. The existing 25-character proximity limit is retained.
++    """
++    left, right = _clause_bounds(sentence, span_start, span_end)
++    for match in _NUMBER_CANDIDATE_PATTERN.finditer(sentence, left, right):
++        if match.end() <= span_start:
++            left = max(left, match.end())
++        elif match.start() >= span_end:
++            right = min(right, match.start())
++            break
++    before = _topic_spans(_norm_topic_text(sentence[max(left, span_start-window):span_start]))
++    after_text = sentence[span_end:min(right, span_end+window)]
++    after = _topic_spans(_norm_topic_text(after_text))
++    attached_after = bool(re.match(r"\s*(?:인|의|에 해당하는)\s", after_text))
++    spans = after if attached_after and after else before or after
++    if len({span[3] for span in spans}) != 1:
++        return None, None
++    best = max(spans, key=lambda sp: sp[1]) if spans is before else min(spans, key=lambda sp: sp[0])
++    return best[2], best[3]
+@@ -238,0 +258 @@ def extract_numeric_claims(text: str) -> list[NumericClaim]:
++    offset = 0
+@@ -240 +260,2 @@ def extract_numeric_claims(text: str) -> list[NumericClaim]:
+-        for m in _NUMBER_PATTERN.finditer(sent):
++        offset = text.index(sent, offset)
++        for m in _NUMBER_CANDIDATE_PATTERN.finditer(sent):
+@@ -242 +263,2 @@ def extract_numeric_claims(text: str) -> list[NumericClaim]:
+-            n, u = _normalize_number(num_str, unit)
++            value = parse_number(num_str)
++            n, u = _normalize_number(num_str, unit) if value is not None else (None, unit)
+@@ -245 +267 @@ def extract_numeric_claims(text: str) -> list[NumericClaim]:
+-                raw=f"{num_str} {unit}", number=n, unit=u,
++                raw=m.group(), number=n, unit=u,
+@@ -246,0 +269,2 @@ def extract_numeric_claims(text: str) -> list[NumericClaim]:
++                start=offset + m.start(), end=offset + m.end(),
++                issue="invalid_number" if n is None or n < 0 else None,
+@@ -247,0 +272 @@ def extract_numeric_claims(text: str) -> list[NumericClaim]:
++        offset += len(sent)
+@@ -262 +287 @@ def _compare_claim(claim: NumericClaim, report: CompanyReport) -> ClaimCheck:
+-    if not claim.matched_code:
++    if claim.issue or not claim.matched_code:
+@@ -423 +448,2 @@ def _is_target_context(sentence: str, start: int, end: int) -> bool:
+-    window = sentence[max(0, start - _TARGET_WINDOW):min(len(sentence), end + _TARGET_WINDOW)]
++    left, right = _clause_bounds(sentence, start, end)
++    window = sentence[max(left, start - _TARGET_WINDOW):min(right, end + _TARGET_WINDOW)]
+@@ -428,9 +454,2 @@ def _sentence_topic_codes(sentence: str) -> set[str]:
+-    """문장에 등장하는 모든 지표 용어의 K-ESG 코드 집합.
+-
+-    `_match_topic_near`와 **같은 인덱스**를 쓴다(2026-07-27). 여기가 D1 교차 비교
+-    후보(`cand_codes`)를 만드는 곳이라, 인덱스가 갈리면 E-3-2 같은 신규 커버 코드의
+-    노드가 후보에 안 들어와 최근접 매칭만 남는다.
+-    여기는 문장 전체가 대상이므로 겹침 해소 없이 등장하는 용어를 모두 모은다.
+-    """
+-    text = _norm_topic_text(sentence)
+-    return {code for term, _topic, code in _TOPIC_TERMS if term in text}
++    """Diagnostic inventory only; it is never a pool of alternative D1 owners."""
++    return {sp[3] for sp in _topic_spans(_norm_topic_text(sentence))}
+@@ -444,18 +463 @@ def _repr_ids(evidence_graph: Any) -> dict[str, str]:
+-def _ledger_representative(evidence_graph: Any, code: str, compat: list[Any]) -> Any | None:
+-    """원장이 채택한 대표 노드를 단위 호환 후보 안에서 찾는다. 없으면 None(폴백).
+-
+-    None을 돌리는 경우 두 가지 — 호출부가 구분한다.
+-      · 기록 자체가 없다(미공시 코드, DART-only 경로, 원장 미실행)
+-      · 기록은 있으나 claim 단위와 환산군이 달라 compat에서 걸러졌다
+-    """
+-    node_id = _repr_ids(evidence_graph).get(code)
+-    if not node_id:
+-        return None
+-    for node in compat:
+-        if getattr(node, "id", None) == node_id:
+-            return node
+-    return None
+-
+-
+-# ---- 책임있는 기권(abstain) 헬퍼 --------------------------------------------
+-# ABSTAIN_ENABLED=0(기본)이면 아래 헬퍼는 호출되지 않아 기존 동작이 그대로다.
++# ---- 평가 보류 -------------------------------------------------------------
+@@ -471,32 +473,12 @@ def _abstain(reason: str, detail: str) -> AxisScore:
+-def _retry_evidence(code: str, evidence_graph: Any) -> list[Any] | None:
+-    """근거 부재 시 최종 기권 판정 전 보조 재검색 훅.
+-
+-    동의어/상위코드 확장·OCR 증빙 노드·RAG 청크 재조회 등 강화된 재검색은
+-    아직 구현하지 않았다. 현재는 항상 None(추가 근거 없음)을 반환해 호출부가
+-    초기 검색 결과 그대로 기권 여부를 판정하게 한다.
+-    TODO: 강화된 재검색(후속 배치 후보).
+-    """
+-    return None
+-
+-
+-def _score_d1_numeric(
+-    sentence: str,
+-    evidence_graph: Any | None,
+-) -> AxisScore:
+-    """claim 숫자 vs L0 노드값 상대 오차.
+-
+-    2026-07-17 정밀도 개선 2건:
+-    - 목표/전망 문맥의 수치는 실적 노드와 비교하지 않는다 (목표 100% vs 실적 72% 오탐).
+-    - 다지표 문장 교차 오탐 차단: 수치를 최근접 코드 하나가 아니라 **문장 내 전체 토픽
+-      코드의 노드들과 비교해 최솟값 오차**를 쓴다. 배치 실측(5개사)에서 D1 만점의
+-      대부분이 "여성 비율 16.6을 옆 지표 노드 29.0과 비교" 류의 교차 매칭이었다.
+-      수치가 문장 내 어떤 관련 노드와도 안 맞을 때만 오차로 계산된다.
+-      (트레이드오프: 문장 내 다른 지표의 노드값과 우연히 일치하는 허위 수치는
+-      놓칠 수 있음 — 정밀도 우선. 재현율 보강은 D5·교차검증 엣지 몫.)
+-    """
+-    if evidence_graph is None:
+-        return AxisScore(score=0.0, evidence=[], detail="evidence_graph 없음 — 스킵")
+-
+-    # G5. 노드 선택 기준 연도 — 그래프 report_year 우선, 없으면 후보 최신 연도 폴백.
+-    # 대표 노드는 원장이 그래프에 남긴 결정(representative_node_ids)을 우선 따르고,
+-    # 기록이 없을 때만 이 공용 함수로 규칙을 재실행한다(상세는 node_select 참조).
++def _selected_d1_node(graph: Any, code: str) -> Any | None:
++    """Choose once, before checking claim units; never reselect to fit a claim."""
++    if graph is None:
++        return None
++    if hasattr(graph, 'resolved_facts'):
++        from .ssot.selection import comparison_node
++        return comparison_node(graph, code)
++    # Compatibility with pre-ledger graph adapters.
++    nodes = graph.search_nodes(keywords=[code]) if hasattr(graph, 'search_nodes') else graph.nodes_by_metric(code)
++    preferred = _repr_ids(graph).get(code)
++    if preferred:
++        return next((n for n in nodes if n.id == preferred), None)
+@@ -504,15 +486,22 @@ def _score_d1_numeric(
+-
+-    ref_year = getattr(evidence_graph, "report_year", None)
+-
+-    worst_delta = 0.0
+-    hit_node_ids: list[str] = []
+-    details: list[str] = []
+-    sentence_codes = _sentence_topic_codes(sentence)
+-    # 기권 판정용: 코드가 매핑되고 실적 비교 대상인(목표/전망 제외) claim만 추적.
+-    # ABSTAIN_ENABLED=0이면 아래 리스트는 채워져도 전혀 소비되지 않는다(동작 불변).
+-    mapped_claims: list[dict[str, Any]] = []
+-
+-    for m in _NUMBER_PATTERN.finditer(sentence):
+-        num_str, unit = m.group("num"), m.group("unit")
+-        claim_val, claim_unit = _normalize_number(num_str, unit)
+-        _, code = _match_topic_near(sentence, m.start(), m.end())
++    return select_representative_node(code, nodes, report_year=getattr(graph, 'report_year', None))
++
++
++def _compare_numeric_claims(sentence: str, evidence_graph: Any, claims: list[NumericClaim],
++                            *, tolerance: float = 0.0) -> list[dict[str, Any]]:
++    """Structured claim/evidence trace shared by generated-text and SSOT D1."""
++    from .rag_gates.units import normalize_unit, convert_to_common
++    from .ssot.selection import finite_number
++    records = []
++    for claim in claims:
++        code = claim.matched_code
++        record = dict(raw=claim.raw, start=claim.start, end=claim.end, code=code,
++                      claim_value=claim.number, claim_unit=claim.unit,
++                      evidence_ids=[], evidence_value=None, evidence_unit=None,
++                      evidence_period=None, status='unverified', reason=None)
++        records.append(record)
++        if _is_target_context(sentence, claim.start, claim.end):
++            record.update(status='excluded', reason='target')
++            continue
++        if claim.issue:
++            record['reason'] = claim.issue
++            continue
+@@ -519,0 +509 @@ def _score_d1_numeric(
++            record['reason'] = 'ambiguous_topic'
+@@ -521,2 +511,3 @@ def _score_d1_numeric(
+-        if _is_target_context(sentence, m.start(), m.end()):
+-            details.append(f"{code}: claim={claim_val} — 목표/전망 문맥, 실적 비교 제외")
++        node = _selected_d1_node(evidence_graph, code)
++        if node is None or finite_number(node.value) is None:
++            record['reason'] = 'no_evidence'
+@@ -524,60 +515,13 @@ def _score_d1_numeric(
+-
+-        # 후보: 최근접 코드 우선 + 문장 내 나머지 토픽 코드 (교차 오탐 방지)
+-        cand_codes = [code] + sorted(sentence_codes - {code})
+-        # 기권 사유 판정용 근거 유무는 **claim 자기 코드** 기준으로만 본다.
+-        # (혼합 문장에서 옆 지표 노드 때문에 no_evidence가 unit_mismatch로 오분류돼
+-        #  조용히 통과하던 버그 방지 — 코드리뷰 must-fix 2.)
+-        own_has_nodes = bool(evidence_graph.search_nodes(keywords=[code]))
+-        best: tuple[float, Any, str] | None = None  # (delta, node, code)
+-        any_nodes = False
+-        for c in cand_codes:
+-            facts = getattr(evidence_graph, "resolved_facts", {})
+-            if c in facts:
+-                from .ssot.selection import comparison_node
+-                from .rag_gates.units import normalize_unit, convert_to_common
+-                resolved = comparison_node(evidence_graph, c)
+-                if resolved is not None:
+-                    any_nodes = True
+-                    cv = convert_to_common(claim_val, normalize_unit(claim_unit or "") or claim_unit,
+-                                           normalize_unit(resolved.unit) or resolved.unit)
+-                    if cv is not None:
+-                        delta = (abs(cv - resolved.value) / abs(resolved.value)
+-                                 if resolved.value else (0.0 if cv == 0 else float("inf")))
+-                        if best is None or delta < best[0]:
+-                            best = (delta, resolved, c)
+-                continue
+-            nodes = evidence_graph.search_nodes(keywords=[c])
+-            if not nodes:
+-                continue
+-            any_nodes = True
+-            # 단위 호환 노드만 비교 대상 ("31 %" 주장을 tCO2eq 노드와 비교하지 않음)
+-            compat = [n for n in nodes if units_compatible(claim_unit, getattr(n, "unit", None))]
+-            if not compat:
+-                continue
+-            # G5. 대표 노드 — **원장이 그래프에 기록한 결정을 그대로 따른다**(2026-07-26).
+-            # 공용 함수(select_representative_node)를 공유하는 것만으로는 대칭이 성립하지
+-            # 않는다: 원장은 origin이 ocr_*인 노드만, 여기 compat는 search_nodes()로
+-            # DART 노드까지 포함한 풀이라 같은 규칙도 다른 노드를 가리킨다
+-            # (실측: 원장 623,648 '국내(별도)' vs D1 1,992,921 DART '합계').
+-            # 규칙을 두 번 돌리는 대신 결정을 공유하면 풀이 달라도 어긋날 수 없다.
+-            node = _ledger_representative(evidence_graph, c, compat)
+-            if node is None:
+-                if _repr_ids(evidence_graph).get(c):
+-                    # 기록은 있으나 claim과 환산군이 다르다 — 원장은 항목 정의 단위로
+-                    # 정규화하지만 노드는 원 단위다. 비교 자체가 무의미하므로 폴백한다.
+-                    details.append(f"{c}: 원장 대표노드와 단위 비호환 → 폴백")
+-                # 기록이 없는 코드(미공시·DART-only 경로 등)는 기존대로 규칙을 재실행한다.
+-                node = select_representative_node(c, compat, report_year=ref_year)
+-            if node is None or node.value == 0:
+-                continue
+-            delta = abs(claim_val - node.value) / abs(node.value)
+-            if best is None or delta < best[0]:
+-                best = (delta, node, c)
+-
+-        if best is None:
+-            if own_has_nodes:
+-                details.append(
+-                    f"{code}: claim={claim_val}{claim_unit} — 단위 불일치(노드 단위와 비교 불가, 스킵)")
+-            else:
+-                details.append(f"{code}: claim={claim_val}{claim_unit} — 근거 노드 없음")
+-            mapped_claims.append({"code": code, "verified": False, "any_nodes": own_has_nodes})
++        fact = getattr(evidence_graph, 'resolved_facts', {}).get(code)
++        ids = list(fact.representative_node_ids) if fact else [node.id]
++        record.update(evidence_ids=ids, evidence_value=node.value, evidence_unit=node.unit,
++                      evidence_period=getattr(node, 'period', None),
++                      evidence_files=list(dict.fromkeys(
++                          getattr(getattr(evidence_graph, 'nodes', {}).get(nid), 'source_file', None)
++                          for nid in ids if getattr(getattr(evidence_graph, 'nodes', {}).get(nid), 'source_file', None)))
++                      or ([node.source_file] if getattr(node, 'source_file', None) else []))
++        cu = normalize_unit(claim.unit or '') or claim.unit
++        nu = normalize_unit(node.unit or '') or node.unit
++        cv = convert_to_common(claim.number, cu, nu) if cu and nu else None
++        if cv is None:
++            record['reason'] = 'unit_mismatch'
+@@ -585,31 +529,44 @@ def _score_d1_numeric(
+-
+-        delta, node, matched_code = best
+-        if delta > worst_delta:
+-            worst_delta = delta
+-        hit_node_ids.append(node.id)
+-        details.append(f"{matched_code}: claim={claim_val} vs node={node.value} (Δ={delta:.1%})")
+-        mapped_claims.append({"code": code, "verified": True, "any_nodes": True})
+-
+-    # ---- 정밀 기권 판정 (ABSTAIN_ENABLED=1일 때만) --------------------------
+-    # 조건: 코드가 매핑된 claim이 최소 1건 있고, 그중 단 하나도 검증(매칭)되지
+-    # 못했을 때만 기권. 하나라도 검증됐으면(worst_delta 산정에 기여) 기권 아님 —
+-    # 실제 위험(수치 불일치) 신호를 기권으로 숨기지 않기 위함.
+-    if ABSTAIN_ENABLED and mapped_claims and not any(c["verified"] for c in mapped_claims):
+-        unresolved_codes = {c["code"] for c in mapped_claims}
+-        retried = any(_retry_evidence(c, evidence_graph) for c in unresolved_codes)
+-        if not retried:
+-            reason = "no_evidence" if any(not c["any_nodes"] for c in mapped_claims) else "unit_mismatch"
+-            # 2026-07-28 실키 A/B: unit_mismatch 기권이 test held-out에서 Overall·recall을
+-            # 하락시켰다(주 타깃 no_evidence는 0건 관측 — docs/abstention_metrics_result.md).
+-            # 근거 자체가 없는 no_evidence만 기본적으로 기권시키고, unit_mismatch는
+-            # ABSTAIN_UNIT_MISMATCH가 명시적으로 켜졌을 때만 기권시킨다(기본 False —
+-            # 꺼져 있으면 기존 동작인 score 계산으로 흘려보낸다).
+-            if reason == "no_evidence" or ABSTAIN_UNIT_MISMATCH:
+-                return _abstain(reason, "; ".join(details) if details else "수치 매칭 없음")
+-
+-    score = min(1.0, worst_delta / max(D1_THRESHOLD, 1e-9))
+-    return AxisScore(
+-        score=round(score, 4),
+-        evidence=hit_node_ids,
+-        detail="; ".join(details) if details else "수치 매칭 없음",
+-    )
++        delta = (abs(cv - node.value) / abs(node.value) if node.value
++                 else (0.0 if cv == 0 else float('inf')))
++        record.update(status='compared', reason='match' if delta <= tolerance else 'mismatch',
++                      compared_value=cv, delta_ratio=delta if delta != float('inf') else None,
++                      nonzero_against_zero=delta == float('inf'))
++    return records
++
++
++def _numeric_axis(records: list[dict[str, Any]], score: float) -> AxisScore:
++    """Keep measured risk and unverified scope independently, including legacy toggles."""
++    from collections import Counter
++    compared = [r for r in records if r['status'] == 'compared']
++    unverified = [r for r in records if r['status'] == 'unverified']
++    reasons = dict(Counter(r['reason'] for r in unverified))
++    status = ('partial' if compared else 'unavailable') if unverified else ('complete' if compared else 'not_applicable')
++    # Historical experiment switches no longer suppress the fact of non-verification.
++    reason = next((r for r in ('no_evidence', 'unit_mismatch', 'ambiguous_topic', 'invalid_number') if r in reasons), None)
++    labels = {'no_evidence': '근거 노드 없음', 'unit_mismatch': '단위 비교 불가',
++              'ambiguous_topic': '지표 연결 모호', 'invalid_number': '부적합 숫자',
++              'target': '목표/전망 문맥, 실적 비교 제외'}
++    details = []
++    for r in records:
++        if r['status'] == 'compared':
++            delta = r['delta_ratio'] if r['delta_ratio'] is not None else float('inf')
++            details.append(f"{r['code']}: claim={r['claim_value']} vs node={r['evidence_value']} (Δ={delta:.1%})")
++        else:
++            details.append(f"{r['code'] or '미확정'}: {r['raw']} — {labels[r['reason']]}")
++    return AxisScore(score=round(score, 4),
++        evidence=list(dict.fromkeys(nid for r in compared for nid in r['evidence_ids'])),
++        detail='; '.join(details) or '수치 비교 대상 없음',
++        abstain=bool(unverified) and not compared,
++        abstain_reason=reason if unverified and not compared else None,
++        evaluation={'status': status, 'compared_claims': len(compared),
++                    'unverified_claims': len(unverified),
++                    'excluded_claims': sum(r['status'] == 'excluded' for r in records),
++                    'reasons': reasons, 'claims': records})
++
++
++def _score_d1_numeric(sentence: str, evidence_graph: Any | None) -> AxisScore:
++    """Compare each claim only to its metric's finalized evidence; preserve coverage."""
++    records = _compare_numeric_claims(sentence, evidence_graph, extract_numeric_claims(sentence))
++    worst_delta = max((float('inf') if r['nonzero_against_zero'] else r['delta_ratio']
++                       for r in records if r['status'] == 'compared'), default=0.0)
++    return _numeric_axis(records, min(1.0, worst_delta / max(D1_THRESHOLD, 1e-9)))
+diff --git a/esgenie/layer3_judge.py b/esgenie/layer3_judge.py
+index 103fac4..072e1df 100644
+--- a/esgenie/layer3_judge.py
++++ b/esgenie/layer3_judge.py
+@@ -194,0 +195,2 @@ def judge_risk_vector(
++        if name == "D1_numeric" and ax.evaluation.get("compared_claims", 0):
++            blended = max(ax.score, blended)
+@@ -211,0 +214 @@ def judge_risk_vector(
++            evaluation=ax.evaluation.copy(),
+diff --git a/esgenie/layer4_verify.py b/esgenie/layer4_verify.py
+index ce7396c..fcaf218 100644
+--- a/esgenie/layer4_verify.py
++++ b/esgenie/layer4_verify.py
+@@ -221,8 +221,6 @@ def verify_and_refine(
+-    # 5축 벡터 계산 (evidence_graph 있을 때만)
+-    rv: RiskVector | None = None
+-    if evidence_graph is not None:
+-        rv = _compute_text_risk_vector(clean_text, evidence_graph, gen, industry_stats,
+-                                       industry_module=industry_module,
+-                                       llm_judge=llm_judge)
+-        det.risk_vector = rv
+-        det.risk_score = rv.risk_score * 100 if rv.risk_score is not None else None
++    # A missing graph must still carry D1 no_evidence to convergence/HITL.
++    rv = _compute_text_risk_vector(clean_text, evidence_graph, gen, industry_stats,
++                                   industry_module=industry_module,
++                                   llm_judge=llm_judge)
++    det.risk_vector = rv
++    det.risk_score = rv.risk_score * 100 if rv.risk_score is not None else None
+@@ -259,6 +257,5 @@ def verify_and_refine(
+-        if evidence_graph is not None:
+-            rv = _compute_text_risk_vector(clean_text, evidence_graph, gen, industry_stats,
+-                                           industry_module=industry_module,
+-                                           llm_judge=llm_judge)
+-            det.risk_vector = rv
+-            det.risk_score = rv.risk_score * 100 if rv.risk_score is not None else None
++        rv = _compute_text_risk_vector(clean_text, evidence_graph, gen, industry_stats,
++                                       industry_module=industry_module,
++                                       llm_judge=llm_judge)
++        det.risk_vector = rv
++        det.risk_score = rv.risk_score * 100 if rv.risk_score is not None else None
+@@ -382,0 +380,2 @@ def _compute_text_risk_vector(
++    numeric_records = []
++    text_offset = 0
+@@ -391,0 +391,5 @@ def _compute_text_risk_vector(
++        text_offset = text.index(sent, text_offset)
++        for record in rv.D1_numeric.evaluation.get("claims", []):
++            numeric_records.append(dict(record, start=record["start"] + text_offset,
++                                        end=record["end"] + text_offset))
++        text_offset += len(sent)
+@@ -393 +397 @@ def _compute_text_risk_vector(
+-            incomplete.append(rv.abstained_axes())
++            incomplete.append(rv.aggregate.get("incomplete_axes", rv.abstained_axes()))
+@@ -401,0 +406,3 @@ def _compute_text_risk_vector(
++    if numeric_records:
++        from .layer3_detect import _numeric_axis
++        best_rv.aggregate["numeric_evaluation"] = _numeric_axis(numeric_records, 0).evaluation
+diff --git a/esgenie/layer5_audit_trace.py b/esgenie/layer5_audit_trace.py
+index a0dc94f..9d3f5f9 100644
+--- a/esgenie/layer5_audit_trace.py
++++ b/esgenie/layer5_audit_trace.py
+@@ -96,22 +96,24 @@ def build_audit_trace(
+-        if evidence_graph is not None or chunks:
+-            related_codes = list(dict.fromkeys(
+-                ([kesg_item_id] if kesg_item_id else []) + guessed_codes
+-            ))
+-            if llm_judge:
+-                from .layer3_judge import detect_risk_vector_hybrid as _detect
+-                rv = _detect(
+-                    sent_text,
+-                    evidence_graph=evidence_graph,
+-                    retrieved_chunks=chunks or None,
+-                    industry_stats=industry_stats,
+-                    _d3_index=d3_index,
+-                    kesg_codes=related_codes or None,
+-                )
+-            else:
+-                rv = detect_risk_vector(
+-                    sent_text,
+-                    evidence_graph=evidence_graph,
+-                    retrieved_chunks=chunks or None,
+-                    industry_stats=industry_stats,
+-                    _d3_index=d3_index,
+-                )
++        related_codes = list(dict.fromkeys(
++            ([kesg_item_id] if kesg_item_id else []) + guessed_codes
++        ))
++        if llm_judge:
++            from .layer3_judge import detect_risk_vector_hybrid as _detect
++            rv = _detect(
++                sent_text,
++                evidence_graph=evidence_graph,
++                retrieved_chunks=chunks or None,
++                industry_stats=industry_stats,
++                _d3_index=d3_index,
++                kesg_codes=related_codes or None,
++            )
++        else:
++            rv = detect_risk_vector(
++                sent_text,
++                evidence_graph=evidence_graph,
++                retrieved_chunks=chunks or None,
++                industry_stats=industry_stats,
++                _d3_index=d3_index,
++            )
++
++        if rv is not None:
++            ev_node_ids.extend(rv.D1_numeric.evidence)
+@@ -125 +127 @@ def build_audit_trace(
+-            if (rv is not None and not rv.evaluation_complete) or (verification.hitl_required and idx == 0)   # 첫 문장에 마킹
++            if (rv is not None and (not rv.evaluation_complete or bool(rv.high_axes()))) or (verification.hitl_required and idx == 0)   # 첫 문장에 마킹
+@@ -163,0 +166,3 @@ def build_audit_trace(
++        "complete_sentences": sum(s.risk_vector is not None and s.risk_vector.evaluation_complete for s in audit_sentences),
++        "numeric_compared_claims": sum(s.risk_vector.D1_numeric.evaluation.get("compared_claims", 0) for s in audit_sentences if s.risk_vector),
++        "numeric_unverified_claims": sum(s.risk_vector.D1_numeric.evaluation.get("unverified_claims", 0) for s in audit_sentences if s.risk_vector),
+diff --git a/esgenie/layer6_report.py b/esgenie/layer6_report.py
+index 2e27ecb..0738f27 100644
+--- a/esgenie/layer6_report.py
++++ b/esgenie/layer6_report.py
+@@ -194,2 +194,2 @@ def _block_esg(output: Any, area: str) -> ReportBlock | None:
+-        axis_note += f" · {rv.evaluation_label}"
+-        if not rv.evaluation_complete:
++        axis_note += f" · {rv.evaluation_label} · D1 {rv.numeric_coverage_label}"
++        if rv.abstained_axes():
+diff --git a/esgenie/numeric_tokens.py b/esgenie/numeric_tokens.py
+new file mode 100644
+index 0000000..ee998ff
+--- /dev/null
++++ b/esgenie/numeric_tokens.py
+@@ -0,0 +1,41 @@
++"""Shared numeric syntax. Callers retain their existing supported unit vocabularies."""
++from __future__ import annotations
++
++import math
++import re
++
++# Block partial matches inside identifiers, signs, decimal/grouping mistakes.
++TOKEN_START = r'(?<![0-9A-Za-z가-힣_.,+\-−])'
++VALID_NUMBER = r'[+\-−]?(?:\d{1,3}(?:,\d{3})+|\d+)(?:\.\d+)?'
++CANDIDATE_NUMBER = r'(?:[+\-−]+\s*)?[\d.,]+(?:[eE][+\-]?\d+)?'
++TOKEN_END = r'(?![\d.,]|[eE][+\-]?\d)'
++
++
++class ValidNumberPattern:
++    """Regex-compatible iteration that rejects entire malformed candidate tokens.
++
++    Scanning candidates first also prevents '- 100' from leaking a positive 100
++    after whitespace. Consumers use only finditer; returned objects are re.Match.
++    """
++    def __init__(self, pattern: re.Pattern):
++        self.pattern = pattern.pattern
++        self._pattern = pattern
++
++    def finditer(self, text: str, *bounds):
++        for match in self._pattern.finditer(text, *bounds):
++            if parse_number(match.group('num')) is not None:
++                yield match
++
++
++def number_pattern(units: str, *, candidates: bool = False):
++    pattern = re.compile(TOKEN_START + rf'(?P<num>{CANDIDATE_NUMBER})' + TOKEN_END
++                         + rf'\s*(?P<unit>{units})(?![A-Za-z0-9_])')
++    return pattern if candidates else ValidNumberPattern(pattern)
++
++
++def parse_number(raw: str) -> float | None:
++    """Malformed grouping and unsupported notation never become partial values."""
++    if not re.fullmatch(VALID_NUMBER, raw):
++        return None
++    value = float(raw.replace(',', '').replace('−', '-'))
++    return value if math.isfinite(value) else None
+diff --git a/esgenie/pipeline.py b/esgenie/pipeline.py
+index b16fbb3..17a7cfa 100644
+--- a/esgenie/pipeline.py
++++ b/esgenie/pipeline.py
+@@ -172 +172,2 @@ def _build_risk_rows(
+-            "D1 수치": round(axes["D1"].score, 3),
++            "D1 수치": None if axes["D1"].abstain else round(axes["D1"].score, 3),
++            "D1 평가": axes["D1"].evaluation,
+@@ -236 +237,2 @@ def _export_v15_artifacts(
+-        ssot_audit_trace.build_data_points(graph, d1_scores, target_codes=BASIC_28_CODES),
++        ssot_audit_trace.build_data_points(graph, d1_scores, target_codes=BASIC_28_CODES,
++            d1_evaluations={r["K-ESG 코드"]: r["D1 평가"] for r in risk_rows}),
+diff --git a/esgenie/schemas.py b/esgenie/schemas.py
+index bda9641..e173d54 100644
+--- a/esgenie/schemas.py
++++ b/esgenie/schemas.py
+@@ -22,2 +22,2 @@ class AxisScore:
+-    abstain: bool = False              # ★ 신설: 판정 보류 여부(기본 False — 기존 동작 불변)
+-    abstain_reason: str | None = None  # ★ 신설: "no_evidence" | "unit_mismatch" | "low_confidence"
++    abstain: bool = False              # 전부 미검증인 축. 부분 검증은 evaluation에 기록.
++    abstain_reason: str | None = None  # 근거/단위/지표 연결/숫자 부적합 사유
+@@ -26,0 +27,21 @@ class AxisScore:
++    @property
++    def evaluation_complete(self) -> bool:
++        return not self.abstain and self.evaluation.get("status") not in {"partial", "unavailable"}
++
++    @property
++    def evaluation_label(self) -> str:
++        if self.abstain or self.evaluation.get("status") == "unavailable":
++            return "평가불가"
++        return {"partial": "부분 평가", "not_applicable": "비교 대상 없음"}.get(self.evaluation.get("status"), "평가 완료")
++
++    @property
++    def coverage_label(self) -> str:
++        if not self.evaluation:
++            return self.evaluation_label
++        labels = {"no_evidence": "근거 없음", "unit_mismatch": "단위 비교 불가",
++                  "ambiguous_topic": "지표 연결 모호", "invalid_number": "부적합 숫자"}
++        reasons = ", ".join(f"{labels.get(k, k)} {v}건" for k, v in self.evaluation.get("reasons", {}).items())
++        return (f"{self.evaluation_label} · 비교 {self.evaluation.get('compared_claims', 0)}건"
++                f" · 미검증 {self.evaluation.get('unverified_claims', 0)}건"
++                + (f" · {reasons}" if reasons else ""))
++
+@@ -63 +84,2 @@ class RiskVector:
+-        return bool(self.aggregate.get("evaluation_complete", not self.abstained_axes()))
++        return (bool(self.aggregate.get("evaluation_complete", True))
++                and all(a.evaluation_complete for a in (self.D1_numeric, self.D2_modifier, self.D3_semantic, self.D5_timeseries)))
+@@ -71,0 +94,10 @@ class RiskVector:
++    @property
++    def numeric_evaluation(self) -> dict[str, Any]:
++        return self.aggregate.get("numeric_evaluation", self.D1_numeric.evaluation)
++
++    @property
++    def numeric_coverage_label(self) -> str:
++        if "numeric_evaluation" not in self.aggregate:
++            return self.D1_numeric.coverage_label
++        return AxisScore(0, evaluation=self.numeric_evaluation).coverage_label
++
+@@ -110,0 +143 @@ def aggregate_axes(axes: dict[str, AxisScore]) -> dict[str, Any]:
++    incomplete = [name for name, axis in axes.items() if not axis.evaluation_complete]
+@@ -124,2 +157,2 @@ def aggregate_axes(axes: dict[str, AxisScore]) -> dict[str, Any]:
+-            "evaluated_weight": round(weight, 6), "evaluation_complete": not abstained,
+-            "evaluation_status": "unavailable" if score is None else "partial" if abstained else "complete"}
++            "evaluated_weight": round(weight, 6), "incomplete_axes": incomplete, "evaluation_complete": not incomplete,
++            "evaluation_status": "unavailable" if score is None else "partial" if incomplete else "complete"}
+diff --git a/esgenie/ssot/audit_trace.py b/esgenie/ssot/audit_trace.py
+index f06d99d..ac0ab44 100644
+--- a/esgenie/ssot/audit_trace.py
++++ b/esgenie/ssot/audit_trace.py
+@@ -56 +56 @@ class DataPoint:
+-    d1_risk: float                 # L3 D1 수치 위험도
++    d1_risk: float | None          # L3 D1 수치 위험도
+@@ -61,0 +62 @@ class DataPoint:
++    d1_evaluation: dict[str, Any] = field(default_factory=dict)
+@@ -104,0 +106 @@ def build_data_points(
++    d1_evaluations: dict[str, dict[str, Any]] | None = None,
+@@ -115,0 +118,2 @@ def build_data_points(
++        evaluation = (d1_evaluations or {}).get(code, {})
++        incomplete = evaluation.get("status") in {"partial", "unavailable"}
+@@ -118 +122 @@ def build_data_points(
+-        if finite_number(fact.value) is None or d1 >= 0.5 or "unit_suspect" in flags:
++        if incomplete or finite_number(fact.value) is None or d1 >= 0.5 or "unit_suspect" in flags:
+@@ -127 +131,2 @@ def build_data_points(
+-            verification=verification, d1_risk=round(d1, 3), evidence_files=links,
++            verification=verification, d1_risk=None if evaluation.get("status") == "unavailable" else round(d1, 3), evidence_files=links,
++            d1_evaluation=evaluation,
+diff --git a/esgenie/ssot/detector_5axis.py b/esgenie/ssot/detector_5axis.py
+index 783127f..4ba043d 100644
+--- a/esgenie/ssot/detector_5axis.py
++++ b/esgenie/ssot/detector_5axis.py
+@@ -52,36 +51,0 @@ class PolicyAuditResult:
+-# 문장에서 수치 토큰 추출: 1,670만 / 12.3% / 4781 tCO2 등
+-_NUM_RE = re.compile(r"([+-]?[0-9][0-9,\.]*)\s*(만|억|천)?\s*(tCO2eq|tCO2|kWh|MWh|GWh|TJ|GJ|MJ|kg|ton|톤|%|원|건|명)?")
+-
+-
+-# ---- 책임있는 기권(abstain) 헬퍼 --------------------------------------------
+-# ABSTAIN_ENABLED=0(기본)이면 아래 헬퍼는 호출되지 않아 기존 동작(0.6/0.9)이 그대로다.
+-# 참고: 이 함수(detect_d1_numeric)의 유일한 프로덕션 호출부인
+-# esgenie/pipeline.py::_build_risk_rows는 `if not nodes: continue`로 노드 없는
+-# 코드를 호출 전에 걸러내므로, 아래 두 분기(코드 없음/근거 없음)는 사실상
+-# 프로덕션 경로가 아니라 직접 호출(테스트 등)에서만 도달한다. 그럼에도 D1의
+-# 두 구현이 "근거 없음"에 대해 같은 의미(기권)를 내도록 정합화한다.
+-#
+-# 2026-07-28 추가 정합화: layer3_detect._score_d1_numeric은 ABSTAIN_UNIT_MISMATCH
+-# (기본 False)로 unit_mismatch 기권을 별도 제어한다(실키 A/B에서 unit_mismatch
+-# 기권이 test held-out 지표를 하락시켜 기본 비활성화). 이 함수(ssot)는 애초에
+-# unit_mismatch를 기권으로 전환하는 분기가 없다(L99 미일치는 그대로 위험 점수로
+-# 유지 — 아래 참조) — 두 경로 모두 "기본적으로 no_evidence만 기권"이라는 점에서
+-# 이미 정합화돼 있다.
+-
+-def _abstain(reason: str, detail: str) -> AxisScore:
+-    return AxisScore(
+-        score=0.0, evidence=[], detail=f"ABSTAIN({reason}): {detail}",
+-        abstain=True, abstain_reason=reason,
+-    )
+-
+-
+-def _retry_evidence(code: str, graph: EvidenceGraph) -> list[Any] | None:
+-    """근거 부재 시 최종 기권 판정 전 보조 재검색 훅.
+-
+-    강화된 재검색(동의어/상위코드 확장, RAG 청크 재조회 등)은 아직 구현하지
+-    않았다. 현재는 항상 None을 반환한다.
+-    TODO: 강화된 재검색(후속 배치 후보).
+-    """
+-    return None
+-
+-
+@@ -95,52 +59,11 @@ def detect_d1_numeric(
+-    """문장 속 수치를 Evidence Graph 노드값과 대조.
+-
+-    판정 단계:
+-      1) 문장에서 수치 클레임 추출.
+-      2) kesg_code에 연결된 노드(DART + OCR) 후보 수집.
+-      3) 각 클레임이 ±tolerance_pct 안에 일치하는 노드가 있는지 확인.
+-         - 일치 노드가 OCR 증빙(origin=ocr_*)이면 source_file을 evidence에 기록 → 증빙 추적.
+-         - 근거 노드 자체가 없으면 '근거 부족' = 고위험(0.9).
+-      4) DART↔OCR cross_check 엣지의 오차가 크면 가산 위험.
+-
+-    Returns: AxisScore(score, evidence=[node_id|source_file], detail)
+-    """
+-    claims = _extract_numbers(sentence)
+-    if not claims:
+-        return AxisScore(0.0, [], "수치 클레임 없음")
+-
+-    if not kesg_code:
+-        if ABSTAIN_ENABLED:
+-            return _abstain("no_evidence", "수치는 있으나 K-ESG 매핑 없음 → 근거 추적 불가")
+-        return AxisScore(0.6, [], "수치는 있으나 K-ESG 매핑 없음 → 근거 추적 불가")
+-
+-    from .selection import comparison_node
+-    selected = comparison_node(graph, kesg_code)
+-    candidates = [selected] if selected is not None else []
+-    if not candidates:
+-        if ABSTAIN_ENABLED and not _retry_evidence(kesg_code, graph):
+-            return _abstain("no_evidence", f"{kesg_code} 근거 노드 없음(재검색 후에도 없음)")
+-        return AxisScore(0.9, [], f"{kesg_code} 근거 노드 없음 → 미증빙 수치(고위험)")
+-
+-    matched_evidence: list[str] = []
+-    unmatched: list[float] = []
+-    for claim_val, claim_unit in claims:
+-        hit = _find_matching_node(claim_val, claim_unit, candidates, tolerance_pct)
+-        if hit is None:
+-            unmatched.append(claim_val)
+-        else:
+-            tag = hit.source_file or hit.id   # 증빙 파일명 우선(감사 추적)
+-            matched_evidence.append(tag)
+-
+-    if unmatched:
+-        score = min(0.5 + 0.1 * len(unmatched), 1.0)
+-        return AxisScore(
+-            score, matched_evidence,
+-            f"미일치 수치 {len(unmatched)}건(±{tolerance_pct}% 초과): {unmatched}",
+-        )
+-
+-    # 모두 일치 → cross_check 엣지 점검
+-    xrisk = _cross_check_risk(kesg_code, graph)
+-    return AxisScore(
+-        round(xrisk, 3), matched_evidence,
+-        "모든 수치 증빙 일치" + (f"; 교차검증 경고" if xrisk > 0 else ""),
+-    )
++    """SSOT keeps its tolerance/risk scale and shares D1 ownership and coverage."""
++    from ..layer3_detect import _compare_numeric_claims, _numeric_axis
++    records = _compare_numeric_claims(sentence, graph, _ssot_claims(sentence, kesg_code),
++                                      tolerance=tolerance_pct / 100)
++    mismatches = sum(r['status'] == 'compared' and r['reason'] == 'mismatch' for r in records)
++    score = min(.5 + .1 * mismatches, 1.0) if mismatches else 0.0
++    if not mismatches and any(r['status'] == 'compared' for r in records) and kesg_code:
++        score = _cross_check_risk(kesg_code, graph)
++    axis = _numeric_axis(records, score)
++    axis.evidence = list(dict.fromkeys(axis.evidence + [f for r in records if r["status"] == "compared" for f in r.get("evidence_files", [])]))
++    return axis
+@@ -280,2 +203,2 @@ def detect_risk_axes(
+-        abstain=not rv.evaluation_complete,
+-        abstain_reason="no_evidence" if not rv.evaluation_complete else None,
++        abstain=rv.risk_score is None,
++        abstain_reason="no_evidence" if rv.risk_score is None else None,
+@@ -291 +214 @@ def detect_risk_axes(
+-_SCALE = {"만": 1e4, "억": 1e8, "천": 1e3}
++from ..numeric_tokens import TOKEN_START, CANDIDATE_NUMBER, TOKEN_END, parse_number
+@@ -292,0 +216,4 @@ _SCALE = {"만": 1e4, "억": 1e8, "천": 1e3}
++_SCALE = {"만": 1e4, "억": 1e8, "천": 1e3}
++# Preserve the SSOT unit vocabulary; numeric grammar has one implementation.
++_NUM_RE = re.compile(TOKEN_START + rf"(?P<num>{CANDIDATE_NUMBER})" + TOKEN_END
++    + r"\s*(?P<scale>만|억|천)?\s*(?P<unit>tCO2eq|tCO2|kWh|MWh|GWh|TJ|GJ|MJ|kg|ton|톤|%p|%|원|건|명)?")
+@@ -294,2 +220,0 @@ _SCALE = {"만": 1e4, "억": 1e8, "천": 1e3}
+-def _extract_numbers(sentence: str) -> list[tuple[float, str | None]]:
+-    """문장에서 (수치, 단위) 클레임 추출.
+@@ -297,5 +222,3 @@ def _extract_numbers(sentence: str) -> list[tuple[float, str | None]]:
+-    오탐 필터:
+-      - 연도(1900~2100, 단위·스케일 없음) 제외 — "2025년"은 수치 주장이 아님
+-      - 단위·스케일·쉼표·소수점이 전혀 없는 맨 정수 제외 — 페이지·항목 번호 오탐 방지
+-    """
+-    out: list[tuple[float, str | None]] = []
++def _ssot_claims(sentence: str, kesg_code: str | None):
++    from ..layer3_detect import NumericClaim, _match_topic_near, _sentence_topic_codes
++    out = []
+@@ -303,5 +226,2 @@ def _extract_numbers(sentence: str) -> list[tuple[float, str | None]]:
+-        raw, scale, unit = m.group(1), m.group(2), m.group(3)
+-        try:
+-            val = float(raw.replace(",", ""))
+-        except ValueError:
+-            continue
++        raw, scale, unit = m.group('num', 'scale', 'unit')
++        val = parse_number(raw)
+@@ -309,7 +229,14 @@ def _extract_numbers(sentence: str) -> list[tuple[float, str | None]]:
+-            if 1900 <= val <= 2100 and "." not in raw:
+-                continue   # 연도
+-            if "," not in raw and "." not in raw:
+-                continue   # 맨 정수 (번호류)
+-        if scale:
+-            val *= _SCALE.get(scale, 1)
+-        out.append((val, unit))
++            if val is not None and 1900 <= val <= 2100 and '.' not in raw:
++                continue
++            if ',' not in raw and '.' not in raw:
++                continue
++        if val is not None and scale:
++            val *= _SCALE[scale]
++        topic, code = _match_topic_near(sentence, m.start(), m.end())
++        # The caller's explicit metric is only a fallback for unnamed single-metric
++        # SSOT rows. It must not override ambiguous named metrics in prose.
++        if code is None and not _sentence_topic_codes(sentence):
++            code = kesg_code
++        out.append(NumericClaim(m.group().rstrip(), val, unit or '', topic, code,
++                                sentence, m.start(), m.end(),
++                                'invalid_number' if val is None or val < 0 else None))
+@@ -318,0 +246,4 @@ def _extract_numbers(sentence: str) -> list[tuple[float, str | None]]:
++def _extract_numbers(sentence: str) -> list[tuple[float, str | None]]:
++    return [(c.number, c.unit or None) for c in _ssot_claims(sentence, None) if c.number is not None]
++
++
+diff --git a/esgenie/ssot/excel_exporter.py b/esgenie/ssot/excel_exporter.py
+index 43a2b3e..a9edcde 100644
+--- a/esgenie/ssot/excel_exporter.py
++++ b/esgenie/ssot/excel_exporter.py
+@@ -64 +64 @@ def export_datasheet(
+-    headers = ["K-ESG 코드", "항목명", "값", "단위", "연도", "검증상태", "D1 위험도", "증빙 파일"]
++    headers = ["K-ESG 코드", "항목명", "값", "단위", "연도", "검증상태", "D1 위험도", "증빙 파일", "D1 평가", "비교 주장", "미검증 주장", "미검증 사유"]
+@@ -72,0 +73,2 @@ def export_datasheet(
++        from ..schemas import AxisScore
++        evaluation = dp.d1_evaluation
+@@ -76,0 +79,3 @@ def export_datasheet(
++            AxisScore(0, evaluation=evaluation).evaluation_label if evaluation else "이전 자료: 평가 범위 미기록",
++            evaluation.get("compared_claims"), evaluation.get("unverified_claims"),
++            ", ".join(evaluation.get("reasons", {})),
+diff --git a/esgenie/supplychain/mapping.py b/esgenie/supplychain/mapping.py
+index fa16d02..c1b4254 100644
+--- a/esgenie/supplychain/mapping.py
++++ b/esgenie/supplychain/mapping.py
+@@ -78,0 +79 @@ def _derive_numeric(q, mapped, missing, dp_by_code, claims=None, evidence_index=
++        from ..schemas import AxisScore, format_score
+@@ -86 +87,2 @@ def _derive_numeric(q, mapped, missing, dp_by_code, claims=None, evidence_index=
+-                      f"(보고 연도 {dp.period}, D1 위험 {dp.d1_risk}, 검증={dp.verification})"
++                      f"(보고 연도 {dp.period}, D1 위험 {format_score(dp.d1_risk)}, 검증={dp.verification})"
++                      + (f" · {AxisScore(0, evaluation=dp.d1_evaluation).coverage_label}" if dp.d1_evaluation else "")
+diff --git a/esgenie/ui/tabs.py b/esgenie/ui/tabs.py
+index 772b08a..7379b83 100644
+--- a/esgenie/ui/tabs.py
++++ b/esgenie/ui/tabs.py
+@@ -687 +687,4 @@ def render_greenwash_workspace(result, active_area: str) -> None:
+-    if verify.converged:
++    rv = verify.final.detection.risk_vector
++    if rv is not None and not rv.evaluation_complete:
++        judgment, judgment_note = "담당자 이관", f"D1 {rv.numeric_coverage_label}"
++    elif verify.converged:
+@@ -1048,0 +1052,2 @@ def render_verify_tab(
++    elif verify.final.detection.risk_vector is not None and not verify.final.detection.risk_vector.evaluation_complete:
++        st.warning(f"독립 증빙 확인 필요 · D1 {verify.final.detection.risk_vector.numeric_coverage_label}")
+@@ -1066 +1071,4 @@ def render_verify_tab(
+-            st.warning(f"{final_risk.evaluation_label}: 기권 축 {', '.join(final_risk.abstained_axes())} — 독립 증빙 확인 필요")
++            st.warning(f"{final_risk.evaluation_label} · 미완료 축 {', '.join(final_risk.aggregate.get('incomplete_axes', final_risk.abstained_axes()))} · D1 {final_risk.numeric_coverage_label} — 독립 증빙 확인 필요")
++        st.caption(f"D1 수치 검증: {final_risk.numeric_coverage_label}")
++        if final_risk.numeric_evaluation.get("claims"):
++            st.dataframe(pd.DataFrame(final_risk.numeric_evaluation["claims"]), hide_index=True, width='stretch')
+@@ -1666,0 +1675 @@ def render_benchmark_tab(gradient: str, *, show_header: bool = True) -> None:
++            "평가 완료": f"{metrics['complete_cases']}/{len(report.cases)}",
+@@ -1713 +1722 @@ def render_benchmark_tab(gradient: str, *, show_header: bool = True) -> None:
+-            else:
++            elif all(case.evaluation_complete for case in report.cases):
+@@ -1714,0 +1724,2 @@ def render_benchmark_tab(gradient: str, *, show_header: bool = True) -> None:
++            else:
++                st.info("분류상 오답 없음 · 부분 평가가 있어 독립 증빙 확인 필요")
+@@ -1885 +1896,7 @@ def _render_provenance_panel(result) -> None:
+-                st.progress(min(1.0, float(data_point.d1_risk or 0.0)), text=f"{float(data_point.d1_risk or 0.0):.2f}")
++                if data_point.d1_risk is None:
++                    st.warning("평가불가 · 독립 증빙 확인 필요")
++                else:
++                    st.progress(min(1.0, data_point.d1_risk), text=f"{data_point.d1_risk:.2f}")
++                if data_point.d1_evaluation:
++                    from esgenie.schemas import AxisScore
++                    st.caption(AxisScore(0, evaluation=data_point.d1_evaluation).coverage_label)
+@@ -1954,0 +1972 @@ def _render_hitl_panel(sentence_trace) -> None:
++                    st.caption(f"D1 수치 검증: {risk_vector.numeric_coverage_label}")
+diff --git a/tests/d1_fixtures.py b/tests/d1_fixtures.py
+new file mode 100644
+index 0000000..5242697
+--- /dev/null
++++ b/tests/d1_fixtures.py
+@@ -0,0 +1,64 @@
++"""D1 missed detections: actual graph → finalized ledger → claim verification."""
++from esgenie.dart_client import CompanyReport
++from esgenie.ssot.evidence_graph import build_from_dart
++from esgenie.ssot.ssot_pipeline import extract_with_ssot
++from esgenie.layer3_detect import score_d1_numeric, extract_numeric_claims
++
++CASES = [
++    ('normal', '재생에너지 사용 비율은 31%이며 폐기물 재활용 비율은 92%였다.', 0, 2, 0),
++    ('swapped', '재생에너지 사용 비율은 92%이며 폐기물 재활용 비율은 31%였다.', 1, 2, 0),
++    ('single_error', '재생에너지 사용 비율은 92%였다.', 1, 1, 0),
++    ('comma_error', '온실가스 배출량은 9,999 tCO2eq이다.', 1, 1, 0),
++    ('plain_error', '온실가스 배출량은 9999 tCO2eq이다.', 1, 1, 0),
++    ('missing', '용수 사용량은 100톤이다.', 0, 0, 1),
++    ('normal_missing', '재생에너지 사용 비율은 31%이며 용수 사용량은 100톤이다.', 0, 1, 1),
++    ('error_missing', '재생에너지 사용 비율은 92%이며 용수 사용량은 100톤이다.', 1, 1, 1),
++]
++
++def make_evidence():
++    report = CompanyReport('D1', '수치 검증 합성', '', 2025, {}, {
++        'E-4-2': {'value': 31, 'unit': '%'},
++        'E-6-2': {'value': 92, 'unit': '%'},
++        'E-3-1': {'value': 100, 'unit': 'tCO2eq'},
++    }, [], 'synthetic')
++    graph = build_from_dart(report)
++    graph.report_year = 2025
++    ledger = extract_with_ssot(report, graph)
++    return report, graph, ledger
++
++
++def verify_case(sentence, *, llm_judge=False, missing_graph=False):
++    """Fixed generated text; real ledger, L3, L4 and L5. No external LLM/OCR."""
++    from types import SimpleNamespace
++    from esgenie.embeddings import IndexedDoc
++    from esgenie.layer2_rag import RAGContext, GenerationResult
++    from esgenie.layer4_verify import verify_and_refine
++    from esgenie.layer5_audit_trace import build_audit_trace
++    from esgenie.schemas import GroundingResult
++    report, graph, ledger = make_evidence()
++    source = IndexedDoc(text=CASES[0][1] + ' 온실가스 배출량은 100 tCO2eq이다.', meta={'id':'evidence'})
++    ctx = RAGContext([], [], [(source, 1.0)])
++    rag = SimpleNamespace(retrieve_for_area=lambda *a, **kw: ctx,
++        generate_section=lambda *a, **kw: GenerationResult('E', sentence, ctx, True))
++    # Isolate D1/L4 behavior from the separately-tested citation gate. Retrieval text
++    # contains only supplied evidence; the absent water evidence is never invented.
++    accepted_gate = lambda *a: GroundingResult('ACCEPT',[],[],[],False,[],[],1.0)
++    graph_arg = None if missing_graph else graph
++    verify = verify_and_refine(report,'E',rag,corp=None,max_iter=0,
++        evidence_graph=graph_arg,llm_judge=llm_judge,grounding_gate=accepted_gate)
++    trace = build_audit_trace(report,'E',verify,ledger,graph_arg,llm_judge=llm_judge)
++    return verify, trace, graph, ledger
++
++def real_excerpt_evidence():
++    import json
++    from pathlib import Path
++    from esgenie.ssot.ocr_router import OcrExtraction, ExtractedMetric, DocChannel
++    from esgenie.ssot.evidence_graph import build_unified_graph
++    data = json.loads((Path(__file__).resolve().parents[1] / 'data/d1_validation/real_excerpt.json').read_text())
++    imported = OcrExtraction(source_file=data['source_file'], channel=DocChannel.UNSTRUCTURED,
++        doc_type='report', metrics=[ExtractedMetric(m['metric_hint'],m['value'],m['unit'],m['period'],
++            kesg_code_guess=m['code'],page=m['source_page_index'],confidence=.9) for m in data['metrics']])
++    graph = build_unified_graph(None,[imported],corp_code='MOBIS',corp_name='현대모비스',report_year=2024)
++    report = CompanyReport('MOBIS','현대모비스','',2024,{}, {}, [],'saved_real_extraction')
++    ledger = extract_with_ssot(report,graph)
++    return report, graph, ledger, data
+diff --git a/tests/test_abstain_ab_determinism.py b/tests/test_abstain_ab_determinism.py
+index b92d2cf..ad8d627 100644
+--- a/tests/test_abstain_ab_determinism.py
++++ b/tests/test_abstain_ab_determinism.py
+@@ -53,2 +53,2 @@ def test_abstain_flag_does_not_change_rule_score_or_judgeable(monkeypatch):
+-    # abstain 플래그 자체는 다르다(이게 유일한 차이).
+-    assert rv_off.D1_numeric.abstain is False
++    # 2026-09-14: 과거 토글도 실제 미검증 상태를 지우지 않는다.
++    assert rv_off.D1_numeric.abstain is True
+diff --git a/tests/test_abstain_metrics.py b/tests/test_abstain_metrics.py
+index 01bc604..a1d4349 100644
+--- a/tests/test_abstain_metrics.py
++++ b/tests/test_abstain_metrics.py
+@@ -55 +55 @@ def test_k_abstains_formula():
+-    assert out["abstains"]["by_reason"] == {"no_evidence": 1, "unit_mismatch": 1, "low_confidence": 0}
++    assert out["abstains"]["by_reason"] == {"no_evidence": 1, "unit_mismatch": 1, "low_confidence": 0, "ambiguous_topic": 0, "invalid_number": 0}
+@@ -171 +171 @@ def test_detector_report_metrics_with_abstained_case():
+-    assert m["abstains"] == {"total": 1, "by_reason": {"no_evidence": 1, "unit_mismatch": 0, "low_confidence": 0}}
++    assert m["abstains"] == {"total": 1, "by_reason": {"no_evidence": 1, "unit_mismatch": 0, "low_confidence": 0, "ambiguous_topic": 0, "invalid_number": 0}}
+diff --git a/tests/test_abstain_unit_mismatch_toggle.py b/tests/test_abstain_unit_mismatch_toggle.py
+index 6bbf6f1..fcab8a0 100644
+--- a/tests/test_abstain_unit_mismatch_toggle.py
++++ b/tests/test_abstain_unit_mismatch_toggle.py
+@@ -1,13 +1,2 @@
+-"""ABSTAIN_ENABLED × ABSTAIN_UNIT_MISMATCH 조합별 동작 — 2026-07-28 배치.
+-
+-배경: 실키 A/B(scripts/abstain_ab_eval.py, docs/abstention_metrics_result.md)에서
+-unit_mismatch 기권이 test held-out의 Overall·recall을 하락시켰다(주 타깃인
+-no_evidence는 0건 관측). 그 결과 ABSTAIN_UNIT_MISMATCH를 기본 False로 신설해
+-unit_mismatch 기권을 별도로 끌 수 있게 했다. 이 파일은 두 플래그의 4가지
+-조합(off/off, on/off, on/on, off/on)에서 no_evidence·unit_mismatch 각각의
+-기권 여부가 정확한지 확인한다.
+-"""
+-from __future__ import annotations
+-
+-from types import SimpleNamespace
+-
++"""Legacy A/B toggles remain readable but cannot erase actual D1 non-verification."""
++import json
+@@ -15,2 +4,4 @@ import os
+-
+-from esgenie.layer3_detect import _score_d1_numeric
++import subprocess
++import sys
++import pytest
++from esgenie.layer3_detect import score_d1_numeric
+@@ -18,98 +9,31 @@ from esgenie.ssot.detector_5axis import detect_d1_numeric
+-
+-
+-def test_default_config_value_is_false(monkeypatch):
+-    """환경변수 미설정 시 코드 기본값이 False인지 확인 — 회귀 시 다른 테스트가 조용히
+-    무의미해지는 것 방지. 앰비언트 env(ABSTAIN_UNIT_MISMATCH=1) 오염에도 안전하도록,
+-    변수를 지운 상태에서 config가 쓰는 파싱 규칙 자체를 검증한다."""
+-    monkeypatch.delenv("ABSTAIN_UNIT_MISMATCH", raising=False)
+-    assert (os.getenv("ABSTAIN_UNIT_MISMATCH", "0") == "1") is False
+-
+-
+-class _NoNodeGraph:
+-    report_year = 2025
+-
+-    def search_nodes(self, keywords, period=None):
+-        return []
+-
+-    def nodes_by_metric(self, metric):
+-        return []
+-
+-
+-class _UnitMismatchGraph:
+-    report_year = 2025
+-
+-    def __init__(self):
+-        self._node = SimpleNamespace(id="n1", value=100.0, unit="tCO2eq", period=2025)
+-
+-    def search_nodes(self, keywords, period=None):
+-        return [self._node]
+-
+-    def nodes_by_metric(self, metric):
+-        return [self._node]
+-
+-
+-SENTENCE = "재생에너지 사용 비율은 31.0%였다."
+-
+-
+-class TestLayer3DetectToggleMatrix:
+-    """layer3_detect._score_d1_numeric — 주 타깃(실제 생성문 D1 경로)."""
+-
+-    def test_both_off_no_evidence_not_abstained(self, monkeypatch):
+-        monkeypatch.setattr("esgenie.layer3_detect.ABSTAIN_ENABLED", False)
+-        monkeypatch.setattr("esgenie.layer3_detect.ABSTAIN_UNIT_MISMATCH", False)
+-        axis = _score_d1_numeric(SENTENCE, _NoNodeGraph())
+-        assert axis.abstain is False and axis.score == 0.0
+-
+-    def test_both_off_unit_mismatch_not_abstained(self, monkeypatch):
+-        monkeypatch.setattr("esgenie.layer3_detect.ABSTAIN_ENABLED", False)
+-        monkeypatch.setattr("esgenie.layer3_detect.ABSTAIN_UNIT_MISMATCH", False)
+-        axis = _score_d1_numeric(SENTENCE, _UnitMismatchGraph())
+-        assert axis.abstain is False and axis.score == 0.0
+-
+-    def test_enabled_only_no_evidence_abstains(self, monkeypatch):
+-        monkeypatch.setattr("esgenie.layer3_detect.ABSTAIN_ENABLED", True)
+-        monkeypatch.setattr("esgenie.layer3_detect.ABSTAIN_UNIT_MISMATCH", False)
+-        axis = _score_d1_numeric(SENTENCE, _NoNodeGraph())
+-        assert axis.abstain is True
+-        assert axis.abstain_reason == "no_evidence"
+-
+-    def test_enabled_only_unit_mismatch_does_not_abstain(self, monkeypatch):
+-        """ABSTAIN_ENABLED=True만으로는 unit_mismatch가 더 이상 기권되지 않는다(핵심 변경)."""
+-        monkeypatch.setattr("esgenie.layer3_detect.ABSTAIN_ENABLED", True)
+-        monkeypatch.setattr("esgenie.layer3_detect.ABSTAIN_UNIT_MISMATCH", False)
+-        axis = _score_d1_numeric(SENTENCE, _UnitMismatchGraph())
+-        assert axis.abstain is False
+-        assert axis.abstain_reason is None
+-        assert axis.score == 0.0
+-
+-    def test_both_on_unit_mismatch_abstains(self, monkeypatch):
+-        monkeypatch.setattr("esgenie.layer3_detect.ABSTAIN_ENABLED", True)
+-        monkeypatch.setattr("esgenie.layer3_detect.ABSTAIN_UNIT_MISMATCH", True)
+-        axis = _score_d1_numeric(SENTENCE, _UnitMismatchGraph())
+-        assert axis.abstain is True
+-        assert axis.abstain_reason == "unit_mismatch"
+-
+-    def test_both_on_no_evidence_still_abstains(self, monkeypatch):
+-        monkeypatch.setattr("esgenie.layer3_detect.ABSTAIN_ENABLED", True)
+-        monkeypatch.setattr("esgenie.layer3_detect.ABSTAIN_UNIT_MISMATCH", True)
+-        axis = _score_d1_numeric(SENTENCE, _NoNodeGraph())
+-        assert axis.abstain is True
+-        assert axis.abstain_reason == "no_evidence"
+-
+-    def test_unit_mismatch_flag_alone_without_abstain_enabled_has_no_effect(self, monkeypatch):
+-        """ABSTAIN_ENABLED=False면 ABSTAIN_UNIT_MISMATCH가 True여도 아무 것도 안 바뀐다."""
+-        monkeypatch.setattr("esgenie.layer3_detect.ABSTAIN_ENABLED", False)
+-        monkeypatch.setattr("esgenie.layer3_detect.ABSTAIN_UNIT_MISMATCH", True)
+-        axis = _score_d1_numeric(SENTENCE, _UnitMismatchGraph())
+-        assert axis.abstain is False
+-        assert axis.score == 0.0
+-
+-
+-class TestSsotDetectorToggleMatrix:
+-    """ssot.detect_d1_numeric — no_evidence만 기권, unit_mismatch 분기 자체가 없음(정합화 확인)."""
+-
+-    def test_no_evidence_abstains_when_enabled_regardless_of_unit_mismatch_flag(self, monkeypatch):
+-        monkeypatch.setattr("esgenie.ssot.detector_5axis.ABSTAIN_ENABLED", True)
+-        axis = detect_d1_numeric("사용량은 128,400 kWh였습니다.", "E-4-1", _NoNodeGraph())
+-        assert axis.abstain is True
+-        assert axis.abstain_reason == "no_evidence"
++from tests.d1_fixtures import make_evidence
++
++
++def test_default_config_and_real_default_execution():
++    env = dict(os.environ)
++    env.pop('ABSTAIN_ENABLED', None)
++    env.pop('ABSTAIN_UNIT_MISMATCH', None)
++    out = subprocess.check_output([sys.executable, '-c', '''
++import json
++from esgenie.config import ABSTAIN_ENABLED, ABSTAIN_UNIT_MISMATCH
++from esgenie.layer3_detect import score_d1_numeric
++print(json.dumps([ABSTAIN_ENABLED, ABSTAIN_UNIT_MISMATCH,
++    score_d1_numeric("용수 사용량은 100톤이다.", None).abstain]))
++'''], env=env, text=True)
++    assert json.loads(out) == [True, True, True]
++
++@pytest.mark.parametrize('enabled,unit_toggle', [(False,False),(True,False),(True,True),(False,True)])
++@pytest.mark.parametrize('sentence,code,reason', [
++    ('용수 사용량 100톤', 'E-5-1', 'no_evidence'),
++    ('재생에너지 비율 31%p', 'E-4-2', 'unit_mismatch'),
++    ('재생에너지 비율 31%', 'E-4-2', None),
++])
++@pytest.mark.parametrize('ssot', [False,True])
++def test_toggle_matrix_preserves_coverage(monkeypatch, enabled, unit_toggle, sentence, code, reason, ssot):
++    for module in ('esgenie.layer3_detect', 'esgenie.ssot.detector_5axis'):
++        monkeypatch.setattr(f'{module}.ABSTAIN_ENABLED', enabled)
++    monkeypatch.setattr('esgenie.layer3_detect.ABSTAIN_UNIT_MISMATCH', unit_toggle)
++    _, graph, _ = make_evidence()
++    axis = detect_d1_numeric(sentence, code, graph) if ssot else score_d1_numeric(sentence, graph)
++    assert axis.abstain == bool(reason) and axis.abstain_reason == reason
++    assert axis.evaluation['unverified_claims'] == int(bool(reason))
+diff --git a/tests/test_d1_abstain.py b/tests/test_d1_abstain.py
+index 193cdd1..9b5a9a5 100644
+--- a/tests/test_d1_abstain.py
++++ b/tests/test_d1_abstain.py
+@@ -1 +1 @@
+-"""D1 정밀 기권(abstain) 조건 — 배치 2 회귀 테스트.
++"""2026-09-14 product policy: absent comparisons never count as verified.
+@@ -3,7 +3,2 @@
+-핵심 불변식:
+-  - ABSTAIN_ENABLED=0(기본)이면 어떤 케이스에서도 기존 동작(0.9/0.6/0.0)이
+-    그대로 나와야 한다(회귀 없음).
+-  - 기권은 "수치 주장 있음 + 코드 매핑됨 + (근거 없음 or 단위 호환 불가)"일
+-    때만 발동한다. 수치 없음/코드 매핑 없음/evidence_graph 없음은 기권이 아니다.
+-  - 문장 내 다수 수치 중 하나라도 검증되면 기권이 아니다(실제 위험 신호를
+-    기권으로 가리지 않기 위함).
++Replaces the previous opt-in/legacy-zero expectations from the task's step 4.
++Measured mismatches are retained independently from incomplete claim coverage.
+@@ -11,4 +6 @@
+-from __future__ import annotations
+-
+-from types import SimpleNamespace
+-
++from dataclasses import replace
+@@ -16,2 +8 @@ import pytest
+-
+-from esgenie.layer3_detect import _score_d1_numeric
++from esgenie.layer3_detect import score_d1_numeric, _build_risk_vector
+@@ -19,241 +10,77 @@ from esgenie.ssot.detector_5axis import detect_d1_numeric
+-
+-
+-class _NoNodeGraph:
+-    """어떤 keyword로 검색해도 노드를 찾지 못하는 그래프 — no_evidence 시나리오."""
+-
+-    report_year = 2025
+-
+-    def search_nodes(self, keywords, period=None):
+-        return []
+-
+-    # ssot 경로용(EvidenceGraph.nodes_by_metric 호환)
+-    def nodes_by_metric(self, metric):
+-        return []
+-
+-
+-class _UnitMismatchGraph:
+-    """노드는 있으나 단위가 항상 다른 그래프 — unit_mismatch 시나리오."""
+-
+-    report_year = 2025
+-
+-    def __init__(self):
+-        self._node = SimpleNamespace(id="n1", value=100.0, unit="tCO2eq", period=2025)
+-
+-    def search_nodes(self, keywords, period=None):
+-        return [self._node]
+-
+-    def nodes_by_metric(self, metric):
+-        return [self._node]
+-
+-
+-class _VerifiedGraph:
+-    """정상 매칭되는 그래프 — 검증 성공 시나리오."""
+-
+-    report_year = 2025
+-
+-    def __init__(self, value=31.0, unit="%"):
+-        self._node = SimpleNamespace(id="n1", value=value, unit=unit, period=2025)
+-
+-    def search_nodes(self, keywords, period=None):
+-        return [self._node]
+-
+-
+-class _PartialGraph:
+-    """두 코드 중 하나만 노드를 갖는 그래프 — '하나라도 검증되면 기권 아님' 시나리오."""
+-
+-    report_year = 2025
+-
+-    def __init__(self):
+-        self._nodes = {"E-4-1": SimpleNamespace(id="n_energy", value=500.0, unit="%", period=2025)}
+-
+-    def search_nodes(self, keywords, period=None):
+-        out = []
+-        for k in keywords:
+-            if k in self._nodes:
+-                out.append(self._nodes[k])
+-        return out
+-
+-
+-class _CodeSpecificGraph:
+-    """지정 코드에만 노드를 반환하는 그래프(코드별 검색) — 혼합 문장 시나리오용.
+-    기본: E-4-2에 단위 불일치(tCO2eq) 노드만, S-2-3(이직률)엔 노드 없음."""
+-
+-    report_year = 2025
+-
+-    def __init__(self, nodes=None):
+-        self._nodes = nodes or {
+-            "E-4-2": SimpleNamespace(id="n_re", value=100.0, unit="tCO2eq", period=2025),
+-            "E-4-1": SimpleNamespace(id="n_en", value=100.0, unit="tCO2eq", period=2025),
+-        }
+-
+-    def search_nodes(self, keywords, period=None):
+-        return [self._nodes[k] for k in keywords if k in self._nodes]
+-
+-    def nodes_by_metric(self, metric):
+-        return [self._nodes[metric]] if metric in self._nodes else []
+-
+-
+-# ============================================================================
+-# layer3_detect._score_d1_numeric (주 타깃)
+-# ============================================================================
+-
+-class TestLayer3DetectAbstain:
+-    def test_no_numeric_claim_never_abstains(self, monkeypatch):
+-        monkeypatch.setattr("esgenie.layer3_detect.ABSTAIN_ENABLED", True)
+-        axis = _score_d1_numeric("올해도 최선을 다해 노력하고 있습니다.", _NoNodeGraph())
+-        assert axis.abstain is False
+-        assert axis.score == 0.0
+-
+-    def test_number_without_code_mapping_never_abstains(self, monkeypatch):
+-        monkeypatch.setattr("esgenie.layer3_detect.ABSTAIN_ENABLED", True)
+-        # "15건"은 _NUMBER_PATTERN 단위(건)엔 걸리지만, 주변에 _KEYWORD_MAP 키워드가 없어
+-        # 코드 매핑이 되지 않는다 → 기권 대상 아님(수치는 있으나 검증 대상이 아님).
+-        s = "본 사업장은 총 15건의 안전점검을 수행하였다."
+-        axis = _score_d1_numeric(s, _NoNodeGraph())
+-        assert axis.abstain is False
+-        assert axis.score == 0.0
+-
+-    def test_evidence_graph_none_never_abstains(self, monkeypatch):
+-        monkeypatch.setattr("esgenie.layer3_detect.ABSTAIN_ENABLED", True)
+-        axis = _score_d1_numeric("재생에너지 사용 비율은 31.0%였다.", None)
+-        assert axis.abstain is False
+-        assert axis.score == 0.0
+-        assert "스킵" in axis.detail
+-
+-    def test_no_evidence_abstains_when_enabled(self, monkeypatch):
+-        monkeypatch.setattr("esgenie.layer3_detect.ABSTAIN_ENABLED", True)
+-        axis = _score_d1_numeric("재생에너지 사용 비율은 31.0%였다.", _NoNodeGraph())
+-        assert axis.abstain is True
+-        assert axis.abstain_reason == "no_evidence"
+-        assert axis.score == 0.0  # 점수 산정 자체는 불변 — 표식만 추가
+-
+-    def test_no_evidence_stays_score_zero_when_disabled(self, monkeypatch):
+-        # 비활성(False) 시 회귀 없음 확인 — env(ABSTAIN_ENABLED=1) 오염에도 안전하도록 명시.
+-        monkeypatch.setattr("esgenie.layer3_detect.ABSTAIN_ENABLED", False)
+-        monkeypatch.setattr("esgenie.layer3_detect.ABSTAIN_UNIT_MISMATCH", False)
+-        axis = _score_d1_numeric("재생에너지 사용 비율은 31.0%였다.", _NoNodeGraph())
+-        assert axis.abstain is False
+-        assert axis.abstain_reason is None
+-        assert axis.score == 0.0
+-
+-    def test_unit_mismatch_does_not_abstain_by_default_even_when_enabled(self, monkeypatch):
+-        """2026-07-28 실키 A/B: unit_mismatch 기권이 test held-out 지표를 하락시켜
+-        ABSTAIN_UNIT_MISMATCH 기본값을 False로 바꿨다 — ABSTAIN_ENABLED만으로는
+-        더 이상 unit_mismatch가 기권되지 않는다(기존 동작인 score 0.0 유지)."""
+-        monkeypatch.setattr("esgenie.layer3_detect.ABSTAIN_ENABLED", True)
+-        monkeypatch.setattr("esgenie.layer3_detect.ABSTAIN_UNIT_MISMATCH", False)
+-        axis = _score_d1_numeric("재생에너지 사용 비율은 31.0%였다.", _UnitMismatchGraph())
+-        assert axis.abstain is False
+-        assert axis.abstain_reason is None
+-        assert axis.score == 0.0
+-
+-    def test_unit_mismatch_abstains_when_both_flags_enabled(self, monkeypatch):
+-        monkeypatch.setattr("esgenie.layer3_detect.ABSTAIN_ENABLED", True)
+-        monkeypatch.setattr("esgenie.layer3_detect.ABSTAIN_UNIT_MISMATCH", True)
+-        axis = _score_d1_numeric("재생에너지 사용 비율은 31.0%였다.", _UnitMismatchGraph())
+-        assert axis.abstain is True
+-        assert axis.abstain_reason == "unit_mismatch"
+-
+-    def test_unit_mismatch_stays_score_zero_when_disabled(self, monkeypatch):
+-        monkeypatch.setattr("esgenie.layer3_detect.ABSTAIN_ENABLED", False)
+-        monkeypatch.setattr("esgenie.layer3_detect.ABSTAIN_UNIT_MISMATCH", False)
+-        axis = _score_d1_numeric("재생에너지 사용 비율은 31.0%였다.", _UnitMismatchGraph())
+-        assert axis.abstain is False
+-        assert axis.score == 0.0
+-
+-    def test_no_evidence_still_abstains_with_unit_mismatch_flag_off(self, monkeypatch):
+-        """주 타깃(no_evidence)은 ABSTAIN_UNIT_MISMATCH와 무관하게 계속 기권한다."""
+-        monkeypatch.setattr("esgenie.layer3_detect.ABSTAIN_ENABLED", True)
+-        monkeypatch.setattr("esgenie.layer3_detect.ABSTAIN_UNIT_MISMATCH", False)
+-        axis = _score_d1_numeric("재생에너지 사용 비율은 31.0%였다.", _NoNodeGraph())
+-        assert axis.abstain is True
+-        assert axis.abstain_reason == "no_evidence"
+-
+-    def test_verified_claim_never_abstains(self, monkeypatch):
+-        monkeypatch.setattr("esgenie.layer3_detect.ABSTAIN_ENABLED", True)
+-        axis = _score_d1_numeric("재생에너지 사용 비율은 31.0%였다.", _VerifiedGraph(value=31.0))
+-        assert axis.abstain is False
+-
+-    def test_one_verified_among_many_never_abstains(self, monkeypatch):
+-        monkeypatch.setattr("esgenie.layer3_detect.ABSTAIN_ENABLED", True)
+-        # 에너지(검증 가능) + 용수(노드 없음) 두 지표가 한 문장에 섞여 있어도,
+-        # 하나라도 검증되면 기권이 아니다.
+-        s = "에너지 사용량은 500%이며 용수 사용량은 120%였다."
+-        axis = _score_d1_numeric(s, _PartialGraph())
+-        assert axis.abstain is False
+-
+-    def test_mixed_sentence_no_evidence_not_masked_by_neighbor_node(self, monkeypatch):
+-        """코드리뷰 must-fix 2 회귀: 혼합 문장에서 옆 지표(재생에너지, 단위불일치 노드
+-        존재) 때문에 자기 코드(이직률, 근거 전무)의 no_evidence가 unit_mismatch로
+-        오분류돼 조용히 통과하던 버그. no_evidence는 자기 코드 근거 유무로 판정되어야
+-        하며, no_evidence가 하나라도 있으면 우선한다."""
+-        monkeypatch.setattr("esgenie.layer3_detect.ABSTAIN_ENABLED", True)
+-        monkeypatch.setattr("esgenie.layer3_detect.ABSTAIN_UNIT_MISMATCH", False)
+-        s = "재생에너지 비율은 31.0%이며 이직률은 1.2%였다."
+-        axis = _score_d1_numeric(s, _CodeSpecificGraph())
+-        assert axis.abstain is True
+-        assert axis.abstain_reason == "no_evidence"
+-
+-    def test_mismatch_risk_not_turned_into_abstain(self, monkeypatch):
+-        """실제 위험(수치 불일치)은 기권으로 가리지 않는다 — 근거는 있고 값만 다른 경우."""
+-        monkeypatch.setattr("esgenie.layer3_detect.ABSTAIN_ENABLED", True)
+-        axis = _score_d1_numeric("재생에너지 사용 비율은 90.0%였다.", _VerifiedGraph(value=31.0))
+-        assert axis.abstain is False
+-        assert axis.score > 0.5
+-
+-
+-# ============================================================================
+-# ssot/detector_5axis.detect_d1_numeric (정합화 — 프로덕션 지렛대 아님)
+-# ============================================================================
+-
+-class TestSsotDetectorAbstain:
+-    def test_no_claim_never_abstains(self, monkeypatch):
+-        monkeypatch.setattr("esgenie.ssot.detector_5axis.ABSTAIN_ENABLED", True)
+-        axis = detect_d1_numeric("수치가 없는 문장입니다.", "E-4-1", _NoNodeGraph())
+-        assert axis.abstain is False
+-        assert axis.score == 0.0
+-
+-    def test_no_kesg_code_abstains_when_enabled(self, monkeypatch):
+-        monkeypatch.setattr("esgenie.ssot.detector_5axis.ABSTAIN_ENABLED", True)
+-        axis = detect_d1_numeric("사용량은 128,400 kWh였습니다.", None, _NoNodeGraph())
+-        assert axis.abstain is True
+-        assert axis.abstain_reason == "no_evidence"
+-
+-    def test_no_kesg_code_stays_legacy_when_disabled(self, monkeypatch):
+-        monkeypatch.setattr("esgenie.ssot.detector_5axis.ABSTAIN_ENABLED", False)
+-        axis = detect_d1_numeric("사용량은 128,400 kWh였습니다.", None, _NoNodeGraph())
+-        assert axis.abstain is False
+-        assert axis.score == 0.6
+-
+-    def test_no_evidence_node_abstains_when_enabled(self, monkeypatch):
+-        monkeypatch.setattr("esgenie.ssot.detector_5axis.ABSTAIN_ENABLED", True)
+-        axis = detect_d1_numeric("사용량은 128,400 kWh였습니다.", "E-4-1", _NoNodeGraph())
+-        assert axis.abstain is True
+-        assert axis.abstain_reason == "no_evidence"
+-
+-    def test_no_evidence_node_stays_legacy_when_disabled(self, monkeypatch):
+-        monkeypatch.setattr("esgenie.ssot.detector_5axis.ABSTAIN_ENABLED", False)
+-        axis = detect_d1_numeric("사용량은 128,400 kWh였습니다.", "E-4-1", _NoNodeGraph())
+-        assert axis.abstain is False
+-        assert axis.score == 0.9
+-
+-    def test_unmatched_value_is_not_abstain(self):
+-        """미일치(근거는 있으나 값이 다름)는 기권이 아니라 실제 위험 — 건드리지 않는다."""
+-        graph = _VerifiedGraph_ssot()
+-        axis = detect_d1_numeric("사용량은 999,999 kWh였습니다.", "E-4-1", graph)
+-        assert axis.abstain is False
+-        assert axis.score >= 0.5
+-
+-
+-class _VerifiedGraph_ssot:
+-    """ssot detect_d1_numeric용 — nodes_by_metric이 단일 노드를 반환."""
+-
+-    report_year = 2025
+-
+-    def __init__(self):
+-        from esgenie.ssot.evidence_graph import EvidenceNode
+-        self._node = EvidenceNode("n1", "E-4-1", 128_400.0, "kWh", 2025, "dart")
+-        self.nodes = {self._node.id: self._node}
+-
+-    def nodes_by_metric(self, metric):
+-        return [self._node]
++from esgenie.schemas import AxisScore
++from tests.d1_fixtures import make_evidence
++
++@pytest.mark.parametrize('ssot', [False, True])
++@pytest.mark.parametrize('sentence,code,reason', [
++    ('용수 사용량은 100톤이다.', 'E-5-1', 'no_evidence'),
++    ('재생에너지 사용 비율은 31%p였다.', 'E-4-2', 'unit_mismatch'),
++    ('총 15건을 수행하였다.', None, 'ambiguous_topic'),
++    ('재생에너지 사용 비율은 -31%였다.', 'E-4-2', 'invalid_number'),
++    ('재생에너지 사용 비율은 3,1%였다.', 'E-4-2', 'invalid_number'),
++])
++def test_unverified_reasons_are_distinct(ssot, sentence, code, reason):
++    _, graph, _ = make_evidence()
++    axis = detect_d1_numeric(sentence, code, graph) if ssot else score_d1_numeric(sentence, graph)
++    assert axis.score == 0 and axis.abstain and axis.abstain_reason == reason
++    assert axis.evaluation['compared_claims'] == 0
++    assert axis.evaluation['unverified_claims'] == 1
++    assert axis.evaluation['reasons'] == {reason: 1}
++
++@pytest.mark.parametrize('ssot', [False, True])
++@pytest.mark.parametrize('sentence', ['수치가 없는 문장입니다.', '2025년 제3장 IFRS S2 RE100', '재생에너지 비율 100% 전환 목표'])
++def test_no_actual_comparison_is_not_abstention(ssot, sentence):
++    _, graph, _ = make_evidence()
++    axis = detect_d1_numeric(sentence, 'E-4-2', graph) if ssot else score_d1_numeric(sentence, graph)
++    assert not axis.abstain and axis.score == 0
++    assert axis.evaluation['status'] == 'not_applicable'
++
++
++def test_missing_graph_is_no_evidence():
++    axis = score_d1_numeric('재생에너지 사용 비율은 31%였다.', None)
++    assert axis.abstain_reason == 'no_evidence'
++
++@pytest.mark.parametrize('value,score', [(31,0),(92,1)])
++def test_partial_verification_preserves_measured_result(value, score):
++    _, graph, _ = make_evidence()
++    axis = score_d1_numeric(f'재생에너지 사용 비율은 {value}%이며 용수 사용량은 100톤이다.', graph)
++    assert axis.score == score and not axis.abstain
++    assert axis.evaluation['status'] == 'partial'
++    assert (axis.evaluation['compared_claims'], axis.evaluation['unverified_claims']) == (1,1)
++    rv = _build_risk_vector(axis, AxisScore(0), AxisScore(0), AxisScore(0))
++    assert rv.risk_score == .4 * score
++    assert not rv.evaluation_complete
++    assert rv.aggregate['incomplete_axes'] == ['D1_numeric']
++
++
++def test_mixed_unverified_reasons_do_not_mask_each_other():
++    _, graph, _ = make_evidence()
++    axis = score_d1_numeric('재생에너지 비율은 31%p이며 용수 사용량은 100톤이다.', graph)
++    assert axis.abstain_reason == 'no_evidence'
++    assert axis.evaluation['reasons'] == {'unit_mismatch':1,'no_evidence':1}
++
++
++def test_explicit_no_selection_is_not_legacy_missing_metadata():
++    _, graph, _ = make_evidence()
++    graph.resolved_facts['E-4-2'] = None
++    assert score_d1_numeric('재생에너지 비율은 31%이다.', graph).abstain_reason == 'no_evidence'
++    del graph.resolved_facts['E-4-2']
++    axis = score_d1_numeric('재생에너지 비율은 31%이다.', graph)
++    assert not axis.abstain and axis.score == 0
++
++
++def test_finalized_unit_cannot_reselect_compatible_decoy():
++    from esgenie.ssot.evidence_graph import EvidenceNode
++    _, graph, _ = make_evidence()
++    graph.resolved_facts['E-4-2'] = replace(graph.resolved_facts['E-4-2'], unit='tCO2eq')
++    graph.add_node(EvidenceNode('decoy','E-4-2',31,'%',2025,'dart'))
++    axis = score_d1_numeric('재생에너지 비율은 31%이다.', graph)
++    assert axis.abstain_reason == 'unit_mismatch' and 'decoy' not in axis.evidence
++
++
++def test_old_axis_payload_and_all_abstention_contract():
++    axis = AxisScore(**{'score':0,'detail':'old','evidence':[]})
++    assert axis.evaluation_complete
++    ab = AxisScore(0,abstain=True,abstain_reason='no_evidence')
++    rv = _build_risk_vector(ab,ab,ab,ab)
++    assert rv.risk_score is None and rv.aggregate['evaluated_weight'] == 0
++    assert rv.numeric_coverage_label == '평가불가'
+diff --git a/tests/test_d1_claim_binding.py b/tests/test_d1_claim_binding.py
+new file mode 100644
+index 0000000..b456671
+--- /dev/null
++++ b/tests/test_d1_claim_binding.py
+@@ -0,0 +1,31 @@
++import pytest
++from esgenie.layer3_detect import score_d1_numeric, extract_numeric_claims
++from tests.d1_fixtures import make_evidence
++
++@pytest.mark.parametrize('sentence,codes', [
++    ('재생에너지 사용 비율은 31%이며 폐기물 재활용 비율은 92%였다.', ['E-4-2','E-6-2']),
++    ('폐기물 재활용 비율은 92%, 재생에너지 사용 비율은 31%였다.', ['E-6-2','E-4-2']),
++    ('재생에너지 사용 비율은 31%. 폐기물 재활용 비율은 92%였다.', ['E-4-2','E-6-2']),
++    ('31%인 재생에너지 사용 비율과 92%인 폐기물 재활용 비율이다.', ['E-4-2','E-6-2']),
++    ('31%는 재생에너지 사용 비율이며 92%는 폐기물 재활용 비율이다.', ['E-4-2','E-6-2']),
++])
++def test_position_and_order_do_not_change_ownership(sentence, codes):
++    _, graph, _ = make_evidence()
++    assert [c.matched_code for c in extract_numeric_claims(sentence)] == codes
++    assert score_d1_numeric(sentence, graph).score == 0
++    wrong = sentence.replace('31%', 'TEMP').replace('92%', '31%').replace('TEMP', '92%')
++    assert score_d1_numeric(wrong, graph).score == 1
++
++
++def test_enumeration_is_ambiguous():
++    claims = extract_numeric_claims('재생에너지 사용 비율과 폐기물 재활용 비율은 31%와 92%였다.')
++    assert all(c.matched_code is None for c in claims)
++
++@pytest.mark.parametrize('sentence', [
++    '재생에너지 사용 비율 목표는 100%이며 폐기물 재활용 비율 실적은 31%였다.',
++    '폐기물 재활용 비율 실적은 31%이며 재생에너지 사용 비율 목표는 100%이다.',
++    '재생에너지 사용 비율 목표는 100%, 폐기물 재활용 비율은 31%였다.',
++])
++def test_target_clause_does_not_hide_neighbor_actual(sentence):
++    _, graph, _ = make_evidence()
++    assert score_d1_numeric(sentence, graph).score == 1
+diff --git a/tests/test_d1_consumers.py b/tests/test_d1_consumers.py
+new file mode 100644
+index 0000000..3f57800
+--- /dev/null
++++ b/tests/test_d1_consumers.py
+@@ -0,0 +1,211 @@
++"""Actual L4/L5, full app and application exporters consume D1 coverage."""
++import copy
++import json
++import sys
++from types import SimpleNamespace
++import fitz
++import pytest
++from openpyxl import load_workbook
++from streamlit.testing.v1 import AppTest
++from tests.d1_fixtures import CASES, verify_case, make_evidence
++from esgenie.layer6_report import _block_esg, ReportDoc
++from esgenie.exporters.report_pdf import export_report_pdf
++from esgenie.layer3_judge import judge_risk_vector
++from esgenie.schemas import AxisScore
++
++@pytest.fixture(autouse=True)
++def restore_app_logging():
++    # app.py configures parent logger propagation; do not pollute later caplog tests.
++    import logging
++    logger = logging.getLogger('esgenie')
++    level, propagate, handlers = logger.level, logger.propagate, list(logger.handlers)
++    yield
++    logger.setLevel(level)
++    logger.propagate = propagate
++    logger.handlers = handlers
++
++@pytest.mark.parametrize('llm_judge', [False,True], ids=['rule','mock_judge'])
++@pytest.mark.parametrize('name,sentence,score,compared,unverified', CASES, ids=[c[0] for c in CASES])
++def test_final_verification_and_audit(name, sentence, score, compared, unverified, llm_judge):
++    verify, trace, graph, _ = verify_case(sentence, llm_judge=llm_judge)
++    axis = verify.final.detection.risk_vector.D1_numeric
++    assert axis.score >= score
++    assert axis.evaluation['compared_claims'] == compared
++    assert axis.evaluation['unverified_claims'] == unverified
++    assert verify.hitl_required == bool(score or unverified)
++    assert verify.converged == (not score and not unverified)
++    payload = json.loads(json.dumps(trace.to_dict(), ensure_ascii=False, allow_nan=False))
++    assert payload['summary']['numeric_compared_claims'] == compared
++    assert payload['summary']['numeric_unverified_claims'] == unverified
++    for sentence_record in payload['sentences']:
++        d1 = sentence_record['risk_vector']['D1_numeric']
++        for claim in d1['evaluation']['claims']:
++            assert sentence_record['sentence_text'][claim['start']:claim['end']] == claim['raw']
++            if claim['status'] == 'compared':
++                assert set(claim['evidence_ids']) <= set(graph.nodes)
++                assert claim['evidence_value'] == graph.resolved_facts[claim['code']].value
++        if score or unverified:
++            assert sentence_record['hitl_status'] == 'HITL_REQUIRED'
++
++
++def test_no_graph_cannot_use_legacy_zero_to_converge():
++    verify, trace, *_ = verify_case('용수 사용량은 100톤이다.', missing_graph=True)
++    assert not verify.converged and verify.hitl_required
++    assert trace.sentences[0].risk_vector.D1_numeric.abstain_reason == 'no_evidence'
++
++
++def test_text_coverage_includes_lower_risk_neighbor_sentence():
++    sentence = '재생에너지 사용 비율은 92%였다. 용수 사용량은 100톤이다.'
++    verify, trace, *_ = verify_case(sentence)
++    rv = verify.final.detection.risk_vector
++    assert rv.D1_numeric.score == 1
++    assert rv.numeric_evaluation['status'] == 'partial'
++    assert rv.numeric_evaluation['unverified_claims'] == 1
++    for record in rv.numeric_evaluation['claims']:
++        assert sentence[record['start']:record['end']] == record['raw']
++    assert not rv.evaluation_complete and verify.hitl_required
++
++
++def test_llm_opinion_cannot_clear_measured_mismatch_or_coverage():
++    verify, *_ = verify_case(CASES[-1][1])
++    rv = verify.final.detection.risk_vector
++    fake = SimpleNamespace(complete=lambda **kw: SimpleNamespace(
++        content=json.dumps({'D1_numeric':{'verdict':'false_positive','llm_score':0,'rationale':'수치가 맞다고 가정'}}),
++        used_mock=True,meta={'model':'test-double'}))
++    after = judge_risk_vector(CASES[-1][1], rv, fake)
++    assert after.D1_numeric.score == 1
++    assert after.D1_numeric.evaluation == rv.D1_numeric.evaluation
++    assert not after.evaluation_complete
++
++@pytest.mark.parametrize('case', [CASES[0],CASES[1],CASES[4],CASES[5],CASES[6],CASES[7]], ids=lambda c:c[0])
++def test_report_pdf_keeps_numeric_coverage(tmp_path, case):
++    name, sentence, score, compared, unverified = case
++    verify, trace, *_ = verify_case(sentence)
++    block = _block_esg(SimpleNamespace(sections={'E':verify}), 'E')
++    doc = ReportDoc('D1검증','',2025,'2026-09-14',[block])
++    with fitz.open(export_report_pdf(doc,tmp_path)) as pdf:
++        text = ' '.join(' '.join(page.get_text().split()) for page in pdf)
++    assert f'비교 {compared}건' in text and f'미검증 {unverified}건' in text
++    assert sentence in text.replace('\n', ' ') or all(token in text for token in sentence.split())
++    if unverified:
++        assert '부분 평가' in text and '사람 검토 필요' in text
++        assert ('D1 평가불가' if not compared else 'D1 부분 평가') in text
++
++
++def test_ssot_json_excel_preserve_measured_value_and_unverified_state(tmp_path):
++    from dataclasses import replace
++    from esgenie.pipeline import _build_risk_rows
++    from esgenie.ssot.audit_trace import build_data_points, build_audit_trace_v15
++    from esgenie.ssot.excel_exporter import export_datasheet
++    _, graph, _ = make_evidence()
++    # Negative absolute performance is unsuitable even when the raw ledger contains it.
++    graph.resolved_facts['E-3-1'] = replace(graph.resolved_facts['E-3-1'], value=-100)
++    scores, rows = _build_risk_rows(graph,target_codes=['E-4-2','E-3-1'])
++    points = build_data_points(graph,scores,target_codes=['E-4-2','E-3-1'],
++        d1_evaluations={r['K-ESG 코드']:r['D1 평가'] for r in rows})
++    outputs = export_datasheet(build_audit_trace_v15('D1','D1',points,[]),tmp_path)
++    data = json.loads(open(outputs['audit_json']).read())['data_points']
++    assert data[0]['value'] == 31 and data[0]['unit'] == '%'
++    assert data[1]['d1_risk'] is None and data[1]['verification'] == 'unverified'
++    assert data[1]['d1_evaluation']['reasons'] == {'invalid_number':1}
++    wb = load_workbook(outputs['xlsx'])
++    assert wb['DataSheet']['C2'].value == 31
++    assert wb['DataSheet']['G3'].value is None
++    assert wb['DataSheet']['I3'].value == '평가불가'
++    assert wb['DataSheet']['K3'].value == 1
++
++@pytest.fixture(scope='module')
++def app_base():
++    from esgenie.pipeline import run
++    return run('005930',areas=['E'],export_outputs=False,save_traces=False)
++
++@pytest.mark.parametrize('case', [CASES[0],CASES[1],CASES[4],CASES[5],CASES[6],CASES[7]], ids=lambda c:c[0])
++def test_actual_app_d1_status(app_base, case, record_property):
++    from pathlib import Path
++    name, sentence, score, compared, unverified = case
++    result = copy.deepcopy(app_base)
++    verify, trace, *_ = verify_case(sentence)
++    result.sections['E'] = verify
++    result.audit_traces['E'] = trace
++    sys.modules.pop('esgenie.ui.tabs',None)
++    at = AppTest.from_file(str(Path(__file__).resolve().parents[1] / 'app.py'),default_timeout=60)
++    at.session_state['result'] = result
++    at.session_state['area_select'] = 'E'
++    at.session_state['expert_mode'] = True
++    at.run()
++    assert not at.exception
++    text = '\n'.join(b.value for b in list(at.markdown)+list(at.caption)+list(at.warning))
++    record_property('ui_coverage', {'case':name, 'compared':compared, 'unverified':unverified,
++        'review_required': '담당자 이관' in text, 'automatic_pass': '자동 통과' in text})
++    assert f'비교 {compared}건' in text and f'미검증 {unverified}건' in text
++    if score or unverified:
++        assert '담당자 이관' in text
++        assert '자동 통과' not in text and '재생성 없이 통과' not in text
++    if unverified:
++        assert ('D1 평가불가' if not compared else 'D1 부분 평가') in text
++
++
++def test_saved_actual_document_ledger_ui_and_exports(tmp_path, app_base):
++    from pathlib import Path
++    from tests.d1_fixtures import real_excerpt_evidence
++    from esgenie.pipeline import _build_risk_rows
++    from esgenie.ssot.audit_trace import build_data_points, build_audit_trace_v15
++    from esgenie.ssot.excel_exporter import export_datasheet
++    _, graph, ledger, source = real_excerpt_evidence()
++    codes = [m['code'] for m in source['metrics']]
++    scores, rows = _build_risk_rows(graph,target_codes=codes)
++    points = build_data_points(graph,scores,target_codes=codes,
++        d1_evaluations={r['K-ESG 코드']:r['D1 평가'] for r in rows})
++    trace = build_audit_trace_v15('MOBIS','현대모비스',points,[])
++    outputs = export_datasheet(trace,tmp_path)
++    wb = load_workbook(outputs['xlsx'])
++    by_code = {m['code']:m for m in source['metrics']}
++    # Existing selection labels the '매립 제로화' row as a component and does not
++    # finalize it. D1 must report this as missing evidence; do not invent a total.
++    from esgenie.layer3_detect import score_d1_numeric
++    assert graph.resolved_facts['E-6-2'] is None
++    assert score_d1_numeric('폐기물 재활용 비율은 92.9%였다.',graph).abstain_reason == 'no_evidence'
++    assert len(points) == 1 and points[0].kesg_code == 'E-6-1'
++    for index, point in enumerate(points,2):
++        source_metric = by_code[point.kesg_code]
++        assert point.value == source_metric['value'] == ledger.mapped[point.kesg_code]['value']
++        assert point.period == int(source_metric['period']) == 2024
++        assert point.evidence_files[0].page == source_metric['source_page_index'] == 69
++        assert wb['DataSheet'].cell(index,3).value == point.value
++        assert wb['DataSheet'].cell(index,4).value == point.unit
++        assert wb['DataSheet'].cell(index,5).value == point.period
++        assert point.d1_evaluation['compared_claims'] == 1
++    result = copy.deepcopy(app_base)
++    result.extraction, result.evidence_graph, result.v15_trace, result.risk_rows = ledger, graph, trace, rows
++    sys.modules.pop('esgenie.ui.tabs',None)
++    at = AppTest.from_file(str(Path(__file__).resolve().parents[1] / 'app.py'),default_timeout=60)
++    at.session_state['result'] = result
++    at.session_state['area_select'] = 'E'
++    at.session_state['expert_mode'] = True
++    at.run()
++    assert not at.exception
++    displayed = '\n'.join(str(frame.value) for frame in at.dataframe)
++    assert '72463' in displayed or '72,463' in displayed
++    assert '2024' in displayed
++
++@pytest.mark.parametrize('case', [CASES[5],CASES[6],CASES[7]], ids=lambda c:c[0])
++def test_calibration_and_evaluation_preserve_partial_claims(case):
++    from esgenie.calibrate import _simulate_vector, BASELINE
++    from esgenie.evaluate import _case_rows, abstain_coverage, with_abstain_ignored
++    from esgenie.benchmark import _case_abstain_info
++    verify,*_ = verify_case(case[1])
++    rv = verify.final.detection.risk_vector
++    record = {'id':case[0],'category':'D1','label':'greenwash' if case[2] else 'clean','axes':{}}
++    for name in ['D1_numeric','D2_modifier','D3_semantic','D5_timeseries']:
++        axis = getattr(rv,name)
++        record['axes'][name] = dict(axis.to_dict(), rule_score=axis.score,
++            judgeable=True,verdict='false_positive',llm_score=0)
++    replay = _simulate_vector(record,trigger=.25,rule_weight=.4)
++    assert replay.D1_numeric.evaluation == rv.D1_numeric.evaluation
++    assert replay.D1_numeric.score == case[2] and not replay.evaluation_complete
++    rows = _case_rows([record],BASELINE)
++    assert rows[0]['evaluation_complete'] is False
++    assert rows[0]['numeric_evaluation']['unverified_claims'] == 1
++    assert _case_abstain_info(replay,bool(case[2]))[0] == (not case[2])
++    assert abstain_coverage(rows)['abstains']['total'] == int(not case[2])
++    assert not with_abstain_ignored(rows)[0]['evaluation_complete']
+diff --git a/tests/test_d1_number_tokens.py b/tests/test_d1_number_tokens.py
+new file mode 100644
+index 0000000..9a41588
+--- /dev/null
++++ b/tests/test_d1_number_tokens.py
+@@ -0,0 +1,36 @@
++import pytest
++from esgenie.layer3_detect import extract_numeric_claims, _NUMBER_PATTERN, _extract_claim_value_for_code
++
++@pytest.mark.parametrize('value', ['0', '0.25', '999', '1000', '9999', '12345.67', '1000000'])
++@pytest.mark.parametrize('space', ['', ' '])
++def test_full_numeric_variants(value, space):
++    grouped = format(float(value), ',f').rstrip('0').rstrip('.') if '.' in value else format(int(value), ',')
++    a, = extract_numeric_claims(f'온실가스 배출량은 {value}{space}tCO2eq이다.')
++    b, = extract_numeric_claims(f'온실가스 배출량은 {grouped}{space}tCO2eq이다.')
++    assert (a.number, a.unit, a.matched_code) == (b.number, b.unit, b.matched_code)
++    assert a.number == float(value) and not a.issue
++
++@pytest.mark.parametrize('token', ['9,99', '12,34,567', '1234,567', '1.2.3', '1,,000', '1e3', '.5', '--100', '- 100', '+-100'])
++def test_invalid_token_is_never_partially_accepted(token):
++    sentence = f'온실가스 배출량은 {token} tCO2eq이다.'
++    assert list(_NUMBER_PATTERN.finditer(sentence)) == []
++    claim, = extract_numeric_claims(sentence)
++    assert claim.number is None and claim.issue == 'invalid_number'
++    assert claim.raw == f'{token} tCO2eq'
++
++@pytest.mark.parametrize('token,value,issue', [('-100',-100,'invalid_number'),('−100',-100,'invalid_number'),('+100',100,None)])
++def test_sign_preserved(token, value, issue):
++    claim, = extract_numeric_claims(f'온실가스 배출량은 {token} tCO2eq이다.')
++    assert claim.number == value and claim.issue == issue
++
++
++def test_unit_tokens_scales_and_identifiers():
++    assert extract_numeric_claims('Scope3 배출량, RE100, IFRS S2, 2025년, 제3장') == []
++    assert [c.unit for c in extract_numeric_claims('재생에너지 31%p, 재활용률 92%')] == ['%p', '%']
++    claim, = extract_numeric_claims('온실가스 배출량 2만 tCO2eq')
++    assert claim.number == 20000 and claim.unit == 'tCO2eq'
++
++
++def test_d5_shared_extraction_preserves_full_value():
++    for token in ['9999', '9,999']:
++        assert _extract_claim_value_for_code(f'온실가스 배출량 {token} tCO2eq', 'E-3-1') == 9999
+diff --git a/tests/test_d1_units.py b/tests/test_d1_units.py
+index b2a865a..3c10f50 100644
+--- a/tests/test_d1_units.py
++++ b/tests/test_d1_units.py
+@@ -77 +77 @@ class TestSsotD1Units:
+-        assert r.score >= 0.5, "단위 불일치 → 미일치 처리"
++        assert r.score == 0 and r.abstain_reason == "unit_mismatch"  # 2026-09-14: 비교 불가는 불일치 확정이 아님
+diff --git a/tests/test_d1_validation_regression.py b/tests/test_d1_validation_regression.py
+new file mode 100644
+index 0000000..ef7b947
+--- /dev/null
++++ b/tests/test_d1_validation_regression.py
+@@ -0,0 +1,36 @@
++"""Required before/after reproductions on a finalized real graph."""
++import pytest
++from esgenie.layer3_detect import score_d1_numeric
++from tests.d1_fixtures import CASES, make_evidence
++
++@pytest.mark.parametrize('name,sentence,score,compared,unverified', CASES, ids=[c[0] for c in CASES])
++def test_required_cases(name, sentence, score, compared, unverified):
++    _, graph, _ = make_evidence()
++    axis = score_d1_numeric(sentence, graph)
++    assert axis.score == score, axis.detail
++    assert axis.abstain == (compared == 0 and unverified > 0)
++    assert axis.evaluation['compared_claims'] == compared
++    assert axis.evaluation['unverified_claims'] == unverified
++    expected_status = ('unavailable' if not compared else 'partial') if unverified else 'complete'
++    assert axis.evaluation['status'] == expected_status
++
++@pytest.mark.parametrize('value', [0,.25,999,1000,9999,12345.67,1000000])
++def test_notation_variants_have_identical_d1_decisions(value):
++    _, graph, _ = make_evidence()
++    a = score_d1_numeric(f'온실가스 배출량은 {value}tCO2eq이다.',graph)
++    b = score_d1_numeric(f'온실가스 배출량은 {value:,} tCO2eq이다.',graph)
++    assert a.score == b.score and a.evaluation['compared_claims'] == b.evaluation['compared_claims'] == 1
++    for axis in (a,b):
++        assert axis.evaluation['claims'][0]['claim_value'] == value
++        assert axis.evaluation['claims'][0]['claim_unit'] == 'tCO2eq'
++
++
++def test_zero_evidence_is_comparable_and_nonzero_against_zero_is_mismatch():
++    from dataclasses import replace
++    _, graph, _ = make_evidence()
++    graph.resolved_facts['E-3-1'] = replace(graph.resolved_facts['E-3-1'],value=0)
++    for value, expected in [(0,0),(100,1)]:
++        axis = score_d1_numeric(f'온실가스 배출량은 {value}tCO2eq이다.',graph)
++        assert axis.score == expected and axis.evaluation['compared_claims'] == 1
++        import json
++        json.dumps(axis.to_dict(),allow_nan=False)
+diff --git a/tests/test_node_selection.py b/tests/test_node_selection.py
+index 8fb6afd..7b8468b 100644
+--- a/tests/test_node_selection.py
++++ b/tests/test_node_selection.py
+@@ -318,10 +318 @@ class TestLedgerD1Symmetry:
+-        """원장 대표노드가 TJ인데 claim이 %면 환산군이 달라 그 노드로는 비교가 무의미하다.
+-
+-        원장은 항목 정의 단위로 정규화해 저장하지만 노드 자체는 원 단위다. 기록된
+-        노드가 claim 단위 필터(compat)에서 걸러지면 기록을 쓰지 않고 **기존 폴백**
+-        (공용 규칙 재실행)으로 가고, 그 사실을 detail에 남긴다 — 조용히 넘기면
+-        D1이 왜 그 노드를 골랐는지 추적할 수 없다.
+-
+-        같은 코드에 % 노드가 함께 있어야 이 분기에 닿는다. 호환 노드가 아예 없으면
+-        기존 '단위 불일치 스킵'이 먼저 걸린다.
+-        """
++        """확정 원장 단위와 비교할 수 없으면 다른 후보를 고르지 않고 보류한다."""
+@@ -337 +328 @@ class TestLedgerD1Symmetry:
+-        assert "단위 불일치" in d1.detail, f"확정 원장 단위와 비교 불가 — {d1.detail}"
++        assert d1.abstain_reason == "unit_mismatch", f"확정 원장 단위와 비교 불가 — {d1.detail}"
+@@ -339 +330 @@ class TestLedgerD1Symmetry:
+-        # 폴백은 기존 동작 그대로 — % claim은 % 노드와 비교된다(TJ 노드와 비교하지 않는다).
++        # 내부 0은 일치 판정이 아니라 미검증 표시와 함께 저장된다.
+diff --git a/tests/test_schemas_abstain.py b/tests/test_schemas_abstain.py
+index 355fae4..75a5e95 100644
+--- a/tests/test_schemas_abstain.py
++++ b/tests/test_schemas_abstain.py
+@@ -60 +60 @@ def test_d3_abstains_without_evidence_in_production_path() -> None:
+-    """D3 근거 부재는 기본 기권이며 D1/D2/D5 기본 동작은 유지된다."""
++    """D1 실적 수치와 D3 모두 근거가 없으므로 기본 기권한다 (2026-09-14)."""
+@@ -62,2 +62,2 @@ def test_d3_abstains_without_evidence_in_production_path() -> None:
+-    assert rv.abstained_axes() == ["D3_semantic"]
+-    assert rv.aggregate.get("abstained_axes") == ["D3_semantic"]
++    assert rv.abstained_axes() == ["D1_numeric", "D3_semantic"]
++    assert rv.aggregate.get("abstained_axes") == ["D1_numeric", "D3_semantic"]
+diff --git a/tests/test_ssot.py b/tests/test_ssot.py
+index 932752a..5a03d96 100644
+--- a/tests/test_ssot.py
++++ b/tests/test_ssot.py
+@@ -307 +307 @@ class TestDetector:
+-    def test_d1_no_kesg_code_is_risky(self):
++    def test_d1_no_kesg_code_is_unverified(self):
+@@ -310 +310 @@ class TestDetector:
+-        assert r.score >= 0.5
++        assert r.score == 0 and r.abstain_reason == "ambiguous_topic"
+@@ -312 +312 @@ class TestDetector:
+-    def test_d1_no_evidence_nodes_high_risk(self):
++    def test_d1_no_evidence_nodes_abstain(self):
+@@ -315 +315 @@ class TestDetector:
+-        assert r.score >= 0.9
++        assert r.score == 0 and r.abstain_reason == "no_evidence"

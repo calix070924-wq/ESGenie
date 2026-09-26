@@ -58,7 +58,7 @@ def test_percentage_point_boundary(evidence,claim,expected):
 @pytest.mark.parametrize('evidence,claim,expected', [(0,0,'verified'), (0,1,'flagged'), (1000,1000,'verified'), (1000,1149.9,'verified'), (1000,1150,'flagged')])
 def test_non_rate_relative_error_and_zero(evidence, claim, expected, monkeypatch):
     monkeypatch.setattr('esgenie.config.D1_THRESHOLD', .15)
-    ans = _reconcile_claim(Answer('q','E','energy',evidence,'verified'), SupplierClaim('E-4-1',claim,'kWh'), evidence, 'kWh', code='E-4-1')
+    ans = _reconcile_claim(Answer('q','E','energy',evidence,'verified', completeness='total'), SupplierClaim('E-4-1',claim,'kWh'), evidence, 'kWh', code='E-4-1')
     assert ans.status == expected
     assert all('%p' not in f for f in ans.flags)
 

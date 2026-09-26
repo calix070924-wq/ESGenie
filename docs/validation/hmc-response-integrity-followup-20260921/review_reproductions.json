@@ -1,0 +1,383 @@
+{
+  "total_plus_components": {
+    "value": 20.0,
+    "verification": "estimated",
+    "completeness": "partial",
+    "boundary": {
+      "period_text": "2026년 연간",
+      "aggregation": "annual",
+      "coverage_months": 12,
+      "basis": "actual",
+      "site": "",
+      "site_scope": "entity",
+      "measure": "도시가스 + 에너지 사용량 + 전력 사용량",
+      "measure_kind": "unknown",
+      "completeness": "partial",
+      "denominator": "",
+      "denominator_kind": "unknown",
+      "inferred": [],
+      "source_quote": "도시가스 사용량 (2026년 연간) / 총 에너지 사용량 (2026년 연간) / 총 전력 사용량 (2026년 연간)"
+    },
+    "sources": [
+      "gas.pdf",
+      "energy_total.pdf",
+      "electricity.pdf"
+    ],
+    "scope_notes": [
+      "E-4-1: 제한적 합산: 도시가스 + 에너지 사용량 + 전력 사용량 — 전체 에너지원을 덮었다는 근거는 없으므로 부분값",
+      "E-4-1: 부분값 — 2026년 연간 · 전사 · 도시가스 + 에너지 사용량 + 전력 사용량 · 부분. 전사·연간·전체 범위 총량임이 입증되지 않아 검증 보류"
+    ],
+    "cross_edges": [],
+    "cross_status": [
+      "",
+      ""
+    ],
+    "cross_risk": 0.0
+  },
+  "different_months_sum": {
+    "value": 0.873988,
+    "verification": "estimated",
+    "completeness": "partial",
+    "boundary": {
+      "period_text": "2026-06 / 2026-05",
+      "aggregation": "monthly",
+      "coverage_months": 1,
+      "basis": "actual",
+      "site": "제1공장",
+      "site_scope": "site",
+      "measure": "도시가스 + 전력 사용량",
+      "measure_kind": "unknown",
+      "completeness": "partial",
+      "denominator": "",
+      "denominator_kind": "unknown",
+      "inferred": [],
+      "source_quote": "도시가스 사용량 (2026-06) / 총 전력 사용량 (2026-05)"
+    },
+    "sources": [
+      "gas.pdf",
+      "electricity.pdf"
+    ],
+    "scope_notes": [
+      "E-4-1: 제한적 합산: 도시가스 + 전력 사용량 — 전체 에너지원을 덮었다는 근거는 없으므로 부분값",
+      "E-4-1: 부분값 — 2026-06 / 2026-05 · 월간 · 제1공장 · 도시가스 + 전력 사용량 · 부분. 전사·연간·전체 범위 총량임이 입증되지 않아 검증 보류"
+    ],
+    "cross_edges": [],
+    "cross_status": [
+      "",
+      ""
+    ],
+    "cross_risk": 0.0
+  },
+  "different_years_sum": {
+    "value": 10.0,
+    "verification": "estimated",
+    "completeness": "partial",
+    "boundary": {
+      "period_text": "2025년 연간 / 2026년 연간",
+      "aggregation": "annual",
+      "coverage_months": 12,
+      "basis": "actual",
+      "site": "",
+      "site_scope": "entity",
+      "measure": "전력 사용량 + 도시가스",
+      "measure_kind": "unknown",
+      "completeness": "partial",
+      "denominator": "",
+      "denominator_kind": "unknown",
+      "inferred": [],
+      "source_quote": "총 전력 사용량 (2025년 연간) / 도시가스 사용량 (2026년 연간)"
+    },
+    "sources": [
+      "electricity.pdf",
+      "gas.pdf"
+    ],
+    "scope_notes": [
+      "E-4-1: 제한적 합산: 전력 사용량 + 도시가스 — 전체 에너지원을 덮었다는 근거는 없으므로 부분값",
+      "E-4-1: 부분값 — 2025년 연간 / 2026년 연간 · 전사 · 전력 사용량 + 도시가스 · 부분. 전사·연간·전체 범위 총량임이 입증되지 않아 검증 보류"
+    ],
+    "cross_edges": [],
+    "cross_status": [
+      "",
+      ""
+    ],
+    "cross_risk": 0.0
+  },
+  "renewable_without_denominator_or_site": {
+    "value": 10.6,
+    "verification": "verified",
+    "completeness": "total",
+    "boundary": {
+      "period_text": "2026년 연간",
+      "aggregation": "annual",
+      "coverage_months": 12,
+      "basis": "actual",
+      "site": "",
+      "site_scope": "unknown",
+      "measure": "재생에너지",
+      "measure_kind": "renewable_total",
+      "completeness": "total",
+      "denominator": "",
+      "denominator_kind": "unknown",
+      "inferred": [
+        "site_scope",
+        "denominator_kind"
+      ],
+      "source_quote": "재생에너지 비율 (2026년 연간)"
+    },
+    "sources": [
+      "renewable.pdf"
+    ],
+    "scope_notes": [],
+    "cross_edges": [],
+    "cross_status": [
+      "",
+      ""
+    ],
+    "cross_risk": 0.0
+  },
+  "renewable_year_only": {
+    "value": 10.6,
+    "verification": "verified",
+    "completeness": "unknown",
+    "boundary": {
+      "period_text": "2026",
+      "aggregation": "unknown",
+      "coverage_months": null,
+      "basis": "actual",
+      "site": "",
+      "site_scope": "unknown",
+      "measure": "재생에너지",
+      "measure_kind": "renewable_total",
+      "completeness": "unknown",
+      "denominator": "",
+      "denominator_kind": "unknown",
+      "inferred": [
+        "aggregation",
+        "site_scope",
+        "denominator_kind"
+      ],
+      "source_quote": "재생에너지 비율 (2026)"
+    },
+    "sources": [
+      "renewable.pdf"
+    ],
+    "scope_notes": [
+      "E-4-2: 경계 확인 필요 — 2026 · 재생에너지"
+    ],
+    "cross_edges": [],
+    "cross_status": [
+      "",
+      ""
+    ],
+    "cross_risk": 0.0
+  },
+  "independent_same_origin_mismatch": {
+    "value": 0.00072,
+    "verification": "estimated",
+    "completeness": "partial",
+    "boundary": {
+      "period_text": "2026-05",
+      "aggregation": "monthly",
+      "coverage_months": 1,
+      "basis": "actual",
+      "site": "제1공장",
+      "site_scope": "site",
+      "measure": "전력 사용량",
+      "measure_kind": "electricity_total",
+      "completeness": "partial",
+      "denominator": "총 전력",
+      "denominator_kind": "total_electricity",
+      "inferred": [],
+      "source_quote": "총 전력 사용량 (2026-05)"
+    },
+    "sources": [
+      "electricity_b.pdf"
+    ],
+    "scope_notes": [
+      "E-4-1: 부분값 — 2026-05 · 월간 · 제1공장 · 전력 사용량 · 부분. 전사·연간·전체 범위 총량임이 입증되지 않아 검증 보류"
+    ],
+    "cross_edges": [],
+    "cross_status": [
+      "",
+      ""
+    ],
+    "cross_risk": 0.0
+  },
+  "different_months_crosscheck": {
+    "value": 0.00036,
+    "verification": "estimated",
+    "completeness": "partial",
+    "boundary": {
+      "period_text": "2026-05",
+      "aggregation": "monthly",
+      "coverage_months": 1,
+      "basis": "actual",
+      "site": "제1공장",
+      "site_scope": "site",
+      "measure": "전력 사용량",
+      "measure_kind": "electricity_total",
+      "completeness": "partial",
+      "denominator": "총 전력",
+      "denominator_kind": "total_electricity",
+      "inferred": [],
+      "source_quote": "총 전력 사용량 (2026-05)"
+    },
+    "sources": [
+      "electricity_a.pdf"
+    ],
+    "scope_notes": [
+      "E-4-1: 부분값 — 2026-05 · 월간 · 제1공장 · 전력 사용량 · 부분. 전사·연간·전체 범위 총량임이 입증되지 않아 검증 보류"
+    ],
+    "cross_edges": [
+      {
+        "source_id": "HANWOOL_E-4-1_2026__ocr_structured__7ec4f4619a",
+        "target_id": "HANWOOL_E-4-1_2026__ocr_unstructured__767cd74492",
+        "edge_type": "cross_check",
+        "yoy": null,
+        "cagr": null,
+        "years_gap": 1,
+        "detail": "교차검증 오차 100.0% (ocr_structured↔ocr_unstructured)"
+      }
+    ],
+    "cross_status": [
+      "mismatch",
+      "교차검증 오차 100.0% (ocr_structured↔ocr_unstructured)"
+    ],
+    "cross_risk": 0.4
+  },
+  "partial_large_claim": {
+    "status": "flagged",
+    "comparison": "mismatch",
+    "review_note": "실제 불일치: Δ81.40%p, 기준 ≥10%p",
+    "flags": [
+      "D1 불일치: 자가신고 92.0% ↔ 증빙 10.6% (Δ81.40%p, 기준 ≥10%p, saq:survey.pdf)"
+    ],
+    "checklist": [
+      {
+        "qid": "E-4-2",
+        "section": "환경",
+        "question_text": "재생에너지 사용 비율",
+        "status": "flagged",
+        "action": "검토·보완",
+        "evidence_needed": [],
+        "request": "D1 불일치: 자가신고 92.0% ↔ 증빙 10.6% (Δ81.40%p, 기준 ≥10%p, saq:survey.pdf)"
+      }
+    ]
+  },
+  "upstream_mismatch_overwritten": {
+    "status": "flagged",
+    "comparison": "scope_unconfirmed",
+    "review_note": "범위 확인 필요: 증빙값이 부분값 — 경계 미기록 · 숫자는 Δ0.00%p, 기준 ≥10%p",
+    "flags": [
+      "범위 확인 필요: 자가신고 10.6% ≈ 증빙 10.6% (Δ0.00%p, 기준 ≥10%p) — 증빙값이 부분값(경계 미기록)이라 전체 범위 일치는 미확인"
+    ],
+    "checklist": [
+      {
+        "qid": "E-4-2",
+        "section": "환경",
+        "question_text": "재생에너지 사용 비율",
+        "status": "flagged",
+        "action": "검토·보완",
+        "evidence_needed": [],
+        "request": "범위 확인 필요: 자가신고 10.6% ≈ 증빙 10.6% (Δ0.00%p, 기준 ≥10%p) — 증빙값이 부분값(경계 미기록)이라 전체 범위 일치는 미확인"
+      }
+    ]
+  },
+  "scope_missing_from_checklist": {
+    "status": "self_reported",
+    "comparison": "scope_unconfirmed",
+    "review_note": "범위 확인 필요: 증빙값이 부분값 — 2026년 상반기 · 부분 · 숫자는 Δ0.00%p, 기준 ≥10%p",
+    "flags": [
+      "범위 확인 필요: 자가신고 10.6% ≈ 증빙 10.6% (Δ0.00%p, 기준 ≥10%p) — 증빙값이 부분값(2026년 상반기 · 부분)이라 전체 범위 일치는 미확인"
+    ],
+    "checklist": []
+  },
+  "document_context_contamination": {
+    "without_context": {
+      "period_text": "2026년 연간",
+      "aggregation": "annual",
+      "coverage_months": 12,
+      "basis": "actual",
+      "site": "",
+      "site_scope": "unknown",
+      "measure": "전력 사용량",
+      "measure_kind": "electricity_total",
+      "completeness": "total",
+      "denominator": "총 전력",
+      "denominator_kind": "total_electricity",
+      "inferred": [
+        "site_scope"
+      ],
+      "source_quote": "총 전력 사용량 (2026년 연간)"
+    },
+    "with_context": {
+      "period_text": "2026년 연간",
+      "aggregation": "annual",
+      "coverage_months": 12,
+      "basis": "actual",
+      "site": "",
+      "site_scope": "entity",
+      "measure": "도시가스",
+      "measure_kind": "fuel_city_gas",
+      "completeness": "partial",
+      "denominator": "총 전력",
+      "denominator_kind": "total_electricity",
+      "inferred": [],
+      "source_quote": "총 전력 사용량 (2026년 연간)"
+    }
+  },
+  "renewable_through_d1": [
+    {
+      "period": "2026년 연간",
+      "d1_risk": 0.0,
+      "status": "complete",
+      "comparison": "compared",
+      "verification": "verified",
+      "completeness": "total"
+    },
+    {
+      "period": "2026",
+      "d1_risk": 0.0,
+      "status": "complete",
+      "comparison": "compared",
+      "verification": "verified",
+      "completeness": "unknown"
+    }
+  ],
+  "renewable_d1_last": {
+    "value": 10.6,
+    "verification": "verified",
+    "completeness": "unknown",
+    "boundary": {
+      "period_text": "2026",
+      "aggregation": "unknown",
+      "coverage_months": null,
+      "basis": "actual",
+      "site": "",
+      "site_scope": "unknown",
+      "measure": "재생에너지",
+      "measure_kind": "renewable_total",
+      "completeness": "unknown",
+      "denominator": "",
+      "denominator_kind": "unknown",
+      "inferred": [
+        "aggregation",
+        "site_scope",
+        "denominator_kind"
+      ],
+      "source_quote": "재생에너지 비율 (2026)"
+    },
+    "sources": [
+      "renewable.pdf"
+    ],
+    "scope_notes": [
+      "E-4-2: 경계 확인 필요 — 2026 · 재생에너지"
+    ],
+    "cross_edges": [],
+    "cross_status": [
+      "",
+      ""
+    ],
+    "cross_risk": 0.0
+  }
+}

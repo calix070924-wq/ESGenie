@@ -87,6 +87,14 @@ from __future__ import annotations
 import re
 from typing import Any, Iterable, Literal
 
+from .boundary import (
+    COMPONENT_SOURCE_KINDS,
+    ENERGY_SOURCE_TERMS as _ENERGY_SOURCE_TERMS,
+    RESIDUAL_TERMS as _RESIDUAL_TERMS,
+    Boundary,
+    detect_measure,
+)
+
 ValueRole = Literal["total", "component", "target", "unknown"]
 
 # ====================================================================
@@ -195,6 +203,16 @@ _BREAKDOWN_TERMS: tuple[str, ...] = (
     # 카테고리는 Scope 3 총합의 하위 분해다. NAVER E-3-2가 카테고리 1 하나
     # ('Upstream 구매 제품 및 서비스' 71,385)를 Scope 3 총합 자리에 올렸다.
     "upstream", "downstream", "category", "카테고리",
+    # 발전·조달 기술별(E-4-1/E-4-2) — 2026-09-20 보강. 사전에 'ppa'·'녹색요금제'·
+    # '자가발전'만 있어 **발전 기술명으로 적힌 에너지원별 내역이 안 걸렸다**.
+    # 실측(한울정밀공업 12번 문서): '태양광 비율' 5.6%와 '기타 재생에너지 비율'
+    # 1.2%가 에너지원별 구성비인데도 전체 재생에너지 비율(E-4-2) 자리에 올랐다.
+    # 어휘는 ssot.boundary가 measure_kind 판정에 쓰는 것과 **같은 사전**이다 —
+    # 두 곳에 나눠 적으면 경계상 부분값인데 대표값 판정은 총량인 모순이 생긴다.
+    *_ENERGY_SOURCE_TERMS,
+    # 표의 잔여 행('기타 재생에너지', '그 외')은 정의상 구성요소다. '… 포함'은
+    # 범위 확대이므로 호출부의 기존 예외가 그대로 적용된다.
+    *_RESIDUAL_TERMS,
 )
 
 
@@ -268,6 +286,47 @@ def _is_pollutant_component(hint: str) -> bool:
     return False
 
 
+_RATIO_WORD_RE = re.compile(r"(?:비율|비중|률|율)(?:\s|$|\(|20\d{2})")
+
+
+def _is_ratio_hint(normalized: str) -> bool:
+    return bool(_RATIO_WORD_RE.search(normalized))
+
+
+def _ratio_role(normalized: str) -> ValueRole:
+    """비율 표현의 역할을 **분자가 무엇인지** 보고 정한다 — 2026-09-20.
+
+    종전에는 비율 표현이면 무조건 total이었다. 그 규칙의 원래 목적은 '재생에너지
+    비율'의 '재생'이 `_COMPONENT_PATTERNS`에 걸려 구성요소로 강등되는 것을 막는
+    것이었는데(비율 지표의 분자는 지표 정의 그 자체다), **에너지원별 구성비까지
+    같이 통과했다.**
+
+    실측(한울정밀공업 12번 문서, 2026-09-20 검토):
+
+        태양광 비율            5.6 %   ← 에너지원별 구성비 (분모=총 전력)
+        그린 프리미엄 비율      3.8 %   ← 에너지원별 구성비
+        기타 재생에너지 비율    1.2 %   ← 표의 잔여 행
+        재생에너지 비율 현재   10.6 %   ← 전체 재생에너지 비율 (E-4-2의 정의)
+
+    앞의 셋이 전부 total로 올라가 E-4-2 대표값 후보가 되었고, 전체 비율 행이 빠진
+    입력에서는 1.2%가 '증빙검증'으로 출력됐다(5.6%만 남긴 입력에서는 5.6%).
+
+    판정 근거는 분자의 **측정 대상**이다. `ssot.boundary.detect_measure`가 돌려주는
+    kind가 특정 에너지원(태양광·풍력·그린프리미엄·PPA·화석연료 …)이거나 표의 잔여
+    행이면 구성비이므로 total이 아니다. 전체 비율 10.6을 하드코딩하거나 D1 임계값을
+    내리지 않는다 — 어휘 사전은 경계 판정(`measure_kind`)과 공유한다.
+    """
+    numerator = _RATIO_WORD_RE.split(normalized, maxsplit=1)[0].strip() or normalized
+    # 표의 잔여 행('기타 재생에너지 비율')은 계열 이름을 쓰지만 구성요소다.
+    # '… 포함'은 범위 확대이므로 제외한다(다른 축과 같은 예외).
+    if "포함" not in numerator and _has_any(numerator, _RESIDUAL_TERMS):
+        return "component"
+    kind, _term = detect_measure(numerator)
+    if kind in COMPONENT_SOURCE_KINDS:
+        return "component"
+    return "total"
+
+
 def classify_common_value_role(
     hint: str | None, *, report_year: int | None = None,
 ) -> ValueRole:
@@ -287,8 +346,9 @@ def classify_common_value_role(
         return "component"
     # 비율 지표의 분자는 지표 정의 자체다. 미래목표·지역/카테고리 분해가 아니라면
     # '재생/재사용/재활용'이라는 말만으로 구성요소 취급하지 않는다.
-    if re.search(r"(?:비율|비중|률|율)(?:\s|$|\(|20\d{2})", normalized):
-        return "total"
+    # 단, 분자가 **특정 에너지원·기술**이면 에너지원별 구성비다(§_ratio_role).
+    if _is_ratio_hint(normalized):
+        return _ratio_role(normalized)
     if any(p.search(normalized) for p in _COMPONENT_PATTERNS):
         return "component"
     if _is_pollutant_component(normalized):
@@ -357,7 +417,11 @@ def classify_value_role(
 
 def is_derived_hint(hint: str | None) -> bool:
     """파생·비실적 hint 판정 — 우선순위 1단계(hard 배제). 공개(테스트·감사용)."""
-    return _has_any(_norm(hint), _DERIVED_TERMS)
+    normalized = _norm(hint)
+    if _is_ratio_hint(normalized):
+        # '총에너지 대비 재생에너지 비율'은 정상 분모, '전년 대비 증감'과 다르다.
+        normalized = re.sub(r"(?:총|전체)\s*(?:에너지|전력|폐기물|취수량)\s*대비", "", normalized)
+    return _has_any(normalized, _DERIVED_TERMS)
 
 
 def _conflicts_metric(code: str, hint: str) -> bool:

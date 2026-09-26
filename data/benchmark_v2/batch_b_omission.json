@@ -28,6 +28,6 @@
     {"id": "B-CTRL-V4", "ticker": "005930", "sentence": "폐기물 재활용률 95%를 달성했다.", "label": "clean", "category": "control_verified", "expect": "verified", "rationale": "삼성 공시 노드(95.8%)와 일치 → 검증됨. 대형사 대조."},
 
     {"id": "B-CTRL-M1", "ticker": "SME001", "sentence": "온실가스 배출량은 100tCO2eq에 불과했다.", "label": "greenwash", "category": "control_mismatch", "expect": "mismatch", "rationale": "SME001 공시값(E-3-1=1250.5)과 큰 불일치 → D1 실위험(1.0)으로 flag. 기권이 실위험을 가리지 않음을 확인."},
-    {"id": "B-CTRL-M2", "ticker": "005930", "sentence": "재생에너지 전환율은 88%에 달했다.", "label": "greenwash", "category": "control_mismatch", "expect": "mismatch", "rationale": "삼성 공시 노드(31%)와 큰 불일치 → flag. 실 수치모순은 그대로 탐지."}
+    {"id": "B-CTRL-M2", "ticker": "005930", "sentence": "재생에너지 전환율은 88%에 달했다.", "label": "greenwash", "category": "control_scope_unconfirmed", "expect": "scope_unconfirmed", "rationale": "구형 샘플 31%에 기간·조직·분모 경계가 없어 88%와 실제 불일치를 확정할 수 없다. 원본 greenwash 라벨은 유지하되 비교 기권을 요구한다. 동일 범위 양방향 불일치는 test_hmc_followup R12에서 별도 검증한다."}
   ]
 }

@@ -192,6 +192,8 @@ def judge_risk_vector(
             blended = round(llm_score, 4)
         else:
             blended = round(rule_weight * ax.score + (1.0 - rule_weight) * llm_score, 4)
+        if name == "D1_numeric" and ax.evaluation.get("compared_claims", 0):
+            blended = max(ax.score, blended)
         extra_note = ""
         if v.get("verdict") == "confirmed" and issb_notes:
             confirmed_with_issb = True
@@ -209,6 +211,7 @@ def judge_risk_vector(
             # 유실되지 않도록 명시 복사한다(코드리뷰 개선).
             abstain=ax.abstain,
             abstain_reason=ax.abstain_reason,
+            evaluation=ax.evaluation.copy(),
         )
 
     out = _rebuild_vector(new_axes)

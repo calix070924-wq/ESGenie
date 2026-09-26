@@ -6,38 +6,17 @@
 from __future__ import annotations
 
 from pathlib import Path
-from typing import Any
 
 from ..frameworks import get_framework
+from ..render import draft_lines, note_lines, scope_line, summary_line
 from ..schema import ResponseSheet
 
-_HEADER = ["문항 ID", "섹션", "문항", "답변", "신뢰", "근거 / 비고"]
-
-
-def _fmt_value(value: Any) -> str:
-    if value is None:
-        return "—"
-    if isinstance(value, bool):
-        return "예" if value else "아니오"
-    if isinstance(value, list):
-        return ", ".join(str(v) for v in value) if value else "—"
-    return str(value)
+_HEADER = ["문항 ID", "섹션", "문항", "답변", "측정 범위 / 검토", "신뢰", "근거 / 비고"]
 
 
 def _fmt_evidence(answer) -> str:
-    parts: list[str] = []
-    for e in answer.evidence_links:
-        loc = ""
-        if e.page is not None:
-            loc = f" p.{e.page + 1}"
-        if e.bbox:
-            loc += f" bbox{[round(x, 3) for x in e.bbox]}"
-        parts.append(f"{e.file_name}{loc}".strip())
-    ev = " / ".join(parts)
-    rationale = "\n".join([answer.rationale, *answer.flags]).strip()
-    if ev and rationale:
-        return f"{rationale}\n근거: {ev}"
-    return ev or rationale
+    # 표기 규칙은 render.py 한 곳에 둔다 — 화면과 제출본이 같은 문장을 쓰게(§5-1).
+    return "\n".join(note_lines(answer)).strip()
 
 
 def _issb_followup_rows(answers) -> list[dict[str, str]]:
@@ -82,12 +61,15 @@ def export_response_sheet(sheet: ResponseSheet, out_dir: str | Path) -> str:
     # ── 제목/요약 ──
     ws["A1"] = f"{sheet.framework_label}"
     ws["A1"].font = Font(size=13, bold=True)
-    ws["A2"] = (
-        f"기업: {sheet.corp_name or '—'}  |  자동응답 {sheet.auto_pct}% · "
-        f"작성필요 {sheet.hitl_pct}% · 증빙대기 {sheet.pending_pct}%  "
-        f"|  검토필요: {sheet.flagged_count}건"
-    )
+    # 4분할(자동응답/AI초안/작성필요/증빙대기)을 빠짐없이 적는다 — AI초안이 빠져
+    # 합이 100%에 못 미치던 헤더를 고정한다(§5-1).
+    ws["A2"] = summary_line(sheet)
     ws["A2"].font = Font(size=10, color="555555")
+    for row in (1, 2):
+        ws.merge_cells(start_row=row, start_column=1, end_row=row, end_column=7)
+        ws.cell(row, 1).alignment = Alignment(wrap_text=True, vertical="center")
+    ws.row_dimensions[1].height = 26
+    ws.row_dimensions[2].height = 36
 
     # ── 헤더 ──
     header_row = 4
@@ -107,7 +89,7 @@ def export_response_sheet(sheet: ResponseSheet, out_dir: str | Path) -> str:
         if a.status == "not_applicable":
             continue
         sec_total[a.section] += 1
-        if a.status in ("verified", "self_reported", "flagged"):
+        if a.answered:
             sec_auto[a.section] += 1
         if a.status == "flagged":
             sec_flag[a.section] += 1
@@ -141,19 +123,16 @@ def export_response_sheet(sheet: ResponseSheet, out_dir: str | Path) -> str:
         ws.cell(row=r, column=1, value=a.qid)
         ws.cell(row=r, column=2, value=a.section)
         ws.cell(row=r, column=3, value=a.question_text).alignment = Alignment(wrap_text=True)
-        if a.status == "draft_ready" and getattr(a, "draft_text", ""):
-            answer_text = f"[AI 초안 — 승인 전]\n{a.draft_text}"
-            citations = getattr(a, "draft_citations", []) or []
-            if citations:
-                cite_lines = [f"{c.get('source_file', '')} · {c.get('node_id', '')} · p.{(c.get('page') or 0) + 1}"
-                              for c in citations]
-                answer_text += "\n\n출처: " + " / ".join(cite_lines)
-            ws.cell(row=r, column=4, value=answer_text).alignment = Alignment(wrap_text=True)
+        draft = draft_lines(a) if a.status == "draft_ready" else []
+        if draft:
+            # 본문 인용은 [1]·문서명·실제 페이지로 — 내부 노드 ID를 제출본에 싣지 않는다(§5-3).
+            ws.cell(row=r, column=4, value="\n".join(draft)).alignment = Alignment(wrap_text=True)
         else:
             ws.cell(row=r, column=4, value=a.display_value).alignment = Alignment(wrap_text=True)
-        badge = ws.cell(row=r, column=5, value=a.badge)
+        ws.cell(row=r, column=5, value=scope_line(a) or "—").alignment = Alignment(wrap_text=True)
+        badge = ws.cell(row=r, column=6, value=a.badge)
         badge.alignment = Alignment(horizontal="center")
-        ws.cell(row=r, column=6, value=_fmt_evidence(a)).alignment = Alignment(wrap_text=True)
+        ws.cell(row=r, column=7, value=_fmt_evidence(a)).alignment = Alignment(wrap_text=True)
         f = status_fill.get(a.status)
         if f:
             for col in range(1, len(_HEADER) + 1):
@@ -172,6 +151,10 @@ def export_response_sheet(sheet: ResponseSheet, out_dir: str | Path) -> str:
         cw["A1"].font = Font(size=12, bold=True)
         cw["A2"] = "증빙 업로드=문서 올리면 자동 해소 / 담당자 작성=사람이 서술 / 검토·보완=경고 소명"
         cw["A2"].font = Font(size=10, color="555555")
+        cw.merge_cells("A1:F1")
+        cw.merge_cells("A2:F2")
+        cw["A2"].alignment = Alignment(wrap_text=True, vertical="center")
+        cw.row_dimensions[2].height = 30
         headers = ["문항 ID", "섹션", "문항", "할 일", "올릴 문서 / 작성 사항", "안내"]
         cfill = PatternFill("solid", fgColor="1F4E78")
         for col, name in enumerate(headers, start=1):
@@ -184,6 +167,7 @@ def export_response_sheet(sheet: ResponseSheet, out_dir: str | Path) -> str:
             "담당자 작성": PatternFill("solid", fgColor="DDEBF7"),
             "검토·보완":   PatternFill("solid", fgColor="FCE4E4"),
             "초안 검토":   PatternFill("solid", fgColor="E8DAEF"),
+            "범위 확인·보완": PatternFill("solid", fgColor="FFF2CC"),
         }
         for ridx, row in enumerate(rows, start=5):
             for col, key in enumerate(headers, start=1):
@@ -193,7 +177,7 @@ def export_response_sheet(sheet: ResponseSheet, out_dir: str | Path) -> str:
             if f:
                 for col in range(1, len(headers) + 1):
                     cw.cell(row=ridx, column=col).fill = f
-        for col, width in enumerate((14, 18, 46, 12, 40, 50), start=1):
+        for col, width in enumerate((22, 20, 52, 20, 44, 80), start=1):
             cw.column_dimensions[cw.cell(row=4, column=col).column_letter].width = width
 
     # ── 보완/검토 목록 시트 ──
@@ -227,9 +211,28 @@ def export_response_sheet(sheet: ResponseSheet, out_dir: str | Path) -> str:
         for col, width in enumerate((48, 54, 54, 60), start=1):
             iw.column_dimensions[iw.cell(row=4, column=col).column_letter].width = width
 
-    widths = [14, 14, 50, 24, 12, 60]
+    widths = [22, 20, 52, 34, 44, 15, 80]
     for col, w in enumerate(widths, start=1):
         ws.column_dimensions[ws.cell(row=header_row, column=col).column_letter].width = w
+
+    # Excel은 저장 파일의 줄바꿈 행 높이를 자동 계산하지 않는다. 한글 폭과
+    # 명시적 줄바꿈으로 높이를 확보해 긴 검토 사유/인용이 셀 아래에서 잘리지 않게 한다.
+    import math
+    import unicodedata
+    for tab in (ws, wb["증빙 체크리스트"] if "증빙 체크리스트" in wb.sheetnames else ws):
+        merged_rows = {r.min_row for r in tab.merged_cells.ranges}
+        for cells in tab.iter_rows(min_row=4):
+            if cells[0].row in merged_rows:
+                tab.row_dimensions[cells[0].row].height = 24
+                continue
+            lines = 1
+            for cell in cells:
+                cell.alignment = Alignment(wrap_text=True, vertical="top")
+                width = tab.column_dimensions[cell.column_letter].width - 2
+                count = sum(max(1, math.ceil(sum(2 if unicodedata.east_asian_width(ch) in "WF" else 1 for ch in line) / width))
+                            for line in str(cell.value or "").splitlines())
+                lines = max(lines, count)
+            tab.row_dimensions[cells[0].row].height = min(409.5, 15 * lines + 8)
 
     wb.save(out_path)
     return str(out_path)

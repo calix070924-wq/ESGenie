@@ -55,7 +55,11 @@ def build_checklist(
     """
     items: list[ChecklistItem] = []
     for a in sheet.answers:
-        if a.status not in _ACTION:
+        scope_pending = (getattr(a, "comparison", "") == "scope_unconfirmed" or bool(getattr(a, "scope_notes", []))
+                         or "incomplete_scope" in getattr(a, "confidence_flags", []))
+        if a.status not in _ACTION and not scope_pending:
+            continue
+        if a.status == "not_applicable":
             continue
         if section is not None and a.section != section:
             continue
@@ -64,12 +68,14 @@ def build_checklist(
             detail = "; ".join(a.flags) or a.rationale or "검토 필요"
         elif a.status == "draft_ready":
             detail = "AI 초안이 생성되었습니다. 내용을 검토한 뒤 승인해 주세요."
+        if scope_pending or getattr(a, "comparison", "") == "mismatch":
+            detail = "; ".join(dict.fromkeys(filter(None, [detail, getattr(a, "comparison_reason", ""), *getattr(a, "scope_notes", [])])))
         items.append(ChecklistItem(
             qid=a.qid,
             section=a.section,
             question_text=a.question_text,
             status=a.status,
-            action=_ACTION[a.status],
+            action="범위 확인·보완" if scope_pending and getattr(a, "comparison", "") != "mismatch" else _ACTION.get(a.status, "검토·보완"),
             evidence_needed=tuple(a.evidence_needed),
             request=detail,
         ))

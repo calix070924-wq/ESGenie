@@ -1,0 +1,7 @@
+{
+  "reviewed": true,
+  "pdf": "controlled final PDF, all 15 pages rendered with PyMuPDF and reviewed using 3 contact sheets; critical rows independently validated by geometric regions",
+  "excel": "artifact-tool imported production workbook and rendered A1:G5, rows 19/26/27/28/52, checklist A20:F27; inspected full images",
+  "legacy": "two manually corrected D54 cells rendered; top alignment and manual-review badge applied",
+  "findings": "no clipped values, scope reasons, citations, or headers found; long reasons increase PDF page count and are retained"
+}

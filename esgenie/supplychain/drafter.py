@@ -7,12 +7,17 @@ from __future__ import annotations
 
 import logging
 import re
+from dataclasses import dataclass
 from typing import Any
 
 from ..embeddings import BM25Index, IndexedDoc
-from ..knowledge.kesg_evidence_requirements import requirement_for
+from ..knowledge.kesg_evidence_requirements import (
+    requirement_for,
+    requirement_for_question,
+)
 from ..llm import LLMClient, LLMResponse
 from ..rag_gates.grounding_gate import evaluate_grounding, grounding_feedback
+from .question_fitness import QuestionFitness, build_fitness_map, select_fit_chunks
 from .schema import Answer, ResponseSheet
 
 logger = logging.getLogger(__name__)
@@ -102,22 +107,34 @@ def generate_drafts(
     if not text_nodes:
         return sheet
 
-    code_map, qtext_map = _build_code_map(sheet, framework=framework)
+    plans = _build_question_plans(sheet, framework=framework)
 
     bm25 = _build_bm25_index(text_nodes)
     llm = LLMClient()
 
     for answer in sheet.answers:
-        primary_code = code_map.get(answer.qid, "")
-        if not _is_draft_candidate(answer, primary_code):
+        plan = plans.get(answer.qid)
+        if plan is None:
+            continue
+        if not _is_draft_candidate(answer, plan.kind):
             continue
 
-        if not primary_code:
+        if not plan.code:
             continue
 
-        question_text = qtext_map.get(answer.qid, answer.question_text)
-        chunks = _collect_chunks(primary_code, evidence_graph, bm25, question_text)
+        question_text = plan.text or answer.question_text
+        chunks = _collect_chunks(plan.code, evidence_graph, bm25, question_text)
         if not chunks:
+            continue
+
+        # 문항 적합성 — 코드 일치·BM25 폴백 두 경로 모두에서 근거를 문항 목적으로
+        # 좁힌다. 코드 태깅은 주제만 말해주므로, 한 코드를 공유하는 여러 문항이 같은
+        # 근거를 받아 같은 초안을 내는 자리가 여기였다(§6).
+        chunks, hold_reason = select_fit_chunks(chunks, plan.fitness)
+        if hold_reason:
+            logger.info(
+                "drafter: 문항 적합성 보류 (qid=%s, 사유=%s)", answer.qid, hold_reason,
+            )
             continue
 
         is_fallback = chunks[0].get("retrieval") == RETRIEVAL_BM25_FALLBACK
@@ -127,37 +144,66 @@ def generate_drafts(
             )
             continue
 
-        _attempt_draft(answer, chunks, llm, max_retries=max_retries)
+        _attempt_draft(answer, chunks, llm, max_retries=max_retries, fitness=plan.fitness)
 
     return sheet
 
 
-def _build_code_map(
+@dataclass(frozen=True)
+class _QuestionPlan:
+    """한 문항의 초안 계획 — 어느 코드로 근거를 찾고, 무엇으로 적합성을 판정하는가."""
+    code: str
+    text: str
+    kind: str
+    fitness: QuestionFitness | None
+
+
+def _build_question_plans(
     sheet: ResponseSheet,
     *,
     framework: Any | None = None,
-) -> tuple[dict[str, str], dict[str, str]]:
-    """framework를 한 번 역조회해 qid→primary_code, qid→question_text 맵을 구축."""
+) -> dict[str, _QuestionPlan]:
+    """framework를 한 번 역조회해 qid→초안 계획을 구축.
+
+    도출유형(kind)은 문항 단위로 해석한다(mapping._unresolved와 같은 규칙) — 안내문과
+    초안 게이트가 서로 다른 유형을 보지 않게.
+    적합성(fitness)은 양식 전체를 봐야 계산되므로(문항 고유 어휘 = 양식 내 df) 여기서
+    한 번만 만든다.
+    """
     fw = framework
     if fw is None:
         from .frameworks import get_framework
         try:
             fw = get_framework(sheet.framework_key)
         except (KeyError, ValueError):
-            return {}, {}
-    code_map = {q.qid: q.primary_code for q in fw.questions}
-    qtext_map = {q.qid: q.text for q in fw.questions}
-    return code_map, qtext_map
+            return {}
+
+    def _req(q: Any):
+        return requirement_for_question(q.kesg_codes, quantitative=q.qtype == "numeric")
+
+    fitness_map = build_fitness_map(fw.questions, _req)
+    return {
+        q.qid: _QuestionPlan(
+            code=q.primary_code,
+            text=q.text,
+            kind=_req(q).kind,
+            fitness=fitness_map.get(q.qid),
+        )
+        for q in fw.questions
+    }
 
 
-def _is_draft_candidate(answer: Answer, primary_code: str) -> bool:
-    """초안 대상 여부: hitl_required, 또는 insufficient 중 policy kind."""
+def _is_draft_candidate(answer: Answer, kind: str) -> bool:
+    """초안 대상 여부: hitl_required, 또는 insufficient 중 policy kind.
+
+    kind는 문항 단위로 해석한 도출유형이다(mapping._unresolved와 같은 규칙).
+    primary_code만 보면 정성 조항(D-5 공정거래 등)이 크로스워크된 정량 코드 때문에
+    quantitative로 읽혀 초안 대상에서 빠졌다 — 안내문과 초안 게이트가 어긋난 자리다.
+    """
     if answer.status == "hitl_required":
         return True
     if answer.status == "insufficient":
-        if primary_code:
-            req = requirement_for(primary_code)
-            return req.kind == "policy"
+        return kind == "policy"
     return False
 
 
@@ -301,6 +347,7 @@ def _attempt_draft(
     llm: LLMClient,
     *,
     max_retries: int,
+    fitness: QuestionFitness | None = None,
 ) -> None:
     """초안 생성 → 근거게이트 검증 → 통과 시 draft_ready, 실패 시 재시도."""
     chunks_text = _format_chunks(chunks)
@@ -334,6 +381,9 @@ def _attempt_draft(
             return
 
         result = evaluate_grounding(draft_text, chunks)
+        if fitness and fitness.intent and not fitness.relevant_text(draft_text):
+            feedback_constraint = "질문의 대상·내용·행동에 직접 답하는 확인된 내용만 쓰세요. 부족하면 INSUFFICIENT_EVIDENCE를 반환하세요."
+            continue
 
         if result.decision == "ACCEPT" and not result.soft_flags:
             answer.status = "draft_ready"
