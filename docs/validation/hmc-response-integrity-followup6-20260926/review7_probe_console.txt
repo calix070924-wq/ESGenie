@@ -1,0 +1,16 @@
+{
+  "checks": {
+    "literal_non_acquisition_control": true,
+    "negated_acquisition_same_sentence": true,
+    "failed_acquisition_same_sentence": true,
+    "standalone_negation_control": true,
+    "standalone_failure_control": true,
+    "other_certificate_denial_control": true,
+    "past_denial_separate_sentence_control": true,
+    "actual_acquisition_control": true,
+    "documented_conservative_preparation_control": true,
+    "honest_plan_control": true
+  },
+  "failed": []
+}
+exit=0

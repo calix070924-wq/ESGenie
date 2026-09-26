@@ -1,0 +1,10 @@
+## HEAD 80ef542 제품 코드(7차 수정 없음, git archive 사본) + 이번 회귀 테스트: -k review7
+tests/test_hmc_followup.py::test_review7_denial_ending_in_same_sentence[ISMS \uc778\uc99d\uc744 \ucde8\ub4dd\ud558\uc9c0 \uc54a\uc558\uc73c\uba70, ISMS \uc778\uc99d\uc744 \ucde8\ub4dd\ud558\uc5ec \uc6b4\uc601 \uc911\uc774\ub2e4.-False] FAILED [ 20%]
+tests/test_hmc_followup.py::test_review7_denial_ending_in_same_sentence[ISMS \uc778\uc99d\uc744 \ucde8\ub4dd\ud558\uc9c0 \ubabb\ud588\uc73c\uba70, ISMS \uc778\uc99d\uc744 \ucde8\ub4dd\ud558\uc5ec \uc6b4\uc601 \uc911\uc774\ub2e4.-False] FAILED [ 40%]
+tests/test_hmc_followup.py::test_review7_denial_ending_in_same_sentence[ISMS \uc778\uc99d\uc744 \ucde8\ub4dd \ubabb\ud588\uc73c\uba70, ISMS \uc778\uc99d\uc744 \ucde8\ub4dd\ud558\uc5ec \uc6b4\uc601 \uc911\uc774\ub2e4.-False] FAILED [ 60%]
+tests/test_hmc_followup.py::test_review7_denial_ending_in_same_sentence[ISMS-P \uc778\uc99d\uc744 \ucde8\ub4dd\ud558\uc9c0 \uc54a\uc558\uc73c\uba70, ISMS \uc778\uc99d\uc744 \ucde8\ub4dd\ud558\uc5ec \uc6b4\uc601 \uc911\uc774\ub2e4.-True] PASSED [ 80%]
+tests/test_hmc_followup.py::test_review7_denial_ending_in_same_sentence[2023\ub144\uc5d0\ub294 ISMS \uc778\uc99d\uc744 \ucde8\ub4dd\ud558\uc9c0 \ubabb\ud588\ub2e4. 2025\ub144 ISMS \uc778\uc99d\uc744 \ucde8\ub4dd\ud588\ub2e4.-True] PASSED [100%]
+FAILED tests/test_hmc_followup.py::test_review7_denial_ending_in_same_sentence[ISMS \uc778\uc99d\uc744 \ucde8\ub4dd\ud558\uc9c0 \uc54a\uc558\uc73c\uba70, ISMS \uc778\uc99d\uc744 \ucde8\ub4dd\ud558\uc5ec \uc6b4\uc601 \uc911\uc774\ub2e4.-False]
+FAILED tests/test_hmc_followup.py::test_review7_denial_ending_in_same_sentence[ISMS \uc778\uc99d\uc744 \ucde8\ub4dd\ud558\uc9c0 \ubabb\ud588\uc73c\uba70, ISMS \uc778\uc99d\uc744 \ucde8\ub4dd\ud558\uc5ec \uc6b4\uc601 \uc911\uc774\ub2e4.-False]
+FAILED tests/test_hmc_followup.py::test_review7_denial_ending_in_same_sentence[ISMS \uc778\uc99d\uc744 \ucde8\ub4dd \ubabb\ud588\uc73c\uba70, ISMS \uc778\uc99d\uc744 \ucde8\ub4dd\ud558\uc5ec \uc6b4\uc601 \uc911\uc774\ub2e4.-False]
+================= 3 failed, 2 passed, 100 deselected in 0.19s ==================
