@@ -58,6 +58,10 @@ _CERT_LINK_PENDING_RE = re.compile(r"예정|계획|목표|향후|앞으로|추�
 # 술어일 때만 센다 — `취득하여 준비 자료를 보관 중이다`의 '준비'는 명사 수식어다.
 _CERT_LINK_PREPARING_RE = re.compile(
     r"(?:준비|추진|신청)\s*(?:중|할|하고\s*있|합니다|한다|이다|입니다)")
+# 취득 술어에 바로 붙은 부정 어미 — `취득하지 않았으며`, `취득하지 못했으며`, `취득 못했다`.
+# 매치는 `취득`에서 끝나므로 매치 문자열만 보면 이 부정을 놓친다(7차 검토 P2).
+# 계획·준비는 넣지 않는다 — 명시적인 미취득만 센다.
+_CERT_DENIED_TAIL_RE = re.compile(r"^(?:하지|되지)?\s*(?:않|못)")
 
 
 def evaluate_grounding(answer_text: str, cited_chunks: list[dict[str, Any]]) -> GroundingResult:
@@ -174,6 +178,7 @@ def _cert_denied_nearby(name: frozenset[str], match: re.Match[str],
     `ISMS 인증은 미취득 상태이며, … 취득해서 …`처럼 한 문장이 현재 미취득을 밝혔다면
     뒤 술어를 어떻게 읽든 완료 근거가 될 수 없다(6차 검토 2). 다른 문장의 과거
     미취득(`2023년에는 받지 못했다. 2025년 취득했다.`)은 막지 않는다.
+    `취득하지 않았으며`처럼 술어 뒤 어미로 밝힌 미취득도 같이 센다(7차 검토 P2).
     """
     start = max(text.rfind(ch, 0, match.start()) for ch in ".!?\n") + 1
     end = _CERT_CLAUSE_END_RE.search(text, match.end())
@@ -182,7 +187,8 @@ def _cert_denied_nearby(name: frozenset[str], match: re.Match[str],
         if other is match or other.start() < start or other.start() >= stop:
             continue
         if (name <= _certification_identity(other.group("name") or "")
-                and _CERT_NOT_DONE_RE.search(other.group(0))):
+                and (_CERT_NOT_DONE_RE.search(other.group(0))
+                     or _CERT_DENIED_TAIL_RE.match(text[other.end():other.end() + 12]))):
             return True
     return False
 

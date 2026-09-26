@@ -600,3 +600,15 @@ def test_review6_2_honest_plan_with_comma_is_allowed():
 ])
 def test_review6_2_explicit_non_acquisition_in_same_sentence(source, supported):
     assert (certification_draft("ISMS 인증을 취득했다.", source) == "draft_ready") is supported
+
+
+@pytest.mark.parametrize("source,supported", [
+    ("ISMS 인증을 취득하지 않았으며, ISMS 인증을 취득하여 운영 중이다.", False),  # 부정 어미
+    ("ISMS 인증을 취득하지 못했으며, ISMS 인증을 취득하여 운영 중이다.", False),
+    ("ISMS 인증을 취득 못했으며, ISMS 인증을 취득하여 운영 중이다.", False),
+    ("ISMS-P 인증을 취득하지 않았으며, ISMS 인증을 취득하여 운영 중이다.", True),  # 다른 인증
+    ("2023년에는 ISMS 인증을 취득하지 못했다. 2025년 ISMS 인증을 취득했다.", True),  # 다른 문장
+])
+def test_review7_denial_ending_in_same_sentence(source, supported):
+    """매치가 `취득`에서 끝나 뒤의 `하지 않았으며`를 놓쳤다(7차 검토 P2)."""
+    assert (certification_draft("ISMS 인증을 취득했다.", source) == "draft_ready") is supported
