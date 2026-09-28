@@ -108,7 +108,14 @@ def test_mapping_uses_actual_chunk_page_and_validates_quotes():
     assert metrics[0].page_source == clauses[0].page_source == "chunk"
     assert metrics[0].quote == "사용량 | TJ | 123"
     assert clauses[0].quote == "정기 교육을 실시한다."
+    # 원문에 없는 인용은 그대로 쓰지 않는다. 그 값을 담은 줄이 원문에서 유일하게
+    # 특정되면 그 줄로 대체하고(_recover_quote), 아니면 비운다. 어느 쪽이든 인용은
+    # 항상 원문 그대로여야 한다.
     data["metrics"][0]["quote"] = "원문에 없는 수치"
+    recovered = o._map_vlm_json(data, page_no=0, source_text=text)[0][0].quote
+    assert recovered == "사용량 | TJ | 123"
+    assert recovered in text
+    data["metrics"][0]["value"] = 456  # 원문에 없는 값 — 되살릴 줄이 없다
     assert o._map_vlm_json(data, page_no=0, source_text=text)[0][0].quote == ""
 
 
@@ -276,3 +283,62 @@ def test_quote_fields_survive_serialization():
     ext = o.OcrExtraction("x.pdf", o.DocChannel.UNSTRUCTURED, "report", metrics=[
         o.ExtractedMetric("Energy", 123, "TJ", "2024", page=2, quote="Energy 123 TJ", page_source="chunk")])
     assert o.OcrExtraction.from_dict(ext.to_dict()).to_dict() == ext.to_dict()
+
+
+# ---- 모델 인용이 비었을 때 원문에서 되살리기 (2026-09-26 실측) -------------------
+
+def test_recovered_quote_is_the_source_line_that_holds_the_value():
+    """표 행에서 값을 찾아 라벨·단위·연도가 함께 남은 줄을 인용으로 쓴다."""
+    source = "온실가스\n연구개발비 | 억 원 | 13,709(연결|2022) | 15,925(연결|2023)"
+    quote = o._recover_quote(source, 15925.0, "연구개발비")
+    assert quote == "연구개발비 | 억 원 | 13,709(연결|2022) | 15,925(연결|2023)"
+    assert quote in source
+
+
+def test_recovered_quote_is_empty_when_the_value_is_not_unique():
+    """같은 값이 여러 행에 있고 라벨로도 좁혀지지 않으면 비워 둔다 — 임의로 고르지 않는다."""
+    source = "매출 원가율 | 88.1\n판매 비용률 | 88.1"
+    assert o._recover_quote(source, 88.1, "영업이익률") == ""
+
+
+def test_recovered_quote_uses_the_metric_label_to_disambiguate():
+    source = "매출 원가율 | 88.1\n판매 비용률 | 88.1"
+    assert o._recover_quote(source, 88.1, "판매 비용률") == "판매 비용률 | 88.1"
+
+
+def test_number_only_line_is_not_used_as_a_quote():
+    """'8' 같은 조각은 원문을 되짚는 데 쓸 수 없는데 근거가 있는 것처럼 보이게 한다."""
+    assert o._recover_quote("목표\n8", 8.0, "TSR 목표") == ""
+
+
+def test_recovered_quote_does_not_match_a_longer_number():
+    """'1,264'가 '11,264'에 걸리면 다른 행이 근거로 붙는다."""
+    assert o._recover_quote("총 배출량 | 11,264", 1264.0, "배출량") == ""
+
+
+def test_windowed_quote_still_contains_its_own_value():
+    """긴 줄을 앞에서부터 자르면 줄 뒤쪽의 값이 사라진다. 값을 기준으로 창을 잡는다."""
+    line = "행 제목 " + "가" * 400 + " 4,321"
+    quote = o._recover_quote(line, 4321.0, "행 제목")
+    assert len(quote) <= o._QUOTE_MAX_CHARS + 2  # 생략 기호 2개
+    assert "4,321" in quote
+    assert quote.strip("…") in line
+
+
+def test_missing_model_quote_is_filled_from_the_page_text():
+    metrics, _clauses = o._map_vlm_json(
+        {"metrics": [{"metric_hint": "연구개발비", "value": 15925, "unit": "억 원", "period": "2023"}]},
+        page_no=14,
+        source_text="연구개발비 | 억 원 | 13,709(연결|2022) | 15,925(연결|2023)",
+    )
+    assert metrics[0].quote == "연구개발비 | 억 원 | 13,709(연결|2022) | 15,925(연결|2023)"
+
+
+def test_model_quote_that_matches_the_source_is_kept_as_is():
+    metrics, _clauses = o._map_vlm_json(
+        {"metrics": [{"metric_hint": "연구개발비", "value": 15925, "unit": "억 원",
+                      "period": "2023", "quote": "15,925(연결|2023)"}]},
+        page_no=14,
+        source_text="연구개발비 | 억 원 | 13,709(연결|2022) | 15,925(연결|2023)",
+    )
+    assert metrics[0].quote == "15,925(연결|2023)"

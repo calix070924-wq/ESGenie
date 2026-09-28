@@ -2123,6 +2123,81 @@ def _split_hint_year(hint: str, period: str) -> tuple[str, str]:
     return (cleaned or hint), (period or m.group(1))
 
 
+_QUOTE_MAX_CHARS = 200
+_QUOTE_HINT_TOKEN_RE = re.compile(r"[0-9A-Za-z가-힣]{2,}")
+
+
+def _value_surface_forms(value: float) -> list[str]:
+    """이 값이 원문에 적힐 수 있는 표기들. 자릿수 구분자 유무와 소수점 표기를 모두 본다."""
+    forms: list[str] = []
+    if value == int(value):
+        integer = int(value)
+        forms += [f"{integer:,}", str(integer), f"{integer:,}.0", f"{integer}.0"]
+    else:
+        forms += [f"{value:,}", str(value)]
+    return list(dict.fromkeys(forms))
+
+
+def _contains_value(line: str, form: str) -> bool:
+    """숫자 경계를 지켜 포함 여부를 본다. '1,264'가 '11,264'에 걸리면 안 된다."""
+    pattern = rf"(?<![\d.,]){re.escape(form)}(?![\d,]|\.\d)"
+    return re.search(pattern, line) is not None
+
+
+def _recover_quote(source_text: str, value: float, hint: str) -> str:
+    """모델이 인용을 주지 않았을 때 **원문에서** 그 수치가 있는 줄을 찾아 되살린다.
+
+    9/20 전량 추출물 실측에서 지표 4,063건 중 1,599건에 인용 문구가 없었다. 원인은
+    모델이 quote를 비워 보내거나 원문과 다르게 적어 `source_quote`의 원문 대조에서
+    떨어진 것이다. 인용이 없으면 사람이 원문을 되짚을 수 없고 `source_review`가 직접
+    근거로 표시할 수도 없다.
+
+    **지어내지 않는다.** 반환값은 항상 원문 한 줄 그대로이며, 그 줄은 보고된 값을
+    숫자 경계까지 포함한다. 후보가 여럿이면 지표 라벨의 낱말로 좁히고, 그래도 하나로
+    특정되지 않으면 **빈 문자열을 돌려준다** — 여러 행 중 하나를 임의로 고르면 잘못된
+    근거가 만들어진다. 값이 여러 번 나오는 표가 흔하므로 이 보수 조건이 핵심이다.
+
+    문맥 없는 조각은 인용으로 쓰지 않는다. 1차 구현에서는 숫자만 있는 줄('8')도
+    채워졌는데, 그런 인용은 사람이 원문을 되짚는 데 아무 도움이 안 되면서 근거가
+    있는 것처럼 보이게 한다(9/26 실측: 그런 식으로 1,378건이 채워졌다). 글자 낱말이
+    한 개도 없는 줄은 후보에서 뺀다 — 표의 행 제목이나 설명이 함께 있어야 인용이다.
+    """
+    lines = [line.strip() for line in source_text.splitlines() if line.strip()]
+    forms = _value_surface_forms(value)
+    candidates = [
+        line for line in lines
+        if any(_contains_value(line, f) for f in forms)
+        and _QUOTE_HINT_TOKEN_RE.search(re.sub(r"[\d.,%\s|()-]+", " ", line))
+    ]
+    if len(candidates) > 1 and hint:
+        tokens = _QUOTE_HINT_TOKEN_RE.findall(hint)
+        narrowed = [line for line in candidates if any(token in line for token in tokens)]
+        if narrowed:
+            candidates = narrowed
+    if len(candidates) != 1:
+        return ""
+    return _quote_window(candidates[0], forms)
+
+
+def _quote_window(line: str, forms: list[str]) -> str:
+    """길이 상한을 지키면서 **보고된 값이 잘려 나가지 않도록** 잘라낸다.
+
+    앞에서부터 상한만큼 자르면 값이 줄 뒤쪽에 있는 행에서 값이 사라진다(9/26 실측:
+    복원분 1,378건 중 146건이 자기 값을 담지 않은 인용이었다). 값 위치를 기준으로
+    창을 잡고, 잘린 쪽에는 생략 기호를 남겨 원문 일부임을 표시한다.
+    """
+    if len(line) <= _QUOTE_MAX_CHARS:
+        return line
+    position = next(
+        (m.start() for m in (re.search(rf"(?<![\d.,]){re.escape(f)}(?![\d,]|\.\d)", line)
+                             for f in forms) if m is not None),
+        0,
+    )
+    start = max(0, min(position - _QUOTE_MAX_CHARS // 2, len(line) - _QUOTE_MAX_CHARS))
+    end = start + _QUOTE_MAX_CHARS
+    return ("…" if start > 0 else "") + line[start:end] + ("…" if end < len(line) else "")
+
+
 def _map_vlm_json(
     data: dict[str, Any], *, page_no: int | None = None, source_text: str | None = None,
     issues: list[dict[str, Any]] | None = None,
@@ -2172,7 +2247,9 @@ def _map_vlm_json(
                 confidence=0.75,   # VLM 추출 기본 신뢰도
                 page=page_no,
                 page_source="chunk" if page_no is not None else "",
-                quote=source_quote(m.get("quote")),
+                # 모델 인용이 원문 대조를 통과하지 못하면 원문에서 되살린다(유일할 때만).
+                quote=(source_quote(m.get("quote"))
+                       or (_recover_quote(source_text, value, hint) if source_text else "")),
             ))
         except (KeyError, TypeError, ValueError) as exc:
             if issues is not None:
