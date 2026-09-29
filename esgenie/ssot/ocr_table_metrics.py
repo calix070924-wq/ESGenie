@@ -661,10 +661,10 @@ def check_recycling_rate(res: TableMetricResult, metrics: list[Any]) -> None:
 
 
 def refine_bboxes_with_pdf(metrics: list[Any], file_path: str) -> None:
-    """표 외접 bbox만 있는 셀을 PDF 문자 좌표로 좁힌다(표 안에서 정확히 한 번 나올 때만)."""
+    """표·텍스트 요소 외접 bbox만 있는 값을 PDF 문자 좌표로 좁힌다(그 안에서 정확히 한 번 나올 때만)."""
     p = Path(file_path)
     targets = [m for m in metrics if getattr(m, "source_detail", None)
-               and m.source_detail.get("precision") == "table"]
+               and m.source_detail.get("precision") in ("table", "text_block")]
     if not targets or not p.is_file() or p.suffix.lower() != ".pdf":
         return
     try:
@@ -689,8 +689,9 @@ def refine_bboxes_with_pdf(metrics: list[Any], file_path: str) -> None:
             for ref, box in zip(m.source_detail["cells"], refined):
                 ref["bbox"], ref["precision"] = box, "pdf_text"
             m.bbox = refined[0] if len(refined) == 1 else _union(refined)
+            area = "텍스트 요소" if m.source_detail["precision"] == "text_block" else "표"
             m.source_detail["precision"] = "pdf_text" if len(refined) == 1 else "cells"
-            m.source_detail["precision_note"] = "OCR 표 bbox 안에서 PDF 문자 좌표로 좁힘"
+            m.source_detail["precision_note"] = f"OCR {area} bbox 안에서 PDF 문자 좌표로 좁힘"
 
 
 def _search_cell(doc: Any, ref: dict[str, Any]) -> list[float] | None:

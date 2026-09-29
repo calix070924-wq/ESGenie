@@ -59,7 +59,8 @@ class ExtractedMetric:
     # 모르는 키를 무시하므로 구버전 캐시는 빈 dict로 읽힌다).
     boundary: dict[str, Any] = field(default_factory=dict)
     # 표 추출기(ocr_table_metrics)가 남기는 원문 근거 — 셀 원문·머리글·원 단위·단위 출처·
-    # 지침 검산·계산식·입력 칸·위치 정밀도("cell"|"table"|"pdf_text"). 비어 있으면 템플릿/LLM 산출.
+    # 지침 검산·계산식·입력 칸·위치 정밀도("cell"|"table"|"pdf_text"|"text_block"). 비어 있으면
+    # 템플릿/LLM 산출. 본문 비율 고정(_pin_rates_from_raw)도 위치 정밀도를 남긴다.
     source_detail: dict[str, Any] = field(default_factory=dict)
 
 
@@ -719,6 +720,7 @@ def _pin_rates_from_raw(
             if kw_re.search(head):
                 val = float(nm.group(1))
                 numstr = nm.group(1)
+                rawstr = nm.group(0)
                 break
         if val is None:
             continue
@@ -735,10 +737,17 @@ def _pin_rates_from_raw(
         # raw 스캔이 비율 코드에 대해 '권위' — 같은 코드 기존 산출물(값/단위 무관)을 전부 폐기하고
         # 텍스트에서 직접 잡은 비율값으로 확정. (템플릿 인접매칭이 엉뚱한 숫자를 박는 사례 차단)
         metrics = [mm for mm in metrics if mm.kesg_code_guess != code]
-        metrics.append(ExtractedMetric(
+        pinned = ExtractedMetric(
             metric_hint=label, value=val, unit="%", period="",
             kesg_code_guess=code, bbox=bbox, page=page, confidence=0.9,
-        ))
+        )
+        if bbox is not None:
+            # 위치는 값을 품은 텍스트 요소(줄·문단)의 외접 사각형이다 — 셀 위치로 표시하지 않는다.
+            pinned.source_detail = {
+                "extractor": "raw_rate_pin", "raw_text": rawstr, "precision": "text_block",
+                "cells": [{"text": rawstr, "bbox": bbox, "page": page, "precision": "text_block"}],
+                "precision_note": "값을 품은 OCR·PDF 텍스트 요소의 외접 위치(셀 단위 아님)"}
+        metrics.append(pinned)
     return metrics
 
 

@@ -345,9 +345,11 @@ def merge_ocr_extraction(
         detail = getattr(m, "source_detail", None)
         if detail:
             # 표 셀 근거(원문·머리글·원 단위·검산식·입력 칸·위치 정밀도)를 경계 출처에 잇는다.
+            # 본문 비율 고정(raw_rate_pin)은 표 셀이 아니므로 text_span으로 구분한다.
             provenance += (dict(
                 {k: detail[k] for k in _TABLE_CELL_PROVENANCE_KEYS if k in detail},
-                source="table_cell", page=m.page, bbox=m.bbox, source_file=extraction.source_file),)
+                source="text_span" if detail.get("extractor") == "raw_rate_pin" else "table_cell",
+                page=m.page, bbox=m.bbox, source_file=extraction.source_file),)
         boundary = replace(boundary, provenance=provenance,
                            review_notes=renewable_notes if code == "E-4-2" else boundary.review_notes)
         if period_inferred and boundary.period_year:

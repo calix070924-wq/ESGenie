@@ -507,3 +507,50 @@ def test_upstage_table_bbox_is_narrowed_with_pdf_text_when_file_exists():
     m = _one(ext, unit="kWh", code="E-4-1")
     assert m.source_detail["precision"] == "pdf_text"
     assert abs(m.bbox[0] - 0.635) < 0.01 and m.bbox[2] - m.bbox[0] < 0.12
+
+
+# 재생 픽스처는 표 밖 요소의 bbox를 싣지 않는다. 아래 값은 2026-09-29 실제 Upstage 실행에서
+# '사업장폐기물 재활용률 29.3%' 요소가 받은 외접 사각형(docs/validation/ocr-numeric-20260929).
+_RATE_ELEMENT_BBOX = [0.0985, 0.5958, 0.4227, 0.6159]
+
+
+def _replay_04_with_rate_element_bbox(file_path: str):
+    fx = _load_fixture("04")
+    tokens = [dict(t) for t in fx["tokens"]]
+    rate_tok = next(t for t in tokens if t["text"] == "사업장폐기물 재활용률 29.3%")
+    rate_tok["bbox"] = list(_RATE_ELEMENT_BBOX)
+    return R._tokens_to_extraction(tokens, doc_type="waste_ledger", file_path=file_path,
+                                   engine="upstage_dp", tables=_tables_from(fx["tables"]))
+
+
+def test_rate_from_text_element_is_marked_as_text_block_not_cell():
+    """본문에서 고정한 비율은 텍스트 요소 위치임을 표시한다 — 셀 위치로 꾸미지 않는다."""
+    ext = _replay_04_with_rate_element_bbox("variant.pdf")
+    rate = _one(ext, unit="%", code="E-6-2")
+    assert rate.bbox == _RATE_ELEMENT_BBOX
+    assert rate.source_detail["precision"] == "text_block"
+    assert rate.source_detail["raw_text"] == "29.3%"
+
+
+def test_rate_from_text_element_is_narrowed_with_pdf_text_when_file_exists():
+    ext = _replay_04_with_rate_element_bbox(str(_bm("04")))
+    rate = _one(ext, unit="%", code="E-6-2")
+    assert rate.source_detail["precision"] == "pdf_text"
+    # 요소 전체(x0=0.0985)가 아니라 '29.3%' 글자 좌표만 가리킨다.
+    assert abs(rate.bbox[0] - 0.344) < 0.01 and rate.bbox[2] - rate.bbox[0] < 0.1
+
+
+def test_rate_without_location_has_no_precision_claim():
+    """위치를 못 찾은 비율에는 정밀도 표시를 붙이지 않는다(재생 픽스처 그대로)."""
+    rate = _one(_replay("04"), unit="%", code="E-6-2")
+    assert rate.value == 29.3 and rate.bbox is None and rate.source_detail == {}
+
+
+def test_rate_text_span_is_not_labelled_table_cell_in_graph():
+    from esgenie.ssot.evidence_graph import EvidenceGraph, merge_ocr_extraction
+    ext = _replay_04_with_rate_element_bbox("variant.pdf")
+    g = EvidenceGraph("c", "한울정밀")
+    merge_ocr_extraction(g, ext, report_year=2026)
+    node = next(n for n in g.nodes.values() if n.value == 29.3)
+    sources = [p.get("source") for p in node.boundary.provenance if p.get("precision")]
+    assert sources == ["text_span"]
