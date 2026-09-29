@@ -709,8 +709,14 @@ class TestUnitNotationVariants:
         from unittest.mock import patch
 
         with patch("esgenie.layer1_extract._relaxed_unit", side_effect=lambda u: u) as m:
-            # 항등 함수로 바꾸면 'ton CO2 eq' != 'tCO2eq'가 되어 판정이 뒤집힌다.
-            assert normalize_to_item_unit("E-3-1", 1.0, "ton CO2 eq")[2] == "unit_suspect"
+            # 항등 함수로 바꾸면 'tons CO2eq' != 'tCO2eq'가 되어 판정이 뒤집힌다.
+            # 2026-09-29: 지렛대 표기를 'ton CO2 eq'에서 복수형으로 바꿨다 — 단위 사전
+            # 확장으로 'ton CO2 eq'가 별칭표에서 직접 읽히게 되어(원문 단위를 그대로 넣는
+            # layer3_detect·selection 경로에 필요하다) 관대 정규화를 거치지 않아도 판정이
+            # 서고, 그래서 이 지렛대가 힘을 잃었다. 복수형 접두 축약(`^tons?`)은 별칭표로
+            # 대체할 수 없는 `_relaxed_unit` 고유 기능이라 지렛대로 남는다. 시험하려는
+            # 계약(`_relaxed_unit`을 재사용한다)은 그대로다.
+            assert normalize_to_item_unit("E-3-1", 1.0, "tons CO2eq")[2] == "unit_suspect"
         assert m.called, "node_select가 _relaxed_unit을 쓰지 않는다(중복 구현 의심)"
 
 
