@@ -42,7 +42,7 @@ def _energy_datapoint():
     return DataPoint(
         kesg_code="E-4-1", kesg_name="에너지 사용량",
         value=128400.0, unit="kWh", period=2025, confidence=0.95,
-        verification="verified", d1_risk=0.05,
+        verification="verified", d1_risk=0.05, completeness="total",  # 단위 테스트의 명시적 전달 계약
         evidence_files=[evidence_link(EvidenceNode(
             'ocr_E-4-1_2025', 'E-4-1', 128400.0, 'kWh' if 'E-4-1' == 'E-4-1' else 'tCO2eq',
             2025, 'ocr', raw_text='E-4-1 실제 수치 128400.0', origin='ocr_structured',
@@ -292,7 +292,7 @@ from esgenie.supplychain.schema import Answer, ResponseSheet  # noqa: E402
 
 
 def _answer(qid: str, status: str) -> Answer:
-    return Answer(qid=qid, section="X", question_text=qid, value=None, status=status)
+    return Answer(qid=qid, section="X", question_text=qid, value=True if status in ("verified", "self_reported", "flagged") else None, status=status)
 
 
 def test_new_statuses_have_badges():

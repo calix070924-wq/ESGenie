@@ -382,7 +382,11 @@ def _merge_ssot_evidence(result: Any, graph: EvidenceGraph) -> None:
             nid for nid in entry.get("evidence_node_ids", [])
             if nid in all_nodes and not is_survey(all_nodes[nid])]
     apply_survey_answers(result, survey_answers)
-    from .selection import finalize_ledger
+    from .selection import apply_energy_sum, finalize_ledger
+    # 실측 에너지원 제한적 합산(작업지시서 §2-2) — 전기·가스가 각각 별개 고지서로
+    # 올라오면 대표 노드 하나만 고른 값은 '총 에너지 사용량'이 아니다. 대표 노드
+    # 선택 뒤에 두어, 합산이 성립하지 않는 경우 기존 선택이 그대로 남게 한다.
+    apply_energy_sum(result, graph)
     finalize_ledger(result, graph)
 
 

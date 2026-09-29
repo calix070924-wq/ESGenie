@@ -1,0 +1,18 @@
+{
+  "checks": {
+    "A_control_value": true,
+    "A_forward_power_not_lost": true,
+    "A_forward_both_sources": true,
+    "A_reverse_power_not_lost": true,
+    "A_reverse_both_sources": true,
+    "B_current_value_unchanged": true,
+    "B_past_conflict_not_transferred": true,
+    "B_current_verification_unchanged": true,
+    "B_current_conflict_retained": true,
+    "C_bare_false_acquisition_control": true,
+    "C_false_acquisition_with_preparation_clause": true,
+    "C_future_plan_control": true,
+    "C_actual_acquisition_control": true
+  },
+  "failed": []
+}

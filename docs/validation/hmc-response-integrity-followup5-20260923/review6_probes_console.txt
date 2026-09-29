@@ -1,0 +1,25 @@
+{
+  "checks": {
+    "A_kWh_forward_status": true,
+    "A_kWh_forward_trace": true,
+    "A_kWh_reverse_status": true,
+    "A_kWh_reverse_trace": true,
+    "A_MWh_forward_status": true,
+    "A_MWh_forward_trace": true,
+    "A_MWh_reverse_status": true,
+    "A_MWh_reverse_trace": true,
+    "B_해서_no_comma": true,
+    "B_해서_comma": true,
+    "B_하여_no_comma": true,
+    "B_하여_comma": true,
+    "B_해_no_comma": true,
+    "B_해_comma": true,
+    "control_noun_preparation": true,
+    "control_actual_operation": true,
+    "control_honest_plan": true,
+    "control_completed_then_preparation": true,
+    "control_ambiguous_source": true,
+    "control_ambiguous_answer": true
+  },
+  "failed": []
+}

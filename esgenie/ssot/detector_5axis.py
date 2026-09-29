@@ -57,7 +57,7 @@ def detect_d1_numeric(
     tolerance_pct: float = 2.0,
 ) -> AxisScore:
     """SSOT keeps its tolerance/risk scale and shares D1 ownership and coverage."""
-    from ..layer3_detect import _compare_numeric_claims, _numeric_axis
+    from ..layer3_detect import _COMPARISON_RANK, _compare_numeric_claims, _numeric_axis
     records = _compare_numeric_claims(sentence, graph, _ssot_claims(sentence, kesg_code),
                                       tolerance=tolerance_pct / 100)
     mismatches = sum(r['status'] == 'compared' and r['reason'] == 'mismatch' for r in records)
@@ -65,6 +65,14 @@ def detect_d1_numeric(
     if not mismatches and any(r['status'] == 'compared' for r in records) and kesg_code:
         score = _cross_check_risk(kesg_code, graph)
     axis = _numeric_axis(records, score)
+    # 증빙 간 교차검증 판정을 claim 판정과 합쳐 가장 심한 상태를 올린다(§4-2).
+    # 점수는 위에서 기존 계약대로 정해졌고, 여기서는 사유 전달만 보강한다.
+    if kesg_code:
+        cross, detail = cross_check_status(kesg_code, graph)
+        current = axis.evaluation.get("comparison") or ""
+        if cross and _COMPARISON_RANK.get(cross, 0) > _COMPARISON_RANK.get(current, -1):
+            axis.evaluation["comparison"] = cross
+            axis.evaluation["comparison_reason"] = detail
     axis.evidence = list(dict.fromkeys(axis.evidence + [f for r in records if r["status"] == "compared" for f in r.get("evidence_files", [])]))
     return axis
 
@@ -272,16 +280,50 @@ def _find_matching_node(
 
 
 def _cross_check_risk(kesg_code: str, graph: EvidenceGraph) -> float:
-    """DART↔OCR cross_check 엣지 오차가 크면 위험 가산."""
-    risk = 0.0
-    for e in graph.edges:
-        if e.edge_type != "cross_check":
+    """DART↔OCR cross_check 엣지 오차가 크면 위험 가산.
+
+    임계값 5%·가산 0.4는 기존 D1 계약이므로 유지한다. scope_gap 엣지(비교 불가)는
+    수치 불일치가 아니므로 위험을 올리지 않는다 — 대신 cross_check_status()가
+    '비교 불가/범위 확인 필요'로 끝까지 전달한다(작업지시서 §4-2).
+    """
+    return 0.4 if any(r["effective"] and r["comparison"] == "mismatch"
+                      for r in cross_check_records(kesg_code, graph)) else 0.0
+
+
+def cross_check_records(kesg_code, graph):
+    """비교 쌍과 출처를 보존하되 무관 범위는 대표값 상태에 영향을 주지 않는다."""
+    fact = getattr(graph, "resolved_facts", {}).get(kesg_code)
+    selected = set(fact.representative_node_ids) if fact else set()
+    records = []
+    for edge in graph.edges:
+        if edge.edge_type not in ("cross_check", "scope_gap"):
             continue
-        if kesg_code in e.source_id or kesg_code in e.target_id:
-            mobj = re.search(r"([0-9\.]+)%", e.detail)
-            if mobj and float(mobj.group(1)) > 5.0:
-                risk = max(risk, 0.4)
-    return risk
+        nodes = [graph.nodes.get(edge.source_id), graph.nodes.get(edge.target_id)]
+        if not any(n and n.metric == kesg_code for n in nodes):
+            continue
+        status = edge.comparison
+        if not status:
+            m = re.search(r"([0-9.]+)%", edge.detail)
+            status = ("not_comparable" if edge.edge_type == "scope_gap" else
+                      "mismatch" if m and float(m[1]) > 5 else "compared")
+        relevant = not selected or bool(selected.intersection((edge.source_id, edge.target_id)))
+        effective = relevant and status != "not_comparable"
+        if status == "scope_unconfirmed" and fact and fact.completeness == "total":
+            effective = False
+        records.append(dict(source_id=edge.source_id, target_id=edge.target_id,
+            comparison=status, comparison_reason=edge.detail, effective=effective,
+            difference_pct=edge.difference_pct,
+            files=[n.source_file for n in nodes if n]))
+    return sorted(records, key=lambda r: tuple(sorted((r["source_id"], r["target_id"]))))
+
+
+def cross_check_status(kesg_code: str, graph: EvidenceGraph) -> tuple[str, str]:
+    from ..layer3_detect import _COMPARISON_RANK
+    active = [r for r in cross_check_records(kesg_code, graph) if r["effective"]]
+    if not active:
+        return "", ""
+    status = max((r["comparison"] for r in active), key=lambda x: _COMPARISON_RANK[x])
+    return status, "; ".join(dict.fromkeys(r["comparison_reason"] for r in active if r["comparison"] == status))
 
 
 def _safe_json(text: str) -> dict[str, Any]:

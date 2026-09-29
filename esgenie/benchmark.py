@@ -117,7 +117,7 @@ class DetectorReport:
         )
         overall = accuracy_on_assessed * coverage
         # 직접 인덱싱: 미등록(오타) 사유는 KeyError로 드러나게 한다(코드리뷰 개선).
-        by_reason: dict[str, int] = {"no_evidence": 0, "unit_mismatch": 0, "low_confidence": 0, "ambiguous_topic": 0, "invalid_number": 0}
+        by_reason: dict[str, int] = {"no_evidence": 0, "unit_mismatch": 0, "low_confidence": 0, "ambiguous_topic": 0, "invalid_number": 0, "scope_unconfirmed": 0}
         for c in abstained:
             for reason in c.abstain_reasons:
                 by_reason[reason] += 1

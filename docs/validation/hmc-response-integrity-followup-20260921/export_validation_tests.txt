@@ -1,0 +1,15 @@
+..........................................................               [100%]
+=============================== warnings summary ===============================
+tests/test_response_sheet_display.py::TestFourWayHeader::test_excel_and_pdf_share_the_header_sentence
+tests/test_response_sheet_display.py::TestFourWayHeader::test_excel_and_pdf_share_the_header_sentence
+  <frozen importlib._bootstrap>:488: DeprecationWarning: builtin type SwigPyPacked has no __module__ attribute
+
+tests/test_response_sheet_display.py::TestFourWayHeader::test_excel_and_pdf_share_the_header_sentence
+tests/test_response_sheet_display.py::TestFourWayHeader::test_excel_and_pdf_share_the_header_sentence
+  <frozen importlib._bootstrap>:488: DeprecationWarning: builtin type SwigPyObject has no __module__ attribute
+
+tests/test_response_sheet_display.py::TestFourWayHeader::test_excel_and_pdf_share_the_header_sentence
+  <frozen importlib._bootstrap>:488: DeprecationWarning: builtin type swigvarlink has no __module__ attribute
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+58 passed, 5 warnings in 0.76s

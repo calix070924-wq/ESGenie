@@ -38,7 +38,7 @@ class AxisScore:
     def coverage_label(self) -> str:
         if not self.evaluation:
             return self.evaluation_label
-        labels = {"no_evidence": "근거 없음", "unit_mismatch": "단위 비교 불가",
+        labels = {"scope_unconfirmed": "범위 확인 필요", "no_evidence": "근거 없음", "unit_mismatch": "단위 비교 불가",
                   "ambiguous_topic": "지표 연결 모호", "invalid_number": "부적합 숫자"}
         reasons = ", ".join(f"{labels.get(k, k)} {v}건" for k, v in self.evaluation.get("reasons", {}).items())
         return (f"{self.evaluation_label} · 비교 {self.evaluation.get('compared_claims', 0)}건"

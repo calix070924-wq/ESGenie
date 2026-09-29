@@ -1,0 +1,124 @@
+============================= test session starts ==============================
+platform darwin -- Python 3.13.13, pytest-9.1.1, pluggy-1.6.0 -- /Users/heojeongmin/Documents/Claude/Projects/ESGenie/venv/bin/python
+cachedir: .pytest_cache
+rootdir: /private/tmp/ESGenie-hmc-response-integrity-20260920
+configfile: pyproject.toml
+plugins: anyio-4.14.0
+collecting ... collected 100 items
+
+tests/test_hmc_followup.py::test_R01_R02_total_contains_components_stable PASSED [  1%]
+tests/test_hmc_followup.py::test_R03_same_usage_period_limited_sum PASSED [  2%]
+tests/test_hmc_followup.py::test_R04_R05_different_periods_do_not_sum[2026-05-2026-06] PASSED [  3%]
+tests/test_hmc_followup.py::test_R04_R05_different_periods_do_not_sum[2025\ub144 \uc5f0\uac04-2026\ub144 \uc5f0\uac04] PASSED [  4%]
+tests/test_hmc_followup.py::test_R06_different_months_no_mismatch PASSED [  5%]
+tests/test_hmc_followup.py::test_R07_period_normalization PASSED         [  6%]
+tests/test_hmc_followup.py::test_R08_unknown_axes_do_not_sum[2026-\uc81c1\uacf5\uc7a5] PASSED [  7%]
+tests/test_hmc_followup.py::test_R08_unknown_axes_do_not_sum[2026-05-] PASSED [  8%]
+tests/test_hmc_followup.py::test_R10_independent_same_origin_mismatch_and_checklist PASSED [  9%]
+tests/test_hmc_followup.py::test_R11_units_equivalent PASSED             [ 10%]
+tests/test_hmc_followup.py::test_R14_R15_incomplete_ratio_not_verified[2026] PASSED [ 11%]
+tests/test_hmc_followup.py::test_R14_R15_incomplete_ratio_not_verified[2026\ub144 \uc5f0\uac04] PASSED [ 12%]
+tests/test_hmc_followup.py::test_R16_confirmed_total_ratio_verified PASSED [ 13%]
+tests/test_hmc_followup.py::test_R17_different_denominators_not_equal PASSED [ 14%]
+tests/test_hmc_followup.py::test_R18_row_measure_not_overwritten PASSED  [ 15%]
+tests/test_hmc_followup.py::test_R19_R21_partial_claim_scope_precedes_difference PASSED [ 16%]
+tests/test_hmc_followup.py::test_R09_duplicate_content_does_not_add_independent_checks_or_emissions PASSED [ 17%]
+tests/test_hmc_followup.py::test_R12_verified_same_scope_bidirectional[0] PASSED [ 18%]
+tests/test_hmc_followup.py::test_R12_verified_same_scope_bidirectional[80] PASSED [ 19%]
+tests/test_hmc_followup.py::test_R20_upstream_mismatch_survives_matching_claim PASSED [ 20%]
+tests/test_hmc_followup.py::test_R23_facility_conflict_and_explicit_distinct_facilities[False] PASSED [ 21%]
+tests/test_hmc_followup.py::test_R23_facility_conflict_and_explicit_distinct_facilities[True] PASSED [ 22%]
+tests/test_hmc_followup.py::test_R24_scope12_estimated_with_period_and_sources PASSED [ 23%]
+tests/test_hmc_followup.py::test_R26_grounding_preparation_does_not_prove_certification PASSED [ 24%]
+tests/test_hmc_followup.py::test_R29_empty_flagged_is_pending_not_auto PASSED [ 25%]
+tests/test_hmc_followup.py::test_other_site_or_target_total_does_not_displace_components PASSED [ 26%]
+tests/test_hmc_followup.py::test_construction_date_is_not_annual_generation_target PASSED [ 27%]
+tests/test_hmc_followup.py::test_labeled_reporting_period_is_preserved PASSED [ 28%]
+tests/test_hmc_followup.py::test_R27_real_multipage_clause_locator_and_unknown PASSED [ 29%]
+tests/test_hmc_followup.py::test_followup_R1_derived_emission_follows_source_measurement[100-scope_unconfirmed] PASSED [ 30%]
+tests/test_hmc_followup.py::test_followup_R1_derived_emission_follows_source_measurement[200-mismatch] PASSED [ 31%]
+tests/test_hmc_followup.py::test_followup_R2_line_total_does_not_absorb_factory_rows PASSED [ 32%]
+tests/test_hmc_followup.py::test_followup_R2_site_containment_has_direction PASSED [ 33%]
+tests/test_hmc_followup.py::test_followup_R3_certification_completion_needs_same_certificate[ISMS \uc778\uc99d\uc744 \ucde8\ub4dd\ud588\ub2e4.-True] PASSED [ 34%]
+tests/test_hmc_followup.py::test_followup_R3_certification_completion_needs_same_certificate[2025\ub144 \uc815\ubcf4\ubcf4\ud638 ISMS \uc778\uc99d\uc744 \ucde8\ub4dd\ud558\uc5ec \uc6b4\uc601 \uc911\uc774\ub2e4.-True] PASSED [ 35%]
+tests/test_hmc_followup.py::test_followup_R3_certification_completion_needs_same_certificate[ISMS \uc778\uc99d\uc744 \ucde8\ub4dd\ud558\uc9c0 \uc54a\uc558\ub2e4.-False] PASSED [ 36%]
+tests/test_hmc_followup.py::test_followup_R3_certification_completion_needs_same_certificate[ISMS \uc778\uc99d \ubbf8\ucde8\ub4dd \uc0c1\ud0dc\ub2e4.-False] PASSED [ 37%]
+tests/test_hmc_followup.py::test_followup_R3_certification_completion_needs_same_certificate[ISO \uc778\uc99d\uc744 \ucde8\ub4dd\ud588\ub2e4. ISMS \uc778\uc99d\uc740 \uc900\ube44 \uc911\uc774\ub2e4.-False] PASSED [ 38%]
+tests/test_hmc_followup.py::test_followup_R3_certification_completion_needs_same_certificate[ISMS \uc778\uc99d\uc744 \uc900\ube44\ud558\uba70 \ud558\ubc18\uae30 \uc2e0\uccad \uc608\uc815\uc774\ub2e4.-False] PASSED [ 39%]
+tests/test_hmc_followup.py::test_followup_R3_unproven_certification_is_not_draft_ready[ISMS \uc778\uc99d\uc744 \ucde8\ub4dd\ud558\uc9c0 \uc54a\uc558\ub2e4.] PASSED [ 40%]
+tests/test_hmc_followup.py::test_followup_R3_unproven_certification_is_not_draft_ready[ISO \uc778\uc99d\uc744 \ucde8\ub4dd\ud588\ub2e4. ISMS \uc778\uc99d\uc740 \uc900\ube44 \uc911\uc774\ub2e4.] PASSED [ 41%]
+tests/test_hmc_followup.py::test_followup_R4_opposite_signs_are_not_zero_difference PASSED [ 42%]
+tests/test_hmc_followup.py::test_followup_R4_difference_is_order_independent_and_signed[0-0-0.0] PASSED [ 43%]
+tests/test_hmc_followup.py::test_followup_R4_difference_is_order_independent_and_signed[0-10-100.0] PASSED [ 44%]
+tests/test_hmc_followup.py::test_followup_R4_difference_is_order_independent_and_signed[10-0-100.0] PASSED [ 45%]
+tests/test_hmc_followup.py::test_followup_R4_difference_is_order_independent_and_signed[-10-10-200.0] PASSED [ 46%]
+tests/test_hmc_followup.py::test_followup_R4_difference_is_order_independent_and_signed[10--10-200.0] PASSED [ 47%]
+tests/test_hmc_followup.py::test_followup_R4_difference_is_order_independent_and_signed[10-10-0.0] PASSED [ 48%]
+tests/test_hmc_followup.py::test_followup_R4_difference_is_order_independent_and_signed[100-200-100.0] PASSED [ 49%]
+tests/test_hmc_followup.py::test_followup_R4_difference_is_order_independent_and_signed[200-100-100.0] PASSED [ 50%]
+tests/test_hmc_followup.py::test_followup_R1a_equivalent_unit_duplicates_are_converted_once PASSED [ 51%]
+tests/test_hmc_followup.py::test_followup_R1b_sum_exclusion_is_not_a_mismatch[101-\uc81c1\uacf5\uc7a5] PASSED [ 52%]
+tests/test_hmc_followup.py::test_followup_R1b_sum_exclusion_is_not_a_mismatch[50-\uc81c1\uacf5\uc7a5 \ub3c4\uc7a5\ub77c\uc778] PASSED [ 53%]
+tests/test_hmc_followup.py::test_followup_R3a_certification_identity_is_compared_exactly[ISMS-P \uc778\uc99d\uc744 \ucde8\ub4dd\ud588\ub2e4.-ISMS \uc778\uc99d\uc744 \ucde8\ub4dd\ud588\ub2e4.-False] PASSED [ 54%]
+tests/test_hmc_followup.py::test_followup_R3a_certification_identity_is_compared_exactly[ISO 27001 \uc778\uc99d\uc744 \ucde8\ub4dd\ud588\ub2e4.-ISO \uc778\uc99d\uc744 \ucde8\ub4dd\ud588\ub2e4. ISO 27001\uc740 \uc900\ube44 \uc911\uc774\ub2e4.-False] PASSED [ 55%]
+tests/test_hmc_followup.py::test_followup_R3a_certification_identity_is_compared_exactly[ISO 9001 \uc778\uc99d\uc744 \ucde8\ub4dd\ud588\ub2e4.-ISO \uc778\uc99d\uc744 \ucde8\ub4dd\ud588\ub2e4.-False] PASSED [ 56%]
+tests/test_hmc_followup.py::test_followup_R3a_certification_identity_is_compared_exactly[\ub2f9\uc0ac\ub294 ISMS \uc778\uc99d\uc744 \ucde8\ub4dd\ud588\ub2e4.-\ud68c\uc0ac\ub294 ISMS \uc778\uc99d\uc744 \ucde8\ub4dd\ud588\ub2e4.-True] PASSED [ 57%]
+tests/test_hmc_followup.py::test_followup_R3a_certification_identity_is_compared_exactly[ISMS \uc778\uc99d\uc744 \ucde8\ub4dd\ud588\ub2e4.-2025\ub144 \uc815\ubcf4\ubcf4\ud638 ISMS \uc778\uc99d\uc744 \ucde8\ub4dd\ud558\uc5ec \uc6b4\uc601 \uc911\uc774\ub2e4.-True] PASSED [ 58%]
+tests/test_hmc_followup.py::test_followup_R3a_certification_identity_is_compared_exactly[ISMS \uc778\uc99d\uc744 \ucde8\ub4dd\ud588\ub2e4.-ISMS \uc778\uc99d\uc744 \ucde8\ub4dd\ud558\uc9c0 \uc54a\uc558\ub2e4.-False] PASSED [ 59%]
+tests/test_hmc_followup.py::test_followup_R3a_certification_identity_is_compared_exactly[ISMS \uc778\uc99d\uc744 \ucde8\ub4dd\ud588\ub2e4.-ISO \uc778\uc99d\uc744 \ucde8\ub4dd\ud588\ub2e4. ISMS \uc778\uc99d\uc740 \uc900\ube44 \uc911\uc774\ub2e4.-False] PASSED [ 60%]
+tests/test_hmc_followup.py::test_followup_R3b_future_plan_is_not_a_completion_claim[ISMS \uc778\uc99d\uc744 \ucde8\ub4dd\ud560 \uc608\uc815\uc774\ub2e4.-True] PASSED [ 61%]
+tests/test_hmc_followup.py::test_followup_R3b_future_plan_is_not_a_completion_claim[ISMS \uc778\uc99d\uc744 \uc900\ube44 \uc911\uc774\ub2e4.-True] PASSED [ 62%]
+tests/test_hmc_followup.py::test_followup_R3b_future_plan_is_not_a_completion_claim[\uc774\ubbf8 ISMS \uc778\uc99d\uc744 \ucde8\ub4dd\ud588\ub2e4.-False] PASSED [ 63%]
+tests/test_hmc_followup.py::test_R27_single_page_still_requires_located_quote PASSED [ 64%]
+tests/test_hmc_followup.py::test_review4_A_conversion_basis_is_recovered_per_measurement[0-False] PASSED [ 65%]
+tests/test_hmc_followup.py::test_review4_A_conversion_basis_is_recovered_per_measurement[0-True] PASSED [ 66%]
+tests/test_hmc_followup.py::test_review4_A_conversion_basis_is_recovered_per_measurement[1-False] PASSED [ 67%]
+tests/test_hmc_followup.py::test_review4_A_conversion_basis_is_recovered_per_measurement[1-True] PASSED [ 68%]
+tests/test_hmc_followup.py::test_review4_A_conversion_basis_is_recovered_per_measurement[2-False] PASSED [ 69%]
+tests/test_hmc_followup.py::test_review4_A_conversion_basis_is_recovered_per_measurement[2-True] PASSED [ 70%]
+tests/test_hmc_followup.py::test_review4_B_past_period_conflict_does_not_reach_current_value PASSED [ 71%]
+tests/test_hmc_followup.py::test_review4_C_adjacent_preparation_does_not_erase_completion_claim[ISMS \uc778\uc99d\uc744 \ucde8\ub4dd\ud588\ub2e4.-False] PASSED [ 72%]
+tests/test_hmc_followup.py::test_review4_C_adjacent_preparation_does_not_erase_completion_claim[ISMS \uc778\uc99d\uc744 \ucde8\ub4dd\ud588\uace0 \uc900\ube44 \uc790\ub8cc\ub97c \ubcf4\uad00\ud55c\ub2e4.-False] PASSED [ 73%]
+tests/test_hmc_followup.py::test_review4_C_adjacent_preparation_does_not_erase_completion_claim[ISMS \uc778\uc99d\uc744 \ucde8\ub4dd\ud558\uc5ec \uc900\ube44 \uc790\ub8cc\ub97c \ubcf4\uad00 \uc911\uc774\ub2e4.-False] PASSED [ 74%]
+tests/test_hmc_followup.py::test_review4_C_adjacent_preparation_does_not_erase_completion_claim[ISMS \uc778\uc99d\uc744 \ucde8\ub4dd\ud560 \uc608\uc815\uc774\ub2e4.-True] PASSED [ 75%]
+tests/test_hmc_followup.py::test_review4_C_real_acquisition_allows_adjacent_preparation_clause PASSED [ 76%]
+tests/test_hmc_followup.py::test_review5_1_conflict_reaches_emission_regardless_of_unit_notation[False] PASSED [ 77%]
+tests/test_hmc_followup.py::test_review5_1_conflict_reaches_emission_regardless_of_unit_notation[True] PASSED [ 78%]
+tests/test_hmc_followup.py::test_review5_1_past_mwh_conflict_does_not_reach_current_value PASSED [ 79%]
+tests/test_hmc_followup.py::test_review5_2_connective_ending_is_not_completion[\ud574\uc11c] PASSED [ 80%]
+tests/test_hmc_followup.py::test_review5_2_connective_ending_is_not_completion[\ud558\uc5ec] PASSED [ 81%]
+tests/test_hmc_followup.py::test_review5_2_connective_ending_is_not_completion[\ud574] PASSED [ 82%]
+tests/test_hmc_followup.py::test_review5_2_connective_completion_still_grounds_claim[2025\ub144 \uc815\ubcf4\ubcf4\ud638 ISMS \uc778\uc99d\uc744 \ucde8\ub4dd\ud558\uc5ec \uc6b4\uc601 \uc911\uc774\ub2e4.] PASSED [ 83%]
+tests/test_hmc_followup.py::test_review5_2_connective_completion_still_grounds_claim[ISMS \uc778\uc99d\uc744 \ucde8\ub4dd\ud574 \ubcf4\uc720\ud558\uace0 \uc788\ub2e4.] PASSED [ 84%]
+tests/test_hmc_followup.py::test_review5_2_connective_completion_still_grounds_claim[ISMS \uc778\uc99d\uc744 \ucde8\ub4dd\ud588\uace0 \uac31\uc2e0 \uc790\ub8cc\ub97c \uc900\ube44\ud55c\ub2e4.] PASSED [ 85%]
+tests/test_hmc_followup.py::test_review5_2_ambiguous_preparation_clause_is_conservative PASSED [ 86%]
+tests/test_hmc_followup.py::test_review6_1_conflict_counterpart_reaches_response_and_checklist[False-200-kWh] PASSED [ 87%]
+tests/test_hmc_followup.py::test_review6_1_conflict_counterpart_reaches_response_and_checklist[False-0.2-MWh] PASSED [ 88%]
+tests/test_hmc_followup.py::test_review6_1_conflict_counterpart_reaches_response_and_checklist[True-200-kWh] PASSED [ 89%]
+tests/test_hmc_followup.py::test_review6_1_conflict_counterpart_reaches_response_and_checklist[True-0.2-MWh] PASSED [ 90%]
+tests/test_hmc_followup.py::test_review6_2_comma_does_not_cut_plan_context[\ud574\uc11c-] PASSED [ 91%]
+tests/test_hmc_followup.py::test_review6_2_comma_does_not_cut_plan_context[\ud574\uc11c-,] PASSED [ 92%]
+tests/test_hmc_followup.py::test_review6_2_comma_does_not_cut_plan_context[\ud558\uc5ec-] PASSED [ 93%]
+tests/test_hmc_followup.py::test_review6_2_comma_does_not_cut_plan_context[\ud558\uc5ec-,] PASSED [ 94%]
+tests/test_hmc_followup.py::test_review6_2_comma_does_not_cut_plan_context[\ud574-] PASSED [ 95%]
+tests/test_hmc_followup.py::test_review6_2_comma_does_not_cut_plan_context[\ud574-,] PASSED [ 96%]
+tests/test_hmc_followup.py::test_review6_2_honest_plan_with_comma_is_allowed PASSED [ 97%]
+tests/test_hmc_followup.py::test_review6_2_explicit_non_acquisition_in_same_sentence[ISMS \uc778\uc99d\uc740 \ubbf8\ucde8\ub4dd \uc0c1\ud0dc\uc774\uba70, ISMS \uc778\uc99d\uc744 \ucde8\ub4dd\ud558\uc5ec \uc6b4\uc601 \uc911\uc774\ub2e4.-False] PASSED [ 98%]
+tests/test_hmc_followup.py::test_review6_2_explicit_non_acquisition_in_same_sentence[ISMS-P \uc778\uc99d\uc740 \ubbf8\ucde8\ub4dd\uc774\uba70, ISMS \uc778\uc99d\uc744 \ucde8\ub4dd\ud558\uc5ec \uc6b4\uc601 \uc911\uc774\ub2e4.-True] PASSED [ 99%]
+tests/test_hmc_followup.py::test_review6_2_explicit_non_acquisition_in_same_sentence[2023\ub144\uc5d0\ub294 ISMS \uc778\uc99d\uc744 \ubc1b\uc9c0 \ubabb\ud588\ub2e4. 2025\ub144 ISMS \uc778\uc99d\uc744 \ucde8\ub4dd\ud588\ub2e4.-True] PASSED [100%]
+
+=============================== warnings summary ===============================
+tests/test_hmc_followup.py::test_R27_real_multipage_clause_locator_and_unknown
+tests/test_hmc_followup.py::test_R27_real_multipage_clause_locator_and_unknown
+  <frozen importlib._bootstrap>:488: DeprecationWarning: builtin type SwigPyPacked has no __module__ attribute
+
+tests/test_hmc_followup.py::test_R27_real_multipage_clause_locator_and_unknown
+tests/test_hmc_followup.py::test_R27_real_multipage_clause_locator_and_unknown
+  <frozen importlib._bootstrap>:488: DeprecationWarning: builtin type SwigPyObject has no __module__ attribute
+
+tests/test_hmc_followup.py::test_R27_real_multipage_clause_locator_and_unknown
+  <frozen importlib._bootstrap>:488: DeprecationWarning: builtin type swigvarlink has no __module__ attribute
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+======================= 100 passed, 5 warnings in 0.29s ========================
+<sys>:0: DeprecationWarning: builtin type swigvarlink has no __module__ attribute

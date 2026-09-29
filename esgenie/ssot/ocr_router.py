@@ -56,6 +56,11 @@ class ExtractedMetric:
     confidence: float = 0.0
     quote: str = ""                     # 추출 입력에서 확인한 원문 인용
     page_source: str = ""               # chunk(실제 페이지 입력) | quote(원본 대조)
+    # 측정 경계(ssot.boundary.Boundary의 dict 표현) — 정형 파서가 표 제목·행/열에서
+    # 직접 읽은 축만 담는다. 비어 있으면 merge_ocr_extraction이 hint·기간 원문에서
+    # 규칙으로 도출한다. dict로 두는 이유는 캐시 JSON 왕복 호환이다(from_dict는
+    # 모르는 키를 무시하므로 구버전 캐시는 빈 dict로 읽힌다).
+    boundary: dict[str, Any] = field(default_factory=dict)
 
 
 @dataclass
@@ -257,6 +262,9 @@ def extract_document(file_path: str, decision: RouteDecision | None = None) -> O
     # 동의어 해소 backstop — 코드 미부여 metric을 사전 매칭으로 채움(전 채널 공통 합류점).
     _backfill_kesg_codes(ext)
     _resolve_clause_pages(ext, file_path)
+    if Path(file_path).is_file():
+        import hashlib
+        ext.router_meta["source_sha256"] = hashlib.sha256(Path(file_path).read_bytes()).hexdigest()
     return ext
 
 
@@ -279,10 +287,11 @@ def _resolve_clause_pages(ext: OcrExtraction, file_path: str) -> None:
                 continue
             quote = re.sub(r"\s+", "", clause.quote or clause.text)
             matches = [i for i, text in enumerate(pages) if quote and quote in text]
-            if len(pages) == 1:
-                clause.page = 0
-                clause.page_source = "single_page"
-            elif len(matches) == 1:
+            # 2026-09-29 머지: 이 브랜치에는 "한 쪽 문서면 무조건 page=0" 분기가 있었는데
+            # main이 그것을 결함으로 판정해 고쳤다(`page is None`). 쪽이 하나뿐이어도 그
+            # 인용이 원문에 없으면 위치를 만들어 주는 것이므로 지어낸 근거에 페이지가 붙는다.
+            # main의 계약(`test_R27_single_page_still_requires_located_quote`)을 따른다.
+            if len(matches) == 1:
                 clause.page = matches[0]
                 clause.page_source = "quote"
             else:
@@ -704,8 +713,9 @@ def _pin_totals_from_raw(
             if numstr in str(t.get("text", "")):
                 bbox, page = t.get("bbox"), t.get("page"); break
         metrics = [mm for mm in metrics if mm.kesg_code_guess != code]
+        label = {"kepco_bill": "사용전력량", "gas_bill": "도시가스 사용열량", "waste_ledger": "총 위탁량"}.get(doc_type, code)
         metrics.append(ExtractedMetric(
-            metric_hint=f"{code} 본문확정", value=round(val, 3), unit=unit,
+            metric_hint=label, value=round(val, 3), unit=unit,
             period="", kesg_code_guess=code, bbox=bbox, page=page, confidence=0.92,
         ))
     return metrics
@@ -2463,9 +2473,13 @@ def _map_vlm_json(
                 period=period,
                 kesg_code_guess=str(m.get("kesg_code") or "") or None,
                 confidence=0.75,   # VLM 추출 기본 신뢰도
+                # `page_no`는 호출부가 넘기는 **0-기준 실제 청크 페이지**다(기본값 None).
+                # main 쪽 `page_no - 1`은 기본값 1(1-기준)에 맞춘 보정이었고, 실제 페이지가
+                # 들어오는 이 경로에서 그대로 두면 off-by-one이 된다.
                 page=page_no,
                 page_source="chunk" if page_no is not None else "",
                 quote=quote,
+                boundary=m.get("boundary") or {},
             ))
         except (KeyError, TypeError, ValueError) as exc:
             if issues is not None:

@@ -91,8 +91,8 @@ def _integrity_check(rows: list[dict[str, Any]]) -> list[str]:
     problems = []
     for r in rows:
         exp = r.get("expect")
-        if exp == "no_evidence" and not (r["d1_abstain"] and r["d1_reason"] == "no_evidence"):
-            problems.append(f"{r['id']}: expect=no_evidence 인데 실제 abstain={r['d1_abstain']} reason={r['d1_reason']}")
+        if exp in {"no_evidence", "scope_unconfirmed"} and not (r["d1_abstain"] and r["d1_reason"] == exp):
+            problems.append(f"{r['id']}: expect={exp} 인데 실제 abstain={r['d1_abstain']} reason={r['d1_reason']}")
         if exp == "verified" and (r["d1_abstain"] or r["d1_score"] > 0.5):
             problems.append(f"{r['id']}: expect=verified 인데 abstain={r['d1_abstain']} d1={r['d1_score']}")
         if exp == "mismatch" and r["pred"] != 1:

@@ -11,18 +11,26 @@ import pytest
 from esgenie.dart_client import CompanyReport
 from esgenie.layer3_detect import score_d1_numeric
 from esgenie.ssot.audit_trace import build_data_points
+from esgenie.ssot.boundary import Boundary, derive_boundary
 from esgenie.ssot.detector_5axis import detect_d1_numeric
 from esgenie.ssot.evidence_graph import EvidenceGraph, EvidenceNode
 from esgenie.ssot.node_select import classify_value_role, select_representative_node
 from esgenie.ssot.ssot_pipeline import extract_with_ssot
 
 
-def node(nid, hint, value, *, code="E-4-1", unit="TJ", year=2024, inferred=False):
+def node(nid, hint, value, *, code="E-4-1", unit="TJ", year=2024, inferred=False,
+         scoped=False):
+    """증빙 노드 하나. `scoped=True`면 `merge_ocr_extraction`과 같은 방식으로 경계를 채운다.
+
+    기본값은 경계를 비워 둔다 — 구버전 원장과 경계를 못 읽은 증빙이 실제로 그렇고,
+    그 입력에서 D1이 무엇을 하는지도 계약이다(§scope_unconfirmed 테스트).
+    """
     return EvidenceNode(
         id=nid, metric=code, value=value, unit=unit, period=year,
         source="ocr/report", raw_text=f"{hint}={value}{unit} (report.pdf)",
         origin="ocr_unstructured", source_file="report.pdf", confidence=.9,
         period_inferred=inferred,
+        boundary=derive_boundary(hint, hint, unit=unit) if scoped else Boundary(),
     )
 
 
@@ -151,15 +159,20 @@ def test_incompatible_quantity_cannot_beat_energy_with_total_word():
     assert graph.resolved_facts["E-4-1"].representative_node_ids == ["power"]
 
 
-@pytest.mark.parametrize("energy_hint,partial", [("에너지 사용량", True), ("에너지 사용량 합계", False)])
-def test_actual_ledger_and_both_d1_paths_use_total_energy(energy_hint, partial):
+@pytest.mark.parametrize("energy_hint", [
+    "2024년 1~12월 전사 에너지 사용량 실적",
+    "2024년 1~12월 전사 에너지 사용량 실적 합계",
+])
+def test_actual_ledger_and_both_d1_paths_use_total_energy(energy_hint):
     result, graph = ledger([
-        node("energy", energy_hint, 9075), node("power", "전력 사용량", 7929),
+        node("energy", energy_hint, 9075, scoped=True),
+        node("power", "2024년 1~12월 전사 전력 사용량 실적", 7929, scoped=True),
     ])
     fact = graph.resolved_facts["E-4-1"]
     assert result.mapped["E-4-1"]["value"] == fact.value == 9075
     assert fact.representative_node_ids == ["energy"]
-    assert ("partial_value" in fact.flags) is partial
+    # 경계가 연간·전사·실적·전체 에너지원을 다 채우면 완전성이 입증되어 D1이 비교에 들어간다.
+    assert fact.completeness == "total"
     for sentence, correct in [("에너지 사용량은 9,075 TJ입니다.", True),
                               ("에너지 사용량은 7,929 TJ입니다.", False)]:
         generated = score_d1_numeric(sentence, graph)
@@ -169,6 +182,44 @@ def test_actual_ledger_and_both_d1_paths_use_total_energy(energy_hint, partial):
         claim = generated.evaluation["claims"][0]
         assert claim["evidence_ids"] == ["energy"]
         assert claim["reason"] == ("match" if correct else "mismatch")
+
+
+# 위 테스트가 경계를 채운 입력을 쓰는 까닭 — 2026-09-29 머지 기록.
+#
+# main이 측정 경계 축을 들여오면서 E-4-1·E-4-2는 원장값의 완전성이 `total`로 **입증**되지
+# 않으면 D1이 수치 비교를 건너뛴다(`boundary.claim_scope_status` → `scope_unconfirmed`).
+# 이 파일의 `node()`는 경계를 비워 두었으므로 위 테스트가 검사하려던 값-대조가 아예
+# 돌지 않았다. 기대값을 `scope_unconfirmed`로 낮추는 대신, 실제 OCR 경로
+# (`merge_ocr_extraction`이 `derive_boundary`로 채운다)와 같은 입력을 주어 원래 계약을
+# 그대로 세웠다. 경계를 비운 입력의 동작은 아래에서 따로 고정한다.
+
+
+@pytest.mark.parametrize("energy_hint,partial", [("에너지 사용량", True), ("에너지 사용량 합계", False)])
+def test_ledger_without_recorded_boundary_refuses_to_compare_instead_of_passing(energy_hint, partial):
+    """경계 미기록 원장에서 D1은 **비교하지 않는다** — 맞는 값도 틀린 값도 통과시킨다.
+
+    바람직한 상태가 아니라 현재 상태의 기록이다. 틀린 값 7,929도 위험으로 잡히지 않는
+    것이 `scope_unconfirmed`의 대가다. 경계가 채워지면 위 테스트대로 되살아난다.
+    """
+    result, graph = ledger([
+        node("energy", energy_hint, 9075), node("power", "전력 사용량", 7929),
+    ])
+    fact = graph.resolved_facts["E-4-1"]
+    # 대표값 선정 자체는 경계와 무관하게 총 에너지를 고른다.
+    assert result.mapped["E-4-1"]["value"] == fact.value == 9075
+    assert fact.representative_node_ids == ["energy"]
+    assert ("partial_value" in fact.flags) is partial
+    assert fact.completeness == "unknown"
+    assert "incomplete_scope" in fact.flags
+    for sentence in ("에너지 사용량은 9,075 TJ입니다.", "에너지 사용량은 7,929 TJ입니다."):
+        generated = score_d1_numeric(sentence, graph)
+        ssot = detect_d1_numeric(sentence, "E-4-1", graph)
+        for score in (generated, ssot):
+            assert score.score == 0
+        claim = generated.evaluation["claims"][0]
+        assert claim["evidence_ids"] == ["energy"]
+        assert claim["reason"] == "scope_unconfirmed"
+        assert claim["comparison"] == "scope_unconfirmed"
 
 
 def test_explicit_missing_selection_is_not_recreated_by_d1():

@@ -808,6 +808,62 @@ API 0회) 이득은 **두 문서 모두 0건**이었다 — 연속 배율 모집
 잃었다는 신호다) 사전은 이 표기를 **의도적으로 미상으로 둔다**. 생성 문장·D1~D5 영향은 라이브
 호출이 필요해 **미측정**이다.
 
+## `origin/main` 머지 — 두 곳에서 main 쪽 판단을 따랐다 (2026-09-29)
+
+기준 `fa81817` 이후 `origin/main`이 29개 커밋(`fa81817..387999b`) 앞서 있었다. 리베이스가
+아니라 **머지**를 택했다 — 이 문서가 참조하는 커밋 해시가 그대로 남아야 하고, 충돌을 한
+지점에서 풀 수 있다. 겹친 파일 7개 중 2개(`ssot/evidence_graph.py`·`ssot/ocr_router.py`)에서
+충돌 5군데가 났다.
+
+main이 들여온 것은 **측정 경계(boundary) 축**이다(`ssot/boundary.py`, `Boundary`,
+`claim_scope_status`, `ComparisonStatus`에 `scope_unconfirmed` 추가, `EvidenceNode.boundary`·
+`document_id`, `ExtractedMetric.boundary`). 연도 정수 하나로는 월간값과 연간값을 가를 수
+없다는 문제를 푼다.
+
+### 내 쪽 동작을 되돌린 1건 — main이 결함으로 판정한 것이 맞다
+
+`ocr_router._resolve_clause_pages`에 내가 넣은 "쪽이 하나뿐인 문서면 무조건 `page=0`" 분기를
+**제거**했다. main은 같은 자리를 `page is None`으로 고쳤고 회귀
+(`test_R27_single_page_still_requires_located_quote`)까지 붙였다. 판단 근거: 쪽이 하나뿐이어도
+그 인용이 원문에 없으면 위치를 **만들어 주는** 것이므로, 지어낸 근거에 페이지가 붙는다. 이쪽이
+옳다. 같은 파일의 공유 테스트도 main이 기대값을 `page==0`에서 `page is None`으로 의도적으로
+바꿔 둔 것을 브랜치 간 diff로 확인했다.
+
+### 내 쪽을 유지한 1건 — main 쪽이 off-by-one이 된다
+
+`_map_vlm_json`의 `page=page_no`를 유지했다(main은 `page_no - 1`). 확인한 사실: main의
+서명은 `page_no: int = 1`이고 호출부가 `_map_vlm_json(data)`로만 불러 **실제 페이지를 넘기지
+않는다** — `-1`은 1-기준 기본값 보정이다. 이 브랜치의 호출부(`ocr_router.py`의 청크 루프)는
+`page_no=page`로 **0-기준 실제 청크 페이지**를 넘기므로 `-1`을 두면 한 쪽씩 밀린다. 나머지
+3군데는 양쪽 신규 필드를 모두 살려 합쳤다(`quote`·`page_source` + `boundary`·`document_id`).
+
+### 머지가 드러낸 사실: 경계가 비면 D1이 **틀린 값도 안 잡는다**
+
+`claim_scope_status`는 E-4-1·E-4-2에서 원장값의 완전성이 `total`로 입증되지 않으면 수치
+비교를 **건너뛴다**(`scope_unconfirmed`). 이 브랜치 고유 테스트
+(`tests/test_representative_scope_period.py`)의 노드 생성 헬퍼는 경계를 비워 두었으므로,
+머지 후 아래가 실측됐다.
+
+| 원장 입력 | 맞는 값 9,075 | 틀린 값 7,929 |
+| --- | --- | --- |
+| 경계 미기록(헬퍼 기본값) | 점수 0 · `scope_unconfirmed` | **점수 0 · `scope_unconfirmed`** ← 위험으로 안 잡힌다 |
+| 경계 기록(연간·전사·실적·전체 에너지원) | 점수 0 · `match` | 점수 0.84 · `mismatch` |
+
+경계를 채우면 원래 계약이 그대로 복구된다. 그래서 **기대값을 `scope_unconfirmed`로 낮추지
+않았다** — 실제 OCR 경로(`merge_ocr_extraction`이 `derive_boundary`로 채운다)와 같은 입력을
+주어 값-대조 계약을 되살리고, 경계를 비운 입력의 동작은 회귀
+(`test_ledger_without_recorded_boundary_refuses_to_compare_instead_of_passing`)로 **따로
+고정**했다. 검사 수는 줄지 않고 늘었다. 그 회귀의 docstring에 "바람직한 상태가 아니라 현재
+상태의 기록"이라고 적어 두었다.
+
+> **부수로 본 단서(이 브랜치 범위 아님, 미해결):** `derive_boundary("2024.01~2024.12", …)`가
+> `period_start='2024-12-01'`로 읽는다(점 구분 범위 표기). `2024년 1~12월` 표기는 올바르게
+> `2024-01-01`이 된다. main 쪽 파싱 문제로 보이며 여기서 고치지 않았다.
+
+머지 후 전체 회귀는 **1,848 passed / 12 skipped / 실패 0**이다. 머지 직후 4건이 실패했고,
+2건은 위 `single_page` 분기 제거로, 2건은 위 경계 테스트 재구성으로 해소했다. 실패를 지우거나
+건너뛰기로 돌린 것이 아니다.
+
 ## 커밋 내역 (2026-09-23 정리, 8개)
 
 `fa81817`(= `origin/main`, 이동 없음) 위에 논리 단위로 8개를 쌓았다. 파일을 하나씩
@@ -881,6 +937,8 @@ diff를 직접 읽어 확인했다. 나머지 파일은 파일 단위 일치만 
 | 보고서 실패 UI 회귀 | 포괄적인 옛 실패 안내 문구 | 실패 단계·구체적 사유·Markdown 사용 가능 여부를 안내하는 최종 동작에 맞춘다. 최종 수정과 재실행 결과는 아래 표에서 확인한다. |
 | `test_ocr_source_context.py`의 `test_invalid_metric_records_are_reported...` | 대역이 `value: "N/A"`와 값 없는 행을 함께 사용 | 두 경우는 계약이 다르다. 깨진 레코드(`"N/A"`)는 실패로 보고하고, 값이 보고되지 않은 행은 미확인으로 남기는 동작을 각각 시험한다. 실제 0의 보존 검증은 유지한다. |
 | `test_node_selection.py`의 `test_relaxed_unit_is_reused_not_reimplemented` (2026-09-29) | 지렛대 표기가 `'ton CO2 eq'` | **계약과 단정문은 그대로 두고 표기만** `'tons CO2eq'`로 바꿨다. 사전 확장으로 `ton CO2 eq`가 별칭표에서 직접 읽히게 되어 `_relaxed_unit`을 항등 함수로 바꿔도 판정이 뒤집히지 않는다 — **지렛대가 무력해진 것이고 계약이 깨진 것이 아니다.** 별칭을 빼는 선택은 하지 않았다: 원문 단위를 그대로 `normalize_unit`에 넣는 경로(`layer3_detect`·`selection`)는 관대 정규화를 거치지 않으므로 사전이 자족적이어야 한다. 복수형 접두 축약(`^tons?(?=co2\|$)`)은 별칭표로 대체할 수 없는 `_relaxed_unit` 고유 기능이라 지렛대로 남고, `assert m.called`(재사용 여부)는 그대로다 |
+| `test_representative_scope_period.py`의 `test_actual_ledger_and_both_d1_paths_use_total_energy` (2026-09-29, main 머지) | 경계를 비운 노드로 `match`/`mismatch`를 기대 | **기대값이 아니라 입력을 고쳤다.** main의 `claim_scope_status`는 E-4-1에서 완전성이 `total`로 입증되지 않으면 수치 비교를 건너뛰므로(`scope_unconfirmed`), 이 테스트가 검사하려던 값-대조가 **아예 돌지 않는 상태**가 됐다. 기대를 `scope_unconfirmed`로 낮추면 계약이 사라진다. 그래서 실제 OCR 경로(`merge_ocr_extraction` → `derive_boundary`)와 같은 방식으로 노드 경계를 채우는 `scoped=True`를 헬퍼에 넣고, 기간·사업장·실적·측정대상이 명시된 hint를 주었다. `match`/`mismatch`·점수·`evidence_ids` 단정문은 **전부 그대로**이며 `fact.completeness == "total"` 확인을 더했다 |
+| 같은 파일에 추가한 `test_ledger_without_recorded_boundary_refuses_to_compare_instead_of_passing` (신규) | (없음) | 위에서 옮겨 온 "경계 미기록" 입력의 동작을 **없애지 않고 따로 고정**했다. 맞는 값 9,075와 **틀린 값 7,929가 모두** 점수 0 · `scope_unconfirmed`가 된다는 사실, 즉 D1이 틀린 값을 잡지 못한다는 것을 회귀로 박았다. 대표값 선정(`["energy"]`)·`partial_value` 플래그 대비는 기존 그대로 유지한다. 바람직한 상태의 승인이 아니라 현재 상태의 기록이다 |
 | 같은 파일의 `test_strict_mode_rejects_malformed_metric_record` | 값 없는 행으로 엄격 모드 중단을 시험 | 엄격 모드 중단은 **스키마 위반**의 계약이다. 대역을 라벨 없는 레코드로 바꿔 원래 의도(깨진 응답은 반드시 중단)를 그대로 시험하고, 값 미보고 행이 문서를 실패시키지 않는 회귀를 별도로 추가했다. 실측 라이브 실패를 재현하는 회귀다. |
 
 신규 대표값 회귀 19건을 기준 HEAD의 선택기 소스로 실행하면 11 failed/8 passed였고 수정 후에는 모두 통과했다. 이는 선택기 차이를 분리한 실험이다. 확인 목록 최초 34건에서도 29 passed/5 failed를 관찰한 뒤 미이수율 오탐·사유 누락 등을 고쳤다. 처음부터 모두 통과하도록 작성한 검증이라고 보고하지 않는다.
@@ -950,7 +1008,7 @@ diff를 직접 읽어 확인했다. 나머지 파일은 파일 단위 일치만 
 
 | 항목 | 최종 상태 | 근거·남은 작업 |
 | --- | --- | --- |
-| 최종 전체 회귀 | **1,578 passed / 12 skipped / 실패 0** (9/29) | 1,560 대비 증가분 18건은 신규 `tests/test_unit_dictionary_coverage.py`다(단위 사전 확장). 1,542 대비 증가분 18건은 신규 `tests/test_ocr_value_reconcile.py`다(값-근거 대조 후처리). 직전 1,542는 `outputs/diagnostics/full_regression6.log`(직전 1,530은 `20260925_area_search_split/full_regression5.log`, 1,529는 같은 디렉터리 `full_regression4.log`, 9/23 기록 1,525는 `20260923_supplychain_impact/full_regression3.log`에 보존). 1,530 대비 증가분 12건은 원장 축약 금액 대조 4건과 원문 인용 복원 8건이다. 종전 기록: `20260925_area_search_split/full_regression5.log`(직전 1,529는 같은 디렉터리 `full_regression4.log`, 9/23 기록 1,525는 `20260923_supplychain_impact/full_regression3.log`에 보존). 9/23 대비 증가분 5건은 임베딩 분할 회귀 테스트 4건과 질의 분할 기본값 고정 테스트 1건이다. 9/21 기록(1,521)·9/20(1,506)·9/18(1,493)은 각 디렉터리에 그대로 보존했다. 9/21 대비 증가분 4건은 조항 번호 회귀 테스트다. 9/20 대비 증가분 중 9건은 신규 `test_ledger_hold_reason.py`, 6건은 G2·G4 회귀이며 나머지 차이는 이 브랜치에 이미 있던 비추적 테스트 파일에서 온 것임을 `--collect-only`로 확인했다 |
+| 최종 전체 회귀 | **1,848 passed / 12 skipped / 실패 0** (9/29, `origin/main` 머지 후) | 1,578 대비 증가분 270건은 거의 전부 **main에서 들어온 테스트**다(`fa81817..387999b` 29개 커밋, 측정 경계 축). 이 브랜치가 더한 것은 경계 미기록 회귀 1건(2 파라미터)이다. 머지 직후에는 4 failed였고 `single_page` 분기 제거 2건·경계 테스트 재구성 2건으로 해소했다. 그 앞 1,578은 아래 기록이다 — 1,560 대비 증가분 18건은 신규 `tests/test_unit_dictionary_coverage.py`다(단위 사전 확장). 1,542 대비 증가분 18건은 신규 `tests/test_ocr_value_reconcile.py`다(값-근거 대조 후처리). 직전 1,542는 `outputs/diagnostics/full_regression6.log`(직전 1,530은 `20260925_area_search_split/full_regression5.log`, 1,529는 같은 디렉터리 `full_regression4.log`, 9/23 기록 1,525는 `20260923_supplychain_impact/full_regression3.log`에 보존). 1,530 대비 증가분 12건은 원장 축약 금액 대조 4건과 원문 인용 복원 8건이다. 종전 기록: `20260925_area_search_split/full_regression5.log`(직전 1,529는 같은 디렉터리 `full_regression4.log`, 9/23 기록 1,525는 `20260923_supplychain_impact/full_regression3.log`에 보존). 9/23 대비 증가분 5건은 임베딩 분할 회귀 테스트 4건과 질의 분할 기본값 고정 테스트 1건이다. 9/21 기록(1,521)·9/20(1,506)·9/18(1,493)은 각 디렉터리에 그대로 보존했다. 9/21 대비 증가분 4건은 조항 번호 회귀 테스트다. 9/20 대비 증가분 중 9건은 신규 `test_ledger_hold_reason.py`, 6건은 G2·G4 회귀이며 나머지 차이는 이 브랜치에 이미 있던 비추적 테스트 파일에서 온 것임을 `--collect-only`로 확인했다 |
 | 별도 감사 검사 | 8 passed (9/21) | `outputs/diagnostics/20260921_ledger_fix/audit_integrity.log`; 별도 프로세스 실행 |
 | `git diff --check` | 통과(출력 없음, 9/21) | `outputs/diagnostics/20260921_ledger_fix/git_diff_check.log` |
 | 엄격 모드 전체 문서 처리 가능성 | **코드 수정 완료** — 값 미보고 행이 문서를 실패시키지 않는다 | 라이브 실측으로 발견, 전·후 재현으로 증명, 회귀 3건 추가 |

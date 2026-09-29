@@ -24,7 +24,7 @@ def fw(code, kind='numeric'):
 
 def numeric(value, claim_value, unit='%', claim_unit='%', code='E-6-2'):
     dp = DataPoint(code, code, value, unit, 2025, .95, 'verified', 0,
-                   [EvidenceLink('bill.pdf', 'evidence_pack/bill.pdf', 'ocr_structured', node_id='n')])
+                   [EvidenceLink('bill.pdf', 'evidence_pack/bill.pdf', 'ocr_structured', node_id='n')], completeness='total')
     graph = EvidenceGraph('AUDIT', 'Audit')
     graph.add_node(EvidenceNode('n', code, value, unit, 2025, 'ocr', origin='ocr_structured',
                                source_file='bill.pdf', raw_text=f'{code} {value}{unit}'))

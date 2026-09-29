@@ -1,0 +1,107 @@
+{
+  "head": "ba0ea8c7b2214ff7c46e13d588bfca19b7579a85",
+  "reproductions": "/private/tmp/ESGenie-hmc-response-integrity-20260920/docs/validation/hmc-response-integrity-followup2-20260921/reproductions.json",
+  "checks": {
+    "R1_single_E31": {
+      "pass": true,
+      "observed": 0.048,
+      "expected": 0.048
+    },
+    "R1_equal_E41": {
+      "pass": true,
+      "observed": 0.00036,
+      "expected": 0.00036
+    },
+    "R1_equal_E31": {
+      "pass": true,
+      "observed": 0.048,
+      "expected": 0.048
+    },
+    "R1_conflict_E41_comparison": {
+      "pass": true,
+      "observed": "mismatch",
+      "expected": "mismatch"
+    },
+    "R1_conflict_E31": {
+      "pass": true,
+      "observed": 0.048,
+      "expected": 0.048
+    },
+    "R1_conflict_E31_comparison": {
+      "pass": true,
+      "observed": "mismatch",
+      "expected": "mismatch"
+    },
+    "R1_conflict_E31_verification": {
+      "pass": true,
+      "observed": "unverified",
+      "expected": "unverified"
+    },
+    "R1_conflict_E31_note": {
+      "pass": true,
+      "observed": true,
+      "expected": true
+    },
+    "R2_factory_control": {
+      "pass": true,
+      "observed": 10.0,
+      "expected": 10
+    },
+    "R2_narrow_total": {
+      "pass": true,
+      "observed": 10.0,
+      "expected": 10
+    },
+    "R2_reversed": {
+      "pass": true,
+      "observed": 10.0,
+      "expected": 10
+    },
+    "R2_narrow_total_note": {
+      "pass": true,
+      "observed": true,
+      "expected": true
+    },
+    "R3_negated": {
+      "pass": true,
+      "observed": true,
+      "expected": true
+    },
+    "R3_other_certificate": {
+      "pass": true,
+      "observed": true,
+      "expected": true
+    },
+    "R3_preparation": {
+      "pass": true,
+      "observed": true,
+      "expected": true
+    },
+    "R3_real_acquisition": {
+      "pass": true,
+      "observed": true,
+      "expected": true
+    },
+    "R4_difference_pct": {
+      "pass": true,
+      "observed": 200.0,
+      "expected": 200.0
+    },
+    "R4_comparison": {
+      "pass": true,
+      "observed": "mismatch",
+      "expected": "mismatch"
+    },
+    "R4_point_comparison": {
+      "pass": true,
+      "observed": "mismatch",
+      "expected": "mismatch"
+    },
+    "R4_point_verification": {
+      "pass": true,
+      "observed": "unverified",
+      "expected": "unverified"
+    }
+  },
+  "failed": []
+}

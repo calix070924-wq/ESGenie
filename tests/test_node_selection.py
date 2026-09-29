@@ -320,6 +320,8 @@ class TestLedgerD1Symmetry:
         from esgenie.layer3_detect import _score_d1_numeric
 
         tj = _n("E-4-1", 7_497.0, "TJ", 2024, "전력 사용량")
+        from tests.boundary_fixtures import confirmed_boundary
+        tj.boundary = confirmed_boundary("E-4-1", 2024)
         pct = _n("E-4-1", 12.9, "%", 2024, "재생에너지 사용률")
         graph = _graph(tj, pct)
         extract_with_ssot(_empty_report(), graph)

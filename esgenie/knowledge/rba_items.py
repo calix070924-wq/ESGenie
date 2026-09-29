@@ -187,12 +187,17 @@ ENV_ITEMS = [
                           "solid waste", "recycling rate", "waste"),
             metrics=(("E-6-2", "폐기물 재활용(순환이용)률", "%"),
                      ("E-6-1", "폐기물 배출량", "톤"))),
+    # C-5는 조항 자체가 '특성화·모니터링·통제·처리 체계'를 묻고, 배출량 수치는 그
+    # 체계의 산출물이다. 하나의 numeric 문항으로 두면 관리체계 존재 여부를 kg 수치로
+    # 답하게 되어(2026-09-20 HMC 응답서 실측) 어느 쪽도 정확히 묻지 못했다. C-4·C-8과
+    # 같은 패턴으로 '조항 존재형 1문항 + 배출량 수치행 1개'로 분해한다.
     RBAItem("C-5", "Environment", "대기배출", "Air Emissions",
             "정량",
             "VOC·에어로졸·부식성·입자상·오존층파괴물질·연소부산물 특성화·모니터링·통제·처리. 몬트리올 의정서 준수.",
             search_terms=("대기오염물질", "대기배출", "VOC", "오존층파괴물질", "NOx", "SOx", "먼지",
                           "air emissions", "ozone depleting"),
-            unit="kg"),
+            unit="kg",
+            metrics=(("E-7-1", "대기오염물질 연간 배출량 (측정 대상 물질 합계)", "kg"),)),
     RBAItem("C-6", "Environment", "물질 규제", "Materials Restrictions",
             "정성",
             "제품·제조 내 특정 물질 금지·제한 관련 법규·고객 요구사항 준수(재활용·폐기 라벨링 포함). 예: RoHS/REACH.",

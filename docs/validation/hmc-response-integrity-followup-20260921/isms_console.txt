@@ -1,0 +1,20 @@
+{
+  "scanned": 2189,
+  "corrections": [
+    {
+      "original_path": "/Users/heojeongmin/Documents/Claude/Projects/ESGenie/outputs/_supplychain/hmc/실사응답서_hmc_한울.xlsx",
+      "original_sha256": "270b34603de4bbf96e767c74f29b5b684ab0743905b5b4f94325e7edebfa34bc",
+      "corrected_path": "/private/tmp/ESGenie-hmc-response-integrity-20260920/outputs/validation/hmc-response-integrity-followup-20260921/legacy_corrections/270b34603d_실사응답서_hmc_한울.xlsx",
+      "corrected_sha256": "fbc37a60643190f3b5e6cd60ea4bb54ba6acbadd4d53d2c08e4b93d50ada41cb",
+      "method": "manual editorial correction, not new LLM generation"
+    },
+    {
+      "original_path": "/Users/heojeongmin/Documents/Claude/Projects/ESGenie/outputs/_supplychain/hmc/실사응답서_hmc_한울정밀.xlsx",
+      "original_sha256": "ee2bf0e94898877f90b0162c28f847c76593fae88c5f5ccc47d11503a1165c6f",
+      "corrected_path": "/private/tmp/ESGenie-hmc-response-integrity-20260920/outputs/validation/hmc-response-integrity-followup-20260921/legacy_corrections/ee2bf0e948_실사응답서_hmc_한울정밀.xlsx",
+      "corrected_sha256": "6442aec93b9916ed9a13b94ea57fa61a6e1244cec0a5ae68935369119e517b9c",
+      "method": "manual editorial correction, not new LLM generation"
+    }
+  ],
+  "errors": []
+}
