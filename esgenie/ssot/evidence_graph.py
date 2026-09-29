@@ -342,6 +342,12 @@ def merge_ocr_extraction(
             base=getattr(m, "boundary", None),
         )
         provenance = tuple(dict(p, page=m.page, bbox=m.bbox, source_file=extraction.source_file) for p in boundary.provenance)
+        detail = getattr(m, "source_detail", None)
+        if detail:
+            # 표 셀 근거(원문·머리글·원 단위·검산식·입력 칸·위치 정밀도)를 경계 출처에 잇는다.
+            provenance += (dict(
+                {k: detail[k] for k in _TABLE_CELL_PROVENANCE_KEYS if k in detail},
+                source="table_cell", page=m.page, bbox=m.bbox, source_file=extraction.source_file),)
         boundary = replace(boundary, provenance=provenance,
                            review_notes=renewable_notes if code == "E-4-2" else boundary.review_notes)
         if period_inferred and boundary.period_year:
@@ -476,6 +482,12 @@ _GUARD_TERMS: tuple[str, ...] = (
 # G4. 미래 기간 분리 임계값 — period가 report_year보다 이 값 이상 앞서면 projection.
 # 2로 둔다: report_year+1(최신 증빙)은 실적, +2 이상(2030/2035/2040 목표축)은 전망.
 _PROJECTION_YEAR_GAP: int = 2
+
+
+_TABLE_CELL_PROVENANCE_KEYS = (
+    "precision", "raw_text", "raw_value", "raw_unit", "unit", "unit_source", "header", "row_label",
+    "table_id", "grid_source", "value_source", "formula", "index_check", "cells", "pinned_unit",
+)
 
 
 def _resolve_kesg_code(
