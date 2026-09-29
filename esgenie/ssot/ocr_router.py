@@ -741,12 +741,15 @@ def _pin_rates_from_raw(
             metric_hint=label, value=val, unit="%", period="",
             kesg_code_guess=code, bbox=bbox, page=page, confidence=0.9,
         )
+        # 원문 비율 문자열('29%'·'29.30%')은 표시 자릿수 검산 근거라 위치와 무관하게 보존한다.
+        pinned.source_detail = {"extractor": "raw_rate_pin", "raw_text": rawstr,
+                                "display_decimals": len(numstr.split(".")[1]) if "." in numstr else 0}
         if bbox is not None:
             # 위치는 값을 품은 텍스트 요소(줄·문단)의 외접 사각형이다 — 셀 위치로 표시하지 않는다.
-            pinned.source_detail = {
-                "extractor": "raw_rate_pin", "raw_text": rawstr, "precision": "text_block",
+            pinned.source_detail.update({
+                "precision": "text_block",
                 "cells": [{"text": rawstr, "bbox": bbox, "page": page, "precision": "text_block"}],
-                "precision_note": "값을 품은 OCR·PDF 텍스트 요소의 외접 위치(셀 단위 아님)"}
+                "precision_note": "값을 품은 OCR·PDF 텍스트 요소의 외접 위치(셀 단위 아님)"})
         metrics.append(pinned)
     return metrics
 

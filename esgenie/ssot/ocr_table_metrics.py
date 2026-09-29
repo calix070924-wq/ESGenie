@@ -280,6 +280,28 @@ def _role(label: str, doc_type: str) -> str | None:
     return None
 
 
+def _unit_role(doc_type: str, role: str | None, unit: str | None) -> str | None:
+    """라벨 역할과 원문 단위를 함께 본다 — 가스 '사용량'이 열량 단위(MJ·GJ·TJ)로 적혀
+    있으면 그 칸은 부피가 아니라 열량 수치다('사용열량' 표현만 열량으로 보지 않는다)."""
+    if doc_type == "gas_bill" and role == "usage" and unit in _HEAT:
+        return "heat"
+    return role
+
+
+# 행 머리 칸의 머리글 → 행 라벨이 가리키는 경계 축.
+_PERIOD_HEAD_WORDS = ("기간", "연월", "년월", "사용월", "청구월", "검침월", "월별", "일자", "날짜")
+_SITE_HEAD_WORDS = ("사업장", "공장", "사이트", "지점", "시설", "장소")
+
+
+def _label_axis(header_text: str) -> str:
+    n = _norm(header_text)
+    if any(w in n for w in _PERIOD_HEAD_WORDS) or n in ("월", "연도", "년도"):
+        return "period"
+    if any(w in n for w in _SITE_HEAD_WORDS):
+        return "site"
+    return ""
+
+
 # ---- 추출 ---------------------------------------------------------------------
 
 @dataclass
@@ -322,14 +344,28 @@ def _index_inputs(row: list[_Cell], roles: list[str | None], header: list[_Cell]
 
 def _compute_from_index(doc_type: str, inputs: dict[str, Any], allowed: set[str],
                         usage_unit: str | None) -> dict[str, Any] | None:
-    """(당월 − 이전) × 배율. 입력이 모자라면 None, 계산 불가 사유는 'reason'으로."""
+    """(당월 − 이전) × 배율. 입력이 모자라면 None, 계산 불가 사유는 'reason'으로.
+
+    지침 단위가 서로 다르면(전월 kWh · 당월 MWh) 당월 지침 단위로 맞춘 뒤 빼고, 차이를
+    사용량 칸 단위로 환산한다. 지침에 단위가 없으면 사용량 칸 단위로 읽는다(기존 동작).
+    한쪽 지침에만 단위가 있거나, 환산할 수 없는 단위(m³ → MJ)면 계산하지 않는다.
+    """
     if "prev" not in inputs or "cur" not in inputs:
         return None
     prev, cur = inputs["prev"]["value"], inputs["cur"]["value"]
-    index_unit = inputs["cur"]["unit"] or inputs["prev"]["unit"]
+    prev_unit, cur_unit = inputs["prev"]["unit"], inputs["cur"]["unit"]
     cells = [inputs["prev"]["cell"], inputs["cur"]["cell"]]
-    if cur < prev:
-        return {"reason": "index_decreased", "cells": cells}
+    input_units = {"previous": prev_unit, "current": cur_unit}
+    if (prev_unit is None) != (cur_unit is None):
+        return {"reason": "index_unit_missing", "cells": cells, "input_units": input_units}
+    prev_in_cur = prev
+    if prev_unit and prev_unit != cur_unit:
+        prev_in_cur = convert_to_common(prev, prev_unit, cur_unit)
+        if prev_in_cur is None:
+            return {"reason": "index_unit_incompatible", "cells": cells, "input_units": input_units}
+    if cur < prev_in_cur:
+        return {"reason": "index_decreased", "cells": cells, "input_units": input_units}
+    index_unit = cur_unit
     if "mult" in inputs:
         mult = inputs["mult"]["value"]
         cells.append(inputs["mult"]["cell"])
@@ -338,21 +374,33 @@ def _compute_from_index(doc_type: str, inputs: dict[str, Any], allowed: set[str]
         # 지침이 부피 단위로 적힌 계량기는 차이가 곧 사용량이다(배율 표기 없음).
         mult, formula = None, "당월 지침 − 이전 지침"
     else:
-        return {"reason": "multiplier_missing", "cells": cells}
+        return {"reason": "multiplier_missing", "cells": cells, "input_units": input_units}
     unit = usage_unit or (index_unit if index_unit in allowed else None)
     if unit is None:
-        return {"reason": "unit_missing", "cells": cells}
-    value = (cur - prev) * (mult if mult is not None else 1)
+        return {"reason": "unit_missing", "cells": cells, "input_units": input_units}
+    diff = (cur - prev_in_cur) * (mult if mult is not None else 1)
+    value = diff
+    if index_unit and index_unit != unit:
+        value = convert_to_common(diff, index_unit, unit)
+        if value is None:
+            return {"reason": "unit_incompatible", "cells": cells, "input_units": input_units,
+                    "usage_unit": unit}
     inp = {"previous": prev, "current": cur}
     if mult is not None:
         inp["multiplier"] = mult
-    return {"value": round(value, 6), "unit": unit, "formula": formula, "inputs": inp, "cells": cells}
+    out = {"value": round(value, 6), "unit": unit, "formula": formula, "inputs": inp, "cells": cells}
+    if index_unit:
+        out["input_units"] = input_units
+        if index_unit != unit or prev_unit != cur_unit:
+            out["conversion"] = f"지침 {prev_unit}·{cur_unit} → {cur_unit}로 맞춰 뺀 뒤 {unit}로 환산"
+    return out
 
 
 def _emit(res: TableMetricResult, *, doc_type: str, role: str, value: float, unit: str,
           raw_unit: str, raw_text: str, header: str, row_label: str, grid: _Grid,
           cells: list[_Cell], value_source: str, unit_source: str,
-          index_check: dict[str, Any] | None, confidence: float, formula: str = "") -> None:
+          index_check: dict[str, Any] | None, confidence: float, formula: str = "",
+          label_axis: str = "") -> None:
     from .ocr_router import ExtractedMetric
     label, code, _allowed = _OUTPUT[doc_type][role]
     hint = f"{label} ({row_label})" if row_label else label
@@ -365,27 +413,52 @@ def _emit(res: TableMetricResult, *, doc_type: str, role: str, value: float, uni
         "unit_source": unit_source, "value_source": value_source, "precision": precision,
         "cells": [_cell_ref(c) for c in cells],
     }
+    if row_label and label_axis:
+        detail["row_label_axis"] = label_axis
     if formula:
         detail["formula"] = formula
     if index_check:
         detail["index_check"] = index_check
     m = ExtractedMetric(
-        metric_hint=hint, value=value, unit=unit, period="", kesg_code_guess=code,
+        metric_hint=hint, value=value, unit=unit,
+        period=row_label if label_axis == "period" else "", kesg_code_guess=code,
         bbox=cells[0].bbox if len(cells) == 1 else _union([c.bbox for c in cells]),
         page=cells[0].page, confidence=confidence,
     )
     m.source_detail = detail
-    # 같은 역할·값·단위는 한 번만(여러 표·마크다운이 같은 칸을 반복 제공).
+    # 표 객체와 텍스트 줄이 **같은 원문 칸**을 겹쳐 제공하면 한 번만 쓴다. 같은 쪽에서
+    # 범위 표시(행 라벨)까지 같은 값이 다시 나오면(요약표 + 본문 표) 같은 사실의 반복
+    # 기재로 보고 위치만 덧붙인다. 행 라벨(사업장·기간)이나 쪽이 다르면 독립된 사실이다.
     for prev in res.metrics:
         pd = prev.source_detail
-        if pd["role"] == role and prev.value == value and prev.unit == unit and pd["row_label"] == row_label:
+        if not (pd["role"] == role and prev.value == value and prev.unit == unit
+                and pd["row_label"] == row_label):
+            continue
+        if _same_origin(prev, m):
+            return
+        if prev.page == m.page:
+            pd.setdefault("repeated_cells", []).extend(detail["cells"])
             return
     res.metrics.append(m)
     res.records.append({k: v for k, v in detail.items() if k != "cells"} | {"metric_hint": hint})
 
 
+def _same_origin(a: Any, b: Any) -> bool:
+    """두 산출물이 같은 원문 칸에서 왔는가 — 같은 쪽이고, 한 위치가 다른 위치의 중심을
+    품는다(표 외접 bbox ⊃ 텍스트 줄 bbox 포함). 위치가 없으면 머리글·원문이 같을 때만."""
+    if a.page != b.page:
+        return False
+    if a.bbox and b.bbox:
+        def holds(box, other):
+            cx, cy = (other[0] + other[2]) / 2, (other[1] + other[3]) / 2
+            return box[0] <= cx <= box[2] and box[1] <= cy <= box[3]
+        return holds(a.bbox, b.bbox) or holds(b.bbox, a.bbox)
+    da, db = a.source_detail, b.source_detail
+    return da.get("header") == db.get("header") and da.get("raw_text") == db.get("raw_text")
+
+
 def _header_row_roles(grid: _Grid, doc_type: str) -> list[str | None]:
-    return [_role(c.text, doc_type) for c in grid.rows[0]]
+    return [_unit_role(doc_type, _role(c.text, doc_type), _header_unit(c.text)[0]) for c in grid.rows[0]]
 
 
 def _process_header_table(res: TableMetricResult, grid: _Grid, doc_type: str) -> bool:
@@ -401,6 +474,7 @@ def _process_header_table(res: TableMetricResult, grid: _Grid, doc_type: str) ->
     if not data:
         return True
     label_col = 0 if roles[0] is None else None
+    label_axis = _label_axis(header[0].text) if label_col is not None else ""
     total_rows = [r for r in data if label_col is not None and _is_total_label(r[0].text)]
     if doc_type == "waste_ledger" and "detail_mass" in roles:
         # '구분 | 중량' 아래 행 머리가 총량·재활용량이면 명세가 아니라 항목표다.
@@ -422,11 +496,13 @@ def _process_header_table(res: TableMetricResult, grid: _Grid, doc_type: str) ->
         for k, role in enumerate(roles):
             if role not in outputs or k >= len(row):
                 continue
-            res.claimed_roles.add(role)
             cell = row[k]
             q = _parse_qty(cell.text)
             if q is None:
                 continue
+            # 원문 칸에 수치가 있을 때만 역할을 차지한다 — 값을 못 만든 표가 같은 역할의
+            # 기존 템플릿 결과를 조용히 지우지 않게 한다(단위 누락·단위 불일치는 검토로 남김).
+            res.claimed_roles.add(role)
             h_unit, h_raw = _header_unit(header[k].text)
             unit, raw_unit, unit_source = q["unit"], q["raw_unit"], "cell"
             if unit is None and h_unit:
@@ -436,7 +512,13 @@ def _process_header_table(res: TableMetricResult, grid: _Grid, doc_type: str) ->
                                    "raw_text": cell.text, "table_id": grid.table_id})
                 explicit_roles.add(role)
                 continue
+            unit_role = _unit_role(doc_type, role, unit)
+            if unit_role != role and unit_role in outputs:
+                role = unit_role
+                res.claimed_roles.add(role)
             if unit not in outputs[role][2]:
+                res.review.append({"reason": "unit_not_allowed_for_role", "role": role, "unit": unit,
+                                   "header": header[k].text, "raw_text": cell.text, "table_id": grid.table_id})
                 continue
             explicit_roles.add(role)
             found.append({"role": role, "value": q["value"], "unit": unit, "raw_unit": raw_unit,
@@ -453,7 +535,10 @@ def _process_header_table(res: TableMetricResult, grid: _Grid, doc_type: str) ->
             comp = _compute_from_index(doc_type, inputs, outputs[usage_role][2], usage_unit)
             if comp and "value" in comp:
                 check = {"formula": comp["formula"], "inputs": comp["inputs"], "computed": comp["value"],
-                         "cells": [_cell_ref(c) for c in comp["cells"]]}
+                         "computed_unit": comp["unit"], "cells": [_cell_ref(c) for c in comp["cells"]]}
+                for key in ("input_units", "conversion"):
+                    if key in comp:
+                        check[key] = comp[key]
                 if explicit:
                     same = abs(explicit["value"] - comp["value"]) < 1e-6
                     check["status"] = "match" if same else "mismatch"
@@ -471,7 +556,8 @@ def _process_header_table(res: TableMetricResult, grid: _Grid, doc_type: str) ->
                                   "index_check": check, "formula": comp["formula"]})
             elif comp:
                 res.review.append({"reason": comp["reason"], "table_id": grid.table_id,
-                                   "cells": [c.text for c in comp["cells"]]})
+                                   "cells": [c.text for c in comp["cells"]],
+                                   **{k: comp[k] for k in ("input_units", "usage_unit") if k in comp}})
                 if explicit:
                     explicit["index_check"] = {"status": comp["reason"]}
         per_row.append(found)
@@ -484,14 +570,16 @@ def _process_header_table(res: TableMetricResult, grid: _Grid, doc_type: str) ->
             chk = f.get("index_check") or {}
             if chk.get("status") == "mismatch":
                 conf = 0.6
+            axis = label_axis if f["row_label"] else ""
             if multi and not f["row_label"]:
                 f["row_label"] = f"행 {per_row.index(found) + 1}"
+            # 행 라벨(사업장·기간)은 데이터 행이 하나여도 원문 범위라 버리지 않는다.
             _emit(res, doc_type=doc_type, role=f["role"], value=f["value"], unit=f["unit"],
                   raw_unit=f["raw_unit"], raw_text=f["raw_text"], header=f["header"],
-                  row_label=f["row_label"] if multi else "", grid=grid, cells=f["cells"],
+                  row_label=f["row_label"], grid=grid, cells=f["cells"],
                   value_source=f["value_source"], unit_source=f["unit_source"],
                   index_check=f.get("index_check"), confidence=conf if not multi else min(conf, 0.7),
-                  formula=f.get("formula", ""))
+                  formula=f.get("formula", ""), label_axis=axis)
     if doc_type == "waste_ledger" and total_rows:
         _check_components(res, grid, roles, total_rows[0])
     return True
@@ -521,7 +609,13 @@ def _process_key_value(res: TableMetricResult, grid: _Grid, doc_type: str) -> No
             res.review.append({"reason": "unit_missing", "role": role, "header": row[0].text,
                                "raw_text": row[k].text, "table_id": grid.table_id})
             continue
+        unit_role = _unit_role(doc_type, role, unit)
+        if unit_role != role and unit_role in outputs:
+            role = unit_role
+            res.claimed_roles.add(role)
         if unit not in outputs[role][2]:
+            res.review.append({"reason": "unit_not_allowed_for_role", "role": role, "unit": unit,
+                               "header": row[0].text, "raw_text": row[k].text, "table_id": grid.table_id})
             continue
         _emit(res, doc_type=doc_type, role=role, value=q["value"], unit=unit, raw_unit=raw_unit,
               raw_text=row[k].text, header=row[0].text, row_label="", grid=grid, cells=[row[k]],
@@ -644,20 +738,53 @@ def _waste_detail_checks(res: TableMetricResult) -> None:
         res.review.append({"reason": "detail_rows_without_total", "detail_sums": res.detail_sums})
 
 
+_RATE_ROUNDING_RULE = "재계산값을 원문 표시 소수 자릿수로 사사오입(ROUND_HALF_UP)한 값이 원문 수치와 같으면 일치"
+
+
 def check_recycling_rate(res: TableMetricResult, metrics: list[Any]) -> None:
-    """원문 재활용률(%)과 재활용량 ÷ 총량 재계산이 표시 자릿수에서 일치하는지."""
-    total, recycled = _metric_kg(res, "total"), _metric_kg(res, "recycled")
+    """원문 재활용률(%)과 재활용량 ÷ 총량 재계산이 **원문 표시 자릿수**에서 일치하는지.
+
+    자릿수는 원문 문자열('29%' → 0자리, '29.0%' → 1자리)에서만 읽는다. float 표기
+    (29.0)로는 '29%'와 '29.0%'를 구분할 수 없어 쓰지 않는다. 원문 문자열이 없으면
+    불일치로 몰지 않고 자릿수 미상으로 남긴다. 총량·재활용량은 같은 행 범위일 때만 비교한다."""
+    from decimal import Decimal, InvalidOperation, ROUND_HALF_UP
     rates = [m for m in metrics if m.kesg_code_guess == "E-6-2" and str(m.unit) == "%"]
-    if not total or recycled is None or len(rates) != 1:
+    if len(rates) != 1:
         return
-    reported = float(rates[0].value)
-    computed = recycled / total * 100
-    text = f"{reported}"
-    decimals = len(text.split(".")[1]) if "." in text else 0
-    res.checks.append({"name": "waste_recycling_rate", "status":
-                       "match" if round(computed, decimals) == round(reported, decimals) else "mismatch",
-                       "computed": round(computed, 4), "reported": reported,
-                       "formula": "재활용량 ÷ 총 위탁량 × 100"})
+    totals = [m for m in res.metrics if m.source_detail["role"] == "total"]
+    recycled_ms = [m for m in res.metrics if m.source_detail["role"] == "recycled"]
+    if not totals or not recycled_ms:
+        return
+    scopes = {m.source_detail.get("row_label", "") for m in totals + recycled_ms}
+    if len(scopes) != 1:
+        res.review.append({"reason": "rate_check_scope_differs", "scopes": sorted(scopes),
+                           "note": "총량과 재활용량의 행 범위가 달라 재활용률을 검산하지 않음"})
+        return
+    total, recycled = _metric_kg(res, "total"), _metric_kg(res, "recycled")
+    if not total or recycled is None:
+        return
+    rate = rates[0]
+    reported = float(rate.value)
+    raw = str((getattr(rate, "source_detail", None) or {}).get("raw_text") or "")
+    num = re.search(r"\d+(?:\.\d+)?", raw)
+    exact = Decimal(repr(recycled)) / Decimal(repr(total)) * 100
+    check = {"name": "waste_recycling_rate", "computed": round(float(exact), 4), "reported": reported,
+             "reported_text": raw, "formula": "재활용량 ÷ 총 위탁량 × 100", "rounding": _RATE_ROUNDING_RULE}
+    if not num:
+        check.update(status="precision_unknown",
+                     note="원문 비율 문자열이 없어 표시 자릿수를 알 수 없음 — 불일치로 판정하지 않음")
+        res.checks.append(check)
+        return
+    digits = num.group(0)
+    decimals = len(digits.split(".")[1]) if "." in digits else 0
+    try:
+        shown = Decimal(digits)
+    except InvalidOperation:
+        return
+    rounded = exact.quantize(Decimal(1).scaleb(-decimals), rounding=ROUND_HALF_UP)
+    check.update(status="match" if rounded == shown else "mismatch", display_decimals=decimals,
+                 computed_rounded=str(rounded))
+    res.checks.append(check)
 
 
 def refine_bboxes_with_pdf(metrics: list[Any], file_path: str) -> None:

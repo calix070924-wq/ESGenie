@@ -541,9 +541,12 @@ def test_rate_from_text_element_is_narrowed_with_pdf_text_when_file_exists():
 
 
 def test_rate_without_location_has_no_precision_claim():
-    """위치를 못 찾은 비율에는 정밀도 표시를 붙이지 않는다(재생 픽스처 그대로)."""
+    """위치를 못 찾은 비율에는 정밀도 표시를 붙이지 않는다(재생 픽스처 그대로).
+    원문 비율 문자열은 자릿수 검산 근거라 위치와 무관하게 남는다(PR #68 검토 R5)."""
     rate = _one(_replay("04"), unit="%", code="E-6-2")
-    assert rate.value == 29.3 and rate.bbox is None and rate.source_detail == {}
+    assert rate.value == 29.3 and rate.bbox is None
+    assert "precision" not in rate.source_detail and "cells" not in rate.source_detail
+    assert rate.source_detail["raw_text"] == "29.3%"
 
 
 def test_rate_text_span_is_not_labelled_table_cell_in_graph():
