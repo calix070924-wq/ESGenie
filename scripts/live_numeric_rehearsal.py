@@ -36,6 +36,7 @@ import traceback
 PROTECTED = [Path("/Users/heojeongmin/Documents/Claude/Projects/ESGenie/output/rehearsal").resolve()]
 INITIAL_DIR = "01_처음업로드_12건"
 FOLLOWUP_DIR = "02_보완할때추가_1건"
+DONE = {"complete", "done"}
 MANIFEST = "00_촬영안내_업로드하지않음/구성_검산_목록.json"
 
 
@@ -276,6 +277,7 @@ def cmd_serve(args) -> None:
 
     dump(run_dir / "environment.json", environment_record(code_path, loaded, settings, cache_dir, {
         "mode": "web_integration", "host": args.host, "port": args.port,
+        "data_root": str(args.data_root or run_dir / "web_workspace"),
         "observer": "unmodified esgenie.web.engine.run_analysis; PipelineOutput captured without changes"}))
     upstage = UpstageCounter()
 
@@ -312,13 +314,14 @@ def cmd_serve(args) -> None:
             dump(target / "run_stats.json", stats)
             dump(run_dir / "latest_run.json", stats)
 
-    app = create_app(data_root=run_dir / "web_workspace", runner=observed_runner)
+    # --data-root: 이미 분석한 작업 공간을 화면 확인용으로 다시 띄울 때(분석 재실행 없음).
+    app = create_app(data_root=(args.data_root or run_dir / "web_workspace").resolve(), runner=observed_runner)
     uvicorn.run(app, host=args.host, port=args.port, access_log=False)
 
 
 def cmd_drive(args) -> None:
     import requests
-    run_dir = prepare_run_dir(args.run_dir)
+    run_dir = prepare_run_dir(args.run_dir, allow_existing=bool(args.resume_project_id))
     session = requests.Session()
     session.headers["x-esgenie-client"] = "workspace"
 
@@ -353,23 +356,31 @@ def cmd_drive(args) -> None:
 
     initial, manifest = input_files(args.pack_dir, "initial")
     followup, _ = input_files(args.pack_dir, "followup")
-    config = call("GET", "/api/config").json()
-    assert config["analysis_available"] is True
-    project = call("POST", "/api/projects", json={"company_name": args.company, "year": args.year,
-                   "industry": args.industry, "framework": args.framework}).json()
-    pid = project["id"]
-    dump(run_dir / "session.json", {"project_id": pid, "base_url": args.base_url, "framework": args.framework,
-                                    "inputs_initial": initial, **manifest, "started_at": now()})
-    for f in initial:
-        project = upload(pid, f)
-    roles = {d["name"]: d["role"] for d in project["documents"]}
     expected = {f["name"]: f["role"] for f in initial}
-    dump(run_dir / "initial_uploaded.json", project)
-    if roles != expected:
-        raise SystemExit(f"업로드 역할이 구성 목록과 다르다: {roles}")
-    call("POST", f"/api/projects/{pid}/analysis")
-    if wait(pid, "initial")["job"]["status"] != "done":
-        raise SystemExit("최초 분석 실패")
+    if args.resume_project_id:
+        # 최초 분석이 이미 끝난 프로젝트를 이어서 내려받기·보완 분석만 한다(유료 재분석 방지).
+        pid = args.resume_project_id
+        if json.loads((run_dir / "session.json").read_text(encoding="utf-8"))["project_id"] != pid:
+            raise SystemExit("session.json의 프로젝트와 다르다")
+        if wait(pid, "initial")["job"]["status"] not in DONE:
+            raise SystemExit("최초 분석 실패")
+    else:
+        config = call("GET", "/api/config").json()
+        assert config["analysis_available"] is True
+        project = call("POST", "/api/projects", json={"company_name": args.company, "year": args.year,
+                       "industry": args.industry, "framework": args.framework}).json()
+        pid = project["id"]
+        dump(run_dir / "session.json", {"project_id": pid, "base_url": args.base_url, "framework": args.framework,
+                                        "inputs_initial": initial, **manifest, "started_at": now()})
+        for f in initial:
+            project = upload(pid, f)
+        roles = {d["name"]: d["role"] for d in project["documents"]}
+        dump(run_dir / "initial_uploaded.json", project)
+        if roles != expected:
+            raise SystemExit(f"업로드 역할이 구성 목록과 다르다: {roles}")
+        call("POST", f"/api/projects/{pid}/analysis")
+        if wait(pid, "initial")["job"]["status"] not in DONE:
+            raise SystemExit("최초 분석 실패")
     export(pid, "initial")
     extra = [f for f in followup if f["name"] not in expected]
     assert len(extra) == 1
@@ -378,7 +389,7 @@ def cmd_drive(args) -> None:
     stale = session.get(args.base_url + f"/api/projects/{pid}/download/xlsx", timeout=30)
     dump(run_dir / "followup_stale_download_check.json", {"status_code": stale.status_code})
     call("POST", f"/api/projects/{pid}/analysis")
-    if wait(pid, "followup")["job"]["status"] != "done":
+    if wait(pid, "followup")["job"]["status"] not in DONE:
         raise SystemExit("보완 분석 실패")
     export(pid, "followup")
     print(json.dumps({"done": True, "run_dir": str(run_dir)}, ensure_ascii=False))
@@ -403,9 +414,11 @@ def main() -> None:
     common(serve)
     serve.add_argument("--host", default="127.0.0.1")
     serve.add_argument("--port", type=int, required=True)
+    serve.add_argument("--data-root", type=Path, default=None)
     drive = sub.add_parser("drive")
     common(drive, code=False, cache=False)
     drive.add_argument("--base-url", required=True)
+    drive.add_argument("--resume-project-id", default="")
     for p in (core, drive):
         p.add_argument("--pack-dir", type=Path, required=True)
         p.add_argument("--company", default="한울정밀공업(주)")
