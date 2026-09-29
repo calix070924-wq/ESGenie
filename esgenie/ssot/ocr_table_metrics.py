@@ -129,6 +129,14 @@ def _grids_from_lines(tokens: list[dict[str, Any]]) -> list[_Grid]:
 
     for row in rows:
         page, yc, cells = row
+        if block and len(cells) < len(block[0][2]) and not _is_total_label(cells[0].text) \
+                and block[-1][0] == page and yc - block[-1][1] <= _BLOCK_GAP:
+            # 빈 칸은 PDF 문자로 남지 않는다 — 수치 행의 칸을 머리글 열에 x로 맞추고 나머지는
+            # 빈 칸으로 둔다. 맞출 수 없으면 기존처럼 표를 끊는다.
+            aligned = _align_to_header(cells, block[0][2])
+            if aligned is not None:
+                block.append((page, yc, aligned))
+                continue
         if len(cells) < 2:
             flush()
             continue
@@ -143,6 +151,27 @@ def _grids_from_lines(tokens: list[dict[str, Any]]) -> list[_Grid]:
         block.append(row)
     flush()
     return grids
+
+
+def _align_to_header(cells: list[_Cell], head: list[_Cell]) -> list[_Cell] | None:
+    """칸 수가 모자란 수치 행을 머리글 열에 맞춘다(가장 가까운 머리글 x중심, 열마다 하나).
+    칸이 모두 수치인 행만 맞춘다 — '기본요금 247,500'처럼 행 머리가 있는 줄은 표 밖의
+    요금 행일 수 있어 열을 추측하지 않는다."""
+    if not all(_parse_qty(c.text) for c in cells) or not all(c.bbox for c in head + cells):
+        return None
+    centers = [(h.bbox[0] + h.bbox[2]) / 2 for h in head]
+    gaps = [b - a for a, b in zip(centers, centers[1:])]
+    if not gaps or min(gaps) <= 0:
+        return None
+    out: list[_Cell | None] = [None] * len(head)
+    for c in cells:
+        cx = (c.bbox[0] + c.bbox[2]) / 2
+        k = min(range(len(centers)), key=lambda i: abs(centers[i] - cx))
+        if out[k] is not None or abs(centers[k] - cx) > min(gaps) / 2:
+            return None
+        out[k] = c
+    page = cells[0].page
+    return [c if c is not None else _Cell("", None, page, "cell") for c in out]
 
 
 # ---- 셀 해석 ------------------------------------------------------------------
@@ -288,9 +317,11 @@ def _unit_role(doc_type: str, role: str | None, unit: str | None) -> str | None:
     return role
 
 
-# 행 머리 칸의 머리글 → 행 라벨이 가리키는 경계 축.
+# 범위 칸의 머리글 → 그 칸이 가리키는 경계 축. 계량기는 경계 필드가 아니라 같은 사실인지
+# 가르는 최소 식별 정보로만 남긴다.
 _PERIOD_HEAD_WORDS = ("기간", "연월", "년월", "사용월", "청구월", "검침월", "월별", "일자", "날짜")
 _SITE_HEAD_WORDS = ("사업장", "공장", "사이트", "지점", "시설", "장소")
+_METER_HEAD_WORDS = ("계량기", "계기번호", "미터", "전력계", "가스계량", "수도계량")
 
 
 def _label_axis(header_text: str) -> str:
@@ -299,6 +330,8 @@ def _label_axis(header_text: str) -> str:
         return "period"
     if any(w in n for w in _SITE_HEAD_WORDS):
         return "site"
+    if any(w in n for w in _METER_HEAD_WORDS):
+        return "meter"
     return ""
 
 
@@ -312,10 +345,17 @@ class TableMetricResult:
     checks: list[dict[str, Any]] = field(default_factory=list)
     claimed_roles: set[str] = field(default_factory=set)
     detail_sums: list[dict[str, Any]] = field(default_factory=list)
+    # 산출 역할 칸은 있는데 값이 비어 있는 칸(빈칸·'-'·'검침 예정') — 표 영역과 함께 둔다.
+    # 템플릿 인접 숫자가 그 표의 다른 칸(지침·배율)을 사용량으로 되살리지 않게 막는 근거다.
+    absent_cells: list[dict[str, Any]] = field(default_factory=list)
 
     def meta(self) -> dict[str, Any]:
-        return {"records": self.records, "review": self.review, "checks": self.checks,
-                "claimed_roles": sorted(self.claimed_roles)}
+        out = {"records": self.records, "review": self.review, "checks": self.checks,
+               "claimed_roles": sorted(self.claimed_roles)}
+        if self.absent_cells:
+            out["absent_cells"] = [{k: v for k, v in a.items() if k != "row_numbers"}
+                                   for a in self.absent_cells]
+        return out
 
 
 def _cell_ref(cell: _Cell) -> dict[str, Any]:
@@ -400,7 +440,7 @@ def _emit(res: TableMetricResult, *, doc_type: str, role: str, value: float, uni
           raw_unit: str, raw_text: str, header: str, row_label: str, grid: _Grid,
           cells: list[_Cell], value_source: str, unit_source: str,
           index_check: dict[str, Any] | None, confidence: float, formula: str = "",
-          label_axis: str = "") -> None:
+          label_axis: str = "", scope: dict[str, str] | None = None) -> None:
     from .ocr_router import ExtractedMetric
     label, code, _allowed = _OUTPUT[doc_type][role]
     hint = f"{label} ({row_label})" if row_label else label
@@ -415,45 +455,57 @@ def _emit(res: TableMetricResult, *, doc_type: str, role: str, value: float, uni
     }
     if row_label and label_axis:
         detail["row_label_axis"] = label_axis
+    if scope:
+        detail["scope"] = dict(scope)
     if formula:
         detail["formula"] = formula
     if index_check:
         detail["index_check"] = index_check
     m = ExtractedMetric(
         metric_hint=hint, value=value, unit=unit,
-        period=row_label if label_axis == "period" else "", kesg_code_guess=code,
+        period=(scope or {}).get("period") or (row_label if label_axis == "period" else ""),
+        kesg_code_guess=code,
         bbox=cells[0].bbox if len(cells) == 1 else _union([c.bbox for c in cells]),
         page=cells[0].page, confidence=confidence,
     )
     m.source_detail = detail
-    # 표 객체와 텍스트 줄이 **같은 원문 칸**을 겹쳐 제공하면 한 번만 쓴다. 같은 쪽에서
-    # 범위 표시(행 라벨)까지 같은 값이 다시 나오면(요약표 + 본문 표) 같은 사실의 반복
-    # 기재로 보고 위치만 덧붙인다. 행 라벨(사업장·기간)이나 쪽이 다르면 독립된 사실이다.
+    # 표 객체와 텍스트 줄이 **같은 원문 칸**을 겹쳐 제공할 때만 한 번으로 줄인다. 같은 쪽·
+    # 같은 범위·같은 값이라도 다른 칸(요약표 + 본문 표)이면 같은 사실인지 원문만으로
+    # 알 수 없다 — 두 후보를 모두 두고 중복 여부를 미확정으로 남긴다(합산 단계가 동일
+    # 측정값 중복으로 막는다). 범위(사업장·기간·계량기)나 쪽이 다르면 독립된 사실이다.
+    twins = []
     for prev in res.metrics:
         pd = prev.source_detail
         if not (pd["role"] == role and prev.value == value and prev.unit == unit
-                and pd["row_label"] == row_label):
+                and pd["row_label"] == row_label and pd.get("scope") == detail.get("scope")):
             continue
         if _same_origin(prev, m):
             return
         if prev.page == m.page:
-            pd.setdefault("repeated_cells", []).extend(detail["cells"])
-            return
+            twins.append(prev)
+    for prev in twins:
+        prev.source_detail["duplicate_status"] = detail["duplicate_status"] = "undetermined"
+        prev.source_detail.setdefault("possible_duplicate_cells", []).extend(detail["cells"])
+        detail.setdefault("possible_duplicate_cells", []).extend(prev.source_detail["cells"])
     res.metrics.append(m)
     res.records.append({k: v for k, v in detail.items() if k != "cells"} | {"metric_hint": hint})
 
 
 def _same_origin(a: Any, b: Any) -> bool:
     """두 산출물이 같은 원문 칸에서 왔는가 — 같은 쪽이고, 한 위치가 다른 위치의 중심을
-    품는다(표 외접 bbox ⊃ 텍스트 줄 bbox 포함). 위치가 없으면 머리글·원문이 같을 때만."""
+    품는다. 두 위치가 모두 칸 좌표면 그것으로 충분하다. 한쪽이 표 외접 bbox(여러 칸을
+    감쌈)거나 위치가 없으면 머리글·원문까지 같을 때만 같은 칸으로 본다."""
     if a.page != b.page:
         return False
+    da, db = a.source_detail, b.source_detail
     if a.bbox and b.bbox:
         def holds(box, other):
             cx, cy = (other[0] + other[2]) / 2, (other[1] + other[3]) / 2
             return box[0] <= cx <= box[2] and box[1] <= cy <= box[3]
-        return holds(a.bbox, b.bbox) or holds(b.bbox, a.bbox)
-    da, db = a.source_detail, b.source_detail
+        if not (holds(a.bbox, b.bbox) or holds(b.bbox, a.bbox)):
+            return False
+        if da.get("precision") == "cell" and db.get("precision") == "cell":
+            return True
     return da.get("header") == db.get("header") and da.get("raw_text") == db.get("raw_text")
 
 
@@ -475,6 +527,10 @@ def _process_header_table(res: TableMetricResult, grid: _Grid, doc_type: str) ->
         return True
     label_col = 0 if roles[0] is None else None
     label_axis = _label_axis(header[0].text) if label_col is not None else ""
+    # 범위 칸(사업장·기간·계량기)은 열 순서와 무관하게 머리글로 모두 읽는다.
+    scope_cols = [(k, axis) for k, (c, r) in enumerate(zip(header, roles))
+                  if r is None and (axis := _label_axis(c.text))]
+    area = _union([c.bbox for row in grid.rows for c in row])
     total_rows = [r for r in data if label_col is not None and _is_total_label(r[0].text)]
     if doc_type == "waste_ledger" and "detail_mass" in roles:
         # '구분 | 중량' 아래 행 머리가 총량·재활용량이면 명세가 아니라 항목표다.
@@ -484,21 +540,39 @@ def _process_header_table(res: TableMetricResult, grid: _Grid, doc_type: str) ->
         return True
     use_rows = total_rows or data
     per_row: list[list[dict[str, Any]]] = []
+    row_axis_of: dict[int, str] = {}
     for row in use_rows:
         row_label = row[label_col].text if label_col is not None and label_col < len(row) else ""
         if row_label and _parse_qty(row_label):
             row_label = ""
         if total_rows:
             row_label = ""
+        scope: dict[str, str] = {}
+        for k, axis in scope_cols:
+            text = row[k].text if k < len(row) else ""
+            if text and not _parse_qty(text) and not _is_total_label(text):
+                scope.setdefault(axis, text)
+        row_axis = label_axis if row_label else next((a for _k, a in scope_cols if a in scope), "")
+        if scope:
+            row_label = " · ".join(p for p in dict.fromkeys(
+                [row_label] + [scope[a] for _k, a in scope_cols if a in scope]) if p)
         inputs = _index_inputs(row, roles, header)
         found: list[dict[str, Any]] = []
         explicit_roles = set()
+        absent: list[dict[str, Any]] = []
+        held = ""
         for k, role in enumerate(roles):
             if role not in outputs or k >= len(row):
                 continue
             cell = row[k]
             q = _parse_qty(cell.text)
             if q is None:
+                # 칸은 있으나 값이 없다(빈칸·'-'·'검침 예정'). 역할은 차지하지 않는다(R3).
+                absent.append({"role": role, "header": header[k].text, "raw_text": cell.text,
+                               "table_id": grid.table_id, "page": cell.page if cell.page is not None
+                               else grid.page, "area": area, "row_label": row_label,
+                               "row_numbers": sorted({p["value"] for c in row
+                                                      if (p := _parse_qty(c.text))})})
                 continue
             # 원문 칸에 수치가 있을 때만 역할을 차지한다 — 값을 못 만든 표가 같은 역할의
             # 기존 템플릿 결과를 조용히 지우지 않게 한다(단위 누락·단위 불일치는 검토로 남김).
@@ -524,7 +598,7 @@ def _process_header_table(res: TableMetricResult, grid: _Grid, doc_type: str) ->
             found.append({"role": role, "value": q["value"], "unit": unit, "raw_unit": raw_unit,
                           "raw_text": cell.text, "header": header[k].text, "cells": [cell],
                           "unit_source": unit_source, "value_source": "explicit",
-                          "row_label": row_label})
+                          "row_label": row_label, "scope": scope})
         usage_role = "usage" if "usage" in outputs else None
         if usage_role and inputs:
             usage_col = next((k for k, r in enumerate(roles) if r == usage_role), None)
@@ -552,14 +626,27 @@ def _process_header_table(res: TableMetricResult, grid: _Grid, doc_type: str) ->
                     found.append({"role": usage_role, "value": comp["value"], "unit": comp["unit"],
                                   "raw_unit": comp["unit"], "raw_text": "", "cells": comp["cells"],
                                   "header": comp["formula"], "unit_source": "index" if not usage_unit else "header",
-                                  "value_source": "computed", "row_label": row_label,
+                                  "value_source": "computed", "row_label": row_label, "scope": scope,
                                   "index_check": check, "formula": comp["formula"]})
             elif comp:
+                held = comp["reason"]
                 res.review.append({"reason": comp["reason"], "table_id": grid.table_id,
                                    "cells": [c.text for c in comp["cells"]],
                                    **{k: comp[k] for k in ("input_units", "usage_unit") if k in comp}})
                 if explicit:
                     explicit["index_check"] = {"status": comp["reason"]}
+        # 빈 칸의 상태: 지침으로 계산됨 / 계산 보류(사유) / 값 없음. 어느 경우도 다른 칸의
+        # 수치(지침·배율·금액)를 그 칸의 값으로 쓰지 않는다.
+        for a in absent:
+            a["state"] = ("computed" if any(f["role"] == a["role"] for f in found)
+                          else f"held:{held}" if held else "absent")
+            if a["state"] != "computed":
+                res.review.append({"reason": "value_absent", "role": a["role"], "header": a["header"],
+                                   "raw_text": a["raw_text"], "state": a["state"],
+                                   "table_id": grid.table_id})
+        res.absent_cells.extend(absent)
+        for f in found:
+            row_axis_of[id(f)] = row_axis
         per_row.append(found)
         if doc_type == "waste_ledger" and not total_rows:
             _check_components(res, grid, roles, row)
@@ -570,7 +657,7 @@ def _process_header_table(res: TableMetricResult, grid: _Grid, doc_type: str) ->
             chk = f.get("index_check") or {}
             if chk.get("status") == "mismatch":
                 conf = 0.6
-            axis = label_axis if f["row_label"] else ""
+            axis = row_axis_of[id(f)] if f["row_label"] else ""
             if multi and not f["row_label"]:
                 f["row_label"] = f"행 {per_row.index(found) + 1}"
             # 행 라벨(사업장·기간)은 데이터 행이 하나여도 원문 범위라 버리지 않는다.
@@ -579,7 +666,7 @@ def _process_header_table(res: TableMetricResult, grid: _Grid, doc_type: str) ->
                   row_label=f["row_label"], grid=grid, cells=f["cells"],
                   value_source=f["value_source"], unit_source=f["unit_source"],
                   index_check=f.get("index_check"), confidence=conf if not multi else min(conf, 0.7),
-                  formula=f.get("formula", ""), label_axis=axis)
+                  formula=f.get("formula", ""), label_axis=axis, scope=f.get("scope"))
     if doc_type == "waste_ledger" and total_rows:
         _check_components(res, grid, roles, total_rows[0])
     return True
@@ -701,20 +788,58 @@ def extract_table_metrics(
     return res
 
 
+def drop_template_candidates_in_absent_tables(res: TableMetricResult, kv_pairs: dict[str, Any],
+                                              doc_type: str) -> None:
+    """값이 빈 산출 칸이 있는 표 **안에서** 템플릿이 집은 숫자는 버린다.
+
+    그 표의 수치 칸은 모두 머리글 역할로 이미 해석됐다 — 역할을 차지하지 못한 템플릿
+    라벨이 표 안에서 찾은 숫자는 빈 칸 옆의 지침·배율·금액이다. 출처 위치가 표 밖(본문
+    문장·다른 표·다른 쪽)이면 그대로 둔다. 위치가 없으면 그 행의 다른 칸 수치와 같을 때만
+    버린다(출처를 가를 근거가 그것뿐이다). LLM 정규화는 이 KV만 보므로 함께 막힌다."""
+    labels = {lb for lbs in TEMPLATE_LABELS_BY_ROLE.get(doc_type, {}).values() for lb in lbs}
+    for label in sorted(labels & set(kv_pairs)):
+        info = kv_pairs[label]
+        hit = next((a for a in res.absent_cells if _candidate_in_table(info, a)), None)
+        if hit is None:
+            continue
+        kv_pairs.pop(label)
+        res.review.append({"reason": "template_candidate_from_other_cell", "label": label,
+                           "value": info.get("value"), "absent_role": hit["role"],
+                           "absent_header": hit["header"], "table_id": hit["table_id"]})
+
+
+def _candidate_in_table(info: dict[str, Any], absent: dict[str, Any]) -> bool:
+    bbox, area = info.get("bbox"), absent.get("area")
+    if bbox and len(bbox) >= 4:
+        if not area or (info.get("page") is not None and absent.get("page") is not None
+                        and info.get("page") != absent.get("page")):
+            return False
+        cx, cy = (bbox[0] + bbox[2]) / 2, (bbox[1] + bbox[3]) / 2
+        return area[0] <= cx <= area[2] and area[1] <= cy <= area[3]
+    try:
+        value = float(info.get("value"))
+    except (TypeError, ValueError):
+        return False
+    return any(abs(value - v) < 1e-9 for v in absent.get("row_numbers") or ())
+
+
 def _flag_conflicts(res: TableMetricResult) -> None:
     """같은 역할·같은 행 라벨인데 값이 다르면(표가 둘 이상) 어느 것도 고르지 않고 검토로 올린다."""
-    groups: dict[tuple[str, str], set[float]] = {}
-    for m in res.metrics:
+    def key(m: Any) -> tuple:
         d = m.source_detail
+        return d["role"], d["row_label"], tuple(sorted((d.get("scope") or {}).items()))
+
+    groups: dict[tuple, set[float]] = {}
+    for m in res.metrics:
         kg = _to_kg(m.value, m.unit) if m.unit in _MASS else None
-        groups.setdefault((d["role"], d["row_label"]), set()).add(
-            kg if kg is not None else float(m.value))
-    for (role, row_label), values in groups.items():
+        groups.setdefault(key(m), set()).add(kg if kg is not None else float(m.value))
+    for k, values in groups.items():
         if len(values) > 1:
-            res.review.append({"reason": "conflicting_values", "role": role,
-                               "row_label": row_label, "values": sorted(values)})
+            role, row_label, scope = k
+            res.review.append({"reason": "conflicting_values", "role": role, "row_label": row_label,
+                               "scope": dict(scope), "values": sorted(values)})
             for m in res.metrics:
-                if m.source_detail["role"] == role and m.source_detail["row_label"] == row_label:
+                if key(m) == k:
                     m.confidence = min(m.confidence, 0.6)
 
 

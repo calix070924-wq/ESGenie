@@ -466,7 +466,11 @@ def test_old_set_values_are_preserved():
     assert _vals(waste, code="E-6-2") == [29.3]
     # 이전 코드는 재활용량 5,400을 ton으로 적었다(1000배 오류) — 원문 단위 kg 유지.
     assert _vals(waste, unit="ton", code=None) == []
-    assert _vals(waste, unit="kg", code=None) == [5400]
+    # 요약표 '재활용(순환이용)'과 항목표 '재활용량'은 같은 쪽의 다른 칸이다 — 같은 쪽이라는
+    # 이유만으로 합치지 않고 두 후보를 두되 중복 여부를 미확정으로 남긴다(PR #68 R7).
+    recycled = [m for m in waste.metrics if m.unit == "kg" and m.kesg_code_guess is None]
+    assert [m.value for m in recycled] == [5400, 5400]
+    assert all(m.source_detail["duplicate_status"] == "undetermined" for m in recycled)
 
 
 # ---- 9. 단위 공통 함수 ------------------------------------------------------------

@@ -243,7 +243,7 @@ def select_fact_nodes(graph, code):
             derived = plan_derived_emissions(graph, derived)[0]
         if derived:
             period = min({n.period for n in derived}, key=lambda p: (abs(p-year), -p)) if year else max(n.period for n in derived)
-            from .boundary import same_period, compatible_sites
+            from .boundary import same_period, compatible_sites, different_meters
             # 환산 근거가 E-4-1 대표값과 같은 원측정값인 후보를 먼저 본다 — 사업장·월만
             # 다른 같은 값의 사용량이 여럿이면 E-4-1과 E-3-1이 서로 다른 범위를 고른다.
             anchor = getattr(graph, "representative_node_ids", {}).get("E-4-1")
@@ -256,7 +256,8 @@ def select_fact_nodes(graph, code):
                 if identity in seen:
                     continue
                 if chosen and (same_period(chosen[0].boundary, b)[0] != "compared"
-                               or not compatible_sites(Boundary.from_dict(chosen[0].boundary), b, inclusion=True)):
+                               or not compatible_sites(Boundary.from_dict(chosen[0].boundary), b, inclusion=True)
+                               or different_meters(chosen[0].boundary, b)):
                     continue
                 seen.add(identity)
                 chosen.append(n)

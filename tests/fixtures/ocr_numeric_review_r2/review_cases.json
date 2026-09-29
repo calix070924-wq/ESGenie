@@ -1,0 +1,25 @@
+{
+  "note": "PR #68 2차 검토(2026-09-29) R6·R7 재현 입력. 검토 파일 repro.py의 네 최소 입력과 같은 표를 옮긴 가상 입력이다 — 실제 회사 증빙이 아니다.",
+  "cases": {
+    "empty_electric_missing_multiplier": {
+      "doc_type": "kepco_bill", "extra": [],
+      "tables": [[["사용량(kWh)", "전월지침", "당월지침"], ["-", "1,000", "1,250"]]],
+      "forbidden_values": [1000, 1250, 250]
+    },
+    "empty_heat_with_only_previous": {
+      "doc_type": "gas_bill", "extra": [],
+      "tables": [[["가스사용량(MJ)", "전월지침(m3)"], ["-", "31,580"]]],
+      "forbidden_values": [31580]
+    },
+    "same_site_different_period": {
+      "doc_type": "kepco_bill", "extra": [],
+      "tables": [[["사업장", "기간", "사용량(kWh)"], ["김해 제1공장", "2026년 4월", "1,000"]],
+                 [["사업장", "기간", "사용량(kWh)"], ["김해 제1공장", "2026년 5월", "1,000"]]]
+    },
+    "different_meters_same_site": {
+      "doc_type": "kepco_bill", "extra": [],
+      "tables": [[["사업장", "계량기", "사용량(kWh)"], ["김해 제1공장", "전력계 A", "1,000"]],
+                 [["사업장", "계량기", "사용량(kWh)"], ["김해 제1공장", "전력계 B", "1,000"]]]
+    }
+  }
+}

@@ -492,6 +492,7 @@ _PROJECTION_YEAR_GAP: int = 2
 _TABLE_CELL_PROVENANCE_KEYS = (
     "precision", "raw_text", "raw_value", "raw_unit", "unit", "unit_source", "header", "row_label",
     "table_id", "grid_source", "value_source", "formula", "index_check", "cells", "pinned_unit",
+    "scope", "duplicate_status", "possible_duplicate_cells",
 )
 
 
