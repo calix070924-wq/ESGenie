@@ -10,10 +10,12 @@
 | 코어 수정 | 필수 수치 6개·오인식 3건·위치 정밀도 표시 통과, 회귀 테스트 통과 | §3, §4 |
 | 실제 분석 확인(코어 단독) | 12건·13건 모두 판정 12개 통과 | §5.1 |
 | 웹 통합 확인(PR #65 + 코어 수정, 임시 통합) | 화면·Excel·PDF 값·단위·상태·출처 일치 | §5.2 |
+| **PR 검토 보완 R1~R5** (`89f34aa`) | R1~R5 수정·재현·테스트·실제 분석·HMC·새 웹 통합(`cd66424`) 확인 완료. 남은 한계는 §10.7 | §10 |
 
-가상 증빙의 검증 항목 **29개 중 통과 27개, 미통과 0개, 미검증 2개**(§7). 미검증 2개는 작업지시서 필수
-항목 밖이다. 이 결과는 BM 개편 가상 증빙 1세트의 수치 인식 범위에 한정되며, 전체 분석 제품이나 시연 준비가
-완료됐다는 뜻이 아니다.
+가상 증빙의 검증 항목 **29개 중 통과 27개, 미통과 0개, 미검증 2개**(§7, 최초 수정 `1dea0c5` 기준 기록 — 검토 보완
+후에도 그대로 둔다). 검토 보완의 테스트 수·검증은 §10에 따로 적었다(최초 집계와 섞지 않음). 미검증 2개는 작업지시서 필수
+항목 밖이다. 이 결과는 BM 개편 가상 증빙 1세트와 검토용 가상 변형 입력의 수치 인식 범위에 한정되며, 전체 분석 제품이나
+시연 준비가 완료됐다는 뜻이 아니다.
 
 ## 1. 커밋
 
@@ -199,3 +201,106 @@ python docs/validation/ocr-numeric-20260929/render_bbox_overlays.py <수정 전 
 # 규칙 경로 스냅샷(작업 폴더의 esgenie 사용)
 ESGENIE_FORCE_MOCK=1 python docs/validation/ocr-numeric-20260929/snapshot_pymupdf_path.py <출력.json>
 ```
+
+## 10. PR 검토 보완 R1~R5 (2026-09-29)
+
+작업지시서: `docs/작업지시서_PR68_검토보완_5건_2026-09-29.md`. 같은 브랜치·같은 Draft PR #68에 후속 커밋으로 추가(기존 커밋 재작성·되돌림 없음).
+기록은 모두 `review-r1/`에 있다(기존 로그·결과 덮어쓰지 않음). 이 절의 수치는 §3·§7의 최초 집계와 별개다.
+
+### 10.1 커밋
+
+| SHA | 내용 |
+|---|---|
+| `89f34aa` | fix(ocr): R1~R5 수정 + 회귀 46개(`tests/test_pr68_review_r1_r5.py`) + 재현 픽스처(`tests/fixtures/ocr_numeric_review_r1/review_cases.json`), 기존 테스트 1개 기대값 갱신 |
+| (이 문서 커밋) | docs: 검토 보완 검증 기록(`review-r1/`)과 이 절 |
+
+웹 통합(임시): `/private/tmp/ESGenie-web-integ-r1-20260929` = PR #65 `6bf9750` + cherry-pick `ec0bb4e`→`ea5aa6f`, `1dea0c5`→`7dd7f01`, `89f34aa`→**`cd66424`**.
+이전 통합 `d92732b`·이전 지표는 수정 후 검증으로 쓰지 않았다(비교 기준으로만 인용).
+
+### 10.2 R1~R5
+
+재현 스크립트: `review-r1/before/repro.py`(검토 파일의 변형 표, 외부 API 없음). 수정 전 `50b8d72` → `before/repro_on_50b8d72.json`,
+수정 후 `89f34aa` → `after/repro_89f34aa.json`, 요약 대조 `after/repro_before_after.json`.
+
+| ID | 수정 전 재현 | 원인·수정 | 추가 테스트 | 최종 답변·출력 확인 | 결과·근거 경로 |
+|---|---|---|---|---|---|
+| R1 지침 단위 | 전월 1 MWh→당월 2 MWh, 사용량(kWh) 칸 비어 있음 → **1 kWh**로 계산. 명시 1 kWh를 **match**로 판정. 1,000 kWh→2 MWh 혼합 → `index_decreased`로 계산 보류 | 지침 차를 단위 없이 뺐다. `_compute_from_index`가 지침 칸 단위를 읽어 이전 지침을 당월 단위로, 결과를 사용량 칸 단위로 환산(`computed_unit`·`input_units`·`conversion` 기록). 지침 단위 없음 → `index_unit_missing`, 비호환(kWh↔m3) → `index_unit_incompatible`로 보류. 배율 없음은 계속 보류(값을 채우지 않음) | R1 9개: MWh→1,000 kWh, 명시 1 → mismatch / 1,000 → match, 혼합 단위 감소 아님(1 MWh), 단위 없음·비호환 보류, 가스 m³ 지침이 MJ가 되지 않음, 배율 미보충, 사용량 0 | 수정 후 재현: 1,000 kWh(computed_only), 명시 1 kWh → mismatch + 검토 노트, 혼합 → 1.0 MWh. BM 실제 분석 값 불변(142,560 kWh, `computed_unit` kWh) | `after/repro_before_after.json`, `logs/new_tests_*.txt`, §10.4 |
+| R2 검산 불일치 전파 | 명시 150,000 kWh ≠ 지침 계산 142,560 kWh는 OCR 검토 목록(`explicit_vs_index_mismatch`)에만 있고, DataPoint는 `estimated`·`scope_unconfirmed`, 답변은 `self_reported` — 불일치가 답변·출력에 보이지 않음(`before/mismatch_answer.json`) | OCR 검토 결과가 근거 그래프 경계로 넘어가지 않았다. `merge_ocr_extraction`이 불일치 노트(파일·쪽, 두 값, 산식, 사유)를 `Boundary.review_notes`에 붙이고, 파생 배출량(E-3-1)이 이를 물려받는다. `finalize_ledger`가 노트를 범위 노트로 옮기며 `source_conflict` 플래그 → 기존 비교 경로에서 `mismatch`·`unverified` | R2 5개: 답변에 두 값·산식·사유, 파생 배출량 상속, 일치 값은 경고 없음, 무관 문서(수도·폐기물) 미표시, Excel·PDF 표시 | 가상 변형(02 사용량 칸만 150,000) 웹 분석: E-4-1 0.54 TJ·E-3-1 71.715 tCO2eq 모두 `실제 불일치`, 화면 상세·Excel·PDF에 `150,000 kWh ≠ 142,560 kWh [(50,586 − 48,210) × 배율 60]`, 신뢰 정보 `source_conflict` | `live/web_variant_R2_cd66424/`, `live/ui_screens_cd66424/R2/`, `variant_inputs/` |
+| R3 가스 MJ | 머리글 `사용량(MJ)`의 360,772 → **추출 0개**(가스 사용량 역할이 m³만 허용) | 사용량 칸 단위가 열량(MJ·GJ·TJ)이면 `heat` 역할로 읽는다(`_unit_role`: 머리글·셀·키-값 공통). 칸이 실제 수량으로 읽힐 때만 템플릿 역할을 차지. 허용 밖 단위는 `unit_not_allowed_for_role` 검토 | R3 6개: 머리글 MJ·셀 MJ → 360,772 MJ E-4-1, m³는 부피로 유지(코드 없음), 단위 없는 값 미생성, 빈 칸이 역할을 차지하지 않음, 부피+열량 동시 기재 시 이중 합산 없음(E-4-1 = 0.360772 TJ) | BM 03 가스는 8,420 m³·코드 없음·MJ/TJ/GJ 없음(판정 12개 불변). m³→MJ 환산·발열량 보충 없음 | `after/repro_before_after.json`, §10.4 판정 |
+| R4 행 라벨·중복 | 사업장별 한 행 표 2개(김해 제1공장·양산 제2공장 각 1,000 kWh) → **1개로 합쳐짐**(행 라벨 버림, 값·단위만으로 중복 제거). 4월·5월도 1개. 행 라벨을 살린 뒤에는 개발 중 E-4-1이 5월·제2공장, E-3-1이 4월·제1공장을 골라 범위가 갈라지는 것을 관찰(별도 로그 없음, 테스트로 고정) | 한 행 표의 행 라벨을 항상 보존하고 머리글로 축(`사업장`→site, `기간`→period)을 기록. 중복 제거는 같은 역할·값·단위·행 라벨이면서 **같은 원문**(같은 쪽·bbox 포함, bbox 없으면 같은 머리글·원문)일 때만. 같은 쪽 다른 칸 반복은 `repeated_cells`로 남김. 선택: 파생 E-3-1 후보를 E-4-1 대표 노드의 범위 순으로 정렬 | R4 8개: 사업장·월 라벨 보존, 여러 행 표, 다른 쪽 같은 값 2개, 같은 칸(표+텍스트) 1개, 같은 범위 다른 값은 상충 검토, 최종 답변이 한 범위만 쓰고 합산 안 함(사업장·월 2가지) | 가상 변형(사업장별 한 행 표 2개) 웹 분석: 근거 노드 2개(행 라벨 김해 제1공장·양산 제2공장, 축 site). 답변 E-4-1 0.0036 TJ(합산 아님)·E-3-1 0.478 tCO2eq 모두 `제1공장`, `사업장 범위 미상 또는 상이 — 합산 보류`. BM 세트 답변 범위 `2026-04-01~30 · 월간 · 제1공장` 불변 | `live/web_variant_R4_cd66424/`, `live/ui_screens_cd66424/R4/` |
+| R5 비율 자릿수 | 재활용 29.3 kg / 합계 100 kg, 원문 `29%` → **mismatch + HITL**(29.0과 29.3을 소수 첫째 자리로 비교) | 비교 규칙: 재계산값(Decimal)을 **원문 표시 소수 자릿수**로 사사오입(ROUND_HALF_UP)한 값 == 원문 수치. 원문 문자열·자릿수(`reported_text`·`display_decimals`·`computed_rounded`·`rounding`)를 기록. 본문 고정 비율은 bbox가 없어도 원문 문자열을 보존. 원문 문자열 없음 → `precision_unknown`(불일치 아님, 한계 노트). 총량·재활용량의 행 라벨이 다르면 검산하지 않고 `rate_check_scope_differs` | R5 18개: 반올림 매개변수 15개(29%·29.0%·29.3%·29.30%·BM 29.3478%·0%·100%·100.0%·0.0%·경계 0.05/29.25/29.5 등), 원문 문자열 보존, 자릿수 미상, 범위 상이 | 수정 후 재현 `29%` → match. BM 실제 분석 29.3% → match(`reported_text` 29.3%, 자릿수 1). 답변 E-6-2 29.3%, 회사 답변 92% 별도 표시 불변 | `after/repro_before_after.json`, `live/core_89f34aa_*_summary.json` |
+
+### 10.3 테스트
+
+| 실행 | 코드 | 결과 | 기록 |
+|---|---|---|---|
+| 새 회귀 46개 수정 전 | `50b8d72` 제품 코드(임시 작업 폴더에 새 테스트·픽스처만 복사) | 38 failed, 8 passed | `logs/new_tests_before_fix_50b8d72.txt` |
+| 새 회귀 46개 수정 후 | `89f34aa` | 46 passed | `logs/new_tests_after_fix.txt` |
+| 전체 | `89f34aa` | 1693 passed, 12 skipped | `logs/full_pytest_after_fix.txt` |
+| 웹 통합 전체(PR #65 venv) | `cd66424` | 1707 passed, 12 skipped | `logs/web_integ_cd66424_full_pytest.txt` |
+
+- 수정 전 통과 8개는 보존 확인용이다: 배율 미보충, 일치 값 무경고, 가스 m³ 부피 유지, 단위 없는 가스 값 미생성, 부피+열량 이중 합산 없음,
+  여러 행 표 사업장 보존, 같은 칸 1개, 같은 범위 다른 값 상충 검토.
+- 건너뜀 12개: `tests/test_table_structure.py` — 실보고서 PDF(`data/real_reports/*.pdf`) 없음. 기존과 같다.
+- 기존 테스트 변경 1개: `test_rate_without_location_has_no_precision_claim` — bbox 없는 본문 비율도 원문 문자열(`raw_text` 29.3%)은 남기고
+  정밀도·셀 주장은 하지 않는지 확인하도록 기대값 갱신(R5).
+- 이전 세트 5,400 kg이 같은 쪽 두 칸에 있어 엄격한 중복 제거 후 2개가 되던 것을 같은 쪽·같은 범위 반복(`repeated_cells`)으로 처리 —
+  `test_old_set_values_are_preserved` 통과.
+- 새 테스트는 외부 API를 호출하지 않는다(키 조회 함수를 None으로 고정). 재현 입력은 저장소 픽스처에 있다.
+
+### 10.4 실제 분석(코어 단독, `89f34aa`)
+
+| 실행 | 캐시 | 시간 | LLM 실호출 | LLM 캐시 적중 | VLM 적중/누락 | Upstage 요청/성공/실패 | 판정 |
+|---|---|---|---|---|---|---|---|
+| 최초 12건 | `core_cache_1dea0c5` 사본 | 43.6 s | 0 | 6 | 7/0 | 4/4/0 | 12/12 |
+| 보완 13건 | 위 캐시 이어 씀 | 20.8 s | 0 | 6 | 8/0 | 4/4/0 | 12/12 |
+
+- 환경(`live/core_run_89f34aa/*/environment.json`): 커밋 `89f34aa`(미커밋은 `review-r1/`뿐), azure_openai gpt-4.1-mini, Upstage Document Parse,
+  키 설정 여부 true(값 미기록), `force_mock=False`, `strict_llm=True`, 입력 sha256 전부 구성 목록(version 2026-09-28)과 일치.
+- 요약(`live/core_89f34aa_{initial,followup}_summary.json`)은 `1dea0c5`(최초)·`688445a`+`1dea0c5` 비율 위치(보완)와 경로 외 동일.
+- 답변: E-4-1 0.513216 TJ, E-3-1 68.158 tCO2eq, E-6-1 18.4 톤, E-6-2 29.3%(회사 답변 92% 별도). 모두 `self_reported`·범위 확인 필요,
+  `2026-04-01~30 · 월간 · 제1공장`.
+- HMC 회귀(`ESGENIE_FORCE_MOCK=1`, 이전 세트·기존 OCR 캐시 읽기만): `hmc/after/validation_report.json` `failed: []`(actual 75·controlled 76 검사).
+  답변 값·단위·상태·비교·노트 불변. 달라진 것: 이전 세트 전력 지표 이름이 원문 라벨 열을 반영해 `사용전력량 (유효전력)`이 되어 E-4-1/E-3-1
+  근거 인용 문구·노드 ID가 바뀜, 기록 필드 추가(`computed_unit`·`input_units`, 5,400 kg `repeated_cells`, `display_decimals`).
+
+### 10.5 웹 통합(`cd66424`, 포트 8795, 새 프로젝트)
+
+| 실행 | 입력 | 시간 | LLM 실호출/성공/실패 | LLM 캐시 적중 | VLM 적중/누락 | Upstage 요청/성공/실패 | 판정 |
+|---|---|---|---|---|---|---|---|
+| rev13 | BM 최초 12건 | 43.9 s | 3/3/0 | 4 | 7/0 | 4/4/0 | 12/12 |
+| rev14 | + 보완 1건(13건) | 8.0 s | 0 | 7 | 8/0 | 4/4/0 | 12/12 |
+| R2 변형 | `R2변형_02_…사용량칸150000.pdf` 1건 | 7.9 s | 0 | 2 | — | 1/1/0 | — |
+| R4 변형 | `R4변형_…사업장별표2개.pdf` 1건 | 7.4 s | 0 | 2 | — | 1/1/0 | — |
+
+- 서버 환경(`live/web_server_cd66424/environment.json`): 통합 커밋 `cd66424`, dirty false, 캐시는 `web_cache_d92732b` 사본, `force_mock=False`,
+  `strict_llm=True`, 키 설정 여부 true. 원래 `esgenie.web.engine.run_analysis`를 변경 없이 관찰.
+- 정상 세트: 판정 12개가 `d92732b` 웹 통합과 항목별 동일(`runs/*_rev1[34]/summary.json`). 번들 PDF(`실사응답서_rba42_…pdf`) 본문 텍스트가
+  최초·보완 모두 `d92732b`와 **동일**(`downloads/*/report_text.txt` diff 빈 출력). Excel `응답서` 시트 E-4-1·E-3-1·E-6-1·E-6-2 행의 값·단위·범위·상태 동일.
+  화면(`ui_screens_cd66424/normal_followup/`) 값 0.513216 TJ·68.158 tCO2eq·18.4 톤·29.3 %(회사 답변 92 % 나란히), 범위 `제1공장`.
+- 보완 업로드 직후 이전 초안 내려받기 **409**(`web_drive_cd66424/followup_stale_download_check.json`).
+- R2·R4 화면 확인: BM 세트에는 검산 불일치·다중 사업장이 없어, 원본을 건드리지 않고 `variant_inputs/make_variants.py`로 가상 변형을 만들었다
+  (쪽 머리에 `검토 보완 검증용 변형본(가상) — 원본 아님` 표시, 원본·변형 sha256은 `variants.json`). 각 변형을 별도 프로젝트로 업로드·분석해
+  화면 목록·상세(`ui_screens_cd66424/{R2,R4}/`, 캡처 스크립트 `variant_inputs/ui_snap_r1.mjs`), Excel, 번들 PDF(`web_variant_*/report_text.txt`)를 확인.
+  - R2 PDF: `150,000kWh`·`142,560kWh`·`원측정값상충`·`배율60` 각 10회, `실제불일치` 4회.
+  - R4 PDF: `0.0036TJ`, `합산보류` 4회, `제2공장` 0회(제2공장 값은 답변에 쓰지 않고 보완 대상으로만 남음).
+
+### 10.6 보존 확인
+
+- 루트 작업 폴더: main `387999b`, 기존 미커밋 3개(`app.py`, `docs/…v2.md`, `esgenie/ui/tabs.py`) 그대로.
+- PR #65 폴더 `outputs/ui_redesign_workspace`: `6bf9750`, 미커밋 0줄(그 `.venv/bin/python`만 절대 경로로 사용).
+- 원본 PDF·기존 OCR 캐시·기존 리허설·이전 세트: 오늘 수정된 파일 0개, 구성 목록 14개 해시 불일치 0개. 기존 `live/`·`logs/`·`hmc/` 기록 덮어쓰지 않음.
+- 새 캐시·작업 공간·zip·원시 덤프·HMC 렌더는 `review-r1/.gitignore`로 커밋 제외(로컬 보존).
+- D1/D6/HMC 임계값, 판정 체계, 모델 변경 없음. 회사명·파일명·정답 수치·해시 분기 없음. 배율·발열량 보충, m³→MJ 환산 없음.
+
+### 10.7 남은 한계(범위 안에서 확인됨, 수정하지 않음)
+
+- 답변 검토 문구에 불일치 노트가 두 번 나온다(`실제 불일치: <노트> · <노트> · …` — 비교 사유와 범위 노트를 잇는 기존 표시 경로).
+- 화면 상세의 제목 아래 문구가 기존 비교 불일치 공통 문구 `같은 기준으로 비교한 회사 답변과 근거의 값이 다릅니다`라, 같은 문서 안 검산 불일치에는
+  맞지 않는다. 목록 행에는 `확인 필요`만 보이고 `실제 불일치`는 상세·Excel·PDF에 보인다. 화면 문구 변경은 범위 밖.
+- 지침으로 계산한 MWh 사용량은 파생 배출량(E-3-1)을 만들지 않는다(기존 파생은 kWh·MJ만 처리).
+- R4에서 두 사업장 중 답변에 쓰는 범위는 노드 순서로 정해진다(합산하지 않고 다른 범위는 `합산 보류`·보완 대상으로 표시). 어느 사업장을 쓸지 사용자가 고르는 기능은 없다.
+- LLM·VLM이 읽은 비율처럼 원문 문자열이 없는 값은 자릿수 검산을 `precision_unknown`으로 남긴다.
+- R2·R4 화면 확인은 가상 변형 입력 1건씩이다. R4 변형은 생성한 단순 표 양식이며 BM 양식이 아니다.
+- HMC는 이전 세트 오프라인(모의 LLM) 회귀만 실행했다. 실제 분석은 rba42만.
+- 범위 밖으로 분리: 전사 73명 인원에 사업장이 붙는 경계 추론, 회사 답변 범위 파서, 교육 참석자 통합(§8).
