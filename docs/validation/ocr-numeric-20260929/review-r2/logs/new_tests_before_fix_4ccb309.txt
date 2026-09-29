@@ -1,0 +1,66 @@
+code=4ccb309 (detached worktree /tmp/ESGenie-r2-base, 수정 전) + 새 테스트 파일·픽스처만 복사, python=/Users/heojeongmin/Documents/Claude/Projects/ESGenie/outputs/ui_redesign_workspace/.venv/bin/python
+FAILED tests/test_pr68_review_r6_r7.py::test_r6_empty_electric_usage_is_not_filled_from_readings[order0-]
+FAILED tests/test_pr68_review_r6_r7.py::test_r6_empty_electric_usage_is_not_filled_from_readings[order0--]
+FAILED tests/test_pr68_review_r6_r7.py::test_r6_empty_electric_usage_is_not_filled_from_readings[order0-\u2014]
+FAILED tests/test_pr68_review_r6_r7.py::test_r6_empty_electric_usage_is_not_filled_from_readings[order0-\uac80\uce68 \uc608\uc815]
+FAILED tests/test_pr68_review_r6_r7.py::test_r6_empty_electric_usage_is_not_filled_from_readings[order1-]
+FAILED tests/test_pr68_review_r6_r7.py::test_r6_empty_electric_usage_is_not_filled_from_readings[order1--]
+FAILED tests/test_pr68_review_r6_r7.py::test_r6_empty_electric_usage_is_not_filled_from_readings[order1-\u2014]
+FAILED tests/test_pr68_review_r6_r7.py::test_r6_empty_electric_usage_is_not_filled_from_readings[order1-\uac80\uce68 \uc608\uc815]
+FAILED tests/test_pr68_review_r6_r7.py::test_r6_empty_electric_usage_is_not_filled_from_readings[order2-]
+FAILED tests/test_pr68_review_r6_r7.py::test_r6_empty_electric_usage_is_not_filled_from_readings[order2--]
+FAILED tests/test_pr68_review_r6_r7.py::test_r6_empty_electric_usage_is_not_filled_from_readings[order2-\u2014]
+FAILED tests/test_pr68_review_r6_r7.py::test_r6_empty_electric_usage_is_not_filled_from_readings[order2-\uac80\uce68 \uc608\uc815]
+FAILED tests/test_pr68_review_r6_r7.py::test_r6_empty_gas_heat_is_not_filled_from_previous_reading[header0-]
+FAILED tests/test_pr68_review_r6_r7.py::test_r6_empty_gas_heat_is_not_filled_from_previous_reading[header0--]
+FAILED tests/test_pr68_review_r6_r7.py::test_r6_empty_gas_heat_is_not_filled_from_previous_reading[header0-\u2014]
+FAILED tests/test_pr68_review_r6_r7.py::test_r6_empty_gas_heat_is_not_filled_from_previous_reading[header0-\uac80\uce68 \uc608\uc815]
+FAILED tests/test_pr68_review_r6_r7.py::test_r6_empty_gas_heat_is_not_filled_from_previous_reading[header1-]
+FAILED tests/test_pr68_review_r6_r7.py::test_r6_empty_gas_heat_is_not_filled_from_previous_reading[header1--]
+FAILED tests/test_pr68_review_r6_r7.py::test_r6_empty_gas_heat_is_not_filled_from_previous_reading[header1-\u2014]
+FAILED tests/test_pr68_review_r6_r7.py::test_r6_empty_gas_heat_is_not_filled_from_previous_reading[header1-\uac80\uce68 \uc608\uc815]
+FAILED tests/test_pr68_review_r6_r7.py::test_r6_empty_gas_heat_is_not_filled_from_previous_reading[header2-]
+FAILED tests/test_pr68_review_r6_r7.py::test_r6_empty_gas_heat_is_not_filled_from_previous_reading[header2--]
+FAILED tests/test_pr68_review_r6_r7.py::test_r6_empty_gas_heat_is_not_filled_from_previous_reading[header2-\u2014]
+FAILED tests/test_pr68_review_r6_r7.py::test_r6_empty_gas_heat_is_not_filled_from_previous_reading[header2-\uac80\uce68 \uc608\uc815]
+FAILED tests/test_pr68_review_r6_r7.py::test_r6_review_minimal_inputs[empty_electric_missing_multiplier]
+FAILED tests/test_pr68_review_r6_r7.py::test_r6_review_minimal_inputs[empty_heat_with_only_previous]
+FAILED tests/test_pr68_review_r6_r7.py::test_r6_llm_normalization_never_sees_the_reading[empty_electric_missing_multiplier]
+FAILED tests/test_pr68_review_r6_r7.py::test_r6_llm_normalization_never_sees_the_reading[empty_heat_with_only_previous]
+FAILED tests/test_pr68_review_r6_r7.py::test_r6_empty_heat_keeps_volume_but_never_makes_mj
+FAILED tests/test_pr68_review_r6_r7.py::test_r6_r1_computed_usage_from_mwh_readings_is_kept
+FAILED tests/test_pr68_review_r6_r7.py::test_r6_r3_empty_column_still_does_not_claim_role
+FAILED tests/test_pr68_review_r6_r7.py::test_r6_local_pdf_text_path[kepco_bill-rows0-forbidden0-]
+FAILED tests/test_pr68_review_r6_r7.py::test_r6_local_pdf_text_path[kepco_bill-rows0-forbidden0--]
+FAILED tests/test_pr68_review_r6_r7.py::test_r6_local_pdf_text_path[kepco_bill-rows0-forbidden0-\u2014]
+FAILED tests/test_pr68_review_r6_r7.py::test_r6_local_pdf_text_path[kepco_bill-rows0-forbidden0-\uac80\uce68 \uc608\uc815]
+FAILED tests/test_pr68_review_r6_r7.py::test_r6_local_pdf_text_path[gas_bill-rows1-forbidden1-]
+FAILED tests/test_pr68_review_r6_r7.py::test_r6_local_pdf_text_path[gas_bill-rows1-forbidden1--]
+FAILED tests/test_pr68_review_r6_r7.py::test_r6_local_pdf_text_path[gas_bill-rows1-forbidden1-\u2014]
+FAILED tests/test_pr68_review_r6_r7.py::test_r6_local_pdf_text_path[gas_bill-rows1-forbidden1-\uac80\uce68 \uc608\uc815]
+FAILED tests/test_pr68_review_r6_r7.py::test_r7_two_months_on_one_page_are_two_facts
+FAILED tests/test_pr68_review_r6_r7.py::test_r7_two_meters_on_one_page_are_two_facts
+FAILED tests/test_pr68_review_r6_r7.py::test_r7_different_meter_values_are_not_a_conflict
+FAILED tests/test_pr68_review_r6_r7.py::test_r7_scope_columns_read_regardless_of_order[order0]
+FAILED tests/test_pr68_review_r6_r7.py::test_r7_scope_columns_read_regardless_of_order[order1]
+FAILED tests/test_pr68_review_r6_r7.py::test_r7_scope_columns_read_regardless_of_order[order2]
+FAILED tests/test_pr68_review_r6_r7.py::test_r7_scope_columns_read_regardless_of_order[order3]
+FAILED tests/test_pr68_review_r6_r7.py::test_r7_multi_row_table_keeps_period_and_meter
+FAILED tests/test_pr68_review_r6_r7.py::test_r7_different_pages_are_two_facts
+FAILED tests/test_pr68_review_r6_r7.py::test_r7_shared_table_bbox_does_not_make_different_cells_one
+FAILED tests/test_pr68_review_r6_r7.py::test_r7_summary_and_detail_repeat_is_kept_but_not_double_counted
+FAILED tests/test_pr68_review_r6_r7.py::test_r7_same_scope_conflict_stays_in_review
+FAILED tests/test_pr68_review_r6_r7.py::test_r7_months_answer_uses_one_period_for_energy_and_emission
+FAILED tests/test_pr68_review_r6_r7.py::test_r7_meters_answer_uses_one_meter_and_is_not_a_conflict[values0]
+FAILED tests/test_pr68_review_r6_r7.py::test_r7_meters_answer_uses_one_meter_and_is_not_a_conflict[values1]
+FAILED tests/test_pr68_review_r6_r7.py::test_r7_meters_in_different_documents_are_not_cross_check_mismatch
+55 failed, 9 passed in 0.93s
+
+## 실패 분류(--tb=line, 줄 번호는 tests/test_pr68_review_r6_r7.py)
+- 실제 결함(R6): 78·90행 가짜 사용량(1,000 kWh·31,580 MJ 등) 24건, 97·115행 금지값이 지표·LLM kv에 들어감 4건,
+  188행 로컬 PDF 텍스트 경로 금지값 8건, 121행 `사용량(m3)|사용열량(MJ)` / `8,420|-` → 8,420 MJ(부피가 MJ로) 1건.
+- 실제 결함(R7): 224·232·248·263·285·316행 기간·계량기 소실·병합, 240행 계량기 값 차이를 상충으로, 293행 요약/항목
+  두 칸이 한 칸으로 병합, 305행 같은 범위 상충이 답변 주석에 없음, 334행 근거 노드에 계량기 없음,
+  355행 다른 계량기 문서 간 '실제 불일치 20.0%'.
+- 새 메타데이터 부재(값 자체는 수정 전에도 보존): 140행 absent_cells 상태 없음(R1 1,000 kWh 값·computed_only는 통과),
+  177행 TableMetricResult.absent_cells 없음(claimed_roles 빈 집합은 통과), 257행 scope 키 없음.

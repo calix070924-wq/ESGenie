@@ -1,0 +1,2 @@
+code=873c5fa (/private/tmp/ESGenie-ocr-numeric-20260929), python=/Users/heojeongmin/Documents/Claude/Projects/ESGenie/outputs/ui_redesign_workspace/.venv/bin/python
+64 passed in 0.45s

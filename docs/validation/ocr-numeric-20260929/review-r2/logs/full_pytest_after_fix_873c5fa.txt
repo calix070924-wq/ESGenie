@@ -1,0 +1,5 @@
+code=873c5fa (/private/tmp/ESGenie-ocr-numeric-20260929), python=/Users/heojeongmin/Documents/Claude/Projects/ESGenie/outputs/ui_redesign_workspace/.venv/bin/python
+=========================== short test summary info ============================
+SKIPPED [5] tests/test_table_structure.py:38: 실보고서 PDF 없음: data/real_reports/051910_lgchem_2025.pdf
+SKIPPED [7] tests/test_table_structure.py:38: 실보고서 PDF 없음: data/real_reports/012330_mobis_2025.pdf
+1757 passed, 12 skipped, 8 warnings in 65.46s (0:01:05)

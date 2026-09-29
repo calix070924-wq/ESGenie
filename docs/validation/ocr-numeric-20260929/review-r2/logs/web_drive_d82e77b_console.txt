@@ -1,0 +1,3 @@
+{"stage": "initial", "status": "complete", "seconds": 80}
+{"stage": "followup", "status": "complete", "seconds": 10}
+{"done": true, "run_dir": "/private/tmp/ESGenie-ocr-numeric-20260929/docs/validation/ocr-numeric-20260929/review-r2/live/web_drive_d82e77b"}
