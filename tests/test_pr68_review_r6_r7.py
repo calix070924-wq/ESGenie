@@ -320,7 +320,9 @@ def test_r7_months_answer_uses_one_period_for_energy_and_emission():
     period = e41.boundary["period_text"]
     assert period in _answer_scope(answers["E-4-1"]) and period in _answer_scope(answers["E-3-1"])
     assert "합산 보류" in answers["E-4-1"].review_note      # 다른 달은 참고 근거로 보존
-    assert answers["E-4-1"].reference_links
+    other = "2026년 4월" if period == "2026년 5월" else "2026년 5월"
+    refs = answers["E-4-1"].reference_links
+    assert refs and all(other in link.quote and period not in link.quote for link in refs)
 
 
 @pytest.mark.parametrize("values", [("1,000", "1,000"), ("1,000", "1,200")])

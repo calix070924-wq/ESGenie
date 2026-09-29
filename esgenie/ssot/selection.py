@@ -545,7 +545,12 @@ def finalize_ledger(result, graph):
                     node = min(matching, key=lambda n: n.id)
                 chosen = [node] if node else []
         if decision and not sum_notes:
-            reference = [n for n, _ in (*decision.blocked, *decision.reference)]
+            chosen_ids = {n.id for n in chosen}
+            reference = [n for n, _ in (*decision.blocked, *decision.reference) if n.id not in chosen_ids]
+            # 같은 값의 다른 기간·계량기 노드가 대표가 되면 합산 판정의 기준 노드를 참고 근거로
+            # 남긴다 — 채택 근거가 참고 근거 자리에 다시 서고 보류된 근거가 사라지지 않게 한다.
+            if len(reference) < len(decision.blocked) + len(decision.reference):
+                reference += [n for n in decision.summable if n.id not in chosen_ids]
             sum_notes = [f"{code}: {r}" for r in decision.reasons]
         ids = [n.id for n in chosen]
         if not ids:
