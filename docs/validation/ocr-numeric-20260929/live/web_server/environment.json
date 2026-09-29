@@ -1,0 +1,33 @@
+{
+  "started_at": "2026-09-29T04:03:20.628363+00:00",
+  "pid": 70744,
+  "code_path": "/private/tmp/ESGenie-web-integ-20260929",
+  "commit": "fe811b23ee47407e130983942e513397311257be",
+  "branch": "HEAD",
+  "log": [
+    "fe811b2 fix(ocr): 고지서·위탁명세 표 셀에서 사용량·총량을 머리글·단위와 함께 읽기",
+    "6bf9750 feat: rebuild supplier workspace around evidence review",
+    "02f19c4 Merge branch 'main' into codex/ui-guided-workspace",
+    "387999b Merge pull request #67 from calix070924-wq/codex/fix-hmc-response-integrity-20260920",
+    "bda40fc docs(hmc): 7차 검토 후속 수정의 검증 기록과 결과 보고"
+  ],
+  "dirty": false,
+  "dirty_files": [],
+  "imported_esgenie": "/private/tmp/ESGenie-web-integ-20260929/esgenie/__init__.py",
+  "force_mock": false,
+  "strict_llm": true,
+  "model": "gpt-4.1-mini",
+  "llm_provider": "azure_openai",
+  "ocr_provider": "upstage_document_parse",
+  "ocr_key_present": true,
+  "llm_key_present": true,
+  "cache_dir": "/private/tmp/ESGenie-ocr-numeric-20260929/docs/validation/ocr-numeric-20260929/live/web_cache",
+  "cache_files_at_start": {
+    "ocr": 8,
+    "llm": 16
+  },
+  "mode": "web_integration",
+  "host": "127.0.0.1",
+  "port": 8791,
+  "observer": "unmodified esgenie.web.engine.run_analysis; PipelineOutput captured without changes"
+}
