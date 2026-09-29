@@ -1857,6 +1857,7 @@ def _extract_unstructured_text(
     chunk_runs: list[dict[str, Any]] = []
     # 모델이 라벨만 읽고 수치를 보고하지 못한 행 — 실패가 아니라 미확인으로 남긴다.
     unvalued_records: list[dict[str, Any]] = []
+    reconciled_records: list[dict[str, Any]] = []
     used_mock = False
 
     for chunk_index, chunk in enumerate(chunks):
@@ -1925,10 +1926,18 @@ def _extract_unstructured_text(
         # 레코드"를 구분한다. 후자까지 strict 중단으로 처리하면 라벨만 있는 표 행 한 줄이
         # 176청크 문서 전체를 실패시켜 strict 모드로 실제 보고서를 처리할 수 없다(실측).
         fatal_issues = [issue for issue in record_issues if issue.get("fatal", True)]
-        unvalued_issues = [issue for issue in record_issues if not issue.get("fatal", True)]
+        # 값이 실린 채 원문 표기와 대조된 행은 '수치 미보고'가 아니므로 버킷을 나눈다.
+        non_fatal = [issue for issue in record_issues if not issue.get("fatal", True)]
+        reconciled_issues = [issue for issue in non_fatal
+                             if issue.get("reason") in _VALUE_RECONCILED_REASONS]
+        unvalued_issues = [issue for issue in non_fatal
+                           if issue.get("reason") not in _VALUE_RECONCILED_REASONS]
         if unvalued_issues:
             unvalued_records.append({"chunk_index": chunk_index, "page": page,
                                      "records": unvalued_issues})
+        if reconciled_issues:
+            reconciled_records.append({"chunk_index": chunk_index, "page": page,
+                                       "records": reconciled_issues})
         if fatal_issues:
             if SETTINGS.strict_llm:
                 raise LLMUnavailableError(f"OCR chunk {chunk_index}: invalid records {fatal_issues}")
@@ -1997,6 +2006,10 @@ def _extract_unstructured_text(
         # 않도록 개수와 라벨을 남기되, 추출 상태를 partial/failed로 바꾸지는 않는다.
         "unvalued_records": unvalued_records,
         "unvalued_record_count": sum(len(entry["records"]) for entry in unvalued_records),
+        # 값이 **실린** 채 원문 표기와 대조해 되잡거나 사람 검토로 남긴 행. 값이 실리지 않은
+        # `unvalued_records`와 섞으면 "수치를 보고하지 못한 행" 수가 부풀려지므로 따로 센다.
+        "value_reconciliations": reconciled_records,
+        "value_reconciliation_count": sum(len(entry["records"]) for entry in reconciled_records),
         "chunk_sources": [{k: chunk[k] for k in ("page", "line_start", "line_end", "context_repeated")}
                           | {"chunk_index": i} for i, chunk in enumerate(chunks)],
         "chunk_runs": chunk_runs,
@@ -2144,6 +2157,177 @@ def _contains_value(line: str, form: str) -> bool:
     return re.search(pattern, line) is not None
 
 
+# ── 값을 그 값의 근거 문구와 맞춰 보는 후처리 (2026-09-29) ─────────────────────
+# 두 보고서 라이브 실측(현대모비스 167쪽 4,063건 · 삼성전기 157쪽 3,175건)에서 기존 게이트가
+# 구조적으로 못 보던 결함 두 종류를 찾았다. 둘 다 원인이 같다 — **모델이 적은 값을 그 값의
+# 근거 문구와 대조하지 않았다.** D1·G2·G4는 모두 '생성된 문장'을 기준으로 돌기 때문에 문장이
+# 인용하지 않은 지표는 검사 범위 밖이었다. 그래서 추출 직후 여기서 대조한다.
+_KR_SCALES = {"조": 1e12, "억": 1e8, "천만": 1e7, "백만": 1e6, "만": 1e4, "천": 1e3}
+# 값이 **실린 채** 원문과 대조된 사유. 값이 실리지 않은 사유(`unvalued_records`)와 섞으면
+# "수치를 보고하지 못한 행" 수가 부풀려지므로 라우터 메타에서 버킷을 나누는 기준이다.
+_VALUE_RECONCILED_REASONS = frozenset({
+    "scale_chain_recomposed", "scale_chain_unresolved", "value_not_written_in_evidence"})
+# 배율이 붙은 한 토막: '46조', '1,182억', 그리고 배율 없는 꼬리 '5,000'.
+_KR_SCALE_TERM_RE = re.compile(
+    r"(?<![0-9A-Za-z가-힣])(\d[\d,]*(?:\.\d+)?)\s*(조|억|천만|백만|만|천)?")
+
+
+def _kr_scale_chain_amounts(text: str) -> set[float]:
+    """연속 배율 표기를 **하나의 금액으로 합성**한다. `46조 1,182억` → 4.61182e13.
+
+    배율이 내림차순으로 이어지는 토막만 더한다. 마지막 토막은 배율이 없을 수 있다
+    (`1만 5,000톤`의 `5,000`). **배율 없는 꼬리는 바로 앞 배율보다 작을 때만** 더한다 —
+    그 조건이 없으면 `1만 5,000톤을 확보하였으며 620억 원`에서 옆 문장의 숫자까지 끌어와
+    없는 금액을 만든다(실측으로 확인해 넣은 조건이다).
+
+    토막이 둘 이상일 때만(`parts > 1`) 결과에 넣는다. `3억`처럼 배율이 하나뿐인 표기는
+    모델이 틀릴 여지가 없으므로 이 대조의 대상이 아니다.
+    """
+    from ..rag_gates.units import parse_number
+
+    terms = [(m.start(), m.end(), parse_number(m.group(1)), m.group(2))
+             for m in _KR_SCALE_TERM_RE.finditer(text)]
+    terms = [t for t in terms if t[2] is not None]
+    amounts: set[float] = set()
+    for index, (_, end, base, scale) in enumerate(terms):
+        if scale is None:
+            continue
+        total, last_factor, parts = base * _KR_SCALES[scale], _KR_SCALES[scale], 1
+        cursor = index + 1
+        while cursor < len(terms):
+            start_next, end_next, base_next, scale_next = terms[cursor]
+            if text[end:start_next].strip():
+                break   # 토막 사이에 공백 말고 다른 글자가 있으면 같은 금액이 아니다.
+            factor = _KR_SCALES[scale_next] if scale_next else 1.0
+            if factor >= last_factor:
+                break   # 배율이 내림차순이 아니면 다른 금액의 시작이다.
+            if scale_next is None and base_next >= last_factor:
+                break
+            total += base_next * factor
+            last_factor, end, parts = factor, end_next, parts + 1
+            cursor += 1
+            if scale_next is None:
+                break
+        if parts > 1:
+            amounts.add(total)
+    return amounts
+
+
+# 글자에 붙은 숫자까지 읽는 느슨한 스캔. `numeric_tokens`의 경계 규칙을 쓰지 않는 이유는
+# **묻는 것이 다르기 때문**이다. 그 규칙은 생성된 문장에서 '주장으로 삼을 수치'를 고르려고
+# 한글·마침표에 붙은 숫자를 버린다. 여기서 묻는 것은 "사람이 이 문구에서 그 값을 볼 수 있나"
+# 이고, `Lv.5`·`제7회`·`3,671억 원4,073억 원`(원문이 칸을 붙여 뽑은 것)의 숫자는 사람 눈에
+# 분명히 보인다. 엄격한 규칙을 쓰면 값이 맞는 지표 8건에 검토 표시가 붙었다(실측).
+# 부호를 함께 읽는다 — 재무제표 행은 `-146,701,456`처럼 음수가 흔하고, 부호를 버리면 값이
+# 맞는 지표 11건에 검토 표시가 붙었다(실측, 삼성전기 p.149~150 기타자본·지분법손익 등).
+# 앞 경계에서 `.`은 막지 않는다 — `Lv.5`의 5는 사람 눈에 보이는 값이다.
+_LOOSE_AMOUNT_RE = re.compile(r"(?<![\d,])([-−+]?)(\d[\d,]*(?:\.\d+)?)\s*(조|억|천만|백만|만|천)?")
+
+
+def _evidence_amounts(text: str) -> set[float]:
+    """근거 문구에서 사람이 읽을 수 있는 값 후보. 맨 수·배율 표기·연속 배율 합성을 모두 넣는다."""
+    from ..rag_gates.units import parse_number
+
+    found: set[float] = set()
+    for match in _LOOSE_AMOUNT_RE.finditer(text):
+        base = parse_number(match.group(2))
+        if base is None:
+            continue
+        if match.group(1) in ("-", "−"):
+            base = -base
+        found.add(base)
+        if match.group(3):
+            found.add(base * _KR_SCALES[match.group(3)])
+    return found | _kr_scale_chain_amounts(text)
+
+
+def _value_written_in_evidence(value: float, unit: str, evidence: str) -> bool:
+    """보고된 값이 근거 문구에 **숫자로** 적혀 있는가.
+
+    값 자체와, 단위 배율을 적용한 절대 금액을 모두 대조한다(`57조 2,370억 원`을 근거로
+    `572,370 억 원`을 보고한 경우처럼 표기 단위가 다를 수 있다). 1% 허용은 원문이 반올림해
+    적는 경우(`19조 5,184억` → `19.5조 원`)를 결함으로 세지 않기 위한 것이다.
+    """
+    from ..rag_gates.units import numeric_equal
+
+    amounts = _evidence_amounts(evidence)
+    if not amounts:
+        return False
+    absolute = value * _unit_scale(unit)
+    return any(numeric_equal(value, amount) or numeric_equal(absolute, amount)
+               for amount in amounts)
+
+
+def _zero_is_grounded(quote: str) -> bool:
+    """보고된 0이 **그 근거 문구에 실제로 적혀 있는가.**
+
+    실측 결함(삼성전기 4건): 원문 칸이 `-`(미공시)인데 값 0으로 실렸다. 자기 근거 문구에
+    0이 한 번도 없으면 그 0은 원문에서 온 값이 아니다. 두 문서 지표 7,238건에 이 판정을
+    적용했을 때 **실제 0을 잘못 걸러낸 경우는 0건**이었다(0값 354건 중 4건만 걸렸다).
+    """
+    return any(_contains_value(quote, form) for form in _value_surface_forms(0.0))
+
+
+def _unit_scale(unit: str) -> float:
+    """단위에 붙은 배율. `'억 원'` → 1e8, `'조 원'` → 1e12, `'달러'` → 1.0.
+
+    공백을 지운 뒤 앞머리를 본다 — OCR이 뽑는 단위는 `'백만 원'`처럼 배율과 통화 사이에
+    공백이 들어온다(`units.normalize_unit`이 같은 이유로 공백을 지운다).
+    """
+    compact = re.sub(r"\s+", "", unit or "")
+    for token in ("천만", "백만", "조", "억", "만", "천"):
+        if compact.startswith(token):
+            return _KR_SCALES[token]
+    return 1.0
+
+
+def _reconcile_scale_chain(
+    value: float, unit: str, evidence: str,
+) -> tuple[float, dict[str, Any] | None]:
+    """모델이 합성한 한국식 자릿수 금액을 **원문 표기로 되잡는다.**
+
+    실측 결함: `매출액 57조 2,370억 원`을 모델이 `57,237억 원`으로 적었다(약 10배 낮다).
+    `46조 1,182억` → 46,182, `10조 4,809억` → 10,409도 같은 종류다. 떨어뜨리는 자릿수가
+    건마다 달라 **모델 값에서 규칙으로 복원할 수 없다.** 그래서 모델 값을 고치는 대신
+    **원문 표기를 다시 읽어 그 값을 쓴다** — 원문이 근거다.
+
+    건드리지 않는 경우(오탐을 막는 조건):
+      - 근거 문구에 합성 표기가 없다.
+      - 모델 값의 절대 금액이 원문 합성 금액과 일치한다(1% 허용, 반올림 표기 포함).
+      - **모델 값이 근거 문구에 그대로 적혀 있다** — 같은 행의 다른 칸 수치이므로 옳다.
+      - 합성 표기가 둘 이상이라 어느 것인지 가릴 수 없다 → 값을 그대로 두고 사유만 남긴다.
+    """
+    from ..rag_gates.units import numeric_equal
+
+    if not evidence or value == 0 or not math.isfinite(value):
+        return value, None
+    chains = _kr_scale_chain_amounts(evidence)
+    if not chains:
+        return value, None
+    scale = _unit_scale(unit)
+    absolute = value * scale
+    if any(numeric_equal(absolute, chain) for chain in chains):
+        return value, None
+    if any(_contains_value(evidence, form) for form in _value_surface_forms(value)):
+        return value, None
+    detail = {"reason": "scale_chain_unresolved", "fatal": False,
+              "value": value, "unit": unit,
+              "source_amounts": sorted(chains), "quote": evidence[:_QUOTE_MAX_CHARS]}
+    if len(chains) != 1:
+        # 실측 예: `9억 4,000만 달러 한도 … 중 8억 400만 달러를 분할 인출` — 모델 값
+        # 840,000,000은 둘 다와 다르다. 어느 쪽으로 고칠지 문구만으로 정할 수 없으므로
+        # 고치지 않고 사람이 보게 남긴다.
+        return value, detail
+    chain = next(iter(chains))
+    ratio = chain / absolute if absolute else 0.0
+    if not 1e-4 <= abs(ratio) <= 1e4:
+        return value, detail   # 자릿수 오류로 설명되지 않는 차이 — 임의로 바꾸지 않는다.
+    corrected = chain / scale if scale else chain
+    return corrected, {"reason": "scale_chain_recomposed", "fatal": False,
+                       "value_before": value, "value_after": corrected, "unit": unit,
+                       "source_amount": chain}
+
+
 def _recover_quote(source_text: str, value: float, hint: str) -> str:
     """모델이 인용을 주지 않았을 때 **원문에서** 그 수치가 있는 줄을 찾아 되살린다.
 
@@ -2238,18 +2422,50 @@ def _map_vlm_json(
                 continue  # G6: 각주 마커('재해율 4)')를 값(4.0)으로 오파싱한 노드 배제
             # 2단 헤더 라벨이 hint에 통째로 들어온 경우 연도를 period로 되돌린다.
             hint, period = _split_hint_year(hint, str(m.get("period") or ""))
+            unit = str(m.get("unit") or "")
+            # 모델 인용이 원문 대조를 통과하지 못하면 원문에서 되살린다(유일할 때만).
+            quote = (source_quote(m.get("quote"))
+                     or (_recover_quote(source_text, value, hint) if source_text else ""))
+
+            # 근거 문구가 있으면 값을 그 문구와 대조한다. 문구가 없으면 대조할 수 없으므로
+            # 아무것도 단정하지 않고 그대로 둔다(추측으로 값을 바꾸지 않는다).
+            if quote:
+                if value == 0 and not _zero_is_grounded(quote):
+                    # 실측 결함: 원문 칸이 `-`(미공시)인데 0으로 실렸다(삼성전기 4건 —
+                    # 유동성장기차입금·장기차입금·지역전문가·Category 9). 자기 근거 문구에
+                    # 0이 한 번도 없으면 그 0은 원문에서 온 값이 아니다. **실제 0과 미확인은
+                    # 다르다** — 차입금 '0원'과 '미공시'는 전혀 다른 문장을 만든다. 그래서
+                    # 0으로 싣지 않고 값을 보고하지 못한 행과 같은 경로로 사유만 남긴다.
+                    if issues is not None:
+                        issues.append({"record_type": "metric", "record_index": index,
+                                       "reason": "zero_not_in_evidence", "fatal": False,
+                                       "metric_hint": hint, "unit": unit, "period": period,
+                                       "quote": quote[:_QUOTE_MAX_CHARS]})
+                    continue
+                value, scale_issue = _reconcile_scale_chain(value, unit, quote)
+                if scale_issue is not None and issues is not None:
+                    issues.append({"record_type": "metric", "record_index": index,
+                                   "metric_hint": hint, "page": page_no, **scale_issue})
+                elif issues is not None and not _value_written_in_evidence(value, unit, quote):
+                    # 근거 문구에 그 숫자가 없다. 값이 틀렸다는 뜻은 아니다 — 모델이 서술을
+                    # 수치로 옮긴 경우가 대부분이다(실측: "교육 대상 임직원 전원이 수료" →
+                    # 100%, "최대 2년 6개월" → 2.5년). 값은 살리되 **사람이 인용만 보고는
+                    # 확인할 수 없다**는 사실을 남긴다. 값을 지우거나 바꾸지 않는다.
+                    issues.append({"record_type": "metric", "record_index": index,
+                                   "reason": "value_not_written_in_evidence", "fatal": False,
+                                   "metric_hint": hint, "value": value, "unit": unit,
+                                   "page": page_no, "quote": quote[:_QUOTE_MAX_CHARS]})
+
             metrics.append(ExtractedMetric(
                 metric_hint=hint,
                 value=value,
-                unit=str(m.get("unit") or ""),
+                unit=unit,
                 period=period,
                 kesg_code_guess=str(m.get("kesg_code") or "") or None,
                 confidence=0.75,   # VLM 추출 기본 신뢰도
                 page=page_no,
                 page_source="chunk" if page_no is not None else "",
-                # 모델 인용이 원문 대조를 통과하지 못하면 원문에서 되살린다(유일할 때만).
-                quote=(source_quote(m.get("quote"))
-                       or (_recover_quote(source_text, value, hint) if source_text else "")),
+                quote=quote,
             ))
         except (KeyError, TypeError, ValueError) as exc:
             if issues is not None:
