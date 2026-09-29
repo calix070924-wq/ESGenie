@@ -1,0 +1,2 @@
+code=8eed3d4 (제품 코드 89f34aa), python3 -m pytest -q tests/test_llm.py tests/test_ocr_cache.py
+24 passed in 0.06s

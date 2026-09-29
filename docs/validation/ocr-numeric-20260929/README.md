@@ -257,6 +257,11 @@ ESGENIE_FORCE_MOCK=1 python docs/validation/ocr-numeric-20260929/snapshot_pymupd
 
 - 환경(`live/core_run_89f34aa/*/environment.json`): 커밋 `89f34aa`(미커밋은 `review-r1/`뿐), azure_openai gpt-4.1-mini, Upstage Document Parse,
   키 설정 여부 true(값 미기록), `force_mock=False`, `strict_llm=True`, 입력 sha256 전부 구성 목록(version 2026-09-28)과 일치.
+- 캐시와 재실행 구분: LLM·VLM 캐시 키는 프롬프트 전문과 실제 입력 텍스트 전체의 sha256이다(`esgenie/llm_cache.py`, `esgenie/ssot/ocr_cache.py` — 이번 수정에서 변경 없음).
+  적중은 입력이 그대로라는 뜻이고, 수정한 표 해석·환산·경계·검토 정보 전달·답변·출력은 매번 새로 계산했다(Upstage OCR 실호출 포함).
+  입력이 바뀌면 키가 바뀌는지는 `tests/test_llm.py`·`tests/test_ocr_cache.py` 24개(`test_key_changes_when_any_field_changes`,
+  `test_preprocessing_change_invalidates_cache` 등) 통과로 확인(`logs/cache_key_tests_89f34aa.txt`). 실제 실행에서도 웹 rev13은 프롬프트에
+  새 프로젝트 ID가 들어가 캐시 3건을 놓치고 실호출했다(§10.5).
 - 요약(`live/core_89f34aa_{initial,followup}_summary.json`)은 `1dea0c5`(최초)·`688445a`+`1dea0c5` 비율 위치(보완)와 경로 외 동일.
 - 답변: E-4-1 0.513216 TJ, E-3-1 68.158 tCO2eq, E-6-1 18.4 톤, E-6-2 29.3%(회사 답변 92% 별도). 모두 `self_reported`·범위 확인 필요,
   `2026-04-01~30 · 월간 · 제1공장`.
