@@ -234,15 +234,45 @@ def _is_total_label(text: str) -> bool:
     return n in _TOTAL_LABELS or n.startswith("합계") or n.startswith("총계")
 
 
-# 금액 행 머리(요금·공급가액·세액·납부금액 등). 기간·사업장·계량기 라벨은 금액이 아니다.
-_MONEY_WORDS = ("요금", "금액", "가액", "세액", "부가세", "부가가치세", "납부액", "청구액", "단가", "할인액")
+# 금액 이름(요금·공급가액·세액·납부금액·기본료 등). 이름만으로 행을 지우지 않는다 — 표 구조
+# (금액 열·수량 열·행 이름)와 함께 판정한다(_classify_row). '…료'는 비용 접미로 보되 물질 명사는 뺀다.
+_MONEY_WORDS = ("요금", "금액", "가액", "세액", "부가세", "부가가치세", "납부", "청구액", "단가", "할인",
+                "수수료", "비용", "대금")
+_NOT_FEE_ENDINGS = ("연료", "원료", "재료", "자료", "시료", "도료", "비료", "사료", "염료", "안료", "향료",
+                    "음료", "완료", "종료")
+_DATE_RE = re.compile(r"\d{4}\s*년|\d{1,2}\s*월|\d{4}\s*[-./]\s*\d{1,2}")
+_CURRENCY_RE = re.compile(r"^\s*[₩￦]?\s*(?P<num>(?:\d{1,3}(?:,\d{3})+|\d+)(?:\.\d+)?)\s*(?:원|krw)?\s*$",
+                          re.IGNORECASE)
+_ABSENT_WORDS = ("예정", "미검침", "미측정", "미기재", "미입력", "미확인", "미정", "없음", "확인중", "산정중",
+                 "추후", "공란")
+_NOTE_HEAD_WORDS = ("비고", "메모", "참고", "설명", "특이사항", "주석")
 
 
 def _is_money_label(text: str) -> bool:
     n = _norm(text)
-    if not n or _parse_qty(text) or _label_axis(text):
+    if not n or _parse_qty(text):
         return False
-    return any(w in n for w in _MONEY_WORDS) or n.endswith("(원)")
+    if any(w in n for w in _MONEY_WORDS) or n.endswith("(원)"):
+        return True
+    stem = re.sub(r"\([^()]*\)$", "", n)
+    return stem.endswith("료") and not stem.endswith(_NOT_FEE_ENDINGS)
+
+
+def _money_number(text: str) -> float | None:
+    """금액 칸의 숫자 — 숫자만 있거나 '원'·'₩'이 붙은 칸. 물리 단위가 붙은 칸은 금액이 아니다."""
+    q = _parse_qty(text)
+    if q is not None:
+        return q["value"] if not q["unit"] else None
+    m = _CURRENCY_RE.match(text or "")
+    return float(m.group("num").replace(",", "")) if m else None
+
+
+def _is_absent_marker(text: str) -> bool:
+    """값이 없다는 표시(빈칸·'-'·'—'·'검침 예정' 등) — 행 이름이 아니다."""
+    n = _norm(text)
+    if not n or not re.sub(r"[-–—―‐‑·._/\u00ad]", "", n) or n in ("n/a", "na"):
+        return True
+    return any(w in n for w in _ABSENT_WORDS)
 
 
 # ---- 머리글 역할 --------------------------------------------------------------
@@ -359,7 +389,8 @@ class TableMetricResult:
     # 산출 역할 칸은 있는데 값이 비어 있는 칸(빈칸·'-'·'검침 예정') — 표 영역과 함께 둔다.
     # 템플릿 인접 숫자가 그 표의 다른 칸(지침·배율)을 사용량으로 되살리지 않게 막는 근거다.
     absent_cells: list[dict[str, Any]] = field(default_factory=list)
-    # 행 머리가 금액 라벨인 행의 수치 칸 — 사용량·열량 후보가 아니다. 템플릿이 되살리지 않게 둔다.
+    # 에너지 근거가 아닌 원문 칸 — 금액 열의 칸, 금액 행·보류 행의 수치 칸(reason으로 구분).
+    # 사용량·열량 후보가 아니다. 템플릿이 되살리지 않게 둔다.
     money_cells: list[dict[str, Any]] = field(default_factory=list)
 
     def meta(self) -> dict[str, Any]:
@@ -538,22 +569,29 @@ def _process_header_table(res: TableMetricResult, grid: _Grid, doc_type: str) ->
     data = grid.rows[1:]
     if not data:
         return True
-    label_col = 0 if roles[0] is None else None
+    # 금액 열 — 머리글이 금액 이름이고 역할·범위 열이 아님('요금(원)'·'청구금액'). 범위 머리글
+    # 판정(_label_axis)은 머리글에만 쓴다.
+    money_cols = [k for k, (c, r) in enumerate(zip(header, roles))
+                  if r is None and not _label_axis(c.text) and _is_money_label(c.text)]
+    label_col = 0 if roles[0] is None and 0 not in money_cols else None
     label_axis = _label_axis(header[0].text) if label_col is not None else ""
     # 범위 칸(사업장·기간·계량기)은 열 순서와 무관하게 머리글로 모두 읽는다.
     scope_cols = [(k, axis) for k, (c, r) in enumerate(zip(header, roles))
                   if r is None and (axis := _label_axis(c.text))]
     area = _union([c.bbox for row in grid.rows for c in row])
-    # 행 머리가 금액 라벨('기본요금 | 247,500')이면 칸 수가 머리글과 같아도 사용량·열량 행이
-    # 아니다 — 금액 원문은 검토 기록으로 남기되 역할·빈 칸 판정에 쓰지 않는다.
-    money_rows = [r for r in data if (head := next((c for c in r if c.text), None)) and _is_money_label(head.text)]
-    for r in money_rows:
-        res.review.append({"reason": "money_row_excluded", "row_label": next(c.text for c in r if c.text),
-                           "cells": [c.text for c in r], "table_id": grid.table_id})
-        res.money_cells.extend({"value": q["value"], "raw_text": c.text, "bbox": c.bbox,
-                                "page": c.page if c.page is not None else grid.page, "table_id": grid.table_id}
-                               for c in r if (q := _parse_qty(c.text)))
-    data = [r for r in data if not any(r is m for m in money_rows)]
+    # 항목명만으로 행을 지우지 않는다(R8 재보완). 행 구조로 가르고, 제외는 원문 셀 단위로 남긴다.
+    kept = []
+    for r in data:
+        kind, row_name = _classify_row(r, header, roles, set(outputs) | {"prev", "cur", "mult", "detail_mass"},
+                                       label_col, label_axis, scope_cols, money_cols)
+        if kind == "data":
+            kept.append(r)
+            _register_excluded_cells(res, grid, r, money_cols, "money_column")
+            continue
+        res.review.append({"reason": kind, "row_label": row_name, "cells": [c.text for c in r],
+                           "table_id": grid.table_id})
+        _register_excluded_cells(res, grid, r, range(len(r)), kind)
+    data = kept
     if not data:
         return True
     total_rows = [r for r in data if label_col is not None and _is_total_label(r[0].text)]
@@ -695,6 +733,56 @@ def _process_header_table(res: TableMetricResult, grid: _Grid, doc_type: str) ->
     if doc_type == "waste_ledger" and total_rows:
         _check_components(res, grid, roles, total_rows[0])
     return True
+
+
+def _classify_row(row: list[_Cell], header: list[_Cell], roles: list[str | None], qty_roles: set[str],
+                  label_col: int | None, label_axis: str, scope_cols: list[tuple[int, str]],
+                  money_cols: list[int]) -> tuple[str, str]:
+    """데이터 행의 종류 → ("data" | 제외·보류 사유, 행 이름).
+
+    · 항목 열이 없는 표에서 수량 열·금액 열에 글자 행 머리가 있으면('기본료 | 247,500') 머리글 구조에
+      맞지 않는 행이다 — 표의 물리 단위를 상속하지 않는다. 금액 이름이면 금액 행, 아니면 보류.
+    · 행 이름(항목 열·범위 값)이 금액 이름이면: 금액 열에 값이 있고 수량 칸에도 값이 있으면 요금
+      명세 행('사용요금 | 8,420 | 360,772 | 247,500') — 수량 칸을 그대로 읽는다. 금액 열이 비어
+      수량 칸 숫자의 뜻을 가를 수 없으면 보류, 금액 열이 없는 표면 금액 행이다.
+      기간 열의 날짜 값('2026년 5월 요금 청구기간')은 기간 식별값이다."""
+    if label_col is None:
+        head = next((k for k, c in enumerate(row) if not _is_absent_marker(c.text)), None)
+        if head is not None and head < len(roles) and (roles[head] in qty_roles or head in money_cols) \
+                and not _parse_qty(row[head].text) and _money_number(row[head].text) is None:
+            text = row[head].text
+            return ("money_row_excluded" if _is_money_label(text) else "row_label_in_quantity_column"), text
+    axis_of = dict(scope_cols)
+    names = [(row[k].text, label_axis if k == label_col else axis_of.get(k, ""))
+             for k, (c, r) in enumerate(zip(header, roles))
+             if k < len(row) and r is None and k not in money_cols
+             and not any(w in _norm(c.text) for w in _NOTE_HEAD_WORDS)]
+    name = next((t for t, axis in names
+                 if _is_money_label(t) and not (axis == "period" and _DATE_RE.search(t))), "")
+    if not name:
+        return "data", ""
+    physical = any(k < len(row) and _parse_qty(row[k].text) for k, r in enumerate(roles) if r in qty_roles)
+    money_value = any(k < len(row) and _money_number(row[k].text) is not None for k in money_cols)
+    if money_cols and money_value and physical:
+        return "data", name
+    if money_cols and physical:
+        return "money_label_row_unconfirmed", name
+    return "money_row_excluded", name
+
+
+def _register_excluded_cells(res: TableMetricResult, grid: _Grid, row: list[_Cell], cols: Any,
+                             reason: str) -> None:
+    for k in cols:
+        if k >= len(row):
+            continue
+        c = row[k]
+        value = _money_number(c.text)
+        if value is None and (q := _parse_qty(c.text)):
+            value = q["value"]
+        if value is not None:
+            res.money_cells.append({"value": value, "raw_text": c.text, "bbox": c.bbox, "reason": reason,
+                                    "page": c.page if c.page is not None else grid.page,
+                                    "table_id": grid.table_id})
 
 
 def _process_key_value(res: TableMetricResult, grid: _Grid, doc_type: str) -> None:
@@ -840,15 +928,20 @@ def drop_template_candidates_from_money_cells(res: TableMetricResult, kv_pairs: 
     labels = {lb for lbs in TEMPLATE_LABELS_BY_ROLE.get(doc_type, {}).values() for lb in lbs}
     for label in sorted(labels & set(kv_pairs)):
         info = kv_pairs[label]
-        hit = next((mc for mc in res.money_cells if _candidate_is_money_cell(info, mc)), None)
+        verdicts = [(mc, _candidate_is_money_cell(info, mc)) for mc in res.money_cells]
+        hit = next((mc for mc, v in verdicts if v), None) or next((mc for mc, v in verdicts if v is None), None)
         if hit is None:
             continue
         kv_pairs.pop(label)
-        res.review.append({"reason": "template_candidate_from_money_cell", "label": label,
-                           "value": info.get("value"), "raw_text": hit["raw_text"], "table_id": hit["table_id"]})
+        # 위치가 없어 같은 칸인지 확인할 수 없으면 채택하지 않고 보류 사유를 남긴다.
+        reason = ("template_candidate_from_money_cell" if any(v for _mc, v in verdicts)
+                  else "template_candidate_identity_unknown")
+        res.review.append({"reason": reason, "label": label, "value": info.get("value"),
+                           "raw_text": hit["raw_text"], "table_id": hit["table_id"]})
 
 
-def _candidate_is_money_cell(info: dict[str, Any], money: dict[str, Any]) -> bool:
+def _candidate_is_money_cell(info: dict[str, Any], money: dict[str, Any]) -> bool | None:
+    """템플릿 후보가 제외한 원문 칸에서 왔는가 — True/False, 확인할 수 없으면 None."""
     try:
         if abs(float(info.get("value")) - money["value"]) > 1e-9:
             return False
@@ -856,7 +949,9 @@ def _candidate_is_money_cell(info: dict[str, Any], money: dict[str, Any]) -> boo
         return False
     bbox, box = info.get("bbox"), money.get("bbox")
     if not (bbox and len(bbox) >= 4 and box):
-        return True
+        # 라벨 토큰 자체에 그 숫자가 적혀 있으면('사용열량 247,500 MJ') 그 토큰이 출처다.
+        digits = re.sub(r"\D", "", money.get("raw_text") or "")
+        return False if digits and digits in re.sub(r"\D", "", info.get("raw_label") or "") else None
     if info.get("page") is not None and money.get("page") is not None and info.get("page") != money.get("page"):
         return False
     cx, cy = (bbox[0] + bbox[2]) / 2, (bbox[1] + bbox[3]) / 2

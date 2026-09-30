@@ -1190,7 +1190,8 @@ def _apply_template(tokens: list[dict[str, Any]], template: dict[str, Any]) -> d
                 hu = _HEADER_UNIT_RE.search(tok["text"])
                 eff_unit = hu.group(1) if hu else unit
                 # 제목 번호('3. 현장 안전과 교육')는 수치가 아니다 — 번호를 떼고 숫자를 찾는다.
-                own_text = _HEADING_ORDINAL_RE.sub("", tok["text"])
+                # 머리글 단위 괄호('사용량(m3)'의 3)도 수치가 아니다.
+                own_text = _HEADER_UNIT_RE.sub("", _HEADING_ORDINAL_RE.sub("", tok["text"]))
                 # 현재 토큰에 숫자가 정확히 하나면 우선 사용 (예: "사용전력량(kWh): 128,400")
                 num = _find_single_number(own_text)
                 if num is not None:
