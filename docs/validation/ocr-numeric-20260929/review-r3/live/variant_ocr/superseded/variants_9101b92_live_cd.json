@@ -1,0 +1,113 @@
+{
+ "code_path": "/private/tmp/ESGenie-ocr-numeric-20260929",
+ "commit": "9101b921ad04a603a942f69d58011d58c6b217e8",
+ "ocr_mode": "live",
+ "raw_dir": "/private/tmp/ESGenie-ocr-numeric-20260929/docs/validation/ocr-numeric-20260929/review-r3/live/variant_ocr/raw_upstage",
+ "imported_esgenie": "/private/tmp/ESGenie-ocr-numeric-20260929/esgenie/__init__.py",
+ "force_mock": false,
+ "llm_key_present": true,
+ "ocr_key_present": true,
+ "cache_dir": "/private/tmp/ESGenie-ocr-numeric-20260929/docs/validation/ocr-numeric-20260929/review-r3/live/variant_ocr/cache_9101b92_live_cd",
+ "llm": {
+  "mode": "on",
+  "hits": 0,
+  "misses": 0,
+  "live_calls": 0,
+  "successes": 0,
+  "failures": 0
+ },
+ "documents": [
+  {
+   "file": "R8c_가스_표선_정상열량_아래기본요금.pdf",
+   "sha256": "87279b76be7479e4e1cb947af944ccec429a8e210e39bbba253d145cecc23a07",
+   "doc_type": "gas_bill",
+   "engine": "upstage_dp",
+   "seconds": 6.87,
+   "upstage": {
+    "requests": 1,
+    "successes": 1,
+    "failures": 0
+   },
+   "metrics": [],
+   "review": [
+    "money_row_excluded",
+    "value_absent",
+    "value_absent"
+   ],
+   "absent_cells": [
+    {
+     "role": "usage",
+     "header": "사용량( m3 )",
+     "raw_text": "8 , 4 2 0",
+     "state": "absent",
+     "table_id": "upstage_table_0"
+    },
+    {
+     "role": "heat",
+     "header": "사용열량( MJ )",
+     "raw_text": "3 6 0 , 7 7 2",
+     "state": "absent",
+     "table_id": "upstage_table_0"
+    }
+   ],
+   "money_rows": [
+    {
+     "reason": "money_row_excluded",
+     "row_label": "기본요금",
+     "cells": [
+      "기본요금",
+      "2 4 7 , 5 0 0"
+     ],
+     "table_id": "upstage_table_0"
+    }
+   ],
+   "hitl_required": null
+  },
+  {
+   "file": "R8d_가스_표선_열량칸대시_아래기본요금.pdf",
+   "sha256": "4def657698eb6470463cae77a67ba9625acc8b29adc2e2827582acedc881b47d",
+   "doc_type": "gas_bill",
+   "engine": "upstage_dp",
+   "seconds": 5.45,
+   "upstage": {
+    "requests": 1,
+    "successes": 1,
+    "failures": 0
+   },
+   "metrics": [],
+   "review": [
+    "money_row_excluded",
+    "value_absent",
+    "value_absent"
+   ],
+   "absent_cells": [
+    {
+     "role": "usage",
+     "header": "사용량( m3 )",
+     "raw_text": "8 , 4 2 0",
+     "state": "absent",
+     "table_id": "upstage_table_0"
+    },
+    {
+     "role": "heat",
+     "header": "사용열량( MJ )",
+     "raw_text": "-",
+     "state": "absent",
+     "table_id": "upstage_table_0"
+    }
+   ],
+   "money_rows": [
+    {
+     "reason": "money_row_excluded",
+     "row_label": "기본요금",
+     "cells": [
+      "기본요금",
+      "2 4 7 , 5 0 0"
+     ],
+     "table_id": "upstage_table_0"
+    }
+   ],
+   "hitl_required": null
+  }
+ ]
+}

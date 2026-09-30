@@ -1,0 +1,34 @@
+{
+ "initial": {
+  "result_diff_paths": [],
+  "result_diff_count": 0,
+  "pdf_text_identical": true,
+  "xlsx_cells_identical": true
+ },
+ "followup": {
+  "result_diff_paths": [],
+  "result_diff_count": 0,
+  "pdf_text_identical": true,
+  "xlsx_cells_identical": true
+ },
+ "stale_download": {
+  "12b62ab": {
+   "status_code": 409
+  }
+ },
+ "ignored_key_substrings": [
+  "document_id",
+  "id",
+  "project_id",
+  "updated_at",
+  "created_at",
+  "job",
+  "started",
+  "finished",
+  "revision",
+  "seconds",
+  "_at",
+  "url",
+  "path"
+ ]
+}
