@@ -594,14 +594,16 @@ def _table_metric_pass(
     kv_pairs: dict[str, Any],
 ):
     """표 격자 추출 — 역할(사용량·총량 등)을 차지하면 같은 역할의 템플릿 KV를 제거한다."""
-    from .ocr_table_metrics import (TEMPLATE_LABELS_BY_ROLE, drop_template_candidates_in_absent_tables,
-                                    extract_table_metrics)
+    from .ocr_table_metrics import (TEMPLATE_LABELS_BY_ROLE, drop_template_candidates_from_money_cells,
+                                    drop_template_candidates_in_absent_tables, extract_table_metrics)
     result = extract_table_metrics(tokens, tables, doc_type=doc_type)
     for role in result.claimed_roles:
         for label in TEMPLATE_LABELS_BY_ROLE.get(doc_type, {}).get(role, ()):
             kv_pairs.pop(label, None)
     # 사용량 칸이 빈 표에서 인접 숫자(지침 등)를 사용량으로 되살리지 않는다.
     drop_template_candidates_in_absent_tables(result, kv_pairs, doc_type)
+    # 금액 행(기본요금 등)에서 뺀 숫자도 템플릿·LLM 후보로 되살리지 않는다.
+    drop_template_candidates_from_money_cells(result, kv_pairs, doc_type)
     return result
 
 

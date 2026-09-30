@@ -234,6 +234,17 @@ def _is_total_label(text: str) -> bool:
     return n in _TOTAL_LABELS or n.startswith("합계") or n.startswith("총계")
 
 
+# 금액 행 머리(요금·공급가액·세액·납부금액 등). 기간·사업장·계량기 라벨은 금액이 아니다.
+_MONEY_WORDS = ("요금", "금액", "가액", "세액", "부가세", "부가가치세", "납부액", "청구액", "단가", "할인액")
+
+
+def _is_money_label(text: str) -> bool:
+    n = _norm(text)
+    if not n or _parse_qty(text) or _label_axis(text):
+        return False
+    return any(w in n for w in _MONEY_WORDS) or n.endswith("(원)")
+
+
 # ---- 머리글 역할 --------------------------------------------------------------
 
 _USAGE_EXCLUDE = ("요금", "금액", "단가", "청구", "부가세", "세액", "지침", "배율", "최대", "평균",
@@ -348,6 +359,8 @@ class TableMetricResult:
     # 산출 역할 칸은 있는데 값이 비어 있는 칸(빈칸·'-'·'검침 예정') — 표 영역과 함께 둔다.
     # 템플릿 인접 숫자가 그 표의 다른 칸(지침·배율)을 사용량으로 되살리지 않게 막는 근거다.
     absent_cells: list[dict[str, Any]] = field(default_factory=list)
+    # 행 머리가 금액 라벨인 행의 수치 칸 — 사용량·열량 후보가 아니다. 템플릿이 되살리지 않게 둔다.
+    money_cells: list[dict[str, Any]] = field(default_factory=list)
 
     def meta(self) -> dict[str, Any]:
         out = {"records": self.records, "review": self.review, "checks": self.checks,
@@ -531,6 +544,18 @@ def _process_header_table(res: TableMetricResult, grid: _Grid, doc_type: str) ->
     scope_cols = [(k, axis) for k, (c, r) in enumerate(zip(header, roles))
                   if r is None and (axis := _label_axis(c.text))]
     area = _union([c.bbox for row in grid.rows for c in row])
+    # 행 머리가 금액 라벨('기본요금 | 247,500')이면 칸 수가 머리글과 같아도 사용량·열량 행이
+    # 아니다 — 금액 원문은 검토 기록으로 남기되 역할·빈 칸 판정에 쓰지 않는다.
+    money_rows = [r for r in data if (head := next((c for c in r if c.text), None)) and _is_money_label(head.text)]
+    for r in money_rows:
+        res.review.append({"reason": "money_row_excluded", "row_label": next(c.text for c in r if c.text),
+                           "cells": [c.text for c in r], "table_id": grid.table_id})
+        res.money_cells.extend({"value": q["value"], "raw_text": c.text, "bbox": c.bbox,
+                                "page": c.page if c.page is not None else grid.page, "table_id": grid.table_id}
+                               for c in r if (q := _parse_qty(c.text)))
+    data = [r for r in data if not any(r is m for m in money_rows)]
+    if not data:
+        return True
     total_rows = [r for r in data if label_col is not None and _is_total_label(r[0].text)]
     if doc_type == "waste_ledger" and "detail_mass" in roles:
         # '구분 | 중량' 아래 행 머리가 총량·재활용량이면 명세가 아니라 항목표다.
@@ -806,6 +831,36 @@ def drop_template_candidates_in_absent_tables(res: TableMetricResult, kv_pairs: 
         res.review.append({"reason": "template_candidate_from_other_cell", "label": label,
                            "value": info.get("value"), "absent_role": hit["role"],
                            "absent_header": hit["header"], "table_id": hit["table_id"]})
+
+
+def drop_template_candidates_from_money_cells(res: TableMetricResult, kv_pairs: dict[str, Any],
+                                              doc_type: str) -> None:
+    """표에서 금액 행으로 뺀 칸의 숫자를 템플릿 라벨이 사용량·열량으로 되살리지 않게 버린다.
+    같은 값이어도 위치가 금액 칸 밖(본문·다른 칸)이면 그대로 둔다."""
+    labels = {lb for lbs in TEMPLATE_LABELS_BY_ROLE.get(doc_type, {}).values() for lb in lbs}
+    for label in sorted(labels & set(kv_pairs)):
+        info = kv_pairs[label]
+        hit = next((mc for mc in res.money_cells if _candidate_is_money_cell(info, mc)), None)
+        if hit is None:
+            continue
+        kv_pairs.pop(label)
+        res.review.append({"reason": "template_candidate_from_money_cell", "label": label,
+                           "value": info.get("value"), "raw_text": hit["raw_text"], "table_id": hit["table_id"]})
+
+
+def _candidate_is_money_cell(info: dict[str, Any], money: dict[str, Any]) -> bool:
+    try:
+        if abs(float(info.get("value")) - money["value"]) > 1e-9:
+            return False
+    except (TypeError, ValueError):
+        return False
+    bbox, box = info.get("bbox"), money.get("bbox")
+    if not (bbox and len(bbox) >= 4 and box):
+        return True
+    if info.get("page") is not None and money.get("page") is not None and info.get("page") != money.get("page"):
+        return False
+    cx, cy = (bbox[0] + bbox[2]) / 2, (bbox[1] + bbox[3]) / 2
+    return box[0] <= cx <= box[2] and box[1] <= cy <= box[3]
 
 
 def _candidate_in_table(info: dict[str, Any], absent: dict[str, Any]) -> bool:
