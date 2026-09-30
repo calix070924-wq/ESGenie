@@ -1,0 +1,29 @@
+06a1433 total 96 failed 28
+ FAIL combo_pay_pending_amount_valid@table_cells | metrics [[5130.0, 'm³'], [98760.0, 'MJ'], [219807.0, 'MJ']] != [[5130, 'm³'], [219807, 'MJ']]; forbidden_in_metrics [98760.0]; forbidden_in_graph [5.54, 98760.0]; forbidden_in_links ['98760']
+ FAIL combo_pay_pending_amount_valid@markdown | metrics [[5130.0, 'm³'], [98760.0, 'MJ'], [219807.0, 'MJ']] != [[5130, 'm³'], [219807, 'MJ']]; forbidden_in_metrics [98760.0]; forbidden_in_graph [5.54, 98760.0]; forbidden_in_links ['98760']
+ FAIL combo_pay_pending_amount_valid@text_lines | metrics [[5130.0, 'm³'], [98760.0, 'MJ'], [219807.0, 'MJ']] != [[5130, 'm³'], [219807, 'MJ']]; E-4-1 (0.09876, 'TJ') != [0.219807, 'TJ']; E-3-1 (5.54, 'tCO2eq') != [12.331, 'tCO2eq']; forbidden_in_metrics [98760.0]; forb
+ FAIL combo_pay_pending_amount_valid@local_pdf | metrics [[5130.0, 'm³'], [98760.0, 'MJ'], [219807.0, 'MJ']] != [[5130, 'm³'], [219807, 'MJ']]; forbidden_in_metrics [98760.0]; forbidden_in_graph [5.54, 98760.0]; forbidden_in_links ['98760']
+ FAIL combo_pay_pending_amount_empty@table_cells | metrics [[5130.0, 'm³'], [98760.0, 'MJ']] != [[5130, 'm³']]; E-4-1 should be absent, got 0.09876; E-3-1 should be absent, got 5.54; forbidden_in_metrics [98760.0]; forbidden_in_graph [5.54, 98760.0]; forbidden_in_links [
+ FAIL combo_pay_pending_amount_empty@markdown | metrics [[5130.0, 'm³'], [98760.0, 'MJ']] != [[5130, 'm³']]; E-4-1 should be absent, got 0.09876; E-3-1 should be absent, got 5.54; forbidden_in_metrics [98760.0]; forbidden_in_graph [5.54, 98760.0]; forbidden_in_links [
+ FAIL combo_pay_pending_amount_empty@text_lines | metrics [[5130.0, 'm³'], [98760.0, 'MJ']] != [[5130, 'm³']]; E-4-1 should be absent, got 0.09876; E-3-1 should be absent, got 5.54; forbidden_in_metrics [98760.0]; forbidden_in_graph [5.54, 98760.0]; forbidden_in_links [
+ FAIL combo_pay_pending_amount_empty@local_pdf | metrics [[5130.0, 'm³'], [98760.0, 'MJ']] != [[5130, 'm³']]; E-4-1 should be absent, got 0.09876; E-3-1 should be absent, got 5.54; forbidden_in_metrics [98760.0]; forbidden_in_graph [5.54, 98760.0]; forbidden_in_links [
+ FAIL combo_mixed_billed_header@table_cells | E-4-1 None != [0.219807, 'TJ']; E-3-1 None != [12.331, 'tCO2eq']; E-4-1 evidence lacks 219807
+ FAIL combo_mixed_billed_header@markdown | E-4-1 None != [0.219807, 'TJ']; E-3-1 None != [12.331, 'tCO2eq']; E-4-1 evidence lacks 219807
+ FAIL combo_mixed_billed_header@text_lines | E-4-1 None != [0.219807, 'TJ']; E-3-1 None != [12.331, 'tCO2eq']; E-4-1 evidence lacks 219807
+ FAIL combo_mixed_billed_header@local_pdf | E-4-1 None != [0.219807, 'TJ']; E-3-1 None != [12.331, 'tCO2eq']; E-4-1 evidence lacks 219807
+ FAIL combo_mixed_empty_heat_later@table_cells | metrics [[3.0, 'm3']] != [[5130, 'm³']]; fake 3 m3
+ FAIL combo_mixed_empty_heat_later@markdown | metrics [] != [[5130, 'm³']]
+ FAIL combo_mixed_empty_heat_later@text_lines | metrics [[3.0, 'm3']] != [[5130, 'm³']]; fake 3 m3
+ FAIL combo_mixed_empty_heat_later@local_pdf | metrics [[3.0, 'm3']] != [[5130, 'm³']]; fake 3 m3
+ FAIL combo_mixed_kepco@table_cells | metrics [] != [[142560, 'kWh']]
+ FAIL combo_mixed_kepco@markdown | metrics [] != [[142560, 'kWh']]
+ FAIL combo_mixed_kepco@text_lines | metrics [] != [[142560, 'kWh']]
+ FAIL combo_mixed_kepco@local_pdf | metrics [] != [[142560, 'kWh']]
+ FAIL combo_first_col_unreadable@table_cells | metrics [[360772.0, 'MJ']] != []; E-4-1 should be absent, got 0.360772; E-3-1 should be absent, got 20.239; forbidden_in_metrics [360772.0]; forbidden_in_graph [20.239, 360772.0]; forbidden_in_links ['360772']; review la
+ FAIL combo_first_col_unreadable@markdown | metrics [[360772.0, 'MJ']] != []; E-4-1 should be absent, got 0.360772; E-3-1 should be absent, got 20.239; forbidden_in_metrics [360772.0]; forbidden_in_graph [20.239, 360772.0]; forbidden_in_links ['360772']; review la
+ FAIL combo_first_col_unreadable@text_lines | metrics [[360772.0, 'MJ']] != []; E-4-1 should be absent, got 0.360772; E-3-1 should be absent, got 20.239; forbidden_in_metrics [360772.0]; forbidden_in_graph [20.239, 360772.0]; forbidden_in_links ['360772']; review la
+ FAIL combo_first_col_unreadable@local_pdf | metrics [[360772.0, 'MJ']] != []; E-4-1 should be absent, got 0.360772; E-3-1 should be absent, got 20.239; forbidden_in_metrics [360772.0]; forbidden_in_graph [20.239, 360772.0]; forbidden_in_links ['360772']; review la
+ FAIL combo_first_col_check_request@table_cells | metrics [[360772.0, 'MJ']] != []; E-4-1 should be absent, got 0.360772; E-3-1 should be absent, got 20.239; forbidden_in_metrics [360772.0]; forbidden_in_graph [20.239, 360772.0]; forbidden_in_links ['360772']; review la
+ FAIL combo_first_col_check_request@markdown | metrics [[360772.0, 'MJ']] != []; E-4-1 should be absent, got 0.360772; E-3-1 should be absent, got 20.239; forbidden_in_metrics [360772.0]; forbidden_in_graph [20.239, 360772.0]; forbidden_in_links ['360772']; review la
+ FAIL combo_first_col_check_request@text_lines | metrics [[360772.0, 'MJ']] != []; E-4-1 should be absent, got 0.360772; E-3-1 should be absent, got 20.239; forbidden_in_metrics [360772.0]; forbidden_in_graph [20.239, 360772.0]; forbidden_in_links ['360772']; review la
+ FAIL combo_first_col_check_request@local_pdf | metrics [[360772.0, 'MJ']] != []; E-4-1 should be absent, got 0.360772; E-3-1 should be absent, got 20.239; forbidden_in_metrics [360772.0]; forbidden_in_graph [20.239, 360772.0]; forbidden_in_links ['360772']; review la

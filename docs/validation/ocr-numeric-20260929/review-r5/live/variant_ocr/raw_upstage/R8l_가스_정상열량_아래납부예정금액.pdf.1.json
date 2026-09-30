@@ -1,0 +1,80 @@
+{
+ "file": "R8l_가스_정상열량_아래납부예정금액.pdf",
+ "call": 1,
+ "pdf_sha256": "80df7b3cc79ab1c4bd0141c18324ed6e86c7a85fe2126ba8a20c50df1cc53bd5",
+ "model_requested": "document-parse-260630",
+ "response": {
+  "api": "2.0",
+  "content": {
+   "html": "<p id='0' data-category='paragraph' style='font-size:14px'>검증용 가상 변형본 - 원본 아님<br>도시가스 요금 청구서<br>사용 기간: 2026-04-01 ~ 2026-04-30</p>\n<table id='1' style='font-size:18px'><thead><tr><td>사용량(m3)</td><td>사용열량(MJ)</td></tr></thead><tbody><tr><td>8,420</td><td>360,772</td></tr><tr><td>납부예정금액</td><td>247,500</td></tr></tbody></table>",
+   "markdown": "",
+   "text": "검증용 가상 변형본 - 원본 아님\n도시가스 요금 청구서\n사용 기간: 2026-04-01 ~ 2026-04-30\n| 사용량(m3) | 사용열량(MJ) |\n| --- | --- |\n| 8,420 | 360,772 |\n| 납부예정금액 | 247,500 |"
+  },
+  "elements": [
+   {
+    "id": 0,
+    "page": 1,
+    "category": "paragraph",
+    "content": {
+     "html": "<p id='0' data-category='paragraph' style='font-size:14px'>검증용 가상 변형본 - 원본 아님<br>도시가스 요금 청구서<br>사용 기간: 2026-04-01 ~ 2026-04-30</p>",
+     "markdown": "",
+     "text": "검증용 가상 변형본 - 원본 아님\n도시가스 요금 청구서\n사용 기간: 2026-04-01 ~ 2026-04-30"
+    },
+    "coordinates": [
+     {
+      "x": 0.0962,
+      "y": 0.0682
+     },
+     {
+      "x": 0.4213,
+      "y": 0.0682
+     },
+     {
+      "x": 0.4213,
+      "y": 0.1454
+     },
+     {
+      "x": 0.0962,
+      "y": 0.1454
+     }
+    ]
+   },
+   {
+    "id": 1,
+    "page": 1,
+    "category": "table",
+    "content": {
+     "html": "<table id='1' style='font-size:18px'><thead><tr><td>사용량(m3)</td><td>사용열량(MJ)</td></tr></thead><tbody><tr><td>8,420</td><td>360,772</td></tr><tr><td>납부예정금액</td><td>247,500</td></tr></tbody></table>",
+     "markdown": "",
+     "text": "| 사용량(m3) | 사용열량(MJ) |\n| --- | --- |\n| 8,420 | 360,772 |\n| 납부예정금액 | 247,500 |\n"
+    },
+    "coordinates": [
+     {
+      "x": 0.0819,
+      "y": 0.1769
+     },
+     {
+      "x": 0.757,
+      "y": 0.1769
+     },
+     {
+      "x": 0.757,
+      "y": 0.2857
+     },
+     {
+      "x": 0.0819,
+      "y": 0.2857
+     }
+    ]
+   }
+  ],
+  "model": "document-parse-260630",
+  "ocr": true,
+  "usage": {
+   "pages": 1,
+   "standard": [
+    1
+   ]
+  }
+ }
+}

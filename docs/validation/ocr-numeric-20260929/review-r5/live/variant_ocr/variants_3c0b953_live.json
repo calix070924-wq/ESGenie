@@ -1,0 +1,247 @@
+{
+ "code_path": "/private/tmp/ESGenie-ocr-numeric-20260929",
+ "commit": "3c0b953e14165b464af87b23bab16d8796f4911c",
+ "ocr_mode": "live",
+ "raw_dir": "/private/tmp/ESGenie-ocr-numeric-20260929/docs/validation/ocr-numeric-20260929/review-r5/live/variant_ocr/raw_upstage",
+ "imported_esgenie": "/private/tmp/ESGenie-ocr-numeric-20260929/esgenie/__init__.py",
+ "force_mock": false,
+ "llm_key_present": true,
+ "ocr_key_present": true,
+ "cache_dir": "/private/tmp/ESGenie-ocr-numeric-20260929/docs/validation/ocr-numeric-20260929/review-r5/live/variant_ocr/cache_3c0b953_live",
+ "llm": {
+  "mode": "on",
+  "hits": 0,
+  "misses": 0,
+  "live_calls": 0,
+  "successes": 0,
+  "failures": 0
+ },
+ "documents": [
+  {
+   "file": "R8l_가스_정상열량_아래납부예정금액.pdf",
+   "sha256": "80df7b3cc79ab1c4bd0141c18324ed6e86c7a85fe2126ba8a20c50df1cc53bd5",
+   "doc_type": "gas_bill",
+   "engine": "upstage_dp",
+   "seconds": 6.95,
+   "upstage": {
+    "requests": 1,
+    "successes": 1,
+    "failures": 0
+   },
+   "metrics": [
+    {
+     "hint": "도시가스 사용량",
+     "value": 8420.0,
+     "unit": "m³",
+     "code": null,
+     "period": "",
+     "page": 0,
+     "role": "usage",
+     "row_label": "",
+     "row_item": null,
+     "scope": null,
+     "value_source": "explicit",
+     "header": "사용량(m3)",
+     "raw_text": "8,420",
+     "index_check": null
+    },
+    {
+     "hint": "도시가스 사용열량",
+     "value": 360772.0,
+     "unit": "MJ",
+     "code": "E-4-1",
+     "period": "",
+     "page": 0,
+     "role": "heat",
+     "row_label": "",
+     "row_item": null,
+     "scope": null,
+     "value_source": "explicit",
+     "header": "사용열량(MJ)",
+     "raw_text": "360,772",
+     "index_check": null
+    }
+   ],
+   "review": [
+    "money_row_excluded"
+   ],
+   "absent_cells": [],
+   "money_rows": [
+    {
+     "reason": "money_row_excluded",
+     "row_label": "납부예정금액",
+     "cells": [
+      "납부예정금액",
+      "247,500"
+     ],
+     "table_id": "upstage_table_0"
+    }
+   ],
+   "hitl_required": null,
+   "not_numeric": []
+  },
+  {
+   "file": "R8m_가스_열량칸대시_아래납부예정금액.pdf",
+   "sha256": "df60ddd5f4f7161ccc11c21ba4360eb44e99a4722381fd258ad5d71fd81b2cc4",
+   "doc_type": "gas_bill",
+   "engine": "upstage_dp",
+   "seconds": 7.96,
+   "upstage": {
+    "requests": 1,
+    "successes": 1,
+    "failures": 0
+   },
+   "metrics": [
+    {
+     "hint": "도시가스 사용량",
+     "value": 8420.0,
+     "unit": "m³",
+     "code": null,
+     "period": "",
+     "page": 0,
+     "role": "usage",
+     "row_label": "",
+     "row_item": null,
+     "scope": null,
+     "value_source": "explicit",
+     "header": "사용량(m3)",
+     "raw_text": "8,420",
+     "index_check": null
+    }
+   ],
+   "review": [
+    "money_row_excluded",
+    "value_absent"
+   ],
+   "absent_cells": [
+    {
+     "role": "heat",
+     "header": "사용열량(MJ)",
+     "raw_text": "-",
+     "state": "absent",
+     "table_id": "upstage_table_0"
+    }
+   ],
+   "money_rows": [
+    {
+     "reason": "money_row_excluded",
+     "row_label": "납부예정금액",
+     "cells": [
+      "납부예정금액",
+      "247,500"
+     ],
+     "table_id": "upstage_table_0"
+    }
+   ],
+   "hitl_required": null,
+   "not_numeric": []
+  },
+  {
+   "file": "R8n_가스_열량칸검침예정_아래청구예정금액.pdf",
+   "sha256": "b5ea88c07538d70406edbfba26dcb9d6169b7c3706fbee33c39590fab77990c2",
+   "doc_type": "gas_bill",
+   "engine": "upstage_dp",
+   "seconds": 5.99,
+   "upstage": {
+    "requests": 1,
+    "successes": 1,
+    "failures": 0
+   },
+   "metrics": [
+    {
+     "hint": "도시가스 사용량",
+     "value": 8420.0,
+     "unit": "m³",
+     "code": null,
+     "period": "",
+     "page": 0,
+     "role": "usage",
+     "row_label": "",
+     "row_item": null,
+     "scope": null,
+     "value_source": "explicit",
+     "header": "사용량(m3)",
+     "raw_text": "8,420",
+     "index_check": null
+    }
+   ],
+   "review": [
+    "money_row_excluded",
+    "value_absent"
+   ],
+   "absent_cells": [
+    {
+     "role": "heat",
+     "header": "사용열량(MJ)",
+     "raw_text": "검침 예정",
+     "state": "absent",
+     "table_id": "upstage_table_0"
+    }
+   ],
+   "money_rows": [
+    {
+     "reason": "money_row_excluded",
+     "row_label": "청구예정금액",
+     "cells": [
+      "청구예정금액",
+      "247,500"
+     ],
+     "table_id": "upstage_table_0"
+    }
+   ],
+   "hitl_required": null,
+   "not_numeric": []
+  },
+  {
+   "file": "R8o_가스_혼합표_납부예정금액행_정상열량.pdf",
+   "sha256": "e959bd17f140ffb23de2d1d2e8cbb4c80ea9dc460880ad0a8843459b386f436e",
+   "doc_type": "gas_bill",
+   "engine": "upstage_dp",
+   "seconds": 5.83,
+   "upstage": {
+    "requests": 1,
+    "successes": 1,
+    "failures": 0
+   },
+   "metrics": [
+    {
+     "hint": "도시가스 사용량",
+     "value": 8420.0,
+     "unit": "m³",
+     "code": null,
+     "period": "",
+     "page": 0,
+     "role": "usage",
+     "row_label": "",
+     "row_item": "납부예정금액",
+     "scope": null,
+     "value_source": "explicit",
+     "header": "사용량(m3)",
+     "raw_text": "8,420",
+     "index_check": null
+    },
+    {
+     "hint": "도시가스 사용열량",
+     "value": 360772.0,
+     "unit": "MJ",
+     "code": "E-4-1",
+     "period": "",
+     "page": 0,
+     "role": "heat",
+     "row_label": "",
+     "row_item": "납부예정금액",
+     "scope": null,
+     "value_source": "explicit",
+     "header": "사용열량(MJ)",
+     "raw_text": "360,772",
+     "index_check": null
+    }
+   ],
+   "review": [],
+   "absent_cells": [],
+   "money_rows": [],
+   "hitl_required": null,
+   "not_numeric": []
+  }
+ ]
+}
