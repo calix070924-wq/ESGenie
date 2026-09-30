@@ -124,6 +124,35 @@ _UNRESOLVED_CAUSES = {
 }
 
 
+# 0을 싣지 않은 하위 사유(`ocr_router._ZeroVerdict.cause`). 사유가 없는 과거 기록은 기본 문구를 쓴다.
+_ZERO_DEFAULT_CAUSE = ("근거 문구에 0이나 이 지표의 명시적 미발생·미보유 서술이 없어 0으로 싣지 않았습니다. "
+                       "미공시(-)·빈 칸·미확인·예방 목표 문구일 수 있습니다.")
+_ZERO_CAUSES = {
+    "no_zero_statement": _ZERO_DEFAULT_CAUSE,
+    "other_subject": "근거 문구의 미발생·미보유 서술이 이 지표가 아닌 다른 대상에 관한 것이라 0으로 싣지 않았습니다.",
+    "future_or_intent": "근거 문구가 미래 예상·목표·계획을 말하고 있어 실제로 없었다는 사실로 볼 수 없어 0으로 싣지 않았습니다.",
+    "not_confirmed": "근거 문구가 미확인·미집계·미공시·해당 없음을 말하고 있어 0으로 싣지 않았습니다.",
+    "evidence_insufficient": "근거 문구가 미발생·미보유를 확인하지 못했다는 뜻(증거 부족·단정 어려움)이라 0으로 싣지 않았습니다.",
+    "negation_negated": "근거 문구가 미발생·미보유를 다시 부정하고 있어(예: '미보유 상태가 아니다') 0으로 싣지 않았습니다.",
+    "interpretation_unknown": "근거 문구의 부정 서술이 실제 사실을 말하는지 판정하지 못해 0으로 싣지 않았습니다.",
+    "period_mismatch": "근거 문구의 기간이 지표 기간과 달라 다른 기간의 0으로 이 기간의 0을 추론하지 않았습니다.",
+    "period_unproven": "근거 문구의 기간이 지표 기간과 같은 범위인지 확인하지 못해(기준일·연간 등) 0으로 싣지 않았습니다.",
+    "site_mismatch": "근거 문구의 사업장이 지표 사업장과 달라 다른 사업장의 0으로 이 사업장의 0을 추론하지 않았습니다.",
+}
+
+
+def _zero_scope(record: dict[str, Any]) -> str:
+    """0을 뺀 행의 지표 범위와 원문 범위. 기간·사업장 불일치를 한눈에 대조하게 한다."""
+    parts = []
+    if record.get("evidence_period"):
+        parts.append(f"원문 기간 {record['evidence_period']}")
+    if record.get("metric_site"):
+        parts.append(f"지표 사업장 {record['metric_site']}")
+    if record.get("evidence_site"):
+        parts.append(f"원문 사업장 {record['evidence_site']}")
+    return (" · " + " · ".join(parts)) if parts else ""
+
+
 def _reconciliation_reviews(ext: Any) -> list[ReviewFinding]:
     """추출값을 근거 문구와 대조한 기록(`router_meta.value_reconciliations`)을 확인 목록에 싣는다.
 
@@ -228,7 +257,7 @@ def build_source_review(output: Any) -> list[ReviewFinding]:
                 "원본의 해당 표·그래프에서 값을 확인하고 필요하면 직접 입력하세요.",
                 check_reason="value_not_reported", evidence=[ref]))
         # 0으로 실린 값을 원문 근거가 없어 뺀 행은 '그림·빈 칸' 안내와 사유가 다르다.
-        # 인용은 있으나 0도, 같은 지표의 명시적 미발생·미보유 서술도 없었다는 뜻이다.
+        # 사유(`cause`)별로 설명한다 — 미공시·다른 기간·다른 사업장·미래 예상·증거 부족.
         for entry in meta.get("unvalued_records", []):
             for record in entry.get("records", []):
                 if record.get("reason") != "zero_not_in_evidence":
@@ -237,10 +266,10 @@ def build_source_review(output: Any) -> list[ReviewFinding]:
                     "extraction", "0값의 원문 근거 확인",
                     f"{record.get('metric_hint') or '지표 미확인'}: 추출값 0"
                     + (f" {record['unit']}" if record.get("unit") else "")
-                    + (f" · 기간 {record['period']}" if record.get("period") else ""),
-                    "근거 문구에 0이나 이 지표의 명시적 미발생·미보유 서술이 없어 0으로 싣지 않았습니다. "
-                    "미공시(-)·빈 칸·미확인·예방 목표 문구일 수 있으며 실제 0이라는 판정도, "
-                    "미공시라는 판정도 아닙니다.",
+                    + (f" · 기간 {record['period']}" if record.get("period") else "")
+                    + _zero_scope(record),
+                    _ZERO_CAUSES.get(record.get("cause"), _ZERO_DEFAULT_CAUSE)
+                    + " 실제 0이라는 판정도, 미공시라는 판정도 아닙니다.",
                     "원본에서 이 지표가 0인지, 미공시·미집계인지 확인하고 0이면 근거와 함께 입력하세요.",
                     check_reason="zero_not_in_evidence", check_result=dict(record),
                     evidence=[_record_reference(ext.source_file, entry, record)]))
