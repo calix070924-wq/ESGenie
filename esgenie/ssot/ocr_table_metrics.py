@@ -243,8 +243,12 @@ _NOT_FEE_ENDINGS = ("연료", "원료", "재료", "자료", "시료", "도료", 
 _DATE_RE = re.compile(r"\d{4}\s*년|\d{1,2}\s*월|\d{4}\s*[-./]\s*\d{1,2}")
 _CURRENCY_RE = re.compile(r"^\s*[₩￦]?\s*(?P<num>(?:\d{1,3}(?:,\d{3})+|\d+)(?:\.\d+)?)\s*(?:원|krw)?\s*$",
                           re.IGNORECASE)
-_ABSENT_WORDS = ("예정", "미검침", "미측정", "미기재", "미입력", "미확인", "미정", "없음", "확인중", "산정중",
-                 "추후", "공란")
+# 값 없음 표시는 칸 **전체**가 상태 표현일 때만 인정한다(R8-3). 단어 포함으로 판정하면 '납부예정금액'·
+# '검침예정일'·'납부금액 미정' 같은 항목명이 빈칸이 되어 행 이름이 사라진다.
+_ABSENT_EXACT = {"n/a", "na", "n.a", "n.a.", "없음", "해당없음", "공란", "미정", "예정", "추후", "미검침", "미측정",
+                 "미계량", "미기재", "미입력", "미확인", "미산정", "미집계"}
+_ABSENT_RE = re.compile(r"^(?:(?:검침|측정|계량|산정|집계|확인|입력|기재|통보)(?:예정|중|전|대기)"
+                        r"|추후(?:검침|측정|기재|입력|확인|산정|통보)?(?:예정)?|(?:값|자료|데이터)없음)$")
 _NOTE_HEAD_WORDS = ("비고", "메모", "참고", "설명", "특이사항", "주석")
 
 
@@ -268,11 +272,15 @@ def _money_number(text: str) -> float | None:
 
 
 def _is_absent_marker(text: str) -> bool:
-    """값이 없다는 표시(빈칸·'-'·'—'·'검침 예정' 등) — 행 이름이 아니다."""
-    n = _norm(text)
-    if not n or not re.sub(r"[-–—―‐‑·._/\u00ad]", "", n) or n in ("n/a", "na"):
+    """칸 전체가 값 없음 표시(빈칸·'-'·'—'·'N/A'·'검침 예정'·'(미검침)' 등)인가.
+
+    True는 "이 칸은 값이 비어 있다고 적혀 있다 — 행 이름으로 읽지 않고 건너뛸 수 있다"는 뜻이다.
+    False는 부재가 아니라는 뜻일 뿐 수치라는 뜻이 아니다 — 목록 밖 글자('검침불가')는 행 이름 또는
+    '값이 숫자가 아님'(보류)으로 행·열 해석에 넘긴다. 명시한 0은 수치다(_parse_qty가 먼저 읽는다)."""
+    n = _norm(text).strip("()[]（）<>")
+    if not n or not re.sub(r"[-–—―‐‑·._/\u00ad]", "", n):
         return True
-    return any(w in n for w in _ABSENT_WORDS)
+    return n in _ABSENT_EXACT or bool(_ABSENT_RE.match(n))
 
 
 # ---- 머리글 역할 --------------------------------------------------------------
@@ -484,7 +492,7 @@ def _emit(res: TableMetricResult, *, doc_type: str, role: str, value: float, uni
           raw_unit: str, raw_text: str, header: str, row_label: str, grid: _Grid,
           cells: list[_Cell], value_source: str, unit_source: str,
           index_check: dict[str, Any] | None, confidence: float, formula: str = "",
-          label_axis: str = "", scope: dict[str, str] | None = None) -> None:
+          label_axis: str = "", scope: dict[str, str] | None = None, row_item: str = "") -> None:
     from .ocr_router import ExtractedMetric
     label, code, _allowed = _OUTPUT[doc_type][role]
     hint = f"{label} ({row_label})" if row_label else label
@@ -501,6 +509,8 @@ def _emit(res: TableMetricResult, *, doc_type: str, role: str, value: float, uni
         detail["row_label_axis"] = label_axis
     if scope:
         detail["scope"] = dict(scope)
+    if row_item:
+        detail["row_item"] = row_item
     if formula:
         detail["formula"] = formula
     if index_check:
@@ -581,11 +591,14 @@ def _process_header_table(res: TableMetricResult, grid: _Grid, doc_type: str) ->
     area = _union([c.bbox for row in grid.rows for c in row])
     # 항목명만으로 행을 지우지 않는다(R8 재보완). 행 구조로 가르고, 제외는 원문 셀 단위로 남긴다.
     kept = []
+    fee_item: dict[int, str] = {}
     for r in data:
         kind, row_name = _classify_row(r, header, roles, set(outputs) | {"prev", "cur", "mult", "detail_mass"},
                                        label_col, label_axis, scope_cols, money_cols)
         if kind == "data":
             kept.append(r)
+            if row_name:
+                fee_item[id(r)] = row_name
             _register_excluded_cells(res, grid, r, money_cols, "money_column")
             continue
         res.review.append({"reason": kind, "row_label": row_name, "cells": [c.text for c in r],
@@ -610,6 +623,11 @@ def _process_header_table(res: TableMetricResult, grid: _Grid, doc_type: str) ->
             row_label = ""
         if total_rows:
             row_label = ""
+        # 요금 명세 행('납부예정금액 | 8,420 | 360,772 | 247,500')의 항목명은 금액 칸의 이름이다. 사용량·열량의
+        # 행 이름으로 붙이면 '예정'이 계획값으로 읽힌다 — 원문 항목명은 row_item으로만 남긴다(R8-3).
+        row_item = fee_item.get(id(row), "")
+        if row_item and row_label == row_item:
+            row_label = ""
         scope: dict[str, str] = {}
         for k, axis in scope_cols:
             text = row[k].text if k < len(row) else ""
@@ -630,7 +648,7 @@ def _process_header_table(res: TableMetricResult, grid: _Grid, doc_type: str) ->
             cell = row[k]
             q = _parse_qty(cell.text)
             if q is None:
-                # 칸은 있으나 값이 없다(빈칸·'-'·'검침 예정'). 역할은 차지하지 않는다(R3).
+                # 칸은 있으나 값이 없다(빈칸·'-'·'검침 예정') 또는 숫자가 아닌 글자다. 역할은 차지하지 않는다(R3).
                 absent.append({"role": role, "header": header[k].text, "raw_text": cell.text,
                                "table_id": grid.table_id, "page": cell.page if cell.page is not None
                                else grid.page, "area": area, "row_label": row_label,
@@ -661,7 +679,7 @@ def _process_header_table(res: TableMetricResult, grid: _Grid, doc_type: str) ->
             found.append({"role": role, "value": q["value"], "unit": unit, "raw_unit": raw_unit,
                           "raw_text": cell.text, "header": header[k].text, "cells": [cell],
                           "unit_source": unit_source, "value_source": "explicit",
-                          "row_label": row_label, "scope": scope})
+                          "row_label": row_label, "scope": scope, "row_item": row_item})
         usage_role = "usage" if "usage" in outputs else None
         if usage_role and inputs:
             usage_col = next((k for k, r in enumerate(roles) if r == usage_role), None)
@@ -690,7 +708,7 @@ def _process_header_table(res: TableMetricResult, grid: _Grid, doc_type: str) ->
                                   "raw_unit": comp["unit"], "raw_text": "", "cells": comp["cells"],
                                   "header": comp["formula"], "unit_source": "index" if not usage_unit else "header",
                                   "value_source": "computed", "row_label": row_label, "scope": scope,
-                                  "index_check": check, "formula": comp["formula"]})
+                                  "index_check": check, "formula": comp["formula"], "row_item": row_item})
             elif comp:
                 held = comp["reason"]
                 res.review.append({"reason": comp["reason"], "table_id": grid.table_id,
@@ -704,7 +722,10 @@ def _process_header_table(res: TableMetricResult, grid: _Grid, doc_type: str) ->
             a["state"] = ("computed" if any(f["role"] == a["role"] for f in found)
                           else f"held:{held}" if held else "absent")
             if a["state"] != "computed":
-                res.review.append({"reason": "value_absent", "role": a["role"], "header": a["header"],
+                # '값 없음'이라고 적힌 칸과, 무엇인지 모르는 글자라 값으로 못 읽은 칸은 다른 판단이다.
+                # 둘 다 이 칸의 값을 만들지 않고 같은 표의 다른 후보를 막는다(absent_cells).
+                reason = "value_absent" if _is_absent_marker(a["raw_text"]) else "value_not_numeric"
+                res.review.append({"reason": reason, "role": a["role"], "header": a["header"],
                                    "raw_text": a["raw_text"], "state": a["state"],
                                    "table_id": grid.table_id})
         res.absent_cells.extend(absent)
@@ -729,7 +750,8 @@ def _process_header_table(res: TableMetricResult, grid: _Grid, doc_type: str) ->
                   row_label=f["row_label"], grid=grid, cells=f["cells"],
                   value_source=f["value_source"], unit_source=f["unit_source"],
                   index_check=f.get("index_check"), confidence=conf if not multi else min(conf, 0.7),
-                  formula=f.get("formula", ""), label_axis=axis, scope=f.get("scope"))
+                  formula=f.get("formula", ""), label_axis=axis, scope=f.get("scope"),
+                  row_item=f.get("row_item", ""))
     if doc_type == "waste_ledger" and total_rows:
         _check_components(res, grid, roles, total_rows[0])
     return True
@@ -745,7 +767,10 @@ def _classify_row(row: list[_Cell], header: list[_Cell], roles: list[str | None]
     · 행 이름(항목 열·범위 값)이 금액 이름이면: 금액 열에 값이 있고 수량 칸에도 값이 있으면 요금
       명세 행('사용요금 | 8,420 | 360,772 | 247,500') — 수량 칸을 그대로 읽는다. 금액 열이 비어
       수량 칸 숫자의 뜻을 가를 수 없으면 보류, 금액 열이 없는 표면 금액 행이다.
-      기간 열의 날짜 값('2026년 5월 요금 청구기간')은 기간 식별값이다."""
+      기간 열의 날짜 값('2026년 5월 요금 청구기간')은 기간 식별값이다.
+    · 행 머리를 찾을 때 건너뛰는 칸은 칸 전체가 값 없음 표시인 칸뿐이다(_is_absent_marker). '납부예정금액'·
+      '검침예정일'처럼 상태 단어가 든 항목명은 행 머리로 남아 위 구조 판정을 받는다(R8-3).
+    반환 ("data", 이름)의 이름이 비어 있지 않으면 요금 명세 행이다 — 이름은 금액 칸의 항목명이다."""
     if label_col is None:
         head = next((k for k, c in enumerate(row) if not _is_absent_marker(c.text)), None)
         if head is not None and head < len(roles) and (roles[head] in qty_roles or head in money_cols) \
