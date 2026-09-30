@@ -1,0 +1,80 @@
+{
+ "file": "R8i_가스_정상열량_아래기본료.pdf",
+ "call": 1,
+ "pdf_sha256": "a56bc2b61da0eeddfd9fe058d06c3e496270bf3bf8060a49f8cebe981b2cfb41",
+ "model_requested": "document-parse-260630",
+ "response": {
+  "api": "2.0",
+  "content": {
+   "html": "<p id='0' data-category='paragraph' style='font-size:14px'>검증용 가상 변형본 - 원본 아님<br>도시가스 요금 청구서<br>사용 기간: 2026-04-01 ~ 2026-04-30</p>\n<table id='1' style='font-size:18px'><thead><tr><td>사용량(m3)</td><td>사용열량(MJ)</td></tr></thead><tbody><tr><td>8,420</td><td>360,772</td></tr><tr><td>기본료</td><td>247,500</td></tr></tbody></table>",
+   "markdown": "",
+   "text": "검증용 가상 변형본 - 원본 아님\n도시가스 요금 청구서\n사용 기간: 2026-04-01 ~ 2026-04-30\n| 사용량(m3) | 사용열량(MJ) |\n| --- | --- |\n| 8,420 | 360,772 |\n| 기본료 | 247,500 |"
+  },
+  "elements": [
+   {
+    "id": 0,
+    "page": 1,
+    "category": "paragraph",
+    "content": {
+     "html": "<p id='0' data-category='paragraph' style='font-size:14px'>검증용 가상 변형본 - 원본 아님<br>도시가스 요금 청구서<br>사용 기간: 2026-04-01 ~ 2026-04-30</p>",
+     "markdown": "",
+     "text": "검증용 가상 변형본 - 원본 아님\n도시가스 요금 청구서\n사용 기간: 2026-04-01 ~ 2026-04-30"
+    },
+    "coordinates": [
+     {
+      "x": 0.0962,
+      "y": 0.0682
+     },
+     {
+      "x": 0.4212,
+      "y": 0.0682
+     },
+     {
+      "x": 0.4212,
+      "y": 0.1454
+     },
+     {
+      "x": 0.0962,
+      "y": 0.1454
+     }
+    ]
+   },
+   {
+    "id": 1,
+    "page": 1,
+    "category": "table",
+    "content": {
+     "html": "<table id='1' style='font-size:18px'><thead><tr><td>사용량(m3)</td><td>사용열량(MJ)</td></tr></thead><tbody><tr><td>8,420</td><td>360,772</td></tr><tr><td>기본료</td><td>247,500</td></tr></tbody></table>",
+     "markdown": "",
+     "text": "| 사용량(m3) | 사용열량(MJ) |\n| --- | --- |\n| 8,420 | 360,772 |\n| 기본료 | 247,500 |\n"
+    },
+    "coordinates": [
+     {
+      "x": 0.0818,
+      "y": 0.1769
+     },
+     {
+      "x": 0.7571,
+      "y": 0.1769
+     },
+     {
+      "x": 0.7571,
+      "y": 0.2856
+     },
+     {
+      "x": 0.0818,
+      "y": 0.2856
+     }
+    ]
+   }
+  ],
+  "model": "document-parse-260630",
+  "ocr": true,
+  "usage": {
+   "pages": 1,
+   "standard": [
+    1
+   ]
+  }
+ }
+}

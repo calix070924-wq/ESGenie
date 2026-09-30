@@ -1,0 +1,280 @@
+{
+ "code_path": "/private/tmp/ESGenie-ocr-numeric-20260929",
+ "commit": "3adb0470db0b94efb200d562642c69f73a48f3ba",
+ "ocr_mode": "live",
+ "raw_dir": "/private/tmp/ESGenie-ocr-numeric-20260929/docs/validation/ocr-numeric-20260929/review-r4/live/variant_ocr/raw_upstage",
+ "imported_esgenie": "/private/tmp/ESGenie-ocr-numeric-20260929/esgenie/__init__.py",
+ "force_mock": false,
+ "llm_key_present": true,
+ "ocr_key_present": true,
+ "cache_dir": "/private/tmp/ESGenie-ocr-numeric-20260929/docs/validation/ocr-numeric-20260929/review-r4/live/variant_ocr/cache_3adb047_live",
+ "llm": {
+  "mode": "on",
+  "hits": 0,
+  "misses": 0,
+  "live_calls": 0,
+  "successes": 0,
+  "failures": 0
+ },
+ "documents": [
+  {
+   "file": "R8g_가스_혼합표_사용요금행_정상열량.pdf",
+   "sha256": "a5d9882301c944d9e4d6d66562c3ed00c87f852421b7ccd3c01165a4f5e3e8eb",
+   "doc_type": "gas_bill",
+   "engine": "upstage_dp",
+   "seconds": 6.79,
+   "upstage": {
+    "requests": 1,
+    "successes": 1,
+    "failures": 0
+   },
+   "metrics": [
+    {
+     "hint": "도시가스 사용량 (사용요금)",
+     "value": 8420.0,
+     "unit": "m³",
+     "code": null,
+     "period": "",
+     "page": 0,
+     "role": "usage",
+     "row_label": "사용요금",
+     "scope": null,
+     "value_source": "explicit",
+     "header": "사용량(m3)",
+     "raw_text": "8,420",
+     "index_check": null
+    },
+    {
+     "hint": "도시가스 사용열량 (사용요금)",
+     "value": 360772.0,
+     "unit": "MJ",
+     "code": "E-4-1",
+     "period": "",
+     "page": 0,
+     "role": "heat",
+     "row_label": "사용요금",
+     "scope": null,
+     "value_source": "explicit",
+     "header": "사용열량(MJ)",
+     "raw_text": "360,772",
+     "index_check": null
+    }
+   ],
+   "review": [],
+   "absent_cells": [],
+   "money_rows": [],
+   "hitl_required": null
+  },
+  {
+   "file": "R8h_가스_혼합표_사용요금행_열량칸대시.pdf",
+   "sha256": "638aa29a2e7f67b1976411d94eb1a7f51ce9f0cebad27521c469a99300645d76",
+   "doc_type": "gas_bill",
+   "engine": "upstage_dp",
+   "seconds": 5.87,
+   "upstage": {
+    "requests": 1,
+    "successes": 1,
+    "failures": 0
+   },
+   "metrics": [
+    {
+     "hint": "도시가스 사용량 (사용요금)",
+     "value": 8420.0,
+     "unit": "m³",
+     "code": null,
+     "period": "",
+     "page": 0,
+     "role": "usage",
+     "row_label": "사용요금",
+     "scope": null,
+     "value_source": "explicit",
+     "header": "사용량(m3)",
+     "raw_text": "8,420",
+     "index_check": null
+    }
+   ],
+   "review": [
+    "value_absent"
+   ],
+   "absent_cells": [
+    {
+     "role": "heat",
+     "header": "사용열량(MJ)",
+     "raw_text": "-",
+     "state": "absent",
+     "table_id": "upstage_table_0"
+    }
+   ],
+   "money_rows": [],
+   "hitl_required": null
+  },
+  {
+   "file": "R8i_가스_정상열량_아래기본료.pdf",
+   "sha256": "a56bc2b61da0eeddfd9fe058d06c3e496270bf3bf8060a49f8cebe981b2cfb41",
+   "doc_type": "gas_bill",
+   "engine": "upstage_dp",
+   "seconds": 8.23,
+   "upstage": {
+    "requests": 1,
+    "successes": 1,
+    "failures": 0
+   },
+   "metrics": [
+    {
+     "hint": "도시가스 사용량",
+     "value": 8420.0,
+     "unit": "m³",
+     "code": null,
+     "period": "",
+     "page": 0,
+     "role": "usage",
+     "row_label": "",
+     "scope": null,
+     "value_source": "explicit",
+     "header": "사용량(m3)",
+     "raw_text": "8,420",
+     "index_check": null
+    },
+    {
+     "hint": "도시가스 사용열량",
+     "value": 360772.0,
+     "unit": "MJ",
+     "code": "E-4-1",
+     "period": "",
+     "page": 0,
+     "role": "heat",
+     "row_label": "",
+     "scope": null,
+     "value_source": "explicit",
+     "header": "사용열량(MJ)",
+     "raw_text": "360,772",
+     "index_check": null
+    }
+   ],
+   "review": [
+    "money_row_excluded"
+   ],
+   "absent_cells": [],
+   "money_rows": [
+    {
+     "reason": "money_row_excluded",
+     "row_label": "기본료",
+     "cells": [
+      "기본료",
+      "247,500"
+     ],
+     "table_id": "upstage_table_0"
+    }
+   ],
+   "hitl_required": null
+  },
+  {
+   "file": "R8j_가스_열량칸대시_아래기본료.pdf",
+   "sha256": "fa5ec6446d2acf0cd0e0721845511049d3d0b9c96293e6723a0e54adfc9f7934",
+   "doc_type": "gas_bill",
+   "engine": "upstage_dp",
+   "seconds": 7.93,
+   "upstage": {
+    "requests": 1,
+    "successes": 1,
+    "failures": 0
+   },
+   "metrics": [
+    {
+     "hint": "도시가스 사용량",
+     "value": 8420.0,
+     "unit": "m³",
+     "code": null,
+     "period": "",
+     "page": 0,
+     "role": "usage",
+     "row_label": "",
+     "scope": null,
+     "value_source": "explicit",
+     "header": "사용량(m3)",
+     "raw_text": "8,420",
+     "index_check": null
+    }
+   ],
+   "review": [
+    "money_row_excluded",
+    "value_absent"
+   ],
+   "absent_cells": [
+    {
+     "role": "heat",
+     "header": "사용열량(MJ)",
+     "raw_text": "-",
+     "state": "absent",
+     "table_id": "upstage_table_0"
+    }
+   ],
+   "money_rows": [
+    {
+     "reason": "money_row_excluded",
+     "row_label": "기본료",
+     "cells": [
+      "기본료",
+      "247,500"
+     ],
+     "table_id": "upstage_table_0"
+    }
+   ],
+   "hitl_required": null
+  },
+  {
+   "file": "R8k_가스_열량칸대시_아래계량기교체요금.pdf",
+   "sha256": "89fd3fba70c29b1eb4d6bf8dcdef7e8b8584d1e78d374c4226b219d6ebcf833c",
+   "doc_type": "gas_bill",
+   "engine": "upstage_dp",
+   "seconds": 6.86,
+   "upstage": {
+    "requests": 1,
+    "successes": 1,
+    "failures": 0
+   },
+   "metrics": [
+    {
+     "hint": "도시가스 사용량",
+     "value": 8420.0,
+     "unit": "m³",
+     "code": null,
+     "period": "",
+     "page": 0,
+     "role": "usage",
+     "row_label": "",
+     "scope": null,
+     "value_source": "explicit",
+     "header": "사용량(m3)",
+     "raw_text": "8,420",
+     "index_check": null
+    }
+   ],
+   "review": [
+    "money_row_excluded",
+    "value_absent"
+   ],
+   "absent_cells": [
+    {
+     "role": "heat",
+     "header": "사용열량(MJ)",
+     "raw_text": "-",
+     "state": "absent",
+     "table_id": "upstage_table_0"
+    }
+   ],
+   "money_rows": [
+    {
+     "reason": "money_row_excluded",
+     "row_label": "계량기 교체요금",
+     "cells": [
+      "계량기 교체요금",
+      "247,500"
+     ],
+     "table_id": "upstage_table_0"
+    }
+   ],
+   "hitl_required": null
+  }
+ ]
+}
