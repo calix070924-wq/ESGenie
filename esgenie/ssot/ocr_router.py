@@ -2182,6 +2182,20 @@ _KR_SCALE_TERM_RE = re.compile(
     r"(?<![0-9A-Za-z가-힣])(\d[\d,]*(?:\.\d+)?)\s*(조|억|천만|백만|만|천)?")
 
 
+@dataclass(frozen=True)
+class _ScaleChain:
+    """원문의 연속 배율 표기 하나. 금액만이 아니라 **무엇을 센 수인지**를 함께 들고 다닌다.
+
+    PR 69 검토(2026-09-30)에서 금액만 비교한 탓에 `1만 8,400 kg`이 `18.4 ton`을,
+    `교육비 1만 2천 원`이 `교육 시간 2.5 시간`을 덮어썼다. 단위와 앞 라벨을 남겨
+    같은 물리량·같은 지표인지 확인한 뒤에만 후보로 쓴다.
+    """
+    amount: float          # 배율을 곱한 값(뒤 단위 기준). `57조 2,370억 원` → 5.7237e13 원
+    surface: str           # 원문 표기 그대로 — 보정·확인 기록의 근거로 남긴다
+    unit: str | None       # 뒤에 붙은 단위의 정규 표기(`units.normalize_unit`). 모르면 None
+    label: str             # 바로 앞 라벨(같은 절 안). 지표 대조에 쓴다
+
+
 def _kr_scale_chain_amounts(text: str) -> set[float]:
     """연속 배율 표기를 **하나의 금액으로 합성**한다. `46조 1,182억` → 4.61182e13.
 
@@ -2193,13 +2207,18 @@ def _kr_scale_chain_amounts(text: str) -> set[float]:
     토막이 둘 이상일 때만(`parts > 1`) 결과에 넣는다. `3억`처럼 배율이 하나뿐인 표기는
     모델이 틀릴 여지가 없으므로 이 대조의 대상이 아니다.
     """
+    return {chain.amount for chain in _kr_scale_chains(text)}
+
+
+def _kr_scale_chains(text: str) -> list[_ScaleChain]:
+    """`_kr_scale_chain_amounts`와 같은 합성 규칙으로, 단위·라벨을 붙여 돌려준다."""
     from ..rag_gates.units import parse_number
 
     terms = [(m.start(), m.end(), parse_number(m.group(1)), m.group(2))
              for m in _KR_SCALE_TERM_RE.finditer(text)]
     terms = [t for t in terms if t[2] is not None]
-    amounts: set[float] = set()
-    for index, (_, end, base, scale) in enumerate(terms):
+    chains: list[_ScaleChain] = []
+    for index, (start, end, base, scale) in enumerate(terms):
         if scale is None:
             continue
         total, last_factor, parts = base * _KR_SCALES[scale], _KR_SCALES[scale], 1
@@ -2219,8 +2238,74 @@ def _kr_scale_chain_amounts(text: str) -> set[float]:
             if scale_next is None:
                 break
         if parts > 1:
-            amounts.add(total)
-    return amounts
+            chains.append(_ScaleChain(amount=total, surface=text[start:end].strip(),
+                                      unit=_trailing_unit(text, end),
+                                      label=_leading_label(text, start)))
+    return chains
+
+
+# 수치 뒤에 붙는 단위 낱말. 조사(`톤을`·`원을`)가 붙으므로 가장 긴 앞머리를 사전에서 찾는다.
+_TRAILING_UNIT_RE = re.compile(r"\s*([^\s\d,;:|()\[\]{}<>·/]+)")
+_TRAILING_UNIT_MAX = 12
+
+
+def _trailing_unit(text: str, end: int) -> str | None:
+    """`end` 바로 뒤 단위를 정규 표기로 읽는다. 사전에 없으면 None — **추정해 채우지 않는다.**"""
+    from ..rag_gates.units import normalize_unit
+
+    match = _TRAILING_UNIT_RE.match(text, end)
+    if not match:
+        return None
+    word = match.group(1)[:_TRAILING_UNIT_MAX]
+    for size in range(len(word), 0, -1):
+        unit = normalize_unit(word[:size])
+        if unit is not None:
+            return unit
+    return None
+
+
+# 라벨을 끊는 경계: 절 구분(쉼표·세미콜론·줄바꿈·문장 끝 마침표)과 표 칸 구분(`|`).
+_LABEL_BREAK_RE = re.compile(r"[,;\n|]|(?<!\d)\.(?!\d)")
+
+
+def _leading_label(text: str, start: int) -> str:
+    """수치 바로 앞 라벨. 앞 수치를 넘지 않고, 비어 있으면 같은 절의 머리(표 행 제목)를 쓴다.
+
+    `매출 46조 1,182억 원 | 영업이익 3,000억 원`의 둘째 금액 라벨은 `영업이익`이고,
+    `매출액 | 57조 2,370억 원`처럼 칸이 나뉜 행은 행 제목 `매출액`이 라벨이다.
+    """
+    head = text[:start]
+    breaks = [m.end() for m in _LABEL_BREAK_RE.finditer(head)]
+    digits = [m.end() for m in re.finditer(r"\d", head)]
+    near = head[max([0, *breaks, *digits]):]
+    if _QUOTE_HINT_TOKEN_RE.search(re.sub(r"\d", " ", near)):
+        return near.strip()
+    clause_breaks = [m.end() for m in re.finditer(r"[,;\n]|(?<!\d)\.(?!\d)", head)]
+    clause = head[max([0, *clause_breaks]):]
+    return re.sub(r"[\d.,%]+", " ", clause).strip()
+
+
+# 조사를 떼고 비교한다(`매출은` ↔ `매출액`). 두 글자 낱말에는 적용하지 않는다.
+_LABEL_PARTICLES = tuple("은는이가을를의에도와과로")
+
+
+def _label_tokens(text: str) -> list[str]:
+    tokens = _QUOTE_HINT_TOKEN_RE.findall(re.sub(r"\d", " ", text))
+    return [t[:-1] if len(t) >= 3 and t.endswith(_LABEL_PARTICLES) else t for t in tokens]
+
+
+def _label_names_metric(label: str, hint: str) -> bool:
+    """원문 라벨이 이 지표를 가리키는가. 한쪽 낱말이 **모두** 다른 쪽에 들어 있어야 한다.
+
+    낱말 하나만 겹치면 같은 지표로 보지 않는다 — `폐기물 배출량`과 `폐기물 재활용량`은
+    `폐기물`이 겹치지만 다른 지표다(한쪽 값으로 다른 쪽을 덮어쓰면 옳은 값을 잃는다).
+    """
+    label_tokens, hint_tokens = _label_tokens(label), _label_tokens(hint)
+    if not label_tokens or not hint_tokens:
+        return False
+    label_compact, hint_compact = "".join(label_tokens), "".join(hint_tokens)
+    return (all(t in label_compact for t in hint_tokens)
+            or all(t in hint_compact for t in label_tokens))
 
 
 # 글자에 붙은 숫자까지 읽는 느슨한 스캔. `numeric_tokens`의 경계 규칙을 쓰지 않는 이유는
@@ -2264,18 +2349,115 @@ def _value_written_in_evidence(value: float, unit: str, evidence: str) -> bool:
     if not amounts:
         return False
     absolute = value * _unit_scale(unit)
-    return any(numeric_equal(value, amount) or numeric_equal(absolute, amount)
-               for amount in amounts)
+    if any(numeric_equal(value, amount) or numeric_equal(absolute, amount)
+           for amount in amounts):
+        return True
+    # 단위를 바꿔 적은 값(`18,400 kg` → `18.4 ton`)도 원문에 적힌 값이다. 공통 환산표로만
+    # 대조한다 — 원문 단위나 추출 단위를 모르면 환산하지 않는다.
+    return any(numeric_equal(value, converted)
+               for converted in _evidence_amounts_in_unit(evidence, unit))
 
 
-def _zero_is_grounded(quote: str) -> bool:
+def _evidence_amounts_in_unit(text: str, unit: str) -> list[float]:
+    """근거 문구의 (수, 뒤 단위) 쌍을 `unit`으로 환산한 값. 환산할 수 없는 쌍은 뺀다."""
+    from ..rag_gates.units import convert_to_common, normalize_unit, parse_number
+
+    target = normalize_unit(unit or "")
+    if target is None:
+        return []
+    pairs: list[tuple[float, str | None]] = []
+    for match in _LOOSE_AMOUNT_RE.finditer(text):
+        base = parse_number(match.group(2))
+        if base is None:
+            continue
+        if match.group(1) in ("-", "−"):
+            base = -base
+        if match.group(3):
+            base *= _KR_SCALES[match.group(3)]
+        pairs.append((base, _trailing_unit(text, match.end())))
+    pairs += [(chain.amount, chain.unit) for chain in _kr_scale_chains(text)]
+    converted = [convert_to_common(amount, source_unit, target)
+                 for amount, source_unit in pairs if source_unit is not None]
+    return [value for value in converted if value is not None]
+
+
+def _zero_is_grounded(quote: str, hint: str = "", period: str = "",
+                      boundary: dict[str, Any] | None = None) -> bool:
     """보고된 0이 **그 근거 문구에 실제로 적혀 있는가.**
 
     실측 결함(삼성전기 4건): 원문 칸이 `-`(미공시)인데 값 0으로 실렸다. 자기 근거 문구에
     0이 한 번도 없으면 그 0은 원문에서 온 값이 아니다. 두 문서 지표 7,238건에 이 판정을
     적용했을 때 **실제 0을 잘못 걸러낸 경우는 0건**이었다(0값 354건 중 4건만 걸렸다).
+
+    숫자 0 말고도 **같은 지표의 명시적 미발생·미보유 서술**은 0의 근거다(PR 69 검토,
+    2026-09-30: 한울정밀 11번 `ISMS 인증 미보유`의 0건이 지워지고 '수치를 읽지 못함'
+    안내가 떴다). 판정은 `_negation_states_zero`가 한다.
     """
-    return any(_contains_value(quote, form) for form in _value_surface_forms(0.0))
+    if any(_contains_value(quote, form) for form in _value_surface_forms(0.0)):
+        return True
+    return bool(hint) and _negation_states_zero(quote, hint, period, boundary or {})
+
+
+# 실제로 없었다·갖고 있지 않다는 서술. `없도록`·`않도록`(예방 목표)은 아래에서 막는다.
+_ZERO_NEGATION_RE = re.compile(
+    r"미발생|미보유|미취득|발생(?:하지|되지)\s*않|보유(?:하지|되지)\s*않|취득(?:하지|되지)\s*않"
+    r"|없(?:었|음|다|으며|습니다|고)")
+# 0이 아니라 **모른다**·**해당 없다**·**목표다**라는 서술. 같은 절에 있으면 0의 근거로 쓰지 않는다.
+_ZERO_NOT_A_FACT_RE = re.compile(
+    r"않도록|없도록|목표|계획|예정|해당\s*(?:사항\s*)?없|자료\s*없|기록\s*없|정보\s*없"
+    r"|확인(?:하지|되지|할\s*수)\s*(?:않|없)|미확인|미집계|집계(?:하지|되지)\s*않|미공시"
+    r"|공시(?:하지|되지)\s*않|파악(?:하지|되지)\s*않|알\s*수\s*없")
+# 지표명에서 무엇을 셌는지 알려 주지 않는 낱말. 이것만 겹쳐서는 같은 지표라 할 수 없다
+# (`환경 사고는 발생하지 않았다`가 `산업재해 발생 건수`의 0이 되면 안 된다).
+_ZERO_GENERIC_TOKENS = frozenset({
+    "발생", "건수", "여부", "상태", "현황", "보유", "횟수", "실적", "누적", "전체", "연간",
+    "기준", "인원", "수준", "비율", "총계", "합계"})
+# 지표 낱말과 부정 서술 사이에 와도 되는 말(`산업재해가 한 건도 발생하지 않았다`).
+_ZERO_FILLER_TOKENS = frozenset({"전혀", "건도", "일체", "모두", "기간", "동안", "현재", "당해"})
+_SITE_RE = re.compile(r"[0-9A-Za-z가-힣]+(?:공장|사업장|사업소|본사|지점|센터|캠퍼스)")
+
+
+def _negation_states_zero(quote: str, hint: str, period: str, boundary: dict[str, Any]) -> bool:
+    """근거 문구의 한 절이 **이 지표·기간·사업장**에 대해 없었다·보유하지 않았다고 말하는가.
+
+    조건(모두 만족해야 한다):
+      - 부정 서술 앞에 지표명의 구체 낱말(`_ZERO_GENERIC_TOKENS` 제외)이 모두 있다.
+      - 마지막 지표 낱말과 부정 서술 사이에 다른 대상 낱말이 없다(`산업재해 예방교육은 없었다`는
+        예방교육이 없다는 말이다).
+      - 같은 절에 미확인·미공시·예방 목표 표현이 없다.
+      - 절에 연도가 있으면 지표 기간의 연도와 같고, 사업장 이름이 있으면 지표 사업장과 같다.
+    """
+    hint_tokens = _label_tokens(hint)
+    specific = [t for t in hint_tokens if t not in _ZERO_GENERIC_TOKENS]
+    if not specific:
+        return False
+    allowed = set(hint_tokens) | _ZERO_GENERIC_TOKENS | _ZERO_FILLER_TOKENS
+    period_years = set(re.findall(r"(?<!\d)(?:19|20)\d{2}(?!\d)", period or ""))
+    site = str(boundary.get("site") or "").strip()
+    for clause in re.split(r"[,;\n]|(?<!\d)\.(?!\d)", quote):
+        negation = _ZERO_NEGATION_RE.search(clause)
+        if negation is None or _ZERO_NOT_A_FACT_RE.search(clause):
+            continue
+        head = clause[:negation.start()]
+        compact = re.sub(r"\s+", "", head)
+        if not all(token in compact for token in specific):
+            continue
+        last = max(head.rfind(token) for token in specific)
+        if last < 0:
+            continue   # 공백을 사이에 두고 나뉜 지표 낱말 — 위치를 특정할 수 없어 인정하지 않는다
+        gap = re.sub(r"^\S*", "", head[last:])   # 지표 낱말이 든 어절의 나머지(조사)는 건너뛴다
+        # 날짜·한 글자 말(`4월`·`한`)은 `_label_tokens`가 이미 뺀다.
+        if any(word not in allowed and not any(token in word for token in hint_tokens)
+               for word in _label_tokens(gap)):
+            continue
+        clause_years = set(re.findall(r"(?<!\d)(?:19|20)\d{2}(?!\d)", clause))
+        if period_years and clause_years and not (period_years & clause_years):
+            continue
+        clause_sites = set(_SITE_RE.findall(clause))
+        if site and clause_sites and not any(site in s or s in site for s in clause_sites):
+            continue
+        return True
+    return False
 
 
 def _unit_scale(unit: str) -> float:
@@ -2292,7 +2474,7 @@ def _unit_scale(unit: str) -> float:
 
 
 def _reconcile_scale_chain(
-    value: float, unit: str, evidence: str,
+    value: float, unit: str, evidence: str, *, hint: str | None = None,
 ) -> tuple[float, dict[str, Any] | None]:
     """모델이 합성한 한국식 자릿수 금액을 **원문 표기로 되잡는다.**
 
@@ -2304,38 +2486,84 @@ def _reconcile_scale_chain(
     건드리지 않는 경우(오탐을 막는 조건):
       - 근거 문구에 합성 표기가 없다.
       - 모델 값의 절대 금액이 원문 합성 금액과 일치한다(1% 허용, 반올림 표기 포함).
+        원문과 추출 단위가 다르면 공통 환산표로 맞춰 본다(`1만 8,400 kg` = `18.4 ton`).
       - **모델 값이 근거 문구에 그대로 적혀 있다** — 같은 행의 다른 칸 수치이므로 옳다.
-      - 합성 표기가 둘 이상이라 어느 것인지 가릴 수 없다 → 값을 그대로 두고 사유만 남긴다.
+      - 원문 표기의 단위가 추출 단위와 **다른 물리량**이다(원 ↔ 시간, 원 ↔ 달러, kg ↔ m³).
+        다른 수량이므로 후보도 아니다.
+      - 후보가 둘 이상이거나, 하나라도 **같은 단위·같은 지표임을 입증하지 못했다**
+        (단위 미상·라벨 불일치) → 값을 그대로 두고 사유만 남긴다(`scale_chain_unresolved`).
+
+    `hint`를 주면 원문 표기 앞 라벨이 이 지표를 가리키는지까지 확인한다. 추출 경로
+    (`_map_vlm_json`)는 항상 지표명을 넘긴다. 주지 않으면 라벨 대조를 생략한다.
     """
-    from ..rag_gates.units import numeric_equal
+    from ..rag_gates.units import convert_to_common, normalize_unit, numeric_equal, units_compatible
 
     if not evidence or value == 0 or not math.isfinite(value):
         return value, None
-    chains = _kr_scale_chain_amounts(evidence)
+    chains = _kr_scale_chains(evidence)
     if not chains:
         return value, None
     scale = _unit_scale(unit)
     absolute = value * scale
-    if any(numeric_equal(absolute, chain) for chain in chains):
+    value_unit = normalize_unit(unit or "")
+    # 단위가 둘 다 알려져 있고 환산군이 다르면 다른 수량이다 — 후보에서 뺀다.
+    candidates = [chain for chain in chains
+                  if not (value_unit and chain.unit and not units_compatible(value_unit, chain.unit))]
+    if not candidates:
         return value, None
+
+    def in_value_unit(chain: _ScaleChain) -> float | None:
+        if value_unit and chain.unit:
+            converted = convert_to_common(chain.amount, chain.unit, value_unit)
+            # 환산 계수의 이진 표현 잡음만 지운다(18,400 × 0.001 = 18.400000000000002).
+            return float(f"{converted:.12g}") if converted is not None else None
+        return None
+
+    for chain in candidates:
+        converted = in_value_unit(chain)
+        if converted is not None and numeric_equal(value, converted):
+            return value, None
+        if converted is None and numeric_equal(absolute, chain.amount):
+            return value, None
     if any(_contains_value(evidence, form) for form in _value_surface_forms(value)):
         return value, None
+    # 다른 단위로 그대로 적힌 값(`재활용량 5,390 kg` → 5.39 ton)도 같은 행의 다른 칸이다.
+    if any(numeric_equal(value, converted)
+           for converted in _evidence_amounts_in_unit(evidence, unit)):
+        return value, None
+
+    def describe(chain: _ScaleChain) -> dict[str, Any]:
+        return {"surface": chain.surface, "amount": chain.amount, "unit": chain.unit,
+                "value_in_unit": in_value_unit(chain), "label": chain.label}
+
     detail = {"reason": "scale_chain_unresolved", "fatal": False,
               "value": value, "unit": unit,
-              "source_amounts": sorted(chains), "quote": evidence[:_QUOTE_MAX_CHARS]}
-    if len(chains) != 1:
+              "source_amounts": sorted(chain.amount for chain in candidates),
+              "candidates": [describe(chain) for chain in candidates],
+              "quote": evidence[:_QUOTE_MAX_CHARS]}
+    if len(candidates) != 1:
         # 실측 예: `9억 4,000만 달러 한도 … 중 8억 400만 달러를 분할 인출` — 모델 값
         # 840,000,000은 둘 다와 다르다. 어느 쪽으로 고칠지 문구만으로 정할 수 없으므로
         # 고치지 않고 사람이 보게 남긴다.
-        return value, detail
-    chain = next(iter(chains))
-    ratio = chain / absolute if absolute else 0.0
+        return value, {**detail, "cause": "multiple_candidates"}
+    chain = candidates[0]
+    corrected = in_value_unit(chain)
+    if corrected is None:
+        # 원문 또는 추출 단위를 사전으로 읽지 못했다 — 단위를 추정해 채우지 않는다.
+        return value, {**detail, "cause": "unit_unproven"}
+    if hint is not None and not _label_names_metric(chain.label, hint):
+        # 같은 문장 안의 다른 지표일 수 있다(`영업이익 1조 2,000억 원 … 매출은`).
+        return value, {**detail, "cause": "metric_unproven"}
+    ratio = corrected / value
     if not 1e-4 <= abs(ratio) <= 1e4:
-        return value, detail   # 자릿수 오류로 설명되지 않는 차이 — 임의로 바꾸지 않는다.
-    corrected = chain / scale if scale else chain
+        # 자릿수 오류로 설명되지 않는 차이 — 임의로 바꾸지 않는다.
+        return value, {**detail, "cause": "ratio_out_of_range"}
     return corrected, {"reason": "scale_chain_recomposed", "fatal": False,
                        "value_before": value, "value_after": corrected, "unit": unit,
-                       "source_amount": chain}
+                       "source_amount": chain.amount, "source_surface": chain.surface,
+                       "source_unit": chain.unit, "source_label": chain.label,
+                       "basis": "원문 연속 배율 표기를 같은 단위군으로 환산한 값",
+                       "quote": evidence[:_QUOTE_MAX_CHARS]}
 
 
 def _recover_quote(source_text: str, value: float, hint: str) -> str:
@@ -2440,23 +2668,27 @@ def _map_vlm_json(
             # 근거 문구가 있으면 값을 그 문구와 대조한다. 문구가 없으면 대조할 수 없으므로
             # 아무것도 단정하지 않고 그대로 둔다(추측으로 값을 바꾸지 않는다).
             if quote:
-                if value == 0 and not _zero_is_grounded(quote):
+                boundary = m.get("boundary") if isinstance(m.get("boundary"), dict) else {}
+                if value == 0 and not _zero_is_grounded(quote, hint, period, boundary):
                     # 실측 결함: 원문 칸이 `-`(미공시)인데 0으로 실렸다(삼성전기 4건 —
                     # 유동성장기차입금·장기차입금·지역전문가·Category 9). 자기 근거 문구에
-                    # 0이 한 번도 없으면 그 0은 원문에서 온 값이 아니다. **실제 0과 미확인은
-                    # 다르다** — 차입금 '0원'과 '미공시'는 전혀 다른 문장을 만든다. 그래서
-                    # 0으로 싣지 않고 값을 보고하지 못한 행과 같은 경로로 사유만 남긴다.
+                    # 0도, 같은 지표의 명시적 미발생·미보유 서술도 없으면 그 0은 원문에서 온
+                    # 값이 아니다. **실제 0과 미확인은 다르다** — 차입금 '0원'과 '미공시'는
+                    # 전혀 다른 문장을 만든다. 그래서 0으로 싣지 않고 사유만 남긴다.
                     if issues is not None:
                         issues.append({"record_type": "metric", "record_index": index,
                                        "reason": "zero_not_in_evidence", "fatal": False,
                                        "metric_hint": hint, "unit": unit, "period": period,
                                        "quote": quote[:_QUOTE_MAX_CHARS]})
                     continue
-                value, scale_issue = _reconcile_scale_chain(value, unit, quote)
+                value, scale_issue = _reconcile_scale_chain(value, unit, quote, hint=hint)
                 if scale_issue is not None and issues is not None:
                     issues.append({"record_type": "metric", "record_index": index,
-                                   "metric_hint": hint, "page": page_no, **scale_issue})
-                elif issues is not None and not _value_written_in_evidence(value, unit, quote):
+                                   "metric_hint": hint, "period": period, "page": page_no,
+                                   **scale_issue})
+                elif (issues is not None and value != 0
+                      and not _value_written_in_evidence(value, unit, quote)):
+                    # 0은 위에서 이미 숫자 0 또는 같은 지표의 명시적 부정 서술로 확인했다.
                     # 근거 문구에 그 숫자가 없다. 값이 틀렸다는 뜻은 아니다 — 모델이 서술을
                     # 수치로 옮긴 경우가 대부분이다(실측: "교육 대상 임직원 전원이 수료" →
                     # 100%, "최대 2년 6개월" → 2.5년). 값은 살리되 **사람이 인용만 보고는
@@ -2464,7 +2696,8 @@ def _map_vlm_json(
                     issues.append({"record_type": "metric", "record_index": index,
                                    "reason": "value_not_written_in_evidence", "fatal": False,
                                    "metric_hint": hint, "value": value, "unit": unit,
-                                   "page": page_no, "quote": quote[:_QUOTE_MAX_CHARS]})
+                                   "period": period, "page": page_no,
+                                   "quote": quote[:_QUOTE_MAX_CHARS]})
 
             metrics.append(ExtractedMetric(
                 metric_hint=hint,

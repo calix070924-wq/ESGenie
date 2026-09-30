@@ -92,6 +92,96 @@ def _finding(category: str, title: str, fact: str, reason: str, action: str,
     )
 
 
+def _record_reference(source_file: str, entry: dict[str, Any], record: dict[str, Any]) -> ReviewEvidence:
+    """라우터 기록의 출처. 기록에 페이지가 없으면 그 기록이 나온 청크의 실제 페이지를 쓴다.
+
+    페이지는 0부터 센 내부 값 그대로 둔다(표시할 때만 +1). 0쪽을 빈 값으로 보지 않도록
+    `None`인지로만 가른다. 둘 다 없으면 미상으로 남긴다.
+    """
+    page = record.get("page") if record.get("page") is not None else entry.get("page")
+    return ReviewEvidence(source_file=source_file, page=page if isinstance(page, int) else None,
+                          quote=str(record.get("quote") or ""))
+
+
+def _plain_number(value: Any) -> str:
+    """값을 **반올림하지 않고** 적는다. `:g`는 840,000,000을 8.4e+08로 바꿔 버린다."""
+    if isinstance(value, bool) or not isinstance(value, (int, float)):
+        return str(value)
+    if isinstance(value, float) and value.is_integer():
+        return f"{int(value):,}"
+    return f"{value:,}" if isinstance(value, int) else repr(value)
+
+
+def _with_unit(value: Any, unit: Any) -> str:
+    return _plain_number(value) + (f" {unit}" if unit else " (단위 미확인)")
+
+
+_UNRESOLVED_CAUSES = {
+    "multiple_candidates": "근거 문구에 같은 단위의 자릿수 표기가 여러 개라 어느 값인지 정할 수 없습니다.",
+    "unit_unproven": "원문 표기나 추출값의 단위를 읽지 못해 같은 수량인지 확인할 수 없습니다.",
+    "metric_unproven": "원문 표기의 라벨이 이 지표와 같다는 것을 확인하지 못했습니다(같은 문장의 다른 지표일 수 있습니다).",
+    "ratio_out_of_range": "원문 표기와 추출값의 차이가 자릿수 오류로 설명되지 않습니다.",
+}
+
+
+def _reconciliation_reviews(ext: Any) -> list[ReviewFinding]:
+    """추출값을 근거 문구와 대조한 기록(`router_meta.value_reconciliations`)을 확인 목록에 싣는다.
+
+    - `scale_chain_unresolved`: 값을 확정하지 못했다 — 추출값과 원문 후보를 함께 보인다.
+    - `value_not_written_in_evidence`: 인용에 그 수가 직접 없다 — 계산·해석 근거 확인. 오류로
+      단정하지 않는다.
+    - `scale_chain_recomposed`: 원문 표기로 이미 보정했다 — 미해결 사항이 아니므로 별도 분류로
+      원값·수정값·근거만 남긴다.
+    값이 실린 행이므로 '수치를 읽지 못한 행' 수(`unvalued_records`)와 합치지 않는다.
+    """
+    findings: list[ReviewFinding] = []
+    for entry in ext.router_meta.get("value_reconciliations", []) or []:
+        for record in entry.get("records", []) or []:
+            reason = record.get("reason")
+            hint = str(record.get("metric_hint") or "지표 미확인")
+            period = f" · 기간 {record['period']}" if record.get("period") else ""
+            ref = _record_reference(ext.source_file, entry, record)
+            if reason == "scale_chain_unresolved":
+                if record.get("candidates"):
+                    shown = ", ".join(str(c.get("surface") or _plain_number(c.get("amount")))
+                                      + (f" {c['unit']}" if c.get("unit") else " (단위 미확인)")
+                                      for c in record["candidates"])
+                else:   # 후보 단위를 남기지 않은 기록 — 배율을 곱한 값만 있다.
+                    shown = ", ".join(f"{_plain_number(amount)} (배율 적용값)"
+                                      for amount in record.get("source_amounts", []))
+                cause = _UNRESOLVED_CAUSES.get(str(record.get("cause") or ""),
+                                               "근거 문구의 자릿수 표기와 추출값이 일치하지 않습니다.")
+                findings.append(_finding(
+                    "data_quality", "추출값과 원문 표기 대조 미해결",
+                    f"{hint}: 추출값 {_with_unit(record.get('value'), record.get('unit'))}{period}"
+                    f" · 원문 후보 {shown or '없음'}",
+                    f"{cause} 추출값을 바꾸지 않고 그대로 두었습니다.",
+                    "원본의 해당 문장에서 이 지표의 값과 단위를 확인하고, 다르면 올바른 값으로 수정하세요.",
+                    check_reason="scale_chain_unresolved", check_result=dict(record), evidence=[ref]))
+            elif reason == "value_not_written_in_evidence":
+                findings.append(_finding(
+                    "data_quality", "인용에 직접 적히지 않은 값 확인",
+                    f"{hint}: 추출값 {_with_unit(record.get('value'), record.get('unit'))}{period}",
+                    "근거 인용에 이 수치가 직접 적혀 있지 않아 서술을 수치로 옮기거나 계산한 값일 수 "
+                    "있습니다. 값이 틀렸다는 판정은 아닙니다.",
+                    "인용 문장과 계산·환산 근거를 대조해 값이 원문 의미와 맞는지 확인하세요.",
+                    check_reason="value_not_written_in_evidence", check_result=dict(record),
+                    evidence=[ref]))
+            elif reason == "scale_chain_recomposed":
+                source = str(record.get("source_surface") or "")
+                source_unit = record.get("source_unit")
+                findings.append(_finding(
+                    "correction", "원문 표기로 보정한 값",
+                    f"{hint}: {_with_unit(record.get('value_before'), record.get('unit'))} → "
+                    f"{_with_unit(record.get('value_after'), record.get('unit'))}{period}"
+                    + (f" · 원문 {source}" + (f" {source_unit}" if source_unit else "") if source else ""),
+                    "추출값이 원문의 연속 자릿수 표기와 달라 같은 지표·같은 단위군으로 확인한 원문 값으로 "
+                    "바꿨습니다. 미해결 오류가 아니라 보정 기록입니다.",
+                    "원문 표기와 보정값이 맞는지 한 번 대조하세요.",
+                    check_reason="scale_chain_recomposed", check_result=dict(record), evidence=[ref]))
+    return findings
+
+
 def build_source_review(output: Any) -> list[ReviewFinding]:
     """SSOT와 기존 검증 결과를 읽어 집계한다. 모든 문제의 발견을 보장하지 않는다."""
     findings: list[ReviewFinding] = []
@@ -124,7 +214,8 @@ def build_source_review(output: Any) -> list[ReviewFinding]:
         # 값은 결과에 없으므로 조용히 넘기지 않는다. 화면이 길어지지 않게 자료마다 한
         # 건으로 묶고 라벨은 앞 5개만 보여 준다. 0으로 채우거나 미공시로 단정하지 않는다.
         unvalued = [record for entry in meta.get("unvalued_records", [])
-                    for record in entry.get("records", [])]
+                    for record in entry.get("records", [])
+                    if record.get("reason") != "zero_not_in_evidence"]
         if unvalued:
             labels = [str(record.get("metric_hint") or "").strip() for record in unvalued]
             shown = [label for label in labels[:5] if label]
@@ -136,6 +227,25 @@ def build_source_review(output: Any) -> list[ReviewFinding]:
                 "미공시라는 확정 판정은 아닙니다.",
                 "원본의 해당 표·그래프에서 값을 확인하고 필요하면 직접 입력하세요.",
                 check_reason="value_not_reported", evidence=[ref]))
+        # 0으로 실린 값을 원문 근거가 없어 뺀 행은 '그림·빈 칸' 안내와 사유가 다르다.
+        # 인용은 있으나 0도, 같은 지표의 명시적 미발생·미보유 서술도 없었다는 뜻이다.
+        for entry in meta.get("unvalued_records", []):
+            for record in entry.get("records", []):
+                if record.get("reason") != "zero_not_in_evidence":
+                    continue
+                findings.append(_finding(
+                    "extraction", "0값의 원문 근거 확인",
+                    f"{record.get('metric_hint') or '지표 미확인'}: 추출값 0"
+                    + (f" {record['unit']}" if record.get("unit") else "")
+                    + (f" · 기간 {record['period']}" if record.get("period") else ""),
+                    "근거 문구에 0이나 이 지표의 명시적 미발생·미보유 서술이 없어 0으로 싣지 않았습니다. "
+                    "미공시(-)·빈 칸·미확인·예방 목표 문구일 수 있으며 실제 0이라는 판정도, "
+                    "미공시라는 판정도 아닙니다.",
+                    "원본에서 이 지표가 0인지, 미공시·미집계인지 확인하고 0이면 근거와 함께 입력하세요.",
+                    check_reason="zero_not_in_evidence", check_result=dict(record),
+                    evidence=[_record_reference(ext.source_file, entry, record)]))
+        if ext.source_file not in mock_sources:   # 시연값의 대조 기록은 입력 경고로만 알린다
+            findings.extend(_reconciliation_reviews(ext))
         for row in meta.get("consistency_findings", []):
             if row.get("severity") != "fail":
                 continue
