@@ -111,8 +111,14 @@ def test_a_real_zero_written_in_the_source_is_kept():
 
 
 def test_zero_written_with_a_decimal_point_is_kept():
-    metrics, _ = _one_metric("지하수 | 0.0 | 12.4", 0.0, unit="ton")
+    metrics, _ = _one_metric("장기차입금 | 0.0 | 12.4", 0.0, unit="ton")
     assert [m.value for m in metrics] == [0.0]
+
+
+def test_zero_of_another_row_is_not_this_metric():
+    """PR 69 3차 검토: 숫자 0도 같은 지표의 행이어야 한다(이전에는 `지하수` 행의 0이 장기차입금 0이 됐다)."""
+    metrics, issues = _one_metric("지하수 | 0.0 | 12.4", 0.0, unit="ton")
+    assert metrics == [] and issues[0]["cause"] == "other_subject"
 
 
 def test_zero_without_any_quote_is_left_untouched():

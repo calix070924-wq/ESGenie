@@ -2195,7 +2195,8 @@ class _ScaleChain:
     unit: str | None       # 뒤에 붙은 단위의 정규 표기(`units.normalize_unit`). 모르면 None
     label: str             # 바로 앞 라벨(같은 절 안). 지표 대조에 쓴다
     unit_text: str = ""    # 원문 단위 표현 전체(`MJ/톤`). 정규화하지 못해도 잘라 버리지 않는다
-    compound: bool = False  # 분모가 있는 복합 단위(원단위). 단순 단위와 같은 수량이 아니다
+    compound: bool = False  # 분모 표지가 있는 단위(원단위). 단순 단위와 같은 수량이 아니다
+    unit_status: str = "ABSENT"   # `_read_unit`의 판독 상태. 보정은 `SIMPLE_COMPLETE`에서만
 
 
 def _kr_scale_chain_amounts(text: str) -> set[float]:
@@ -2243,24 +2244,46 @@ def _kr_scale_chains(text: str) -> list[_ScaleChain]:
             unit_read = _read_unit(text, end)
             chains.append(_ScaleChain(amount=total, surface=text[start:end].strip(),
                                       unit=unit_read.unit, label=_leading_label(text, start),
-                                      unit_text=unit_read.text, compound=unit_read.compound))
+                                      unit_text=unit_read.text, compound=unit_read.compound,
+                                      unit_status=unit_read.status))
     return chains
 
 
 @dataclass(frozen=True)
 class _UnitRead:
-    """수치 뒤 단위 표현을 읽은 결과. 정규화에 실패해도 원문 표현은 남긴다."""
-    text: str              # 원문 단위 표현 전체(조사 제외). 없으면 ""
-    unit: str | None       # 정규 표기. 복합 단위·사전 밖 표기는 None
-    compound: bool = False
+    """수치 뒤 단위 표현을 읽은 결과. 정규화에 실패해도 원문 표현은 남긴다.
+
+    PR 69 3차 검토(2026-09-30): 분모를 읽지 못한 `MJ/(톤)`·`MJ/` 줄바꿈 `톤`·`MJ/100개`가
+    분자 `MJ`로 되돌아가 원단위 값이 총량 후보가 됐다. **`/`가 보이면 단순 단위로 끝나지
+    않는다** — 분모를 끝까지 읽지 못하면 `INCOMPLETE`다.
+    """
+    text: str              # raw_text — 원문 단위 표현 전체(조사 제외). 없으면 ""
+    unit: str | None       # canonical_unit — `SIMPLE_COMPLETE`일 때만 채운다
+    status: str = "ABSENT"  # `_UNIT_STATUSES`
+    span: tuple[int, int] = (0, 0)   # 원문에서 읽은 범위
+    has_denominator_marker: bool = False
+    reason: str = ""
+
+    @property
+    def compound(self) -> bool:
+        """분모 표지(`/`)가 있는 표현. 분모를 다 읽었는지와 무관하게 단순 단위가 아니다."""
+        return self.has_denominator_marker
 
 
+# `SIMPLE_COMPLETE` 알려진 단순 단위 / `COMPOUND_COMPLETE` 분모까지 알려진 단위로 읽음 /
+# `INCOMPLETE` `/` 뒤를 못 읽었거나 잘림 / `UNKNOWN` 표현은 있으나 사전 밖 / `ABSENT` 단위 없음.
+_UNIT_STATUSES = ("SIMPLE_COMPLETE", "COMPOUND_COMPLETE", "INCOMPLETE", "UNKNOWN", "ABSENT")
 # 수치 뒤 단위 한 낱말. 영문 뒤의 숫자·지수(`m3`·`m^3`·`tCO2eq`)는 단위의 일부로 읽는다.
 # 한글 뒤 숫자(`원4,073억`)는 다음 수치의 시작이므로 끊는다.
-_UNIT_WORD = r"(?:[A-Za-z]+(?:\^?\d+)?|[^\sA-Za-z\d.,;:!?'\"|()\[\]{}<>·/+=~\-])+"
-# 분모까지 한 표현으로 읽는다(`MJ/톤`·`MJ / 톤`). `/`에서 끊으면 원단위가 총량이 된다
-# (PR 69 2차 검토: `1만 2천 MJ/톤`을 `MJ`로 읽어 에너지 총량 2.5 GJ를 12 GJ로 덮어썼다).
-_UNIT_EXPR_RE = re.compile(rf"[ \t]*({_UNIT_WORD})(?:[ \t]*/[ \t]*({_UNIT_WORD}))?")
+_UNIT_WORD = r"(?:[A-Za-z]+(?:\^?\d+)?|[^\sA-Za-z\d.,;:!?'\"|()\[\]{}<>·/／+=~\-])+"
+_UNIT_WORD_RE = re.compile(rf"[ \t]*({_UNIT_WORD})")
+# 분모 표지. 분모 정규식의 성공 여부와 **따로** 찾는다 — 분모를 못 읽어도 표지는 남는다.
+# 표지 앞의 줄바꿈 하나까지는 같은 표현으로 본다(`MJ` 줄바꿈 `/톤`).
+_UNIT_SLASH_RE = re.compile(r"[ \t]*(?:\n[ \t]*)?[/／]")
+# 분모 낱말은 같은 줄에서만 읽는다. 줄을 넘으면 다른 행·지표의 단위를 빌려 올 수 있다.
+_UNIT_DENOMINATOR_RE = re.compile(rf"[ \t]*({_UNIT_WORD})")
+# 분모 바로 뒤에 오면 분모를 끝까지 읽지 못한 것이다(`톤(`·`톤/년`·`톤2`).
+_UNIT_DENOMINATOR_CONTINUES_RE = re.compile(r"[(（/／\d]")
 # 단위 뒤에 붙어도 되는 조사·어미. **이 목록에 없는 접미사는 조사로 보지 않는다** —
 # 알 수 없는 접미사를 떼어 내고 앞머리를 단위로 인정하면 다른 수량을 같은 단위로 읽는다.
 _UNIT_PARTICLES = ("으로는", "으로", "이며", "이고", "이다", "입니다", "이었다", "였다", "에서",
@@ -2291,24 +2314,48 @@ def _strip_unit_particle(word: str) -> str:
 
 
 def _read_unit(text: str, end: int) -> _UnitRead:
-    """`end` 바로 뒤 단위 표현을 **전체로** 읽는다. 사전에 없으면 unit=None — 추정해 채우지 않는다.
+    """`end` 바로 뒤 단위 표현을 **단계별로** 읽는다. 사전에 없으면 unit=None — 추정해 채우지 않는다.
 
-    분모가 있는 복합 단위(`MJ/톤`·`원/명`·`kg/일`)는 이 모듈이 환산하지 않는다. 분자만 남겨
-    `MJ`·`원`·`kg`로 읽으면 원단위가 총량과 같은 수량이 되므로, 정규화하지 않고 `compound`로
-    표시해 둔다.
+    1. 분자 낱말을 읽는다. 없으면 `ABSENT`.
+    2. 분자 뒤에서 `/`를 **독립적으로** 찾는다. 찾으면 이 뒤로는 단순 단위를 반환하지 않는다.
+       같은 줄의 분모 낱말을 경계까지 읽고 두 낱말이 모두 사전에 있으면 `COMPOUND_COMPLETE`,
+       빠졌거나(`MJ/`·`MJ/` 줄바꿈 `톤`)·괄호·숫자로 시작하거나(`MJ/(톤)`·`MJ/100개`)·
+       사전 밖이면 `INCOMPLETE`. 복합 단위는 이 모듈이 환산하지 않으므로 unit은 늘 None이다.
+    3. 표지가 없을 때만 단순 단위로 정규화한다. 사전 밖이면 `UNKNOWN`.
     """
-    match = _UNIT_EXPR_RE.match(text, end)
-    if not match:
-        return _UnitRead("", None)
-    numerator, denominator = match.group(1), match.group(2)
-    if denominator:
-        return _UnitRead(f"{numerator}/{_strip_unit_particle(denominator)}", None, compound=True)
-    return _UnitRead(_strip_unit_particle(numerator), _normalize_unit_word(numerator))
+    numerator = _UNIT_WORD_RE.match(text, end)
+    slash = _UNIT_SLASH_RE.match(text, numerator.end() if numerator else end)
+    if not numerator:
+        if slash:
+            return _UnitRead(text[end:slash.end()].strip(), None, "INCOMPLETE", (end, slash.end()),
+                             True, "numerator_missing")
+        return _UnitRead("", None, "ABSENT", (end, end))
+    word = numerator.group(1)
+    if slash:
+        denominator = _UNIT_DENOMINATOR_RE.match(text, slash.end())
+        start = numerator.start(1)
+        if not denominator:
+            return _UnitRead(re.sub(r"\s+", "", text[start:slash.end()]), None, "INCOMPLETE",
+                             (start, slash.end()), True, "denominator_missing")
+        stripped = _strip_unit_particle(denominator.group(1))
+        raw = f"{word}/{stripped}"
+        span = (start, denominator.end())
+        if _UNIT_DENOMINATOR_CONTINUES_RE.match(text, denominator.end()):
+            return _UnitRead(raw, None, "INCOMPLETE", span, True, "denominator_partial")
+        if _normalize_unit_word(word) is None or _normalize_unit_word(denominator.group(1)) is None:
+            return _UnitRead(raw, None, "INCOMPLETE", span, True, "denominator_unknown")
+        return _UnitRead(raw, None, "COMPOUND_COMPLETE", span, True, "compound_not_converted")
+    unit = _normalize_unit_word(word)
+    span = (numerator.start(1), numerator.end())
+    if unit is None:
+        return _UnitRead(_strip_unit_particle(word), None, "UNKNOWN", span, reason="unit_not_in_table")
+    return _UnitRead(_strip_unit_particle(word), unit, "SIMPLE_COMPLETE", span)
 
 
 def _trailing_unit(text: str, end: int) -> str | None:
-    """`end` 바로 뒤 단위의 정규 표기. 복합 단위·사전 밖 표기는 None."""
-    return _read_unit(text, end).unit
+    """`end` 바로 뒤 단위의 정규 표기. `SIMPLE_COMPLETE`가 아니면(복합·잘림·사전 밖) None."""
+    read = _read_unit(text, end)
+    return read.unit if read.status == "SIMPLE_COMPLETE" else None
 
 
 # 라벨을 끊는 경계: 절 구분(쉼표·세미콜론·줄바꿈·문장 끝 마침표)과 표 칸 구분(`|`).
@@ -2429,7 +2476,11 @@ def _value_written_in_evidence(value: float, unit: str, evidence: str) -> bool:
 
 
 def _evidence_amounts_in_unit(text: str, unit: str) -> list[float]:
-    """근거 문구의 (수, 뒤 단위) 쌍을 `unit`으로 환산한 값. 환산할 수 없는 쌍은 뺀다."""
+    """근거 문구의 (수, 뒤 단위) 쌍을 `unit`으로 환산한 값. 환산할 수 없는 쌍은 뺀다.
+
+    뒤 단위는 자동 보정과 같은 `_read_unit` 판독을 쓴다. 분모 표지가 있거나 잘린 단위는
+    분자 단위로 되돌려 환산하지 않는다(`1만 2천 MJ/(톤)`은 12 GJ가 아니다).
+    """
     from ..rag_gates.units import convert_to_common, normalize_unit, parse_number
 
     target = normalize_unit(unit or "")
@@ -2445,7 +2496,8 @@ def _evidence_amounts_in_unit(text: str, unit: str) -> list[float]:
         if match.group(3):
             base *= _KR_SCALES[match.group(3)]
         pairs.append((base, _trailing_unit(text, match.end())))
-    pairs += [(chain.amount, chain.unit) for chain in _kr_scale_chains(text)]
+    pairs += [(chain.amount, chain.unit) for chain in _kr_scale_chains(text)
+              if chain.unit_status == "SIMPLE_COMPLETE"]
     converted = [convert_to_common(amount, source_unit, target)
                  for amount, source_unit in pairs if source_unit is not None]
     return [value for value in converted if value is not None]
@@ -2453,7 +2505,7 @@ def _evidence_amounts_in_unit(text: str, unit: str) -> list[float]:
 
 def _zero_is_grounded(quote: str, hint: str = "", period: str = "",
                       boundary: dict[str, Any] | None = None) -> bool:
-    """보고된 0이 **그 근거 문구에 실제로 적혀 있는가.** 사유는 `_zero_verdict`가 돌려준다.
+    """보고된 0을 **원문 사실로 보존해도 되는가.** 판정 상태와 사유는 `_zero_verdict`가 돌려준다.
 
     실측 결함(삼성전기 4건): 원문 칸이 `-`(미공시)인데 값 0으로 실렸다. 자기 근거 문구에
     0이 한 번도 없으면 그 0은 원문에서 온 값이 아니다. 두 문서 지표 7,238건에 이 판정을
@@ -2461,59 +2513,136 @@ def _zero_is_grounded(quote: str, hint: str = "", period: str = "",
 
     숫자 0 말고도 **같은 지표의 명시적 미발생·미보유 서술**은 0의 근거다(PR 69 검토,
     2026-09-30: 한울정밀 11번 `ISMS 인증 미보유`의 0건이 지워지고 '수치를 읽지 못함'
-    안내가 떴다). 판정은 `_negation_states_zero`가 한다.
+    안내가 떴다). True는 요청 범위까지 확인됐다는 뜻이 **아니다** — `_ZeroVerdict.accepted` 참고.
     """
     return _zero_verdict(quote, hint, period, boundary).accepted
 
 
+# 0 근거의 최종 상태(PR 69 3차 검토). 파싱 성공·원문 사실·요청 범위 일치를 bool 하나로 섞지 않는다.
+#   CONFIRMED   같은 지표의 실제 사실이고 요청 범위(기간·사업장)까지 같다.
+#   SOURCE_ONLY 원문 사실은 확인했지만 요청 범위의 실적으로 확정할 정보가 없다(보고 연도만 받은
+#               요청 ↔ 원문 4월, 원문에 범위 표기 없음). 값은 **원문 범위로** 보존한다.
+#   REJECTED    다른 지표·목표·조건·가정·명시적 범위 충돌 — 이 실적의 근거가 아니다.
+#   UNRESOLVED  표현 해석이나 근거 연결 자체를 판단하지 못했다.
+_ZERO_STATUSES = ("CONFIRMED", "SOURCE_ONLY", "REJECTED", "UNRESOLVED")
+
+
 @dataclass(frozen=True)
 class _ZeroVerdict:
-    """0을 채택할지와 그 사유. 채택하지 않은 0은 사유와 원문 범위를 확인 목록에 넘긴다."""
-    accepted: bool
-    cause: str                    # `_ZERO_CAUSES`의 키
+    """0 근거의 판정. 채택하지 않은 0은 사유와 원문 범위를 확인 목록에 넘긴다."""
+    status: str                   # `_ZERO_STATUSES`
+    cause: str                    # 채택하지 않은 0은 `_ZERO_CAUSES`, 보존한 0은 `_ZERO_KEPT_CAUSES`의 키
     evidence_period: str = ""     # 대조한 원문의 기간 표기
     evidence_site: str = ""       # 대조한 원문의 사업장 표기
+    evidence_text: str = ""       # 판정 근거가 된 서술·표 행(원문 그대로)
+    evidence_offset: int = -1     # 인용 안에서 후보의 위치. 후보가 없으면 -1
+    candidate: str = ""           # numeric(숫자 0) | negation(미발생·미보유 서술)
+    requested_scope: str = ""     # 요청 기간의 의미(`_DateSpan.kind`). 읽지 못하면 ""
+    source_scope: Any = None      # 원문 범위(`_DateSpan`). 없으면 None
+
+    @property
+    def accepted(self) -> bool:
+        """원문 사실로 0을 **보존해도 되는가**(CONFIRMED·SOURCE_ONLY). 요청 범위 확인과는 다르다."""
+        return self.status in ("CONFIRMED", "SOURCE_ONLY")
+
+    @property
+    def scope_confirmed(self) -> bool:
+        """요청 범위의 실적으로 확인됐는가. SOURCE_ONLY는 여기서 False다."""
+        return self.status == "CONFIRMED"
 
 
 # 채택하지 않은 0의 하위 사유. 확인 목록이 사유별로 다르게 설명한다(`source_review`).
 _ZERO_CAUSES = frozenset({
     "no_zero_statement",        # 0도, 미발생·미보유 서술도 없다(미공시 `-`·빈 칸 포함)
-    "other_subject",            # 부정 서술의 대상이 이 지표가 아니다
-    "future_or_intent",         # 미래 예상·목표·계획·가능성
+    "other_subject",            # 후보의 대상이 이 지표가 아니거나 연결을 특정하지 못했다
+    "future_or_intent",         # 미래 예상·목표·계획·가능성(`목표 0건` 포함)
+    "conditional",              # 조건(`발생하지 않으면`·`0건일 경우`)
+    "assumption",               # 가정·전제(`발생하지 않는다고 가정한다`)
     "not_confirmed",            # 미확인·미집계·미공시·해당 없음·기록 없음
     "evidence_insufficient",    # '발생하지 않았다는 증거가 없다'처럼 미발생의 근거가 없다는 말
     "negation_negated",         # '미보유 상태가 아니다'처럼 부정을 다시 부정했다
-    "interpretation_unknown",   # 사실 서술인지 판정하지 못했다
+    "interpretation_unknown",   # 사실 서술인지 판정하지 못했다(인식하지 못한 표현의 기본값)
     "period_mismatch",          # 원문 기간이 지표 기간과 명시적으로 다르다
     "period_unproven",          # 기간이 겹치지만 같은 범위임을 확인하지 못했다
+    "period_ambiguous",         # 원문에 기간이 여럿이라 이 0이 어느 기간인지 특정하지 못했다
     "site_mismatch",            # 원문 사업장이 지표 사업장과 다르다
 })
+# 보존한 0의 사유. SOURCE_ONLY는 무엇이 확인되지 않았는지를 남긴다.
+_ZERO_KEPT_CAUSES = {
+    "stated_zero": "",
+    "report_year_only": "요청 기간이 보고 연도뿐이라 원문 범위의 사실로만 보존했습니다(연간 실적으로 확정하지 않음).",
+    "period_not_stated": "원문에 기간 표기가 없어 요청 기간의 실적인지 확인하지 못했습니다.",
+    "requested_period_unknown": "요청 기간을 읽지 못해 원문 범위의 사실로만 보존했습니다.",
+    "source_year_unknown": "원문 기간의 연도가 적혀 있지 않아 요청 기간의 실적인지 확인하지 못했습니다.",
+    "site_not_stated": "원문에 사업장 표기가 없어 요청 사업장의 실적인지 확인하지 못했습니다.",
+    "source_site_only": "원문 사실이 특정 사업장의 것이라 전체 범위의 실적으로 확정하지 않았습니다.",
+}
+# 판정 상태의 우선순위. 후보마다 **자기 문맥으로** 판정한 뒤 가장 강한 것을 고른다.
+_ZERO_STATUS_RANK = {"CONFIRMED": 0, "SOURCE_ONLY": 1, "REJECTED": 2, "UNRESOLVED": 3}
+
+
+@dataclass(frozen=True)
+class _ZeroCandidate:
+    """0의 근거 후보 하나. 숫자 0과 부정 서술은 **찾는 방법만** 다르고 판정은 같다."""
+    kind: str             # numeric | negation
+    statement: str        # 후보가 든 서술(절을 연결 어미로 나눈 한 토막)
+    start: int            # statement 안 후보의 시작·끝
+    end: int
+    offset: int           # 인용 안 후보의 위치
+    context: str          # 같은 절의 뒤 서술을 뺀 나머지 문구(기간·사업장 폴백)
+    column: str = ""      # 표 열 머리(같은 칸 수의 앞 행). 없으면 ""
+    match: Any = None     # 부정 서술의 정규식 결과
 
 
 def _zero_verdict(quote: str, hint: str = "", period: str = "",
                   boundary: dict[str, Any] | None = None) -> _ZeroVerdict:
+    """숫자 0과 부정 서술 후보를 모두 찾고, **같은 검사**(대상 → 사실성 → 사업장·기간)로 판정한다.
+
+    `if 인용에 0이 있음: 채택` 구조를 없앴다(PR 69 3차 검토: `목표 0건`·`4월 1일 기준 0건`이
+    4월 실적 0으로 채택됐다). 한 후보의 성공으로 다른 후보를 덮지 않도록 후보마다 자기 서술·
+    표 행·열 머리에서 범위를 읽고, 그 서술에 없을 때만 같은 절의 앞 서술과 다른 절을 본다.
+    """
     boundary = boundary or {}
-    if any(_contains_value(quote, form) for form in _value_surface_forms(0.0)):
-        # 숫자 0도 **명시적으로 다른** 기간·사업장이면 이 지표의 0이 아니다. 날짜·표 번호 속
-        # 0(`2026-04-01`)은 `_contains_value`의 숫자 경계가 이미 뺀다 — 그 0으로 아래 범위
-        # 대조를 건너뛰지 않는다.
-        spans = _date_spans(quote)
-        if _period_relation(period, spans) == "mismatch":
-            return _ZeroVerdict(False, "period_mismatch", _spans_text(spans))
-        sites = _site_keys(quote)
-        if not _site_matches(boundary, sites):
-            return _ZeroVerdict(False, "site_mismatch", evidence_site=", ".join(sorted(sites)))
-        return _ZeroVerdict(True, "stated_zero")
-    if not hint:
-        return _ZeroVerdict(False, "no_zero_statement")
-    return _negation_states_zero(quote, hint, period, boundary)
+    hint_tokens = _label_tokens(hint)
+    specific = [t for t in hint_tokens if t not in _ZERO_GENERIC_TOKENS]
+    candidates = _zero_candidates(quote)
+    if not candidates:
+        return _ZeroVerdict("UNRESOLVED", "no_zero_statement")
+    allowed = set(hint_tokens) | _ZERO_GENERIC_TOKENS | _ZERO_FILLER_TOKENS
+    requested = _requested_period(period, hint)
+    verdicts: list[_ZeroVerdict] = []
+    for candidate in candidates:
+        base = {"evidence_text": candidate.statement.strip(), "evidence_offset": candidate.offset,
+                "candidate": candidate.kind, "requested_scope": requested.kind if requested else ""}
+        subject = _zero_subject(candidate, specific, hint_tokens, allowed)
+        if subject != "same":
+            status = "UNRESOLVED" if subject == "unclear" else "REJECTED"
+            cause = "future_or_intent" if subject == "target" else "other_subject"
+            verdicts.append(_ZeroVerdict(status, cause, **base))
+            continue
+        if candidate.kind == "negation":
+            cause = _negation_mood(candidate.statement, candidate.match)
+        else:
+            cause = _numeric_zero_mood(candidate.statement, candidate.end)
+        if cause is None and _ZERO_INTENT_RE.search(candidate.column):
+            cause = "future_or_intent"   # 표의 목표·계획 열에 있는 0
+        if cause is not None:
+            verdicts.append(_ZeroVerdict(
+                "UNRESOLVED" if cause == "interpretation_unknown" else "REJECTED", cause, **base))
+            continue
+        verdicts.append(_zero_scope_verdict(candidate, requested, boundary, base))
+    # 지표 대상이 맞은 후보의 판정이 대상이 다른 후보의 판정보다 앞선다(같은 순위 안에서는 앞 후보).
+    return min(verdicts, key=lambda v: (_ZERO_STATUS_RANK[v.status],
+                                        v.cause in ("other_subject", "no_zero_statement")))
 
 
+# 숫자 0 후보. 숫자 경계를 지킨다 — 날짜·항목 번호·`1,000`·`0.5` 속 0은 후보가 아니다.
+_ZERO_NUMERIC_RE = re.compile(r"(?<![\d.,\-/])0(?:\.0+)?(?![\d,]|\.\d|[-./]\d)")
 # 실제로 없었다·갖고 있지 않다는 서술의 **어근**. 사실인지는 뒤 어미로 따로 판정한다.
 _ZERO_NEGATION_RE = re.compile(
     r"미발생|미보유|미취득|(?:발생|보유|취득)(?:하지|되지)\s*않|없(?=[었음다으습고을는도게기])")
 # 목표·계획 표현. 부정 서술 **앞이나 그 어절 안에** 있으면 완료된 사실이 아니다.
-_ZERO_INTENT_RE = re.compile(r"않도록|없도록|목표|계획|예정")
+_ZERO_INTENT_RE = re.compile(r"않도록|없도록|목표|계획|예정|예상|전망")
 # 0이 아니라 **모른다**·**해당 없다**는 서술. 부정 서술을 포함한 서술 안 어디에 있어도 막는다.
 _ZERO_UNCONFIRMED_RE = re.compile(
     r"해당\s*(?:사항\s*)?없|자료\s*없|기록\s*없|정보\s*없"
@@ -2522,6 +2651,11 @@ _ZERO_UNCONFIRMED_RE = re.compile(
 # 미발생의 **근거가 없다**는 서술. `없다`의 대상이 산업재해가 아니라 증거다.
 _ZERO_NO_PROOF_RE = re.compile(
     r"(?:증거|근거|입증|증빙)\S*\s*(?:없|부족)|(?:단정|판단|보기)\S*\s*(?:어렵|힘들|할\s*수\s*없)")
+# 조건 어미(`않으면`·`없다면`·`않더라도`)와 조건 명사(`않을 경우`·`0건일 때`).
+_ZERO_CONDITION_TAIL_RE = re.compile(r"(?:았|었)?(?:으면|면|다면|는다면|라면|더라도|어도|아도)")
+_ZERO_CONDITION_NOUN_RE = re.compile(r"\s*(?:경우|때|시)(?![가-힣])")
+# 가정·전제. 부정을 안은 뒤 서술어가 이것이면 사실이 아니다(`않는다고 가정한다`).
+_ZERO_ASSUMPTION_RE = re.compile(r"가정|전제|간주|상정|추정|가상")
 # 부정 어근 뒤 어미. 미래·목표(`않을`·`않도록`·`않기를`·`않겠`)는 완료된 미발생이 아니다.
 _ZERO_FUTURE_TAIL_RE = re.compile(r"(?:았|었)?(?:도록|게|기를|기로|고자|으려|려고|려는|겠|을)")
 # 인용·명사절로 안긴 부정(`않았다는`·`않았음을`·`않았는지`). 참·거짓은 뒤 서술어가 정한다.
@@ -2530,12 +2664,33 @@ _ZERO_EMBED_TAIL_RE = re.compile(r"(?:았|었)?(?:다는|다고|는지|은지|�
 _ZERO_ADNOMINAL_TAIL_RE = re.compile(r"(?:았|었)?(?:은|는|던)")
 _ZERO_CONFIRMED_RE = re.compile(r"확인(?:했|하였|됐|되었|됨|함|한다|된다)|검증(?:했|하였|됐|되었|됨)")
 _ZERO_DOUBT_RE = re.compile(r"없|않|어렵|불확실|모르|못|불명")
+# **사실로 인정하는 어미**(명시적 목록). 이 밖의 어미는 사실로 보지 않는다(`interpretation_unknown`).
+#   동사 부정(`않`·`없`): 과거 `았다`·`었습니다`·`았음`·`았으며`·`았고`·`았으나`, 현재 `는다`·`다`·`음`.
+#   `않고`(현재)는 `않고 있다`·`않고 관리한다`가 갈리므로 넣지 않는다 — `없고`만 사실이다.
+_ZERO_VERB_FACT_TAIL_RE = re.compile(
+    r"(?:았|었)(?:다|습니다|음|으며|고|으나|지만|는데|으므로)?"
+    r"|(?:는다|습니다|음|으며|으나|지만|는데|다)")
+_ZERO_EUPSEO_FACT_TAIL_RE = re.compile(r"고")
+#   명사 부정(`미보유`·`미발생`·`미취득`): 그대로 끝나거나 `이다`·`이며`·`임`·`상태이다`.
+_ZERO_NOUN_FACT_TAIL_RE = re.compile(
+    r"(?:\s*상태)?(?:이다|이며|이고|입니다|이었다|였다|이었으며|이었고|임|이었음|이었습니다)?")
+# 사실 서술 뒤에 와도 되는 것: 문장부호, 날짜·기준일 괄호, 숫자·날짜만 든 표 칸.
+_ZERO_TRAILING_NOISE_RE = re.compile(
+    r"(?:\s*(?:\|[\s\d.,\-~/년월일%]*|[(（][\s\d.,\-~/년월일]*(?:기준|현재)?\s*[)）]))*[\s.。!]*")
+# 숫자 0 뒤: 단위 한 낱말·조사·서술어(`0건이다`·`0건으로 집계됐다`)와 숫자만 든 표 칸.
+_ZERO_NUMERIC_FACT_TAIL_RE = re.compile(
+    r"\s*(?:[A-Za-z%]+\d*|[가-힣]{1,2})?"
+    r"(?:이다|입니다|이었다|였다|이며|이고|임|으로|로|을|를|이|가|은|는|의|이었으며)?"
+    r"(?:\s*(?:집계|확인|기록|발생|나타|보고)(?:됐다|되었다|됨|했다|하였다|했음|됐음|났다|되었음|하였음)?)?"
+    r"(?:\s*\|[\s\d.,\-~/%]*)*[\s.。!]*")
 # 한 절 안의 서술 경계. 연결 어미(`미보유이며`·`않았고`·`있으나`) 뒤는 다른 서술이다 —
 # `미보유이며 향후 취득을 계획`의 `계획`은 현재 미보유에 걸리지 않는다.
 # 인용 어미(`않았다고`·`않았다며`)는 경계가 아니다 — 뒤 서술어가 그 부정의 참·거짓을 정한다.
+# `고`는 용언 어미 뒤에서만 경계다 — 명사 끝의 `고`(`환경 사고 0건`·`재고`)에서 자르면 주어를 잃는다.
 _ZERO_STATEMENT_SPLIT_RE = re.compile(
-    r"(?:(?<![다라]며)(?<=며)|(?<![다라]고)(?<=고)|(?<=으나)|(?<=지만)|(?<=는데)|(?<=면서))\s+")
-_ZERO_CLAUSE_SPLIT_RE = re.compile(r"[,;\n]|(?<!\d)\.(?!\d)")
+    r"(?:(?<![다라]며)(?<=며)|(?<=[았었했됐않없였하되이]고)|(?<=으나)|(?<=지만)|(?<=는데)|(?<=면서))\s+")
+# 절 경계. 자릿수 쉼표(`1,000`)와 소수점은 경계가 아니다.
+_ZERO_CLAUSE_SPLIT_RE = re.compile(r"(?<!\d),|,(?!\d)|[;\n]|(?<!\d)\.(?!\d)")
 # 지표명에서 무엇을 셌는지 알려 주지 않는 낱말. 이것만 겹쳐서는 같은 지표라 할 수 없다
 # (`환경 사고는 발생하지 않았다`가 `산업재해 발생 건수`의 0이 되면 안 된다).
 _ZERO_GENERIC_TOKENS = frozenset({
@@ -2545,56 +2700,79 @@ _ZERO_GENERIC_TOKENS = frozenset({
 _ZERO_FILLER_TOKENS = frozenset({"전혀", "건도", "일체", "모두", "기간", "동안", "현재", "당해"})
 
 
-def _negation_states_zero(quote: str, hint: str, period: str, boundary: dict[str, Any]) -> _ZeroVerdict:
-    """근거 문구의 한 서술이 **이 지표·기간·사업장**에 대해 없었다·보유하지 않았다고 말하는가.
+def _pieces(text: str, pattern: re.Pattern[str], base: int = 0) -> list[tuple[int, str]]:
+    """구분자로 나눈 토막과 그 시작 위치(`base` 기준)."""
+    pieces, cursor = [], 0
+    for m in pattern.finditer(text):
+        pieces.append((base + cursor, text[cursor:m.start()]))
+        cursor = m.end()
+    pieces.append((base + cursor, text[cursor:]))
+    return pieces
 
-    서술마다 순서대로 본다(모두 통과해야 채택):
-      1. 대상 — 부정 어근 앞에 지표명의 구체 낱말(`_ZERO_GENERIC_TOKENS` 제외)이 모두 있고,
-         마지막 지표 낱말과 부정 사이에 다른 대상 낱말이 없다(`산업재해 예방교육은 없었다`).
-      2. 사실성 — 부정 어근을 찾은 것만으로 인정하지 않는다. 앞말과 뒤 어미를 본다:
-         목표·계획(`않도록`·`않을 것이다`), 미확인·미집계, 근거 부재(`않았다는 증거가 없다`),
-         이중 부정(`미보유 상태가 아니다`)은 채택하지 않는다. 판정할 수 없으면 채택하지 않는다.
-      3. 기간 — 원문 기간이 지표 기간과 같은 범위다(`_period_relation`). 다른 범위의 0으로
-         이 범위의 0을 추론하지 않는다.
-      4. 사업장 — 원문 사업장이 지역·번호까지 지표 사업장과 같다(`_site_matches`).
-    여러 서술이 모두 떨어지면 **대상이 맞은 서술의 첫 사유**를 돌려준다.
-    """
-    hint_tokens = _label_tokens(hint)
-    specific = [t for t in hint_tokens if t not in _ZERO_GENERIC_TOKENS]
-    if not specific:
-        return _ZeroVerdict(False, "no_zero_statement")
-    allowed = set(hint_tokens) | _ZERO_GENERIC_TOKENS | _ZERO_FILLER_TOKENS
-    found_negation, rejected = False, None
-    for clause in _ZERO_CLAUSE_SPLIT_RE.split(quote):
-        statements = _ZERO_STATEMENT_SPLIT_RE.split(clause)
-        for position, statement in enumerate(statements):
-            # 서술에 기간·사업장이 없으면 문구 전체에서 찾되, 같은 절의 **다른 서술**(연결 어미
-            # 뒤 `2027년 취득을 목표로`)의 날짜·사업장은 빼고 본다.
-            context = quote.replace(clause, " ".join(statements[:position]))
-            for negation in _ZERO_NEGATION_RE.finditer(statement):
-                found_negation = True
-                head = statement[:negation.start()]
-                if not _names_zero_subject(head, specific, hint_tokens, allowed):
-                    continue
-                cause = _negation_mood(statement, negation)
-                if cause is None:
-                    spans = _date_spans(statement) or _date_spans(context)
-                    relation = _period_relation(period, spans)
-                    if relation in ("mismatch", "unproven"):
-                        cause = "period_mismatch" if relation == "mismatch" else "period_unproven"
-                        rejected = rejected or _ZeroVerdict(False, cause, _spans_text(spans))
-                        continue
-                    sites = _site_keys(statement) or _site_keys(context)
-                    if not _site_matches(boundary, sites):
-                        rejected = rejected or _ZeroVerdict(
-                            False, "site_mismatch", evidence_site=", ".join(sorted(sites)))
-                        continue
-                    return _ZeroVerdict(True, "stated_zero", _spans_text(spans),
-                                        ", ".join(sorted(sites)))
-                rejected = rejected or _ZeroVerdict(False, cause)
-    if rejected is not None:
-        return rejected
-    return _ZeroVerdict(False, "other_subject" if found_negation else "no_zero_statement")
+
+def _zero_candidates(quote: str) -> list[_ZeroCandidate]:
+    """인용의 숫자 0과 부정 서술을 **위치를 가진 후보**로 찾는다(판정은 하지 않는다)."""
+    numeric = [m.start() for m in _ZERO_NUMERIC_RE.finditer(quote)]
+    candidates: list[_ZeroCandidate] = []
+    for clause_start, clause in _pieces(quote, _ZERO_CLAUSE_SPLIT_RE):
+        clause_end = clause_start + len(clause)
+        for statement_start, statement in _pieces(clause, _ZERO_STATEMENT_SPLIT_RE, clause_start):
+            # 서술에 기간·사업장이 없을 때 볼 문맥: 다른 절 + 같은 절의 **앞** 서술(연결 어미 뒤
+            # `2027년 취득을 목표로`의 날짜·사업장은 빼고 본다).
+            context = quote[:clause_start] + " " + quote[clause_start:statement_start] + " " + quote[clause_end:]
+            column = ""
+            found = [("numeric", p - statement_start, p - statement_start + 1, None) for p in numeric
+                     if statement_start <= p < statement_start + len(statement)]
+            found += [("negation", m.start(), m.end(), m) for m in _ZERO_NEGATION_RE.finditer(statement)]
+            for kind, start, end, match in sorted(found, key=lambda f: f[1]):
+                if kind == "numeric":
+                    zero = _ZERO_NUMERIC_RE.match(statement, start)
+                    end = zero.end() if zero else end
+                column = _column_header(quote, statement_start + start)
+                candidates.append(_ZeroCandidate(kind, statement, start, end, statement_start + start,
+                                                 context, column, match))
+    return candidates
+
+
+def _column_header(quote: str, offset: int) -> str:
+    """표 행(`|`로 칸을 나눈 줄)의 후보가 속한 열의 머리. 칸 수가 같은 가장 가까운 앞 행을 쓴다."""
+    line_start = quote.rfind("\n", 0, offset) + 1
+    line_end = quote.find("\n", offset)
+    line = quote[line_start:line_end if line_end >= 0 else len(quote)]
+    if "|" not in line:
+        return ""
+    index = quote[line_start:offset].count("|")
+    width = line.count("|")
+    for header in reversed(quote[:line_start].splitlines()):
+        if header.count("|") == width:
+            return header.split("|")[index].strip()
+    return ""
+
+
+def _zero_subject(candidate: _ZeroCandidate, specific: list[str], hint_tokens: list[str],
+                  allowed: set[str]) -> str:
+    """후보 앞말이 이 지표를 가리키는가: same / target(같은 지표의 목표) / different / unclear."""
+    head = candidate.statement[:candidate.start]
+    if specific and _names_zero_subject(head, specific, hint_tokens, allowed):
+        return "same"
+    words = _label_tokens(head)
+    # 표 행 라벨이 지표명의 일부인 경우(`지하수 | 0` ↔ `지하수 취수량`): 앞말의 낱말이 모두
+    # 지표명 안에 있고 수량 종류가 같으면 같은 지표다. 일반 낱말만 겹치는 앞말은 인정하지 않는다.
+    if (candidate.column or "|" in head) and words:
+        hint_compact = "".join(hint_tokens)
+        if (any(w not in _ZERO_GENERIC_TOKENS for w in words)
+                and all(w in hint_compact for w in words)
+                and _metric_kinds(words) == _metric_kinds(hint_tokens)):
+            return "same"
+    if not specific or not words:
+        return "unclear"   # 지표명이 모두 일반 낱말이거나 앞말이 없다 — 연결을 특정할 수 없다
+    compact = re.sub(r"\s+", "", head)
+    if all(token in compact for token in specific):
+        last = max(head.rfind(token) for token in specific)
+        gap = _label_tokens(re.sub(r"^\S*", "", head[last:])) if last >= 0 else []
+        if "target" in _metric_kinds(gap) and "target" not in _metric_kinds(hint_tokens):
+            return "target"   # `산업재해 목표 0건` — 같은 지표의 목표값이지 실적이 아니다
+    return "different"
 
 
 def _names_zero_subject(head: str, specific: list[str], hint_tokens: list[str],
@@ -2613,16 +2791,27 @@ def _names_zero_subject(head: str, specific: list[str], hint_tokens: list[str],
 
 
 def _negation_mood(statement: str, negation: re.Match[str]) -> str | None:
-    """부정 서술이 완료된 사실·현재 상태면 None, 아니면 채택하지 않는 사유."""
+    """부정 서술이 완료된 사실·현재 상태면 None, 아니면 채택하지 않는 사유.
+
+    **None은 명시적 사실 분기에서만 돌려준다.** 인식하지 못한 어미·문장 구조는 마지막 기본값
+    `interpretation_unknown`으로 떨어진다(PR 69 3차 검토: 거부 목록에 없던 `발생하지 않으면`·
+    `발생하지 않는다고 가정한다`가 기본값으로 사실이 됐다).
+    """
     tail_end = negation.end()
     while tail_end < len(statement) and not statement[tail_end].isspace():
         tail_end += 1
     tail = statement[negation.end():tail_end]          # 부정 어근 뒤 같은 어절의 어미
+    core = tail.rstrip(".。!)]\"'”’")
     before, rest = statement[:tail_end], statement[tail_end:]
     if _ZERO_UNCONFIRMED_RE.search(statement):
         return "not_confirmed"
     if _ZERO_NO_PROOF_RE.search(rest):
         return "evidence_insufficient"
+    if (_ZERO_CONDITION_TAIL_RE.fullmatch(core)
+            or (core in ("을", "는", "은", "던") and _ZERO_CONDITION_NOUN_RE.match(rest))):
+        return "conditional"
+    if _ZERO_ASSUMPTION_RE.search(rest):
+        return "assumption"
     if _ZERO_INTENT_RE.search(before) or _ZERO_FUTURE_TAIL_RE.match(tail):
         return "future_or_intent"
     if _ZERO_EMBED_TAIL_RE.match(tail):
@@ -2639,63 +2828,208 @@ def _negation_mood(statement: str, negation: re.Match[str]) -> str | None:
         confirmed = _ZERO_CONFIRMED_RE.search(rest)
         return None if confirmed and not _ZERO_DOUBT_RE.search(rest[confirmed.end():]) \
             else "interpretation_unknown"
-    return None
+    # ── 명시적 사실 분기 ──
+    finished = _ZERO_TRAILING_NOISE_RE.fullmatch(tail[len(core):] + rest) is not None
+    word = negation.group(0)
+    if word.startswith("미"):
+        if finished and _ZERO_NOUN_FACT_TAIL_RE.fullmatch(core):
+            return None
+        if not core and _ZERO_NOUN_FACT_TAIL_RE.match(rest) and _ZERO_TRAILING_NOISE_RE.fullmatch(
+                rest[_ZERO_NOUN_FACT_TAIL_RE.match(rest).end():]):
+            return None   # `미보유 상태이다`
+    elif finished and (_ZERO_VERB_FACT_TAIL_RE.fullmatch(core)
+                       or (word == "없" and _ZERO_EUPSEO_FACT_TAIL_RE.fullmatch(core))):
+        return None
+    return "interpretation_unknown"
 
 
-# ── 0의 기간·사업장 대조 (PR 69 2차 검토) ─────────────────────────────────────
+def _numeric_zero_mood(statement: str, end: int) -> str | None:
+    """숫자 0이 실제 실적으로 적혔으면 None, 아니면 채택하지 않는 사유. 부정 서술과 같은 규약이다.
+
+    표의 `산업재해 발생 건수 | 0`과 `0건이다`·`0건으로 집계됐다`는 사실이다. 목표·예상·조건·가정·
+    미확인 서술 안의 0, 그리고 **인식하지 못한 뒤 서술**의 0은 사실로 보지 않는다.
+    """
+    head, rest = statement[:end], statement[end:]
+    if _ZERO_UNCONFIRMED_RE.search(statement):
+        return "not_confirmed"
+    if _ZERO_NO_PROOF_RE.search(rest):
+        return "evidence_insufficient"
+    if re.match(r"\s*(?:[A-Za-z%]+\d*|[가-힣]{1,2})?(?:이|일|인)?(?:면|라면|다면|더라도)", rest) \
+            or re.match(r"\s*(?:[A-Za-z%]+\d*|[가-힣]{1,2})?(?:일|인)\s*(?:경우|때)", rest):
+        return "conditional"
+    if _ZERO_ASSUMPTION_RE.search(rest):
+        return "assumption"
+    if _ZERO_INTENT_RE.search(rest) or re.search(r"(?:목표|계획|예정|예상|전망)\s*$", head[:-1]):
+        return "future_or_intent"
+    if _ZERO_NUMERIC_FACT_TAIL_RE.fullmatch(rest):
+        return None
+    return "interpretation_unknown"
+
+
+def _zero_scope_verdict(candidate: _ZeroCandidate, requested: "_DateSpan | None",
+                        boundary: dict[str, Any], base: dict[str, Any]) -> _ZeroVerdict:
+    """사실로 확인된 후보의 **사업장 → 기간** 대조. 숫자 0과 부정 서술이 같은 결정표를 쓴다.
+
+    | 요청 ↔ 원문                                      | 판정                         |
+    | 같은 범위                                         | CONFIRMED                    |
+    | 다른 사업장 · 겹치지 않는 기간                     | REJECTED(site/period_mismatch)|
+    | 겹치지만 다른 범위(월 ↔ 기준일, 연간 ↔ 월)          | REJECTED(period_unproven)    |
+    | 보고 연도 메타데이터 ↔ 그해 월·기준일·연도만 표기   | SOURCE_ONLY(report_year_only) |
+    | 보고 연도 메타데이터 ↔ 그해 명시적 연간(`연간`)     | CONFIRMED                    |
+    | 원문에 범위 없음 · 요청 기간 미상 · 원문 연도 미상  | SOURCE_ONLY                  |
+    | 원문 범위가 여럿이라 연결을 특정하지 못함           | UNRESOLVED(period_ambiguous) |
+    """
+    own = _date_spans(candidate.statement) or _date_spans(candidate.column)
+    spans = own or _date_spans(candidate.context)
+    sites = (_site_keys(candidate.statement) or _site_keys(candidate.column)
+             or _site_keys(candidate.context))
+    site_text = ", ".join(sorted(sites))
+    if not _site_matches(boundary, sites):
+        return _ZeroVerdict("REJECTED", "site_mismatch", evidence_site=site_text, **base)
+    relation, span = _period_relation(requested, spans)
+    period_text = _spans_text([span]) if span is not None else _spans_text(spans)
+    scope = {"evidence_period": period_text, "evidence_site": site_text, "source_scope": span, **base}
+    if relation == "mismatch":
+        return _ZeroVerdict("REJECTED", "period_mismatch", **scope)
+    if relation == "unproven":
+        return _ZeroVerdict("REJECTED", "period_unproven", **scope)
+    if relation == "ambiguous":
+        return _ZeroVerdict("UNRESOLVED", "period_ambiguous", **scope)
+    if relation != "match":
+        cause = {"report_year": "report_year_only", "unscoped": "period_not_stated",
+                 "year_unknown": "source_year_unknown"}.get(relation, "requested_period_unknown")
+        return _ZeroVerdict("SOURCE_ONLY", cause, **scope)
+    site = str(boundary.get("site") or "").strip()
+    if site and not sites:
+        return _ZeroVerdict("SOURCE_ONLY", "site_not_stated", **scope)
+    if sites and not site:
+        return _ZeroVerdict("SOURCE_ONLY", "source_site_only", **scope)
+    return _ZeroVerdict("CONFIRMED", "stated_zero", **scope)
+
+
+def _zero_scope_boundary(boundary: dict[str, Any], verdict: _ZeroVerdict, period: str) -> dict[str, Any]:
+    """보존한 0의 경계: 모델 경계에 **원문 범위**와 판정 기록을 더한다(`MeasurementBoundary.from_dict`).
+
+    - 원문 범위가 있으면 그 기간·집계 방식을 쓴다(MONTH → 월간, AS_OF·DAY → 시점, ANNUAL → 연간,
+      RANGE → 기간 합계, 연도 표기만 → 연도만). 연도 미상 범위는 날짜를 만들지 않는다.
+    - SOURCE_ONLY는 `review_notes`에 무엇이 확인되지 않았는지를 남긴다. 후속 원장은 이 기록
+      (`provenance`의 `zero_evidence`)으로 범위 미확정을 표시한다.
+    """
+    span = verdict.source_scope
+    scope: dict[str, Any] = {"basis": "actual"}
+    if span is not None:
+        scope["period_text"] = span.text.strip()
+        if span.kind == "MONTH":
+            scope.update(aggregation="monthly", coverage_months=1)
+        elif span.kind in ("AS_OF", "DAY"):
+            scope["aggregation"] = "point"
+        elif span.kind == "ANNUAL":
+            scope.update(aggregation="annual", coverage_months=12)
+        elif span.kind == "RANGE":
+            scope["aggregation"] = "period_total"
+        if span.year_known:
+            scope["period_year"] = span.start.year
+            if span.kind != "YEAR":
+                scope.update(period_start=span.start.isoformat(), period_end=span.end.isoformat())
+    if verdict.evidence_site and not str(boundary.get("site") or "").strip():
+        scope.update(site=verdict.evidence_site, site_scope="site")   # 모델 사업장 표기는 그대로 둔다
+    record = {"source": "zero_evidence", "status": verdict.status, "cause": verdict.cause,
+              "candidate": verdict.candidate, "requested_period": period,
+              "requested_scope": verdict.requested_scope,
+              "source_period": verdict.evidence_period, "source_site": verdict.evidence_site,
+              "evidence": verdict.evidence_text[:_QUOTE_MAX_CHARS], "method": "rule"}
+    merged = {**boundary, **scope}
+    merged["provenance"] = [*(boundary.get("provenance") or []), record]
+    if verdict.status == "SOURCE_ONLY":
+        note = _ZERO_KEPT_CAUSES.get(verdict.cause) or "원문 사실만 확인했고 요청 범위는 확인하지 못했습니다."
+        merged["review_notes"] = [*(boundary.get("review_notes") or []), note]
+    return merged
+
+
+# ── 0의 기간·사업장 대조 (PR 69 2차·3차 검토) ─────────────────────────────────
 # 연도 집합만 비교하면 `2026년 3월` 미발생이 4월 0건의 근거가 됐다. 기준일·월·연도·구간을
 # 실제 범위로 읽어 **같은 범위일 때만** 인정한다. `measurement_context.period_bounds`는
 # 단일 날짜를 읽지 못하고 `site_path`는 지역명을 떼므로 이 경로 전용으로 둔다.
+# 3차 검토: 기간에 **무슨 의미로 쓰였는지**(kind)를 함께 둔다. 모델의 `period="2026"`은 보고
+# 연도일 뿐 연간 합계가 아니다 — `grain='year'`만으로 둘을 가르지 않는다.
 
 @dataclass(frozen=True)
 class _DateSpan:
-    start: Any       # datetime.date
+    start: Any       # datetime.date. 연도 미상이면 `_YEARLESS` 해의 날짜
     end: Any
     grain: str       # day | month | year | range
     text: str
+    # REPORT_YEAR(요청의 보고 연도) · ANNUAL(명시적 연간) · YEAR(원문의 연도 표기) · MONTH ·
+    # AS_OF(`기준`이 붙은 날) · DAY · RANGE
+    kind: str = ""
+    year_known: bool = True   # False면 월·일만 확인됐다(`3월`·`04-01~04-07`)
 
 
+_YEARLESS = 2000    # 연도 미상 범위를 담는 윤년. 비교 때 요청 연도로 옮긴다.
 _DATE_ISO_RE = re.compile(r"(?<!\d)((?:19|20)\d{2})[-./](\d{1,2})(?:[-./](\d{1,2}))?(?![\d])")
 _DATE_KR_RE = re.compile(r"(?<!\d)((?:19|20)\d{2})\s*년(?:\s*(\d{1,2})\s*월(?:\s*(\d{1,2})\s*일)?)?")
 # 연도만 적은 표기. 수량(`2000명`)은 연도로 읽지 않는다.
 _DATE_YEAR_RE = re.compile(
     r"(?<![\d.,])((?:19|20)\d{2})(?![\d.,]|\s*(?:명|건|원|개|대|톤|kg|회|시간|%))")
+# 연도 없는 월·일(`3월`·`4월 1일`). `12개월`·`매월`은 읽지 않는다.
+_DATE_MONTH_ONLY_RE = re.compile(r"(?<![\d.,])()(\d{1,2})\s*월(?:\s*(\d{1,2})\s*일)?")
+# 연도 없는 날짜 구간(`04-01~04-07`). 구간일 때만 읽는다 — `3-1`처럼 홀로 선 표기는 항목 번호일 수 있다.
+_DATE_PARTIAL_RANGE_RE = re.compile(
+    r"(?<![\d\-./])(\d{1,2})[-./](\d{1,2})\s*(?:~|∼|〜|부터)\s*(\d{1,2})[-./](\d{1,2})(?![\d\-./])")
 _RANGE_JOIN_RE = re.compile(r"\s*(?:~|∼|〜|–|—|-|부터)\s*")
 # 구간의 뒤쪽이 연·월을 생략한 표기(`2026-04-01~04-30`·`4월 1일부터 30일까지`).
 _RANGE_PARTIAL_RE = re.compile(r"(?:(\d{1,2})[-./](\d{1,2})|(?:(\d{1,2})\s*월\s*)?(\d{1,2})\s*일)(?![\d])")
+# 명시적 연간 표기(`2026년 연간`·`2026년 연합계`·`2026년 전체`)와 기준일 표기(`2026-04-01 기준`).
+_ANNUAL_WORD_RE = re.compile(r"연간|연\s*합계|연중|년간|한\s*해\s*(?:동안|전체)?|전체|1년\s*간?")
+_AS_OF_WORD_RE = re.compile(r"\s*(?:기준|현재|시점)")
 
 
 def _date_spans(text: str) -> list[_DateSpan]:
-    """문구의 날짜 표기를 실제 범위로 읽는다. 구간(`A ~ B`)은 하나로 합친다."""
+    """문구의 날짜 표기를 실제 범위와 의미로 읽는다. 구간(`A ~ B`)은 하나로 합친다."""
     import calendar
     from datetime import date
 
     text = str(text or "")
-    tokens: list[tuple[int, int, int, int | None, int | None]] = []
+    tokens: list[tuple[int, int, int | None, int | None, int | None]] = []
     taken: list[tuple[int, int]] = []
-    for pattern in (_DATE_ISO_RE, _DATE_KR_RE, _DATE_YEAR_RE):
+    for m in _DATE_PARTIAL_RANGE_RE.finditer(text):
+        taken.append((m.start(), m.end()))
+    for pattern in (_DATE_ISO_RE, _DATE_KR_RE, _DATE_YEAR_RE, _DATE_MONTH_ONLY_RE):
         for m in pattern.finditer(text):
             if any(s < m.end() and m.start() < e for s, e in taken):
                 continue
             groups = m.groups() + (None, None)
-            tokens.append((m.start(), m.end(), int(groups[0]),
-                           int(groups[1]) if groups[1] else None, int(groups[2]) if groups[2] else None))
+            year = int(groups[0]) if groups[0] else None
+            month = int(groups[1]) if groups[1] else None
+            if year is None and not (month and 1 <= month <= 12):
+                continue
+            tokens.append((m.start(), m.end(), year, month, int(groups[2]) if groups[2] else None))
             taken.append((m.start(), m.end()))
     tokens.sort()
 
     def span(y, mo, d, start, end) -> _DateSpan | None:
+        known, y = y is not None, y if y is not None else _YEARLESS
         try:
             if d is not None:
                 day = date(y, mo, d)
-                return _DateSpan(day, day, "day", text[start:end])
+                kind = "AS_OF" if _AS_OF_WORD_RE.match(text, end) else "DAY"
+                return _DateSpan(day, day, "day", text[start:end], kind, known)
             if mo is not None:
                 return _DateSpan(date(y, mo, 1), date(y, mo, calendar.monthrange(y, mo)[1]),
-                                 "month", text[start:end])
-            return _DateSpan(date(y, 1, 1), date(y, 12, 31), "year", text[start:end])
+                                 "month", text[start:end], "MONTH", known)
+            annual = re.match(rf"\s*(?:{_ANNUAL_WORD_RE.pattern})", text[end:])
+            label = text[start:end + annual.end()] if annual else text[start:end]
+            return _DateSpan(date(y, 1, 1), date(y, 12, 31), "year", label,
+                             "ANNUAL" if annual else "YEAR", known)
         except ValueError:
             return None
 
     spans: list[_DateSpan] = []
+    for m in _DATE_PARTIAL_RANGE_RE.finditer(text):
+        first = span(None, int(m.group(1)), int(m.group(2)), m.start(), m.start())
+        second = span(None, int(m.group(3)), int(m.group(4)), m.end(), m.end())
+        if first and second and second.end >= first.start:
+            spans.append(_DateSpan(first.start, second.end, "range", m.group(0), "RANGE", False))
     index = 0
     while index < len(tokens):
         start, end, y, mo, d = tokens[index]
@@ -2708,7 +3042,7 @@ def _date_spans(text: str) -> list[_DateSpan]:
         if join:
             if index < len(tokens) and tokens[index][0] == join.end():
                 s2, e2, y2, mo2, d2 = tokens[index]
-                second = span(y2, mo2, d2, s2, e2)
+                second = span(y2 if y2 is not None else y, mo2, d2, s2, e2)
                 index += 1
             elif mo is not None:
                 partial = _RANGE_PARTIAL_RE.match(text, join.end())
@@ -2717,8 +3051,11 @@ def _date_spans(text: str) -> list[_DateSpan]:
                     d2 = int(partial.group(2) or partial.group(4))
                     second = span(y, mo2, d2, join.end(), partial.end())
         if second is not None and second.end >= first.start:
+            whole_year = (first.start.month, first.start.day, second.end.month, second.end.day) == (1, 1, 12, 31)
             spans.append(_DateSpan(first.start, second.end, "range",
-                                   text[start:end] + " ~ " + second.text))
+                                   text[start:end] + " ~ " + second.text,
+                                   "ANNUAL" if whole_year and first.year_known else "RANGE",
+                                   first.year_known and second.year_known))
         else:
             spans.append(first)
     return spans
@@ -2728,33 +3065,73 @@ def _spans_text(spans: list[_DateSpan]) -> str:
     return ", ".join(dict.fromkeys(s.text.strip() for s in spans))
 
 
-def _period_relation(period: str, spans: list[_DateSpan]) -> str:
-    """지표 기간과 원문 기간의 관계: match / mismatch / unproven / unknown.
+def _requested_period(period: str, hint: str = "") -> _DateSpan | None:
+    """요청(모델 응답) 기간의 범위와 의미. 읽지 못하거나 여럿이면 None.
 
-    - 같은 범위면 match(`2026-04` = `2026년 4월` = `2026-04-01 ~ 2026-04-30`).
-    - 지표 기간이 연도만이고 원문 범위가 그 해 안이면 match — 모델이 보고 연도만 적은
-      경우다. 원문 범위는 인용으로 남고, 연간 합계로 확대하는 추론은 하지 않는다.
-    - 모두 겹치지 않으면 mismatch(3월 ↔ 4월, 4월 1일 ↔ 4월 30일).
-    - 겹치지만 범위가 다르면 unproven(연간 미발생 → 4월, 4월 1일 기준 → 4월 한 달).
-    - 한쪽이라도 기간을 읽지 못하면 unknown(판정하지 않는다).
+    연도만 적힌 `period="2026"`은 **보고 연도**(REPORT_YEAR)다. 지표명·기간에 연간 표기
+    (`연간 산업재해 발생 건수`·`2026년 연간`)가 있을 때만 명시적 연간(ANNUAL)으로 본다.
     """
-    metric = _date_spans(period)
-    if len(metric) != 1 or not spans:
-        return "unknown"
-    target = metric[0]
-    relations = []
-    for s in spans:
-        if (s.start, s.end) == (target.start, target.end):
-            relations.append("match")
-        elif s.end < target.start or s.start > target.end:
-            relations.append("mismatch")
-        elif target.grain == "year" and target.start <= s.start and s.end <= target.end:
-            relations.append("match")
-        else:
-            relations.append("unproven")
-    if "match" in relations:
-        return "match"
-    return "mismatch" if all(r == "mismatch" for r in relations) else "unproven"
+    from dataclasses import replace
+
+    spans = _date_spans(period)
+    if len(spans) != 1 or not spans[0].year_known:
+        return None
+    span = spans[0]
+    if span.kind == "YEAR":
+        annual = _ANNUAL_WORD_RE.search(hint or "")
+        return replace(span, kind="ANNUAL" if annual else "REPORT_YEAR")
+    return span
+
+
+def _period_relation(requested: _DateSpan | None, spans: list[_DateSpan]) -> tuple[str, _DateSpan | None]:
+    """요청 기간과 원문 기간의 관계와 대표 원문 범위.
+
+    match(같은 범위) / mismatch(모두 겹치지 않음) / unproven(겹치지만 다른 범위) /
+    report_year(요청이 보고 연도뿐) / year_unknown(원문 연도 미상, 월·일은 요청과 같음) /
+    unscoped(원문에 범위 없음) / requested_unknown(요청 기간 미상) / ambiguous(원문 범위가 여럿).
+    """
+    from dataclasses import replace
+
+    distinct = list({(s.start, s.end, s.year_known): s for s in spans}.values())
+    if not distinct:
+        return "unscoped", None
+    if requested is None:
+        return ("requested_unknown", distinct[0]) if len(distinct) == 1 else ("ambiguous", None)
+
+    def relation(s: _DateSpan) -> str:
+        if requested.kind == "REPORT_YEAR":
+            if not s.year_known:
+                return "report_year"
+            if s.end < requested.start or s.start > requested.end:
+                return "mismatch"
+            if s.kind == "ANNUAL" and (s.start, s.end) == (requested.start, requested.end):
+                return "match"   # 원문이 그해 연간 범위를 명시했다(`2026년 연간`) — 연도만의 표기와 다르다
+            return "report_year" if requested.start <= s.start and s.end <= requested.end else "unproven"
+        found = []
+        for year in (range(requested.start.year, requested.end.year + 1) if not s.year_known else [None]):
+            try:
+                shifted = s if year is None else replace(
+                    s, start=s.start.replace(year=year),
+                    end=s.end.replace(year=year + (s.end.year - s.start.year)))
+            except ValueError:
+                continue
+            if (shifted.start, shifted.end) == (requested.start, requested.end):
+                found.append("match" if s.year_known else "year_unknown")
+            elif shifted.end < requested.start or shifted.start > requested.end:
+                found.append("mismatch")
+            else:
+                found.append("unproven")
+        for r in ("match", "year_unknown", "unproven"):
+            if r in found:
+                return r
+        return "mismatch"
+
+    relations = [relation(s) for s in distinct]
+    if len(distinct) == 1:
+        return relations[0], distinct[0]
+    if all(r == "mismatch" for r in relations):
+        return "mismatch", distinct[0]
+    return "ambiguous", None
 
 
 _SITE_KINDS = r"공장|사업장|사업소|본사|지점|센터|캠퍼스"
@@ -2869,7 +3246,8 @@ def _reconcile_scale_chain(
 
     def describe(chain: _ScaleChain) -> dict[str, Any]:
         return {"surface": chain.surface, "amount": chain.amount, "unit": chain.unit,
-                "unit_text": chain.unit_text, "value_in_unit": in_value_unit(chain),
+                "unit_text": chain.unit_text, "unit_status": chain.unit_status,
+                "value_in_unit": in_value_unit(chain),
                 "label": chain.label}
 
     detail = {"reason": "scale_chain_unresolved", "fatal": False,
@@ -2887,6 +3265,9 @@ def _reconcile_scale_chain(
     if corrected is None:
         # 원문 또는 추출 단위를 사전으로 읽지 못했다 — 단위를 추정해 채우지 않는다.
         return value, {**detail, "cause": "unit_unproven"}
+    if chain.unit_status != "SIMPLE_COMPLETE" or value_unit is None:
+        # 원문 단위를 끝까지 읽은 단순 단위일 때만 고친다(분모 표지·잘림·사전 밖은 제외).
+        return value, {**detail, "cause": "unit_unproven"}
     if hint is not None and not _label_names_metric(chain.label, hint):
         # 같은 문장 안의 다른 지표일 수 있다(`영업이익 1조 2,000억 원 … 매출은`).
         return value, {**detail, "cause": "metric_unproven"}
@@ -2898,6 +3279,7 @@ def _reconcile_scale_chain(
                        "value_before": value, "value_after": corrected, "unit": unit,
                        "source_amount": chain.amount, "source_surface": chain.surface,
                        "source_unit": chain.unit, "source_unit_text": chain.unit_text,
+                       "source_unit_status": chain.unit_status,
                        "source_label": chain.label,
                        "basis": "원문 연속 배율 표기를 같은 단위군으로 환산한 값",
                        "quote": evidence[:_QUOTE_MAX_CHARS]}
@@ -3013,16 +3395,24 @@ def _map_vlm_json(
                     # 0도, 같은 지표의 명시적 미발생·미보유 서술도 없으면 그 0은 원문에서 온
                     # 값이 아니다. **실제 0과 미확인은 다르다** — 차입금 '0원'과 '미공시'는
                     # 전혀 다른 문장을 만든다. 그래서 0으로 싣지 않고 사유만 남긴다.
+                    # 판정 상태·근거 서술·쪽·모델 원값을 함께 남긴다(쪽 0과 쪽 미상 None은 다르다).
                     if issues is not None:
                         issues.append({"record_type": "metric", "record_index": index,
                                        "reason": "zero_not_in_evidence", "fatal": False,
-                                       "cause": zero.cause,
-                                       "metric_hint": hint, "unit": unit, "period": period,
+                                       "cause": zero.cause, "status": zero.status,
+                                       "metric_hint": hint, "value": value, "unit": unit,
+                                       "period": period, "page": page_no,
+                                       "requested_scope": zero.requested_scope,
                                        "metric_site": str(boundary.get("site") or ""),
                                        "evidence_period": zero.evidence_period,
                                        "evidence_site": zero.evidence_site,
+                                       "evidence_text": zero.evidence_text[:_QUOTE_MAX_CHARS],
                                        "quote": quote[:_QUOTE_MAX_CHARS]})
                     continue
+                if zero is not None:
+                    # 보존한 0은 **원문 범위**를 경계에 싣는다. 모델이 연도만 보냈어도 원문이 4월이면
+                    # 이 근거의 기간은 4월이다 — 후속 원장이 연간 실적으로 넓히지 않게 한다.
+                    m = {**m, "boundary": _zero_scope_boundary(boundary, zero, period)}
                 value, scale_issue = _reconcile_scale_chain(value, unit, quote, hint=hint)
                 if scale_issue is not None and issues is not None:
                     issues.append({"record_type": "metric", "record_index": index,

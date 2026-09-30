@@ -40,7 +40,7 @@ OCR 캐시를 재생해도 같은 경계가 나온다. 새 필드를 채우려�
 from __future__ import annotations
 
 import re
-from dataclasses import dataclass, field, asdict, fields
+from dataclasses import dataclass, field, asdict, fields, replace
 from typing import Any, Iterable, Literal
 from .measurement_context import period_bounds, header_context, site_path
 
@@ -649,10 +649,15 @@ def derive_boundary(
     if base is None:
         return derived
     prior = Boundary.from_dict(base)
+    # 원문 대조 기록(`provenance`·`review_notes`)은 범위를 읽지 못한 경계에서도 잃지 않고
+    # 규칙 추론 기록 뒤에 덧붙인다(PR 69 3차 검토: 범위 미확정 0의 판정 기록이 사라졌다).
+    carried = {"provenance": derived.provenance + prior.provenance,
+               "review_notes": tuple(dict.fromkeys(derived.review_notes + prior.review_notes))}
     if not prior.is_known:
-        return derived
+        return replace(derived, **carried)
     # 정형 파서가 직접 읽은 축이 규칙 추론을 이긴다.
-    return derived.merged(**{k: v for k, v in asdict(prior).items() if k != "inferred"})
+    return replace(derived.merged(**{k: v for k, v in asdict(prior).items()
+                                     if k not in ("inferred", "provenance", "review_notes")}), **carried)
 
 
 # ====================================================================

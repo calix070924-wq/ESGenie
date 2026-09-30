@@ -423,6 +423,16 @@ def _scope_note(code, boundary, completeness) -> str:
     return f"{code}: 경계 확인 필요 — {label or '경계 미기록'}; {detail}"
 
 
+def _scope_source_only(boundary) -> bool:
+    """근거 0이 원문 사실로만 보존됐는가(`ocr_router._ZeroVerdict` SOURCE_ONLY).
+
+    '범위를 검사하지 않음'과 '검사해서 일치함'을 가르는 기록이다 — 이 표지가 있으면 요청 범위의
+    실적으로 확인되지 않았다는 뜻이므로 원장 플래그 `scope_source_only`로 남긴다.
+    """
+    return any(p.get("source") == "zero_evidence" and p.get("status") == "SOURCE_ONLY"
+               for p in (boundary.provenance or ()) if isinstance(p, dict))
+
+
 def _from_nodes(graph, code, nodes):
     if not nodes:
         return None
@@ -445,7 +455,9 @@ def _from_nodes(graph, code, nodes):
     # 원장에 싣는 경계는 판정된 완전성을 그대로 반영한다 — label()이 '총량'이라고
     # 찍으면서 fact.completeness가 'partial'인 자기모순 출력을 막는다.
     boundary = replace(boundary, completeness=completeness)
-    notes = []
+    notes = list(boundary.review_notes) if _scope_source_only(boundary) else []
+    if notes:
+        flags.append("scope_source_only")
     if code in WHOLE_SCOPE_CODES and completeness != "total":
         flags.append("incomplete_scope")
         notes.append(_scope_note(code, boundary, completeness))
@@ -557,6 +569,8 @@ def finalize_ledger(result, graph):
         boundary = replace(boundary, completeness=completeness)
         scope_notes = list(sum_notes)
         scope_notes.extend(boundary.review_notes)
+        if _scope_source_only(boundary):
+            flags.append("scope_source_only")
         if code in WHOLE_SCOPE_CODES and completeness != "total":
             flags.append("incomplete_scope")
             scope_notes.append(_scope_note(code, boundary, completeness))
