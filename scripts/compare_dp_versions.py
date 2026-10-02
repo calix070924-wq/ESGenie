@@ -1,9 +1,11 @@
 # -*- coding: utf-8 -*-
-"""compare_dp_versions.py — Upstage Document Parse 구버전 vs document-parse-260630 라이브 비교.
+"""compare_dp_versions.py — Upstage Document Parse 명시 pin vs document-parse alias 라이브 비교.
 
 2026-07-31 기본 alias 전환(260128→260630) 전에 신버전을 미리 켜보고
 ① 속도(throughput +60% 공지 검증) ② 정확도(핵심 ESG 수치) ③ words 옵션(단어단위 bbox)
 응답 형태를 확인한다.
+2026-10-02 갱신: 260630 명시 pin은 2026-11-02(KST) 종료 → 기본값을 alias(현재 260930)로 전환하며
+비교 대상을 260630 pin vs alias로 바꿨다. 11/2 이후 260630 행은 실패로 표시된다.
 
 ⚠ 샌드박스는 api.upstage.ai egress 차단 확인됨 → 반드시 Mac(.env에 유효 UPSTAGE_API_KEY)에서 실행.
 
@@ -20,8 +22,8 @@ sys.path.insert(0, ".")
 from esgenie.config import SETTINGS  # noqa: F401  (.env 로드)
 from esgenie.ssot import ocr_router as R
 
-OLD_MODEL = "document-parse"           # 현재 default alias → 7/31까지 260128
-NEW_MODEL = "document-parse-260630"    # 신버전 명시 pin
+OLD_MODEL = "document-parse-260630"    # 직전 명시 pin → 2026-11-02 종료
+NEW_MODEL = "document-parse"           # default alias → 2026-10-02 기준 260930
 
 D = "시연증빙세트_한울정밀공업/"
 GT = [
