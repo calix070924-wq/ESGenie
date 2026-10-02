@@ -24,6 +24,7 @@ from pathlib import Path
 from typing import Any
 
 from ..rag_gates.units import convert_to_common, normalize_unit
+from .boundary import detect_basis
 
 
 # ---- 격자 복원 ------------------------------------------------------------------
@@ -250,16 +251,31 @@ _ABSENT_EXACT = {"n/a", "na", "n.a", "n.a.", "없음", "해당없음", "공란",
 _ABSENT_RE = re.compile(r"^(?:(?:검침|측정|계량|산정|집계|확인|입력|기재|통보)(?:예정|중|전|대기)"
                         r"|추후(?:검침|측정|기재|입력|확인|산정|통보)?(?:예정)?|(?:값|자료|데이터)없음)$")
 _NOTE_HEAD_WORDS = ("비고", "메모", "참고", "설명", "특이사항", "주석")
+# 요금 명세 행 항목명에서 '예정'이 납부·청구 시점만 나타내는 표현('납부예정금액'·'청구 예정 요금'·'예정 납부액'·
+# '납부금액(예정)'·'예정일 납부 금액'). 이 표현은 금액의 일정이지 물리량의 근거 성격이 아니다(R8-3 후속).
+# '예상'(추정)은 시점이 아니다 — '예상 요금'·'납부 예상액'은 물리량도 추정일 수 있어 계획 판정을 그대로 둔다.
+_PAYMENT_TIMING_RE = re.compile(r"(?:납부|청구|정산|결제|고지|출금|이체|지급)(?:금액|요금|액|일)?\(?예정\)?"
+                                r"|예정일?(?:납부|청구|정산|결제|고지|출금|이체|지급)")
+# 시점 표현이 끼어 금액 단어가 갈라진 금액 이름('청구예정액'·'정산 예정액' — '청구액'·'정산액'의 예정분).
+_TIMED_AMOUNT_RE = re.compile(r"(?:청구|정산|결제|고지|지급|이체|출금)(?:예정|예상)액")
 
 
 def _is_money_label(text: str) -> bool:
     n = _norm(text)
     if not n or _parse_qty(text):
         return False
-    if any(w in n for w in _MONEY_WORDS) or n.endswith("(원)"):
+    if any(w in n for w in _MONEY_WORDS) or n.endswith("(원)") or _TIMED_AMOUNT_RE.search(n):
         return True
     stem = re.sub(r"\([^()]*\)$", "", n)
     return stem.endswith("료") and not stem.endswith(_NOT_FEE_ENDINGS)
+
+
+def _fee_item_basis(name: str) -> str:
+    """요금 명세 행 항목명이 사용량·열량의 근거 성격을 함께 나타내는지 → detect_basis 결과.
+
+    납부·청구 시점 표현을 뺀 뒤에도 계획·목표 단어가 남으면('예상 사용량 및 요금'·'계획 사용량 및 요금') 물리량을
+    수식하는 이름이다 — 행 이름으로 남겨 근거 경계까지 전달한다. 'actual'이면 금액 칸의 이름일 뿐이다."""
+    return detect_basis(_PAYMENT_TIMING_RE.sub(" ", _norm(name)))
 
 
 def _money_number(text: str) -> float | None:
@@ -625,8 +641,9 @@ def _process_header_table(res: TableMetricResult, grid: _Grid, doc_type: str) ->
             row_label = ""
         # 요금 명세 행('납부예정금액 | 8,420 | 360,772 | 247,500')의 항목명은 금액 칸의 이름이다. 사용량·열량의
         # 행 이름으로 붙이면 '예정'이 계획값으로 읽힌다 — 원문 항목명은 row_item으로만 남긴다(R8-3).
+        # 다만 '예상 사용량 및 요금'처럼 물리량 자체의 계획·목표를 나타내면 행 이름으로 남긴다(R8-3 후속).
         row_item = fee_item.get(id(row), "")
-        if row_item and row_label == row_item:
+        if row_item and row_label == row_item and _fee_item_basis(row_item) == "actual":
             row_label = ""
         scope: dict[str, str] = {}
         for k, axis in scope_cols:
@@ -637,6 +654,9 @@ def _process_header_table(res: TableMetricResult, grid: _Grid, doc_type: str) ->
         if scope:
             row_label = " · ".join(p for p in dict.fromkeys(
                 [row_label] + [scope[a] for _k, a in scope_cols if a in scope]) if p)
+        if row_item and row_item not in row_label and _fee_item_basis(row_item) != "actual":
+            # 항목 칸이 행 이름 열이 아니어도(열 재배치·사업장 열이 앞선 표) 물리량의 계획·목표 표시는 전달한다.
+            row_label = " · ".join(p for p in (row_label, row_item) if p)
         inputs = _index_inputs(row, roles, header)
         found: list[dict[str, Any]] = []
         explicit_roles = set()
