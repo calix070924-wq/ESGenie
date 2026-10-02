@@ -1,0 +1,999 @@
+{
+ "note": "PR #68 6차 검토(R8-3 후속) 구현 후 대표 조합 — 검증용 가상 입력, 원본 아님. 생성: review-r6/make_combos.py",
+ "emission_rule": "E-4-1 TJ = MJ/1e6, E-3-1 tCO2eq = round(MJ*0.0000561, 3)",
+ "cases": {
+  "combo_actual_due_date_amount": {
+   "group": "납부 시점 조합",
+   "meaning": "'예정일 납부 금액' — 금액 일정 표현, 사용량·열량은 실적",
+   "doc_type": "gas_bill",
+   "extra": [
+    "사용 기간: 2026-04-01 ~ 2026-04-30"
+   ],
+   "tables": [
+    [
+     [
+      "항목",
+      "사용량(m3)",
+      "사용열량(MJ)",
+      "요금(원)"
+     ],
+     [
+      "예정일 납부 금액",
+      "8,420",
+      "360,772",
+      "247,500"
+     ]
+    ]
+   ],
+   "expected": {
+    "metrics": [
+     [
+      8420,
+      "m³"
+     ],
+     [
+      360772,
+      "MJ"
+     ]
+    ],
+    "E-4-1": [
+     0.360772,
+     "TJ"
+    ],
+    "E-3-1": [
+     20.239,
+     "tCO2eq"
+    ]
+   },
+   "basis": [
+    [
+     8420,
+     "actual"
+    ],
+    [
+     360772,
+     "actual"
+    ]
+   ],
+   "forbidden_values": [
+    247500
+   ],
+   "paths": [
+    "table_cells",
+    "markdown",
+    "text_lines",
+    "local_pdf"
+   ],
+   "evidence_contains": "360772"
+  },
+  "combo_actual_pay_due_day_amount": {
+   "group": "납부 시점 조합",
+   "meaning": "'납부예정일 금액' — 금액 일정 표현, 사용량·열량은 실적",
+   "doc_type": "gas_bill",
+   "extra": [
+    "사용 기간: 2026-04-01 ~ 2026-04-30"
+   ],
+   "tables": [
+    [
+     [
+      "항목",
+      "사용량(m3)",
+      "사용열량(MJ)",
+      "요금(원)"
+     ],
+     [
+      "납부예정일 금액",
+      "8,420",
+      "360,772",
+      "247,500"
+     ]
+    ]
+   ],
+   "expected": {
+    "metrics": [
+     [
+      8420,
+      "m³"
+     ],
+     [
+      360772,
+      "MJ"
+     ]
+    ],
+    "E-4-1": [
+     0.360772,
+     "TJ"
+    ],
+    "E-3-1": [
+     20.239,
+     "tCO2eq"
+    ]
+   },
+   "basis": [
+    [
+     8420,
+     "actual"
+    ],
+    [
+     360772,
+     "actual"
+    ]
+   ],
+   "forbidden_values": [
+    247500
+   ],
+   "paths": [
+    "table_cells",
+    "markdown",
+    "text_lines",
+    "local_pdf"
+   ],
+   "evidence_contains": "360772"
+  },
+  "combo_actual_bill_scheduled_usage_fee": {
+   "group": "납부 시점 조합",
+   "meaning": "'당월 청구 예정 사용요금' — 금액 일정 표현, 사용량·열량은 실적",
+   "doc_type": "gas_bill",
+   "extra": [
+    "사용 기간: 2026-04-01 ~ 2026-04-30"
+   ],
+   "tables": [
+    [
+     [
+      "항목",
+      "사용량(m3)",
+      "사용열량(MJ)",
+      "요금(원)"
+     ],
+     [
+      "당월 청구 예정 사용요금",
+      "8,420",
+      "360,772",
+      "247,500"
+     ]
+    ]
+   ],
+   "expected": {
+    "metrics": [
+     [
+      8420,
+      "m³"
+     ],
+     [
+      360772,
+      "MJ"
+     ]
+    ],
+    "E-4-1": [
+     0.360772,
+     "TJ"
+    ],
+    "E-3-1": [
+     20.239,
+     "tCO2eq"
+    ]
+   },
+   "basis": [
+    [
+     8420,
+     "actual"
+    ],
+    [
+     360772,
+     "actual"
+    ]
+   ],
+   "forbidden_values": [
+    247500
+   ],
+   "paths": [
+    "table_cells",
+    "markdown",
+    "text_lines"
+   ],
+   "evidence_contains": "360772"
+  },
+  "combo_actual_autopay_scheduled": {
+   "group": "납부 시점 조합",
+   "meaning": "'자동이체 예정 금액' — 금액 일정 표현, 사용량·열량은 실적",
+   "doc_type": "gas_bill",
+   "extra": [
+    "사용 기간: 2026-04-01 ~ 2026-04-30"
+   ],
+   "tables": [
+    [
+     [
+      "항목",
+      "사용량(m3)",
+      "사용열량(MJ)",
+      "요금(원)"
+     ],
+     [
+      "자동이체 예정 금액",
+      "8,420",
+      "360,772",
+      "247,500"
+     ]
+    ]
+   ],
+   "expected": {
+    "metrics": [
+     [
+      8420,
+      "m³"
+     ],
+     [
+      360772,
+      "MJ"
+     ]
+    ],
+    "E-4-1": [
+     0.360772,
+     "TJ"
+    ],
+    "E-3-1": [
+     20.239,
+     "tCO2eq"
+    ]
+   },
+   "basis": [
+    [
+     8420,
+     "actual"
+    ],
+    [
+     360772,
+     "actual"
+    ]
+   ],
+   "forbidden_values": [
+    247500
+   ],
+   "paths": [
+    "table_cells",
+    "markdown",
+    "text_lines",
+    "local_pdf"
+   ],
+   "evidence_contains": "360772"
+  },
+  "combo_actual_bill_scheduled_vat": {
+   "group": "납부 시점 조합",
+   "meaning": "'청구예정액(VAT 포함)' — 금액 일정 표현, 사용량·열량은 실적",
+   "doc_type": "gas_bill",
+   "extra": [
+    "사용 기간: 2026-04-01 ~ 2026-04-30"
+   ],
+   "tables": [
+    [
+     [
+      "항목",
+      "사용량(m3)",
+      "사용열량(MJ)",
+      "요금(원)"
+     ],
+     [
+      "청구예정액(VAT 포함)",
+      "8,420",
+      "360,772",
+      "247,500"
+     ]
+    ]
+   ],
+   "expected": {
+    "metrics": [
+     [
+      8420,
+      "m³"
+     ],
+     [
+      360772,
+      "MJ"
+     ]
+    ],
+    "E-4-1": [
+     0.360772,
+     "TJ"
+    ],
+    "E-3-1": [
+     20.239,
+     "tCO2eq"
+    ]
+   },
+   "basis": [
+    [
+     8420,
+     "actual"
+    ],
+    [
+     360772,
+     "actual"
+    ]
+   ],
+   "forbidden_values": [
+    247500
+   ],
+   "paths": [
+    "table_cells",
+    "markdown",
+    "text_lines"
+   ],
+   "evidence_contains": "360772"
+  },
+  "combo_actual_settle_scheduled_amount": {
+   "group": "납부 시점 조합",
+   "meaning": "'정산예정액' — 금액 일정 표현, 사용량·열량은 실적",
+   "doc_type": "gas_bill",
+   "extra": [
+    "사용 기간: 2026-04-01 ~ 2026-04-30"
+   ],
+   "tables": [
+    [
+     [
+      "항목",
+      "사용량(m3)",
+      "사용열량(MJ)",
+      "요금(원)"
+     ],
+     [
+      "정산예정액",
+      "8,420",
+      "360,772",
+      "247,500"
+     ]
+    ]
+   ],
+   "expected": {
+    "metrics": [
+     [
+      8420,
+      "m³"
+     ],
+     [
+      360772,
+      "MJ"
+     ]
+    ],
+    "E-4-1": [
+     0.360772,
+     "TJ"
+    ],
+    "E-3-1": [
+     20.239,
+     "tCO2eq"
+    ]
+   },
+   "basis": [
+    [
+     8420,
+     "actual"
+    ],
+    [
+     360772,
+     "actual"
+    ]
+   ],
+   "forbidden_values": [
+    247500
+   ],
+   "paths": [
+    "table_cells",
+    "markdown",
+    "text_lines",
+    "local_pdf"
+   ],
+   "evidence_contains": "360772"
+  },
+  "combo_qty_no_space": {
+   "group": "물리량 예상·계획 조합",
+   "meaning": "'예상사용량및요금' — 사용량·열량 자체가 plan",
+   "doc_type": "gas_bill",
+   "extra": [
+    "사용 기간: 2026-04-01 ~ 2026-04-30"
+   ],
+   "tables": [
+    [
+     [
+      "항목",
+      "사용량(m3)",
+      "사용열량(MJ)",
+      "요금(원)"
+     ],
+     [
+      "예상사용량및요금",
+      "8,420",
+      "360,772",
+      "247,500"
+     ]
+    ]
+   ],
+   "expected": {
+    "metrics": [
+     [
+      8420,
+      "m³"
+     ],
+     [
+      360772,
+      "MJ"
+     ]
+    ],
+    "E-4-1": null,
+    "E-3-1": null
+   },
+   "basis": [
+    [
+     8420,
+     "plan"
+    ],
+    [
+     360772,
+     "plan"
+    ]
+   ],
+   "forbidden_values": [
+    247500
+   ],
+   "paths": [
+    "table_cells",
+    "markdown",
+    "text_lines",
+    "local_pdf"
+   ]
+  },
+  "combo_qty_fee_on_expected_usage": {
+   "group": "물리량 예상·계획 조합",
+   "meaning": "'납부 예정 요금(예상 사용량 기준)' — 사용량·열량 자체가 plan",
+   "doc_type": "gas_bill",
+   "extra": [
+    "사용 기간: 2026-04-01 ~ 2026-04-30"
+   ],
+   "tables": [
+    [
+     [
+      "항목",
+      "사용량(m3)",
+      "사용열량(MJ)",
+      "요금(원)"
+     ],
+     [
+      "납부 예정 요금(예상 사용량 기준)",
+      "8,420",
+      "360,772",
+      "247,500"
+     ]
+    ]
+   ],
+   "expected": {
+    "metrics": [
+     [
+      8420,
+      "m³"
+     ],
+     [
+      360772,
+      "MJ"
+     ]
+    ],
+    "E-4-1": null,
+    "E-3-1": null
+   },
+   "basis": [
+    [
+     8420,
+     "plan"
+    ],
+    [
+     360772,
+     "plan"
+    ]
+   ],
+   "forbidden_values": [
+    247500
+   ],
+   "paths": [
+    "table_cells",
+    "markdown",
+    "text_lines"
+   ]
+  },
+  "combo_qty_expected_and_bill_scheduled": {
+   "group": "물리량 예상·계획 조합",
+   "meaning": "'예상 사용량 및 청구 예정 금액' — 사용량·열량 자체가 plan",
+   "doc_type": "gas_bill",
+   "extra": [
+    "사용 기간: 2026-04-01 ~ 2026-04-30"
+   ],
+   "tables": [
+    [
+     [
+      "항목",
+      "사용량(m3)",
+      "사용열량(MJ)",
+      "요금(원)"
+     ],
+     [
+      "예상 사용량 및 청구 예정 금액",
+      "8,420",
+      "360,772",
+      "247,500"
+     ]
+    ]
+   ],
+   "expected": {
+    "metrics": [
+     [
+      8420,
+      "m³"
+     ],
+     [
+      360772,
+      "MJ"
+     ]
+    ],
+    "E-4-1": null,
+    "E-3-1": null
+   },
+   "basis": [
+    [
+     8420,
+     "plan"
+    ],
+    [
+     360772,
+     "plan"
+    ]
+   ],
+   "forbidden_values": [
+    247500
+   ],
+   "paths": [
+    "table_cells",
+    "markdown",
+    "text_lines"
+   ]
+  },
+  "combo_qty_usage_scheduled_qty": {
+   "group": "물리량 예상·계획 조합",
+   "meaning": "'사용 예정량 및 요금' — 사용량·열량 자체가 plan",
+   "doc_type": "gas_bill",
+   "extra": [
+    "사용 기간: 2026-04-01 ~ 2026-04-30"
+   ],
+   "tables": [
+    [
+     [
+      "항목",
+      "사용량(m3)",
+      "사용열량(MJ)",
+      "요금(원)"
+     ],
+     [
+      "사용 예정량 및 요금",
+      "8,420",
+      "360,772",
+      "247,500"
+     ]
+    ]
+   ],
+   "expected": {
+    "metrics": [
+     [
+      8420,
+      "m³"
+     ],
+     [
+      360772,
+      "MJ"
+     ]
+    ],
+    "E-4-1": null,
+    "E-3-1": null
+   },
+   "basis": [
+    [
+     8420,
+     "plan"
+    ],
+    [
+     360772,
+     "plan"
+    ]
+   ],
+   "forbidden_values": [
+    247500
+   ],
+   "paths": [
+    "table_cells",
+    "markdown",
+    "text_lines",
+    "local_pdf"
+   ]
+  },
+  "combo_qty_year_target": {
+   "group": "물리량 예상·계획 조합",
+   "meaning": "'2026년 목표 사용량 및 요금' — 사용량·열량 자체가 target",
+   "doc_type": "gas_bill",
+   "extra": [
+    "사용 기간: 2026-04-01 ~ 2026-04-30"
+   ],
+   "tables": [
+    [
+     [
+      "항목",
+      "사용량(m3)",
+      "사용열량(MJ)",
+      "요금(원)"
+     ],
+     [
+      "2026년 목표 사용량 및 요금",
+      "8,420",
+      "360,772",
+      "247,500"
+     ]
+    ]
+   ],
+   "expected": {
+    "metrics": [
+     [
+      8420,
+      "m³"
+     ],
+     [
+      360772,
+      "MJ"
+     ]
+    ],
+    "E-4-1": null,
+    "E-3-1": null
+   },
+   "basis": [
+    [
+     8420,
+     "target"
+    ],
+    [
+     360772,
+     "target"
+    ]
+   ],
+   "forbidden_values": [
+    247500
+   ],
+   "paths": [
+    "table_cells",
+    "markdown",
+    "text_lines"
+   ]
+  },
+  "combo_qty_plan_fee_included": {
+   "group": "물리량 예상·계획 조합",
+   "meaning": "'계획 사용량(요금 포함)' — 사용량·열량 자체가 plan",
+   "doc_type": "gas_bill",
+   "extra": [
+    "사용 기간: 2026-04-01 ~ 2026-04-30"
+   ],
+   "tables": [
+    [
+     [
+      "항목",
+      "사용량(m3)",
+      "사용열량(MJ)",
+      "요금(원)"
+     ],
+     [
+      "계획 사용량(요금 포함)",
+      "8,420",
+      "360,772",
+      "247,500"
+     ]
+    ]
+   ],
+   "expected": {
+    "metrics": [
+     [
+      8420,
+      "m³"
+     ],
+     [
+      360772,
+      "MJ"
+     ]
+    ],
+    "E-4-1": null,
+    "E-3-1": null
+   },
+   "basis": [
+    [
+     8420,
+     "plan"
+    ],
+    [
+     360772,
+     "plan"
+    ]
+   ],
+   "forbidden_values": [
+    247500
+   ],
+   "paths": [
+    "table_cells",
+    "markdown",
+    "text_lines"
+   ]
+  },
+  "combo_qty_ambiguous_estimated_bill": {
+   "group": "물리량 예상·계획 조합",
+   "meaning": "'예상 청구액' — 사용량·열량 자체가 plan",
+   "doc_type": "gas_bill",
+   "extra": [
+    "사용 기간: 2026-04-01 ~ 2026-04-30"
+   ],
+   "tables": [
+    [
+     [
+      "항목",
+      "사용량(m3)",
+      "사용열량(MJ)",
+      "요금(원)"
+     ],
+     [
+      "예상 청구액",
+      "8,420",
+      "360,772",
+      "247,500"
+     ]
+    ]
+   ],
+   "expected": {
+    "metrics": [
+     [
+      8420,
+      "m³"
+     ],
+     [
+      360772,
+      "MJ"
+     ]
+    ],
+    "E-4-1": null,
+    "E-3-1": null
+   },
+   "basis": [
+    [
+     8420,
+     "plan"
+    ],
+    [
+     360772,
+     "plan"
+    ]
+   ],
+   "forbidden_values": [
+    247500
+   ],
+   "paths": [
+    "table_cells",
+    "markdown",
+    "text_lines",
+    "local_pdf"
+   ]
+  },
+  "combo_qty_ambiguous_estimated_payment": {
+   "group": "물리량 예상·계획 조합",
+   "meaning": "'납부 예상 금액' — 사용량·열량 자체가 plan",
+   "doc_type": "gas_bill",
+   "extra": [
+    "사용 기간: 2026-04-01 ~ 2026-04-30"
+   ],
+   "tables": [
+    [
+     [
+      "항목",
+      "사용량(m3)",
+      "사용열량(MJ)",
+      "요금(원)"
+     ],
+     [
+      "납부 예상 금액",
+      "8,420",
+      "360,772",
+      "247,500"
+     ]
+    ]
+   ],
+   "expected": {
+    "metrics": [
+     [
+      8420,
+      "m³"
+     ],
+     [
+      360772,
+      "MJ"
+     ]
+    ],
+    "E-4-1": null,
+    "E-3-1": null
+   },
+   "basis": [
+    [
+     8420,
+     "plan"
+    ],
+    [
+     360772,
+     "plan"
+    ]
+   ],
+   "forbidden_values": [
+    247500
+   ],
+   "paths": [
+    "table_cells",
+    "markdown",
+    "text_lines",
+    "local_pdf"
+   ]
+  },
+  "combo_columns_expected_last": {
+   "group": "구조 조합",
+   "meaning": "항목 열이 마지막 + '예상 사용량 및 요금' → plan",
+   "doc_type": "gas_bill",
+   "extra": [
+    "사용 기간: 2026-04-01 ~ 2026-04-30"
+   ],
+   "tables": [
+    [
+     [
+      "사용량(m3)",
+      "사용열량(MJ)",
+      "요금(원)",
+      "항목"
+     ],
+     [
+      "8,420",
+      "360,772",
+      "247,500",
+      "예상 사용량 및 요금"
+     ]
+    ]
+   ],
+   "expected": {
+    "metrics": [
+     [
+      8420,
+      "m³"
+     ],
+     [
+      360772,
+      "MJ"
+     ]
+    ],
+    "E-4-1": null,
+    "E-3-1": null
+   },
+   "basis": [
+    [
+     8420,
+     "plan"
+    ],
+    [
+     360772,
+     "plan"
+    ]
+   ],
+   "forbidden_values": [
+    247500
+   ],
+   "paths": [
+    "table_cells",
+    "markdown",
+    "text_lines",
+    "local_pdf"
+   ]
+  },
+  "combo_site_expected": {
+   "group": "구조 조합",
+   "meaning": "사업장 열 + '계획 사용량 및 요금'(가스) → 범위 유지, plan",
+   "doc_type": "gas_bill",
+   "extra": [
+    "사용 기간: 2026-04-01 ~ 2026-04-30"
+   ],
+   "tables": [
+    [
+     [
+      "사업장",
+      "항목",
+      "사용량(m3)",
+      "요금(원)"
+     ],
+     [
+      "김해 제1공장",
+      "계획 사용량 및 요금",
+      "8,420",
+      "247,500"
+     ]
+    ]
+   ],
+   "expected": {
+    "metrics": [
+     [
+      8420,
+      "m³"
+     ]
+    ],
+    "scope": {
+     "site": [
+      "김해 제1공장"
+     ]
+    }
+   },
+   "basis": [
+    [
+     8420,
+     "plan"
+    ]
+   ],
+   "forbidden_values": [
+    247500
+   ],
+   "paths": [
+    "table_cells",
+    "markdown",
+    "text_lines"
+   ]
+  },
+  "combo_site_pay_scheduled": {
+   "group": "구조 조합",
+   "meaning": "사업장 열 + '납부예정금액'(가스) → 범위 유지, actual",
+   "doc_type": "gas_bill",
+   "extra": [
+    "사용 기간: 2026-04-01 ~ 2026-04-30"
+   ],
+   "tables": [
+    [
+     [
+      "사업장",
+      "항목",
+      "사용량(m3)",
+      "요금(원)"
+     ],
+     [
+      "김해 제1공장",
+      "납부예정금액",
+      "8,420",
+      "247,500"
+     ]
+    ]
+   ],
+   "expected": {
+    "metrics": [
+     [
+      8420,
+      "m³"
+     ]
+    ],
+    "scope": {
+     "site": [
+      "김해 제1공장"
+     ]
+    }
+   },
+   "basis": [
+    [
+     8420,
+     "actual"
+    ]
+   ],
+   "forbidden_values": [
+    247500
+   ],
+   "paths": [
+    "table_cells",
+    "markdown",
+    "text_lines"
+   ]
+  }
+ }
+}

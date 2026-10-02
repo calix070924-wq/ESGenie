@@ -1,0 +1,6 @@
+code=0b497fc + 참고 링크 테스트 강화(수정 전 selection.py), python=/Users/heojeongmin/Documents/Claude/Projects/ESGenie/outputs/ui_redesign_workspace/.venv/bin/python
+
+tests/test_pr68_review_r6_r7.py:325: AssertionError
+=========================== short test summary info ============================
+FAILED tests/test_pr68_review_r6_r7.py::test_r7_months_answer_uses_one_period_for_energy_and_emission
+1 failed, 2 passed, 61 deselected in 0.31s

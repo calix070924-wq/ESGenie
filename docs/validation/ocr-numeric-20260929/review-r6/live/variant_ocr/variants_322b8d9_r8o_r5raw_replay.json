@@ -1,0 +1,104 @@
+{
+ "code_path": "/private/tmp/ESGenie-ocr-numeric-20260929",
+ "commit": "322b8d9e4fe73e33219556d8bddf5abdb61553bc",
+ "ocr_mode": "replay",
+ "raw_dir": "/private/tmp/ESGenie-ocr-numeric-20260929/docs/validation/ocr-numeric-20260929/review-r6/../review-r5/live/variant_ocr/raw_upstage",
+ "imported_esgenie": "/private/tmp/ESGenie-ocr-numeric-20260929/esgenie/__init__.py",
+ "force_mock": false,
+ "llm_key_present": true,
+ "ocr_key_present": true,
+ "cache_dir": "/private/tmp/ESGenie-ocr-numeric-20260929/docs/validation/ocr-numeric-20260929/review-r6/live/variant_ocr/cache_322b8d9_r8o",
+ "llm": {
+  "mode": "on",
+  "hits": 0,
+  "misses": 0,
+  "live_calls": 0,
+  "successes": 0,
+  "failures": 0
+ },
+ "documents": [
+  {
+   "file": "R8o_가스_혼합표_납부예정금액행_정상열량.pdf",
+   "sha256": "e959bd17f140ffb23de2d1d2e8cbb4c80ea9dc460880ad0a8843459b386f436e",
+   "doc_type": "gas_bill",
+   "engine": "upstage_dp",
+   "seconds": 0.51,
+   "upstage": {
+    "requests": 1,
+    "successes": 1,
+    "failures": 0
+   },
+   "metrics": [
+    {
+     "hint": "도시가스 사용량",
+     "value": 8420.0,
+     "unit": "m³",
+     "code": null,
+     "period": "",
+     "page": 0,
+     "role": "usage",
+     "row_label": "",
+     "row_item": "납부예정금액",
+     "scope": null,
+     "value_source": "explicit",
+     "header": "사용량(m3)",
+     "raw_text": "8,420",
+     "index_check": null
+    },
+    {
+     "hint": "도시가스 사용열량",
+     "value": 360772.0,
+     "unit": "MJ",
+     "code": "E-4-1",
+     "period": "",
+     "page": 0,
+     "role": "heat",
+     "row_label": "",
+     "row_item": "납부예정금액",
+     "scope": null,
+     "value_source": "explicit",
+     "header": "사용열량(MJ)",
+     "raw_text": "360,772",
+     "index_check": null
+    }
+   ],
+   "review": [],
+   "absent_cells": [],
+   "money_rows": [],
+   "hitl_required": null,
+   "not_numeric": [],
+   "node_basis": [
+    [
+     "E-3-1",
+     "도시가스 사용열량=360772.0MJ (R8o_가스_혼합표_납부예정금액행_정상열량.pdf) → 배출계수 환산: 360772.0 MJ × 5.61e-05 = 20.239 tCO2eq (추정)",
+     20.239,
+     "actual"
+    ],
+    [
+     "E-4-1",
+     "도시가스 사용열량=360772.0MJ (R8o_가스_혼합표_납부예정금액행_정상열량.pdf)",
+     360772.0,
+     "actual"
+    ],
+    [
+     "도시가스 사용량",
+     "도시가스 사용량=8420.0m³ (R8o_가스_혼합표_납부예정금액행_정상열량.pdf)",
+     8420.0,
+     "actual"
+    ]
+   ],
+   "answers": {
+    "E-3-1": {
+     "value": 20.239,
+     "unit": "tCO2eq",
+     "status": "self_reported"
+    },
+    "E-4-1": {
+     "value": 0.360772,
+     "unit": "TJ",
+     "status": "self_reported"
+    }
+   }
+  }
+ ]
+}

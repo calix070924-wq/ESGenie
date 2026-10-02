@@ -1,0 +1,13 @@
+# 캐시·작업 공간·원본 사본은 저장소에 올리지 않는다(로컬 검증 경로에만 보존).
+live/*cache*/
+live/web_server*/web_workspace/
+*.zip
+# HMC 회귀 렌더(원본 증빙 페이지 이미지)·중간 산출물 — 판정은 validation_report.json에 있다.
+hmc/*_out/
+# 원시 실행 덤프는 로컬 검증 경로에만 둔다(기존 docs/validation 관례). 판정은 *_summary.json·summary.json.
+live/**/pipeline.json
+live/**/result.json
+live/**/input_project.json
+live/**/*_project.json
+live/**/*_uploaded.json
+live/**/latest_run.json

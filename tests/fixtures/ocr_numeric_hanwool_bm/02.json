@@ -1,0 +1,633 @@
+{
+ "source_file": "02_전기요금청구서_2026-04.pdf",
+ "recorded_doc_type": "kepco_bill",
+ "source_sha256": "cc0a3ee26da633572e0d76b34876d78375e4067df0e59625f659fbe61059fe2f",
+ "stage": "upstage_dp_output (raw_text elements + parsed HTML table cells)",
+ "origin": {
+  "pipeline_json": "/Users/heojeongmin/Documents/Claude/Projects/ESGenie/output/rehearsal/hanwool_bm_20260928/runs/20260928T035715Z_11976e3b984b43f6941f780a7f4a80cb_rev13/pipeline.json",
+  "pipeline_json_sha256": "6b4c54164b2520f20b42ad05578672841751230195e183da853fb8aca7f18ac2",
+  "code_commit": "6bf975005364e1a32aee1ca6e58c761edb11db08"
+ },
+ "recorded_metrics": [],
+ "tokens": [
+  {
+   "text": "ESGenie / FICTIONAL DOCUMENT",
+   "bbox": null,
+   "page": 0
+  },
+  {
+   "text": "HW-ELEC-202604",
+   "bbox": null,
+   "page": 0
+  },
+  {
+   "text": "전기요금 청구서",
+   "bbox": null,
+   "page": 0
+  },
+  {
+   "text": "한빛전력서비스(가상) / 2026년 4월 사용분",
+   "bbox": null,
+   "page": 0
+  },
+  {
+   "text": "| 항목 | 내용 |\n| --- | --- |\n| 고객 / 사업장 | 한울정밀공업(주) / 김해 제1공장 |\n| 고객번호 | DEMO-ELEC-G01 |\n| 사용 기간 | 2026-04-01 ~ 2026-04-30 (30일) |\n| 발행 / 납기 | 2026-05-07 / 2026-05-25 |",
+   "bbox": [
+    0.0995,
+    0.1642,
+    0.9191,
+    0.3134
+   ],
+   "page": 0
+  },
+  {
+   "text": "검침과 사용량",
+   "bbox": null,
+   "page": 0
+  },
+  {
+   "text": "| 이전 지침 | 당월 지침 | 계기 배율 | 당월 전력 사용량 |\n| --- | --- | --- | --- |\n| 48,210 | 50,586 | 60 | 142,560 kWh |",
+   "bbox": [
+    0.1005,
+    0.3536,
+    0.9186,
+    0.4118
+   ],
+   "page": 0
+  },
+  {
+   "text": "사용량 계산: (50,586-48,210) × 60 = 142,560 kWh",
+   "bbox": null,
+   "page": 0
+  },
+  {
+   "text": "청구 내역",
+   "bbox": null,
+   "page": 0
+  },
+  {
+   "text": "| 항목 | 금액 |\n| --- | --- |\n| 기본요금 | 5,760,000원 |\n| 사용요금: 142,560 kWh × 125원 | 17,820,000원 |\n| 공급가액 | 23,580,000원 |\n| 부가세(가상 산정) | 2,358,000원 |\n| 청구금액 합계 | 25,938,000원 |",
+   "bbox": [
+    0.0994,
+    0.4681,
+    0.9195,
+    0.6466
+   ],
+   "page": 0
+  },
+  {
+   "text": "사용량 적용 범위",
+   "bbox": null,
+   "page": 0
+  },
+  {
+   "text": "이 청구서의 142,560 kWh는 김해 제1공장의 2026년 4월 사용량입니다. 양산 제2공장이나 다른 월의 사용량은 포함하지",
+   "bbox": null,
+   "page": 0
+  },
+  {
+   "text": "않습니다.",
+   "bbox": null,
+   "page": 0
+  },
+  {
+   "text": "시연용 단순 요금 산정이며 실제 전력회사 요금표·청구 양식과 무관합니다.",
+   "bbox": null,
+   "page": 0
+  },
+  {
+   "text": "시연용 가상자료 | 모든 기업·인물·수치·기록은 가상이며 실제 제출용이 아닙니다.",
+   "bbox": null,
+   "page": 0
+  },
+  {
+   "text": "BM 개편 2026-09-28 / 1",
+   "bbox": null,
+   "page": 0
+  }
+ ],
+ "tables": [
+  {
+   "table_id": "upstage_table_0",
+   "row_count": 5,
+   "column_count": 2,
+   "cells": [
+    {
+     "row_index": 0,
+     "column_index": 0,
+     "content": "항목",
+     "row_span": 1,
+     "column_span": 1,
+     "kind": null,
+     "bbox": [
+      0.0995,
+      0.1642,
+      0.9191,
+      0.3134
+     ],
+     "page": 0,
+     "confidence": null
+    },
+    {
+     "row_index": 0,
+     "column_index": 1,
+     "content": "내용",
+     "row_span": 1,
+     "column_span": 1,
+     "kind": null,
+     "bbox": [
+      0.0995,
+      0.1642,
+      0.9191,
+      0.3134
+     ],
+     "page": 0,
+     "confidence": null
+    },
+    {
+     "row_index": 1,
+     "column_index": 0,
+     "content": "고객 / 사업장",
+     "row_span": 1,
+     "column_span": 1,
+     "kind": null,
+     "bbox": [
+      0.0995,
+      0.1642,
+      0.9191,
+      0.3134
+     ],
+     "page": 0,
+     "confidence": null
+    },
+    {
+     "row_index": 1,
+     "column_index": 1,
+     "content": "한울정밀공업(주) / 김해 제1공장",
+     "row_span": 1,
+     "column_span": 1,
+     "kind": null,
+     "bbox": [
+      0.0995,
+      0.1642,
+      0.9191,
+      0.3134
+     ],
+     "page": 0,
+     "confidence": null
+    },
+    {
+     "row_index": 2,
+     "column_index": 0,
+     "content": "고객번호",
+     "row_span": 1,
+     "column_span": 1,
+     "kind": null,
+     "bbox": [
+      0.0995,
+      0.1642,
+      0.9191,
+      0.3134
+     ],
+     "page": 0,
+     "confidence": null
+    },
+    {
+     "row_index": 2,
+     "column_index": 1,
+     "content": "DEMO-ELEC-G01",
+     "row_span": 1,
+     "column_span": 1,
+     "kind": null,
+     "bbox": [
+      0.0995,
+      0.1642,
+      0.9191,
+      0.3134
+     ],
+     "page": 0,
+     "confidence": null
+    },
+    {
+     "row_index": 3,
+     "column_index": 0,
+     "content": "사용 기간",
+     "row_span": 1,
+     "column_span": 1,
+     "kind": null,
+     "bbox": [
+      0.0995,
+      0.1642,
+      0.9191,
+      0.3134
+     ],
+     "page": 0,
+     "confidence": null
+    },
+    {
+     "row_index": 3,
+     "column_index": 1,
+     "content": "2026-04-01 ~ 2026-04-30 (30일)",
+     "row_span": 1,
+     "column_span": 1,
+     "kind": null,
+     "bbox": [
+      0.0995,
+      0.1642,
+      0.9191,
+      0.3134
+     ],
+     "page": 0,
+     "confidence": null
+    },
+    {
+     "row_index": 4,
+     "column_index": 0,
+     "content": "발행 / 납기",
+     "row_span": 1,
+     "column_span": 1,
+     "kind": null,
+     "bbox": [
+      0.0995,
+      0.1642,
+      0.9191,
+      0.3134
+     ],
+     "page": 0,
+     "confidence": null
+    },
+    {
+     "row_index": 4,
+     "column_index": 1,
+     "content": "2026-05-07 / 2026-05-25",
+     "row_span": 1,
+     "column_span": 1,
+     "kind": null,
+     "bbox": [
+      0.0995,
+      0.1642,
+      0.9191,
+      0.3134
+     ],
+     "page": 0,
+     "confidence": null
+    }
+   ],
+   "source": "upstage_dp",
+   "page": 0,
+   "meta": {
+    "resolved_tier": 0,
+    "gate_flags": [],
+    "hard_fail_codes": []
+   }
+  },
+  {
+   "table_id": "upstage_table_1",
+   "row_count": 2,
+   "column_count": 4,
+   "cells": [
+    {
+     "row_index": 0,
+     "column_index": 0,
+     "content": "이전 지침",
+     "row_span": 1,
+     "column_span": 1,
+     "kind": null,
+     "bbox": [
+      0.1005,
+      0.3536,
+      0.9186,
+      0.4118
+     ],
+     "page": 0,
+     "confidence": null
+    },
+    {
+     "row_index": 0,
+     "column_index": 1,
+     "content": "당월 지침",
+     "row_span": 1,
+     "column_span": 1,
+     "kind": null,
+     "bbox": [
+      0.1005,
+      0.3536,
+      0.9186,
+      0.4118
+     ],
+     "page": 0,
+     "confidence": null
+    },
+    {
+     "row_index": 0,
+     "column_index": 2,
+     "content": "계기 배율",
+     "row_span": 1,
+     "column_span": 1,
+     "kind": null,
+     "bbox": [
+      0.1005,
+      0.3536,
+      0.9186,
+      0.4118
+     ],
+     "page": 0,
+     "confidence": null
+    },
+    {
+     "row_index": 0,
+     "column_index": 3,
+     "content": "당월 전력 사용량",
+     "row_span": 1,
+     "column_span": 1,
+     "kind": null,
+     "bbox": [
+      0.1005,
+      0.3536,
+      0.9186,
+      0.4118
+     ],
+     "page": 0,
+     "confidence": null
+    },
+    {
+     "row_index": 1,
+     "column_index": 0,
+     "content": "48,210",
+     "row_span": 1,
+     "column_span": 1,
+     "kind": null,
+     "bbox": [
+      0.1005,
+      0.3536,
+      0.9186,
+      0.4118
+     ],
+     "page": 0,
+     "confidence": null
+    },
+    {
+     "row_index": 1,
+     "column_index": 1,
+     "content": "50,586",
+     "row_span": 1,
+     "column_span": 1,
+     "kind": null,
+     "bbox": [
+      0.1005,
+      0.3536,
+      0.9186,
+      0.4118
+     ],
+     "page": 0,
+     "confidence": null
+    },
+    {
+     "row_index": 1,
+     "column_index": 2,
+     "content": "60",
+     "row_span": 1,
+     "column_span": 1,
+     "kind": null,
+     "bbox": [
+      0.1005,
+      0.3536,
+      0.9186,
+      0.4118
+     ],
+     "page": 0,
+     "confidence": null
+    },
+    {
+     "row_index": 1,
+     "column_index": 3,
+     "content": "142,560 kWh",
+     "row_span": 1,
+     "column_span": 1,
+     "kind": null,
+     "bbox": [
+      0.1005,
+      0.3536,
+      0.9186,
+      0.4118
+     ],
+     "page": 0,
+     "confidence": null
+    }
+   ],
+   "source": "upstage_dp",
+   "page": 0,
+   "meta": {
+    "resolved_tier": 0,
+    "gate_flags": [],
+    "hard_fail_codes": []
+   }
+  },
+  {
+   "table_id": "upstage_table_2",
+   "row_count": 6,
+   "column_count": 2,
+   "cells": [
+    {
+     "row_index": 0,
+     "column_index": 0,
+     "content": "항목",
+     "row_span": 1,
+     "column_span": 1,
+     "kind": null,
+     "bbox": [
+      0.0994,
+      0.4681,
+      0.9195,
+      0.6466
+     ],
+     "page": 0,
+     "confidence": null
+    },
+    {
+     "row_index": 0,
+     "column_index": 1,
+     "content": "금액",
+     "row_span": 1,
+     "column_span": 1,
+     "kind": null,
+     "bbox": [
+      0.0994,
+      0.4681,
+      0.9195,
+      0.6466
+     ],
+     "page": 0,
+     "confidence": null
+    },
+    {
+     "row_index": 1,
+     "column_index": 0,
+     "content": "기본요금",
+     "row_span": 1,
+     "column_span": 1,
+     "kind": null,
+     "bbox": [
+      0.0994,
+      0.4681,
+      0.9195,
+      0.6466
+     ],
+     "page": 0,
+     "confidence": null
+    },
+    {
+     "row_index": 1,
+     "column_index": 1,
+     "content": "5,760,000원",
+     "row_span": 1,
+     "column_span": 1,
+     "kind": null,
+     "bbox": [
+      0.0994,
+      0.4681,
+      0.9195,
+      0.6466
+     ],
+     "page": 0,
+     "confidence": null
+    },
+    {
+     "row_index": 2,
+     "column_index": 0,
+     "content": "사용요금: 142,560 kWh × 125원",
+     "row_span": 1,
+     "column_span": 1,
+     "kind": null,
+     "bbox": [
+      0.0994,
+      0.4681,
+      0.9195,
+      0.6466
+     ],
+     "page": 0,
+     "confidence": null
+    },
+    {
+     "row_index": 2,
+     "column_index": 1,
+     "content": "17,820,000원",
+     "row_span": 1,
+     "column_span": 1,
+     "kind": null,
+     "bbox": [
+      0.0994,
+      0.4681,
+      0.9195,
+      0.6466
+     ],
+     "page": 0,
+     "confidence": null
+    },
+    {
+     "row_index": 3,
+     "column_index": 0,
+     "content": "공급가액",
+     "row_span": 1,
+     "column_span": 1,
+     "kind": null,
+     "bbox": [
+      0.0994,
+      0.4681,
+      0.9195,
+      0.6466
+     ],
+     "page": 0,
+     "confidence": null
+    },
+    {
+     "row_index": 3,
+     "column_index": 1,
+     "content": "23,580,000원",
+     "row_span": 1,
+     "column_span": 1,
+     "kind": null,
+     "bbox": [
+      0.0994,
+      0.4681,
+      0.9195,
+      0.6466
+     ],
+     "page": 0,
+     "confidence": null
+    },
+    {
+     "row_index": 4,
+     "column_index": 0,
+     "content": "부가세(가상 산정)",
+     "row_span": 1,
+     "column_span": 1,
+     "kind": null,
+     "bbox": [
+      0.0994,
+      0.4681,
+      0.9195,
+      0.6466
+     ],
+     "page": 0,
+     "confidence": null
+    },
+    {
+     "row_index": 4,
+     "column_index": 1,
+     "content": "2,358,000원",
+     "row_span": 1,
+     "column_span": 1,
+     "kind": null,
+     "bbox": [
+      0.0994,
+      0.4681,
+      0.9195,
+      0.6466
+     ],
+     "page": 0,
+     "confidence": null
+    },
+    {
+     "row_index": 5,
+     "column_index": 0,
+     "content": "청구금액 합계",
+     "row_span": 1,
+     "column_span": 1,
+     "kind": null,
+     "bbox": [
+      0.0994,
+      0.4681,
+      0.9195,
+      0.6466
+     ],
+     "page": 0,
+     "confidence": null
+    },
+    {
+     "row_index": 5,
+     "column_index": 1,
+     "content": "25,938,000원",
+     "row_span": 1,
+     "column_span": 1,
+     "kind": null,
+     "bbox": [
+      0.0994,
+      0.4681,
+      0.9195,
+      0.6466
+     ],
+     "page": 0,
+     "confidence": null
+    }
+   ],
+   "source": "upstage_dp",
+   "page": 0,
+   "meta": {
+    "resolved_tier": 0,
+    "gate_flags": [],
+    "hard_fail_codes": []
+   }
+  }
+ ]
+}

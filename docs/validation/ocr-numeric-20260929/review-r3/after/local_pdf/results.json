@@ -1,0 +1,151 @@
+{
+ "code_path": "/private/tmp/ESGenie-ocr-numeric-20260929",
+ "imported": "/private/tmp/ESGenie-ocr-numeric-20260929/esgenie/ssot/ocr_router.py",
+ "cases": {
+  "valid_heat": {
+   "pdf_sha256": "d5d209d3e5ff25cda9c68cb36c35688b2a07b318324409c48af2818730e27d62",
+   "metrics": [
+    {
+     "value": 8420.0,
+     "unit": "m³",
+     "code": null,
+     "hint": "도시가스 사용량",
+     "raw_text": "8,420",
+     "header": "사용량(m3)",
+     "row_label": ""
+    },
+    {
+     "value": 360772.0,
+     "unit": "MJ",
+     "code": "E-4-1",
+     "hint": "도시가스 사용열량",
+     "raw_text": "360,772",
+     "header": "사용열량(MJ)",
+     "row_label": ""
+    }
+   ],
+   "review": [
+    "money_row_excluded"
+   ],
+   "nodes": [
+    [
+     "E-3-1",
+     20.239,
+     "tCO2eq"
+    ],
+    [
+     "E-4-1",
+     360772.0,
+     "MJ"
+    ],
+    [
+     "도시가스 사용량",
+     8420.0,
+     "m³"
+    ]
+   ],
+   "points": {
+    "E-4-1": {
+     "value": 0.360772,
+     "unit": "TJ",
+     "comparison": "scope_unconfirmed",
+     "scope_notes": [
+      "E-4-1: 부분값 — 2026-04-01~2026-04-30 · 월간 · 도시가스 · 부분. 전사·연간·전체 범위 총량임이 입증되지 않아 검증 보류. 연간 실적의 실제 사용기간·집계 방식 확인; 전사/공장 조직·사업장 범위 확인; 전체 에너지원 포함 여부 확인"
+     ],
+     "evidence": [
+      "도시가스 사용열량=360772.0MJ (valid_heat.pdf)"
+     ],
+     "reference": []
+    },
+    "E-3-1": {
+     "value": 20.239,
+     "unit": "tCO2eq",
+     "comparison": "scope_unconfirmed",
+     "scope_notes": [
+      "E-3-1: 부분값 — 2026-04-01~2026-04-30 · 월간 · 도시가스 환산 배출량 · 부분. 전사·연간·전체 범위 총량임이 입증되지 않아 검증 보류. 연간 실적의 실제 사용기간·집계 방식 확인; 전사/공장 조직·사업장 범위 확인"
+     ],
+     "evidence": [
+      "도시가스 사용열량=360772.0MJ (valid_heat.pdf) → 배출계수 환산: 360772.0 MJ × 5.61e-05 = 20.239 tCO2eq (추정)"
+     ],
+     "reference": []
+    }
+   },
+   "answers": {
+    "E-3-1": {
+     "value": 20.239,
+     "unit": "tCO2eq",
+     "status": "self_reported",
+     "evidence": [
+      "도시가스 사용열량=360772.0MJ (valid_heat.pdf) → 배출계수 환산: 360772.0 MJ × 5.61e-05 = 20.239 tCO2eq (추정)"
+     ],
+     "reference": []
+    },
+    "E-4-1": {
+     "value": 0.360772,
+     "unit": "TJ",
+     "status": "self_reported",
+     "evidence": [
+      "도시가스 사용열량=360772.0MJ (valid_heat.pdf)"
+     ],
+     "reference": []
+    }
+   }
+  },
+  "empty_heat": {
+   "pdf_sha256": "c6c3c0f61b39bc3287e3f728d5a90f95e314f790be61590ecb00c684dffde65e",
+   "metrics": [
+    {
+     "value": 8420.0,
+     "unit": "m³",
+     "code": null,
+     "hint": "도시가스 사용량",
+     "raw_text": "8,420",
+     "header": "사용량(m3)",
+     "row_label": ""
+    }
+   ],
+   "review": [
+    "money_row_excluded",
+    "value_absent",
+    "template_candidate_from_other_cell"
+   ],
+   "nodes": [
+    [
+     "도시가스 사용량",
+     8420.0,
+     "m³"
+    ]
+   ],
+   "points": {},
+   "answers": {}
+  },
+  "fee_with_won": {
+   "pdf_sha256": "c2d47347862985009948f3f6b4729f0ec8996dadb90bc193397deda00e36d0e7",
+   "metrics": [
+    {
+     "value": 8420.0,
+     "unit": "m³",
+     "code": null,
+     "hint": "도시가스 사용량",
+     "raw_text": "8,420",
+     "header": "사용량(m3)",
+     "row_label": ""
+    }
+   ],
+   "review": [
+    "money_row_excluded",
+    "value_absent",
+    "template_candidate_from_other_cell"
+   ],
+   "nodes": [
+    [
+     "도시가스 사용량",
+     8420.0,
+     "m³"
+    ]
+   ],
+   "points": {},
+   "answers": {}
+  }
+ }
+}

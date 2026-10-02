@@ -1,0 +1,74 @@
+{
+ "code_path": "/private/tmp/ESGenie-main-387999b",
+ "imported": "/private/tmp/ESGenie-main-387999b/esgenie/ssot/ocr_router.py",
+ "paths": {
+  "A_valid_heat/table_cells": {
+   "metrics": [
+    [
+     3.0,
+     "m3",
+     "E-4-1"
+    ],
+    [
+     360772.0,
+     "MJ",
+     "E-4-1"
+    ]
+   ],
+   "review": []
+  },
+  "A_valid_heat/text_lines": {
+   "metrics": [
+    [
+     3.0,
+     "m3",
+     "E-4-1"
+    ],
+    [
+     360772.0,
+     "MJ",
+     "E-4-1"
+    ]
+   ],
+   "review": []
+  },
+  "A_valid_heat/markdown": {
+   "metrics": [],
+   "review": []
+  },
+  "B_empty_heat/table_cells": {
+   "metrics": [
+    [
+     3.0,
+     "m3",
+     "E-4-1"
+    ],
+    [
+     247500.0,
+     "MJ",
+     "E-4-1"
+    ]
+   ],
+   "review": []
+  },
+  "B_empty_heat/text_lines": {
+   "metrics": [
+    [
+     3.0,
+     "m3",
+     "E-4-1"
+    ],
+    [
+     247500.0,
+     "MJ",
+     "E-4-1"
+    ]
+   ],
+   "review": []
+  },
+  "B_empty_heat/markdown": {
+   "metrics": [],
+   "review": []
+  }
+ }
+}

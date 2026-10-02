@@ -1,0 +1,16 @@
+{"case": "납부금액/360,772/table_replay", "metrics": [[8420.0, "m³"], [360772.0, "MJ"]], "answers": {"E-3-1": [20.239, "tCO2eq"], "E-4-1": [0.360772, "TJ"]}, "review": ["money_row_excluded", "money_row_excluded"]}
+{"case": "납부금액/360,772/local_pdf", "metrics": [[8420.0, "m³"], [360772.0, "MJ"]], "answers": {"E-3-1": [20.239, "tCO2eq"], "E-4-1": [0.360772, "TJ"]}, "review": ["money_row_excluded"]}
+{"case": "납부금액/-/table_replay", "metrics": [[8420.0, "m³"]], "answers": {}, "review": ["money_row_excluded", "value_absent", "money_row_excluded", "value_absent", "template_candidate_from_other_cell"]}
+{"case": "납부금액/-/local_pdf", "metrics": [[8420.0, "m³"]], "answers": {}, "review": ["money_row_excluded", "value_absent", "template_candidate_from_other_cell"]}
+{"case": "납부예정금액/360,772/table_replay", "metrics": [[8420.0, "m³"], [360772.0, "MJ"]], "answers": {"E-3-1": [20.239, "tCO2eq"], "E-4-1": [0.360772, "TJ"]}, "review": ["money_row_excluded", "money_row_excluded"]}
+{"case": "납부예정금액/360,772/local_pdf", "metrics": [[8420.0, "m³"], [360772.0, "MJ"]], "answers": {"E-3-1": [20.239, "tCO2eq"], "E-4-1": [0.360772, "TJ"]}, "review": ["money_row_excluded"]}
+{"case": "납부예정금액/-/table_replay", "metrics": [[8420.0, "m³"]], "answers": {}, "review": ["money_row_excluded", "value_absent", "money_row_excluded", "value_absent", "template_candidate_from_other_cell"]}
+{"case": "납부예정금액/-/local_pdf", "metrics": [[8420.0, "m³"]], "answers": {}, "review": ["money_row_excluded", "value_absent", "template_candidate_from_other_cell"]}
+{"case": "청구예정금액/360,772/table_replay", "metrics": [[8420.0, "m³"], [360772.0, "MJ"]], "answers": {"E-3-1": [20.239, "tCO2eq"], "E-4-1": [0.360772, "TJ"]}, "review": ["money_row_excluded", "money_row_excluded"]}
+{"case": "청구예정금액/360,772/local_pdf", "metrics": [[8420.0, "m³"], [360772.0, "MJ"]], "answers": {"E-3-1": [20.239, "tCO2eq"], "E-4-1": [0.360772, "TJ"]}, "review": ["money_row_excluded"]}
+{"case": "청구예정금액/-/table_replay", "metrics": [[8420.0, "m³"]], "answers": {}, "review": ["money_row_excluded", "value_absent", "money_row_excluded", "value_absent", "template_candidate_from_other_cell"]}
+{"case": "청구예정금액/-/local_pdf", "metrics": [[8420.0, "m³"]], "answers": {}, "review": ["money_row_excluded", "value_absent", "template_candidate_from_other_cell"]}
+{"case": "추후청구요금/360,772/table_replay", "metrics": [[8420.0, "m³"], [360772.0, "MJ"]], "answers": {"E-3-1": [20.239, "tCO2eq"], "E-4-1": [0.360772, "TJ"]}, "review": ["money_row_excluded", "money_row_excluded"]}
+{"case": "추후청구요금/360,772/local_pdf", "metrics": [[8420.0, "m³"], [360772.0, "MJ"]], "answers": {"E-3-1": [20.239, "tCO2eq"], "E-4-1": [0.360772, "TJ"]}, "review": ["money_row_excluded"]}
+{"case": "추후청구요금/-/table_replay", "metrics": [[8420.0, "m³"]], "answers": {}, "review": ["money_row_excluded", "value_absent", "money_row_excluded", "value_absent", "template_candidate_from_other_cell"]}
+{"case": "추후청구요금/-/local_pdf", "metrics": [[8420.0, "m³"]], "answers": {}, "review": ["money_row_excluded", "value_absent", "template_candidate_from_other_cell"]}

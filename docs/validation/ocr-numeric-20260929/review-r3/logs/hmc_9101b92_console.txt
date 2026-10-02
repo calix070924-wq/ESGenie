@@ -1,0 +1,25 @@
+{
+  "failed": [],
+  "actual_checks": 75,
+  "controlled_checks": 76,
+  "negative_controls": {
+    "missing_question": [
+      "all_question_ids",
+      "waste:required"
+    ],
+    "empty_boundary": [
+      "energy:boundary",
+      "energy:period_site"
+    ],
+    "changed_value": [
+      "energy:value_unit"
+    ],
+    "wrong_page": [
+      "communication:actual_page"
+    ],
+    "missing_checklist": [
+      "energy:scope_action"
+    ]
+  },
+  "out_dir": "/private/tmp/ESGenie-ocr-numeric-20260929/docs/validation/ocr-numeric-20260929/review-r3/hmc/after_out_9101b92"
+}

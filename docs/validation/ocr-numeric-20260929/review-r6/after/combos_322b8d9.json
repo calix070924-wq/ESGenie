@@ -1,0 +1,4652 @@
+{
+ "code_sha": "322b8d9e4fe73e33219556d8bddf5abdb61553bc",
+ "code_path": "/private/tmp/ESGenie-ocr-numeric-20260929",
+ "total": 60,
+ "failed": 0,
+ "results": {
+  "combo_actual_due_date_amount@table_cells": {
+   "pass": true,
+   "violations": [],
+   "metrics": [
+    [
+     8420.0,
+     "m³"
+    ],
+    [
+     360772.0,
+     "MJ"
+    ]
+   ],
+   "metric_sources": [
+    {
+     "value": 8420.0,
+     "unit": "m³",
+     "row_label": "",
+     "scope": null,
+     "hint": "도시가스 사용량",
+     "cell": null,
+     "bbox": [
+      0.21000000000000002,
+      0.23,
+      0.35,
+      0.24
+     ]
+    },
+    {
+     "value": 360772.0,
+     "unit": "MJ",
+     "row_label": "",
+     "scope": null,
+     "hint": "도시가스 사용열량",
+     "cell": null,
+     "bbox": [
+      0.37,
+      0.23,
+      0.51,
+      0.24
+     ]
+    }
+   ],
+   "answers": {
+    "E-4-1": {
+     "value": 0.360772,
+     "unit": "TJ",
+     "status": "self_reported",
+     "evidence": [
+      "도시가스 사용열량=360772.0MJ (review-variant.pdf)"
+     ],
+     "reference": []
+    },
+    "E-3-1": {
+     "value": 20.239,
+     "unit": "tCO2eq",
+     "status": "self_reported",
+     "evidence": [
+      "도시가스 사용열량=360772.0MJ (review-variant.pdf) → 배출계수 환산: 360772.0 MJ × 5.61e-05 = 20.239 tCO2eq (추정)"
+     ],
+     "reference": []
+    }
+   },
+   "answer_status": {
+    "E-4-1": [
+     "self_reported"
+    ],
+    "E-3-1": [
+     "self_reported"
+    ]
+   },
+   "review_reasons": [],
+   "forbidden_in_metrics": [],
+   "forbidden_in_graph": [],
+   "forbidden_in_links": [],
+   "fake_3_m3": false,
+   "node_basis": [
+    [
+     20.239,
+     "actual"
+    ],
+    [
+     8420.0,
+     "actual"
+    ],
+    [
+     360772.0,
+     "actual"
+    ]
+   ]
+  },
+  "combo_actual_due_date_amount@markdown": {
+   "pass": true,
+   "violations": [],
+   "metrics": [
+    [
+     8420.0,
+     "m³"
+    ],
+    [
+     360772.0,
+     "MJ"
+    ]
+   ],
+   "metric_sources": [
+    {
+     "value": 8420.0,
+     "unit": "m³",
+     "row_label": "",
+     "scope": null,
+     "hint": "도시가스 사용량",
+     "cell": null,
+     "bbox": [
+      0.05,
+      0.2,
+      0.6,
+      0.4
+     ]
+    },
+    {
+     "value": 360772.0,
+     "unit": "MJ",
+     "row_label": "",
+     "scope": null,
+     "hint": "도시가스 사용열량",
+     "cell": null,
+     "bbox": [
+      0.05,
+      0.2,
+      0.6,
+      0.4
+     ]
+    }
+   ],
+   "answers": {
+    "E-4-1": {
+     "value": 0.360772,
+     "unit": "TJ",
+     "status": "self_reported",
+     "evidence": [
+      "도시가스 사용열량=360772.0MJ (md.pdf)"
+     ],
+     "reference": []
+    },
+    "E-3-1": {
+     "value": 20.239,
+     "unit": "tCO2eq",
+     "status": "self_reported",
+     "evidence": [
+      "도시가스 사용열량=360772.0MJ (md.pdf) → 배출계수 환산: 360772.0 MJ × 5.61e-05 = 20.239 tCO2eq (추정)"
+     ],
+     "reference": []
+    }
+   },
+   "answer_status": {
+    "E-4-1": [
+     "self_reported"
+    ],
+    "E-3-1": [
+     "self_reported"
+    ]
+   },
+   "review_reasons": [],
+   "forbidden_in_metrics": [],
+   "forbidden_in_graph": [],
+   "forbidden_in_links": [],
+   "fake_3_m3": false,
+   "node_basis": [
+    [
+     20.239,
+     "actual"
+    ],
+    [
+     8420.0,
+     "actual"
+    ],
+    [
+     360772.0,
+     "actual"
+    ]
+   ]
+  },
+  "combo_actual_due_date_amount@text_lines": {
+   "pass": true,
+   "violations": [],
+   "metrics": [
+    [
+     8420.0,
+     "m³"
+    ],
+    [
+     360772.0,
+     "MJ"
+    ]
+   ],
+   "metric_sources": [
+    {
+     "value": 8420.0,
+     "unit": "m³",
+     "row_label": "",
+     "scope": null,
+     "hint": "도시가스 사용량",
+     "cell": null,
+     "bbox": [
+      0.3,
+      0.16,
+      0.42000000000000004,
+      0.16999999999999998
+     ]
+    },
+    {
+     "value": 360772.0,
+     "unit": "MJ",
+     "row_label": "",
+     "scope": null,
+     "hint": "도시가스 사용열량",
+     "cell": null,
+     "bbox": [
+      0.52,
+      0.16,
+      0.64,
+      0.16999999999999998
+     ]
+    }
+   ],
+   "answers": {
+    "E-4-1": {
+     "value": 0.360772,
+     "unit": "TJ",
+     "status": "self_reported",
+     "evidence": [
+      "도시가스 사용열량=360772.0MJ (lines.pdf)"
+     ],
+     "reference": []
+    },
+    "E-3-1": {
+     "value": 20.239,
+     "unit": "tCO2eq",
+     "status": "self_reported",
+     "evidence": [
+      "도시가스 사용열량=360772.0MJ (lines.pdf) → 배출계수 환산: 360772.0 MJ × 5.61e-05 = 20.239 tCO2eq (추정)"
+     ],
+     "reference": []
+    }
+   },
+   "answer_status": {
+    "E-4-1": [
+     "self_reported"
+    ],
+    "E-3-1": [
+     "self_reported"
+    ]
+   },
+   "review_reasons": [],
+   "forbidden_in_metrics": [],
+   "forbidden_in_graph": [],
+   "forbidden_in_links": [],
+   "fake_3_m3": false,
+   "node_basis": [
+    [
+     20.239,
+     "actual"
+    ],
+    [
+     8420.0,
+     "actual"
+    ],
+    [
+     360772.0,
+     "actual"
+    ]
+   ]
+  },
+  "combo_actual_due_date_amount@local_pdf": {
+   "pass": true,
+   "violations": [],
+   "metrics": [
+    [
+     8420.0,
+     "m³"
+    ],
+    [
+     360772.0,
+     "MJ"
+    ]
+   ],
+   "metric_sources": [
+    {
+     "value": 8420.0,
+     "unit": "m³",
+     "row_label": "",
+     "scope": null,
+     "hint": "도시가스 사용량",
+     "cell": null,
+     "bbox": [
+      0.2857142857142857,
+      0.1377672209026128,
+      0.3697478991596639,
+      0.15201900237529692
+     ]
+    },
+    {
+     "value": 360772.0,
+     "unit": "MJ",
+     "row_label": "",
+     "scope": null,
+     "hint": "도시가스 사용열량",
+     "cell": null,
+     "bbox": [
+      0.5042016806722689,
+      0.1377672209026128,
+      0.6218487394957983,
+      0.15201900237529692
+     ]
+    }
+   ],
+   "answers": {
+    "E-4-1": {
+     "value": 0.360772,
+     "unit": "TJ",
+     "status": "self_reported",
+     "evidence": [
+      "도시가스 사용열량=360772.0MJ (case.pdf)"
+     ],
+     "reference": []
+    },
+    "E-3-1": {
+     "value": 20.239,
+     "unit": "tCO2eq",
+     "status": "self_reported",
+     "evidence": [
+      "도시가스 사용열량=360772.0MJ (case.pdf) → 배출계수 환산: 360772.0 MJ × 5.61e-05 = 20.239 tCO2eq (추정)"
+     ],
+     "reference": []
+    }
+   },
+   "answer_status": {
+    "E-4-1": [
+     "self_reported"
+    ],
+    "E-3-1": [
+     "self_reported"
+    ]
+   },
+   "review_reasons": [],
+   "forbidden_in_metrics": [],
+   "forbidden_in_graph": [],
+   "forbidden_in_links": [],
+   "fake_3_m3": false,
+   "node_basis": [
+    [
+     20.239,
+     "actual"
+    ],
+    [
+     8420.0,
+     "actual"
+    ],
+    [
+     360772.0,
+     "actual"
+    ]
+   ]
+  },
+  "combo_actual_pay_due_day_amount@table_cells": {
+   "pass": true,
+   "violations": [],
+   "metrics": [
+    [
+     8420.0,
+     "m³"
+    ],
+    [
+     360772.0,
+     "MJ"
+    ]
+   ],
+   "metric_sources": [
+    {
+     "value": 8420.0,
+     "unit": "m³",
+     "row_label": "",
+     "scope": null,
+     "hint": "도시가스 사용량",
+     "cell": null,
+     "bbox": [
+      0.21000000000000002,
+      0.23,
+      0.35,
+      0.24
+     ]
+    },
+    {
+     "value": 360772.0,
+     "unit": "MJ",
+     "row_label": "",
+     "scope": null,
+     "hint": "도시가스 사용열량",
+     "cell": null,
+     "bbox": [
+      0.37,
+      0.23,
+      0.51,
+      0.24
+     ]
+    }
+   ],
+   "answers": {
+    "E-4-1": {
+     "value": 0.360772,
+     "unit": "TJ",
+     "status": "self_reported",
+     "evidence": [
+      "도시가스 사용열량=360772.0MJ (review-variant.pdf)"
+     ],
+     "reference": []
+    },
+    "E-3-1": {
+     "value": 20.239,
+     "unit": "tCO2eq",
+     "status": "self_reported",
+     "evidence": [
+      "도시가스 사용열량=360772.0MJ (review-variant.pdf) → 배출계수 환산: 360772.0 MJ × 5.61e-05 = 20.239 tCO2eq (추정)"
+     ],
+     "reference": []
+    }
+   },
+   "answer_status": {
+    "E-4-1": [
+     "self_reported"
+    ],
+    "E-3-1": [
+     "self_reported"
+    ]
+   },
+   "review_reasons": [],
+   "forbidden_in_metrics": [],
+   "forbidden_in_graph": [],
+   "forbidden_in_links": [],
+   "fake_3_m3": false,
+   "node_basis": [
+    [
+     20.239,
+     "actual"
+    ],
+    [
+     8420.0,
+     "actual"
+    ],
+    [
+     360772.0,
+     "actual"
+    ]
+   ]
+  },
+  "combo_actual_pay_due_day_amount@markdown": {
+   "pass": true,
+   "violations": [],
+   "metrics": [
+    [
+     8420.0,
+     "m³"
+    ],
+    [
+     360772.0,
+     "MJ"
+    ]
+   ],
+   "metric_sources": [
+    {
+     "value": 8420.0,
+     "unit": "m³",
+     "row_label": "",
+     "scope": null,
+     "hint": "도시가스 사용량",
+     "cell": null,
+     "bbox": [
+      0.05,
+      0.2,
+      0.6,
+      0.4
+     ]
+    },
+    {
+     "value": 360772.0,
+     "unit": "MJ",
+     "row_label": "",
+     "scope": null,
+     "hint": "도시가스 사용열량",
+     "cell": null,
+     "bbox": [
+      0.05,
+      0.2,
+      0.6,
+      0.4
+     ]
+    }
+   ],
+   "answers": {
+    "E-4-1": {
+     "value": 0.360772,
+     "unit": "TJ",
+     "status": "self_reported",
+     "evidence": [
+      "도시가스 사용열량=360772.0MJ (md.pdf)"
+     ],
+     "reference": []
+    },
+    "E-3-1": {
+     "value": 20.239,
+     "unit": "tCO2eq",
+     "status": "self_reported",
+     "evidence": [
+      "도시가스 사용열량=360772.0MJ (md.pdf) → 배출계수 환산: 360772.0 MJ × 5.61e-05 = 20.239 tCO2eq (추정)"
+     ],
+     "reference": []
+    }
+   },
+   "answer_status": {
+    "E-4-1": [
+     "self_reported"
+    ],
+    "E-3-1": [
+     "self_reported"
+    ]
+   },
+   "review_reasons": [],
+   "forbidden_in_metrics": [],
+   "forbidden_in_graph": [],
+   "forbidden_in_links": [],
+   "fake_3_m3": false,
+   "node_basis": [
+    [
+     20.239,
+     "actual"
+    ],
+    [
+     8420.0,
+     "actual"
+    ],
+    [
+     360772.0,
+     "actual"
+    ]
+   ]
+  },
+  "combo_actual_pay_due_day_amount@text_lines": {
+   "pass": true,
+   "violations": [],
+   "metrics": [
+    [
+     8420.0,
+     "m³"
+    ],
+    [
+     360772.0,
+     "MJ"
+    ]
+   ],
+   "metric_sources": [
+    {
+     "value": 8420.0,
+     "unit": "m³",
+     "row_label": "",
+     "scope": null,
+     "hint": "도시가스 사용량",
+     "cell": null,
+     "bbox": [
+      0.3,
+      0.16,
+      0.42000000000000004,
+      0.16999999999999998
+     ]
+    },
+    {
+     "value": 360772.0,
+     "unit": "MJ",
+     "row_label": "",
+     "scope": null,
+     "hint": "도시가스 사용열량",
+     "cell": null,
+     "bbox": [
+      0.52,
+      0.16,
+      0.64,
+      0.16999999999999998
+     ]
+    }
+   ],
+   "answers": {
+    "E-4-1": {
+     "value": 0.360772,
+     "unit": "TJ",
+     "status": "self_reported",
+     "evidence": [
+      "도시가스 사용열량=360772.0MJ (lines.pdf)"
+     ],
+     "reference": []
+    },
+    "E-3-1": {
+     "value": 20.239,
+     "unit": "tCO2eq",
+     "status": "self_reported",
+     "evidence": [
+      "도시가스 사용열량=360772.0MJ (lines.pdf) → 배출계수 환산: 360772.0 MJ × 5.61e-05 = 20.239 tCO2eq (추정)"
+     ],
+     "reference": []
+    }
+   },
+   "answer_status": {
+    "E-4-1": [
+     "self_reported"
+    ],
+    "E-3-1": [
+     "self_reported"
+    ]
+   },
+   "review_reasons": [],
+   "forbidden_in_metrics": [],
+   "forbidden_in_graph": [],
+   "forbidden_in_links": [],
+   "fake_3_m3": false,
+   "node_basis": [
+    [
+     20.239,
+     "actual"
+    ],
+    [
+     8420.0,
+     "actual"
+    ],
+    [
+     360772.0,
+     "actual"
+    ]
+   ]
+  },
+  "combo_actual_pay_due_day_amount@local_pdf": {
+   "pass": true,
+   "violations": [],
+   "metrics": [
+    [
+     8420.0,
+     "m³"
+    ],
+    [
+     360772.0,
+     "MJ"
+    ]
+   ],
+   "metric_sources": [
+    {
+     "value": 8420.0,
+     "unit": "m³",
+     "row_label": "",
+     "scope": null,
+     "hint": "도시가스 사용량",
+     "cell": null,
+     "bbox": [
+      0.2857142857142857,
+      0.1377672209026128,
+      0.3697478991596639,
+      0.15201900237529692
+     ]
+    },
+    {
+     "value": 360772.0,
+     "unit": "MJ",
+     "row_label": "",
+     "scope": null,
+     "hint": "도시가스 사용열량",
+     "cell": null,
+     "bbox": [
+      0.5042016806722689,
+      0.1377672209026128,
+      0.6218487394957983,
+      0.15201900237529692
+     ]
+    }
+   ],
+   "answers": {
+    "E-4-1": {
+     "value": 0.360772,
+     "unit": "TJ",
+     "status": "self_reported",
+     "evidence": [
+      "도시가스 사용열량=360772.0MJ (case.pdf)"
+     ],
+     "reference": []
+    },
+    "E-3-1": {
+     "value": 20.239,
+     "unit": "tCO2eq",
+     "status": "self_reported",
+     "evidence": [
+      "도시가스 사용열량=360772.0MJ (case.pdf) → 배출계수 환산: 360772.0 MJ × 5.61e-05 = 20.239 tCO2eq (추정)"
+     ],
+     "reference": []
+    }
+   },
+   "answer_status": {
+    "E-4-1": [
+     "self_reported"
+    ],
+    "E-3-1": [
+     "self_reported"
+    ]
+   },
+   "review_reasons": [],
+   "forbidden_in_metrics": [],
+   "forbidden_in_graph": [],
+   "forbidden_in_links": [],
+   "fake_3_m3": false,
+   "node_basis": [
+    [
+     20.239,
+     "actual"
+    ],
+    [
+     8420.0,
+     "actual"
+    ],
+    [
+     360772.0,
+     "actual"
+    ]
+   ]
+  },
+  "combo_actual_bill_scheduled_usage_fee@table_cells": {
+   "pass": true,
+   "violations": [],
+   "metrics": [
+    [
+     8420.0,
+     "m³"
+    ],
+    [
+     360772.0,
+     "MJ"
+    ]
+   ],
+   "metric_sources": [
+    {
+     "value": 8420.0,
+     "unit": "m³",
+     "row_label": "",
+     "scope": null,
+     "hint": "도시가스 사용량",
+     "cell": null,
+     "bbox": [
+      0.21000000000000002,
+      0.23,
+      0.35,
+      0.24
+     ]
+    },
+    {
+     "value": 360772.0,
+     "unit": "MJ",
+     "row_label": "",
+     "scope": null,
+     "hint": "도시가스 사용열량",
+     "cell": null,
+     "bbox": [
+      0.37,
+      0.23,
+      0.51,
+      0.24
+     ]
+    }
+   ],
+   "answers": {
+    "E-4-1": {
+     "value": 0.360772,
+     "unit": "TJ",
+     "status": "self_reported",
+     "evidence": [
+      "도시가스 사용열량=360772.0MJ (review-variant.pdf)"
+     ],
+     "reference": []
+    },
+    "E-3-1": {
+     "value": 20.239,
+     "unit": "tCO2eq",
+     "status": "self_reported",
+     "evidence": [
+      "도시가스 사용열량=360772.0MJ (review-variant.pdf) → 배출계수 환산: 360772.0 MJ × 5.61e-05 = 20.239 tCO2eq (추정)"
+     ],
+     "reference": []
+    }
+   },
+   "answer_status": {
+    "E-4-1": [
+     "self_reported"
+    ],
+    "E-3-1": [
+     "self_reported"
+    ]
+   },
+   "review_reasons": [],
+   "forbidden_in_metrics": [],
+   "forbidden_in_graph": [],
+   "forbidden_in_links": [],
+   "fake_3_m3": false,
+   "node_basis": [
+    [
+     20.239,
+     "actual"
+    ],
+    [
+     8420.0,
+     "actual"
+    ],
+    [
+     360772.0,
+     "actual"
+    ]
+   ]
+  },
+  "combo_actual_bill_scheduled_usage_fee@markdown": {
+   "pass": true,
+   "violations": [],
+   "metrics": [
+    [
+     8420.0,
+     "m³"
+    ],
+    [
+     360772.0,
+     "MJ"
+    ]
+   ],
+   "metric_sources": [
+    {
+     "value": 8420.0,
+     "unit": "m³",
+     "row_label": "",
+     "scope": null,
+     "hint": "도시가스 사용량",
+     "cell": null,
+     "bbox": [
+      0.05,
+      0.2,
+      0.6,
+      0.4
+     ]
+    },
+    {
+     "value": 360772.0,
+     "unit": "MJ",
+     "row_label": "",
+     "scope": null,
+     "hint": "도시가스 사용열량",
+     "cell": null,
+     "bbox": [
+      0.05,
+      0.2,
+      0.6,
+      0.4
+     ]
+    }
+   ],
+   "answers": {
+    "E-4-1": {
+     "value": 0.360772,
+     "unit": "TJ",
+     "status": "self_reported",
+     "evidence": [
+      "도시가스 사용열량=360772.0MJ (md.pdf)"
+     ],
+     "reference": []
+    },
+    "E-3-1": {
+     "value": 20.239,
+     "unit": "tCO2eq",
+     "status": "self_reported",
+     "evidence": [
+      "도시가스 사용열량=360772.0MJ (md.pdf) → 배출계수 환산: 360772.0 MJ × 5.61e-05 = 20.239 tCO2eq (추정)"
+     ],
+     "reference": []
+    }
+   },
+   "answer_status": {
+    "E-4-1": [
+     "self_reported"
+    ],
+    "E-3-1": [
+     "self_reported"
+    ]
+   },
+   "review_reasons": [],
+   "forbidden_in_metrics": [],
+   "forbidden_in_graph": [],
+   "forbidden_in_links": [],
+   "fake_3_m3": false,
+   "node_basis": [
+    [
+     20.239,
+     "actual"
+    ],
+    [
+     8420.0,
+     "actual"
+    ],
+    [
+     360772.0,
+     "actual"
+    ]
+   ]
+  },
+  "combo_actual_bill_scheduled_usage_fee@text_lines": {
+   "pass": true,
+   "violations": [],
+   "metrics": [
+    [
+     8420.0,
+     "m³"
+    ],
+    [
+     360772.0,
+     "MJ"
+    ]
+   ],
+   "metric_sources": [
+    {
+     "value": 8420.0,
+     "unit": "m³",
+     "row_label": "",
+     "scope": null,
+     "hint": "도시가스 사용량",
+     "cell": null,
+     "bbox": [
+      0.3,
+      0.16,
+      0.42000000000000004,
+      0.16999999999999998
+     ]
+    },
+    {
+     "value": 360772.0,
+     "unit": "MJ",
+     "row_label": "",
+     "scope": null,
+     "hint": "도시가스 사용열량",
+     "cell": null,
+     "bbox": [
+      0.52,
+      0.16,
+      0.64,
+      0.16999999999999998
+     ]
+    }
+   ],
+   "answers": {
+    "E-4-1": {
+     "value": 0.360772,
+     "unit": "TJ",
+     "status": "self_reported",
+     "evidence": [
+      "도시가스 사용열량=360772.0MJ (lines.pdf)"
+     ],
+     "reference": []
+    },
+    "E-3-1": {
+     "value": 20.239,
+     "unit": "tCO2eq",
+     "status": "self_reported",
+     "evidence": [
+      "도시가스 사용열량=360772.0MJ (lines.pdf) → 배출계수 환산: 360772.0 MJ × 5.61e-05 = 20.239 tCO2eq (추정)"
+     ],
+     "reference": []
+    }
+   },
+   "answer_status": {
+    "E-4-1": [
+     "self_reported"
+    ],
+    "E-3-1": [
+     "self_reported"
+    ]
+   },
+   "review_reasons": [],
+   "forbidden_in_metrics": [],
+   "forbidden_in_graph": [],
+   "forbidden_in_links": [],
+   "fake_3_m3": false,
+   "node_basis": [
+    [
+     20.239,
+     "actual"
+    ],
+    [
+     8420.0,
+     "actual"
+    ],
+    [
+     360772.0,
+     "actual"
+    ]
+   ]
+  },
+  "combo_actual_autopay_scheduled@table_cells": {
+   "pass": true,
+   "violations": [],
+   "metrics": [
+    [
+     8420.0,
+     "m³"
+    ],
+    [
+     360772.0,
+     "MJ"
+    ]
+   ],
+   "metric_sources": [
+    {
+     "value": 8420.0,
+     "unit": "m³",
+     "row_label": "",
+     "scope": null,
+     "hint": "도시가스 사용량",
+     "cell": null,
+     "bbox": [
+      0.21000000000000002,
+      0.23,
+      0.35,
+      0.24
+     ]
+    },
+    {
+     "value": 360772.0,
+     "unit": "MJ",
+     "row_label": "",
+     "scope": null,
+     "hint": "도시가스 사용열량",
+     "cell": null,
+     "bbox": [
+      0.37,
+      0.23,
+      0.51,
+      0.24
+     ]
+    }
+   ],
+   "answers": {
+    "E-4-1": {
+     "value": 0.360772,
+     "unit": "TJ",
+     "status": "self_reported",
+     "evidence": [
+      "도시가스 사용열량=360772.0MJ (review-variant.pdf)"
+     ],
+     "reference": []
+    },
+    "E-3-1": {
+     "value": 20.239,
+     "unit": "tCO2eq",
+     "status": "self_reported",
+     "evidence": [
+      "도시가스 사용열량=360772.0MJ (review-variant.pdf) → 배출계수 환산: 360772.0 MJ × 5.61e-05 = 20.239 tCO2eq (추정)"
+     ],
+     "reference": []
+    }
+   },
+   "answer_status": {
+    "E-4-1": [
+     "self_reported"
+    ],
+    "E-3-1": [
+     "self_reported"
+    ]
+   },
+   "review_reasons": [],
+   "forbidden_in_metrics": [],
+   "forbidden_in_graph": [],
+   "forbidden_in_links": [],
+   "fake_3_m3": false,
+   "node_basis": [
+    [
+     20.239,
+     "actual"
+    ],
+    [
+     8420.0,
+     "actual"
+    ],
+    [
+     360772.0,
+     "actual"
+    ]
+   ]
+  },
+  "combo_actual_autopay_scheduled@markdown": {
+   "pass": true,
+   "violations": [],
+   "metrics": [
+    [
+     8420.0,
+     "m³"
+    ],
+    [
+     360772.0,
+     "MJ"
+    ]
+   ],
+   "metric_sources": [
+    {
+     "value": 8420.0,
+     "unit": "m³",
+     "row_label": "",
+     "scope": null,
+     "hint": "도시가스 사용량",
+     "cell": null,
+     "bbox": [
+      0.05,
+      0.2,
+      0.6,
+      0.4
+     ]
+    },
+    {
+     "value": 360772.0,
+     "unit": "MJ",
+     "row_label": "",
+     "scope": null,
+     "hint": "도시가스 사용열량",
+     "cell": null,
+     "bbox": [
+      0.05,
+      0.2,
+      0.6,
+      0.4
+     ]
+    }
+   ],
+   "answers": {
+    "E-4-1": {
+     "value": 0.360772,
+     "unit": "TJ",
+     "status": "self_reported",
+     "evidence": [
+      "도시가스 사용열량=360772.0MJ (md.pdf)"
+     ],
+     "reference": []
+    },
+    "E-3-1": {
+     "value": 20.239,
+     "unit": "tCO2eq",
+     "status": "self_reported",
+     "evidence": [
+      "도시가스 사용열량=360772.0MJ (md.pdf) → 배출계수 환산: 360772.0 MJ × 5.61e-05 = 20.239 tCO2eq (추정)"
+     ],
+     "reference": []
+    }
+   },
+   "answer_status": {
+    "E-4-1": [
+     "self_reported"
+    ],
+    "E-3-1": [
+     "self_reported"
+    ]
+   },
+   "review_reasons": [],
+   "forbidden_in_metrics": [],
+   "forbidden_in_graph": [],
+   "forbidden_in_links": [],
+   "fake_3_m3": false,
+   "node_basis": [
+    [
+     20.239,
+     "actual"
+    ],
+    [
+     8420.0,
+     "actual"
+    ],
+    [
+     360772.0,
+     "actual"
+    ]
+   ]
+  },
+  "combo_actual_autopay_scheduled@text_lines": {
+   "pass": true,
+   "violations": [],
+   "metrics": [
+    [
+     8420.0,
+     "m³"
+    ],
+    [
+     360772.0,
+     "MJ"
+    ]
+   ],
+   "metric_sources": [
+    {
+     "value": 8420.0,
+     "unit": "m³",
+     "row_label": "",
+     "scope": null,
+     "hint": "도시가스 사용량",
+     "cell": null,
+     "bbox": [
+      0.3,
+      0.16,
+      0.42000000000000004,
+      0.16999999999999998
+     ]
+    },
+    {
+     "value": 360772.0,
+     "unit": "MJ",
+     "row_label": "",
+     "scope": null,
+     "hint": "도시가스 사용열량",
+     "cell": null,
+     "bbox": [
+      0.52,
+      0.16,
+      0.64,
+      0.16999999999999998
+     ]
+    }
+   ],
+   "answers": {
+    "E-4-1": {
+     "value": 0.360772,
+     "unit": "TJ",
+     "status": "self_reported",
+     "evidence": [
+      "도시가스 사용열량=360772.0MJ (lines.pdf)"
+     ],
+     "reference": []
+    },
+    "E-3-1": {
+     "value": 20.239,
+     "unit": "tCO2eq",
+     "status": "self_reported",
+     "evidence": [
+      "도시가스 사용열량=360772.0MJ (lines.pdf) → 배출계수 환산: 360772.0 MJ × 5.61e-05 = 20.239 tCO2eq (추정)"
+     ],
+     "reference": []
+    }
+   },
+   "answer_status": {
+    "E-4-1": [
+     "self_reported"
+    ],
+    "E-3-1": [
+     "self_reported"
+    ]
+   },
+   "review_reasons": [],
+   "forbidden_in_metrics": [],
+   "forbidden_in_graph": [],
+   "forbidden_in_links": [],
+   "fake_3_m3": false,
+   "node_basis": [
+    [
+     20.239,
+     "actual"
+    ],
+    [
+     8420.0,
+     "actual"
+    ],
+    [
+     360772.0,
+     "actual"
+    ]
+   ]
+  },
+  "combo_actual_autopay_scheduled@local_pdf": {
+   "pass": true,
+   "violations": [],
+   "metrics": [
+    [
+     8420.0,
+     "m³"
+    ],
+    [
+     360772.0,
+     "MJ"
+    ]
+   ],
+   "metric_sources": [
+    {
+     "value": 8420.0,
+     "unit": "m³",
+     "row_label": "",
+     "scope": null,
+     "hint": "도시가스 사용량",
+     "cell": null,
+     "bbox": [
+      0.2857142857142857,
+      0.1377672209026128,
+      0.3697478991596639,
+      0.15201900237529692
+     ]
+    },
+    {
+     "value": 360772.0,
+     "unit": "MJ",
+     "row_label": "",
+     "scope": null,
+     "hint": "도시가스 사용열량",
+     "cell": null,
+     "bbox": [
+      0.5042016806722689,
+      0.1377672209026128,
+      0.6218487394957983,
+      0.15201900237529692
+     ]
+    }
+   ],
+   "answers": {
+    "E-4-1": {
+     "value": 0.360772,
+     "unit": "TJ",
+     "status": "self_reported",
+     "evidence": [
+      "도시가스 사용열량=360772.0MJ (case.pdf)"
+     ],
+     "reference": []
+    },
+    "E-3-1": {
+     "value": 20.239,
+     "unit": "tCO2eq",
+     "status": "self_reported",
+     "evidence": [
+      "도시가스 사용열량=360772.0MJ (case.pdf) → 배출계수 환산: 360772.0 MJ × 5.61e-05 = 20.239 tCO2eq (추정)"
+     ],
+     "reference": []
+    }
+   },
+   "answer_status": {
+    "E-4-1": [
+     "self_reported"
+    ],
+    "E-3-1": [
+     "self_reported"
+    ]
+   },
+   "review_reasons": [],
+   "forbidden_in_metrics": [],
+   "forbidden_in_graph": [],
+   "forbidden_in_links": [],
+   "fake_3_m3": false,
+   "node_basis": [
+    [
+     20.239,
+     "actual"
+    ],
+    [
+     8420.0,
+     "actual"
+    ],
+    [
+     360772.0,
+     "actual"
+    ]
+   ]
+  },
+  "combo_actual_bill_scheduled_vat@table_cells": {
+   "pass": true,
+   "violations": [],
+   "metrics": [
+    [
+     8420.0,
+     "m³"
+    ],
+    [
+     360772.0,
+     "MJ"
+    ]
+   ],
+   "metric_sources": [
+    {
+     "value": 8420.0,
+     "unit": "m³",
+     "row_label": "",
+     "scope": null,
+     "hint": "도시가스 사용량",
+     "cell": null,
+     "bbox": [
+      0.21000000000000002,
+      0.23,
+      0.35,
+      0.24
+     ]
+    },
+    {
+     "value": 360772.0,
+     "unit": "MJ",
+     "row_label": "",
+     "scope": null,
+     "hint": "도시가스 사용열량",
+     "cell": null,
+     "bbox": [
+      0.37,
+      0.23,
+      0.51,
+      0.24
+     ]
+    }
+   ],
+   "answers": {
+    "E-4-1": {
+     "value": 0.360772,
+     "unit": "TJ",
+     "status": "self_reported",
+     "evidence": [
+      "도시가스 사용열량=360772.0MJ (review-variant.pdf)"
+     ],
+     "reference": []
+    },
+    "E-3-1": {
+     "value": 20.239,
+     "unit": "tCO2eq",
+     "status": "self_reported",
+     "evidence": [
+      "도시가스 사용열량=360772.0MJ (review-variant.pdf) → 배출계수 환산: 360772.0 MJ × 5.61e-05 = 20.239 tCO2eq (추정)"
+     ],
+     "reference": []
+    }
+   },
+   "answer_status": {
+    "E-4-1": [
+     "self_reported"
+    ],
+    "E-3-1": [
+     "self_reported"
+    ]
+   },
+   "review_reasons": [],
+   "forbidden_in_metrics": [],
+   "forbidden_in_graph": [],
+   "forbidden_in_links": [],
+   "fake_3_m3": false,
+   "node_basis": [
+    [
+     20.239,
+     "actual"
+    ],
+    [
+     8420.0,
+     "actual"
+    ],
+    [
+     360772.0,
+     "actual"
+    ]
+   ]
+  },
+  "combo_actual_bill_scheduled_vat@markdown": {
+   "pass": true,
+   "violations": [],
+   "metrics": [
+    [
+     8420.0,
+     "m³"
+    ],
+    [
+     360772.0,
+     "MJ"
+    ]
+   ],
+   "metric_sources": [
+    {
+     "value": 8420.0,
+     "unit": "m³",
+     "row_label": "",
+     "scope": null,
+     "hint": "도시가스 사용량",
+     "cell": null,
+     "bbox": [
+      0.05,
+      0.2,
+      0.6,
+      0.4
+     ]
+    },
+    {
+     "value": 360772.0,
+     "unit": "MJ",
+     "row_label": "",
+     "scope": null,
+     "hint": "도시가스 사용열량",
+     "cell": null,
+     "bbox": [
+      0.05,
+      0.2,
+      0.6,
+      0.4
+     ]
+    }
+   ],
+   "answers": {
+    "E-4-1": {
+     "value": 0.360772,
+     "unit": "TJ",
+     "status": "self_reported",
+     "evidence": [
+      "도시가스 사용열량=360772.0MJ (md.pdf)"
+     ],
+     "reference": []
+    },
+    "E-3-1": {
+     "value": 20.239,
+     "unit": "tCO2eq",
+     "status": "self_reported",
+     "evidence": [
+      "도시가스 사용열량=360772.0MJ (md.pdf) → 배출계수 환산: 360772.0 MJ × 5.61e-05 = 20.239 tCO2eq (추정)"
+     ],
+     "reference": []
+    }
+   },
+   "answer_status": {
+    "E-4-1": [
+     "self_reported"
+    ],
+    "E-3-1": [
+     "self_reported"
+    ]
+   },
+   "review_reasons": [],
+   "forbidden_in_metrics": [],
+   "forbidden_in_graph": [],
+   "forbidden_in_links": [],
+   "fake_3_m3": false,
+   "node_basis": [
+    [
+     20.239,
+     "actual"
+    ],
+    [
+     8420.0,
+     "actual"
+    ],
+    [
+     360772.0,
+     "actual"
+    ]
+   ]
+  },
+  "combo_actual_bill_scheduled_vat@text_lines": {
+   "pass": true,
+   "violations": [],
+   "metrics": [
+    [
+     8420.0,
+     "m³"
+    ],
+    [
+     360772.0,
+     "MJ"
+    ]
+   ],
+   "metric_sources": [
+    {
+     "value": 8420.0,
+     "unit": "m³",
+     "row_label": "",
+     "scope": null,
+     "hint": "도시가스 사용량",
+     "cell": null,
+     "bbox": [
+      0.3,
+      0.16,
+      0.42000000000000004,
+      0.16999999999999998
+     ]
+    },
+    {
+     "value": 360772.0,
+     "unit": "MJ",
+     "row_label": "",
+     "scope": null,
+     "hint": "도시가스 사용열량",
+     "cell": null,
+     "bbox": [
+      0.52,
+      0.16,
+      0.64,
+      0.16999999999999998
+     ]
+    }
+   ],
+   "answers": {
+    "E-4-1": {
+     "value": 0.360772,
+     "unit": "TJ",
+     "status": "self_reported",
+     "evidence": [
+      "도시가스 사용열량=360772.0MJ (lines.pdf)"
+     ],
+     "reference": []
+    },
+    "E-3-1": {
+     "value": 20.239,
+     "unit": "tCO2eq",
+     "status": "self_reported",
+     "evidence": [
+      "도시가스 사용열량=360772.0MJ (lines.pdf) → 배출계수 환산: 360772.0 MJ × 5.61e-05 = 20.239 tCO2eq (추정)"
+     ],
+     "reference": []
+    }
+   },
+   "answer_status": {
+    "E-4-1": [
+     "self_reported"
+    ],
+    "E-3-1": [
+     "self_reported"
+    ]
+   },
+   "review_reasons": [],
+   "forbidden_in_metrics": [],
+   "forbidden_in_graph": [],
+   "forbidden_in_links": [],
+   "fake_3_m3": false,
+   "node_basis": [
+    [
+     20.239,
+     "actual"
+    ],
+    [
+     8420.0,
+     "actual"
+    ],
+    [
+     360772.0,
+     "actual"
+    ]
+   ]
+  },
+  "combo_actual_settle_scheduled_amount@table_cells": {
+   "pass": true,
+   "violations": [],
+   "metrics": [
+    [
+     8420.0,
+     "m³"
+    ],
+    [
+     360772.0,
+     "MJ"
+    ]
+   ],
+   "metric_sources": [
+    {
+     "value": 8420.0,
+     "unit": "m³",
+     "row_label": "",
+     "scope": null,
+     "hint": "도시가스 사용량",
+     "cell": null,
+     "bbox": [
+      0.21000000000000002,
+      0.23,
+      0.35,
+      0.24
+     ]
+    },
+    {
+     "value": 360772.0,
+     "unit": "MJ",
+     "row_label": "",
+     "scope": null,
+     "hint": "도시가스 사용열량",
+     "cell": null,
+     "bbox": [
+      0.37,
+      0.23,
+      0.51,
+      0.24
+     ]
+    }
+   ],
+   "answers": {
+    "E-4-1": {
+     "value": 0.360772,
+     "unit": "TJ",
+     "status": "self_reported",
+     "evidence": [
+      "도시가스 사용열량=360772.0MJ (review-variant.pdf)"
+     ],
+     "reference": []
+    },
+    "E-3-1": {
+     "value": 20.239,
+     "unit": "tCO2eq",
+     "status": "self_reported",
+     "evidence": [
+      "도시가스 사용열량=360772.0MJ (review-variant.pdf) → 배출계수 환산: 360772.0 MJ × 5.61e-05 = 20.239 tCO2eq (추정)"
+     ],
+     "reference": []
+    }
+   },
+   "answer_status": {
+    "E-4-1": [
+     "self_reported"
+    ],
+    "E-3-1": [
+     "self_reported"
+    ]
+   },
+   "review_reasons": [],
+   "forbidden_in_metrics": [],
+   "forbidden_in_graph": [],
+   "forbidden_in_links": [],
+   "fake_3_m3": false,
+   "node_basis": [
+    [
+     20.239,
+     "actual"
+    ],
+    [
+     8420.0,
+     "actual"
+    ],
+    [
+     360772.0,
+     "actual"
+    ]
+   ]
+  },
+  "combo_actual_settle_scheduled_amount@markdown": {
+   "pass": true,
+   "violations": [],
+   "metrics": [
+    [
+     8420.0,
+     "m³"
+    ],
+    [
+     360772.0,
+     "MJ"
+    ]
+   ],
+   "metric_sources": [
+    {
+     "value": 8420.0,
+     "unit": "m³",
+     "row_label": "",
+     "scope": null,
+     "hint": "도시가스 사용량",
+     "cell": null,
+     "bbox": [
+      0.05,
+      0.2,
+      0.6,
+      0.4
+     ]
+    },
+    {
+     "value": 360772.0,
+     "unit": "MJ",
+     "row_label": "",
+     "scope": null,
+     "hint": "도시가스 사용열량",
+     "cell": null,
+     "bbox": [
+      0.05,
+      0.2,
+      0.6,
+      0.4
+     ]
+    }
+   ],
+   "answers": {
+    "E-4-1": {
+     "value": 0.360772,
+     "unit": "TJ",
+     "status": "self_reported",
+     "evidence": [
+      "도시가스 사용열량=360772.0MJ (md.pdf)"
+     ],
+     "reference": []
+    },
+    "E-3-1": {
+     "value": 20.239,
+     "unit": "tCO2eq",
+     "status": "self_reported",
+     "evidence": [
+      "도시가스 사용열량=360772.0MJ (md.pdf) → 배출계수 환산: 360772.0 MJ × 5.61e-05 = 20.239 tCO2eq (추정)"
+     ],
+     "reference": []
+    }
+   },
+   "answer_status": {
+    "E-4-1": [
+     "self_reported"
+    ],
+    "E-3-1": [
+     "self_reported"
+    ]
+   },
+   "review_reasons": [],
+   "forbidden_in_metrics": [],
+   "forbidden_in_graph": [],
+   "forbidden_in_links": [],
+   "fake_3_m3": false,
+   "node_basis": [
+    [
+     20.239,
+     "actual"
+    ],
+    [
+     8420.0,
+     "actual"
+    ],
+    [
+     360772.0,
+     "actual"
+    ]
+   ]
+  },
+  "combo_actual_settle_scheduled_amount@text_lines": {
+   "pass": true,
+   "violations": [],
+   "metrics": [
+    [
+     8420.0,
+     "m³"
+    ],
+    [
+     360772.0,
+     "MJ"
+    ]
+   ],
+   "metric_sources": [
+    {
+     "value": 8420.0,
+     "unit": "m³",
+     "row_label": "",
+     "scope": null,
+     "hint": "도시가스 사용량",
+     "cell": null,
+     "bbox": [
+      0.3,
+      0.16,
+      0.42000000000000004,
+      0.16999999999999998
+     ]
+    },
+    {
+     "value": 360772.0,
+     "unit": "MJ",
+     "row_label": "",
+     "scope": null,
+     "hint": "도시가스 사용열량",
+     "cell": null,
+     "bbox": [
+      0.52,
+      0.16,
+      0.64,
+      0.16999999999999998
+     ]
+    }
+   ],
+   "answers": {
+    "E-4-1": {
+     "value": 0.360772,
+     "unit": "TJ",
+     "status": "self_reported",
+     "evidence": [
+      "도시가스 사용열량=360772.0MJ (lines.pdf)"
+     ],
+     "reference": []
+    },
+    "E-3-1": {
+     "value": 20.239,
+     "unit": "tCO2eq",
+     "status": "self_reported",
+     "evidence": [
+      "도시가스 사용열량=360772.0MJ (lines.pdf) → 배출계수 환산: 360772.0 MJ × 5.61e-05 = 20.239 tCO2eq (추정)"
+     ],
+     "reference": []
+    }
+   },
+   "answer_status": {
+    "E-4-1": [
+     "self_reported"
+    ],
+    "E-3-1": [
+     "self_reported"
+    ]
+   },
+   "review_reasons": [],
+   "forbidden_in_metrics": [],
+   "forbidden_in_graph": [],
+   "forbidden_in_links": [],
+   "fake_3_m3": false,
+   "node_basis": [
+    [
+     20.239,
+     "actual"
+    ],
+    [
+     8420.0,
+     "actual"
+    ],
+    [
+     360772.0,
+     "actual"
+    ]
+   ]
+  },
+  "combo_actual_settle_scheduled_amount@local_pdf": {
+   "pass": true,
+   "violations": [],
+   "metrics": [
+    [
+     8420.0,
+     "m³"
+    ],
+    [
+     360772.0,
+     "MJ"
+    ]
+   ],
+   "metric_sources": [
+    {
+     "value": 8420.0,
+     "unit": "m³",
+     "row_label": "",
+     "scope": null,
+     "hint": "도시가스 사용량",
+     "cell": null,
+     "bbox": [
+      0.2857142857142857,
+      0.1377672209026128,
+      0.3697478991596639,
+      0.15201900237529692
+     ]
+    },
+    {
+     "value": 360772.0,
+     "unit": "MJ",
+     "row_label": "",
+     "scope": null,
+     "hint": "도시가스 사용열량",
+     "cell": null,
+     "bbox": [
+      0.5042016806722689,
+      0.1377672209026128,
+      0.6218487394957983,
+      0.15201900237529692
+     ]
+    }
+   ],
+   "answers": {
+    "E-4-1": {
+     "value": 0.360772,
+     "unit": "TJ",
+     "status": "self_reported",
+     "evidence": [
+      "도시가스 사용열량=360772.0MJ (case.pdf)"
+     ],
+     "reference": []
+    },
+    "E-3-1": {
+     "value": 20.239,
+     "unit": "tCO2eq",
+     "status": "self_reported",
+     "evidence": [
+      "도시가스 사용열량=360772.0MJ (case.pdf) → 배출계수 환산: 360772.0 MJ × 5.61e-05 = 20.239 tCO2eq (추정)"
+     ],
+     "reference": []
+    }
+   },
+   "answer_status": {
+    "E-4-1": [
+     "self_reported"
+    ],
+    "E-3-1": [
+     "self_reported"
+    ]
+   },
+   "review_reasons": [],
+   "forbidden_in_metrics": [],
+   "forbidden_in_graph": [],
+   "forbidden_in_links": [],
+   "fake_3_m3": false,
+   "node_basis": [
+    [
+     20.239,
+     "actual"
+    ],
+    [
+     8420.0,
+     "actual"
+    ],
+    [
+     360772.0,
+     "actual"
+    ]
+   ]
+  },
+  "combo_qty_no_space@table_cells": {
+   "pass": true,
+   "violations": [],
+   "metrics": [
+    [
+     8420.0,
+     "m³"
+    ],
+    [
+     360772.0,
+     "MJ"
+    ]
+   ],
+   "metric_sources": [
+    {
+     "value": 8420.0,
+     "unit": "m³",
+     "row_label": "예상사용량및요금",
+     "scope": null,
+     "hint": "도시가스 사용량 (예상사용량및요금)",
+     "cell": null,
+     "bbox": [
+      0.21000000000000002,
+      0.23,
+      0.35,
+      0.24
+     ]
+    },
+    {
+     "value": 360772.0,
+     "unit": "MJ",
+     "row_label": "예상사용량및요금",
+     "scope": null,
+     "hint": "도시가스 사용열량 (예상사용량및요금)",
+     "cell": null,
+     "bbox": [
+      0.37,
+      0.23,
+      0.51,
+      0.24
+     ]
+    }
+   ],
+   "answers": {
+    "E-4-1": null,
+    "E-3-1": null
+   },
+   "answer_status": {
+    "E-4-1": [
+     "insufficient"
+    ],
+    "E-3-1": [
+     "insufficient"
+    ]
+   },
+   "review_reasons": [],
+   "forbidden_in_metrics": [],
+   "forbidden_in_graph": [],
+   "forbidden_in_links": [],
+   "fake_3_m3": false,
+   "node_basis": [
+    [
+     20.239,
+     "plan"
+    ],
+    [
+     8420.0,
+     "plan"
+    ],
+    [
+     360772.0,
+     "plan"
+    ]
+   ]
+  },
+  "combo_qty_no_space@markdown": {
+   "pass": true,
+   "violations": [],
+   "metrics": [
+    [
+     8420.0,
+     "m³"
+    ],
+    [
+     360772.0,
+     "MJ"
+    ]
+   ],
+   "metric_sources": [
+    {
+     "value": 8420.0,
+     "unit": "m³",
+     "row_label": "예상사용량및요금",
+     "scope": null,
+     "hint": "도시가스 사용량 (예상사용량및요금)",
+     "cell": null,
+     "bbox": [
+      0.05,
+      0.2,
+      0.6,
+      0.4
+     ]
+    },
+    {
+     "value": 360772.0,
+     "unit": "MJ",
+     "row_label": "예상사용량및요금",
+     "scope": null,
+     "hint": "도시가스 사용열량 (예상사용량및요금)",
+     "cell": null,
+     "bbox": [
+      0.05,
+      0.2,
+      0.6,
+      0.4
+     ]
+    }
+   ],
+   "answers": {
+    "E-4-1": null,
+    "E-3-1": null
+   },
+   "answer_status": {
+    "E-4-1": [
+     "insufficient"
+    ],
+    "E-3-1": [
+     "insufficient"
+    ]
+   },
+   "review_reasons": [],
+   "forbidden_in_metrics": [],
+   "forbidden_in_graph": [],
+   "forbidden_in_links": [],
+   "fake_3_m3": false,
+   "node_basis": [
+    [
+     20.239,
+     "plan"
+    ],
+    [
+     8420.0,
+     "plan"
+    ],
+    [
+     360772.0,
+     "plan"
+    ]
+   ]
+  },
+  "combo_qty_no_space@text_lines": {
+   "pass": true,
+   "violations": [],
+   "metrics": [
+    [
+     8420.0,
+     "m³"
+    ],
+    [
+     360772.0,
+     "MJ"
+    ]
+   ],
+   "metric_sources": [
+    {
+     "value": 8420.0,
+     "unit": "m³",
+     "row_label": "예상사용량및요금",
+     "scope": null,
+     "hint": "도시가스 사용량 (예상사용량및요금)",
+     "cell": null,
+     "bbox": [
+      0.3,
+      0.16,
+      0.42000000000000004,
+      0.16999999999999998
+     ]
+    },
+    {
+     "value": 360772.0,
+     "unit": "MJ",
+     "row_label": "예상사용량및요금",
+     "scope": null,
+     "hint": "도시가스 사용열량 (예상사용량및요금)",
+     "cell": null,
+     "bbox": [
+      0.52,
+      0.16,
+      0.64,
+      0.16999999999999998
+     ]
+    }
+   ],
+   "answers": {
+    "E-4-1": null,
+    "E-3-1": null
+   },
+   "answer_status": {
+    "E-4-1": [
+     "insufficient"
+    ],
+    "E-3-1": [
+     "insufficient"
+    ]
+   },
+   "review_reasons": [],
+   "forbidden_in_metrics": [],
+   "forbidden_in_graph": [],
+   "forbidden_in_links": [],
+   "fake_3_m3": false,
+   "node_basis": [
+    [
+     20.239,
+     "plan"
+    ],
+    [
+     8420.0,
+     "plan"
+    ],
+    [
+     360772.0,
+     "plan"
+    ]
+   ]
+  },
+  "combo_qty_no_space@local_pdf": {
+   "pass": true,
+   "violations": [],
+   "metrics": [
+    [
+     8420.0,
+     "m³"
+    ],
+    [
+     360772.0,
+     "MJ"
+    ]
+   ],
+   "metric_sources": [
+    {
+     "value": 8420.0,
+     "unit": "m³",
+     "row_label": "예상사용량및요금",
+     "scope": null,
+     "hint": "도시가스 사용량 (예상사용량및요금)",
+     "cell": null,
+     "bbox": [
+      0.2857142857142857,
+      0.1377672209026128,
+      0.3697478991596639,
+      0.15201900237529692
+     ]
+    },
+    {
+     "value": 360772.0,
+     "unit": "MJ",
+     "row_label": "예상사용량및요금",
+     "scope": null,
+     "hint": "도시가스 사용열량 (예상사용량및요금)",
+     "cell": null,
+     "bbox": [
+      0.5042016806722689,
+      0.1377672209026128,
+      0.6218487394957983,
+      0.15201900237529692
+     ]
+    }
+   ],
+   "answers": {
+    "E-4-1": null,
+    "E-3-1": null
+   },
+   "answer_status": {
+    "E-4-1": [
+     "insufficient"
+    ],
+    "E-3-1": [
+     "insufficient"
+    ]
+   },
+   "review_reasons": [],
+   "forbidden_in_metrics": [],
+   "forbidden_in_graph": [],
+   "forbidden_in_links": [],
+   "fake_3_m3": false,
+   "node_basis": [
+    [
+     20.239,
+     "plan"
+    ],
+    [
+     8420.0,
+     "plan"
+    ],
+    [
+     360772.0,
+     "plan"
+    ]
+   ]
+  },
+  "combo_qty_fee_on_expected_usage@table_cells": {
+   "pass": true,
+   "violations": [],
+   "metrics": [
+    [
+     8420.0,
+     "m³"
+    ],
+    [
+     360772.0,
+     "MJ"
+    ]
+   ],
+   "metric_sources": [
+    {
+     "value": 8420.0,
+     "unit": "m³",
+     "row_label": "납부 예정 요금(예상 사용량 기준)",
+     "scope": null,
+     "hint": "도시가스 사용량 (납부 예정 요금(예상 사용량 기준))",
+     "cell": null,
+     "bbox": [
+      0.21000000000000002,
+      0.23,
+      0.35,
+      0.24
+     ]
+    },
+    {
+     "value": 360772.0,
+     "unit": "MJ",
+     "row_label": "납부 예정 요금(예상 사용량 기준)",
+     "scope": null,
+     "hint": "도시가스 사용열량 (납부 예정 요금(예상 사용량 기준))",
+     "cell": null,
+     "bbox": [
+      0.37,
+      0.23,
+      0.51,
+      0.24
+     ]
+    }
+   ],
+   "answers": {
+    "E-4-1": null,
+    "E-3-1": null
+   },
+   "answer_status": {
+    "E-4-1": [
+     "insufficient"
+    ],
+    "E-3-1": [
+     "insufficient"
+    ]
+   },
+   "review_reasons": [],
+   "forbidden_in_metrics": [],
+   "forbidden_in_graph": [],
+   "forbidden_in_links": [],
+   "fake_3_m3": false,
+   "node_basis": [
+    [
+     8420.0,
+     "plan"
+    ],
+    [
+     360772.0,
+     "plan"
+    ]
+   ]
+  },
+  "combo_qty_fee_on_expected_usage@markdown": {
+   "pass": true,
+   "violations": [],
+   "metrics": [
+    [
+     8420.0,
+     "m³"
+    ],
+    [
+     360772.0,
+     "MJ"
+    ]
+   ],
+   "metric_sources": [
+    {
+     "value": 8420.0,
+     "unit": "m³",
+     "row_label": "납부 예정 요금(예상 사용량 기준)",
+     "scope": null,
+     "hint": "도시가스 사용량 (납부 예정 요금(예상 사용량 기준))",
+     "cell": null,
+     "bbox": [
+      0.05,
+      0.2,
+      0.6,
+      0.4
+     ]
+    },
+    {
+     "value": 360772.0,
+     "unit": "MJ",
+     "row_label": "납부 예정 요금(예상 사용량 기준)",
+     "scope": null,
+     "hint": "도시가스 사용열량 (납부 예정 요금(예상 사용량 기준))",
+     "cell": null,
+     "bbox": [
+      0.05,
+      0.2,
+      0.6,
+      0.4
+     ]
+    }
+   ],
+   "answers": {
+    "E-4-1": null,
+    "E-3-1": null
+   },
+   "answer_status": {
+    "E-4-1": [
+     "insufficient"
+    ],
+    "E-3-1": [
+     "insufficient"
+    ]
+   },
+   "review_reasons": [],
+   "forbidden_in_metrics": [],
+   "forbidden_in_graph": [],
+   "forbidden_in_links": [],
+   "fake_3_m3": false,
+   "node_basis": [
+    [
+     8420.0,
+     "plan"
+    ],
+    [
+     360772.0,
+     "plan"
+    ]
+   ]
+  },
+  "combo_qty_fee_on_expected_usage@text_lines": {
+   "pass": true,
+   "violations": [],
+   "metrics": [
+    [
+     8420.0,
+     "m³"
+    ],
+    [
+     360772.0,
+     "MJ"
+    ]
+   ],
+   "metric_sources": [
+    {
+     "value": 8420.0,
+     "unit": "m³",
+     "row_label": "납부 예정 요금(예상 사용량 기준)",
+     "scope": null,
+     "hint": "도시가스 사용량 (납부 예정 요금(예상 사용량 기준))",
+     "cell": null,
+     "bbox": [
+      0.3,
+      0.16,
+      0.42000000000000004,
+      0.16999999999999998
+     ]
+    },
+    {
+     "value": 360772.0,
+     "unit": "MJ",
+     "row_label": "납부 예정 요금(예상 사용량 기준)",
+     "scope": null,
+     "hint": "도시가스 사용열량 (납부 예정 요금(예상 사용량 기준))",
+     "cell": null,
+     "bbox": [
+      0.52,
+      0.16,
+      0.64,
+      0.16999999999999998
+     ]
+    }
+   ],
+   "answers": {
+    "E-4-1": null,
+    "E-3-1": null
+   },
+   "answer_status": {
+    "E-4-1": [
+     "insufficient"
+    ],
+    "E-3-1": [
+     "insufficient"
+    ]
+   },
+   "review_reasons": [],
+   "forbidden_in_metrics": [],
+   "forbidden_in_graph": [],
+   "forbidden_in_links": [],
+   "fake_3_m3": false,
+   "node_basis": [
+    [
+     8420.0,
+     "plan"
+    ],
+    [
+     360772.0,
+     "plan"
+    ]
+   ]
+  },
+  "combo_qty_expected_and_bill_scheduled@table_cells": {
+   "pass": true,
+   "violations": [],
+   "metrics": [
+    [
+     8420.0,
+     "m³"
+    ],
+    [
+     360772.0,
+     "MJ"
+    ]
+   ],
+   "metric_sources": [
+    {
+     "value": 8420.0,
+     "unit": "m³",
+     "row_label": "예상 사용량 및 청구 예정 금액",
+     "scope": null,
+     "hint": "도시가스 사용량 (예상 사용량 및 청구 예정 금액)",
+     "cell": null,
+     "bbox": [
+      0.21000000000000002,
+      0.23,
+      0.35,
+      0.24
+     ]
+    },
+    {
+     "value": 360772.0,
+     "unit": "MJ",
+     "row_label": "예상 사용량 및 청구 예정 금액",
+     "scope": null,
+     "hint": "도시가스 사용열량 (예상 사용량 및 청구 예정 금액)",
+     "cell": null,
+     "bbox": [
+      0.37,
+      0.23,
+      0.51,
+      0.24
+     ]
+    }
+   ],
+   "answers": {
+    "E-4-1": null,
+    "E-3-1": null
+   },
+   "answer_status": {
+    "E-4-1": [
+     "insufficient"
+    ],
+    "E-3-1": [
+     "insufficient"
+    ]
+   },
+   "review_reasons": [],
+   "forbidden_in_metrics": [],
+   "forbidden_in_graph": [],
+   "forbidden_in_links": [],
+   "fake_3_m3": false,
+   "node_basis": [
+    [
+     8420.0,
+     "plan"
+    ],
+    [
+     360772.0,
+     "plan"
+    ]
+   ]
+  },
+  "combo_qty_expected_and_bill_scheduled@markdown": {
+   "pass": true,
+   "violations": [],
+   "metrics": [
+    [
+     8420.0,
+     "m³"
+    ],
+    [
+     360772.0,
+     "MJ"
+    ]
+   ],
+   "metric_sources": [
+    {
+     "value": 8420.0,
+     "unit": "m³",
+     "row_label": "예상 사용량 및 청구 예정 금액",
+     "scope": null,
+     "hint": "도시가스 사용량 (예상 사용량 및 청구 예정 금액)",
+     "cell": null,
+     "bbox": [
+      0.05,
+      0.2,
+      0.6,
+      0.4
+     ]
+    },
+    {
+     "value": 360772.0,
+     "unit": "MJ",
+     "row_label": "예상 사용량 및 청구 예정 금액",
+     "scope": null,
+     "hint": "도시가스 사용열량 (예상 사용량 및 청구 예정 금액)",
+     "cell": null,
+     "bbox": [
+      0.05,
+      0.2,
+      0.6,
+      0.4
+     ]
+    }
+   ],
+   "answers": {
+    "E-4-1": null,
+    "E-3-1": null
+   },
+   "answer_status": {
+    "E-4-1": [
+     "insufficient"
+    ],
+    "E-3-1": [
+     "insufficient"
+    ]
+   },
+   "review_reasons": [],
+   "forbidden_in_metrics": [],
+   "forbidden_in_graph": [],
+   "forbidden_in_links": [],
+   "fake_3_m3": false,
+   "node_basis": [
+    [
+     8420.0,
+     "plan"
+    ],
+    [
+     360772.0,
+     "plan"
+    ]
+   ]
+  },
+  "combo_qty_expected_and_bill_scheduled@text_lines": {
+   "pass": true,
+   "violations": [],
+   "metrics": [
+    [
+     8420.0,
+     "m³"
+    ],
+    [
+     360772.0,
+     "MJ"
+    ]
+   ],
+   "metric_sources": [
+    {
+     "value": 8420.0,
+     "unit": "m³",
+     "row_label": "예상 사용량 및 청구 예정 금액",
+     "scope": null,
+     "hint": "도시가스 사용량 (예상 사용량 및 청구 예정 금액)",
+     "cell": null,
+     "bbox": [
+      0.3,
+      0.16,
+      0.42000000000000004,
+      0.16999999999999998
+     ]
+    },
+    {
+     "value": 360772.0,
+     "unit": "MJ",
+     "row_label": "예상 사용량 및 청구 예정 금액",
+     "scope": null,
+     "hint": "도시가스 사용열량 (예상 사용량 및 청구 예정 금액)",
+     "cell": null,
+     "bbox": [
+      0.52,
+      0.16,
+      0.64,
+      0.16999999999999998
+     ]
+    }
+   ],
+   "answers": {
+    "E-4-1": null,
+    "E-3-1": null
+   },
+   "answer_status": {
+    "E-4-1": [
+     "insufficient"
+    ],
+    "E-3-1": [
+     "insufficient"
+    ]
+   },
+   "review_reasons": [],
+   "forbidden_in_metrics": [],
+   "forbidden_in_graph": [],
+   "forbidden_in_links": [],
+   "fake_3_m3": false,
+   "node_basis": [
+    [
+     8420.0,
+     "plan"
+    ],
+    [
+     360772.0,
+     "plan"
+    ]
+   ]
+  },
+  "combo_qty_usage_scheduled_qty@table_cells": {
+   "pass": true,
+   "violations": [],
+   "metrics": [
+    [
+     8420.0,
+     "m³"
+    ],
+    [
+     360772.0,
+     "MJ"
+    ]
+   ],
+   "metric_sources": [
+    {
+     "value": 8420.0,
+     "unit": "m³",
+     "row_label": "사용 예정량 및 요금",
+     "scope": null,
+     "hint": "도시가스 사용량 (사용 예정량 및 요금)",
+     "cell": null,
+     "bbox": [
+      0.21000000000000002,
+      0.23,
+      0.35,
+      0.24
+     ]
+    },
+    {
+     "value": 360772.0,
+     "unit": "MJ",
+     "row_label": "사용 예정량 및 요금",
+     "scope": null,
+     "hint": "도시가스 사용열량 (사용 예정량 및 요금)",
+     "cell": null,
+     "bbox": [
+      0.37,
+      0.23,
+      0.51,
+      0.24
+     ]
+    }
+   ],
+   "answers": {
+    "E-4-1": null,
+    "E-3-1": null
+   },
+   "answer_status": {
+    "E-4-1": [
+     "insufficient"
+    ],
+    "E-3-1": [
+     "insufficient"
+    ]
+   },
+   "review_reasons": [],
+   "forbidden_in_metrics": [],
+   "forbidden_in_graph": [],
+   "forbidden_in_links": [],
+   "fake_3_m3": false,
+   "node_basis": [
+    [
+     8420.0,
+     "plan"
+    ],
+    [
+     360772.0,
+     "plan"
+    ]
+   ]
+  },
+  "combo_qty_usage_scheduled_qty@markdown": {
+   "pass": true,
+   "violations": [],
+   "metrics": [
+    [
+     8420.0,
+     "m³"
+    ],
+    [
+     360772.0,
+     "MJ"
+    ]
+   ],
+   "metric_sources": [
+    {
+     "value": 8420.0,
+     "unit": "m³",
+     "row_label": "사용 예정량 및 요금",
+     "scope": null,
+     "hint": "도시가스 사용량 (사용 예정량 및 요금)",
+     "cell": null,
+     "bbox": [
+      0.05,
+      0.2,
+      0.6,
+      0.4
+     ]
+    },
+    {
+     "value": 360772.0,
+     "unit": "MJ",
+     "row_label": "사용 예정량 및 요금",
+     "scope": null,
+     "hint": "도시가스 사용열량 (사용 예정량 및 요금)",
+     "cell": null,
+     "bbox": [
+      0.05,
+      0.2,
+      0.6,
+      0.4
+     ]
+    }
+   ],
+   "answers": {
+    "E-4-1": null,
+    "E-3-1": null
+   },
+   "answer_status": {
+    "E-4-1": [
+     "insufficient"
+    ],
+    "E-3-1": [
+     "insufficient"
+    ]
+   },
+   "review_reasons": [],
+   "forbidden_in_metrics": [],
+   "forbidden_in_graph": [],
+   "forbidden_in_links": [],
+   "fake_3_m3": false,
+   "node_basis": [
+    [
+     8420.0,
+     "plan"
+    ],
+    [
+     360772.0,
+     "plan"
+    ]
+   ]
+  },
+  "combo_qty_usage_scheduled_qty@text_lines": {
+   "pass": true,
+   "violations": [],
+   "metrics": [
+    [
+     8420.0,
+     "m³"
+    ],
+    [
+     360772.0,
+     "MJ"
+    ]
+   ],
+   "metric_sources": [
+    {
+     "value": 8420.0,
+     "unit": "m³",
+     "row_label": "사용 예정량 및 요금",
+     "scope": null,
+     "hint": "도시가스 사용량 (사용 예정량 및 요금)",
+     "cell": null,
+     "bbox": [
+      0.3,
+      0.16,
+      0.42000000000000004,
+      0.16999999999999998
+     ]
+    },
+    {
+     "value": 360772.0,
+     "unit": "MJ",
+     "row_label": "사용 예정량 및 요금",
+     "scope": null,
+     "hint": "도시가스 사용열량 (사용 예정량 및 요금)",
+     "cell": null,
+     "bbox": [
+      0.52,
+      0.16,
+      0.64,
+      0.16999999999999998
+     ]
+    }
+   ],
+   "answers": {
+    "E-4-1": null,
+    "E-3-1": null
+   },
+   "answer_status": {
+    "E-4-1": [
+     "insufficient"
+    ],
+    "E-3-1": [
+     "insufficient"
+    ]
+   },
+   "review_reasons": [],
+   "forbidden_in_metrics": [],
+   "forbidden_in_graph": [],
+   "forbidden_in_links": [],
+   "fake_3_m3": false,
+   "node_basis": [
+    [
+     8420.0,
+     "plan"
+    ],
+    [
+     360772.0,
+     "plan"
+    ]
+   ]
+  },
+  "combo_qty_usage_scheduled_qty@local_pdf": {
+   "pass": true,
+   "violations": [],
+   "metrics": [
+    [
+     8420.0,
+     "m³"
+    ],
+    [
+     360772.0,
+     "MJ"
+    ]
+   ],
+   "metric_sources": [
+    {
+     "value": 8420.0,
+     "unit": "m³",
+     "row_label": "사용 예정량 및 요금",
+     "scope": null,
+     "hint": "도시가스 사용량 (사용 예정량 및 요금)",
+     "cell": null,
+     "bbox": [
+      0.2857142857142857,
+      0.1377672209026128,
+      0.3697478991596639,
+      0.15201900237529692
+     ]
+    },
+    {
+     "value": 360772.0,
+     "unit": "MJ",
+     "row_label": "사용 예정량 및 요금",
+     "scope": null,
+     "hint": "도시가스 사용열량 (사용 예정량 및 요금)",
+     "cell": null,
+     "bbox": [
+      0.5042016806722689,
+      0.1377672209026128,
+      0.6218487394957983,
+      0.15201900237529692
+     ]
+    }
+   ],
+   "answers": {
+    "E-4-1": null,
+    "E-3-1": null
+   },
+   "answer_status": {
+    "E-4-1": [
+     "insufficient"
+    ],
+    "E-3-1": [
+     "insufficient"
+    ]
+   },
+   "review_reasons": [],
+   "forbidden_in_metrics": [],
+   "forbidden_in_graph": [],
+   "forbidden_in_links": [],
+   "fake_3_m3": false,
+   "node_basis": [
+    [
+     8420.0,
+     "plan"
+    ],
+    [
+     360772.0,
+     "plan"
+    ]
+   ]
+  },
+  "combo_qty_year_target@table_cells": {
+   "pass": true,
+   "violations": [],
+   "metrics": [
+    [
+     8420.0,
+     "m³"
+    ],
+    [
+     360772.0,
+     "MJ"
+    ]
+   ],
+   "metric_sources": [
+    {
+     "value": 8420.0,
+     "unit": "m³",
+     "row_label": "2026년 목표 사용량 및 요금",
+     "scope": null,
+     "hint": "도시가스 사용량 (2026년 목표 사용량 및 요금)",
+     "cell": null,
+     "bbox": [
+      0.21000000000000002,
+      0.23,
+      0.35,
+      0.24
+     ]
+    },
+    {
+     "value": 360772.0,
+     "unit": "MJ",
+     "row_label": "2026년 목표 사용량 및 요금",
+     "scope": null,
+     "hint": "도시가스 사용열량 (2026년 목표 사용량 및 요금)",
+     "cell": null,
+     "bbox": [
+      0.37,
+      0.23,
+      0.51,
+      0.24
+     ]
+    }
+   ],
+   "answers": {
+    "E-4-1": null,
+    "E-3-1": null
+   },
+   "answer_status": {
+    "E-4-1": [
+     "insufficient"
+    ],
+    "E-3-1": [
+     "insufficient"
+    ]
+   },
+   "review_reasons": [],
+   "forbidden_in_metrics": [],
+   "forbidden_in_graph": [],
+   "forbidden_in_links": [],
+   "fake_3_m3": false,
+   "node_basis": [
+    [
+     8420.0,
+     "target"
+    ],
+    [
+     360772.0,
+     "target"
+    ]
+   ]
+  },
+  "combo_qty_year_target@markdown": {
+   "pass": true,
+   "violations": [],
+   "metrics": [
+    [
+     8420.0,
+     "m³"
+    ],
+    [
+     360772.0,
+     "MJ"
+    ]
+   ],
+   "metric_sources": [
+    {
+     "value": 8420.0,
+     "unit": "m³",
+     "row_label": "2026년 목표 사용량 및 요금",
+     "scope": null,
+     "hint": "도시가스 사용량 (2026년 목표 사용량 및 요금)",
+     "cell": null,
+     "bbox": [
+      0.05,
+      0.2,
+      0.6,
+      0.4
+     ]
+    },
+    {
+     "value": 360772.0,
+     "unit": "MJ",
+     "row_label": "2026년 목표 사용량 및 요금",
+     "scope": null,
+     "hint": "도시가스 사용열량 (2026년 목표 사용량 및 요금)",
+     "cell": null,
+     "bbox": [
+      0.05,
+      0.2,
+      0.6,
+      0.4
+     ]
+    }
+   ],
+   "answers": {
+    "E-4-1": null,
+    "E-3-1": null
+   },
+   "answer_status": {
+    "E-4-1": [
+     "insufficient"
+    ],
+    "E-3-1": [
+     "insufficient"
+    ]
+   },
+   "review_reasons": [],
+   "forbidden_in_metrics": [],
+   "forbidden_in_graph": [],
+   "forbidden_in_links": [],
+   "fake_3_m3": false,
+   "node_basis": [
+    [
+     8420.0,
+     "target"
+    ],
+    [
+     360772.0,
+     "target"
+    ]
+   ]
+  },
+  "combo_qty_year_target@text_lines": {
+   "pass": true,
+   "violations": [],
+   "metrics": [
+    [
+     8420.0,
+     "m³"
+    ],
+    [
+     360772.0,
+     "MJ"
+    ]
+   ],
+   "metric_sources": [
+    {
+     "value": 8420.0,
+     "unit": "m³",
+     "row_label": "2026년 목표 사용량 및 요금",
+     "scope": null,
+     "hint": "도시가스 사용량 (2026년 목표 사용량 및 요금)",
+     "cell": null,
+     "bbox": [
+      0.3,
+      0.16,
+      0.42000000000000004,
+      0.16999999999999998
+     ]
+    },
+    {
+     "value": 360772.0,
+     "unit": "MJ",
+     "row_label": "2026년 목표 사용량 및 요금",
+     "scope": null,
+     "hint": "도시가스 사용열량 (2026년 목표 사용량 및 요금)",
+     "cell": null,
+     "bbox": [
+      0.52,
+      0.16,
+      0.64,
+      0.16999999999999998
+     ]
+    }
+   ],
+   "answers": {
+    "E-4-1": null,
+    "E-3-1": null
+   },
+   "answer_status": {
+    "E-4-1": [
+     "insufficient"
+    ],
+    "E-3-1": [
+     "insufficient"
+    ]
+   },
+   "review_reasons": [],
+   "forbidden_in_metrics": [],
+   "forbidden_in_graph": [],
+   "forbidden_in_links": [],
+   "fake_3_m3": false,
+   "node_basis": [
+    [
+     8420.0,
+     "target"
+    ],
+    [
+     360772.0,
+     "target"
+    ]
+   ]
+  },
+  "combo_qty_plan_fee_included@table_cells": {
+   "pass": true,
+   "violations": [],
+   "metrics": [
+    [
+     8420.0,
+     "m³"
+    ],
+    [
+     360772.0,
+     "MJ"
+    ]
+   ],
+   "metric_sources": [
+    {
+     "value": 8420.0,
+     "unit": "m³",
+     "row_label": "계획 사용량(요금 포함)",
+     "scope": null,
+     "hint": "도시가스 사용량 (계획 사용량(요금 포함))",
+     "cell": null,
+     "bbox": [
+      0.21000000000000002,
+      0.23,
+      0.35,
+      0.24
+     ]
+    },
+    {
+     "value": 360772.0,
+     "unit": "MJ",
+     "row_label": "계획 사용량(요금 포함)",
+     "scope": null,
+     "hint": "도시가스 사용열량 (계획 사용량(요금 포함))",
+     "cell": null,
+     "bbox": [
+      0.37,
+      0.23,
+      0.51,
+      0.24
+     ]
+    }
+   ],
+   "answers": {
+    "E-4-1": null,
+    "E-3-1": null
+   },
+   "answer_status": {
+    "E-4-1": [
+     "insufficient"
+    ],
+    "E-3-1": [
+     "insufficient"
+    ]
+   },
+   "review_reasons": [],
+   "forbidden_in_metrics": [],
+   "forbidden_in_graph": [],
+   "forbidden_in_links": [],
+   "fake_3_m3": false,
+   "node_basis": [
+    [
+     8420.0,
+     "plan"
+    ],
+    [
+     360772.0,
+     "plan"
+    ]
+   ]
+  },
+  "combo_qty_plan_fee_included@markdown": {
+   "pass": true,
+   "violations": [],
+   "metrics": [
+    [
+     8420.0,
+     "m³"
+    ],
+    [
+     360772.0,
+     "MJ"
+    ]
+   ],
+   "metric_sources": [
+    {
+     "value": 8420.0,
+     "unit": "m³",
+     "row_label": "계획 사용량(요금 포함)",
+     "scope": null,
+     "hint": "도시가스 사용량 (계획 사용량(요금 포함))",
+     "cell": null,
+     "bbox": [
+      0.05,
+      0.2,
+      0.6,
+      0.4
+     ]
+    },
+    {
+     "value": 360772.0,
+     "unit": "MJ",
+     "row_label": "계획 사용량(요금 포함)",
+     "scope": null,
+     "hint": "도시가스 사용열량 (계획 사용량(요금 포함))",
+     "cell": null,
+     "bbox": [
+      0.05,
+      0.2,
+      0.6,
+      0.4
+     ]
+    }
+   ],
+   "answers": {
+    "E-4-1": null,
+    "E-3-1": null
+   },
+   "answer_status": {
+    "E-4-1": [
+     "insufficient"
+    ],
+    "E-3-1": [
+     "insufficient"
+    ]
+   },
+   "review_reasons": [],
+   "forbidden_in_metrics": [],
+   "forbidden_in_graph": [],
+   "forbidden_in_links": [],
+   "fake_3_m3": false,
+   "node_basis": [
+    [
+     8420.0,
+     "plan"
+    ],
+    [
+     360772.0,
+     "plan"
+    ]
+   ]
+  },
+  "combo_qty_plan_fee_included@text_lines": {
+   "pass": true,
+   "violations": [],
+   "metrics": [
+    [
+     8420.0,
+     "m³"
+    ],
+    [
+     360772.0,
+     "MJ"
+    ]
+   ],
+   "metric_sources": [
+    {
+     "value": 8420.0,
+     "unit": "m³",
+     "row_label": "계획 사용량(요금 포함)",
+     "scope": null,
+     "hint": "도시가스 사용량 (계획 사용량(요금 포함))",
+     "cell": null,
+     "bbox": [
+      0.3,
+      0.16,
+      0.42000000000000004,
+      0.16999999999999998
+     ]
+    },
+    {
+     "value": 360772.0,
+     "unit": "MJ",
+     "row_label": "계획 사용량(요금 포함)",
+     "scope": null,
+     "hint": "도시가스 사용열량 (계획 사용량(요금 포함))",
+     "cell": null,
+     "bbox": [
+      0.52,
+      0.16,
+      0.64,
+      0.16999999999999998
+     ]
+    }
+   ],
+   "answers": {
+    "E-4-1": null,
+    "E-3-1": null
+   },
+   "answer_status": {
+    "E-4-1": [
+     "insufficient"
+    ],
+    "E-3-1": [
+     "insufficient"
+    ]
+   },
+   "review_reasons": [],
+   "forbidden_in_metrics": [],
+   "forbidden_in_graph": [],
+   "forbidden_in_links": [],
+   "fake_3_m3": false,
+   "node_basis": [
+    [
+     8420.0,
+     "plan"
+    ],
+    [
+     360772.0,
+     "plan"
+    ]
+   ]
+  },
+  "combo_qty_ambiguous_estimated_bill@table_cells": {
+   "pass": true,
+   "violations": [],
+   "metrics": [
+    [
+     8420.0,
+     "m³"
+    ],
+    [
+     360772.0,
+     "MJ"
+    ]
+   ],
+   "metric_sources": [
+    {
+     "value": 8420.0,
+     "unit": "m³",
+     "row_label": "예상 청구액",
+     "scope": null,
+     "hint": "도시가스 사용량 (예상 청구액)",
+     "cell": null,
+     "bbox": [
+      0.21000000000000002,
+      0.23,
+      0.35,
+      0.24
+     ]
+    },
+    {
+     "value": 360772.0,
+     "unit": "MJ",
+     "row_label": "예상 청구액",
+     "scope": null,
+     "hint": "도시가스 사용열량 (예상 청구액)",
+     "cell": null,
+     "bbox": [
+      0.37,
+      0.23,
+      0.51,
+      0.24
+     ]
+    }
+   ],
+   "answers": {
+    "E-4-1": null,
+    "E-3-1": null
+   },
+   "answer_status": {
+    "E-4-1": [
+     "insufficient"
+    ],
+    "E-3-1": [
+     "insufficient"
+    ]
+   },
+   "review_reasons": [],
+   "forbidden_in_metrics": [],
+   "forbidden_in_graph": [],
+   "forbidden_in_links": [],
+   "fake_3_m3": false,
+   "node_basis": [
+    [
+     20.239,
+     "plan"
+    ],
+    [
+     8420.0,
+     "plan"
+    ],
+    [
+     360772.0,
+     "plan"
+    ]
+   ]
+  },
+  "combo_qty_ambiguous_estimated_bill@markdown": {
+   "pass": true,
+   "violations": [],
+   "metrics": [
+    [
+     8420.0,
+     "m³"
+    ],
+    [
+     360772.0,
+     "MJ"
+    ]
+   ],
+   "metric_sources": [
+    {
+     "value": 8420.0,
+     "unit": "m³",
+     "row_label": "예상 청구액",
+     "scope": null,
+     "hint": "도시가스 사용량 (예상 청구액)",
+     "cell": null,
+     "bbox": [
+      0.05,
+      0.2,
+      0.6,
+      0.4
+     ]
+    },
+    {
+     "value": 360772.0,
+     "unit": "MJ",
+     "row_label": "예상 청구액",
+     "scope": null,
+     "hint": "도시가스 사용열량 (예상 청구액)",
+     "cell": null,
+     "bbox": [
+      0.05,
+      0.2,
+      0.6,
+      0.4
+     ]
+    }
+   ],
+   "answers": {
+    "E-4-1": null,
+    "E-3-1": null
+   },
+   "answer_status": {
+    "E-4-1": [
+     "insufficient"
+    ],
+    "E-3-1": [
+     "insufficient"
+    ]
+   },
+   "review_reasons": [],
+   "forbidden_in_metrics": [],
+   "forbidden_in_graph": [],
+   "forbidden_in_links": [],
+   "fake_3_m3": false,
+   "node_basis": [
+    [
+     20.239,
+     "plan"
+    ],
+    [
+     8420.0,
+     "plan"
+    ],
+    [
+     360772.0,
+     "plan"
+    ]
+   ]
+  },
+  "combo_qty_ambiguous_estimated_bill@text_lines": {
+   "pass": true,
+   "violations": [],
+   "metrics": [
+    [
+     8420.0,
+     "m³"
+    ],
+    [
+     360772.0,
+     "MJ"
+    ]
+   ],
+   "metric_sources": [
+    {
+     "value": 8420.0,
+     "unit": "m³",
+     "row_label": "예상 청구액",
+     "scope": null,
+     "hint": "도시가스 사용량 (예상 청구액)",
+     "cell": null,
+     "bbox": [
+      0.3,
+      0.16,
+      0.42000000000000004,
+      0.16999999999999998
+     ]
+    },
+    {
+     "value": 360772.0,
+     "unit": "MJ",
+     "row_label": "예상 청구액",
+     "scope": null,
+     "hint": "도시가스 사용열량 (예상 청구액)",
+     "cell": null,
+     "bbox": [
+      0.52,
+      0.16,
+      0.64,
+      0.16999999999999998
+     ]
+    }
+   ],
+   "answers": {
+    "E-4-1": null,
+    "E-3-1": null
+   },
+   "answer_status": {
+    "E-4-1": [
+     "insufficient"
+    ],
+    "E-3-1": [
+     "insufficient"
+    ]
+   },
+   "review_reasons": [],
+   "forbidden_in_metrics": [],
+   "forbidden_in_graph": [],
+   "forbidden_in_links": [],
+   "fake_3_m3": false,
+   "node_basis": [
+    [
+     20.239,
+     "plan"
+    ],
+    [
+     8420.0,
+     "plan"
+    ],
+    [
+     360772.0,
+     "plan"
+    ]
+   ]
+  },
+  "combo_qty_ambiguous_estimated_bill@local_pdf": {
+   "pass": true,
+   "violations": [],
+   "metrics": [
+    [
+     8420.0,
+     "m³"
+    ],
+    [
+     360772.0,
+     "MJ"
+    ]
+   ],
+   "metric_sources": [
+    {
+     "value": 8420.0,
+     "unit": "m³",
+     "row_label": "예상 청구액",
+     "scope": null,
+     "hint": "도시가스 사용량 (예상 청구액)",
+     "cell": null,
+     "bbox": [
+      0.2857142857142857,
+      0.1377672209026128,
+      0.3697478991596639,
+      0.15201900237529692
+     ]
+    },
+    {
+     "value": 360772.0,
+     "unit": "MJ",
+     "row_label": "예상 청구액",
+     "scope": null,
+     "hint": "도시가스 사용열량 (예상 청구액)",
+     "cell": null,
+     "bbox": [
+      0.5042016806722689,
+      0.1377672209026128,
+      0.6218487394957983,
+      0.15201900237529692
+     ]
+    }
+   ],
+   "answers": {
+    "E-4-1": null,
+    "E-3-1": null
+   },
+   "answer_status": {
+    "E-4-1": [
+     "insufficient"
+    ],
+    "E-3-1": [
+     "insufficient"
+    ]
+   },
+   "review_reasons": [],
+   "forbidden_in_metrics": [],
+   "forbidden_in_graph": [],
+   "forbidden_in_links": [],
+   "fake_3_m3": false,
+   "node_basis": [
+    [
+     20.239,
+     "plan"
+    ],
+    [
+     8420.0,
+     "plan"
+    ],
+    [
+     360772.0,
+     "plan"
+    ]
+   ]
+  },
+  "combo_qty_ambiguous_estimated_payment@table_cells": {
+   "pass": true,
+   "violations": [],
+   "metrics": [
+    [
+     8420.0,
+     "m³"
+    ],
+    [
+     360772.0,
+     "MJ"
+    ]
+   ],
+   "metric_sources": [
+    {
+     "value": 8420.0,
+     "unit": "m³",
+     "row_label": "납부 예상 금액",
+     "scope": null,
+     "hint": "도시가스 사용량 (납부 예상 금액)",
+     "cell": null,
+     "bbox": [
+      0.21000000000000002,
+      0.23,
+      0.35,
+      0.24
+     ]
+    },
+    {
+     "value": 360772.0,
+     "unit": "MJ",
+     "row_label": "납부 예상 금액",
+     "scope": null,
+     "hint": "도시가스 사용열량 (납부 예상 금액)",
+     "cell": null,
+     "bbox": [
+      0.37,
+      0.23,
+      0.51,
+      0.24
+     ]
+    }
+   ],
+   "answers": {
+    "E-4-1": null,
+    "E-3-1": null
+   },
+   "answer_status": {
+    "E-4-1": [
+     "insufficient"
+    ],
+    "E-3-1": [
+     "insufficient"
+    ]
+   },
+   "review_reasons": [],
+   "forbidden_in_metrics": [],
+   "forbidden_in_graph": [],
+   "forbidden_in_links": [],
+   "fake_3_m3": false,
+   "node_basis": [
+    [
+     20.239,
+     "plan"
+    ],
+    [
+     8420.0,
+     "plan"
+    ],
+    [
+     360772.0,
+     "plan"
+    ]
+   ]
+  },
+  "combo_qty_ambiguous_estimated_payment@markdown": {
+   "pass": true,
+   "violations": [],
+   "metrics": [
+    [
+     8420.0,
+     "m³"
+    ],
+    [
+     360772.0,
+     "MJ"
+    ]
+   ],
+   "metric_sources": [
+    {
+     "value": 8420.0,
+     "unit": "m³",
+     "row_label": "납부 예상 금액",
+     "scope": null,
+     "hint": "도시가스 사용량 (납부 예상 금액)",
+     "cell": null,
+     "bbox": [
+      0.05,
+      0.2,
+      0.6,
+      0.4
+     ]
+    },
+    {
+     "value": 360772.0,
+     "unit": "MJ",
+     "row_label": "납부 예상 금액",
+     "scope": null,
+     "hint": "도시가스 사용열량 (납부 예상 금액)",
+     "cell": null,
+     "bbox": [
+      0.05,
+      0.2,
+      0.6,
+      0.4
+     ]
+    }
+   ],
+   "answers": {
+    "E-4-1": null,
+    "E-3-1": null
+   },
+   "answer_status": {
+    "E-4-1": [
+     "insufficient"
+    ],
+    "E-3-1": [
+     "insufficient"
+    ]
+   },
+   "review_reasons": [],
+   "forbidden_in_metrics": [],
+   "forbidden_in_graph": [],
+   "forbidden_in_links": [],
+   "fake_3_m3": false,
+   "node_basis": [
+    [
+     20.239,
+     "plan"
+    ],
+    [
+     8420.0,
+     "plan"
+    ],
+    [
+     360772.0,
+     "plan"
+    ]
+   ]
+  },
+  "combo_qty_ambiguous_estimated_payment@text_lines": {
+   "pass": true,
+   "violations": [],
+   "metrics": [
+    [
+     8420.0,
+     "m³"
+    ],
+    [
+     360772.0,
+     "MJ"
+    ]
+   ],
+   "metric_sources": [
+    {
+     "value": 8420.0,
+     "unit": "m³",
+     "row_label": "납부 예상 금액",
+     "scope": null,
+     "hint": "도시가스 사용량 (납부 예상 금액)",
+     "cell": null,
+     "bbox": [
+      0.3,
+      0.16,
+      0.42000000000000004,
+      0.16999999999999998
+     ]
+    },
+    {
+     "value": 360772.0,
+     "unit": "MJ",
+     "row_label": "납부 예상 금액",
+     "scope": null,
+     "hint": "도시가스 사용열량 (납부 예상 금액)",
+     "cell": null,
+     "bbox": [
+      0.52,
+      0.16,
+      0.64,
+      0.16999999999999998
+     ]
+    }
+   ],
+   "answers": {
+    "E-4-1": null,
+    "E-3-1": null
+   },
+   "answer_status": {
+    "E-4-1": [
+     "insufficient"
+    ],
+    "E-3-1": [
+     "insufficient"
+    ]
+   },
+   "review_reasons": [],
+   "forbidden_in_metrics": [],
+   "forbidden_in_graph": [],
+   "forbidden_in_links": [],
+   "fake_3_m3": false,
+   "node_basis": [
+    [
+     20.239,
+     "plan"
+    ],
+    [
+     8420.0,
+     "plan"
+    ],
+    [
+     360772.0,
+     "plan"
+    ]
+   ]
+  },
+  "combo_qty_ambiguous_estimated_payment@local_pdf": {
+   "pass": true,
+   "violations": [],
+   "metrics": [
+    [
+     8420.0,
+     "m³"
+    ],
+    [
+     360772.0,
+     "MJ"
+    ]
+   ],
+   "metric_sources": [
+    {
+     "value": 8420.0,
+     "unit": "m³",
+     "row_label": "납부 예상 금액",
+     "scope": null,
+     "hint": "도시가스 사용량 (납부 예상 금액)",
+     "cell": null,
+     "bbox": [
+      0.2857142857142857,
+      0.1377672209026128,
+      0.3697478991596639,
+      0.15201900237529692
+     ]
+    },
+    {
+     "value": 360772.0,
+     "unit": "MJ",
+     "row_label": "납부 예상 금액",
+     "scope": null,
+     "hint": "도시가스 사용열량 (납부 예상 금액)",
+     "cell": null,
+     "bbox": [
+      0.5042016806722689,
+      0.1377672209026128,
+      0.6218487394957983,
+      0.15201900237529692
+     ]
+    }
+   ],
+   "answers": {
+    "E-4-1": null,
+    "E-3-1": null
+   },
+   "answer_status": {
+    "E-4-1": [
+     "insufficient"
+    ],
+    "E-3-1": [
+     "insufficient"
+    ]
+   },
+   "review_reasons": [],
+   "forbidden_in_metrics": [],
+   "forbidden_in_graph": [],
+   "forbidden_in_links": [],
+   "fake_3_m3": false,
+   "node_basis": [
+    [
+     20.239,
+     "plan"
+    ],
+    [
+     8420.0,
+     "plan"
+    ],
+    [
+     360772.0,
+     "plan"
+    ]
+   ]
+  },
+  "combo_columns_expected_last@table_cells": {
+   "pass": true,
+   "violations": [],
+   "metrics": [
+    [
+     8420.0,
+     "m³"
+    ],
+    [
+     360772.0,
+     "MJ"
+    ]
+   ],
+   "metric_sources": [
+    {
+     "value": 8420.0,
+     "unit": "m³",
+     "row_label": "예상 사용량 및 요금",
+     "scope": null,
+     "hint": "도시가스 사용량 (예상 사용량 및 요금)",
+     "cell": null,
+     "bbox": [
+      0.05,
+      0.23,
+      0.19,
+      0.24
+     ]
+    },
+    {
+     "value": 360772.0,
+     "unit": "MJ",
+     "row_label": "예상 사용량 및 요금",
+     "scope": null,
+     "hint": "도시가스 사용열량 (예상 사용량 및 요금)",
+     "cell": null,
+     "bbox": [
+      0.21000000000000002,
+      0.23,
+      0.35,
+      0.24
+     ]
+    }
+   ],
+   "answers": {
+    "E-4-1": null,
+    "E-3-1": null
+   },
+   "answer_status": {
+    "E-4-1": [
+     "insufficient"
+    ],
+    "E-3-1": [
+     "insufficient"
+    ]
+   },
+   "review_reasons": [],
+   "forbidden_in_metrics": [],
+   "forbidden_in_graph": [],
+   "forbidden_in_links": [],
+   "fake_3_m3": false,
+   "node_basis": [
+    [
+     20.239,
+     "plan"
+    ],
+    [
+     8420.0,
+     "plan"
+    ],
+    [
+     360772.0,
+     "plan"
+    ]
+   ]
+  },
+  "combo_columns_expected_last@markdown": {
+   "pass": true,
+   "violations": [],
+   "metrics": [
+    [
+     8420.0,
+     "m³"
+    ],
+    [
+     360772.0,
+     "MJ"
+    ]
+   ],
+   "metric_sources": [
+    {
+     "value": 8420.0,
+     "unit": "m³",
+     "row_label": "예상 사용량 및 요금",
+     "scope": null,
+     "hint": "도시가스 사용량 (예상 사용량 및 요금)",
+     "cell": null,
+     "bbox": [
+      0.05,
+      0.2,
+      0.6,
+      0.4
+     ]
+    },
+    {
+     "value": 360772.0,
+     "unit": "MJ",
+     "row_label": "예상 사용량 및 요금",
+     "scope": null,
+     "hint": "도시가스 사용열량 (예상 사용량 및 요금)",
+     "cell": null,
+     "bbox": [
+      0.05,
+      0.2,
+      0.6,
+      0.4
+     ]
+    }
+   ],
+   "answers": {
+    "E-4-1": null,
+    "E-3-1": null
+   },
+   "answer_status": {
+    "E-4-1": [
+     "insufficient"
+    ],
+    "E-3-1": [
+     "insufficient"
+    ]
+   },
+   "review_reasons": [],
+   "forbidden_in_metrics": [],
+   "forbidden_in_graph": [],
+   "forbidden_in_links": [],
+   "fake_3_m3": false,
+   "node_basis": [
+    [
+     20.239,
+     "plan"
+    ],
+    [
+     8420.0,
+     "plan"
+    ],
+    [
+     360772.0,
+     "plan"
+    ]
+   ]
+  },
+  "combo_columns_expected_last@text_lines": {
+   "pass": true,
+   "violations": [],
+   "metrics": [
+    [
+     8420.0,
+     "m³"
+    ],
+    [
+     360772.0,
+     "MJ"
+    ]
+   ],
+   "metric_sources": [
+    {
+     "value": 8420.0,
+     "unit": "m³",
+     "row_label": "예상 사용량 및 요금",
+     "scope": null,
+     "hint": "도시가스 사용량 (예상 사용량 및 요금)",
+     "cell": null,
+     "bbox": [
+      0.08,
+      0.16,
+      0.2,
+      0.16999999999999998
+     ]
+    },
+    {
+     "value": 360772.0,
+     "unit": "MJ",
+     "row_label": "예상 사용량 및 요금",
+     "scope": null,
+     "hint": "도시가스 사용열량 (예상 사용량 및 요금)",
+     "cell": null,
+     "bbox": [
+      0.3,
+      0.16,
+      0.42000000000000004,
+      0.16999999999999998
+     ]
+    }
+   ],
+   "answers": {
+    "E-4-1": null,
+    "E-3-1": null
+   },
+   "answer_status": {
+    "E-4-1": [
+     "insufficient"
+    ],
+    "E-3-1": [
+     "insufficient"
+    ]
+   },
+   "review_reasons": [],
+   "forbidden_in_metrics": [],
+   "forbidden_in_graph": [],
+   "forbidden_in_links": [],
+   "fake_3_m3": false,
+   "node_basis": [
+    [
+     20.239,
+     "plan"
+    ],
+    [
+     8420.0,
+     "plan"
+    ],
+    [
+     360772.0,
+     "plan"
+    ]
+   ]
+  },
+  "combo_columns_expected_last@local_pdf": {
+   "pass": true,
+   "violations": [],
+   "metrics": [
+    [
+     8420.0,
+     "m³"
+    ],
+    [
+     360772.0,
+     "MJ"
+    ]
+   ],
+   "metric_sources": [
+    {
+     "value": 8420.0,
+     "unit": "m³",
+     "row_label": "예상 사용량 및 요금",
+     "scope": null,
+     "hint": "도시가스 사용량 (예상 사용량 및 요금)",
+     "cell": null,
+     "bbox": [
+      0.06722689075630252,
+      0.1377672209026128,
+      0.15126050420168066,
+      0.15201900237529692
+     ]
+    },
+    {
+     "value": 360772.0,
+     "unit": "MJ",
+     "row_label": "예상 사용량 및 요금",
+     "scope": null,
+     "hint": "도시가스 사용열량 (예상 사용량 및 요금)",
+     "cell": null,
+     "bbox": [
+      0.2857142857142857,
+      0.1377672209026128,
+      0.40336134453781514,
+      0.15201900237529692
+     ]
+    }
+   ],
+   "answers": {
+    "E-4-1": null,
+    "E-3-1": null
+   },
+   "answer_status": {
+    "E-4-1": [
+     "insufficient"
+    ],
+    "E-3-1": [
+     "insufficient"
+    ]
+   },
+   "review_reasons": [],
+   "forbidden_in_metrics": [],
+   "forbidden_in_graph": [],
+   "forbidden_in_links": [],
+   "fake_3_m3": false,
+   "node_basis": [
+    [
+     20.239,
+     "plan"
+    ],
+    [
+     8420.0,
+     "plan"
+    ],
+    [
+     360772.0,
+     "plan"
+    ]
+   ]
+  },
+  "combo_site_expected@table_cells": {
+   "pass": true,
+   "violations": [],
+   "metrics": [
+    [
+     8420.0,
+     "m³"
+    ]
+   ],
+   "metric_sources": [
+    {
+     "value": 8420.0,
+     "unit": "m³",
+     "row_label": "김해 제1공장 · 계획 사용량 및 요금",
+     "scope": {
+      "site": "김해 제1공장"
+     },
+     "hint": "도시가스 사용량 (김해 제1공장 · 계획 사용량 및 요금)",
+     "cell": null,
+     "bbox": [
+      0.37,
+      0.23,
+      0.51,
+      0.24
+     ]
+    }
+   ],
+   "answers": {
+    "E-4-1": null,
+    "E-3-1": null
+   },
+   "answer_status": {
+    "E-4-1": [
+     "insufficient"
+    ],
+    "E-3-1": [
+     "insufficient"
+    ]
+   },
+   "review_reasons": [],
+   "forbidden_in_metrics": [],
+   "forbidden_in_graph": [],
+   "forbidden_in_links": [],
+   "fake_3_m3": false,
+   "node_basis": [
+    [
+     8420.0,
+     "plan"
+    ]
+   ]
+  },
+  "combo_site_expected@markdown": {
+   "pass": true,
+   "violations": [],
+   "metrics": [
+    [
+     8420.0,
+     "m³"
+    ]
+   ],
+   "metric_sources": [
+    {
+     "value": 8420.0,
+     "unit": "m³",
+     "row_label": "김해 제1공장 · 계획 사용량 및 요금",
+     "scope": {
+      "site": "김해 제1공장"
+     },
+     "hint": "도시가스 사용량 (김해 제1공장 · 계획 사용량 및 요금)",
+     "cell": null,
+     "bbox": [
+      0.05,
+      0.2,
+      0.6,
+      0.4
+     ]
+    }
+   ],
+   "answers": {
+    "E-4-1": null,
+    "E-3-1": null
+   },
+   "answer_status": {
+    "E-4-1": [
+     "insufficient"
+    ],
+    "E-3-1": [
+     "insufficient"
+    ]
+   },
+   "review_reasons": [],
+   "forbidden_in_metrics": [],
+   "forbidden_in_graph": [],
+   "forbidden_in_links": [],
+   "fake_3_m3": false,
+   "node_basis": [
+    [
+     8420.0,
+     "plan"
+    ]
+   ]
+  },
+  "combo_site_expected@text_lines": {
+   "pass": true,
+   "violations": [],
+   "metrics": [
+    [
+     8420.0,
+     "m³"
+    ]
+   ],
+   "metric_sources": [
+    {
+     "value": 8420.0,
+     "unit": "m³",
+     "row_label": "김해 제1공장 · 계획 사용량 및 요금",
+     "scope": {
+      "site": "김해 제1공장"
+     },
+     "hint": "도시가스 사용량 (김해 제1공장 · 계획 사용량 및 요금)",
+     "cell": null,
+     "bbox": [
+      0.52,
+      0.16,
+      0.64,
+      0.16999999999999998
+     ]
+    }
+   ],
+   "answers": {
+    "E-4-1": null,
+    "E-3-1": null
+   },
+   "answer_status": {
+    "E-4-1": [
+     "insufficient"
+    ],
+    "E-3-1": [
+     "insufficient"
+    ]
+   },
+   "review_reasons": [],
+   "forbidden_in_metrics": [],
+   "forbidden_in_graph": [],
+   "forbidden_in_links": [],
+   "fake_3_m3": false,
+   "node_basis": [
+    [
+     8420.0,
+     "plan"
+    ]
+   ]
+  },
+  "combo_site_pay_scheduled@table_cells": {
+   "pass": true,
+   "violations": [],
+   "metrics": [
+    [
+     8420.0,
+     "m³"
+    ]
+   ],
+   "metric_sources": [
+    {
+     "value": 8420.0,
+     "unit": "m³",
+     "row_label": "김해 제1공장",
+     "scope": {
+      "site": "김해 제1공장"
+     },
+     "hint": "도시가스 사용량 (김해 제1공장)",
+     "cell": null,
+     "bbox": [
+      0.37,
+      0.23,
+      0.51,
+      0.24
+     ]
+    }
+   ],
+   "answers": {
+    "E-4-1": null,
+    "E-3-1": null
+   },
+   "answer_status": {
+    "E-4-1": [
+     "insufficient"
+    ],
+    "E-3-1": [
+     "insufficient"
+    ]
+   },
+   "review_reasons": [],
+   "forbidden_in_metrics": [],
+   "forbidden_in_graph": [],
+   "forbidden_in_links": [],
+   "fake_3_m3": false,
+   "node_basis": [
+    [
+     8420.0,
+     "actual"
+    ]
+   ]
+  },
+  "combo_site_pay_scheduled@markdown": {
+   "pass": true,
+   "violations": [],
+   "metrics": [
+    [
+     8420.0,
+     "m³"
+    ]
+   ],
+   "metric_sources": [
+    {
+     "value": 8420.0,
+     "unit": "m³",
+     "row_label": "김해 제1공장",
+     "scope": {
+      "site": "김해 제1공장"
+     },
+     "hint": "도시가스 사용량 (김해 제1공장)",
+     "cell": null,
+     "bbox": [
+      0.05,
+      0.2,
+      0.6,
+      0.4
+     ]
+    }
+   ],
+   "answers": {
+    "E-4-1": null,
+    "E-3-1": null
+   },
+   "answer_status": {
+    "E-4-1": [
+     "insufficient"
+    ],
+    "E-3-1": [
+     "insufficient"
+    ]
+   },
+   "review_reasons": [],
+   "forbidden_in_metrics": [],
+   "forbidden_in_graph": [],
+   "forbidden_in_links": [],
+   "fake_3_m3": false,
+   "node_basis": [
+    [
+     8420.0,
+     "actual"
+    ]
+   ]
+  },
+  "combo_site_pay_scheduled@text_lines": {
+   "pass": true,
+   "violations": [],
+   "metrics": [
+    [
+     8420.0,
+     "m³"
+    ]
+   ],
+   "metric_sources": [
+    {
+     "value": 8420.0,
+     "unit": "m³",
+     "row_label": "김해 제1공장",
+     "scope": {
+      "site": "김해 제1공장"
+     },
+     "hint": "도시가스 사용량 (김해 제1공장)",
+     "cell": null,
+     "bbox": [
+      0.52,
+      0.16,
+      0.64,
+      0.16999999999999998
+     ]
+    }
+   ],
+   "answers": {
+    "E-4-1": null,
+    "E-3-1": null
+   },
+   "answer_status": {
+    "E-4-1": [
+     "insufficient"
+    ],
+    "E-3-1": [
+     "insufficient"
+    ]
+   },
+   "review_reasons": [],
+   "forbidden_in_metrics": [],
+   "forbidden_in_graph": [],
+   "forbidden_in_links": [],
+   "fake_3_m3": false,
+   "node_basis": [
+    [
+     8420.0,
+     "actual"
+    ]
+   ]
+  }
+ }
+}

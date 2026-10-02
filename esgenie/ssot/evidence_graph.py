@@ -342,8 +342,19 @@ def merge_ocr_extraction(
             base=getattr(m, "boundary", None),
         )
         provenance = tuple(dict(p, page=m.page, bbox=m.bbox, source_file=extraction.source_file) for p in boundary.provenance)
-        boundary = replace(boundary, provenance=provenance,
-                           review_notes=renewable_notes if code == "E-4-2" else boundary.review_notes)
+        detail = getattr(m, "source_detail", None)
+        if detail:
+            # 표 셀 근거(원문·머리글·원 단위·검산식·입력 칸·위치 정밀도)를 경계 출처에 잇는다.
+            # 본문 비율 고정(raw_rate_pin)은 표 셀이 아니므로 text_span으로 구분한다.
+            provenance += (dict(
+                {k: detail[k] for k in _TABLE_CELL_PROVENANCE_KEYS if k in detail},
+                source="text_span" if detail.get("extractor") == "raw_rate_pin" else "table_cell",
+                page=m.page, bbox=m.bbox, source_file=extraction.source_file),)
+        review_notes = renewable_notes if code == "E-4-2" else boundary.review_notes
+        mismatch_note = _index_mismatch_note(detail, m, extraction.source_file)
+        if mismatch_note:
+            review_notes = tuple(review_notes) + (mismatch_note,)
+        boundary = replace(boundary, provenance=provenance, review_notes=review_notes)
         if period_inferred and boundary.period_year:
             period, period_inferred = boundary.period_year, False
         confidence = m.confidence
@@ -478,6 +489,13 @@ _GUARD_TERMS: tuple[str, ...] = (
 _PROJECTION_YEAR_GAP: int = 2
 
 
+_TABLE_CELL_PROVENANCE_KEYS = (
+    "precision", "raw_text", "raw_value", "raw_unit", "unit", "unit_source", "header", "row_label",
+    "table_id", "grid_source", "value_source", "formula", "index_check", "cells", "pinned_unit",
+    "scope", "duplicate_status", "possible_duplicate_cells",
+)
+
+
 def _resolve_kesg_code(
     m: ExtractedMetric, *, allow_fuzzy: bool = False
 ) -> str | None:
@@ -602,6 +620,38 @@ def _link_cross_check(graph: EvidenceGraph, node: EvidenceNode) -> None:
             detail=f"{COMPARISON_LABEL[status]}: {reason} ({other.source_file} ↔ {node.source_file})"))
 
 
+def _fmt_qty(value: Any) -> str:
+    try:
+        v = float(value)
+    except (TypeError, ValueError):
+        return str(value)
+    return f"{v:,.0f}" if v == int(v) else f"{v:,.6g}"
+
+
+def _index_mismatch_note(detail: dict | None, m: Any, source_file: str | None) -> str:
+    """같은 문서 안에서 명시 사용량과 지침 계산이 다르면 두 값·식·사유를 검토 사유로 남긴다.
+
+    기존 원측정값 상충 표식(SOURCE_CONFLICT_NOTE)을 써서 선택·답변·출력의 상충 경로를
+    그대로 탄다. 범위 문구로 대신하지 않는다 — 수치 자체가 서로 다르다는 경고다."""
+    check = (detail or {}).get("index_check") or {}
+    if check.get("status") != "mismatch":
+        return ""
+    from .selection import SOURCE_CONFLICT_NOTE
+    inputs = check.get("inputs") or {}
+    units = check.get("input_units") or {}
+    def arg(key: str, label: str) -> str:
+        u = units.get(key) or ""
+        return f"{label} {_fmt_qty(inputs.get(key))}{(' ' + u) if u else ''}"
+    formula = f"({arg('current', '당월 지침')} − {arg('previous', '이전 지침')})"
+    if inputs.get("multiplier") is not None:
+        formula += f" × {arg('multiplier', '배율')}"
+    computed_unit = check.get("computed_unit") or m.unit
+    where = f"{source_file or '원문'} {int(m.page) + 1}쪽" if m.page is not None else (source_file or "원문")
+    return (f"{where} {SOURCE_CONFLICT_NOTE}(같은 문서 검산 불일치) — 명시 사용량 "
+            f"{_fmt_qty(m.value)} {m.unit} ≠ 지침 계산 {_fmt_qty(check.get('computed'))} {computed_unit} "
+            f"[{formula}]. 명시값을 보존했으나 채택 전 원문 확인 필요")
+
+
 def _emit_derived_emission(
     graph: EvidenceGraph,
     node: EvidenceNode,
@@ -652,6 +702,8 @@ def _emit_derived_emission(
         completeness="partial",
         inferred=tuple(sorted(set(node.boundary.inferred) | {"measure_kind"})),
         source_quote=node.boundary.source_quote,
+        # 원측정값의 검토 사유(검산 불일치 등)는 환산값에도 그대로 남긴다.
+        review_notes=node.boundary.review_notes,
     )
     derived = EvidenceNode(
         id=_make_derived_node_id(

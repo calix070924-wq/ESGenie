@@ -1,0 +1,1680 @@
+{
+  "import_path": "/private/tmp/ESGenie-ocr-numeric-20260929/esgenie/__init__.py",
+  "inputs": [
+    {
+      "path": "/Users/heojeongmin/Documents/Claude/Projects/ESGenie/시연증빙세트_한울정밀공업/01_전기요금청구서_2026-05.pdf",
+      "sha256": "2547cf4cae6ea5e0bff62c3442fa97b4c88852d116339ff564525c384cd3bb45",
+      "pages_zero_based": [
+        0
+      ],
+      "input_class": "local PDF text + production structured parser",
+      "metrics": [
+        {
+          "metric_hint": "청구금액",
+          "value": 27748160.0,
+          "unit": "원",
+          "period": "",
+          "kesg_code_guess": null,
+          "bbox": [
+            0.7599483030597268,
+            0.5635541451994639,
+            0.8913227167654654,
+            0.5778077926725314
+          ],
+          "page": 0,
+          "confidence": 0.8,
+          "boundary": {},
+          "source_detail": {}
+        },
+        {
+          "metric_hint": "사용전력량 (유효전력)",
+          "value": 142560.0,
+          "unit": "kWh",
+          "period": "",
+          "kesg_code_guess": "E-4-1",
+          "bbox": [
+            0.8362474809020204,
+            0.33181528981503056,
+            0.894682607752798,
+            0.34250552541983115
+          ],
+          "page": 0,
+          "confidence": 0.9,
+          "boundary": {},
+          "source_detail": {
+            "extractor": "ocr_table_metrics",
+            "role": "usage",
+            "table_id": "text_block_1",
+            "grid_source": "text_lines",
+            "header": "사용량(kWh)",
+            "row_label": "유효전력",
+            "raw_text": "142,560",
+            "raw_value": 142560.0,
+            "raw_unit": "kWh",
+            "unit": "kWh",
+            "unit_source": "header",
+            "value_source": "explicit",
+            "precision": "cell",
+            "cells": [
+              {
+                "text": "142,560",
+                "bbox": [
+                  0.8362474809020204,
+                  0.33181528981503056,
+                  0.894682607752798,
+                  0.34250552541983115
+                ],
+                "page": 0,
+                "precision": "cell"
+              }
+            ],
+            "index_check": {
+              "formula": "(당월 지침 − 이전 지침) × 배율",
+              "inputs": {
+                "previous": 48210.0,
+                "current": 50586.0,
+                "multiplier": 60.0
+              },
+              "computed": 142560.0,
+              "computed_unit": "kWh",
+              "cells": [
+                {
+                  "text": "48,210",
+                  "bbox": [
+                    0.3628098855787376,
+                    0.33181528981503056,
+                    0.4089683220385123,
+                    0.34250552541983115
+                  ],
+                  "page": 0,
+                  "precision": "cell"
+                },
+                {
+                  "text": "50,586",
+                  "bbox": [
+                    0.5247145620396606,
+                    0.33181528981503056,
+                    0.5708730497657386,
+                    0.34250552541983115
+                  ],
+                  "page": 0,
+                  "precision": "cell"
+                },
+                {
+                  "text": "60",
+                  "bbox": [
+                    0.6493290522552303,
+                    0.33181528981503056,
+                    0.6661111791813694,
+                    0.34250552541983115
+                  ],
+                  "page": 0,
+                  "precision": "cell"
+                }
+              ],
+              "status": "match"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "path": "/Users/heojeongmin/Documents/Claude/Projects/ESGenie/시연증빙세트_한울정밀공업/02_도시가스요금고지서_2026-05.pdf",
+      "sha256": "4b117377f037a1bfd9821e0c59f7e98cc96e9db470e2ef60f37e7d430ddee837",
+      "pages_zero_based": [
+        0
+      ],
+      "input_class": "local PDF text + production structured parser",
+      "metrics": [
+        {
+          "metric_hint": "도시가스 사용량",
+          "value": 8420.0,
+          "unit": "m³",
+          "period": "",
+          "kesg_code_guess": null,
+          "bbox": [
+            0.43504036452392314,
+            0.30767315990796257,
+            0.4756350228827145,
+            0.31836339551276316
+          ],
+          "page": 0,
+          "confidence": 0.9,
+          "boundary": {},
+          "source_detail": {
+            "extractor": "ocr_table_metrics",
+            "role": "usage",
+            "table_id": "text_block_1",
+            "grid_source": "text_lines",
+            "header": "사용량(㎥)",
+            "row_label": "",
+            "raw_text": "8,420",
+            "raw_value": 8420.0,
+            "raw_unit": "㎥",
+            "unit": "m³",
+            "unit_source": "header",
+            "value_source": "explicit",
+            "precision": "cell",
+            "cells": [
+              {
+                "text": "8,420",
+                "bbox": [
+                  0.43504036452392314,
+                  0.30767315990796257,
+                  0.4756350228827145,
+                  0.31836339551276316
+                ],
+                "page": 0,
+                "precision": "cell"
+              }
+            ],
+            "index_check": {
+              "formula": "당월 지침 − 이전 지침",
+              "inputs": {
+                "previous": 31580.0,
+                "current": 40000.0
+              },
+              "computed": 8420.0,
+              "computed_unit": "m³",
+              "cells": [
+                {
+                  "text": "31,580",
+                  "bbox": [
+                    0.1723336139309002,
+                    0.30767315990796257,
+                    0.2184920632072507,
+                    0.31836339551276316
+                  ],
+                  "page": 0,
+                  "precision": "cell"
+                },
+                {
+                  "text": "40,000",
+                  "bbox": [
+                    0.3056669515364255,
+                    0.30767315990796257,
+                    0.35182538799620017,
+                    0.31836339551276316
+                  ],
+                  "page": 0,
+                  "precision": "cell"
+                }
+              ],
+              "input_units": {
+                "previous": "m³",
+                "current": "m³"
+              },
+              "status": "match"
+            }
+          }
+        },
+        {
+          "metric_hint": "도시가스 사용열량",
+          "value": 360772.0,
+          "unit": "MJ",
+          "period": "",
+          "kesg_code_guess": "E-4-1",
+          "bbox": [
+            0.8401330052973471,
+            0.30767315990796257,
+            0.8946825052201913,
+            0.31836339551276316
+          ],
+          "page": 0,
+          "confidence": 0.9,
+          "boundary": {},
+          "source_detail": {
+            "extractor": "ocr_table_metrics",
+            "role": "heat",
+            "table_id": "text_block_1",
+            "grid_source": "text_lines",
+            "header": "사용열량(MJ)",
+            "row_label": "",
+            "raw_text": "360,772",
+            "raw_value": 360772.0,
+            "raw_unit": "MJ",
+            "unit": "MJ",
+            "unit_source": "header",
+            "value_source": "explicit",
+            "precision": "cell",
+            "cells": [
+              {
+                "text": "360,772",
+                "bbox": [
+                  0.8401330052973471,
+                  0.30767315990796257,
+                  0.8946825052201913,
+                  0.31836339551276316
+                ],
+                "page": 0,
+                "precision": "cell"
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "path": "/Users/heojeongmin/Documents/Claude/Projects/ESGenie/시연증빙세트_한울정밀공업/03_사업장폐기물_위탁처리명세_2026-04.pdf",
+      "sha256": "15f1ff6bdc6ee4b9415ae0b75b790c3a40fd411246acb7e3af5bf6eae77f355f",
+      "pages_zero_based": [
+        0
+      ],
+      "input_class": "local PDF text + production structured parser",
+      "metrics": [
+        {
+          "metric_hint": "재활용량",
+          "value": 5400.0,
+          "unit": "kg",
+          "period": "",
+          "kesg_code_guess": null,
+          "bbox": [
+            0.1662246443272041,
+            0.5335913119216398,
+            0.2242515504211783,
+            0.5442815475264403
+          ],
+          "page": 0,
+          "confidence": 0.9,
+          "boundary": {},
+          "source_detail": {
+            "extractor": "ocr_table_metrics",
+            "role": "recycled",
+            "table_id": "text_block_2",
+            "grid_source": "text_lines",
+            "header": "재활용(순환이용)",
+            "row_label": "",
+            "raw_text": "5,400 kg",
+            "raw_value": 5400.0,
+            "raw_unit": "kg",
+            "unit": "kg",
+            "unit_source": "cell",
+            "value_source": "explicit",
+            "precision": "cell",
+            "cells": [
+              {
+                "text": "5,400 kg",
+                "bbox": [
+                  0.1662246443272041,
+                  0.5335913119216398,
+                  0.2242515504211783,
+                  0.5442815475264403
+                ],
+                "page": 0,
+                "precision": "cell"
+              }
+            ],
+            "duplicate_status": "undetermined",
+            "possible_duplicate_cells": [
+              {
+                "text": "5,400 kg",
+                "bbox": [
+                  0.367222222507035,
+                  0.6002313622293132,
+                  0.42202543936503606,
+                  0.6103277321049693
+                ],
+                "page": 0,
+                "precision": "cell"
+              }
+            ]
+          }
+        },
+        {
+          "metric_hint": "재활용량",
+          "value": 5400.0,
+          "unit": "kg",
+          "period": "",
+          "kesg_code_guess": null,
+          "bbox": [
+            0.367222222507035,
+            0.6002313622293132,
+            0.42202543936503606,
+            0.6103277321049693
+          ],
+          "page": 0,
+          "confidence": 0.88,
+          "boundary": {},
+          "source_detail": {
+            "extractor": "ocr_table_metrics",
+            "role": "recycled",
+            "table_id": "text_block_3",
+            "grid_source": "text_lines",
+            "header": "재활용량",
+            "row_label": "",
+            "raw_text": "5,400 kg",
+            "raw_value": 5400.0,
+            "raw_unit": "kg",
+            "unit": "kg",
+            "unit_source": "cell",
+            "value_source": "explicit",
+            "precision": "cell",
+            "cells": [
+              {
+                "text": "5,400 kg",
+                "bbox": [
+                  0.367222222507035,
+                  0.6002313622293132,
+                  0.42202543936503606,
+                  0.6103277321049693
+                ],
+                "page": 0,
+                "precision": "cell"
+              }
+            ],
+            "duplicate_status": "undetermined",
+            "possible_duplicate_cells": [
+              {
+                "text": "5,400 kg",
+                "bbox": [
+                  0.1662246443272041,
+                  0.5335913119216398,
+                  0.2242515504211783,
+                  0.5442815475264403
+                ],
+                "page": 0,
+                "precision": "cell"
+              }
+            ]
+          }
+        },
+        {
+          "metric_hint": "재활용 비율",
+          "value": 29.3,
+          "unit": "%",
+          "period": "",
+          "kesg_code_guess": "E-6-2",
+          "bbox": [
+            0.7696486053771175,
+            0.5321540792844641,
+            0.8303515484217925,
+            0.5452199228014426
+          ],
+          "page": 0,
+          "confidence": 0.9,
+          "boundary": {},
+          "source_detail": {
+            "extractor": "raw_rate_pin",
+            "raw_text": "29.3 %",
+            "display_decimals": 1,
+            "precision": "text_block",
+            "cells": [
+              {
+                "text": "29.3 %",
+                "bbox": [
+                  0.7696486053771175,
+                  0.5321540792844641,
+                  0.8303515484217925,
+                  0.5452199228014426
+                ],
+                "page": 0,
+                "precision": "text_block"
+              }
+            ],
+            "precision_note": "값을 품은 OCR·PDF 텍스트 요소의 외접 위치(셀 단위 아님)"
+          }
+        },
+        {
+          "metric_hint": "총 위탁량",
+          "value": 18.4,
+          "unit": "ton",
+          "period": "",
+          "kesg_code_guess": "E-6-1",
+          "bbox": [
+            0.367222222507035,
+            0.5760892685711452,
+            0.4791274885304463,
+            0.5861856021979013
+          ],
+          "page": 0,
+          "confidence": 0.92,
+          "boundary": {},
+          "source_detail": {
+            "extractor": "ocr_table_metrics",
+            "role": "total",
+            "table_id": "text_block_3",
+            "grid_source": "text_lines",
+            "header": "폐기물 총배출량",
+            "row_label": "",
+            "raw_text": "18,400 kg (18.4 t)",
+            "raw_value": 18400.0,
+            "raw_unit": "kg",
+            "unit": "kg",
+            "unit_source": "cell",
+            "value_source": "explicit",
+            "precision": "cell",
+            "cells": [
+              {
+                "text": "18,400 kg (18.4 t)",
+                "bbox": [
+                  0.367222222507035,
+                  0.5760892685711452,
+                  0.4791274885304463,
+                  0.5861856021979013
+                ],
+                "page": 0,
+                "precision": "cell"
+              }
+            ],
+            "pinned_unit": "ton",
+            "pinned_by": "본문 명시값 고정(_TOTAL_RAW_PATTERNS)"
+          }
+        }
+      ]
+    },
+    {
+      "path": "/Users/heojeongmin/Documents/Claude/Projects/ESGenie/시연증빙세트_한울정밀공업/12_재생에너지사용현황_2026-06.pdf",
+      "sha256": "b59208c3896062ced60faebac48ddcd9110f6280fc3287533375b226ffaca033",
+      "pages_zero_based": [
+        0
+      ],
+      "cache_path": "/Users/heojeongmin/Documents/Claude/Projects/ESGenie/data/_cache/ocr/0ad49a4822ee713d7a36ba8cce53c0e31e9c47cf1eaf0f1cdb80cc137f318ce9.json",
+      "cache_sha256": "2f3c6f916c13bac9aceb4fa627d5c5cc5ee0e1da8f1e4d84960c6070b21d347f",
+      "cache_meta": {
+        "key": "0ad49a4822ee713d7a36ba8cce53c0e31e9c47cf1eaf0f1cdb80cc137f318ce9",
+        "created_at": "2026-08-05T16:34:04+00:00",
+        "model": "gpt-4.1-mini",
+        "doc_type": "ambiguous_fallback_vlm",
+        "source_file": "12_재생에너지사용현황_2026-06.pdf",
+        "prompt_sha256": "910d98b903903a42bf1ea537d16996c031f6d5939dd94dd2ed028948f5825de4",
+        "input_chars": 905
+      },
+      "input_class": "saved OCR response replay; context augmented from original PDF",
+      "link_limit": "cache metadata lacks original input SHA256; filename and source content checked"
+    },
+    {
+      "path": "/Users/heojeongmin/Documents/Claude/Projects/ESGenie/시연증빙세트_한울정밀공업/의사소통절차서_2025.pdf",
+      "sha256": "ea9b48f60738d1f10fc23e0608622a58cee0708abb1e3612c15e973a4b5c135a",
+      "pages_zero_based": [
+        0
+      ],
+      "input_class": "local PDF text; question code manually routed, fitness and grounding executed"
+    }
+  ],
+  "claim_source": {
+    "path": "/Users/heojeongmin/Documents/Claude/Projects/ESGenie/시연증빙세트_한울정밀공업/05_OEM_ESG자가진단설문_한성모터스.pdf",
+    "sha256": "3f714150fc34bd738b8ac690a4c06413b6be24834ef4c1844320c40a569461f0",
+    "page": 0,
+    "actual_scope": "SAQ scope not proven identical to April waste ledger",
+    "control": "value 92 reused, April/site boundary explicitly assigned only in synthetic claim"
+  },
+  "actual": {
+    "checks": [
+      {
+        "check": "all_question_ids",
+        "pass": true
+      },
+      {
+        "check": "energy:required",
+        "pass": true
+      },
+      {
+        "check": "energy:value_unit",
+        "pass": true
+      },
+      {
+        "check": "energy:boundary",
+        "pass": true
+      },
+      {
+        "check": "energy:source",
+        "pass": true
+      },
+      {
+        "check": "energy:source_identity_page",
+        "pass": true
+      },
+      {
+        "check": "energy:period_site",
+        "pass": true
+      },
+      {
+        "check": "energy:two_sources_partial",
+        "pass": true
+      },
+      {
+        "check": "energy:scope_action",
+        "pass": true
+      },
+      {
+        "check": "renewable:required",
+        "pass": true
+      },
+      {
+        "check": "renewable:value_unit",
+        "pass": true
+      },
+      {
+        "check": "renewable:boundary",
+        "pass": true
+      },
+      {
+        "check": "renewable:source",
+        "pass": true
+      },
+      {
+        "check": "renewable:source_identity_page",
+        "pass": true
+      },
+      {
+        "check": "renewable:scope_action",
+        "pass": true
+      },
+      {
+        "check": "renewable:conflict_and_denominator",
+        "pass": true
+      },
+      {
+        "check": "emissions:required",
+        "pass": true
+      },
+      {
+        "check": "emissions:value_unit",
+        "pass": true
+      },
+      {
+        "check": "emissions:boundary",
+        "pass": true
+      },
+      {
+        "check": "emissions:source",
+        "pass": true
+      },
+      {
+        "check": "emissions:source_identity_page",
+        "pass": true
+      },
+      {
+        "check": "emissions:period_site",
+        "pass": true
+      },
+      {
+        "check": "emissions:two_sources_partial",
+        "pass": true
+      },
+      {
+        "check": "waste:required",
+        "pass": true
+      },
+      {
+        "check": "waste:value_unit",
+        "pass": true
+      },
+      {
+        "check": "waste:boundary",
+        "pass": true
+      },
+      {
+        "check": "waste:source",
+        "pass": true
+      },
+      {
+        "check": "waste:source_identity_page",
+        "pass": true
+      },
+      {
+        "check": "waste:period",
+        "pass": true
+      },
+      {
+        "check": "waste:comparison",
+        "pass": true
+      },
+      {
+        "check": "communication:required",
+        "pass": true
+      },
+      {
+        "check": "communication:approval_pending",
+        "pass": true
+      },
+      {
+        "check": "communication:actual_page",
+        "pass": true
+      },
+      {
+        "check": "communication:grounding",
+        "pass": true
+      },
+      {
+        "check": "summary:four_parts",
+        "pass": true
+      },
+      {
+        "check": "xlsx:HMC-C-8-E-4-1:row",
+        "pass": true
+      },
+      {
+        "check": "xlsx:HMC-C-8-E-4-1:all_fields",
+        "pass": true
+      },
+      {
+        "check": "xlsx:HMC-C-8-E-4-1:checklist",
+        "pass": true
+      },
+      {
+        "check": "pdf:HMC-C-8-E-4-1:region",
+        "pass": true
+      },
+      {
+        "check": "pdf:HMC-C-8-E-4-1:value_unit_or_draft",
+        "pass": true
+      },
+      {
+        "check": "pdf:HMC-C-8-E-4-1:badge",
+        "pass": true
+      },
+      {
+        "check": "pdf:HMC-C-8-E-4-1:scope",
+        "pass": true
+      },
+      {
+        "check": "pdf:HMC-C-8-E-4-1:notes",
+        "pass": true
+      },
+      {
+        "check": "xlsx:HMC-C-8-E-4-2:row",
+        "pass": true
+      },
+      {
+        "check": "xlsx:HMC-C-8-E-4-2:all_fields",
+        "pass": true
+      },
+      {
+        "check": "xlsx:HMC-C-8-E-4-2:checklist",
+        "pass": true
+      },
+      {
+        "check": "pdf:HMC-C-8-E-4-2:region",
+        "pass": true
+      },
+      {
+        "check": "pdf:HMC-C-8-E-4-2:value_unit_or_draft",
+        "pass": true
+      },
+      {
+        "check": "pdf:HMC-C-8-E-4-2:badge",
+        "pass": true
+      },
+      {
+        "check": "pdf:HMC-C-8-E-4-2:scope",
+        "pass": true
+      },
+      {
+        "check": "pdf:HMC-C-8-E-4-2:notes",
+        "pass": true
+      },
+      {
+        "check": "xlsx:HMC-C-8-E-3-1:row",
+        "pass": true
+      },
+      {
+        "check": "xlsx:HMC-C-8-E-3-1:all_fields",
+        "pass": true
+      },
+      {
+        "check": "xlsx:HMC-C-8-E-3-1:checklist",
+        "pass": true
+      },
+      {
+        "check": "pdf:HMC-C-8-E-3-1:region",
+        "pass": true
+      },
+      {
+        "check": "pdf:HMC-C-8-E-3-1:value_unit_or_draft",
+        "pass": true
+      },
+      {
+        "check": "pdf:HMC-C-8-E-3-1:badge",
+        "pass": true
+      },
+      {
+        "check": "pdf:HMC-C-8-E-3-1:scope",
+        "pass": true
+      },
+      {
+        "check": "pdf:HMC-C-8-E-3-1:notes",
+        "pass": true
+      },
+      {
+        "check": "xlsx:HMC-C-4-E-6-2:row",
+        "pass": true
+      },
+      {
+        "check": "xlsx:HMC-C-4-E-6-2:all_fields",
+        "pass": true
+      },
+      {
+        "check": "xlsx:HMC-C-4-E-6-2:checklist",
+        "pass": true
+      },
+      {
+        "check": "pdf:HMC-C-4-E-6-2:region",
+        "pass": true
+      },
+      {
+        "check": "pdf:HMC-C-4-E-6-2:value_unit_or_draft",
+        "pass": true
+      },
+      {
+        "check": "pdf:HMC-C-4-E-6-2:badge",
+        "pass": true
+      },
+      {
+        "check": "pdf:HMC-C-4-E-6-2:scope",
+        "pass": true
+      },
+      {
+        "check": "pdf:HMC-C-4-E-6-2:notes",
+        "pass": true
+      },
+      {
+        "check": "xlsx:HMC-E-7:row",
+        "pass": true
+      },
+      {
+        "check": "xlsx:HMC-E-7:all_fields",
+        "pass": true
+      },
+      {
+        "check": "xlsx:HMC-E-7:checklist",
+        "pass": true
+      },
+      {
+        "check": "pdf:HMC-E-7:region",
+        "pass": true
+      },
+      {
+        "check": "pdf:HMC-E-7:value_unit_or_draft",
+        "pass": true
+      },
+      {
+        "check": "pdf:HMC-E-7:badge",
+        "pass": true
+      },
+      {
+        "check": "pdf:HMC-E-7:scope",
+        "pass": true
+      },
+      {
+        "check": "pdf:HMC-E-7:notes",
+        "pass": true
+      }
+    ],
+    "failed": [],
+    "executed": 75,
+    "files": {
+      "json": {
+        "path": "/private/tmp/ESGenie-ocr-numeric-20260929/docs/validation/ocr-numeric-20260929/review-r2/hmc/after_out_873c5fa/actual/response_sheet.json",
+        "sha256": "55caa2771d70b84a807270a42595e8119770d89c8927f452ad2efa3d9fd36cec"
+      },
+      "xlsx": {
+        "path": "/private/tmp/ESGenie-ocr-numeric-20260929/docs/validation/ocr-numeric-20260929/review-r2/hmc/after_out_873c5fa/actual/실사응답서_hmc_한울정밀공업_실제자료.xlsx",
+        "sha256": "e138cc01380084849f6c2dadbd04197b6ec051ecfa593ae532a577694395aabd"
+      },
+      "pdf": {
+        "path": "/private/tmp/ESGenie-ocr-numeric-20260929/docs/validation/ocr-numeric-20260929/review-r2/hmc/after_out_873c5fa/actual/실사응답서_hmc_한울정밀공업_실제자료.pdf",
+        "sha256": "5ac4da17af8b5b96098c1dd8dceb9f0d097c39582c18ddccf569627c6b1c65dd"
+      }
+    },
+    "pdf_regions": {
+      "HMC-C-4-E-6-2": [
+        {
+          "page": 2,
+          "rect": [
+            30.0,
+            157.02,
+            811.8897705078125,
+            284.02
+          ],
+          "text": "HMC-C-4-E-\n6-2\n환경\n[C-4·수치] 폐기물 재활용(순환이용)률\n29.3 % (2026년)\n측정 범위: 2026-04-01~2026-04\n-30 · 월간 · 제1공장 · 폐기물 ·\n부분 · 범위 확인 필요\n자가신고\n폐기물 재활용 비율 = 29.3% (보고 연도 2026, \nD1 위험 평가불가, 검증=estimated) · 평가불가 \n· 비교 0건 · 미검증 1건 · 범위 확인 필요 1건\n범위 확인 필요: 전체 주장에 필요한 기간·사업장·\n분모 미확인 — 부분값 증빙 2026-04-01~2026-0\n4-30 · 월간 · 제1공장 · 폐기물 · 부분\n범위 확인 필요: 전체 주장에 필요한 기간·사업장·\n분모 미확인 — 부분값 증빙 2026-04-01~2026-0\n4-30 · 월간 · 제1공장 · 폐기물 · 부분\n근거: 03_사업장폐기물_위탁처리명세\n_2026-04.pdf p.1\n"
+        }
+      ],
+      "HMC-C-8-E-3-1": [
+        {
+          "page": 3,
+          "rect": [
+            30.0,
+            168.02,
+            811.8897705078125,
+            361.02
+          ],
+          "text": "HMC-C-8-E-\n3-1\n환경\n[C-8·수치] 온실가스 배출량 (Scope 1+2)\n88.397 tCO2eq (2026\n년)\n측정 범위: 2026-04-25~2026-05\n-24 · 월간 · 제1공장 도장·건조라\n인 / 제1공장 · 도시가스 환산 배출\n량 + 사용전력량 환산 배출량 · 부\n분 · 범위 확인 필요\n자가신고\n온실가스 배출량 (Scope1 + Scope2) = \n88.397tCO2eq (보고 연도 2026, D1 위험 평가불\n가, 검증=estimated) · 평가불가 · 비교 0건 · 미\n검증 1건 · 범위 확인 필요 1건 · 신뢰 정보: \nderived, incomplete_scope, partial_value\n범위 확인 필요: 전체 주장에 필요한 기간·사업장·\n분모 미확인 — 부분값 증빙 2026-04-25~2026-0\n5-24 · 월간 · 제1공장 도장·건조라인 / 제1공장 \n· 도시가스 환산 배출량 + 사용전력량 환산 배출량 \n· 부분 · E-3-1: 부분값 — 2026-04-25~2026-05-\n24 · 월간 · 제1공장 도장·건조라인 / 제1공장 · \n도시가스 환산 배출량 + 사용전력량 환산 배출량 · \n부분. 전사·연간·전체 범위 총량임이 입증되지 않\n아 검증 보류. 연간 실적의 실제 사용기간·집계 방\n식 확인; 전사/공장 조직·사업장 범위 확인\n근거: 02_도시가스요금고지서_2026-05.pdf p.1 \n/ 01_전기요금청구서_2026-05.pdf p.1\n"
+        }
+      ],
+      "HMC-C-8-E-4-1": [
+        {
+          "page": 4,
+          "rect": [
+            30.0,
+            57.02,
+            811.8897705078125,
+            349.02
+          ],
+          "text": "HMC-C-8-E-\n4-1\n환경\n[C-8·수치] 에너지 사용량\n0.873988 TJ (2026년)\n측정 범위: 2026-04-25~2026-05\n-24 · 월간 · 제1공장 / 제1공장 도\n장·건조라인 · 사용전력량 + 도시\n가스 · 부분 · 범위 확인 필요\n자가신고\n에너지 사용량 = 0.873988TJ (보고 연도 2026, \nD1 위험 평가불가, 검증=estimated) · 평가불가 \n· 비교 0건 · 미검증 1건 · 범위 확인 필요 1건 · 신\n뢰 정보: incomplete_scope, partial_value\n범위 확인 필요: 전체 주장에 필요한 기간·사업장·\n분모 미확인 — 부분값 증빙 2026-04-25~2026-0\n5-24 · 월간 · 제1공장 / 제1공장 도장·건조라인 \n· 사용전력량 + 도시가스 · 부분 · E-4-1: 실제 대\n상 기간·집계 상이(2026-04-25~2026-05-24 vs \n2026년 1~6월 월평균) — 합산 보류 · E-4-1: 제한\n적 합산: 사용전력량 + 도시가스 — 확인된 기간·사\n업장의 일부 에너지원, 전사 연간 총량 입증 아님 · \nE-4-1: 합산 제외 — 12_재생에너지사용현황\n_2026-06.pdf — 실제 대상 기간·집계 상이\n(2026-04-25~2026-05-24 vs 2026년 1~6월 월\n평균) — 합산 보류 · E-4-1: 부분값 — \n2026-04-25~2026-05-24 · 월간 · 제1공장 / 제1\n공장 도장·건조라인 · 사용전력량 + 도시가스 · 부\n분. 전사·연간·전체 범위 총량임이 입증되지 않아 \n검증 보류. 연간 실적의 실제 사용기간·집계 방식 \n확인; 전사/공장 조직·사업장 범위 확인; 전체 에너\n지원 포함 여부 확인\n근거: 01_전기요금청구서_2026-05.pdf p.1 / \n02_도시가스요금고지서_2026-05.pdf p.1\n보완 대상(값 산정 미사용): 12_재생에너지사용현\n황_2026-06.pdf p.1\n"
+        }
+      ],
+      "HMC-C-8-E-4-2": [
+        {
+          "page": 5,
+          "rect": [
+            30.0,
+            57.02,
+            811.8897705078125,
+            316.02
+          ],
+          "text": "HMC-C-8-E-\n4-2\n환경\n[C-8·수치] 재생에너지 비율\n10.6 % (2026년)\n측정 범위: 2026년 상반기 · 기간\n합계 · 재생에너지 · 부분 · 범위\n확인 필요\n자가신고\n재생에너지 사용 비율 = 10.6% (보고 연도 2026, \nD1 위험 평가불가, 검증=estimated) · 평가불가 \n· 비교 0건 · 미검증 1건 · 범위 확인 필요 1건 · 신\n뢰 정보: incomplete_scope\n범위 확인 필요: 전체 주장에 필요한 기간·사업장·\n분모 미확인 — 부분값 증빙 2026년 상반기 · 기간\n합계 · 재생에너지 · 부분 · 실적/계획·설비 동일\n성 확인 필요 (12_재생에너지사용현황\n_2026-06.pdf p.1): 태양광 월평균 사용량 \n45.0MWh (2026년 1~6월 월평균) / • 태양광 패널\n 설치 — 이사회 승인 투자(2억원), 2026년 하반기 \n착공, 연간 약 540MWh 발전 목표. 기존 설비 또는 \n동일 설비인지 확인 · 조달수단 확인 필요 (12_재\n생에너지사용현황_2026-06.pdf): • 그린 프리미\n엄 구매 — 충청권 풍력발전 PPA 계약으로 월 \n30MWh 안정 공급 — 그린프리미엄/PPA 계약·사\n용량 증빙 확인 · E-4-2: 부분값 — 2026년 상반기 \n· 기간합계 · 재생에너지 · 부분. 전사·연간·전체 \n범위 총량임이 입증되지 않아 검증 보류. 연간 실적\n의 실제 사용기간·집계 방식 확인; 전사/공장 조직\n·사업장 범위 확인; 전체 재생에너지 분자·조달수\n단 포함 관계 확인; 총에너지 분모 확인 (분모 미상)\n근거: 12_재생에너지사용현황_2026-06.pdf p.1\n"
+        }
+      ],
+      "HMC-E-7": [
+        {
+          "page": 7,
+          "rect": [
+            30.0,
+            291.02,
+            811.8897705078125,
+            385.02
+          ],
+          "text": "HMC-E-7\n경영시스템\n[E-7] 의사소통 — 방침·관행·기대·성과를 근\n로자·공급사·고객에 명확·정확히 전달하는\n프로세스.\n[AI 초안 — 승인 전]\nESG 방침·관행·기대·성\n과를 근로자·공급사·고\n객에 명확하고 정확하게 \n전달하는 프로세스를 규\n정한다. [1]\n출처: [1] 의사소통절차서\n_2025.pdf p.1\n—\nAI초안(승인\n전)\n방침·관행·기대·성과를 근로자·공급사·고객에\n전달하는 프로세스를 입증할 의사소통 절차서, 공\n지 기록, 소통 채널 운영 현황을 올려주세요.\n"
+        }
+      ]
+    },
+    "xlsx_rows": {
+      "HMC-C-8-E-4-1": 27,
+      "HMC-C-8-E-4-2": 28,
+      "HMC-C-8-E-3-1": 26,
+      "HMC-C-4-E-6-2": 19,
+      "HMC-E-7": 52
+    }
+  },
+  "controlled": {
+    "checks": [
+      {
+        "check": "all_question_ids",
+        "pass": true
+      },
+      {
+        "check": "energy:required",
+        "pass": true
+      },
+      {
+        "check": "energy:value_unit",
+        "pass": true
+      },
+      {
+        "check": "energy:boundary",
+        "pass": true
+      },
+      {
+        "check": "energy:source",
+        "pass": true
+      },
+      {
+        "check": "energy:source_identity_page",
+        "pass": true
+      },
+      {
+        "check": "energy:period_site",
+        "pass": true
+      },
+      {
+        "check": "energy:two_sources_partial",
+        "pass": true
+      },
+      {
+        "check": "energy:scope_action",
+        "pass": true
+      },
+      {
+        "check": "renewable:required",
+        "pass": true
+      },
+      {
+        "check": "renewable:value_unit",
+        "pass": true
+      },
+      {
+        "check": "renewable:boundary",
+        "pass": true
+      },
+      {
+        "check": "renewable:source",
+        "pass": true
+      },
+      {
+        "check": "renewable:source_identity_page",
+        "pass": true
+      },
+      {
+        "check": "renewable:scope_action",
+        "pass": true
+      },
+      {
+        "check": "renewable:conflict_and_denominator",
+        "pass": true
+      },
+      {
+        "check": "emissions:required",
+        "pass": true
+      },
+      {
+        "check": "emissions:value_unit",
+        "pass": true
+      },
+      {
+        "check": "emissions:boundary",
+        "pass": true
+      },
+      {
+        "check": "emissions:source",
+        "pass": true
+      },
+      {
+        "check": "emissions:source_identity_page",
+        "pass": true
+      },
+      {
+        "check": "emissions:period_site",
+        "pass": true
+      },
+      {
+        "check": "emissions:two_sources_partial",
+        "pass": true
+      },
+      {
+        "check": "waste:required",
+        "pass": true
+      },
+      {
+        "check": "waste:value_unit",
+        "pass": true
+      },
+      {
+        "check": "waste:boundary",
+        "pass": true
+      },
+      {
+        "check": "waste:source",
+        "pass": true
+      },
+      {
+        "check": "waste:source_identity_page",
+        "pass": true
+      },
+      {
+        "check": "waste:period",
+        "pass": true
+      },
+      {
+        "check": "waste:comparison",
+        "pass": true
+      },
+      {
+        "check": "waste:mismatch_action",
+        "pass": true
+      },
+      {
+        "check": "communication:required",
+        "pass": true
+      },
+      {
+        "check": "communication:approval_pending",
+        "pass": true
+      },
+      {
+        "check": "communication:actual_page",
+        "pass": true
+      },
+      {
+        "check": "communication:grounding",
+        "pass": true
+      },
+      {
+        "check": "summary:four_parts",
+        "pass": true
+      },
+      {
+        "check": "xlsx:HMC-C-8-E-4-1:row",
+        "pass": true
+      },
+      {
+        "check": "xlsx:HMC-C-8-E-4-1:all_fields",
+        "pass": true
+      },
+      {
+        "check": "xlsx:HMC-C-8-E-4-1:checklist",
+        "pass": true
+      },
+      {
+        "check": "pdf:HMC-C-8-E-4-1:region",
+        "pass": true
+      },
+      {
+        "check": "pdf:HMC-C-8-E-4-1:value_unit_or_draft",
+        "pass": true
+      },
+      {
+        "check": "pdf:HMC-C-8-E-4-1:badge",
+        "pass": true
+      },
+      {
+        "check": "pdf:HMC-C-8-E-4-1:scope",
+        "pass": true
+      },
+      {
+        "check": "pdf:HMC-C-8-E-4-1:notes",
+        "pass": true
+      },
+      {
+        "check": "xlsx:HMC-C-8-E-4-2:row",
+        "pass": true
+      },
+      {
+        "check": "xlsx:HMC-C-8-E-4-2:all_fields",
+        "pass": true
+      },
+      {
+        "check": "xlsx:HMC-C-8-E-4-2:checklist",
+        "pass": true
+      },
+      {
+        "check": "pdf:HMC-C-8-E-4-2:region",
+        "pass": true
+      },
+      {
+        "check": "pdf:HMC-C-8-E-4-2:value_unit_or_draft",
+        "pass": true
+      },
+      {
+        "check": "pdf:HMC-C-8-E-4-2:badge",
+        "pass": true
+      },
+      {
+        "check": "pdf:HMC-C-8-E-4-2:scope",
+        "pass": true
+      },
+      {
+        "check": "pdf:HMC-C-8-E-4-2:notes",
+        "pass": true
+      },
+      {
+        "check": "xlsx:HMC-C-8-E-3-1:row",
+        "pass": true
+      },
+      {
+        "check": "xlsx:HMC-C-8-E-3-1:all_fields",
+        "pass": true
+      },
+      {
+        "check": "xlsx:HMC-C-8-E-3-1:checklist",
+        "pass": true
+      },
+      {
+        "check": "pdf:HMC-C-8-E-3-1:region",
+        "pass": true
+      },
+      {
+        "check": "pdf:HMC-C-8-E-3-1:value_unit_or_draft",
+        "pass": true
+      },
+      {
+        "check": "pdf:HMC-C-8-E-3-1:badge",
+        "pass": true
+      },
+      {
+        "check": "pdf:HMC-C-8-E-3-1:scope",
+        "pass": true
+      },
+      {
+        "check": "pdf:HMC-C-8-E-3-1:notes",
+        "pass": true
+      },
+      {
+        "check": "xlsx:HMC-C-4-E-6-2:row",
+        "pass": true
+      },
+      {
+        "check": "xlsx:HMC-C-4-E-6-2:all_fields",
+        "pass": true
+      },
+      {
+        "check": "xlsx:HMC-C-4-E-6-2:checklist",
+        "pass": true
+      },
+      {
+        "check": "pdf:HMC-C-4-E-6-2:region",
+        "pass": true
+      },
+      {
+        "check": "pdf:HMC-C-4-E-6-2:value_unit_or_draft",
+        "pass": true
+      },
+      {
+        "check": "pdf:HMC-C-4-E-6-2:badge",
+        "pass": true
+      },
+      {
+        "check": "pdf:HMC-C-4-E-6-2:scope",
+        "pass": true
+      },
+      {
+        "check": "pdf:HMC-C-4-E-6-2:notes",
+        "pass": true
+      },
+      {
+        "check": "xlsx:HMC-E-7:row",
+        "pass": true
+      },
+      {
+        "check": "xlsx:HMC-E-7:all_fields",
+        "pass": true
+      },
+      {
+        "check": "xlsx:HMC-E-7:checklist",
+        "pass": true
+      },
+      {
+        "check": "pdf:HMC-E-7:region",
+        "pass": true
+      },
+      {
+        "check": "pdf:HMC-E-7:value_unit_or_draft",
+        "pass": true
+      },
+      {
+        "check": "pdf:HMC-E-7:badge",
+        "pass": true
+      },
+      {
+        "check": "pdf:HMC-E-7:scope",
+        "pass": true
+      },
+      {
+        "check": "pdf:HMC-E-7:notes",
+        "pass": true
+      }
+    ],
+    "failed": [],
+    "executed": 76,
+    "files": {
+      "json": {
+        "path": "/private/tmp/ESGenie-ocr-numeric-20260929/docs/validation/ocr-numeric-20260929/review-r2/hmc/after_out_873c5fa/controlled/response_sheet.json",
+        "sha256": "67b14aa2d523740c4ae9a565a780edbdf663bf14e80eacf1566fbffd0936682f"
+      },
+      "xlsx": {
+        "path": "/private/tmp/ESGenie-ocr-numeric-20260929/docs/validation/ocr-numeric-20260929/review-r2/hmc/after_out_873c5fa/controlled/실사응답서_hmc_한울정밀공업_동일범위주장통제.xlsx",
+        "sha256": "e057721b3a993b4a53da108e2cb94feba07b27df1004080e102612bdbe4f56eb"
+      },
+      "pdf": {
+        "path": "/private/tmp/ESGenie-ocr-numeric-20260929/docs/validation/ocr-numeric-20260929/review-r2/hmc/after_out_873c5fa/controlled/실사응답서_hmc_한울정밀공업_동일범위주장통제.pdf",
+        "sha256": "18fdbabac7a19fe77a9b6de50e4006f9bf99c4009196361cff9ea1073b540690"
+      }
+    },
+    "pdf_regions": {
+      "HMC-C-4-E-6-2": [
+        {
+          "page": 2,
+          "rect": [
+            30.0,
+            196.02,
+            811.8897705078125,
+            323.02
+          ],
+          "text": "HMC-C-4-E-\n6-2\n환경\n[C-4·수치] 폐기물 재활용(순환이용)률\n29.3 % (2026년)\n측정 범위: 2026-04-01~2026-04\n-30 · 월간 · 제1공장 · 폐기물 ·\n부분 · 실제 불일치\n검토필요\n폐기물 재활용 비율 = 29.3% (보고 연도 2026, \nD1 위험 평가불가, 검증=estimated) · 평가불가 \n· 비교 0건 · 미검증 1건 · 범위 확인 필요 1건 · 자\n가주장과 증빙 불일치 (차이 62.70%p, 기준 \n>=10%p) — 소명 필요\n실제 불일치: 차이 62.70%p, 기준 >=10%p\nD1 불일치: 자가신고 92.0% vs 증빙 29.3% (차이\n 62.70%p, 기준 >=10%p, synthetic:same_sco\npe_control; original SAQ value only)\n근거: 03_사업장폐기물_위탁처리명세\n_2026-04.pdf p.1\n"
+        }
+      ],
+      "HMC-C-8-E-3-1": [
+        {
+          "page": 3,
+          "rect": [
+            30.0,
+            207.02,
+            811.8897705078125,
+            400.02
+          ],
+          "text": "HMC-C-8-E-\n3-1\n환경\n[C-8·수치] 온실가스 배출량 (Scope 1+2)\n88.397 tCO2eq (2026\n년)\n측정 범위: 2026-04-25~2026-05\n-24 · 월간 · 제1공장 도장·건조라\n인 / 제1공장 · 도시가스 환산 배출\n량 + 사용전력량 환산 배출량 · 부\n분 · 범위 확인 필요\n자가신고\n온실가스 배출량 (Scope1 + Scope2) = \n88.397tCO2eq (보고 연도 2026, D1 위험 평가불\n가, 검증=estimated) · 평가불가 · 비교 0건 · 미\n검증 1건 · 범위 확인 필요 1건 · 신뢰 정보: \nderived, incomplete_scope, partial_value\n범위 확인 필요: 전체 주장에 필요한 기간·사업장·\n분모 미확인 — 부분값 증빙 2026-04-25~2026-0\n5-24 · 월간 · 제1공장 도장·건조라인 / 제1공장 \n· 도시가스 환산 배출량 + 사용전력량 환산 배출량 \n· 부분 · E-3-1: 부분값 — 2026-04-25~2026-05-\n24 · 월간 · 제1공장 도장·건조라인 / 제1공장 · \n도시가스 환산 배출량 + 사용전력량 환산 배출량 · \n부분. 전사·연간·전체 범위 총량임이 입증되지 않\n아 검증 보류. 연간 실적의 실제 사용기간·집계 방\n식 확인; 전사/공장 조직·사업장 범위 확인\n근거: 02_도시가스요금고지서_2026-05.pdf p.1 \n/ 01_전기요금청구서_2026-05.pdf p.1\n"
+        }
+      ],
+      "HMC-C-8-E-4-1": [
+        {
+          "page": 4,
+          "rect": [
+            30.0,
+            57.02,
+            811.8897705078125,
+            349.02
+          ],
+          "text": "HMC-C-8-E-\n4-1\n환경\n[C-8·수치] 에너지 사용량\n0.873988 TJ (2026년)\n측정 범위: 2026-04-25~2026-05\n-24 · 월간 · 제1공장 / 제1공장 도\n장·건조라인 · 사용전력량 + 도시\n가스 · 부분 · 범위 확인 필요\n자가신고\n에너지 사용량 = 0.873988TJ (보고 연도 2026, \nD1 위험 평가불가, 검증=estimated) · 평가불가 \n· 비교 0건 · 미검증 1건 · 범위 확인 필요 1건 · 신\n뢰 정보: incomplete_scope, partial_value\n범위 확인 필요: 전체 주장에 필요한 기간·사업장·\n분모 미확인 — 부분값 증빙 2026-04-25~2026-0\n5-24 · 월간 · 제1공장 / 제1공장 도장·건조라인 \n· 사용전력량 + 도시가스 · 부분 · E-4-1: 실제 대\n상 기간·집계 상이(2026-04-25~2026-05-24 vs \n2026년 1~6월 월평균) — 합산 보류 · E-4-1: 제한\n적 합산: 사용전력량 + 도시가스 — 확인된 기간·사\n업장의 일부 에너지원, 전사 연간 총량 입증 아님 · \nE-4-1: 합산 제외 — 12_재생에너지사용현황\n_2026-06.pdf — 실제 대상 기간·집계 상이\n(2026-04-25~2026-05-24 vs 2026년 1~6월 월\n평균) — 합산 보류 · E-4-1: 부분값 — \n2026-04-25~2026-05-24 · 월간 · 제1공장 / 제1\n공장 도장·건조라인 · 사용전력량 + 도시가스 · 부\n분. 전사·연간·전체 범위 총량임이 입증되지 않아 \n검증 보류. 연간 실적의 실제 사용기간·집계 방식 \n확인; 전사/공장 조직·사업장 범위 확인; 전체 에너\n지원 포함 여부 확인\n근거: 01_전기요금청구서_2026-05.pdf p.1 / \n02_도시가스요금고지서_2026-05.pdf p.1\n보완 대상(값 산정 미사용): 12_재생에너지사용현\n황_2026-06.pdf p.1\n"
+        }
+      ],
+      "HMC-C-8-E-4-2": [
+        {
+          "page": 5,
+          "rect": [
+            30.0,
+            57.02,
+            811.8897705078125,
+            316.02
+          ],
+          "text": "HMC-C-8-E-\n4-2\n환경\n[C-8·수치] 재생에너지 비율\n10.6 % (2026년)\n측정 범위: 2026년 상반기 · 기간\n합계 · 재생에너지 · 부분 · 범위\n확인 필요\n자가신고\n재생에너지 사용 비율 = 10.6% (보고 연도 2026, \nD1 위험 평가불가, 검증=estimated) · 평가불가 \n· 비교 0건 · 미검증 1건 · 범위 확인 필요 1건 · 신\n뢰 정보: incomplete_scope\n범위 확인 필요: 전체 주장에 필요한 기간·사업장·\n분모 미확인 — 부분값 증빙 2026년 상반기 · 기간\n합계 · 재생에너지 · 부분 · 실적/계획·설비 동일\n성 확인 필요 (12_재생에너지사용현황\n_2026-06.pdf p.1): 태양광 월평균 사용량 \n45.0MWh (2026년 1~6월 월평균) / • 태양광 패널\n 설치 — 이사회 승인 투자(2억원), 2026년 하반기 \n착공, 연간 약 540MWh 발전 목표. 기존 설비 또는 \n동일 설비인지 확인 · 조달수단 확인 필요 (12_재\n생에너지사용현황_2026-06.pdf): • 그린 프리미\n엄 구매 — 충청권 풍력발전 PPA 계약으로 월 \n30MWh 안정 공급 — 그린프리미엄/PPA 계약·사\n용량 증빙 확인 · E-4-2: 부분값 — 2026년 상반기 \n· 기간합계 · 재생에너지 · 부분. 전사·연간·전체 \n범위 총량임이 입증되지 않아 검증 보류. 연간 실적\n의 실제 사용기간·집계 방식 확인; 전사/공장 조직\n·사업장 범위 확인; 전체 재생에너지 분자·조달수\n단 포함 관계 확인; 총에너지 분모 확인 (분모 미상)\n근거: 12_재생에너지사용현황_2026-06.pdf p.1\n"
+        }
+      ],
+      "HMC-E-7": [
+        {
+          "page": 7,
+          "rect": [
+            30.0,
+            291.02,
+            811.8897705078125,
+            385.02
+          ],
+          "text": "HMC-E-7\n경영시스템\n[E-7] 의사소통 — 방침·관행·기대·성과를 근\n로자·공급사·고객에 명확·정확히 전달하는\n프로세스.\n[AI 초안 — 승인 전]\nESG 방침·관행·기대·성\n과를 근로자·공급사·고\n객에 명확하고 정확하게 \n전달하는 프로세스를 규\n정한다. [1]\n출처: [1] 의사소통절차서\n_2025.pdf p.1\n—\nAI초안(승인\n전)\n방침·관행·기대·성과를 근로자·공급사·고객에\n전달하는 프로세스를 입증할 의사소통 절차서, 공\n지 기록, 소통 채널 운영 현황을 올려주세요.\n"
+        }
+      ]
+    },
+    "xlsx_rows": {
+      "HMC-C-8-E-4-1": 27,
+      "HMC-C-8-E-4-2": 28,
+      "HMC-C-8-E-3-1": 26,
+      "HMC-C-4-E-6-2": 19,
+      "HMC-E-7": 52
+    }
+  },
+  "negative_controls": {
+    "missing_question": [
+      "all_question_ids",
+      "waste:required"
+    ],
+    "empty_boundary": [
+      "energy:boundary",
+      "energy:period_site"
+    ],
+    "changed_value": [
+      "energy:value_unit"
+    ],
+    "wrong_page": [
+      "communication:actual_page"
+    ],
+    "missing_checklist": [
+      "energy:scope_action"
+    ]
+  },
+  "clauses": {
+    "input_class": "real PDF local text; manual relevance labels; actual grounding; no live LLM",
+    "documents": [
+      {
+        "file": "/Users/heojeongmin/Documents/Claude/Projects/ESGenie/시연증빙세트_한울정밀공업/의사소통절차서_2025.pdf",
+        "sha256": "ea9b48f60738d1f10fc23e0608622a58cee0708abb1e3612c15e973a4b5c135a",
+        "page": 0,
+        "source_excerpt": "한울정밀공업㈜\n이해관계자 의사소통 절차서\n────────────────────────────────────────\n문서번호: ESG-COM-2025-001\n시행일자: 2025년 3월 1일\n승  인: 대표이사 김철수 (인)\n1. 목적\n   ESG 방침·관행·기대·성과를 근로자·공급사·고객에\n   명확하고 정확하게 전달하는 프로세스를 규정한다.\n2. 내부 의사소통 (근로자)\n   - 신입 OJT 시 ESG 방침·행동규범 교육(8시간)\n   - 월간 안전보건 게시판 업데이트\n   - 분기별 ESG 뉴스레터 배포\n   - 근로자 고충 접수 핫라인(익명 가능)\n3. 외부 의사소통 (공급사)\n   - 연 1회 공급사 ESG 설명회 개최\n   - 행동규범(CoC) 한국어·영문 배포\n   - SAQ 결과 피드백 30일 이내 회신\n4. 외부 의사소통 (고객·이해관계자)\n   - ESG 경영 성과 홈페이지 공개(연 1회 갱신)\n   - 고객 실사 대응 창구: ESG 사무국(esg@hanul.co.kr)\n5. 기록\n   소통 이력은 3년간 보존한다.\n    한울정밀공업㈜  |  경기도 화성시 동탄산단로 45\n",
+        "HMC-E-7": {
+          "manual_label": "관련",
+          "selected": true,
+          "hold_reason": "",
+          "kept_excerpt": "목적\n   ESG 방침·관행·기대·성과를 근로자·공급사·고객에\n   명확하고 정확하게 전달하는 프로세스를 규정한다.\n내부 의사소통 (근로자)\n   - 신입 OJT 시 ESG 방침·행동규범 교육(8시간)\n   - 월간 안전보건 게시판 업데이트\n   - 분기별 ESG 뉴스레터 배포\n   - 근로자 고충 접수 핫라인(익명 가능)\n외부 의사소통 (공급사)\n   - 연 1회 공급사 ESG 설명회 개최\n   - 행동규범(CoC) 한국어·영문 배포\n   - SAQ 결과 피드백 30일 이내 회신\n외부 의사소통 (고객·이해관계자)\n   - ESG 경영 성과 홈페이지 공개(연 1회 갱신)\n   - 고객 실사 대응 창구: ESG 사무국(esg@hanul.co.kr)"
+        },
+        "HMC-E-8": {
+          "manual_label": "부분 관련",
+          "selected": true,
+          "hold_reason": "",
+          "kept_excerpt": "내부 의사소통 (근로자)\n   - 신입 OJT 시 ESG 방침·행동규범 교육(8시간)\n   - 월간 안전보건 게시판 업데이트\n   - 분기별 ESG 뉴스레터 배포\n   - 근로자 고충 접수 핫라인(익명 가능)"
+        }
+      },
+      {
+        "file": "/Users/heojeongmin/Documents/Claude/Projects/ESGenie/시연증빙세트_한울정밀공업/15_노사협의회규정_2026-06.pdf",
+        "sha256": "285587de243e950176d65dab5000992df979e2a8cbcadc3c93fc794931d34f76",
+        "page": 0,
+        "source_excerpt": "시연용 가상자료\n시연용 가상자료 — 실제 기업과 무관합니다.\n한울정밀공업(주) · ESGenie 본선 시연 세트\n노사협의회 규정\n한울정밀공업(주) · 문서번호 HN-HR-006 · 시행 2024년 1월 1일\n제1조 (목적)\n이 규정은 경영과 노동에 관한 사항을 노사가 동등한 입장에서 협의함으로써 상호 신뢰 관계를 구축하고, 기업의 발전과 근로자의\n복리 증진을 도모함을 목적으로 한다.\n제2조 (구성)\n구분\n구성\n선출 방법\n위원장\n대표이사\n회사측 당연직\n회사측 위원\n인사담당임원, 재무담당임원 (2명)\n회사 지명\n근로자측 위원\n직원 선출 대표 (3명)\n부서별 대의원 2명 이상 투표로 선출\n근로자측 위원의 임기는 1년으로 하며 연임할 수 있다.\n제3조 (회의)\n• 개최 주기: 월 1회 정기 개최(필요 시 임시 협의 가능)\n• 개최 시간: 근무시간 내에 개최하며 해당 시간의 급여를 지급한다.\n• 협의 의제: 경영 현황, 임금, 근무환경, 안전보건, 교육훈련 등\n제4조 (결사의 자유 및 보복 금지)\n• 회사는 근로자의 단결권·단체교섭권을 존중하며, 노동조합 결성 및 가입을 방해하지 않는다.\n• 회사는 근로자측 위원의 의견 표명, 협의 참여, 문제 제기를 이유로 해고·전",
+        "HMC-E-7": {
+          "manual_label": "무관",
+          "selected": false,
+          "hold_reason": "질문의 대상·내용·행동 관계를 뒷받침하는 근거 없음",
+          "kept_excerpt": ""
+        },
+        "HMC-E-8": {
+          "manual_label": "관련",
+          "selected": true,
+          "hold_reason": "",
+          "kept_excerpt": "한울정밀공업(주) · ESGenie 본선 시연 세트\n노사협의회 규정\n한울정밀공업(주) · 문서번호 HN-HR-006 · 시행 2024년 1월 1일\n제1조 (목적)\n이 규정은 경영과 노동에 관한 사항을 노사가 동등한 입장에서 협의함으로써 상호 신뢰 관계를 구축하고, 기업의 발전과 근로자의\n복리 증진을 도모함을 목적으로 한다.\n제2조 (구성)\n구분\n구성\n선출 방법\n위원장\n대표이사\n회사측 당연직\n회사측 위원\n인사담당임원, 재무담당임원 (2명)\n회사 지명\n근로자측 위원\n직원 선출 대표 (3명)\n부서별 대의원 2명 이상 투표로 선출\n근로자측 위원의 임기는 1년으로 하며 연임할 수 있다.\n• 회사는 근로자측 위원의 의견 표명, 협의 참여, 문제 제기를 이유로 해고·전직·임금 감액 등 불리한 처우를 하지 않는다.\n제5조 (정보 제공)\n회사는 협의 안건에 필요한 자료를 사전에 공개하고, 근로자측 위원이 요청하는 경우 경영 현황을 성실히 설명한다."
+        }
+      },
+      {
+        "file": "/Users/heojeongmin/Documents/Claude/Projects/ESGenie/시연증빙세트_한울정밀공업/17_고충처리및신원보호규정_2026-06.pdf",
+        "sha256": "51ba2554cdf9639a93feac577b829635346718db64205f0c11dacd638dab1316",
+        "page": 0,
+        "source_excerpt": "시연용 가상자료\n시연용 가상자료 — 실제 기업과 무관합니다.\n한울정밀공업(주) · ESGenie 본선 시연 세트\n고충처리 절차 및 신원보호 규정\n한울정밀공업(주) · 문서번호 HN-HR-009 · 시행 2024년 1월 1일\n제1조 (목적)\n이 규정은 임직원의 직장 내 부당한 대우, 안전 불만, 법규 위반 사항에 대한 고충을 공정하게 해결하고 신고자를 보호함을\n목적으로 한다.\n제2조 (신고 경로)\n경로\n담당\n성격\n1차 상담\n직속 상사\n비공식 상담\n공식 접수\n인사담당임원\n공식 고충 접수·조사\n익명 핫라인\n외부 전담 변호사\n전화·이메일, 익명 가능\n제3조 (신원보호)\n• 신고자의 신원은 엄격히 보호하며 익명 신고를 허용한다.\n• 신고 내용은 조사 관련자에 한해 열람을 제한한다.\n• 신고 사실 자체를 외부에 공개하는 것을 금지한다.\n제4조 (보복 금지)\n• 신고 또는 고충 제기를 이유로 한 해고, 임금 삭감, 부당 전직, 따돌림을 금지한다.\n• 보복 행위가 확인된 경우 즉시 징계하고 손해배상을 청구한다.\n제5조 (처리 절차)\n단계\n기한\n접수 후 조사 착수\n15일 이내\n조사 결과 통보\n30일 이내\n이의 제기\n결과 통보 후 10일 이내\n제6조 (차별 및 괴롭힘 금지)\n",
+        "HMC-E-7": {
+          "manual_label": "무관",
+          "selected": false,
+          "hold_reason": "질문의 대상·내용·행동 관계를 뒷받침하는 근거 없음",
+          "kept_excerpt": ""
+        },
+        "HMC-E-8": {
+          "manual_label": "관련",
+          "selected": true,
+          "hold_reason": "",
+          "kept_excerpt": "한울정밀공업(주) · ESGenie 본선 시연 세트\n고충처리 절차 및 신원보호 규정\n한울정밀공업(주) · 문서번호 HN-HR-009 · 시행 2024년 1월 1일\n제1조 (목적)\n이 규정은 임직원의 직장 내 부당한 대우, 안전 불만, 법규 위반 사항에 대한 고충을 공정하게 해결하고 신고자를 보호함을\n목적으로 한다.\n제2조 (신고 경로)\n경로\n담당\n성격\n1차 상담\n직속 상사\n비공식 상담\n공식 접수\n인사담당임원\n공식 고충 접수·조사\n익명 핫라인\n외부 전담 변호사\n전화·이메일, 익명 가능\n제3조 (신원보호)\n• 신고자의 신원은 엄격히 보호하며 익명 신고를 허용한다.\n제4조 (보복 금지)\n• 신고 또는 고충 제기를 이유로 한 해고, 임금 삭감, 부당 전직, 따돌림을 금지한다.\n제6조 (차별 및 괴롭힘 금지)\n회사는 성별·연령·국적·인종·종교·고용형태에 따른 차별과 직장 내 괴롭힘·성희롱을 금지하며, 관련 고충은 본 규정에 따라\n처리한다.\n연간 처리 기록: 2026년 고충 접수 0건 / 주관: 인사팀 / 승인: 대표이사"
+        }
+      },
+      {
+        "file": "/Users/heojeongmin/Documents/Claude/Projects/ESGenie/시연증빙세트_한울정밀공업/18_정보보호정책_2026-06.pdf",
+        "sha256": "d8b71febc94335187d7eec0ed3e6b4db2a92154179a66f497628509aef090d02",
+        "page": 0,
+        "source_excerpt": "시연용 가상자료\n시연용 가상자료 — 실제 기업과 무관합니다.\n한울정밀공업(주) · ESGenie 본선 시연 세트\n정보보호 정책\n한울정밀공업(주) · 문서번호 HN-SEC-001 · 시행 2024년 1월 1일\n제1조 (기본원칙)\n• 임직원·고객·공급사의 개인정보를 개인정보보호법 등 관계 법규에 따라 보호한다.\n• 정보보안 관리체계(ISMS) 인증을 준비하며 표준 통제항목을 단계적으로 적용한다.\n• 정보 접근은 업무상 필요한 최소한의 인원으로 제한한다.\n제2조 (개인정보 관리)\n단계\n기준\n수집\n업무상 필요한 최소 항목만 수집(이름·부서·직책)\n저장\n암호화 저장, 접근권한 분리\n제공\n법령 근거 또는 정보주체 동의가 있는 경우에 한함\n폐기\n퇴직·계약 종료 후 6개월 이내 복구 불가능한 방식으로 폐기\n제3조 (정보보안)\n• 백신 프로그램을 월 1회 이상 갱신한다.\n• 외부 저장매체는 사전 승인된 것만 사용한다.\n• 클라우드 서비스 이용 시 보안 협약 체결을 필수로 한다.\n• 고객사 도면·사양 등 영업비밀은 별도 접근통제 구역에서 관리한다.\n제4조 (모니터링 및 교육)\n• 분기 1회 정보보안 감사를 실시한다.\n• 전 임직원 대상 개인정보·정보보안 교육을 연 2회 실시한",
+        "HMC-E-7": {
+          "manual_label": "무관",
+          "selected": false,
+          "hold_reason": "질문의 대상·내용·행동 관계를 뒷받침하는 근거 없음",
+          "kept_excerpt": ""
+        },
+        "HMC-E-8": {
+          "manual_label": "무관",
+          "selected": false,
+          "hold_reason": "질문의 대상·내용·행동 관계를 뒷받침하는 근거 없음",
+          "kept_excerpt": ""
+        }
+      },
+      {
+        "file": "/Users/heojeongmin/Documents/Claude/Projects/ESGenie/시연증빙세트_한울정밀공업/16_부패방지윤리경영규정_2026-06.pdf",
+        "sha256": "91efc1986b926c4590e561e2c92465c1423d2efcaf7f26dc6d4f80a3ec26f1d3",
+        "page": 0,
+        "source_excerpt": "시연용 가상자료\n시연용 가상자료 — 실제 기업과 무관합니다.\n한울정밀공업(주) · ESGenie 본선 시연 세트\n부패방지 및 윤리경영 규정\n한울정밀공업(주) · 문서번호 HN-ETH-001 · 시행 2024년 1월 1일\n제1장 기본원칙\n• 모든 임직원은 뇌물, 선물, 부당한 이익의 제공·수수를 금지한다.\n• 정부 관계자, 거래처, 경쟁사 관계자와의 관계에서 공정거래 원칙을 준수한다.\n• 이해충돌이 발생할 수 있는 사항은 사전에 신고하고 해당 업무에서 회피한다.\n• 임직원 행동강령(Code of Conduct)을 수립하고 전 임직원이 연 1회 서명으로 준수를 확약한다.\n제2장 금지사항\n구분\n기준\n뇌물\n금전·선물·접대 등 형태를 불문하고 일체 금지\n접대 한도\n1회 50만원 이상 불가 (경조사비는 별도 기준 적용)\n부정청탁\n청탁금지법상 부정청탁 및 금품 수수 금지\n묵인 금지\n부정부패 행위를 알고도 묵인하는 행위 금지\n제3장 감시·감독 및 신고\n• 분기 1회 모니터링: 외부 거래처 선물·접대 수수 여부를 점검한다.\n• 신고 채널: 익명 신고 핫라인(외부 전담 변호사 운영, 전화·이메일)을 상시 운영한다.\n• 위반 발견 시 즉시 보고하고 감사 절차를 개시한다.\n• 신",
+        "HMC-E-7": {
+          "manual_label": "무관",
+          "selected": false,
+          "hold_reason": "질문의 대상·내용·행동 관계를 뒷받침하는 근거 없음",
+          "kept_excerpt": ""
+        },
+        "HMC-E-8": {
+          "manual_label": "부분 관련",
+          "selected": true,
+          "hold_reason": "",
+          "kept_excerpt": "• 신고 채널: 익명 신고 핫라인(외부 전담 변호사 운영, 전화·이메일)을 상시 운영한다.\n• 신고자의 신원은 보호하며 신고를 이유로 한 불이익 처우를 금지한다."
+        }
+      },
+      {
+        "file": "/Users/heojeongmin/Documents/Claude/Projects/ESGenie/시연증빙세트_한울정밀공업/14_임금및복리후생규정_2026-06.pdf",
+        "sha256": "3f61f73dabdbbb6106b61af73dd022341d81b1f791efcf3395d016f454e68fc7",
+        "page": 0,
+        "source_excerpt": "시연용 가상자료\n시연용 가상자료 — 실제 기업과 무관합니다.\n한울정밀공업(주) · ESGenie 본선 시연 세트\n임금 및 복리후생 규정\n한울정밀공업(주) · 문서번호 HN-HR-004 · 시행 2024년 1월 1일\n제1장 임금 기준\n• 최저임금: 국가 공시 최저임금 이상을 준수한다(2026년 기준 11,500원/시간).\n• 현 평균 시급: 15,000원/시간 — 최저임금의 130% 수준.\n• 임금 지급: 월 1회, 매월 25일 지급한다.\n• 임금 공제: 법정 공제(세금·4대보험료) 외의 공제를 하지 않는다.\n제2장 연장·휴일·야간 수당\n구분\n지급률\n비고\n연장근로\n통상시급의 150%\n월 단위 정산\n휴일근로\n통상시급의 200%\n법정휴일 포함\n야간근로\n통상시급의 150%\n22:00 ~ 06:00\n제3장 복리후생 (전 직원 동일 적용)\n• 4대보험: 건강보험·고용보험·산재보험·국민연금 전원 가입\n• 퇴직금: 근속연수 1년당 30일분 평균임금\n• 장기근속 휴가: 근속 3년 이상 연 1주일 별도 부여\n• 명절 상여: 설·추석 각 50만원\n• 건강검진: 2년 1회 정기검진(회사 전액 부담)\n• 복지비: 월 150,000원/인 — 카페테리아 방식(운동·식사·도서·의료 등 ",
+        "HMC-E-7": {
+          "manual_label": "무관",
+          "selected": false,
+          "hold_reason": "질문의 대상·내용·행동 관계를 뒷받침하는 근거 없음",
+          "kept_excerpt": ""
+        },
+        "HMC-E-8": {
+          "manual_label": "무관",
+          "selected": false,
+          "hold_reason": "질문의 대상·내용·행동 관계를 뒷받침하는 근거 없음",
+          "kept_excerpt": ""
+        }
+      },
+      {
+        "file": "/Users/heojeongmin/Documents/Claude/Projects/ESGenie/시연증빙세트_한울정밀공업/근로시간관리규정_2025.pdf",
+        "sha256": "2d48975e6d3f270e3be6982ee6512624ce945e503132c07ff31af86daa90e129",
+        "page": 0,
+        "source_excerpt": "한울정밀공업㈜\n근로시간 관리 규정\n────────────────────────────────────────\n문서번호: HR-WH-2025-001\n시행일자: 2025년 1월 1일\n승  인: 대표이사 김철수 (인)\n제1조 (목적)\n본 규정은 RBA 행동규범 v8.0 및 근로기준법에 따라\n주 60시간(연장 포함) 근로시간 상한을 준수하고,\n근로자의 건강권을 보호하는 것을 목적으로 한다.\n제2조 (근로시간 상한)\n① 주간 총 근로시간은 연장근로 포함 60시간을 초과할 수 없다.\n② 법정 기준근로시간은 주 40시간으로 한다.\n③ 연장근로는 주 12시간을 초과하지 아니한다.\n제3조 (휴일 보장)\n① 7일 중 최소 1일의 휴일을 보장한다.\n② 연차유급휴가는 근로기준법에 따라 부여한다.\n제4조 (연장근로 동의)\n① 모든 연장근로는 근로자의 자발적 서면 동의를 얻어야 한다.\n② 강제적 연장근로를 지시하는 경우 징계 대상으로 한다.\n제5조 (근태 관리)\n① 전자 출퇴근 시스템으로 일 단위 근로시간을 기록한다.\n② 주간 60시간 초과 경고 알림을 시행한다.\n    한울정밀공업㈜  |  경기도 화성시 동탄산단로 45\n",
+        "HMC-E-7": {
+          "manual_label": "무관",
+          "selected": false,
+          "hold_reason": "질문의 대상·내용·행동 관계를 뒷받침하는 근거 없음",
+          "kept_excerpt": ""
+        },
+        "HMC-E-8": {
+          "manual_label": "무관",
+          "selected": false,
+          "hold_reason": "질문의 대상·내용·행동 관계를 뒷받침하는 근거 없음",
+          "kept_excerpt": ""
+        }
+      },
+      {
+        "file": "/Users/heojeongmin/Documents/Claude/Projects/ESGenie/시연증빙세트_한울정밀공업/지식재산보호규정_2025.pdf",
+        "sha256": "cef0359c867df21804b0de9a8979c8df329fe9e9414a27e0adaab06332815284",
+        "page": 0,
+        "source_excerpt": "한울정밀공업㈜\n지식재산 보호 규정\n────────────────────────────────────────\n문서번호: LEGAL-IP-2025-001\n시행일자: 2025년 2월 1일\n승  인: 대표이사 김철수 (인)\n제1조 (목적)\n본 규정은 회사 및 거래처의 지식재산권, 영업비밀,\n기술 노하우를 보호하는 것을 목적으로 한다.\n제2조 (범위)\n특허, 실용신안, 디자인, 상표, 저작권, 영업비밀,\n고객사 기밀정보 일체에 적용한다.\n제3조 (비밀유지 의무)\n① 전 임직원은 입사 시 비밀유지서약서(NDA)에 서명한다.\n② 퇴직 후 2년간 비밀유지 의무를 부담한다.\n③ 외부 방문자는 방문 전 기밀유지 동의서를 작성한다.\n제4조 (기술 이전)\n① 거래처 기술정보의 무단 복제·유출을 금지한다.\n② 기술 이전 시 쌍방 서면 계약을 체결한다.\n제5조 (위반 시 조치)\n① 지식재산 침해 시 즉시 징계 조치한다.\n② 손해배상 청구 및 형사 고발할 수 있다.\n    한울정밀공업㈜  |  경기도 화성시 동탄산단로 45\n",
+        "HMC-E-7": {
+          "manual_label": "무관",
+          "selected": false,
+          "hold_reason": "질문의 대상·내용·행동 관계를 뒷받침하는 근거 없음",
+          "kept_excerpt": ""
+        },
+        "HMC-E-8": {
+          "manual_label": "무관",
+          "selected": false,
+          "hold_reason": "질문의 대상·내용·행동 관계를 뒷받침하는 근거 없음",
+          "kept_excerpt": ""
+        }
+      },
+      {
+        "file": "/Users/heojeongmin/Documents/Claude/Projects/ESGenie/시연증빙세트_한울정밀공업/위생_기숙사관리규정_2025.pdf",
+        "sha256": "fc8b64f95c8a1b98512141e79c74cbddd58c102fd72d9d84b259efe2f29dc691",
+        "page": 0,
+        "source_excerpt": "한울정밀공업㈜\n위생·식품·기숙사 관리 규정\n────────────────────────────────────────\n문서번호: EHS-SN-2025-003\n시행일자: 2025년 1월 1일\n승  인: 대표이사 김철수 (인)\n제1조 (목적)\n본 규정은 RBA B-7(Sanitation, Food, Housing)에 따라\n사업장 내 청결·위생 환경과 기숙사 안전을 확보함을 목적으로 한다.\n제2조 (위생시설)\n① 화장실은 남녀 구분, 30인당 1개소 이상 설치한다.\n② 음용 가능한 깨끗한 식수를 상시 제공한다.\n③ 세면대·소독제를 비치하고 월 1회 위생점검을 실시한다.\n제3조 (급식 관리)\n① 구내식당 운영 시 식품위생법 기준을 준수한다.\n② 식자재 입고·보관·조리 과정의 위생을 월 1회 검사한다.\n③ 식중독 예방 교육을 연 2회 실시한다.\n제4조 (기숙사)\n① 기숙사 제공 시 1인당 최소 4.5㎡ 이상 개인공간을 확보한다.\n② 비상구 2개소 이상, 소화기·감지기를 층별 비치한다.\n③ 온수·냉난방·환기를 확보하고, 분기별 안전점검을 실시한다.\n④ 입·퇴실 자유를 보장하며, 신분증 보관을 금지한다.\n    한울정밀공업㈜  |  경기도 화성시 동탄산단로 45\n",
+        "HMC-E-7": {
+          "manual_label": "무관",
+          "selected": false,
+          "hold_reason": "질문의 대상·내용·행동 관계를 뒷받침하는 근거 없음",
+          "kept_excerpt": ""
+        },
+        "HMC-E-8": {
+          "manual_label": "무관",
+          "selected": false,
+          "hold_reason": "질문의 대상·내용·행동 관계를 뒷받침하는 근거 없음",
+          "kept_excerpt": ""
+        }
+      },
+      {
+        "file": "/Users/heojeongmin/Documents/Claude/Projects/ESGenie/시연증빙세트_한울정밀공업/책임광물실사정책_2025.pdf",
+        "sha256": "d971832b035471ad2ac6408207ed80d156b48a4759a7b065521da145b1facbd1",
+        "page": 0,
+        "source_excerpt": "한울정밀공업㈜\n책임있는 광물 조달 정책서\n────────────────────────────────────────\n문서번호: SCM-RM-2025-001\n시행일자: 2025년 1월 15일\n승  인: 대표이사 김철수 (인)\n1. 목적\n   탄탈럼(Ta)·주석(Sn)·텅스텐(W)·금(Au)(3TG) 및 코발트의\n   공급망을 투명하게 관리하고, 분쟁지역 인권침해와의 연루를\n   방지한다.\n2. 적용 기준\n   - OECD 분쟁광물 실사 지침\n   - RBA 행동규범 v8.0 D-7\n   - 고객사 CMRT(Conflict Minerals Reporting Template\n3. 실사 절차\n   3.1 공급사에 연 1회 CMRT 작성·제출 요청\n   3.2 제련소 확인(RMAP 인증 여부)\n   3.3 고위험 공급원 식별 시 시정 요구 또는 거래 재검토\n   3.4 코발트 공급망 별도 실사(OECD 3단계 프레임워크)\n4. 보고\n   연 1회 분쟁광물 실사보고서를 공개하고,\n   고객사 요청 시 30일 이내 CMRT를 제출한다.\n5. 위반\n   고의적 허위 보고 시 거래 중단 조치.\n    한울정밀공업㈜  |  경기도 화성시 동탄산단로 45\n",
+        "HMC-E-7": {
+          "manual_label": "무관",
+          "selected": false,
+          "hold_reason": "질문의 대상·내용·행동 관계를 뒷받침하는 근거 없음",
+          "kept_excerpt": ""
+        },
+        "HMC-E-8": {
+          "manual_label": "무관",
+          "selected": false,
+          "hold_reason": "질문의 대상·내용·행동 관계를 뒷받침하는 근거 없음",
+          "kept_excerpt": ""
+        }
+      }
+    ],
+    "mixed": {
+      "HMC-E-7": {
+        "kept": [
+          "의사소통절차서_2025.pdf"
+        ],
+        "permutations": 3,
+        "stable": true
+      },
+      "HMC-E-8": {
+        "kept": [
+          "15_노사협의회규정_2026-06.pdf",
+          "16_부패방지윤리경영규정_2026-06.pdf",
+          "17_고충처리및신원보호규정_2026-06.pdf",
+          "의사소통절차서_2025.pdf"
+        ],
+        "permutations": 3,
+        "stable": true
+      }
+    },
+    "limited_e8_draft": {
+      "qid": "HMC-E-8",
+      "section": "경영시스템",
+      "question_text": "[E-8] 근로자·이해관계자 참여·구제접근 — 근로자·대표·이해관계자와 양방향 소통, 보복 없는 고충·피드백 환경, 구제 접근 보장.",
+      "value": null,
+      "status": "draft_ready",
+      "evidence_links": [],
+      "flags": [],
+      "rationale": "",
+      "evidence_needed": [],
+      "draft_text": "신고자의 신원은 엄격히 보호하며 익명 신고를 허용한다. [DOC17]",
+      "draft_citations": [
+        {
+          "node_id": "DOC17",
+          "source_file": "17_고충처리및신원보호규정_2026-06.pdf",
+          "page": 0,
+          "text_preview": "한울정밀공업(주) · ESGenie 본선 시연 세트\n고충처리 절차 및 신원보호 규정\n한울정밀공업(주) · 문서번호 HN-HR-009 · 시행 2024년 1월 1일\n제1조 (목적)\n",
+          "retrieval": "code_match"
+        }
+      ],
+      "draft_grounding": {
+        "decision": "ACCEPT",
+        "g1_uncited_sentences": [],
+        "g2_orphan_numbers": [],
+        "g4_unit_mismatches": [],
+        "g5_overclaim": false,
+        "hard_fails": [],
+        "soft_flags": [],
+        "faithfulness": 1.0
+      },
+      "unit": "",
+      "period": null,
+      "confidence_flags": [],
+      "self_reports": [],
+      "option_evidence": {},
+      "boundary_label": "",
+      "completeness": "",
+      "comparison": "",
+      "comparison_reason": "",
+      "boundary": {},
+      "comparisons": [],
+      "scope_notes": [],
+      "reference_links": [],
+      "badge": "🤖 AI초안",
+      "display_value": "—",
+      "comparison_label": "",
+      "review_note": "",
+      "draft_display": "신고자의 신원은 엄격히 보호하며 익명 신고를 허용한다. [1]",
+      "draft_sources": [
+        "[1] 17_고충처리및신원보호규정_2026-06.pdf p.1"
+      ],
+      "draft_review_notes": []
+    },
+    "grounding": {
+      "wrong_acquisition": {
+        "decision": "ACCEPT",
+        "g1_uncited_sentences": [],
+        "g2_orphan_numbers": [],
+        "g4_unit_mismatches": [],
+        "g5_overclaim": false,
+        "hard_fails": [],
+        "soft_flags": [
+          "G5_unproven_certification_completion"
+        ],
+        "faithfulness": 1.0
+      },
+      "correct_preparation": {
+        "decision": "ACCEPT",
+        "g1_uncited_sentences": [],
+        "g2_orphan_numbers": [],
+        "g4_unit_mismatches": [],
+        "g5_overclaim": false,
+        "hard_fails": [],
+        "soft_flags": [],
+        "faithfulness": 1.0
+      }
+    }
+  },
+  "framework_structure_only": {
+    "kesg28": {
+      "label": "K-ESG 자가진단 — 중소기업 기본형 (28항목)",
+      "questions": 28,
+      "distinctive_min": 4,
+      "distinctive_median": 8,
+      "distinctive_max": 15,
+      "questions_without_distinctive_terms": [],
+      "most_shared_primary_code": {
+        "code": "P-1-1",
+        "question_count": 1
+      }
+    },
+    "kesg61": {
+      "label": "K-ESG 자가진단 — 전체 (61항목)",
+      "questions": 61,
+      "distinctive_min": 2,
+      "distinctive_median": 6,
+      "distinctive_max": 12,
+      "questions_without_distinctive_terms": [],
+      "most_shared_primary_code": {
+        "code": "P-1-1",
+        "question_count": 1
+      }
+    },
+    "rba42": {
+      "label": "RBA 행동규범 자가진단 (v8.0, 42항목)",
+      "questions": 48,
+      "distinctive_min": 7,
+      "distinctive_median": 16,
+      "distinctive_max": 26,
+      "questions_without_distinctive_terms": [],
+      "most_shared_primary_code": {
+        "code": "S-4-1",
+        "question_count": 6
+      }
+    },
+    "saq5": {
+      "label": "Drive Sustainability SAQ 5.0 — 핵심 전체본",
+      "questions": 26,
+      "distinctive_min": 3,
+      "distinctive_median": 9,
+      "distinctive_max": 19,
+      "questions_without_distinctive_terms": [],
+      "most_shared_primary_code": {
+        "code": "E-1-1",
+        "question_count": 2
+      }
+    },
+    "saq5_env": {
+      "label": "Drive Sustainability SAQ 5.0 — 환경 섹션",
+      "questions": 11,
+      "distinctive_min": 2,
+      "distinctive_median": 6,
+      "distinctive_max": 13,
+      "questions_without_distinctive_terms": [],
+      "most_shared_primary_code": {
+        "code": "E-1-1",
+        "question_count": 2
+      }
+    },
+    "hmc": {
+      "label": "현대차 협력사 ESG 사전점검 (RBA v8.0 매핑 참고양식)",
+      "questions": 48,
+      "distinctive_min": 7,
+      "distinctive_median": 16,
+      "distinctive_max": 26,
+      "questions_without_distinctive_terms": [],
+      "most_shared_primary_code": {
+        "code": "S-4-1",
+        "question_count": 6
+      }
+    }
+  },
+  "pdf_renders": [
+    "/private/tmp/ESGenie-ocr-numeric-20260929/docs/validation/ocr-numeric-20260929/review-r2/hmc/after_out_873c5fa/controlled/pdf_p1.png",
+    "/private/tmp/ESGenie-ocr-numeric-20260929/docs/validation/ocr-numeric-20260929/review-r2/hmc/after_out_873c5fa/controlled/pdf_p2.png",
+    "/private/tmp/ESGenie-ocr-numeric-20260929/docs/validation/ocr-numeric-20260929/review-r2/hmc/after_out_873c5fa/controlled/pdf_p3.png",
+    "/private/tmp/ESGenie-ocr-numeric-20260929/docs/validation/ocr-numeric-20260929/review-r2/hmc/after_out_873c5fa/controlled/pdf_p4.png",
+    "/private/tmp/ESGenie-ocr-numeric-20260929/docs/validation/ocr-numeric-20260929/review-r2/hmc/after_out_873c5fa/controlled/pdf_p5.png",
+    "/private/tmp/ESGenie-ocr-numeric-20260929/docs/validation/ocr-numeric-20260929/review-r2/hmc/after_out_873c5fa/controlled/pdf_p6.png",
+    "/private/tmp/ESGenie-ocr-numeric-20260929/docs/validation/ocr-numeric-20260929/review-r2/hmc/after_out_873c5fa/controlled/pdf_p7.png",
+    "/private/tmp/ESGenie-ocr-numeric-20260929/docs/validation/ocr-numeric-20260929/review-r2/hmc/after_out_873c5fa/controlled/pdf_p8.png",
+    "/private/tmp/ESGenie-ocr-numeric-20260929/docs/validation/ocr-numeric-20260929/review-r2/hmc/after_out_873c5fa/controlled/pdf_p9.png",
+    "/private/tmp/ESGenie-ocr-numeric-20260929/docs/validation/ocr-numeric-20260929/review-r2/hmc/after_out_873c5fa/controlled/pdf_p10.png",
+    "/private/tmp/ESGenie-ocr-numeric-20260929/docs/validation/ocr-numeric-20260929/review-r2/hmc/after_out_873c5fa/controlled/pdf_p11.png",
+    "/private/tmp/ESGenie-ocr-numeric-20260929/docs/validation/ocr-numeric-20260929/review-r2/hmc/after_out_873c5fa/controlled/pdf_p12.png",
+    "/private/tmp/ESGenie-ocr-numeric-20260929/docs/validation/ocr-numeric-20260929/review-r2/hmc/after_out_873c5fa/controlled/pdf_p13.png",
+    "/private/tmp/ESGenie-ocr-numeric-20260929/docs/validation/ocr-numeric-20260929/review-r2/hmc/after_out_873c5fa/controlled/pdf_p14.png",
+    "/private/tmp/ESGenie-ocr-numeric-20260929/docs/validation/ocr-numeric-20260929/review-r2/hmc/after_out_873c5fa/controlled/pdf_p15.png"
+  ],
+  "generation": {
+    "LLM": "deterministic exact-source excerpt mock",
+    "grounding": "production local gate, no mock",
+    "live_calls": 0
+  },
+  "failed": []
+}

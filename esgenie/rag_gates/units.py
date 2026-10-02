@@ -53,6 +53,7 @@ _UNIT_ALIASES: dict[str, str] = {
     "tons": "t",
     "톤": "t",
     "kg": "kg",
+    "㎏": "kg",
     "킬로그램": "kg",
     "tco2eq": "tCO2eq",
     "tco2": "tCO2eq",
@@ -68,6 +69,11 @@ _UNIT_ALIASES: dict[str, str] = {
     "tj": "TJ",
     "gj": "GJ",
     "mj": "MJ",
+    # Volume — 고지서의 m3·㎥ 표기 변형. 질량(ton)·에너지와 환산하지 않는다.
+    "m3": "m³",
+    "m³": "m³",
+    "㎥": "m³",
+    "m^3": "m³",
     # Percentage / permille — ‰(퍼밀)은 %와 다른 단위(산업재해율 오매핑 차단용)
     "%": "%",
     "퍼센트": "%",
@@ -98,6 +104,7 @@ _UNIT_GROUPS: list[dict[str, float]] = [
     },
     {"원": 1.0, "백만원": 1_000_000.0, "억원": 100_000_000.0},
     {"t": 1.0, "kg": 0.001},           # 질량: 1 t = 1000 kg
+    {"m³": 1.0},                       # 부피: 밀도·발열량 없이 질량·에너지로 바꾸지 않는다
 ]
 
 _UNIT_TO_GROUP: dict[str, dict[str, float]] = {}

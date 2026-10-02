@@ -1,0 +1,795 @@
+{
+  "stage": "/private/tmp/ESGenie-ocr-numeric-20260929/docs/validation/ocr-numeric-20260929/review-r2/live/core_run_873c5fa/followup",
+  "ocr": {
+    "01_기업및임직원현황_2026-04.pdf": {
+      "doc_type": "ambiguous_fallback_vlm",
+      "engine": "gpt-4.1-mini-text",
+      "table_checks": [],
+      "hitl_required": false,
+      "metrics": [
+        {
+          "label": "총 인원",
+          "value": 73.0,
+          "unit": "명",
+          "code": null,
+          "page": 0,
+          "bbox": null,
+          "precision": null,
+          "index_check": null
+        },
+        {
+          "label": "직접 고용 인원",
+          "value": 70.0,
+          "unit": "명",
+          "code": null,
+          "page": 0,
+          "bbox": null,
+          "precision": null,
+          "index_check": null
+        },
+        {
+          "label": "파견 인원",
+          "value": 3.0,
+          "unit": "명",
+          "code": null,
+          "page": 0,
+          "bbox": null,
+          "precision": null,
+          "index_check": null
+        },
+        {
+          "label": "김해 제1공장 인원 합계",
+          "value": 50.0,
+          "unit": "명",
+          "code": null,
+          "page": 0,
+          "bbox": null,
+          "precision": null,
+          "index_check": null
+        },
+        {
+          "label": "김해 제1공장 정규직 인원",
+          "value": 40.0,
+          "unit": "명",
+          "code": null,
+          "page": 0,
+          "bbox": null,
+          "precision": null,
+          "index_check": null
+        },
+        {
+          "label": "김해 제1공장 기간제 인원",
+          "value": 8.0,
+          "unit": "명",
+          "code": null,
+          "page": 0,
+          "bbox": null,
+          "precision": null,
+          "index_check": null
+        },
+        {
+          "label": "김해 제1공장 파견 인원",
+          "value": 2.0,
+          "unit": "명",
+          "code": null,
+          "page": 0,
+          "bbox": null,
+          "precision": null,
+          "index_check": null
+        },
+        {
+          "label": "양산 제2공장 인원 합계",
+          "value": 23.0,
+          "unit": "명",
+          "code": null,
+          "page": 0,
+          "bbox": null,
+          "precision": null,
+          "index_check": null
+        },
+        {
+          "label": "양산 제2공장 정규직 인원",
+          "value": 18.0,
+          "unit": "명",
+          "code": null,
+          "page": 0,
+          "bbox": null,
+          "precision": null,
+          "index_check": null
+        },
+        {
+          "label": "양산 제2공장 기간제 인원",
+          "value": 4.0,
+          "unit": "명",
+          "code": null,
+          "page": 0,
+          "bbox": null,
+          "precision": null,
+          "index_check": null
+        },
+        {
+          "label": "양산 제2공장 파견 인원",
+          "value": 1.0,
+          "unit": "명",
+          "code": null,
+          "page": 0,
+          "bbox": null,
+          "precision": null,
+          "index_check": null
+        }
+      ]
+    },
+    "02_전기요금청구서_2026-04.pdf": {
+      "doc_type": "kepco_bill",
+      "engine": "upstage_dp",
+      "table_checks": [],
+      "hitl_required": false,
+      "metrics": [
+        {
+          "label": "사용전력량",
+          "value": 142560.0,
+          "unit": "kWh",
+          "code": "E-4-1",
+          "page": 0,
+          "bbox": [
+            0.6351,
+            0.3921,
+            0.7219,
+            0.4025
+          ],
+          "precision": "pdf_text",
+          "index_check": "match"
+        }
+      ]
+    },
+    "03_도시가스요금고지서_2026-04.pdf": {
+      "doc_type": "gas_bill",
+      "engine": "upstage_dp",
+      "table_checks": [],
+      "hitl_required": false,
+      "metrics": [
+        {
+          "label": "도시가스 사용량",
+          "value": 8420.0,
+          "unit": "m³",
+          "code": null,
+          "page": 0,
+          "bbox": [
+            0.5941,
+            0.4218,
+            0.631,
+            0.4322
+          ],
+          "precision": "pdf_text",
+          "index_check": "match"
+        }
+      ]
+    },
+    "04_사업장폐기물위탁처리명세_2026-04.pdf": {
+      "doc_type": "waste_ledger",
+      "engine": "upstage_dp",
+      "table_checks": [
+        [
+          "waste_components_sum",
+          "match"
+        ],
+        [
+          "waste_detail_sum",
+          "match"
+        ],
+        [
+          "waste_recycled_detail_sum",
+          "match"
+        ],
+        [
+          "waste_recycling_rate",
+          "match"
+        ]
+      ],
+      "hitl_required": false,
+      "metrics": [
+        {
+          "label": "재활용량",
+          "value": 5400.0,
+          "unit": "kg",
+          "code": null,
+          "page": 0,
+          "bbox": [
+            0.1123,
+            0.5643,
+            0.1691,
+            0.5748
+          ],
+          "precision": "pdf_text",
+          "index_check": null
+        },
+        {
+          "label": "총 위탁량",
+          "value": 18400.0,
+          "unit": "kg",
+          "code": "E-6-1",
+          "page": 0,
+          "bbox": [
+            0.7266,
+            0.5643,
+            0.7915,
+            0.5748
+          ],
+          "precision": "pdf_text",
+          "index_check": null
+        },
+        {
+          "label": "재활용 비율",
+          "value": 29.3,
+          "unit": "%",
+          "code": "E-6-2",
+          "page": 0,
+          "bbox": [
+            0.3438,
+            0.5973,
+            0.4209,
+            0.6151
+          ],
+          "precision": "pdf_text",
+          "index_check": null
+        }
+      ]
+    },
+    "06_환경안전관리규정_2026.pdf": {
+      "doc_type": "policy_manual",
+      "engine": "gpt-4.1-mini-text",
+      "table_checks": [],
+      "hitl_required": false,
+      "metrics": []
+    },
+    "07_상수도청구서_2026-04.pdf": {
+      "doc_type": "water_bill",
+      "engine": "upstage_dp",
+      "table_checks": [],
+      "hitl_required": false,
+      "metrics": [
+        {
+          "label": "상수도 사용량",
+          "value": 680.0,
+          "unit": "m³",
+          "code": "E-5-1",
+          "page": 0,
+          "bbox": [
+            0.5803,
+            0.3921,
+            0.605,
+            0.4025
+          ],
+          "precision": "pdf_text",
+          "index_check": "match"
+        }
+      ]
+    },
+    "08_공정스크랩관리대장_2026-04.pdf": {
+      "doc_type": "ambiguous_fallback_vlm",
+      "engine": "gpt-4.1-mini-text",
+      "table_checks": [],
+      "hitl_required": false,
+      "metrics": [
+        {
+          "label": "스크랩 발생량",
+          "value": 12500.0,
+          "unit": "kg",
+          "code": null,
+          "page": 0,
+          "bbox": null,
+          "precision": null,
+          "index_check": null
+        },
+        {
+          "label": "내부 재투입량",
+          "value": 11500.0,
+          "unit": "kg",
+          "code": null,
+          "page": 0,
+          "bbox": null,
+          "precision": null,
+          "index_check": null
+        },
+        {
+          "label": "외부 반출량",
+          "value": 1000.0,
+          "unit": "kg",
+          "code": null,
+          "page": 0,
+          "bbox": null,
+          "precision": null,
+          "index_check": null
+        },
+        {
+          "label": "생산 스크랩 내부 재투입률",
+          "value": 92.0,
+          "unit": "%",
+          "code": "E-2-2",
+          "page": 0,
+          "bbox": null,
+          "precision": null,
+          "index_check": null
+        }
+      ]
+    }
+  },
+  "graph": [
+    {
+      "file": "01_",
+      "metric": "총 인원",
+      "value": 73.0,
+      "unit": "명",
+      "code": null,
+      "period_text": "2026-04-30",
+      "site": "제1공장",
+      "site_scope": "site",
+      "aggregation": "unknown",
+      "page": 0,
+      "bbox": false,
+      "table_cell_precision": []
+    },
+    {
+      "file": "01_",
+      "metric": "직접 고용 인원",
+      "value": 70.0,
+      "unit": "명",
+      "code": null,
+      "period_text": "2026-04-30",
+      "site": "제1공장",
+      "site_scope": "site",
+      "aggregation": "unknown",
+      "page": 0,
+      "bbox": false,
+      "table_cell_precision": []
+    },
+    {
+      "file": "01_",
+      "metric": "파견 인원",
+      "value": 3.0,
+      "unit": "명",
+      "code": null,
+      "period_text": "2026-04-30",
+      "site": "제1공장",
+      "site_scope": "site",
+      "aggregation": "unknown",
+      "page": 0,
+      "bbox": false,
+      "table_cell_precision": []
+    },
+    {
+      "file": "01_",
+      "metric": "김해 제1공장 인원 합계",
+      "value": 50.0,
+      "unit": "명",
+      "code": null,
+      "period_text": "2026-04-30",
+      "site": "제1공장",
+      "site_scope": "site",
+      "aggregation": "unknown",
+      "page": 0,
+      "bbox": false,
+      "table_cell_precision": []
+    },
+    {
+      "file": "01_",
+      "metric": "김해 제1공장 정규직 인원",
+      "value": 40.0,
+      "unit": "명",
+      "code": null,
+      "period_text": "2026-04-30",
+      "site": "제1공장",
+      "site_scope": "site",
+      "aggregation": "unknown",
+      "page": 0,
+      "bbox": false,
+      "table_cell_precision": []
+    },
+    {
+      "file": "01_",
+      "metric": "김해 제1공장 기간제 인원",
+      "value": 8.0,
+      "unit": "명",
+      "code": null,
+      "period_text": "2026-04-30",
+      "site": "제1공장",
+      "site_scope": "site",
+      "aggregation": "unknown",
+      "page": 0,
+      "bbox": false,
+      "table_cell_precision": []
+    },
+    {
+      "file": "01_",
+      "metric": "김해 제1공장 파견 인원",
+      "value": 2.0,
+      "unit": "명",
+      "code": null,
+      "period_text": "2026-04-30",
+      "site": "제1공장",
+      "site_scope": "site",
+      "aggregation": "unknown",
+      "page": 0,
+      "bbox": false,
+      "table_cell_precision": []
+    },
+    {
+      "file": "01_",
+      "metric": "양산 제2공장 인원 합계",
+      "value": 23.0,
+      "unit": "명",
+      "code": null,
+      "period_text": "2026-04-30",
+      "site": "제2공장",
+      "site_scope": "site",
+      "aggregation": "unknown",
+      "page": 0,
+      "bbox": false,
+      "table_cell_precision": []
+    },
+    {
+      "file": "01_",
+      "metric": "양산 제2공장 정규직 인원",
+      "value": 18.0,
+      "unit": "명",
+      "code": null,
+      "period_text": "2026-04-30",
+      "site": "제2공장",
+      "site_scope": "site",
+      "aggregation": "unknown",
+      "page": 0,
+      "bbox": false,
+      "table_cell_precision": []
+    },
+    {
+      "file": "01_",
+      "metric": "양산 제2공장 기간제 인원",
+      "value": 4.0,
+      "unit": "명",
+      "code": null,
+      "period_text": "2026-04-30",
+      "site": "제2공장",
+      "site_scope": "site",
+      "aggregation": "unknown",
+      "page": 0,
+      "bbox": false,
+      "table_cell_precision": []
+    },
+    {
+      "file": "01_",
+      "metric": "양산 제2공장 파견 인원",
+      "value": 1.0,
+      "unit": "명",
+      "code": null,
+      "period_text": "2026-04-30",
+      "site": "제2공장",
+      "site_scope": "site",
+      "aggregation": "unknown",
+      "page": 0,
+      "bbox": false,
+      "table_cell_precision": []
+    },
+    {
+      "file": "02_",
+      "metric": "E-4-1",
+      "value": 142560.0,
+      "unit": "kWh",
+      "code": null,
+      "period_text": "2026-04-01~2026-04-30",
+      "site": "제1공장",
+      "site_scope": "site",
+      "aggregation": "monthly",
+      "page": 0,
+      "bbox": true,
+      "table_cell_precision": [
+        "pdf_text"
+      ]
+    },
+    {
+      "file": "02_",
+      "metric": "E-3-1",
+      "value": 68.158,
+      "unit": "tCO2eq",
+      "code": null,
+      "period_text": "2026-04-01~2026-04-30",
+      "site": "제1공장",
+      "site_scope": "site",
+      "aggregation": "monthly",
+      "page": 0,
+      "bbox": true,
+      "table_cell_precision": [
+        "pdf_text"
+      ]
+    },
+    {
+      "file": "03_",
+      "metric": "도시가스 사용량",
+      "value": 8420.0,
+      "unit": "m³",
+      "code": null,
+      "period_text": "2026-04-01~2026-04-30",
+      "site": "제1공장 도장·건조라인",
+      "site_scope": "site",
+      "aggregation": "monthly",
+      "page": 0,
+      "bbox": true,
+      "table_cell_precision": [
+        "pdf_text"
+      ]
+    },
+    {
+      "file": "04_",
+      "metric": "재활용량",
+      "value": 5400.0,
+      "unit": "kg",
+      "code": null,
+      "period_text": "2026-04-01~2026-04-30",
+      "site": "제1공장",
+      "site_scope": "site",
+      "aggregation": "monthly",
+      "page": 0,
+      "bbox": true,
+      "table_cell_precision": [
+        "pdf_text"
+      ]
+    },
+    {
+      "file": "04_",
+      "metric": "E-6-1",
+      "value": 18400.0,
+      "unit": "kg",
+      "code": null,
+      "period_text": "2026-04-01~2026-04-30",
+      "site": "제1공장",
+      "site_scope": "site",
+      "aggregation": "monthly",
+      "page": 0,
+      "bbox": true,
+      "table_cell_precision": [
+        "pdf_text"
+      ]
+    },
+    {
+      "file": "04_",
+      "metric": "E-6-2",
+      "value": 29.3,
+      "unit": "%",
+      "code": null,
+      "period_text": "2026-04-01~2026-04-30",
+      "site": "제1공장",
+      "site_scope": "site",
+      "aggregation": "monthly",
+      "page": 0,
+      "bbox": true,
+      "table_cell_precision": []
+    },
+    {
+      "file": "07_",
+      "metric": "E-5-1",
+      "value": 680.0,
+      "unit": "m³",
+      "code": null,
+      "period_text": "2026-04-01~2026-04-30",
+      "site": "제1공장",
+      "site_scope": "site",
+      "aggregation": "monthly",
+      "page": 0,
+      "bbox": true,
+      "table_cell_precision": [
+        "pdf_text"
+      ]
+    },
+    {
+      "file": "08_",
+      "metric": "스크랩 발생량",
+      "value": 12500.0,
+      "unit": "kg",
+      "code": null,
+      "period_text": "2026-04-01 ~ 2026-04-30",
+      "site": "",
+      "site_scope": "unknown",
+      "aggregation": "monthly",
+      "page": 0,
+      "bbox": false,
+      "table_cell_precision": []
+    },
+    {
+      "file": "08_",
+      "metric": "내부 재투입량",
+      "value": 11500.0,
+      "unit": "kg",
+      "code": null,
+      "period_text": "2026-04-01 ~ 2026-04-30",
+      "site": "",
+      "site_scope": "unknown",
+      "aggregation": "monthly",
+      "page": 0,
+      "bbox": false,
+      "table_cell_precision": []
+    },
+    {
+      "file": "08_",
+      "metric": "외부 반출량",
+      "value": 1000.0,
+      "unit": "kg",
+      "code": null,
+      "period_text": "2026-04-01 ~ 2026-04-30",
+      "site": "",
+      "site_scope": "unknown",
+      "aggregation": "monthly",
+      "page": 0,
+      "bbox": false,
+      "table_cell_precision": []
+    },
+    {
+      "file": "08_",
+      "metric": "E-2-2",
+      "value": 92.0,
+      "unit": "%",
+      "code": null,
+      "period_text": "2026-04-01 ~ 2026-04-30",
+      "site": "",
+      "site_scope": "unknown",
+      "aggregation": "monthly",
+      "page": 0,
+      "bbox": false,
+      "table_cell_precision": []
+    }
+  ],
+  "answers": [
+    {
+      "qid": "RBA-C-4-E-6-2",
+      "value": 29.3,
+      "unit": "%",
+      "display_value": "29.3 % (2026년)",
+      "status": "self_reported",
+      "badge": "⚠️ 자가신고",
+      "boundary_label": "2026-04-01~2026-04-30 · 월간 · 제1공장 · 폐기물 · 부분",
+      "links": [
+        {
+          "page": 0
+        }
+      ]
+    },
+    {
+      "qid": "RBA-C-4-E-6-1",
+      "value": 18.4,
+      "unit": "톤",
+      "display_value": "18.4 톤 (2026년)",
+      "status": "self_reported",
+      "badge": "⚠️ 자가신고",
+      "boundary_label": "2026-04-01~2026-04-30 · 월간 · 제1공장 · 폐기물 · 부분",
+      "links": [
+        {
+          "page": 0
+        }
+      ]
+    },
+    {
+      "qid": "RBA-C-8-E-3-1",
+      "value": 68.158,
+      "unit": "tCO2eq",
+      "display_value": "68.158 tCO2eq (2026년)",
+      "status": "self_reported",
+      "badge": "⚠️ 자가신고",
+      "boundary_label": "2026-04-01~2026-04-30 · 월간 · 제1공장 · 사용전력량 환산 배출량 · 부분",
+      "links": [
+        {
+          "page": 0
+        }
+      ]
+    },
+    {
+      "qid": "RBA-C-8-E-4-1",
+      "value": 0.513216,
+      "unit": "TJ",
+      "display_value": "0.513216 TJ (2026년)",
+      "status": "self_reported",
+      "badge": "⚠️ 자가신고",
+      "boundary_label": "2026-04-01~2026-04-30 · 월간 · 제1공장 · 사용전력량 · 부분",
+      "links": [
+        {
+          "page": 0
+        }
+      ]
+    }
+  ],
+  "checks": [
+    {
+      "doc": "02_",
+      "expect": "142560.0 kWh",
+      "found": true,
+      "precision": [
+        "pdf_text"
+      ],
+      "bbox": [
+        true
+      ]
+    },
+    {
+      "doc": "03_",
+      "expect": "8420.0 m³",
+      "found": true,
+      "precision": [
+        "pdf_text"
+      ],
+      "bbox": [
+        true
+      ]
+    },
+    {
+      "doc": "07_",
+      "expect": "680.0 m³",
+      "found": true,
+      "precision": [
+        "pdf_text"
+      ],
+      "bbox": [
+        true
+      ]
+    },
+    {
+      "doc": "04_",
+      "expect": "18400.0 kg",
+      "found": true,
+      "precision": [
+        "pdf_text"
+      ],
+      "bbox": [
+        true
+      ]
+    },
+    {
+      "doc": "04_",
+      "expect": "5400.0 kg",
+      "found": true,
+      "precision": [
+        "pdf_text"
+      ],
+      "bbox": [
+        true
+      ]
+    },
+    {
+      "doc": "04_",
+      "expect": "29.3 %",
+      "found": true,
+      "precision": [
+        "pdf_text"
+      ],
+      "bbox": [
+        true
+      ]
+    },
+    {
+      "doc": "03_",
+      "forbid": "None MJ",
+      "found": false
+    },
+    {
+      "doc": "03_",
+      "forbid": "None TJ",
+      "found": false
+    },
+    {
+      "doc": "03_",
+      "forbid": "None GJ",
+      "found": false
+    },
+    {
+      "doc": "06_",
+      "forbid": "3.0 None",
+      "found": false
+    },
+    {
+      "doc": "04_",
+      "forbid": "18.4 ton",
+      "found": false
+    },
+    {
+      "doc": "01_",
+      "forbid": "waste_ledger",
+      "found": false
+    }
+  ]
+}

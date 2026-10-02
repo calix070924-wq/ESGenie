@@ -1,0 +1,31 @@
+2026-09-29 17:34:30,049 INFO esgenie.pipeline [L0] SSOT Evidence Graph 구축 중...
+2026-09-29 17:34:30,097 INFO esgenie.ssot.ocr_router [OCR] 캐시 on — hit 1 / miss 0 [01_기업및임직원현황_2026-04.pdf]
+2026-09-29 17:34:34,554 INFO esgenie.ssot.ocr_router [OCR] 캐시 on — hit 1 / miss 0 [06_환경안전관리규정_2026.pdf]
+2026-09-29 17:34:35,973 INFO esgenie.ssot.ocr_router [OCR] 캐시 on — hit 1 / miss 0 [08_공정스크랩관리대장_2026-04.pdf]
+2026-09-29 17:34:36,034 INFO esgenie.ssot.ocr_router [OCR] 캐시 on — hit 1 / miss 0 [09_안전보건교육실시기록_2026-04-22.pdf]
+2026-09-29 17:34:36,099 INFO esgenie.ssot.ocr_router [OCR] 캐시 on — hit 1 / miss 0 [10_윤리경영및고충처리규정_2026.pdf]
+2026-09-29 17:34:36,148 INFO esgenie.ssot.ocr_router [OCR] 캐시 on — hit 1 / miss 0 [11_정보보호관리규정_2026.pdf]
+2026-09-29 17:34:36,219 INFO esgenie.ssot.ocr_router [OCR] 캐시 on — hit 1 / miss 0 [12_개인별주간근로시간기록_2026-04-13_19.pdf]
+2026-09-29 17:34:36,275 INFO esgenie.ssot.ocr_router [OCR] 캐시 on — hit 1 / miss 0 [13_안전보건추가교육실시기록_2026-04-27.pdf]
+2026-09-29 17:34:36,282 INFO esgenie.pipeline [OCR] 캐시 hit 8 / miss 0 (mode=hit)
+2026-09-29 17:34:36,306 INFO esgenie.pipeline [L0] 완료: 33 노드, 38 텍스트노드, 0 엣지
+2026-09-29 17:34:36,306 INFO esgenie.pipeline [L0] 비DART 증빙을 빈 CompanyReport에 연결 — 단일 L1~L5 경로 사용
+2026-09-29 17:34:36,306 INFO esgenie.pipeline [L1] K-ESG 항목 추출 중...
+2026-09-29 17:34:36,311 INFO esgenie.pipeline [L1] 완료: 17.9% 커버리지 (중소기업 기본형 (28항목))
+2026-09-29 17:34:36,311 INFO esgenie.pipeline [D6] 선택적 공시 의심도=0.56 (high)
+2026-09-29 17:34:36,311 INFO esgenie.pipeline [ISSB] 프로파일 내 2/6 공시, 누락 4
+2026-09-29 17:34:41,125 INFO sentence_transformers.base.model No device provided, using mps
+2026-09-29 17:34:41,373 WARNING huggingface_hub.utils._http Warning: You are sending unauthenticated requests to the HF Hub. Please set a HF_TOKEN to enable higher rate limits and faster downloads.
+2026-09-29 17:34:41,601 INFO sentence_transformers.base.model Loading SentenceTransformer model from sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2.
+2026-09-29 17:34:48,034 INFO esgenie.pipeline [L2] Hybrid RAG 인덱스 로드 중... (backend=sbert)
+2026-09-29 17:34:48,040 INFO faiss.loader Loading faiss.
+2026-09-29 17:34:48,072 INFO faiss.loader Successfully loaded faiss.
+2026-09-29 17:34:48,733 INFO esgenie.pipeline [L3-L4] 영역 E 탐지·검증 중...
+2026-09-29 17:34:49,333 INFO esgenie.pipeline [L4] 영역 E 완료: 위험도=10.14, 수렴=False, HITL=True
+2026-09-29 17:34:49,334 INFO esgenie.pipeline [L5] Audit Trace 생성 중 (영역 E)...
+2026-09-29 17:34:49,522 INFO esgenie.pipeline [L3-L4] 영역 S 탐지·검증 중...
+2026-09-29 17:34:49,738 INFO esgenie.pipeline [L4] 영역 S 완료: 위험도=None, 수렴=False, HITL=True
+2026-09-29 17:34:49,738 INFO esgenie.pipeline [L5] Audit Trace 생성 중 (영역 S)...
+2026-09-29 17:34:49,870 INFO esgenie.pipeline [L3-L4] 영역 G 탐지·검증 중...
+2026-09-29 17:34:50,334 INFO esgenie.pipeline [L4] 영역 G 완료: 위험도=0.0, 수렴=True, HITL=False
+2026-09-29 17:34:50,334 INFO esgenie.pipeline [L5] Audit Trace 생성 중 (영역 G)...

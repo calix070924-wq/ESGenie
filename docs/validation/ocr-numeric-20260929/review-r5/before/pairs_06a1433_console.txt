@@ -1,0 +1,89 @@
+06a1433 total 381 failed 88
+ FAIL name_meter_reading_date_row@table_cells | metrics [[20.0, 'MJ'], [8420.0, 'm³']] != [[8420, 'm³']]; E-4-1 should be absent, got 2e-05; E-3-1 should be absent, got 0.001; forbidden_in_metrics [20.0]; forbidden_in_graph [0.001, 20.0]; forbidden_in_links ['20', '20
+ FAIL name_meter_reading_date_row@markdown | metrics [[20.0, 'MJ'], [8420.0, 'm³']] != [[8420, 'm³']]; E-4-1 should be absent, got 2e-05; E-3-1 should be absent, got 0.001; forbidden_in_metrics [20.0]; forbidden_in_graph [0.001, 20.0]; forbidden_in_links ['20', '20
+ FAIL name_meter_reading_date_row@text_lines | metrics [[20.0, 'MJ'], [8420.0, 'm³']] != [[8420, 'm³']]; E-4-1 should be absent, got 2e-05; E-3-1 should be absent, got 0.001; forbidden_in_metrics [20.0]; forbidden_in_graph [0.001, 20.0]; forbidden_in_links ['20', '20
+ FAIL name_meter_reading_date_row@local_pdf | metrics [[20.0, 'MJ'], [8420.0, 'm³']] != [[8420, 'm³']]; E-4-1 should be absent, got 2e-05; E-3-1 should be absent, got 0.001; forbidden_in_metrics [20.0]; forbidden_in_graph [0.001, 20.0]; forbidden_in_links ['20', '20
+ FAIL name_meter_reading_date_row_valid@table_cells | review lacks row_label_in_quantity_column
+ FAIL name_meter_reading_date_row_valid@markdown | review lacks row_label_in_quantity_column
+ FAIL name_meter_reading_date_row_valid@text_lines | review lacks row_label_in_quantity_column
+ FAIL name_meter_reading_date_row_valid@local_pdf | review lacks row_label_in_quantity_column
+ FAIL name_state_pending_vs_date_pair@table_cells | metrics [[20.0, 'MJ'], [8420.0, 'm³']] != [[8420, 'm³']]; E-4-1 should be absent, got 2e-05; E-3-1 should be absent, got 0.001; forbidden_in_metrics [20.0]; forbidden_in_graph [0.001, 20.0]; forbidden_in_links ['20', '20
+ FAIL name_state_pending_vs_date_pair@markdown | metrics [[20.0, 'MJ'], [8420.0, 'm³']] != [[8420, 'm³']]; E-4-1 should be absent, got 2e-05; E-3-1 should be absent, got 0.001; forbidden_in_metrics [20.0]; forbidden_in_graph [0.001, 20.0]; forbidden_in_links ['20', '20
+ FAIL name_state_pending_vs_date_pair@text_lines | metrics [[20.0, 'MJ'], [8420.0, 'm³']] != [[8420, 'm³']]; E-4-1 should be absent, got 2e-05; E-3-1 should be absent, got 0.001; forbidden_in_metrics [20.0]; forbidden_in_graph [0.001, 20.0]; forbidden_in_links ['20', '20
+ FAIL name_state_pending_vs_date_pair@local_pdf | metrics [[20.0, 'MJ'], [8420.0, 'm³']] != [[8420, 'm³']]; E-4-1 should be absent, got 2e-05; E-3-1 should be absent, got 0.001; forbidden_in_metrics [20.0]; forbidden_in_graph [0.001, 20.0]; forbidden_in_links ['20', '20
+ FAIL name_unknown_text_in_heat@table_cells | review lacks value_not_numeric; review has value_absent
+ FAIL name_unknown_text_in_heat@markdown | review lacks value_not_numeric; review has value_absent
+ FAIL name_unknown_text_in_heat@text_lines | review lacks value_not_numeric; review has value_absent
+ FAIL name_unknown_text_in_heat@local_pdf | review lacks value_not_numeric; review has value_absent
+ FAIL name_unknown_text_first_col_row@table_cells | metrics [[8420.0, 'm³'], [12000.0, 'MJ'], [360772.0, 'MJ']] != [[8420, 'm³'], [360772, 'MJ']]; forbidden_in_metrics [12000.0]; forbidden_in_graph [0.673, 12000.0]; forbidden_in_links ['12000']; review lacks row_label_in_
+ FAIL name_unknown_text_first_col_row@markdown | metrics [[8420.0, 'm³'], [12000.0, 'MJ'], [360772.0, 'MJ']] != [[8420, 'm³'], [360772, 'MJ']]; forbidden_in_metrics [12000.0]; forbidden_in_graph [0.673, 12000.0]; forbidden_in_links ['12000']; review lacks row_label_in_
+ FAIL name_unknown_text_first_col_row@text_lines | metrics [[8420.0, 'm³'], [12000.0, 'MJ'], [360772.0, 'MJ']] != [[8420, 'm³'], [360772, 'MJ']]; E-4-1 (0.012, 'TJ') != [0.360772, 'TJ']; E-3-1 (0.673, 'tCO2eq') != [20.239, 'tCO2eq']; forbidden_in_metrics [12000.0]; forbi
+ FAIL name_unknown_text_first_col_row@local_pdf | metrics [[8420.0, 'm³'], [12000.0, 'MJ'], [360772.0, 'MJ']] != [[8420, 'm³'], [360772, 'MJ']]; forbidden_in_metrics [12000.0]; forbidden_in_graph [0.673, 12000.0]; forbidden_in_links ['12000']; review lacks row_label_in_
+ FAIL mixed_pay_scheduled_valid@table_cells | metrics [[3.0, 'm3']] != [[8420, 'm³'], [360772, 'MJ']]; E-4-1 None != [0.360772, 'TJ']; E-3-1 None != [20.239, 'tCO2eq']; fake 3 m3; E-4-1 evidence lacks 360772
+ FAIL mixed_pay_scheduled_valid@markdown | metrics [] != [[8420, 'm³'], [360772, 'MJ']]; E-4-1 None != [0.360772, 'TJ']; E-3-1 None != [20.239, 'tCO2eq']; E-4-1 evidence lacks 360772
+ FAIL mixed_pay_scheduled_valid@text_lines | metrics [[3.0, 'm3']] != [[8420, 'm³'], [360772, 'MJ']]; E-4-1 None != [0.360772, 'TJ']; E-3-1 None != [20.239, 'tCO2eq']; fake 3 m3; E-4-1 evidence lacks 360772
+ FAIL mixed_pay_scheduled_valid@local_pdf | metrics [[3.0, 'm3']] != [[8420, 'm³'], [360772, 'MJ']]; E-4-1 None != [0.360772, 'TJ']; E-3-1 None != [20.239, 'tCO2eq']; fake 3 m3; E-4-1 evidence lacks 360772
+ FAIL mixed_pay_scheduled_empty@table_cells | metrics [[3.0, 'm3']] != [[8420, 'm³']]; fake 3 m3; review lacks value_absent
+ FAIL mixed_pay_scheduled_empty@markdown | metrics [] != [[8420, 'm³']]; review lacks value_absent
+ FAIL mixed_pay_scheduled_empty@text_lines | metrics [[3.0, 'm3']] != [[8420, 'm³']]; fake 3 m3; review lacks value_absent
+ FAIL mixed_pay_scheduled_empty@local_pdf | metrics [[3.0, 'm3']] != [[8420, 'm³']]; fake 3 m3; review lacks value_absent
+ FAIL mixed_pay_scheduled_pending@table_cells | metrics [[3.0, 'm3']] != [[8420, 'm³']]; fake 3 m3; review lacks value_absent
+ FAIL mixed_pay_scheduled_pending@markdown | metrics [] != [[8420, 'm³']]; review lacks value_absent
+ FAIL mixed_pay_scheduled_pending@text_lines | metrics [[3.0, 'm3']] != [[8420, 'm³']]; fake 3 m3; review lacks value_absent
+ FAIL mixed_pay_scheduled_pending@local_pdf | metrics [[3.0, 'm3']] != [[8420, 'm³']]; fake 3 m3; review lacks value_absent
+ FAIL mixed_pay_scheduled_zero@table_cells | metrics [[3.0, 'm3']] != [[0, 'MJ'], [8420, 'm³']]; fake 3 m3
+ FAIL mixed_pay_scheduled_zero@markdown | metrics [] != [[0, 'MJ'], [8420, 'm³']]
+ FAIL mixed_pay_scheduled_zero@text_lines | metrics [[3.0, 'm3']] != [[0, 'MJ'], [8420, 'm³']]; fake 3 m3
+ FAIL mixed_pay_scheduled_zero@local_pdf | metrics [[3.0, 'm3']] != [[0, 'MJ'], [8420, 'm³']]; fake 3 m3
+ FAIL mixed_bill_scheduled_valid@table_cells | metrics [[3.0, 'm3']] != [[8420, 'm³'], [360772, 'MJ']]; E-4-1 None != [0.360772, 'TJ']; E-3-1 None != [20.239, 'tCO2eq']; fake 3 m3; E-4-1 evidence lacks 360772
+ FAIL mixed_bill_scheduled_valid@markdown | metrics [] != [[8420, 'm³'], [360772, 'MJ']]; E-4-1 None != [0.360772, 'TJ']; E-3-1 None != [20.239, 'tCO2eq']; E-4-1 evidence lacks 360772
+ FAIL mixed_bill_scheduled_valid@text_lines | metrics [[3.0, 'm3']] != [[8420, 'm³'], [360772, 'MJ']]; E-4-1 None != [0.360772, 'TJ']; E-3-1 None != [20.239, 'tCO2eq']; fake 3 m3; E-4-1 evidence lacks 360772
+ FAIL mixed_bill_scheduled_valid@local_pdf | metrics [[3.0, 'm3']] != [[8420, 'm³'], [360772, 'MJ']]; E-4-1 None != [0.360772, 'TJ']; E-3-1 None != [20.239, 'tCO2eq']; fake 3 m3; E-4-1 evidence lacks 360772
+ FAIL mixed_bill_scheduled_empty@table_cells | metrics [[3.0, 'm3']] != [[8420, 'm³']]; fake 3 m3; review lacks value_absent
+ FAIL mixed_bill_scheduled_empty@markdown | metrics [] != [[8420, 'm³']]; review lacks value_absent
+ FAIL mixed_bill_scheduled_empty@text_lines | metrics [[3.0, 'm3']] != [[8420, 'm³']]; fake 3 m3; review lacks value_absent
+ FAIL mixed_bill_scheduled_empty@local_pdf | metrics [[3.0, 'm3']] != [[8420, 'm³']]; fake 3 m3; review lacks value_absent
+ FAIL mixed_bill_scheduled_pending@table_cells | metrics [[3.0, 'm3']] != [[8420, 'm³']]; fake 3 m3; review lacks value_absent
+ FAIL mixed_bill_scheduled_pending@markdown | metrics [] != [[8420, 'm³']]; review lacks value_absent
+ FAIL mixed_bill_scheduled_pending@text_lines | metrics [[3.0, 'm3']] != [[8420, 'm³']]; fake 3 m3; review lacks value_absent
+ FAIL mixed_bill_scheduled_pending@local_pdf | metrics [[3.0, 'm3']] != [[8420, 'm³']]; fake 3 m3; review lacks value_absent
+ FAIL mixed_bill_scheduled_zero@table_cells | metrics [[3.0, 'm3']] != [[0, 'MJ'], [8420, 'm³']]; fake 3 m3
+ FAIL mixed_bill_scheduled_zero@markdown | metrics [] != [[0, 'MJ'], [8420, 'm³']]
+ FAIL mixed_bill_scheduled_zero@text_lines | metrics [[3.0, 'm3']] != [[0, 'MJ'], [8420, 'm³']]; fake 3 m3
+ FAIL mixed_bill_scheduled_zero@local_pdf | metrics [[3.0, 'm3']] != [[0, 'MJ'], [8420, 'm³']]; fake 3 m3
+ FAIL mixed_later_billing_valid@table_cells | metrics [[3.0, 'm3']] != [[8420, 'm³'], [360772, 'MJ']]; E-4-1 None != [0.360772, 'TJ']; E-3-1 None != [20.239, 'tCO2eq']; fake 3 m3; E-4-1 evidence lacks 360772
+ FAIL mixed_later_billing_valid@markdown | metrics [] != [[8420, 'm³'], [360772, 'MJ']]; E-4-1 None != [0.360772, 'TJ']; E-3-1 None != [20.239, 'tCO2eq']; E-4-1 evidence lacks 360772
+ FAIL mixed_later_billing_valid@text_lines | metrics [[3.0, 'm3']] != [[8420, 'm³'], [360772, 'MJ']]; E-4-1 None != [0.360772, 'TJ']; E-3-1 None != [20.239, 'tCO2eq']; fake 3 m3; E-4-1 evidence lacks 360772
+ FAIL mixed_later_billing_valid@local_pdf | metrics [[3.0, 'm3']] != [[8420, 'm³'], [360772, 'MJ']]; E-4-1 None != [0.360772, 'TJ']; E-3-1 None != [20.239, 'tCO2eq']; fake 3 m3; E-4-1 evidence lacks 360772
+ FAIL mixed_later_billing_empty@table_cells | metrics [[3.0, 'm3']] != [[8420, 'm³']]; fake 3 m3; review lacks value_absent
+ FAIL mixed_later_billing_empty@markdown | metrics [] != [[8420, 'm³']]; review lacks value_absent
+ FAIL mixed_later_billing_empty@text_lines | metrics [[3.0, 'm3']] != [[8420, 'm³']]; fake 3 m3; review lacks value_absent
+ FAIL mixed_later_billing_empty@local_pdf | metrics [[3.0, 'm3']] != [[8420, 'm³']]; fake 3 m3; review lacks value_absent
+ FAIL mixed_later_billing_pending@table_cells | metrics [[3.0, 'm3']] != [[8420, 'm³']]; fake 3 m3; review lacks value_absent
+ FAIL mixed_later_billing_pending@markdown | metrics [] != [[8420, 'm³']]; review lacks value_absent
+ FAIL mixed_later_billing_pending@text_lines | metrics [[3.0, 'm3']] != [[8420, 'm³']]; fake 3 m3; review lacks value_absent
+ FAIL mixed_later_billing_pending@local_pdf | metrics [[3.0, 'm3']] != [[8420, 'm³']]; fake 3 m3; review lacks value_absent
+ FAIL mixed_later_billing_zero@table_cells | metrics [[3.0, 'm3']] != [[0, 'MJ'], [8420, 'm³']]; fake 3 m3
+ FAIL mixed_later_billing_zero@markdown | metrics [] != [[0, 'MJ'], [8420, 'm³']]
+ FAIL mixed_later_billing_zero@text_lines | metrics [[3.0, 'm3']] != [[0, 'MJ'], [8420, 'm³']]; fake 3 m3
+ FAIL mixed_later_billing_zero@local_pdf | metrics [[3.0, 'm3']] != [[0, 'MJ'], [8420, 'm³']]; fake 3 m3
+ FAIL mixed_unconfirmed_billed_valid@table_cells | metrics [[3.0, 'm3']] != [[8420, 'm³'], [360772, 'MJ']]; E-4-1 None != [0.360772, 'TJ']; E-3-1 None != [20.239, 'tCO2eq']; fake 3 m3; E-4-1 evidence lacks 360772
+ FAIL mixed_unconfirmed_billed_valid@markdown | metrics [] != [[8420, 'm³'], [360772, 'MJ']]; E-4-1 None != [0.360772, 'TJ']; E-3-1 None != [20.239, 'tCO2eq']; E-4-1 evidence lacks 360772
+ FAIL mixed_unconfirmed_billed_valid@text_lines | metrics [[3.0, 'm3']] != [[8420, 'm³'], [360772, 'MJ']]; E-4-1 None != [0.360772, 'TJ']; E-3-1 None != [20.239, 'tCO2eq']; fake 3 m3; E-4-1 evidence lacks 360772
+ FAIL mixed_unconfirmed_billed_valid@local_pdf | metrics [[3.0, 'm3']] != [[8420, 'm³'], [360772, 'MJ']]; E-4-1 None != [0.360772, 'TJ']; E-3-1 None != [20.239, 'tCO2eq']; fake 3 m3; E-4-1 evidence lacks 360772
+ FAIL mixed_unconfirmed_billed_empty@table_cells | metrics [[3.0, 'm3']] != [[8420, 'm³']]; fake 3 m3; review lacks value_absent
+ FAIL mixed_unconfirmed_billed_empty@markdown | metrics [] != [[8420, 'm³']]; review lacks value_absent
+ FAIL mixed_unconfirmed_billed_empty@text_lines | metrics [[3.0, 'm3']] != [[8420, 'm³']]; fake 3 m3; review lacks value_absent
+ FAIL mixed_unconfirmed_billed_empty@local_pdf | metrics [[3.0, 'm3']] != [[8420, 'm³']]; fake 3 m3; review lacks value_absent
+ FAIL mixed_unconfirmed_billed_pending@table_cells | metrics [[3.0, 'm3']] != [[8420, 'm³']]; fake 3 m3; review lacks value_absent
+ FAIL mixed_unconfirmed_billed_pending@markdown | metrics [] != [[8420, 'm³']]; review lacks value_absent
+ FAIL mixed_unconfirmed_billed_pending@text_lines | metrics [[3.0, 'm3']] != [[8420, 'm³']]; fake 3 m3; review lacks value_absent
+ FAIL mixed_unconfirmed_billed_pending@local_pdf | metrics [[3.0, 'm3']] != [[8420, 'm³']]; fake 3 m3; review lacks value_absent
+ FAIL mixed_unconfirmed_billed_zero@table_cells | metrics [[3.0, 'm3']] != [[0, 'MJ'], [8420, 'm³']]; fake 3 m3
+ FAIL mixed_unconfirmed_billed_zero@markdown | metrics [] != [[0, 'MJ'], [8420, 'm³']]
+ FAIL mixed_unconfirmed_billed_zero@text_lines | metrics [[3.0, 'm3']] != [[0, 'MJ'], [8420, 'm³']]; fake 3 m3
+ FAIL mixed_unconfirmed_billed_zero@local_pdf | metrics [[3.0, 'm3']] != [[0, 'MJ'], [8420, 'm³']]; fake 3 m3
+ FAIL columns_mixed_2@table_cells | metrics [[3.0, 'm3']] != [[8420, 'm³']]; fake 3 m3
+ FAIL columns_mixed_2@markdown | metrics [] != [[8420, 'm³']]
+ FAIL columns_mixed_2@text_lines | metrics [[3.0, 'm3']] != [[8420, 'm³']]; fake 3 m3
+ FAIL columns_mixed_2@local_pdf | metrics [[3.0, 'm3']] != [[8420, 'm³']]; fake 3 m3

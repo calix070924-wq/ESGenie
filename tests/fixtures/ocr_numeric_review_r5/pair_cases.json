@@ -1,0 +1,4663 @@
+{
+ "note": "PR #68 5차 검토(R8-3) 판정 충돌 검사 입력 — 검증용 가상 입력, 원본 아님. 생성: review-r5/make_cases.py",
+ "emission_rule": "E-4-1 TJ = MJ/1e6, E-3-1 tCO2eq = round(MJ*0.0000561, 3)",
+ "cases": {
+  "known_pay_scheduled_valid": {
+   "group": "알려진 회귀·대조군",
+   "meaning": "2칸 표 + '납부예정금액 | 247,500', 정상 열량 → 열량 보존, 금액 제외",
+   "doc_type": "gas_bill",
+   "extra": [
+    "사용 기간: 2026-04-01 ~ 2026-04-30"
+   ],
+   "tables": [
+    [
+     [
+      "사용량(m3)",
+      "사용열량(MJ)"
+     ],
+     [
+      "8,420",
+      "360,772"
+     ],
+     [
+      "납부예정금액",
+      "247,500"
+     ]
+    ]
+   ],
+   "expected": {
+    "metrics": [
+     [
+      8420,
+      "m³"
+     ],
+     [
+      360772,
+      "MJ"
+     ]
+    ],
+    "E-4-1": [
+     0.360772,
+     "TJ"
+    ],
+    "E-3-1": [
+     20.239,
+     "tCO2eq"
+    ]
+   },
+   "forbidden_values": [
+    247500
+   ],
+   "paths": [
+    "table_cells",
+    "markdown",
+    "text_lines",
+    "local_pdf"
+   ],
+   "evidence_contains": "360772",
+   "review_includes": [
+    "money_row_excluded"
+   ]
+  },
+  "known_pay_scheduled_empty": {
+   "group": "알려진 회귀·대조군",
+   "meaning": "2칸 표 + '납부예정금액 | 247,500', 열량 '-' → 8,420 m³만",
+   "doc_type": "gas_bill",
+   "extra": [
+    "사용 기간: 2026-04-01 ~ 2026-04-30"
+   ],
+   "tables": [
+    [
+     [
+      "사용량(m3)",
+      "사용열량(MJ)"
+     ],
+     [
+      "8,420",
+      "-"
+     ],
+     [
+      "납부예정금액",
+      "247,500"
+     ]
+    ]
+   ],
+   "expected": {
+    "metrics": [
+     [
+      8420,
+      "m³"
+     ]
+    ],
+    "E-4-1": null,
+    "E-3-1": null
+   },
+   "forbidden_values": [
+    247500
+   ],
+   "paths": [
+    "table_cells",
+    "markdown",
+    "text_lines",
+    "local_pdf"
+   ],
+   "review_includes": [
+    "money_row_excluded",
+    "value_absent"
+   ]
+  },
+  "known_bill_scheduled_valid": {
+   "group": "알려진 회귀·대조군",
+   "meaning": "2칸 표 + '청구예정금액 | 247,500', 정상 열량 → 열량 보존, 금액 제외",
+   "doc_type": "gas_bill",
+   "extra": [
+    "사용 기간: 2026-04-01 ~ 2026-04-30"
+   ],
+   "tables": [
+    [
+     [
+      "사용량(m3)",
+      "사용열량(MJ)"
+     ],
+     [
+      "8,420",
+      "360,772"
+     ],
+     [
+      "청구예정금액",
+      "247,500"
+     ]
+    ]
+   ],
+   "expected": {
+    "metrics": [
+     [
+      8420,
+      "m³"
+     ],
+     [
+      360772,
+      "MJ"
+     ]
+    ],
+    "E-4-1": [
+     0.360772,
+     "TJ"
+    ],
+    "E-3-1": [
+     20.239,
+     "tCO2eq"
+    ]
+   },
+   "forbidden_values": [
+    247500
+   ],
+   "paths": [
+    "table_cells",
+    "markdown",
+    "text_lines",
+    "local_pdf"
+   ],
+   "evidence_contains": "360772",
+   "review_includes": [
+    "money_row_excluded"
+   ]
+  },
+  "known_bill_scheduled_empty": {
+   "group": "알려진 회귀·대조군",
+   "meaning": "2칸 표 + '청구예정금액 | 247,500', 열량 '-' → 8,420 m³만",
+   "doc_type": "gas_bill",
+   "extra": [
+    "사용 기간: 2026-04-01 ~ 2026-04-30"
+   ],
+   "tables": [
+    [
+     [
+      "사용량(m3)",
+      "사용열량(MJ)"
+     ],
+     [
+      "8,420",
+      "-"
+     ],
+     [
+      "청구예정금액",
+      "247,500"
+     ]
+    ]
+   ],
+   "expected": {
+    "metrics": [
+     [
+      8420,
+      "m³"
+     ]
+    ],
+    "E-4-1": null,
+    "E-3-1": null
+   },
+   "forbidden_values": [
+    247500
+   ],
+   "paths": [
+    "table_cells",
+    "markdown",
+    "text_lines",
+    "local_pdf"
+   ],
+   "review_includes": [
+    "money_row_excluded",
+    "value_absent"
+   ]
+  },
+  "known_later_billing_valid": {
+   "group": "알려진 회귀·대조군",
+   "meaning": "2칸 표 + '추후청구요금 | 247,500', 정상 열량 → 열량 보존, 금액 제외",
+   "doc_type": "gas_bill",
+   "extra": [
+    "사용 기간: 2026-04-01 ~ 2026-04-30"
+   ],
+   "tables": [
+    [
+     [
+      "사용량(m3)",
+      "사용열량(MJ)"
+     ],
+     [
+      "8,420",
+      "360,772"
+     ],
+     [
+      "추후청구요금",
+      "247,500"
+     ]
+    ]
+   ],
+   "expected": {
+    "metrics": [
+     [
+      8420,
+      "m³"
+     ],
+     [
+      360772,
+      "MJ"
+     ]
+    ],
+    "E-4-1": [
+     0.360772,
+     "TJ"
+    ],
+    "E-3-1": [
+     20.239,
+     "tCO2eq"
+    ]
+   },
+   "forbidden_values": [
+    247500
+   ],
+   "paths": [
+    "table_cells",
+    "markdown",
+    "text_lines",
+    "local_pdf"
+   ],
+   "evidence_contains": "360772",
+   "review_includes": [
+    "money_row_excluded"
+   ]
+  },
+  "known_later_billing_empty": {
+   "group": "알려진 회귀·대조군",
+   "meaning": "2칸 표 + '추후청구요금 | 247,500', 열량 '-' → 8,420 m³만",
+   "doc_type": "gas_bill",
+   "extra": [
+    "사용 기간: 2026-04-01 ~ 2026-04-30"
+   ],
+   "tables": [
+    [
+     [
+      "사용량(m3)",
+      "사용열량(MJ)"
+     ],
+     [
+      "8,420",
+      "-"
+     ],
+     [
+      "추후청구요금",
+      "247,500"
+     ]
+    ]
+   ],
+   "expected": {
+    "metrics": [
+     [
+      8420,
+      "m³"
+     ]
+    ],
+    "E-4-1": null,
+    "E-3-1": null
+   },
+   "forbidden_values": [
+    247500
+   ],
+   "paths": [
+    "table_cells",
+    "markdown",
+    "text_lines",
+    "local_pdf"
+   ],
+   "review_includes": [
+    "money_row_excluded",
+    "value_absent"
+   ]
+  },
+  "known_paid_amount_valid": {
+   "group": "알려진 회귀·대조군",
+   "meaning": "2칸 표 + '납부금액 | 247,500', 정상 열량 → 열량 보존, 금액 제외",
+   "doc_type": "gas_bill",
+   "extra": [
+    "사용 기간: 2026-04-01 ~ 2026-04-30"
+   ],
+   "tables": [
+    [
+     [
+      "사용량(m3)",
+      "사용열량(MJ)"
+     ],
+     [
+      "8,420",
+      "360,772"
+     ],
+     [
+      "납부금액",
+      "247,500"
+     ]
+    ]
+   ],
+   "expected": {
+    "metrics": [
+     [
+      8420,
+      "m³"
+     ],
+     [
+      360772,
+      "MJ"
+     ]
+    ],
+    "E-4-1": [
+     0.360772,
+     "TJ"
+    ],
+    "E-3-1": [
+     20.239,
+     "tCO2eq"
+    ]
+   },
+   "forbidden_values": [
+    247500
+   ],
+   "paths": [
+    "table_cells",
+    "markdown",
+    "text_lines",
+    "local_pdf"
+   ],
+   "evidence_contains": "360772",
+   "review_includes": [
+    "money_row_excluded"
+   ]
+  },
+  "known_paid_amount_empty": {
+   "group": "알려진 회귀·대조군",
+   "meaning": "2칸 표 + '납부금액 | 247,500', 열량 '-' → 8,420 m³만",
+   "doc_type": "gas_bill",
+   "extra": [
+    "사용 기간: 2026-04-01 ~ 2026-04-30"
+   ],
+   "tables": [
+    [
+     [
+      "사용량(m3)",
+      "사용열량(MJ)"
+     ],
+     [
+      "8,420",
+      "-"
+     ],
+     [
+      "납부금액",
+      "247,500"
+     ]
+    ]
+   ],
+   "expected": {
+    "metrics": [
+     [
+      8420,
+      "m³"
+     ]
+    ],
+    "E-4-1": null,
+    "E-3-1": null
+   },
+   "forbidden_values": [
+    247500
+   ],
+   "paths": [
+    "table_cells",
+    "markdown",
+    "text_lines",
+    "local_pdf"
+   ],
+   "review_includes": [
+    "money_row_excluded",
+    "value_absent"
+   ]
+  },
+  "marker_heat_blank": {
+   "group": "실제 부재 표시",
+   "meaning": "열량 칸 '' → 8,420 m³만, 값 없음 기록",
+   "doc_type": "gas_bill",
+   "extra": [
+    "사용 기간: 2026-04-01 ~ 2026-04-30"
+   ],
+   "tables": [
+    [
+     [
+      "사용량(m3)",
+      "사용열량(MJ)"
+     ],
+     [
+      "8,420",
+      ""
+     ]
+    ]
+   ],
+   "expected": {
+    "metrics": [
+     [
+      8420,
+      "m³"
+     ]
+    ],
+    "E-4-1": null,
+    "E-3-1": null
+   },
+   "forbidden_values": [],
+   "paths": [
+    "table_cells",
+    "markdown"
+   ],
+   "review_includes": [
+    "value_absent"
+   ]
+  },
+  "marker_heat_blank_fee_row": {
+   "group": "실제 부재 표시",
+   "meaning": "열량 칸 '' + 표 밑 '납부예정금액 | 247,500' → 8,420 m³만",
+   "doc_type": "gas_bill",
+   "extra": [
+    "사용 기간: 2026-04-01 ~ 2026-04-30"
+   ],
+   "tables": [
+    [
+     [
+      "사용량(m3)",
+      "사용열량(MJ)"
+     ],
+     [
+      "8,420",
+      ""
+     ],
+     [
+      "납부예정금액",
+      "247,500"
+     ]
+    ]
+   ],
+   "expected": {
+    "metrics": [
+     [
+      8420,
+      "m³"
+     ]
+    ],
+    "E-4-1": null,
+    "E-3-1": null
+   },
+   "forbidden_values": [
+    247500
+   ],
+   "paths": [
+    "table_cells",
+    "markdown"
+   ],
+   "review_includes": [
+    "value_absent",
+    "money_row_excluded"
+   ]
+  },
+  "marker_usage_blank": {
+   "group": "실제 부재 표시",
+   "meaning": "첫 칸(사용량) '' + 열량 360,772 → 열량만, 첫 칸은 행 이름 아님",
+   "doc_type": "gas_bill",
+   "extra": [
+    "사용 기간: 2026-04-01 ~ 2026-04-30"
+   ],
+   "tables": [
+    [
+     [
+      "사용량(m3)",
+      "사용열량(MJ)"
+     ],
+     [
+      "",
+      "360,772"
+     ]
+    ]
+   ],
+   "expected": {
+    "metrics": [
+     [
+      360772,
+      "MJ"
+     ]
+    ],
+    "E-4-1": [
+     0.360772,
+     "TJ"
+    ],
+    "E-3-1": [
+     20.239,
+     "tCO2eq"
+    ]
+   },
+   "forbidden_values": [],
+   "paths": [
+    "table_cells",
+    "markdown"
+   ],
+   "evidence_contains": "360772",
+   "review_includes": [
+    "value_absent"
+   ],
+   "review_excludes": [
+    "row_label_in_quantity_column",
+    "money_row_excluded"
+   ]
+  },
+  "marker_heat_dash": {
+   "group": "실제 부재 표시",
+   "meaning": "열량 칸 '-' → 8,420 m³만, 값 없음 기록",
+   "doc_type": "gas_bill",
+   "extra": [
+    "사용 기간: 2026-04-01 ~ 2026-04-30"
+   ],
+   "tables": [
+    [
+     [
+      "사용량(m3)",
+      "사용열량(MJ)"
+     ],
+     [
+      "8,420",
+      "-"
+     ]
+    ]
+   ],
+   "expected": {
+    "metrics": [
+     [
+      8420,
+      "m³"
+     ]
+    ],
+    "E-4-1": null,
+    "E-3-1": null
+   },
+   "forbidden_values": [],
+   "paths": [
+    "table_cells",
+    "markdown",
+    "text_lines",
+    "local_pdf"
+   ],
+   "review_includes": [
+    "value_absent"
+   ]
+  },
+  "marker_heat_dash_fee_row": {
+   "group": "실제 부재 표시",
+   "meaning": "열량 칸 '-' + 표 밑 '납부예정금액 | 247,500' → 8,420 m³만",
+   "doc_type": "gas_bill",
+   "extra": [
+    "사용 기간: 2026-04-01 ~ 2026-04-30"
+   ],
+   "tables": [
+    [
+     [
+      "사용량(m3)",
+      "사용열량(MJ)"
+     ],
+     [
+      "8,420",
+      "-"
+     ],
+     [
+      "납부예정금액",
+      "247,500"
+     ]
+    ]
+   ],
+   "expected": {
+    "metrics": [
+     [
+      8420,
+      "m³"
+     ]
+    ],
+    "E-4-1": null,
+    "E-3-1": null
+   },
+   "forbidden_values": [
+    247500
+   ],
+   "paths": [
+    "table_cells",
+    "markdown",
+    "text_lines",
+    "local_pdf"
+   ],
+   "review_includes": [
+    "value_absent",
+    "money_row_excluded"
+   ]
+  },
+  "marker_usage_dash": {
+   "group": "실제 부재 표시",
+   "meaning": "첫 칸(사용량) '-' + 열량 360,772 → 열량만, 첫 칸은 행 이름 아님",
+   "doc_type": "gas_bill",
+   "extra": [
+    "사용 기간: 2026-04-01 ~ 2026-04-30"
+   ],
+   "tables": [
+    [
+     [
+      "사용량(m3)",
+      "사용열량(MJ)"
+     ],
+     [
+      "-",
+      "360,772"
+     ]
+    ]
+   ],
+   "expected": {
+    "metrics": [
+     [
+      360772,
+      "MJ"
+     ]
+    ],
+    "E-4-1": [
+     0.360772,
+     "TJ"
+    ],
+    "E-3-1": [
+     20.239,
+     "tCO2eq"
+    ]
+   },
+   "forbidden_values": [],
+   "paths": [
+    "table_cells",
+    "markdown",
+    "text_lines",
+    "local_pdf"
+   ],
+   "evidence_contains": "360772",
+   "review_includes": [
+    "value_absent"
+   ],
+   "review_excludes": [
+    "row_label_in_quantity_column",
+    "money_row_excluded"
+   ]
+  },
+  "marker_heat_emdash": {
+   "group": "실제 부재 표시",
+   "meaning": "열량 칸 '—' → 8,420 m³만, 값 없음 기록",
+   "doc_type": "gas_bill",
+   "extra": [
+    "사용 기간: 2026-04-01 ~ 2026-04-30"
+   ],
+   "tables": [
+    [
+     [
+      "사용량(m3)",
+      "사용열량(MJ)"
+     ],
+     [
+      "8,420",
+      "—"
+     ]
+    ]
+   ],
+   "expected": {
+    "metrics": [
+     [
+      8420,
+      "m³"
+     ]
+    ],
+    "E-4-1": null,
+    "E-3-1": null
+   },
+   "forbidden_values": [],
+   "paths": [
+    "table_cells",
+    "markdown",
+    "text_lines",
+    "local_pdf"
+   ],
+   "review_includes": [
+    "value_absent"
+   ]
+  },
+  "marker_heat_emdash_fee_row": {
+   "group": "실제 부재 표시",
+   "meaning": "열량 칸 '—' + 표 밑 '납부예정금액 | 247,500' → 8,420 m³만",
+   "doc_type": "gas_bill",
+   "extra": [
+    "사용 기간: 2026-04-01 ~ 2026-04-30"
+   ],
+   "tables": [
+    [
+     [
+      "사용량(m3)",
+      "사용열량(MJ)"
+     ],
+     [
+      "8,420",
+      "—"
+     ],
+     [
+      "납부예정금액",
+      "247,500"
+     ]
+    ]
+   ],
+   "expected": {
+    "metrics": [
+     [
+      8420,
+      "m³"
+     ]
+    ],
+    "E-4-1": null,
+    "E-3-1": null
+   },
+   "forbidden_values": [
+    247500
+   ],
+   "paths": [
+    "table_cells",
+    "markdown",
+    "text_lines",
+    "local_pdf"
+   ],
+   "review_includes": [
+    "value_absent",
+    "money_row_excluded"
+   ]
+  },
+  "marker_usage_emdash": {
+   "group": "실제 부재 표시",
+   "meaning": "첫 칸(사용량) '—' + 열량 360,772 → 열량만, 첫 칸은 행 이름 아님",
+   "doc_type": "gas_bill",
+   "extra": [
+    "사용 기간: 2026-04-01 ~ 2026-04-30"
+   ],
+   "tables": [
+    [
+     [
+      "사용량(m3)",
+      "사용열량(MJ)"
+     ],
+     [
+      "—",
+      "360,772"
+     ]
+    ]
+   ],
+   "expected": {
+    "metrics": [
+     [
+      360772,
+      "MJ"
+     ]
+    ],
+    "E-4-1": [
+     0.360772,
+     "TJ"
+    ],
+    "E-3-1": [
+     20.239,
+     "tCO2eq"
+    ]
+   },
+   "forbidden_values": [],
+   "paths": [
+    "table_cells",
+    "markdown",
+    "text_lines",
+    "local_pdf"
+   ],
+   "evidence_contains": "360772",
+   "review_includes": [
+    "value_absent"
+   ],
+   "review_excludes": [
+    "row_label_in_quantity_column",
+    "money_row_excluded"
+   ]
+  },
+  "marker_heat_na": {
+   "group": "실제 부재 표시",
+   "meaning": "열량 칸 'N/A' → 8,420 m³만, 값 없음 기록",
+   "doc_type": "gas_bill",
+   "extra": [
+    "사용 기간: 2026-04-01 ~ 2026-04-30"
+   ],
+   "tables": [
+    [
+     [
+      "사용량(m3)",
+      "사용열량(MJ)"
+     ],
+     [
+      "8,420",
+      "N/A"
+     ]
+    ]
+   ],
+   "expected": {
+    "metrics": [
+     [
+      8420,
+      "m³"
+     ]
+    ],
+    "E-4-1": null,
+    "E-3-1": null
+   },
+   "forbidden_values": [],
+   "paths": [
+    "table_cells",
+    "markdown",
+    "text_lines",
+    "local_pdf"
+   ],
+   "review_includes": [
+    "value_absent"
+   ]
+  },
+  "marker_heat_na_fee_row": {
+   "group": "실제 부재 표시",
+   "meaning": "열량 칸 'N/A' + 표 밑 '납부예정금액 | 247,500' → 8,420 m³만",
+   "doc_type": "gas_bill",
+   "extra": [
+    "사용 기간: 2026-04-01 ~ 2026-04-30"
+   ],
+   "tables": [
+    [
+     [
+      "사용량(m3)",
+      "사용열량(MJ)"
+     ],
+     [
+      "8,420",
+      "N/A"
+     ],
+     [
+      "납부예정금액",
+      "247,500"
+     ]
+    ]
+   ],
+   "expected": {
+    "metrics": [
+     [
+      8420,
+      "m³"
+     ]
+    ],
+    "E-4-1": null,
+    "E-3-1": null
+   },
+   "forbidden_values": [
+    247500
+   ],
+   "paths": [
+    "table_cells",
+    "markdown",
+    "text_lines",
+    "local_pdf"
+   ],
+   "review_includes": [
+    "value_absent",
+    "money_row_excluded"
+   ]
+  },
+  "marker_usage_na": {
+   "group": "실제 부재 표시",
+   "meaning": "첫 칸(사용량) 'N/A' + 열량 360,772 → 열량만, 첫 칸은 행 이름 아님",
+   "doc_type": "gas_bill",
+   "extra": [
+    "사용 기간: 2026-04-01 ~ 2026-04-30"
+   ],
+   "tables": [
+    [
+     [
+      "사용량(m3)",
+      "사용열량(MJ)"
+     ],
+     [
+      "N/A",
+      "360,772"
+     ]
+    ]
+   ],
+   "expected": {
+    "metrics": [
+     [
+      360772,
+      "MJ"
+     ]
+    ],
+    "E-4-1": [
+     0.360772,
+     "TJ"
+    ],
+    "E-3-1": [
+     20.239,
+     "tCO2eq"
+    ]
+   },
+   "forbidden_values": [],
+   "paths": [
+    "table_cells",
+    "markdown",
+    "text_lines",
+    "local_pdf"
+   ],
+   "evidence_contains": "360772",
+   "review_includes": [
+    "value_absent"
+   ],
+   "review_excludes": [
+    "row_label_in_quantity_column",
+    "money_row_excluded"
+   ]
+  },
+  "marker_heat_pending": {
+   "group": "실제 부재 표시",
+   "meaning": "열량 칸 '검침 예정' → 8,420 m³만, 값 없음 기록",
+   "doc_type": "gas_bill",
+   "extra": [
+    "사용 기간: 2026-04-01 ~ 2026-04-30"
+   ],
+   "tables": [
+    [
+     [
+      "사용량(m3)",
+      "사용열량(MJ)"
+     ],
+     [
+      "8,420",
+      "검침 예정"
+     ]
+    ]
+   ],
+   "expected": {
+    "metrics": [
+     [
+      8420,
+      "m³"
+     ]
+    ],
+    "E-4-1": null,
+    "E-3-1": null
+   },
+   "forbidden_values": [],
+   "paths": [
+    "table_cells",
+    "markdown",
+    "text_lines",
+    "local_pdf"
+   ],
+   "review_includes": [
+    "value_absent"
+   ]
+  },
+  "marker_heat_pending_fee_row": {
+   "group": "실제 부재 표시",
+   "meaning": "열량 칸 '검침 예정' + 표 밑 '납부예정금액 | 247,500' → 8,420 m³만",
+   "doc_type": "gas_bill",
+   "extra": [
+    "사용 기간: 2026-04-01 ~ 2026-04-30"
+   ],
+   "tables": [
+    [
+     [
+      "사용량(m3)",
+      "사용열량(MJ)"
+     ],
+     [
+      "8,420",
+      "검침 예정"
+     ],
+     [
+      "납부예정금액",
+      "247,500"
+     ]
+    ]
+   ],
+   "expected": {
+    "metrics": [
+     [
+      8420,
+      "m³"
+     ]
+    ],
+    "E-4-1": null,
+    "E-3-1": null
+   },
+   "forbidden_values": [
+    247500
+   ],
+   "paths": [
+    "table_cells",
+    "markdown",
+    "text_lines",
+    "local_pdf"
+   ],
+   "review_includes": [
+    "value_absent",
+    "money_row_excluded"
+   ]
+  },
+  "marker_usage_pending": {
+   "group": "실제 부재 표시",
+   "meaning": "첫 칸(사용량) '검침 예정' + 열량 360,772 → 열량만, 첫 칸은 행 이름 아님",
+   "doc_type": "gas_bill",
+   "extra": [
+    "사용 기간: 2026-04-01 ~ 2026-04-30"
+   ],
+   "tables": [
+    [
+     [
+      "사용량(m3)",
+      "사용열량(MJ)"
+     ],
+     [
+      "검침 예정",
+      "360,772"
+     ]
+    ]
+   ],
+   "expected": {
+    "metrics": [
+     [
+      360772,
+      "MJ"
+     ]
+    ],
+    "E-4-1": [
+     0.360772,
+     "TJ"
+    ],
+    "E-3-1": [
+     20.239,
+     "tCO2eq"
+    ]
+   },
+   "forbidden_values": [],
+   "paths": [
+    "table_cells",
+    "markdown",
+    "text_lines",
+    "local_pdf"
+   ],
+   "evidence_contains": "360772",
+   "review_includes": [
+    "value_absent"
+   ],
+   "review_excludes": [
+    "row_label_in_quantity_column",
+    "money_row_excluded"
+   ]
+  },
+  "marker_heat_measure_pending": {
+   "group": "실제 부재 표시",
+   "meaning": "열량 칸 '측정 예정' → 8,420 m³만, 값 없음 기록",
+   "doc_type": "gas_bill",
+   "extra": [
+    "사용 기간: 2026-04-01 ~ 2026-04-30"
+   ],
+   "tables": [
+    [
+     [
+      "사용량(m3)",
+      "사용열량(MJ)"
+     ],
+     [
+      "8,420",
+      "측정 예정"
+     ]
+    ]
+   ],
+   "expected": {
+    "metrics": [
+     [
+      8420,
+      "m³"
+     ]
+    ],
+    "E-4-1": null,
+    "E-3-1": null
+   },
+   "forbidden_values": [],
+   "paths": [
+    "table_cells",
+    "markdown",
+    "text_lines",
+    "local_pdf"
+   ],
+   "review_includes": [
+    "value_absent"
+   ]
+  },
+  "marker_heat_measure_pending_fee_row": {
+   "group": "실제 부재 표시",
+   "meaning": "열량 칸 '측정 예정' + 표 밑 '납부예정금액 | 247,500' → 8,420 m³만",
+   "doc_type": "gas_bill",
+   "extra": [
+    "사용 기간: 2026-04-01 ~ 2026-04-30"
+   ],
+   "tables": [
+    [
+     [
+      "사용량(m3)",
+      "사용열량(MJ)"
+     ],
+     [
+      "8,420",
+      "측정 예정"
+     ],
+     [
+      "납부예정금액",
+      "247,500"
+     ]
+    ]
+   ],
+   "expected": {
+    "metrics": [
+     [
+      8420,
+      "m³"
+     ]
+    ],
+    "E-4-1": null,
+    "E-3-1": null
+   },
+   "forbidden_values": [
+    247500
+   ],
+   "paths": [
+    "table_cells",
+    "markdown",
+    "text_lines",
+    "local_pdf"
+   ],
+   "review_includes": [
+    "value_absent",
+    "money_row_excluded"
+   ]
+  },
+  "marker_usage_measure_pending": {
+   "group": "실제 부재 표시",
+   "meaning": "첫 칸(사용량) '측정 예정' + 열량 360,772 → 열량만, 첫 칸은 행 이름 아님",
+   "doc_type": "gas_bill",
+   "extra": [
+    "사용 기간: 2026-04-01 ~ 2026-04-30"
+   ],
+   "tables": [
+    [
+     [
+      "사용량(m3)",
+      "사용열량(MJ)"
+     ],
+     [
+      "측정 예정",
+      "360,772"
+     ]
+    ]
+   ],
+   "expected": {
+    "metrics": [
+     [
+      360772,
+      "MJ"
+     ]
+    ],
+    "E-4-1": [
+     0.360772,
+     "TJ"
+    ],
+    "E-3-1": [
+     20.239,
+     "tCO2eq"
+    ]
+   },
+   "forbidden_values": [],
+   "paths": [
+    "table_cells",
+    "markdown",
+    "text_lines",
+    "local_pdf"
+   ],
+   "evidence_contains": "360772",
+   "review_includes": [
+    "value_absent"
+   ],
+   "review_excludes": [
+    "row_label_in_quantity_column",
+    "money_row_excluded"
+   ]
+  },
+  "marker_heat_unread": {
+   "group": "실제 부재 표시",
+   "meaning": "열량 칸 '미검침' → 8,420 m³만, 값 없음 기록",
+   "doc_type": "gas_bill",
+   "extra": [
+    "사용 기간: 2026-04-01 ~ 2026-04-30"
+   ],
+   "tables": [
+    [
+     [
+      "사용량(m3)",
+      "사용열량(MJ)"
+     ],
+     [
+      "8,420",
+      "미검침"
+     ]
+    ]
+   ],
+   "expected": {
+    "metrics": [
+     [
+      8420,
+      "m³"
+     ]
+    ],
+    "E-4-1": null,
+    "E-3-1": null
+   },
+   "forbidden_values": [],
+   "paths": [
+    "table_cells",
+    "markdown",
+    "text_lines",
+    "local_pdf"
+   ],
+   "review_includes": [
+    "value_absent"
+   ]
+  },
+  "marker_heat_unread_fee_row": {
+   "group": "실제 부재 표시",
+   "meaning": "열량 칸 '미검침' + 표 밑 '납부예정금액 | 247,500' → 8,420 m³만",
+   "doc_type": "gas_bill",
+   "extra": [
+    "사용 기간: 2026-04-01 ~ 2026-04-30"
+   ],
+   "tables": [
+    [
+     [
+      "사용량(m3)",
+      "사용열량(MJ)"
+     ],
+     [
+      "8,420",
+      "미검침"
+     ],
+     [
+      "납부예정금액",
+      "247,500"
+     ]
+    ]
+   ],
+   "expected": {
+    "metrics": [
+     [
+      8420,
+      "m³"
+     ]
+    ],
+    "E-4-1": null,
+    "E-3-1": null
+   },
+   "forbidden_values": [
+    247500
+   ],
+   "paths": [
+    "table_cells",
+    "markdown",
+    "text_lines",
+    "local_pdf"
+   ],
+   "review_includes": [
+    "value_absent",
+    "money_row_excluded"
+   ]
+  },
+  "marker_usage_unread": {
+   "group": "실제 부재 표시",
+   "meaning": "첫 칸(사용량) '미검침' + 열량 360,772 → 열량만, 첫 칸은 행 이름 아님",
+   "doc_type": "gas_bill",
+   "extra": [
+    "사용 기간: 2026-04-01 ~ 2026-04-30"
+   ],
+   "tables": [
+    [
+     [
+      "사용량(m3)",
+      "사용열량(MJ)"
+     ],
+     [
+      "미검침",
+      "360,772"
+     ]
+    ]
+   ],
+   "expected": {
+    "metrics": [
+     [
+      360772,
+      "MJ"
+     ]
+    ],
+    "E-4-1": [
+     0.360772,
+     "TJ"
+    ],
+    "E-3-1": [
+     20.239,
+     "tCO2eq"
+    ]
+   },
+   "forbidden_values": [],
+   "paths": [
+    "table_cells",
+    "markdown",
+    "text_lines",
+    "local_pdf"
+   ],
+   "evidence_contains": "360772",
+   "review_includes": [
+    "value_absent"
+   ],
+   "review_excludes": [
+    "row_label_in_quantity_column",
+    "money_row_excluded"
+   ]
+  },
+  "marker_heat_undecided": {
+   "group": "실제 부재 표시",
+   "meaning": "열량 칸 '미정' → 8,420 m³만, 값 없음 기록",
+   "doc_type": "gas_bill",
+   "extra": [
+    "사용 기간: 2026-04-01 ~ 2026-04-30"
+   ],
+   "tables": [
+    [
+     [
+      "사용량(m3)",
+      "사용열량(MJ)"
+     ],
+     [
+      "8,420",
+      "미정"
+     ]
+    ]
+   ],
+   "expected": {
+    "metrics": [
+     [
+      8420,
+      "m³"
+     ]
+    ],
+    "E-4-1": null,
+    "E-3-1": null
+   },
+   "forbidden_values": [],
+   "paths": [
+    "table_cells",
+    "markdown",
+    "text_lines",
+    "local_pdf"
+   ],
+   "review_includes": [
+    "value_absent"
+   ]
+  },
+  "marker_heat_undecided_fee_row": {
+   "group": "실제 부재 표시",
+   "meaning": "열량 칸 '미정' + 표 밑 '납부예정금액 | 247,500' → 8,420 m³만",
+   "doc_type": "gas_bill",
+   "extra": [
+    "사용 기간: 2026-04-01 ~ 2026-04-30"
+   ],
+   "tables": [
+    [
+     [
+      "사용량(m3)",
+      "사용열량(MJ)"
+     ],
+     [
+      "8,420",
+      "미정"
+     ],
+     [
+      "납부예정금액",
+      "247,500"
+     ]
+    ]
+   ],
+   "expected": {
+    "metrics": [
+     [
+      8420,
+      "m³"
+     ]
+    ],
+    "E-4-1": null,
+    "E-3-1": null
+   },
+   "forbidden_values": [
+    247500
+   ],
+   "paths": [
+    "table_cells",
+    "markdown",
+    "text_lines",
+    "local_pdf"
+   ],
+   "review_includes": [
+    "value_absent",
+    "money_row_excluded"
+   ]
+  },
+  "marker_usage_undecided": {
+   "group": "실제 부재 표시",
+   "meaning": "첫 칸(사용량) '미정' + 열량 360,772 → 열량만, 첫 칸은 행 이름 아님",
+   "doc_type": "gas_bill",
+   "extra": [
+    "사용 기간: 2026-04-01 ~ 2026-04-30"
+   ],
+   "tables": [
+    [
+     [
+      "사용량(m3)",
+      "사용열량(MJ)"
+     ],
+     [
+      "미정",
+      "360,772"
+     ]
+    ]
+   ],
+   "expected": {
+    "metrics": [
+     [
+      360772,
+      "MJ"
+     ]
+    ],
+    "E-4-1": [
+     0.360772,
+     "TJ"
+    ],
+    "E-3-1": [
+     20.239,
+     "tCO2eq"
+    ]
+   },
+   "forbidden_values": [],
+   "paths": [
+    "table_cells",
+    "markdown",
+    "text_lines",
+    "local_pdf"
+   ],
+   "evidence_contains": "360772",
+   "review_includes": [
+    "value_absent"
+   ],
+   "review_excludes": [
+    "row_label_in_quantity_column",
+    "money_row_excluded"
+   ]
+  },
+  "marker_heat_paren_pending": {
+   "group": "실제 부재 표시",
+   "meaning": "열량 칸 '(검침 예정)' → 8,420 m³만, 값 없음 기록",
+   "doc_type": "gas_bill",
+   "extra": [
+    "사용 기간: 2026-04-01 ~ 2026-04-30"
+   ],
+   "tables": [
+    [
+     [
+      "사용량(m3)",
+      "사용열량(MJ)"
+     ],
+     [
+      "8,420",
+      "(검침 예정)"
+     ]
+    ]
+   ],
+   "expected": {
+    "metrics": [
+     [
+      8420,
+      "m³"
+     ]
+    ],
+    "E-4-1": null,
+    "E-3-1": null
+   },
+   "forbidden_values": [],
+   "paths": [
+    "table_cells",
+    "markdown",
+    "text_lines",
+    "local_pdf"
+   ],
+   "review_includes": [
+    "value_absent"
+   ]
+  },
+  "marker_heat_paren_pending_fee_row": {
+   "group": "실제 부재 표시",
+   "meaning": "열량 칸 '(검침 예정)' + 표 밑 '납부예정금액 | 247,500' → 8,420 m³만",
+   "doc_type": "gas_bill",
+   "extra": [
+    "사용 기간: 2026-04-01 ~ 2026-04-30"
+   ],
+   "tables": [
+    [
+     [
+      "사용량(m3)",
+      "사용열량(MJ)"
+     ],
+     [
+      "8,420",
+      "(검침 예정)"
+     ],
+     [
+      "납부예정금액",
+      "247,500"
+     ]
+    ]
+   ],
+   "expected": {
+    "metrics": [
+     [
+      8420,
+      "m³"
+     ]
+    ],
+    "E-4-1": null,
+    "E-3-1": null
+   },
+   "forbidden_values": [
+    247500
+   ],
+   "paths": [
+    "table_cells",
+    "markdown",
+    "text_lines",
+    "local_pdf"
+   ],
+   "review_includes": [
+    "value_absent",
+    "money_row_excluded"
+   ]
+  },
+  "marker_usage_paren_pending": {
+   "group": "실제 부재 표시",
+   "meaning": "첫 칸(사용량) '(검침 예정)' + 열량 360,772 → 열량만, 첫 칸은 행 이름 아님",
+   "doc_type": "gas_bill",
+   "extra": [
+    "사용 기간: 2026-04-01 ~ 2026-04-30"
+   ],
+   "tables": [
+    [
+     [
+      "사용량(m3)",
+      "사용열량(MJ)"
+     ],
+     [
+      "(검침 예정)",
+      "360,772"
+     ]
+    ]
+   ],
+   "expected": {
+    "metrics": [
+     [
+      360772,
+      "MJ"
+     ]
+    ],
+    "E-4-1": [
+     0.360772,
+     "TJ"
+    ],
+    "E-3-1": [
+     20.239,
+     "tCO2eq"
+    ]
+   },
+   "forbidden_values": [],
+   "paths": [
+    "table_cells",
+    "markdown",
+    "text_lines",
+    "local_pdf"
+   ],
+   "evidence_contains": "360772",
+   "review_includes": [
+    "value_absent"
+   ],
+   "review_excludes": [
+    "row_label_in_quantity_column",
+    "money_row_excluded"
+   ]
+  },
+  "marker_heat_later": {
+   "group": "실제 부재 표시",
+   "meaning": "열량 칸 '추후 기재' → 8,420 m³만, 값 없음 기록",
+   "doc_type": "gas_bill",
+   "extra": [
+    "사용 기간: 2026-04-01 ~ 2026-04-30"
+   ],
+   "tables": [
+    [
+     [
+      "사용량(m3)",
+      "사용열량(MJ)"
+     ],
+     [
+      "8,420",
+      "추후 기재"
+     ]
+    ]
+   ],
+   "expected": {
+    "metrics": [
+     [
+      8420,
+      "m³"
+     ]
+    ],
+    "E-4-1": null,
+    "E-3-1": null
+   },
+   "forbidden_values": [],
+   "paths": [
+    "table_cells",
+    "markdown",
+    "text_lines",
+    "local_pdf"
+   ],
+   "review_includes": [
+    "value_absent"
+   ]
+  },
+  "marker_heat_later_fee_row": {
+   "group": "실제 부재 표시",
+   "meaning": "열량 칸 '추후 기재' + 표 밑 '납부예정금액 | 247,500' → 8,420 m³만",
+   "doc_type": "gas_bill",
+   "extra": [
+    "사용 기간: 2026-04-01 ~ 2026-04-30"
+   ],
+   "tables": [
+    [
+     [
+      "사용량(m3)",
+      "사용열량(MJ)"
+     ],
+     [
+      "8,420",
+      "추후 기재"
+     ],
+     [
+      "납부예정금액",
+      "247,500"
+     ]
+    ]
+   ],
+   "expected": {
+    "metrics": [
+     [
+      8420,
+      "m³"
+     ]
+    ],
+    "E-4-1": null,
+    "E-3-1": null
+   },
+   "forbidden_values": [
+    247500
+   ],
+   "paths": [
+    "table_cells",
+    "markdown",
+    "text_lines",
+    "local_pdf"
+   ],
+   "review_includes": [
+    "value_absent",
+    "money_row_excluded"
+   ]
+  },
+  "marker_usage_later": {
+   "group": "실제 부재 표시",
+   "meaning": "첫 칸(사용량) '추후 기재' + 열량 360,772 → 열량만, 첫 칸은 행 이름 아님",
+   "doc_type": "gas_bill",
+   "extra": [
+    "사용 기간: 2026-04-01 ~ 2026-04-30"
+   ],
+   "tables": [
+    [
+     [
+      "사용량(m3)",
+      "사용열량(MJ)"
+     ],
+     [
+      "추후 기재",
+      "360,772"
+     ]
+    ]
+   ],
+   "expected": {
+    "metrics": [
+     [
+      360772,
+      "MJ"
+     ]
+    ],
+    "E-4-1": [
+     0.360772,
+     "TJ"
+    ],
+    "E-3-1": [
+     20.239,
+     "tCO2eq"
+    ]
+   },
+   "forbidden_values": [],
+   "paths": [
+    "table_cells",
+    "markdown",
+    "text_lines",
+    "local_pdf"
+   ],
+   "evidence_contains": "360772",
+   "review_includes": [
+    "value_absent"
+   ],
+   "review_excludes": [
+    "row_label_in_quantity_column",
+    "money_row_excluded"
+   ]
+  },
+  "marker_heat_none": {
+   "group": "실제 부재 표시",
+   "meaning": "열량 칸 '해당 없음' → 8,420 m³만, 값 없음 기록",
+   "doc_type": "gas_bill",
+   "extra": [
+    "사용 기간: 2026-04-01 ~ 2026-04-30"
+   ],
+   "tables": [
+    [
+     [
+      "사용량(m3)",
+      "사용열량(MJ)"
+     ],
+     [
+      "8,420",
+      "해당 없음"
+     ]
+    ]
+   ],
+   "expected": {
+    "metrics": [
+     [
+      8420,
+      "m³"
+     ]
+    ],
+    "E-4-1": null,
+    "E-3-1": null
+   },
+   "forbidden_values": [],
+   "paths": [
+    "table_cells",
+    "markdown",
+    "text_lines",
+    "local_pdf"
+   ],
+   "review_includes": [
+    "value_absent"
+   ]
+  },
+  "marker_heat_none_fee_row": {
+   "group": "실제 부재 표시",
+   "meaning": "열량 칸 '해당 없음' + 표 밑 '납부예정금액 | 247,500' → 8,420 m³만",
+   "doc_type": "gas_bill",
+   "extra": [
+    "사용 기간: 2026-04-01 ~ 2026-04-30"
+   ],
+   "tables": [
+    [
+     [
+      "사용량(m3)",
+      "사용열량(MJ)"
+     ],
+     [
+      "8,420",
+      "해당 없음"
+     ],
+     [
+      "납부예정금액",
+      "247,500"
+     ]
+    ]
+   ],
+   "expected": {
+    "metrics": [
+     [
+      8420,
+      "m³"
+     ]
+    ],
+    "E-4-1": null,
+    "E-3-1": null
+   },
+   "forbidden_values": [
+    247500
+   ],
+   "paths": [
+    "table_cells",
+    "markdown",
+    "text_lines",
+    "local_pdf"
+   ],
+   "review_includes": [
+    "value_absent",
+    "money_row_excluded"
+   ]
+  },
+  "marker_usage_none": {
+   "group": "실제 부재 표시",
+   "meaning": "첫 칸(사용량) '해당 없음' + 열량 360,772 → 열량만, 첫 칸은 행 이름 아님",
+   "doc_type": "gas_bill",
+   "extra": [
+    "사용 기간: 2026-04-01 ~ 2026-04-30"
+   ],
+   "tables": [
+    [
+     [
+      "사용량(m3)",
+      "사용열량(MJ)"
+     ],
+     [
+      "해당 없음",
+      "360,772"
+     ]
+    ]
+   ],
+   "expected": {
+    "metrics": [
+     [
+      360772,
+      "MJ"
+     ]
+    ],
+    "E-4-1": [
+     0.360772,
+     "TJ"
+    ],
+    "E-3-1": [
+     20.239,
+     "tCO2eq"
+    ]
+   },
+   "forbidden_values": [],
+   "paths": [
+    "table_cells",
+    "markdown",
+    "text_lines",
+    "local_pdf"
+   ],
+   "evidence_contains": "360772",
+   "review_includes": [
+    "value_absent"
+   ],
+   "review_excludes": [
+    "row_label_in_quantity_column",
+    "money_row_excluded"
+   ]
+  },
+  "marker_reading_computed_pending": {
+   "group": "실제 부재 표시",
+   "meaning": "사용량 칸 '검침 예정' + 전월·당월 지침 + 배율 1 → (1,250 − 1,000) × 1 = 250 kWh 계산 유지",
+   "doc_type": "kepco_bill",
+   "extra": [],
+   "tables": [
+    [
+     [
+      "사용량(kWh)",
+      "전월지침",
+      "당월지침",
+      "배율"
+     ],
+     [
+      "검침 예정",
+      "1,000",
+      "1,250",
+      "1"
+     ]
+    ]
+   ],
+   "expected": {
+    "metrics": [
+     [
+      250,
+      "kWh"
+     ]
+    ]
+   },
+   "forbidden_values": [],
+   "paths": [
+    "table_cells",
+    "markdown",
+    "text_lines",
+    "local_pdf"
+   ]
+  },
+  "marker_reading_no_multiplier_pending": {
+   "group": "실제 부재 표시",
+   "meaning": "사용량 칸 '검침 예정' + 지침만(배율 없음) → 배율을 가정하지 않고 보류",
+   "doc_type": "kepco_bill",
+   "extra": [],
+   "tables": [
+    [
+     [
+      "사용량(kWh)",
+      "전월지침",
+      "당월지침"
+     ],
+     [
+      "검침 예정",
+      "1,000",
+      "1,250"
+     ]
+    ]
+   ],
+   "expected": {
+    "metrics": []
+   },
+   "forbidden_values": [],
+   "paths": [
+    "table_cells",
+    "markdown",
+    "text_lines",
+    "local_pdf"
+   ],
+   "review_includes": [
+    "multiplier_missing"
+   ]
+  },
+  "marker_reading_computed_unread": {
+   "group": "실제 부재 표시",
+   "meaning": "사용량 칸 '미검침' + 전월·당월 지침 + 배율 1 → (1,250 − 1,000) × 1 = 250 kWh 계산 유지",
+   "doc_type": "kepco_bill",
+   "extra": [],
+   "tables": [
+    [
+     [
+      "사용량(kWh)",
+      "전월지침",
+      "당월지침",
+      "배율"
+     ],
+     [
+      "미검침",
+      "1,000",
+      "1,250",
+      "1"
+     ]
+    ]
+   ],
+   "expected": {
+    "metrics": [
+     [
+      250,
+      "kWh"
+     ]
+    ]
+   },
+   "forbidden_values": [],
+   "paths": [
+    "table_cells",
+    "markdown",
+    "text_lines",
+    "local_pdf"
+   ]
+  },
+  "marker_reading_no_multiplier_unread": {
+   "group": "실제 부재 표시",
+   "meaning": "사용량 칸 '미검침' + 지침만(배율 없음) → 배율을 가정하지 않고 보류",
+   "doc_type": "kepco_bill",
+   "extra": [],
+   "tables": [
+    [
+     [
+      "사용량(kWh)",
+      "전월지침",
+      "당월지침"
+     ],
+     [
+      "미검침",
+      "1,000",
+      "1,250"
+     ]
+    ]
+   ],
+   "expected": {
+    "metrics": []
+   },
+   "forbidden_values": [],
+   "paths": [
+    "table_cells",
+    "markdown",
+    "text_lines",
+    "local_pdf"
+   ],
+   "review_includes": [
+    "multiplier_missing"
+   ]
+  },
+  "marker_reading_computed_undecided": {
+   "group": "실제 부재 표시",
+   "meaning": "사용량 칸 '미정' + 전월·당월 지침 + 배율 1 → (1,250 − 1,000) × 1 = 250 kWh 계산 유지",
+   "doc_type": "kepco_bill",
+   "extra": [],
+   "tables": [
+    [
+     [
+      "사용량(kWh)",
+      "전월지침",
+      "당월지침",
+      "배율"
+     ],
+     [
+      "미정",
+      "1,000",
+      "1,250",
+      "1"
+     ]
+    ]
+   ],
+   "expected": {
+    "metrics": [
+     [
+      250,
+      "kWh"
+     ]
+    ]
+   },
+   "forbidden_values": [],
+   "paths": [
+    "table_cells",
+    "markdown",
+    "text_lines",
+    "local_pdf"
+   ]
+  },
+  "marker_reading_no_multiplier_undecided": {
+   "group": "실제 부재 표시",
+   "meaning": "사용량 칸 '미정' + 지침만(배율 없음) → 배율을 가정하지 않고 보류",
+   "doc_type": "kepco_bill",
+   "extra": [],
+   "tables": [
+    [
+     [
+      "사용량(kWh)",
+      "전월지침",
+      "당월지침"
+     ],
+     [
+      "미정",
+      "1,000",
+      "1,250"
+     ]
+    ]
+   ],
+   "expected": {
+    "metrics": []
+   },
+   "forbidden_values": [],
+   "paths": [
+    "table_cells",
+    "markdown",
+    "text_lines",
+    "local_pdf"
+   ],
+   "review_includes": [
+    "multiplier_missing"
+   ]
+  },
+  "overlap_checking_billed_valid": {
+   "group": "겹치는 단어",
+   "meaning": "2칸 표 + '확인중인 청구금액 | 247,500', 정상 열량",
+   "doc_type": "gas_bill",
+   "extra": [
+    "사용 기간: 2026-04-01 ~ 2026-04-30"
+   ],
+   "tables": [
+    [
+     [
+      "사용량(m3)",
+      "사용열량(MJ)"
+     ],
+     [
+      "8,420",
+      "360,772"
+     ],
+     [
+      "확인중인 청구금액",
+      "247,500"
+     ]
+    ]
+   ],
+   "expected": {
+    "metrics": [
+     [
+      8420,
+      "m³"
+     ],
+     [
+      360772,
+      "MJ"
+     ]
+    ],
+    "E-4-1": [
+     0.360772,
+     "TJ"
+    ],
+    "E-3-1": [
+     20.239,
+     "tCO2eq"
+    ]
+   },
+   "forbidden_values": [
+    247500
+   ],
+   "paths": [
+    "table_cells",
+    "markdown",
+    "text_lines",
+    "local_pdf"
+   ],
+   "evidence_contains": "360772",
+   "review_includes": [
+    "money_row_excluded"
+   ]
+  },
+  "overlap_checking_billed_empty": {
+   "group": "겹치는 단어",
+   "meaning": "2칸 표 + '확인중인 청구금액 | 247,500', 열량 '-'",
+   "doc_type": "gas_bill",
+   "extra": [
+    "사용 기간: 2026-04-01 ~ 2026-04-30"
+   ],
+   "tables": [
+    [
+     [
+      "사용량(m3)",
+      "사용열량(MJ)"
+     ],
+     [
+      "8,420",
+      "-"
+     ],
+     [
+      "확인중인 청구금액",
+      "247,500"
+     ]
+    ]
+   ],
+   "expected": {
+    "metrics": [
+     [
+      8420,
+      "m³"
+     ]
+    ],
+    "E-4-1": null,
+    "E-3-1": null
+   },
+   "forbidden_values": [
+    247500
+   ],
+   "paths": [
+    "table_cells",
+    "markdown",
+    "text_lines",
+    "local_pdf"
+   ],
+   "review_includes": [
+    "money_row_excluded"
+   ]
+  },
+  "overlap_unconfirmed_billed_valid": {
+   "group": "겹치는 단어",
+   "meaning": "2칸 표 + '미확인 청구액 | 247,500', 정상 열량",
+   "doc_type": "gas_bill",
+   "extra": [
+    "사용 기간: 2026-04-01 ~ 2026-04-30"
+   ],
+   "tables": [
+    [
+     [
+      "사용량(m3)",
+      "사용열량(MJ)"
+     ],
+     [
+      "8,420",
+      "360,772"
+     ],
+     [
+      "미확인 청구액",
+      "247,500"
+     ]
+    ]
+   ],
+   "expected": {
+    "metrics": [
+     [
+      8420,
+      "m³"
+     ],
+     [
+      360772,
+      "MJ"
+     ]
+    ],
+    "E-4-1": [
+     0.360772,
+     "TJ"
+    ],
+    "E-3-1": [
+     20.239,
+     "tCO2eq"
+    ]
+   },
+   "forbidden_values": [
+    247500
+   ],
+   "paths": [
+    "table_cells",
+    "markdown",
+    "text_lines",
+    "local_pdf"
+   ],
+   "evidence_contains": "360772",
+   "review_includes": [
+    "money_row_excluded"
+   ]
+  },
+  "overlap_unconfirmed_billed_empty": {
+   "group": "겹치는 단어",
+   "meaning": "2칸 표 + '미확인 청구액 | 247,500', 열량 '-'",
+   "doc_type": "gas_bill",
+   "extra": [
+    "사용 기간: 2026-04-01 ~ 2026-04-30"
+   ],
+   "tables": [
+    [
+     [
+      "사용량(m3)",
+      "사용열량(MJ)"
+     ],
+     [
+      "8,420",
+      "-"
+     ],
+     [
+      "미확인 청구액",
+      "247,500"
+     ]
+    ]
+   ],
+   "expected": {
+    "metrics": [
+     [
+      8420,
+      "m³"
+     ]
+    ],
+    "E-4-1": null,
+    "E-3-1": null
+   },
+   "forbidden_values": [
+    247500
+   ],
+   "paths": [
+    "table_cells",
+    "markdown",
+    "text_lines",
+    "local_pdf"
+   ],
+   "review_includes": [
+    "money_row_excluded"
+   ]
+  },
+  "overlap_unsettled_fee_valid": {
+   "group": "겹치는 단어",
+   "meaning": "2칸 표 + '미정산 요금 | 247,500', 정상 열량",
+   "doc_type": "gas_bill",
+   "extra": [
+    "사용 기간: 2026-04-01 ~ 2026-04-30"
+   ],
+   "tables": [
+    [
+     [
+      "사용량(m3)",
+      "사용열량(MJ)"
+     ],
+     [
+      "8,420",
+      "360,772"
+     ],
+     [
+      "미정산 요금",
+      "247,500"
+     ]
+    ]
+   ],
+   "expected": {
+    "metrics": [
+     [
+      8420,
+      "m³"
+     ],
+     [
+      360772,
+      "MJ"
+     ]
+    ],
+    "E-4-1": [
+     0.360772,
+     "TJ"
+    ],
+    "E-3-1": [
+     20.239,
+     "tCO2eq"
+    ]
+   },
+   "forbidden_values": [
+    247500
+   ],
+   "paths": [
+    "table_cells",
+    "markdown",
+    "text_lines",
+    "local_pdf"
+   ],
+   "evidence_contains": "360772",
+   "review_includes": [
+    "money_row_excluded"
+   ]
+  },
+  "overlap_unsettled_fee_empty": {
+   "group": "겹치는 단어",
+   "meaning": "2칸 표 + '미정산 요금 | 247,500', 열량 '-'",
+   "doc_type": "gas_bill",
+   "extra": [
+    "사용 기간: 2026-04-01 ~ 2026-04-30"
+   ],
+   "tables": [
+    [
+     [
+      "사용량(m3)",
+      "사용열량(MJ)"
+     ],
+     [
+      "8,420",
+      "-"
+     ],
+     [
+      "미정산 요금",
+      "247,500"
+     ]
+    ]
+   ],
+   "expected": {
+    "metrics": [
+     [
+      8420,
+      "m³"
+     ]
+    ],
+    "E-4-1": null,
+    "E-3-1": null
+   },
+   "forbidden_values": [
+    247500
+   ],
+   "paths": [
+    "table_cells",
+    "markdown",
+    "text_lines",
+    "local_pdf"
+   ],
+   "review_includes": [
+    "money_row_excluded"
+   ]
+  },
+  "overlap_scheduled_payment_valid": {
+   "group": "겹치는 단어",
+   "meaning": "2칸 표 + '예정 납부액 | 247,500', 정상 열량",
+   "doc_type": "gas_bill",
+   "extra": [
+    "사용 기간: 2026-04-01 ~ 2026-04-30"
+   ],
+   "tables": [
+    [
+     [
+      "사용량(m3)",
+      "사용열량(MJ)"
+     ],
+     [
+      "8,420",
+      "360,772"
+     ],
+     [
+      "예정 납부액",
+      "247,500"
+     ]
+    ]
+   ],
+   "expected": {
+    "metrics": [
+     [
+      8420,
+      "m³"
+     ],
+     [
+      360772,
+      "MJ"
+     ]
+    ],
+    "E-4-1": [
+     0.360772,
+     "TJ"
+    ],
+    "E-3-1": [
+     20.239,
+     "tCO2eq"
+    ]
+   },
+   "forbidden_values": [
+    247500
+   ],
+   "paths": [
+    "table_cells",
+    "markdown",
+    "text_lines",
+    "local_pdf"
+   ],
+   "evidence_contains": "360772",
+   "review_includes": [
+    "money_row_excluded"
+   ]
+  },
+  "overlap_scheduled_payment_empty": {
+   "group": "겹치는 단어",
+   "meaning": "2칸 표 + '예정 납부액 | 247,500', 열량 '-'",
+   "doc_type": "gas_bill",
+   "extra": [
+    "사용 기간: 2026-04-01 ~ 2026-04-30"
+   ],
+   "tables": [
+    [
+     [
+      "사용량(m3)",
+      "사용열량(MJ)"
+     ],
+     [
+      "8,420",
+      "-"
+     ],
+     [
+      "예정 납부액",
+      "247,500"
+     ]
+    ]
+   ],
+   "expected": {
+    "metrics": [
+     [
+      8420,
+      "m³"
+     ]
+    ],
+    "E-4-1": null,
+    "E-3-1": null
+   },
+   "forbidden_values": [
+    247500
+   ],
+   "paths": [
+    "table_cells",
+    "markdown",
+    "text_lines",
+    "local_pdf"
+   ],
+   "review_includes": [
+    "money_row_excluded"
+   ]
+  },
+  "overlap_later_payment_valid": {
+   "group": "겹치는 단어",
+   "meaning": "2칸 표 + '추후 납부금액 | 247,500', 정상 열량",
+   "doc_type": "gas_bill",
+   "extra": [
+    "사용 기간: 2026-04-01 ~ 2026-04-30"
+   ],
+   "tables": [
+    [
+     [
+      "사용량(m3)",
+      "사용열량(MJ)"
+     ],
+     [
+      "8,420",
+      "360,772"
+     ],
+     [
+      "추후 납부금액",
+      "247,500"
+     ]
+    ]
+   ],
+   "expected": {
+    "metrics": [
+     [
+      8420,
+      "m³"
+     ],
+     [
+      360772,
+      "MJ"
+     ]
+    ],
+    "E-4-1": [
+     0.360772,
+     "TJ"
+    ],
+    "E-3-1": [
+     20.239,
+     "tCO2eq"
+    ]
+   },
+   "forbidden_values": [
+    247500
+   ],
+   "paths": [
+    "table_cells",
+    "markdown",
+    "text_lines",
+    "local_pdf"
+   ],
+   "evidence_contains": "360772",
+   "review_includes": [
+    "money_row_excluded"
+   ]
+  },
+  "overlap_later_payment_empty": {
+   "group": "겹치는 단어",
+   "meaning": "2칸 표 + '추후 납부금액 | 247,500', 열량 '-'",
+   "doc_type": "gas_bill",
+   "extra": [
+    "사용 기간: 2026-04-01 ~ 2026-04-30"
+   ],
+   "tables": [
+    [
+     [
+      "사용량(m3)",
+      "사용열량(MJ)"
+     ],
+     [
+      "8,420",
+      "-"
+     ],
+     [
+      "추후 납부금액",
+      "247,500"
+     ]
+    ]
+   ],
+   "expected": {
+    "metrics": [
+     [
+      8420,
+      "m³"
+     ]
+    ],
+    "E-4-1": null,
+    "E-3-1": null
+   },
+   "forbidden_values": [
+    247500
+   ],
+   "paths": [
+    "table_cells",
+    "markdown",
+    "text_lines",
+    "local_pdf"
+   ],
+   "review_includes": [
+    "money_row_excluded"
+   ]
+  },
+  "overlap_amount_undecided_valid": {
+   "group": "겹치는 단어",
+   "meaning": "2칸 표 + '납부금액 미정 | 247,500', 정상 열량",
+   "doc_type": "gas_bill",
+   "extra": [
+    "사용 기간: 2026-04-01 ~ 2026-04-30"
+   ],
+   "tables": [
+    [
+     [
+      "사용량(m3)",
+      "사용열량(MJ)"
+     ],
+     [
+      "8,420",
+      "360,772"
+     ],
+     [
+      "납부금액 미정",
+      "247,500"
+     ]
+    ]
+   ],
+   "expected": {
+    "metrics": [
+     [
+      8420,
+      "m³"
+     ],
+     [
+      360772,
+      "MJ"
+     ]
+    ],
+    "E-4-1": [
+     0.360772,
+     "TJ"
+    ],
+    "E-3-1": [
+     20.239,
+     "tCO2eq"
+    ]
+   },
+   "forbidden_values": [
+    247500
+   ],
+   "paths": [
+    "table_cells",
+    "markdown",
+    "text_lines",
+    "local_pdf"
+   ],
+   "evidence_contains": "360772",
+   "review_includes": [
+    "money_row_excluded"
+   ]
+  },
+  "overlap_amount_undecided_empty": {
+   "group": "겹치는 단어",
+   "meaning": "2칸 표 + '납부금액 미정 | 247,500', 열량 '-'",
+   "doc_type": "gas_bill",
+   "extra": [
+    "사용 기간: 2026-04-01 ~ 2026-04-30"
+   ],
+   "tables": [
+    [
+     [
+      "사용량(m3)",
+      "사용열량(MJ)"
+     ],
+     [
+      "8,420",
+      "-"
+     ],
+     [
+      "납부금액 미정",
+      "247,500"
+     ]
+    ]
+   ],
+   "expected": {
+    "metrics": [
+     [
+      8420,
+      "m³"
+     ]
+    ],
+    "E-4-1": null,
+    "E-3-1": null
+   },
+   "forbidden_values": [
+    247500
+   ],
+   "paths": [
+    "table_cells",
+    "markdown",
+    "text_lines",
+    "local_pdf"
+   ],
+   "review_includes": [
+    "money_row_excluded"
+   ]
+  },
+  "name_meter_reading_date_row": {
+   "group": "상태와 항목명",
+   "meaning": "표 밑 '검침예정일 | 20'(날짜) — 부재 아님, 역할 불명 → 그 행만 보류",
+   "doc_type": "gas_bill",
+   "extra": [
+    "사용 기간: 2026-04-01 ~ 2026-04-30"
+   ],
+   "tables": [
+    [
+     [
+      "사용량(m3)",
+      "사용열량(MJ)"
+     ],
+     [
+      "8,420",
+      "-"
+     ],
+     [
+      "검침예정일",
+      "20"
+     ]
+    ]
+   ],
+   "expected": {
+    "metrics": [
+     [
+      8420,
+      "m³"
+     ]
+    ],
+    "E-4-1": null,
+    "E-3-1": null
+   },
+   "forbidden_values": [
+    20
+   ],
+   "paths": [
+    "table_cells",
+    "markdown",
+    "text_lines",
+    "local_pdf"
+   ],
+   "review_includes": [
+    "row_label_in_quantity_column"
+   ]
+  },
+  "name_meter_reading_date_row_valid": {
+   "group": "상태와 항목명",
+   "meaning": "정상 열량 + 표 밑 '검침예정일 | 2026-05-12' → 정상값 유지, 그 행 보류",
+   "doc_type": "gas_bill",
+   "extra": [
+    "사용 기간: 2026-04-01 ~ 2026-04-30"
+   ],
+   "tables": [
+    [
+     [
+      "사용량(m3)",
+      "사용열량(MJ)"
+     ],
+     [
+      "8,420",
+      "360,772"
+     ],
+     [
+      "검침예정일",
+      "2026-05-12"
+     ]
+    ]
+   ],
+   "expected": {
+    "metrics": [
+     [
+      8420,
+      "m³"
+     ],
+     [
+      360772,
+      "MJ"
+     ]
+    ],
+    "E-4-1": [
+     0.360772,
+     "TJ"
+    ],
+    "E-3-1": [
+     20.239,
+     "tCO2eq"
+    ]
+   },
+   "forbidden_values": [],
+   "paths": [
+    "table_cells",
+    "markdown",
+    "text_lines",
+    "local_pdf"
+   ],
+   "evidence_contains": "360772",
+   "review_includes": [
+    "row_label_in_quantity_column"
+   ]
+  },
+  "name_state_pending_vs_date_pair": {
+   "group": "상태와 항목명",
+   "meaning": "열량 칸 '검침 예정'(부재) + 표 밑 '검침예정일 | 20'(항목명)",
+   "doc_type": "gas_bill",
+   "extra": [
+    "사용 기간: 2026-04-01 ~ 2026-04-30"
+   ],
+   "tables": [
+    [
+     [
+      "사용량(m3)",
+      "사용열량(MJ)"
+     ],
+     [
+      "8,420",
+      "검침 예정"
+     ],
+     [
+      "검침예정일",
+      "20"
+     ]
+    ]
+   ],
+   "expected": {
+    "metrics": [
+     [
+      8420,
+      "m³"
+     ]
+    ],
+    "E-4-1": null,
+    "E-3-1": null
+   },
+   "forbidden_values": [
+    20
+   ],
+   "paths": [
+    "table_cells",
+    "markdown",
+    "text_lines",
+    "local_pdf"
+   ],
+   "review_includes": [
+    "value_absent",
+    "row_label_in_quantity_column"
+   ]
+  },
+  "name_undecided_vs_amount_undecided": {
+   "group": "상태와 항목명",
+   "meaning": "열량 칸 '미정'(부재) + 표 밑 '납부금액 미정 | 247,500'(금액)",
+   "doc_type": "gas_bill",
+   "extra": [
+    "사용 기간: 2026-04-01 ~ 2026-04-30"
+   ],
+   "tables": [
+    [
+     [
+      "사용량(m3)",
+      "사용열량(MJ)"
+     ],
+     [
+      "8,420",
+      "미정"
+     ],
+     [
+      "납부금액 미정",
+      "247,500"
+     ]
+    ]
+   ],
+   "expected": {
+    "metrics": [
+     [
+      8420,
+      "m³"
+     ]
+    ],
+    "E-4-1": null,
+    "E-3-1": null
+   },
+   "forbidden_values": [
+    247500
+   ],
+   "paths": [
+    "table_cells",
+    "markdown",
+    "text_lines",
+    "local_pdf"
+   ],
+   "review_includes": [
+    "value_absent",
+    "money_row_excluded"
+   ]
+  },
+  "name_unknown_text_in_heat": {
+   "group": "상태와 항목명",
+   "meaning": "열량 칸 '검침불가'(목록 밖 문구) — 값 아님, 부재로 단정하지 않고 사유 남김",
+   "doc_type": "gas_bill",
+   "extra": [
+    "사용 기간: 2026-04-01 ~ 2026-04-30"
+   ],
+   "tables": [
+    [
+     [
+      "사용량(m3)",
+      "사용열량(MJ)"
+     ],
+     [
+      "8,420",
+      "검침불가"
+     ]
+    ]
+   ],
+   "expected": {
+    "metrics": [
+     [
+      8420,
+      "m³"
+     ]
+    ],
+    "E-4-1": null,
+    "E-3-1": null
+   },
+   "forbidden_values": [],
+   "paths": [
+    "table_cells",
+    "markdown",
+    "text_lines",
+    "local_pdf"
+   ],
+   "review_includes": [
+    "value_not_numeric"
+   ],
+   "review_excludes": [
+    "value_absent"
+   ]
+  },
+  "name_unknown_text_first_col_row": {
+   "group": "상태와 항목명",
+   "meaning": "표 밑 '검침불가 | 12,000' — 첫 칸을 지우고 12,000을 채택하지 않음, 그 행만 보류",
+   "doc_type": "gas_bill",
+   "extra": [
+    "사용 기간: 2026-04-01 ~ 2026-04-30"
+   ],
+   "tables": [
+    [
+     [
+      "사용량(m3)",
+      "사용열량(MJ)"
+     ],
+     [
+      "8,420",
+      "360,772"
+     ],
+     [
+      "검침불가",
+      "12,000"
+     ]
+    ]
+   ],
+   "expected": {
+    "metrics": [
+     [
+      8420,
+      "m³"
+     ],
+     [
+      360772,
+      "MJ"
+     ]
+    ],
+    "E-4-1": [
+     0.360772,
+     "TJ"
+    ],
+    "E-3-1": [
+     20.239,
+     "tCO2eq"
+    ]
+   },
+   "forbidden_values": [
+    12000
+   ],
+   "paths": [
+    "table_cells",
+    "markdown",
+    "text_lines",
+    "local_pdf"
+   ],
+   "evidence_contains": "360772",
+   "review_includes": [
+    "row_label_in_quantity_column"
+   ]
+  },
+  "mixed_pay_scheduled_valid": {
+   "group": "정상 혼합 표",
+   "meaning": "혼합 표 항목 '납부예정금액', 정상 열량",
+   "doc_type": "gas_bill",
+   "extra": [
+    "사용 기간: 2026-04-01 ~ 2026-04-30"
+   ],
+   "tables": [
+    [
+     [
+      "항목",
+      "사용량(m3)",
+      "사용열량(MJ)",
+      "요금(원)"
+     ],
+     [
+      "납부예정금액",
+      "8,420",
+      "360,772",
+      "247,500"
+     ]
+    ]
+   ],
+   "expected": {
+    "metrics": [
+     [
+      8420,
+      "m³"
+     ],
+     [
+      360772,
+      "MJ"
+     ]
+    ],
+    "E-4-1": [
+     0.360772,
+     "TJ"
+    ],
+    "E-3-1": [
+     20.239,
+     "tCO2eq"
+    ]
+   },
+   "forbidden_values": [
+    247500
+   ],
+   "paths": [
+    "table_cells",
+    "markdown",
+    "text_lines",
+    "local_pdf"
+   ],
+   "evidence_contains": "360772"
+  },
+  "mixed_pay_scheduled_empty": {
+   "group": "정상 혼합 표",
+   "meaning": "혼합 표 항목 '납부예정금액', 열량 '-'",
+   "doc_type": "gas_bill",
+   "extra": [
+    "사용 기간: 2026-04-01 ~ 2026-04-30"
+   ],
+   "tables": [
+    [
+     [
+      "항목",
+      "사용량(m3)",
+      "사용열량(MJ)",
+      "요금(원)"
+     ],
+     [
+      "납부예정금액",
+      "8,420",
+      "-",
+      "247,500"
+     ]
+    ]
+   ],
+   "expected": {
+    "metrics": [
+     [
+      8420,
+      "m³"
+     ]
+    ],
+    "E-4-1": null,
+    "E-3-1": null
+   },
+   "forbidden_values": [
+    247500
+   ],
+   "paths": [
+    "table_cells",
+    "markdown",
+    "text_lines",
+    "local_pdf"
+   ],
+   "review_includes": [
+    "value_absent"
+   ]
+  },
+  "mixed_pay_scheduled_pending": {
+   "group": "정상 혼합 표",
+   "meaning": "혼합 표 항목 '납부예정금액', 열량 '검침 예정'",
+   "doc_type": "gas_bill",
+   "extra": [
+    "사용 기간: 2026-04-01 ~ 2026-04-30"
+   ],
+   "tables": [
+    [
+     [
+      "항목",
+      "사용량(m3)",
+      "사용열량(MJ)",
+      "요금(원)"
+     ],
+     [
+      "납부예정금액",
+      "8,420",
+      "검침 예정",
+      "247,500"
+     ]
+    ]
+   ],
+   "expected": {
+    "metrics": [
+     [
+      8420,
+      "m³"
+     ]
+    ],
+    "E-4-1": null,
+    "E-3-1": null
+   },
+   "forbidden_values": [
+    247500
+   ],
+   "paths": [
+    "table_cells",
+    "markdown",
+    "text_lines",
+    "local_pdf"
+   ],
+   "review_includes": [
+    "value_absent"
+   ]
+  },
+  "mixed_pay_scheduled_zero": {
+   "group": "정상 혼합 표",
+   "meaning": "혼합 표 항목 '납부예정금액', 명시 0 MJ",
+   "doc_type": "gas_bill",
+   "extra": [
+    "사용 기간: 2026-04-01 ~ 2026-04-30"
+   ],
+   "tables": [
+    [
+     [
+      "항목",
+      "사용량(m3)",
+      "사용열량(MJ)",
+      "요금(원)"
+     ],
+     [
+      "납부예정금액",
+      "8,420",
+      "0",
+      "247,500"
+     ]
+    ]
+   ],
+   "expected": {
+    "metrics": [
+     [
+      0,
+      "MJ"
+     ],
+     [
+      8420,
+      "m³"
+     ]
+    ]
+   },
+   "forbidden_values": [
+    247500
+   ],
+   "paths": [
+    "table_cells",
+    "markdown",
+    "text_lines",
+    "local_pdf"
+   ]
+  },
+  "mixed_bill_scheduled_valid": {
+   "group": "정상 혼합 표",
+   "meaning": "혼합 표 항목 '청구예정금액', 정상 열량",
+   "doc_type": "gas_bill",
+   "extra": [
+    "사용 기간: 2026-04-01 ~ 2026-04-30"
+   ],
+   "tables": [
+    [
+     [
+      "항목",
+      "사용량(m3)",
+      "사용열량(MJ)",
+      "요금(원)"
+     ],
+     [
+      "청구예정금액",
+      "8,420",
+      "360,772",
+      "247,500"
+     ]
+    ]
+   ],
+   "expected": {
+    "metrics": [
+     [
+      8420,
+      "m³"
+     ],
+     [
+      360772,
+      "MJ"
+     ]
+    ],
+    "E-4-1": [
+     0.360772,
+     "TJ"
+    ],
+    "E-3-1": [
+     20.239,
+     "tCO2eq"
+    ]
+   },
+   "forbidden_values": [
+    247500
+   ],
+   "paths": [
+    "table_cells",
+    "markdown",
+    "text_lines",
+    "local_pdf"
+   ],
+   "evidence_contains": "360772"
+  },
+  "mixed_bill_scheduled_empty": {
+   "group": "정상 혼합 표",
+   "meaning": "혼합 표 항목 '청구예정금액', 열량 '-'",
+   "doc_type": "gas_bill",
+   "extra": [
+    "사용 기간: 2026-04-01 ~ 2026-04-30"
+   ],
+   "tables": [
+    [
+     [
+      "항목",
+      "사용량(m3)",
+      "사용열량(MJ)",
+      "요금(원)"
+     ],
+     [
+      "청구예정금액",
+      "8,420",
+      "-",
+      "247,500"
+     ]
+    ]
+   ],
+   "expected": {
+    "metrics": [
+     [
+      8420,
+      "m³"
+     ]
+    ],
+    "E-4-1": null,
+    "E-3-1": null
+   },
+   "forbidden_values": [
+    247500
+   ],
+   "paths": [
+    "table_cells",
+    "markdown",
+    "text_lines",
+    "local_pdf"
+   ],
+   "review_includes": [
+    "value_absent"
+   ]
+  },
+  "mixed_bill_scheduled_pending": {
+   "group": "정상 혼합 표",
+   "meaning": "혼합 표 항목 '청구예정금액', 열량 '검침 예정'",
+   "doc_type": "gas_bill",
+   "extra": [
+    "사용 기간: 2026-04-01 ~ 2026-04-30"
+   ],
+   "tables": [
+    [
+     [
+      "항목",
+      "사용량(m3)",
+      "사용열량(MJ)",
+      "요금(원)"
+     ],
+     [
+      "청구예정금액",
+      "8,420",
+      "검침 예정",
+      "247,500"
+     ]
+    ]
+   ],
+   "expected": {
+    "metrics": [
+     [
+      8420,
+      "m³"
+     ]
+    ],
+    "E-4-1": null,
+    "E-3-1": null
+   },
+   "forbidden_values": [
+    247500
+   ],
+   "paths": [
+    "table_cells",
+    "markdown",
+    "text_lines",
+    "local_pdf"
+   ],
+   "review_includes": [
+    "value_absent"
+   ]
+  },
+  "mixed_bill_scheduled_zero": {
+   "group": "정상 혼합 표",
+   "meaning": "혼합 표 항목 '청구예정금액', 명시 0 MJ",
+   "doc_type": "gas_bill",
+   "extra": [
+    "사용 기간: 2026-04-01 ~ 2026-04-30"
+   ],
+   "tables": [
+    [
+     [
+      "항목",
+      "사용량(m3)",
+      "사용열량(MJ)",
+      "요금(원)"
+     ],
+     [
+      "청구예정금액",
+      "8,420",
+      "0",
+      "247,500"
+     ]
+    ]
+   ],
+   "expected": {
+    "metrics": [
+     [
+      0,
+      "MJ"
+     ],
+     [
+      8420,
+      "m³"
+     ]
+    ]
+   },
+   "forbidden_values": [
+    247500
+   ],
+   "paths": [
+    "table_cells",
+    "markdown",
+    "text_lines",
+    "local_pdf"
+   ]
+  },
+  "mixed_later_billing_valid": {
+   "group": "정상 혼합 표",
+   "meaning": "혼합 표 항목 '추후청구요금', 정상 열량",
+   "doc_type": "gas_bill",
+   "extra": [
+    "사용 기간: 2026-04-01 ~ 2026-04-30"
+   ],
+   "tables": [
+    [
+     [
+      "항목",
+      "사용량(m3)",
+      "사용열량(MJ)",
+      "요금(원)"
+     ],
+     [
+      "추후청구요금",
+      "8,420",
+      "360,772",
+      "247,500"
+     ]
+    ]
+   ],
+   "expected": {
+    "metrics": [
+     [
+      8420,
+      "m³"
+     ],
+     [
+      360772,
+      "MJ"
+     ]
+    ],
+    "E-4-1": [
+     0.360772,
+     "TJ"
+    ],
+    "E-3-1": [
+     20.239,
+     "tCO2eq"
+    ]
+   },
+   "forbidden_values": [
+    247500
+   ],
+   "paths": [
+    "table_cells",
+    "markdown",
+    "text_lines",
+    "local_pdf"
+   ],
+   "evidence_contains": "360772"
+  },
+  "mixed_later_billing_empty": {
+   "group": "정상 혼합 표",
+   "meaning": "혼합 표 항목 '추후청구요금', 열량 '-'",
+   "doc_type": "gas_bill",
+   "extra": [
+    "사용 기간: 2026-04-01 ~ 2026-04-30"
+   ],
+   "tables": [
+    [
+     [
+      "항목",
+      "사용량(m3)",
+      "사용열량(MJ)",
+      "요금(원)"
+     ],
+     [
+      "추후청구요금",
+      "8,420",
+      "-",
+      "247,500"
+     ]
+    ]
+   ],
+   "expected": {
+    "metrics": [
+     [
+      8420,
+      "m³"
+     ]
+    ],
+    "E-4-1": null,
+    "E-3-1": null
+   },
+   "forbidden_values": [
+    247500
+   ],
+   "paths": [
+    "table_cells",
+    "markdown",
+    "text_lines",
+    "local_pdf"
+   ],
+   "review_includes": [
+    "value_absent"
+   ]
+  },
+  "mixed_later_billing_pending": {
+   "group": "정상 혼합 표",
+   "meaning": "혼합 표 항목 '추후청구요금', 열량 '검침 예정'",
+   "doc_type": "gas_bill",
+   "extra": [
+    "사용 기간: 2026-04-01 ~ 2026-04-30"
+   ],
+   "tables": [
+    [
+     [
+      "항목",
+      "사용량(m3)",
+      "사용열량(MJ)",
+      "요금(원)"
+     ],
+     [
+      "추후청구요금",
+      "8,420",
+      "검침 예정",
+      "247,500"
+     ]
+    ]
+   ],
+   "expected": {
+    "metrics": [
+     [
+      8420,
+      "m³"
+     ]
+    ],
+    "E-4-1": null,
+    "E-3-1": null
+   },
+   "forbidden_values": [
+    247500
+   ],
+   "paths": [
+    "table_cells",
+    "markdown",
+    "text_lines",
+    "local_pdf"
+   ],
+   "review_includes": [
+    "value_absent"
+   ]
+  },
+  "mixed_later_billing_zero": {
+   "group": "정상 혼합 표",
+   "meaning": "혼합 표 항목 '추후청구요금', 명시 0 MJ",
+   "doc_type": "gas_bill",
+   "extra": [
+    "사용 기간: 2026-04-01 ~ 2026-04-30"
+   ],
+   "tables": [
+    [
+     [
+      "항목",
+      "사용량(m3)",
+      "사용열량(MJ)",
+      "요금(원)"
+     ],
+     [
+      "추후청구요금",
+      "8,420",
+      "0",
+      "247,500"
+     ]
+    ]
+   ],
+   "expected": {
+    "metrics": [
+     [
+      0,
+      "MJ"
+     ],
+     [
+      8420,
+      "m³"
+     ]
+    ]
+   },
+   "forbidden_values": [
+    247500
+   ],
+   "paths": [
+    "table_cells",
+    "markdown",
+    "text_lines",
+    "local_pdf"
+   ]
+  },
+  "mixed_unconfirmed_billed_valid": {
+   "group": "정상 혼합 표",
+   "meaning": "혼합 표 항목 '미확인 청구액', 정상 열량",
+   "doc_type": "gas_bill",
+   "extra": [
+    "사용 기간: 2026-04-01 ~ 2026-04-30"
+   ],
+   "tables": [
+    [
+     [
+      "항목",
+      "사용량(m3)",
+      "사용열량(MJ)",
+      "요금(원)"
+     ],
+     [
+      "미확인 청구액",
+      "8,420",
+      "360,772",
+      "247,500"
+     ]
+    ]
+   ],
+   "expected": {
+    "metrics": [
+     [
+      8420,
+      "m³"
+     ],
+     [
+      360772,
+      "MJ"
+     ]
+    ],
+    "E-4-1": [
+     0.360772,
+     "TJ"
+    ],
+    "E-3-1": [
+     20.239,
+     "tCO2eq"
+    ]
+   },
+   "forbidden_values": [
+    247500
+   ],
+   "paths": [
+    "table_cells",
+    "markdown",
+    "text_lines",
+    "local_pdf"
+   ],
+   "evidence_contains": "360772"
+  },
+  "mixed_unconfirmed_billed_empty": {
+   "group": "정상 혼합 표",
+   "meaning": "혼합 표 항목 '미확인 청구액', 열량 '-'",
+   "doc_type": "gas_bill",
+   "extra": [
+    "사용 기간: 2026-04-01 ~ 2026-04-30"
+   ],
+   "tables": [
+    [
+     [
+      "항목",
+      "사용량(m3)",
+      "사용열량(MJ)",
+      "요금(원)"
+     ],
+     [
+      "미확인 청구액",
+      "8,420",
+      "-",
+      "247,500"
+     ]
+    ]
+   ],
+   "expected": {
+    "metrics": [
+     [
+      8420,
+      "m³"
+     ]
+    ],
+    "E-4-1": null,
+    "E-3-1": null
+   },
+   "forbidden_values": [
+    247500
+   ],
+   "paths": [
+    "table_cells",
+    "markdown",
+    "text_lines",
+    "local_pdf"
+   ],
+   "review_includes": [
+    "value_absent"
+   ]
+  },
+  "mixed_unconfirmed_billed_pending": {
+   "group": "정상 혼합 표",
+   "meaning": "혼합 표 항목 '미확인 청구액', 열량 '검침 예정'",
+   "doc_type": "gas_bill",
+   "extra": [
+    "사용 기간: 2026-04-01 ~ 2026-04-30"
+   ],
+   "tables": [
+    [
+     [
+      "항목",
+      "사용량(m3)",
+      "사용열량(MJ)",
+      "요금(원)"
+     ],
+     [
+      "미확인 청구액",
+      "8,420",
+      "검침 예정",
+      "247,500"
+     ]
+    ]
+   ],
+   "expected": {
+    "metrics": [
+     [
+      8420,
+      "m³"
+     ]
+    ],
+    "E-4-1": null,
+    "E-3-1": null
+   },
+   "forbidden_values": [
+    247500
+   ],
+   "paths": [
+    "table_cells",
+    "markdown",
+    "text_lines",
+    "local_pdf"
+   ],
+   "review_includes": [
+    "value_absent"
+   ]
+  },
+  "mixed_unconfirmed_billed_zero": {
+   "group": "정상 혼합 표",
+   "meaning": "혼합 표 항목 '미확인 청구액', 명시 0 MJ",
+   "doc_type": "gas_bill",
+   "extra": [
+    "사용 기간: 2026-04-01 ~ 2026-04-30"
+   ],
+   "tables": [
+    [
+     [
+      "항목",
+      "사용량(m3)",
+      "사용열량(MJ)",
+      "요금(원)"
+     ],
+     [
+      "미확인 청구액",
+      "8,420",
+      "0",
+      "247,500"
+     ]
+    ]
+   ],
+   "expected": {
+    "metrics": [
+     [
+      0,
+      "MJ"
+     ],
+     [
+      8420,
+      "m³"
+     ]
+    ]
+   },
+   "forbidden_values": [
+    247500
+   ],
+   "paths": [
+    "table_cells",
+    "markdown",
+    "text_lines",
+    "local_pdf"
+   ]
+  },
+  "columns_mixed_0": {
+   "group": "단어·열 위치",
+   "meaning": "혼합 표 열 재배치 0 + 항목명 띄어쓰기 변경",
+   "doc_type": "gas_bill",
+   "extra": [
+    "사용 기간: 2026-04-01 ~ 2026-04-30"
+   ],
+   "tables": [
+    [
+     [
+      "요금(원)",
+      "항목",
+      "사용열량(MJ)",
+      "사용량(m3)"
+     ],
+     [
+      "247,500",
+      "납부 예정 금액",
+      "360,772",
+      "8,420"
+     ]
+    ]
+   ],
+   "expected": {
+    "metrics": [
+     [
+      8420,
+      "m³"
+     ],
+     [
+      360772,
+      "MJ"
+     ]
+    ],
+    "E-4-1": [
+     0.360772,
+     "TJ"
+    ],
+    "E-3-1": [
+     20.239,
+     "tCO2eq"
+    ]
+   },
+   "forbidden_values": [
+    247500
+   ],
+   "paths": [
+    "table_cells",
+    "markdown",
+    "text_lines",
+    "local_pdf"
+   ],
+   "evidence_contains": "360772"
+  },
+  "columns_mixed_1": {
+   "group": "단어·열 위치",
+   "meaning": "혼합 표 열 재배치 1 + 항목명 띄어쓰기 변경",
+   "doc_type": "gas_bill",
+   "extra": [
+    "사용 기간: 2026-04-01 ~ 2026-04-30"
+   ],
+   "tables": [
+    [
+     [
+      "사용량(m3)",
+      "요금(원)",
+      "사용열량(MJ)",
+      "항목"
+     ],
+     [
+      "8,420",
+      "247,500",
+      "360,772",
+      "추후 청구 요금"
+     ]
+    ]
+   ],
+   "expected": {
+    "metrics": [
+     [
+      8420,
+      "m³"
+     ],
+     [
+      360772,
+      "MJ"
+     ]
+    ],
+    "E-4-1": [
+     0.360772,
+     "TJ"
+    ],
+    "E-3-1": [
+     20.239,
+     "tCO2eq"
+    ]
+   },
+   "forbidden_values": [
+    247500
+   ],
+   "paths": [
+    "table_cells",
+    "markdown",
+    "text_lines",
+    "local_pdf"
+   ],
+   "evidence_contains": "360772"
+  },
+  "columns_mixed_2": {
+   "group": "단어·열 위치",
+   "meaning": "혼합 표 열 재배치 2 + 항목명 띄어쓰기 변경",
+   "doc_type": "gas_bill",
+   "extra": [
+    "사용 기간: 2026-04-01 ~ 2026-04-30"
+   ],
+   "tables": [
+    [
+     [
+      "항목",
+      "사용열량(MJ)",
+      "요금(원)",
+      "사용량(m3)"
+     ],
+     [
+      "청구 예정 금액",
+      "-",
+      "247,500",
+      "8,420"
+     ]
+    ]
+   ],
+   "expected": {
+    "metrics": [
+     [
+      8420,
+      "m³"
+     ]
+    ],
+    "E-4-1": null,
+    "E-3-1": null
+   },
+   "forbidden_values": [
+    247500
+   ],
+   "paths": [
+    "table_cells",
+    "markdown",
+    "text_lines",
+    "local_pdf"
+   ]
+  },
+  "columns_swapped_2col_spaced_fee": {
+   "group": "단어·열 위치",
+   "meaning": "2칸 표 열 순서 바뀜 + 표 밑 '납부 예정 금액'",
+   "doc_type": "gas_bill",
+   "extra": [
+    "사용 기간: 2026-04-01 ~ 2026-04-30"
+   ],
+   "tables": [
+    [
+     [
+      "사용열량(MJ)",
+      "사용량(m3)"
+     ],
+     [
+      "360,772",
+      "8,420"
+     ],
+     [
+      "납부 예정 금액",
+      "247,500"
+     ]
+    ]
+   ],
+   "expected": {
+    "metrics": [
+     [
+      8420,
+      "m³"
+     ],
+     [
+      360772,
+      "MJ"
+     ]
+    ],
+    "E-4-1": [
+     0.360772,
+     "TJ"
+    ],
+    "E-3-1": [
+     20.239,
+     "tCO2eq"
+    ]
+   },
+   "forbidden_values": [
+    247500
+   ],
+   "paths": [
+    "table_cells",
+    "markdown",
+    "text_lines",
+    "local_pdf"
+   ]
+  },
+  "columns_swapped_2col_empty_later_fee": {
+   "group": "단어·열 위치",
+   "meaning": "2칸 표 열 순서 바뀜 + 열량 '미검침' + 표 밑 '추후청구요금'",
+   "doc_type": "gas_bill",
+   "extra": [
+    "사용 기간: 2026-04-01 ~ 2026-04-30"
+   ],
+   "tables": [
+    [
+     [
+      "사용열량(MJ)",
+      "사용량(m3)"
+     ],
+     [
+      "미검침",
+      "8,420"
+     ],
+     [
+      "추후청구요금",
+      "247,500"
+     ]
+    ]
+   ],
+   "expected": {
+    "metrics": [
+     [
+      8420,
+      "m³"
+     ]
+    ],
+    "E-4-1": null,
+    "E-3-1": null
+   },
+   "forbidden_values": [
+    247500
+   ],
+   "paths": [
+    "table_cells",
+    "markdown",
+    "text_lines",
+    "local_pdf"
+   ]
+  },
+  "notation_won_valid": {
+   "group": "금액 표기·숫자",
+   "meaning": "표 밑 '납부예정금액 | 247,500원', 정상 열량",
+   "doc_type": "gas_bill",
+   "extra": [
+    "사용 기간: 2026-04-01 ~ 2026-04-30"
+   ],
+   "tables": [
+    [
+     [
+      "사용량(m3)",
+      "사용열량(MJ)"
+     ],
+     [
+      "8,420",
+      "360,772"
+     ],
+     [
+      "납부예정금액",
+      "247,500원"
+     ]
+    ]
+   ],
+   "expected": {
+    "metrics": [
+     [
+      8420,
+      "m³"
+     ],
+     [
+      360772,
+      "MJ"
+     ]
+    ],
+    "E-4-1": [
+     0.360772,
+     "TJ"
+    ],
+    "E-3-1": [
+     20.239,
+     "tCO2eq"
+    ]
+   },
+   "forbidden_values": [
+    247500
+   ],
+   "paths": [
+    "table_cells",
+    "markdown",
+    "text_lines",
+    "local_pdf"
+   ],
+   "evidence_contains": "360772"
+  },
+  "notation_won_empty": {
+   "group": "금액 표기·숫자",
+   "meaning": "표 밑 '청구예정금액 | 247,500원', 열량 '-'",
+   "doc_type": "gas_bill",
+   "extra": [
+    "사용 기간: 2026-04-01 ~ 2026-04-30"
+   ],
+   "tables": [
+    [
+     [
+      "사용량(m3)",
+      "사용열량(MJ)"
+     ],
+     [
+      "8,420",
+      "-"
+     ],
+     [
+      "청구예정금액",
+      "247,500원"
+     ]
+    ]
+   ],
+   "expected": {
+    "metrics": [
+     [
+      8420,
+      "m³"
+     ]
+    ],
+    "E-4-1": null,
+    "E-3-1": null
+   },
+   "forbidden_values": [
+    247500
+   ],
+   "paths": [
+    "table_cells",
+    "markdown",
+    "text_lines",
+    "local_pdf"
+   ]
+  },
+  "notation_krw_valid": {
+   "group": "금액 표기·숫자",
+   "meaning": "표 밑 '납부예정금액 | ₩247,500', 정상 열량",
+   "doc_type": "gas_bill",
+   "extra": [
+    "사용 기간: 2026-04-01 ~ 2026-04-30"
+   ],
+   "tables": [
+    [
+     [
+      "사용량(m3)",
+      "사용열량(MJ)"
+     ],
+     [
+      "8,420",
+      "360,772"
+     ],
+     [
+      "납부예정금액",
+      "₩247,500"
+     ]
+    ]
+   ],
+   "expected": {
+    "metrics": [
+     [
+      8420,
+      "m³"
+     ],
+     [
+      360772,
+      "MJ"
+     ]
+    ],
+    "E-4-1": [
+     0.360772,
+     "TJ"
+    ],
+    "E-3-1": [
+     20.239,
+     "tCO2eq"
+    ]
+   },
+   "forbidden_values": [
+    247500
+   ],
+   "paths": [
+    "table_cells",
+    "markdown",
+    "text_lines",
+    "local_pdf"
+   ],
+   "evidence_contains": "360772"
+  },
+  "notation_krw_empty": {
+   "group": "금액 표기·숫자",
+   "meaning": "표 밑 '청구예정금액 | ₩247,500', 열량 '-'",
+   "doc_type": "gas_bill",
+   "extra": [
+    "사용 기간: 2026-04-01 ~ 2026-04-30"
+   ],
+   "tables": [
+    [
+     [
+      "사용량(m3)",
+      "사용열량(MJ)"
+     ],
+     [
+      "8,420",
+      "-"
+     ],
+     [
+      "청구예정금액",
+      "₩247,500"
+     ]
+    ]
+   ],
+   "expected": {
+    "metrics": [
+     [
+      8420,
+      "m³"
+     ]
+    ],
+    "E-4-1": null,
+    "E-3-1": null
+   },
+   "forbidden_values": [
+    247500
+   ],
+   "paths": [
+    "table_cells",
+    "markdown",
+    "text_lines",
+    "local_pdf"
+   ]
+  },
+  "numbers_other": {
+   "group": "금액 표기·숫자",
+   "meaning": "다른 사용량·열량·금액 + '추후청구요금'",
+   "doc_type": "gas_bill",
+   "extra": [
+    "사용 기간: 2026-04-01 ~ 2026-04-30"
+   ],
+   "tables": [
+    [
+     [
+      "사용량(m3)",
+      "사용열량(MJ)"
+     ],
+     [
+      "5,130",
+      "219,807"
+     ],
+     [
+      "추후청구요금",
+      "98,760"
+     ]
+    ]
+   ],
+   "expected": {
+    "metrics": [
+     [
+      5130,
+      "m³"
+     ],
+     [
+      219807,
+      "MJ"
+     ]
+    ],
+    "E-4-1": [
+     0.219807,
+     "TJ"
+    ],
+    "E-3-1": [
+     12.331,
+     "tCO2eq"
+    ]
+   },
+   "forbidden_values": [
+    98760
+   ],
+   "paths": [
+    "table_cells",
+    "markdown",
+    "text_lines",
+    "local_pdf"
+   ],
+   "evidence_contains": "219807"
+  },
+  "numbers_other_empty": {
+   "group": "금액 표기·숫자",
+   "meaning": "다른 숫자 + 빈 열량 + '납부예정금액'",
+   "doc_type": "gas_bill",
+   "extra": [
+    "사용 기간: 2026-04-01 ~ 2026-04-30"
+   ],
+   "tables": [
+    [
+     [
+      "사용량(m3)",
+      "사용열량(MJ)"
+     ],
+     [
+      "5,130",
+      "측정 예정"
+     ],
+     [
+      "납부예정금액",
+      "98,760"
+     ]
+    ]
+   ],
+   "expected": {
+    "metrics": [
+     [
+      5130,
+      "m³"
+     ]
+    ],
+    "E-4-1": null,
+    "E-3-1": null
+   },
+   "forbidden_values": [
+    98760
+   ],
+   "paths": [
+    "table_cells",
+    "markdown",
+    "text_lines",
+    "local_pdf"
+   ]
+  },
+  "numbers_same_in_heat_and_fee": {
+   "group": "금액 표기·숫자",
+   "meaning": "열량 칸과 '납부예정금액' 칸에 같은 247,500 → 열량 칸만 근거",
+   "doc_type": "gas_bill",
+   "extra": [
+    "사용 기간: 2026-04-01 ~ 2026-04-30"
+   ],
+   "tables": [
+    [
+     [
+      "사용량(m3)",
+      "사용열량(MJ)"
+     ],
+     [
+      "8,420",
+      "247,500"
+     ],
+     [
+      "납부예정금액",
+      "247,500"
+     ]
+    ]
+   ],
+   "expected": {
+    "metrics": [
+     [
+      8420,
+      "m³"
+     ],
+     [
+      247500,
+      "MJ"
+     ]
+    ],
+    "E-4-1": [
+     0.2475,
+     "TJ"
+    ],
+    "E-3-1": [
+     13.885,
+     "tCO2eq"
+    ]
+   },
+   "forbidden_values": [],
+   "paths": [
+    "table_cells",
+    "markdown",
+    "text_lines",
+    "local_pdf"
+   ],
+   "evidence_contains": "사용열량",
+   "review_includes": [
+    "money_row_excluded"
+   ]
+  },
+  "scope_meter_with_pending_word": {
+   "group": "기존 보존",
+   "meaning": "계량기 열 '전력계 B(교체 예정)'는 범위 식별값",
+   "doc_type": "kepco_bill",
+   "extra": [],
+   "tables": [
+    [
+     [
+      "계량기",
+      "사용량(kWh)"
+     ],
+     [
+      "전력계 A",
+      "1,000"
+     ],
+     [
+      "전력계 B(교체 예정)",
+      "1,200"
+     ]
+    ]
+   ],
+   "expected": {
+    "metrics": [
+     [
+      1000,
+      "kWh"
+     ],
+     [
+      1200,
+      "kWh"
+     ]
+    ],
+    "scope": {
+     "meter": [
+      "전력계 A",
+      "전력계 B(교체 예정)"
+     ]
+    }
+   },
+   "forbidden_values": [],
+   "paths": [
+    "table_cells",
+    "markdown",
+    "text_lines",
+    "local_pdf"
+   ]
+  },
+  "scope_period_with_pending_and_absent": {
+   "group": "기존 보존",
+   "meaning": "기간 '2026년 5월(검침 예정)' 행의 사용량 '-' → 4월 1,000 kWh만",
+   "doc_type": "kepco_bill",
+   "extra": [],
+   "tables": [
+    [
+     [
+      "기간",
+      "사용량(kWh)"
+     ],
+     [
+      "2026년 4월",
+      "1,000"
+     ],
+     [
+      "2026년 5월(검침 예정)",
+      "-"
+     ]
+    ]
+   ],
+   "expected": {
+    "metrics": [
+     [
+      1000,
+      "kWh"
+     ]
+    ],
+    "scope": {
+     "period": [
+      "2026년 4월"
+     ]
+    }
+   },
+   "forbidden_values": [],
+   "paths": [
+    "table_cells",
+    "markdown",
+    "text_lines",
+    "local_pdf"
+   ],
+   "review_includes": [
+    "value_absent"
+   ]
+  },
+  "scope_period_second_col": {
+   "group": "기존 보존",
+   "meaning": "사용량·기간 순서(항목 열 없음) — '2026년 5월 예정분'도 기간",
+   "doc_type": "kepco_bill",
+   "extra": [],
+   "tables": [
+    [
+     [
+      "사용량(kWh)",
+      "기간"
+     ],
+     [
+      "1,000",
+      "2026년 4월"
+     ],
+     [
+      "1,200",
+      "2026년 5월 예정분"
+     ]
+    ]
+   ],
+   "expected": {
+    "metrics": [
+     [
+      1000,
+      "kWh"
+     ],
+     [
+      1200,
+      "kWh"
+     ]
+    ],
+    "scope": {
+     "period": [
+      "2026년 4월",
+      "2026년 5월 예정분"
+     ]
+    }
+   },
+   "forbidden_values": [],
+   "paths": [
+    "table_cells",
+    "markdown",
+    "text_lines",
+    "local_pdf"
+   ]
+  },
+  "other_source_body": {
+   "group": "기존 보존",
+   "meaning": "빈 열량 + '납부예정금액' 행, 본문 '도시가스 사용열량 360,772 MJ' 보존",
+   "doc_type": "gas_bill",
+   "extra": [
+    "사용 기간: 2026-04-01 ~ 2026-04-30",
+    "도시가스 사용열량 360,772 MJ"
+   ],
+   "tables": [
+    [
+     [
+      "사용량(m3)",
+      "사용열량(MJ)"
+     ],
+     [
+      "8,420",
+      "-"
+     ],
+     [
+      "납부예정금액",
+      "247,500"
+     ]
+    ]
+   ],
+   "expected": {
+    "metrics": [
+     [
+      8420,
+      "m³"
+     ],
+     [
+      360772,
+      "MJ"
+     ]
+    ],
+    "E-4-1": [
+     0.360772,
+     "TJ"
+    ],
+    "E-3-1": [
+     20.239,
+     "tCO2eq"
+    ]
+   },
+   "forbidden_values": [
+    247500
+   ],
+   "paths": [
+    "table_cells",
+    "markdown"
+   ]
+  },
+  "other_source_table": {
+   "group": "기존 보존",
+   "meaning": "빈 열량 + '청구예정금액' 행, 다른 표(2쪽)의 360,772 MJ 보존",
+   "doc_type": "gas_bill",
+   "extra": [
+    "사용 기간: 2026-04-01 ~ 2026-04-30"
+   ],
+   "tables": [
+    [
+     [
+      "사용량(m3)",
+      "사용열량(MJ)"
+     ],
+     [
+      "8,420",
+      "-"
+     ],
+     [
+      "청구예정금액",
+      "247,500"
+     ]
+    ],
+    [
+     [
+      "사용열량(MJ)"
+     ],
+     [
+      "360,772"
+     ]
+    ]
+   ],
+   "expected": {
+    "metrics": [
+     [
+      8420,
+      "m³"
+     ],
+     [
+      360772,
+      "MJ"
+     ]
+    ],
+    "E-4-1": [
+     0.360772,
+     "TJ"
+    ],
+    "E-3-1": [
+     20.239,
+     "tCO2eq"
+    ]
+   },
+   "forbidden_values": [
+    247500
+   ],
+   "paths": [
+    "table_cells"
+   ]
+  }
+ }
+}

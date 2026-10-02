@@ -1,0 +1,34 @@
+{
+  "started_at": "2026-09-30T03:06:35.252879+00:00",
+  "pid": 14517,
+  "code_path": "/private/tmp/ESGenie-web-integ-r5-20260930",
+  "commit": "a3710861ddd005cb4eb34c678f3a3df663c260dc",
+  "branch": "HEAD",
+  "log": [
+    "a371086 fix(ocr): 부재 표시를 칸 전체 상태 표현으로 제한하고 요금 명세 행 항목명을 물리량 행 이름에서 분리(R8-3)",
+    "25720c9 fix(ocr): 요금 명세 행의 정상 사용량 보존(R8-1)과 목록 밖 금액 행·범위 면제 차단(R8-2)",
+    "281f8f8 fix(ocr): 표 아래 금액 행을 사용량·열량 행으로 읽지 않음 (R8)",
+    "910b79a fix(ssot): 같은 값의 다른 기간 노드가 대표일 때 보류 근거가 채택 근거로 바뀌던 참고 링크(R7)",
+    "df2fcf6 fix(ocr): 빈 사용량 칸의 지침 되살림(R6)과 같은 쪽 다른 기간·계량기 병합(R7)"
+  ],
+  "dirty": false,
+  "dirty_files": [],
+  "imported_esgenie": "/private/tmp/ESGenie-web-integ-r5-20260930/esgenie/__init__.py",
+  "force_mock": false,
+  "strict_llm": true,
+  "model": "gpt-4.1-mini",
+  "llm_provider": "azure_openai",
+  "ocr_provider": "upstage_document_parse",
+  "ocr_key_present": true,
+  "llm_key_present": true,
+  "cache_dir": "/private/tmp/ESGenie-ocr-numeric-20260929/docs/validation/ocr-numeric-20260929/review-r5/live/web_cache_a371086",
+  "cache_files_at_start": {
+    "ocr": 8,
+    "llm": 44
+  },
+  "mode": "web_integration",
+  "host": "127.0.0.1",
+  "port": 8792,
+  "data_root": "/private/tmp/ESGenie-ocr-numeric-20260929/docs/validation/ocr-numeric-20260929/review-r5/live/web_server_a371086/web_workspace",
+  "observer": "unmodified esgenie.web.engine.run_analysis; PipelineOutput captured without changes"
+}

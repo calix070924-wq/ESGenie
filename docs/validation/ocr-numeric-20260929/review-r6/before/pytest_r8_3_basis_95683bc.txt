@@ -1,0 +1,2656 @@
+FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF.............................. [ 36%]
+..........................FFFF....FFFF.......FFFF....FFF....FFFFFFFFFFFF [ 72%]
+FFFFFFFFFFFFFF............................FFFFFFF...FFF                  [100%]
+=================================== FAILURES ===================================
+_________ test_fee_item_basis_pairs[timing_pay_scheduled@table_cells] __________
+
+name = 'timing_pay_scheduled', path = 'table_cells'
+tmp_path = PosixPath('/private/var/folders/gv/v1k12j3j7md1v39gzbkw5qg40000gn/T/pytest-of-heojeongmin/pytest-266/test_fee_item_basis_pairs_timi0')
+
+    @pytest.mark.parametrize("name,path", _params(PAIRS))
+    def test_fee_item_basis_pairs(name, path, tmp_path):
+>       _check(PAIRS[name], path, tmp_path)
+
+tests/test_pr68_review_r8_3_basis.py:43: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+case = {'basis': [[8420, 'actual'], [360772, 'actual']], 'doc_type': 'gas_bill', 'evidence_contains': '360772', 'expected': {'E-3-1': [20.239, 'tCO2eq'], 'E-4-1': [0.360772, 'TJ'], 'metrics': [[8420, 'm³'], [360772, 'MJ']]}, ...}
+path = 'table_cells'
+tmp_path = PosixPath('/private/var/folders/gv/v1k12j3j7md1v39gzbkw5qg40000gn/T/pytest-of-heojeongmin/pytest-266/test_fee_item_basis_pairs_timi0')
+
+    def _check(case, path, tmp_path):
+        if path == "local_pdf":
+            pytest.importorskip("fitz")
+        obs = observe(run_path(case, path, tmp_path), case["forbidden_values"])
+>       assert violations(case, obs) == [], obs
+E       AssertionError: {'answer_status': {'E-3-1': ['insufficient'], 'E-4-1': ['insufficient']}, 'answers': {'E-3-1': None, 'E-4-1': None}, 'fake_3_m3': False, 'forbidden_in_graph': [], ...}
+E       assert ["E-4-1 None ... != [actual]"] == []
+E         
+E         Left contains 5 more items, first extra item: "E-4-1 None != [0.360772, 'TJ']"
+E         Use -v to get more diff
+
+tests/test_pr68_review_r8_3_basis.py:36: AssertionError
+___________ test_fee_item_basis_pairs[timing_pay_scheduled@markdown] ___________
+
+name = 'timing_pay_scheduled', path = 'markdown'
+tmp_path = PosixPath('/private/var/folders/gv/v1k12j3j7md1v39gzbkw5qg40000gn/T/pytest-of-heojeongmin/pytest-266/test_fee_item_basis_pairs_timi1')
+
+    @pytest.mark.parametrize("name,path", _params(PAIRS))
+    def test_fee_item_basis_pairs(name, path, tmp_path):
+>       _check(PAIRS[name], path, tmp_path)
+
+tests/test_pr68_review_r8_3_basis.py:43: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+case = {'basis': [[8420, 'actual'], [360772, 'actual']], 'doc_type': 'gas_bill', 'evidence_contains': '360772', 'expected': {'E-3-1': [20.239, 'tCO2eq'], 'E-4-1': [0.360772, 'TJ'], 'metrics': [[8420, 'm³'], [360772, 'MJ']]}, ...}
+path = 'markdown'
+tmp_path = PosixPath('/private/var/folders/gv/v1k12j3j7md1v39gzbkw5qg40000gn/T/pytest-of-heojeongmin/pytest-266/test_fee_item_basis_pairs_timi1')
+
+    def _check(case, path, tmp_path):
+        if path == "local_pdf":
+            pytest.importorskip("fitz")
+        obs = observe(run_path(case, path, tmp_path), case["forbidden_values"])
+>       assert violations(case, obs) == [], obs
+E       AssertionError: {'answer_status': {'E-3-1': ['insufficient'], 'E-4-1': ['insufficient']}, 'answers': {'E-3-1': None, 'E-4-1': None}, 'fake_3_m3': False, 'forbidden_in_graph': [], ...}
+E       assert ["E-4-1 None ... != [actual]"] == []
+E         
+E         Left contains 5 more items, first extra item: "E-4-1 None != [0.360772, 'TJ']"
+E         Use -v to get more diff
+
+tests/test_pr68_review_r8_3_basis.py:36: AssertionError
+__________ test_fee_item_basis_pairs[timing_pay_scheduled@text_lines] __________
+
+name = 'timing_pay_scheduled', path = 'text_lines'
+tmp_path = PosixPath('/private/var/folders/gv/v1k12j3j7md1v39gzbkw5qg40000gn/T/pytest-of-heojeongmin/pytest-266/test_fee_item_basis_pairs_timi2')
+
+    @pytest.mark.parametrize("name,path", _params(PAIRS))
+    def test_fee_item_basis_pairs(name, path, tmp_path):
+>       _check(PAIRS[name], path, tmp_path)
+
+tests/test_pr68_review_r8_3_basis.py:43: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+case = {'basis': [[8420, 'actual'], [360772, 'actual']], 'doc_type': 'gas_bill', 'evidence_contains': '360772', 'expected': {'E-3-1': [20.239, 'tCO2eq'], 'E-4-1': [0.360772, 'TJ'], 'metrics': [[8420, 'm³'], [360772, 'MJ']]}, ...}
+path = 'text_lines'
+tmp_path = PosixPath('/private/var/folders/gv/v1k12j3j7md1v39gzbkw5qg40000gn/T/pytest-of-heojeongmin/pytest-266/test_fee_item_basis_pairs_timi2')
+
+    def _check(case, path, tmp_path):
+        if path == "local_pdf":
+            pytest.importorskip("fitz")
+        obs = observe(run_path(case, path, tmp_path), case["forbidden_values"])
+>       assert violations(case, obs) == [], obs
+E       AssertionError: {'answer_status': {'E-3-1': ['insufficient'], 'E-4-1': ['insufficient']}, 'answers': {'E-3-1': None, 'E-4-1': None}, 'fake_3_m3': False, 'forbidden_in_graph': [], ...}
+E       assert ["E-4-1 None ... != [actual]"] == []
+E         
+E         Left contains 5 more items, first extra item: "E-4-1 None != [0.360772, 'TJ']"
+E         Use -v to get more diff
+
+tests/test_pr68_review_r8_3_basis.py:36: AssertionError
+__________ test_fee_item_basis_pairs[timing_pay_scheduled@local_pdf] ___________
+
+name = 'timing_pay_scheduled', path = 'local_pdf'
+tmp_path = PosixPath('/private/var/folders/gv/v1k12j3j7md1v39gzbkw5qg40000gn/T/pytest-of-heojeongmin/pytest-266/test_fee_item_basis_pairs_timi3')
+
+    @pytest.mark.parametrize("name,path", _params(PAIRS))
+    def test_fee_item_basis_pairs(name, path, tmp_path):
+>       _check(PAIRS[name], path, tmp_path)
+
+tests/test_pr68_review_r8_3_basis.py:43: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+case = {'basis': [[8420, 'actual'], [360772, 'actual']], 'doc_type': 'gas_bill', 'evidence_contains': '360772', 'expected': {'E-3-1': [20.239, 'tCO2eq'], 'E-4-1': [0.360772, 'TJ'], 'metrics': [[8420, 'm³'], [360772, 'MJ']]}, ...}
+path = 'local_pdf'
+tmp_path = PosixPath('/private/var/folders/gv/v1k12j3j7md1v39gzbkw5qg40000gn/T/pytest-of-heojeongmin/pytest-266/test_fee_item_basis_pairs_timi3')
+
+    def _check(case, path, tmp_path):
+        if path == "local_pdf":
+            pytest.importorskip("fitz")
+        obs = observe(run_path(case, path, tmp_path), case["forbidden_values"])
+>       assert violations(case, obs) == [], obs
+E       AssertionError: {'answer_status': {'E-3-1': ['insufficient'], 'E-4-1': ['insufficient']}, 'answers': {'E-3-1': None, 'E-4-1': None}, 'fake_3_m3': False, 'forbidden_in_graph': [], ...}
+E       assert ["E-4-1 None ... != [actual]"] == []
+E         
+E         Left contains 5 more items, first extra item: "E-4-1 None != [0.360772, 'TJ']"
+E         Use -v to get more diff
+
+tests/test_pr68_review_r8_3_basis.py:36: AssertionError
+_________ test_fee_item_basis_pairs[timing_bill_scheduled@table_cells] _________
+
+name = 'timing_bill_scheduled', path = 'table_cells'
+tmp_path = PosixPath('/private/var/folders/gv/v1k12j3j7md1v39gzbkw5qg40000gn/T/pytest-of-heojeongmin/pytest-266/test_fee_item_basis_pairs_timi4')
+
+    @pytest.mark.parametrize("name,path", _params(PAIRS))
+    def test_fee_item_basis_pairs(name, path, tmp_path):
+>       _check(PAIRS[name], path, tmp_path)
+
+tests/test_pr68_review_r8_3_basis.py:43: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+case = {'basis': [[8420, 'actual'], [360772, 'actual']], 'doc_type': 'gas_bill', 'evidence_contains': '360772', 'expected': {'E-3-1': [20.239, 'tCO2eq'], 'E-4-1': [0.360772, 'TJ'], 'metrics': [[8420, 'm³'], [360772, 'MJ']]}, ...}
+path = 'table_cells'
+tmp_path = PosixPath('/private/var/folders/gv/v1k12j3j7md1v39gzbkw5qg40000gn/T/pytest-of-heojeongmin/pytest-266/test_fee_item_basis_pairs_timi4')
+
+    def _check(case, path, tmp_path):
+        if path == "local_pdf":
+            pytest.importorskip("fitz")
+        obs = observe(run_path(case, path, tmp_path), case["forbidden_values"])
+>       assert violations(case, obs) == [], obs
+E       AssertionError: {'answer_status': {'E-3-1': ['insufficient'], 'E-4-1': ['insufficient']}, 'answers': {'E-3-1': None, 'E-4-1': None}, 'fake_3_m3': False, 'forbidden_in_graph': [], ...}
+E       assert ["E-4-1 None ... != [actual]"] == []
+E         
+E         Left contains 5 more items, first extra item: "E-4-1 None != [0.360772, 'TJ']"
+E         Use -v to get more diff
+
+tests/test_pr68_review_r8_3_basis.py:36: AssertionError
+__________ test_fee_item_basis_pairs[timing_bill_scheduled@markdown] ___________
+
+name = 'timing_bill_scheduled', path = 'markdown'
+tmp_path = PosixPath('/private/var/folders/gv/v1k12j3j7md1v39gzbkw5qg40000gn/T/pytest-of-heojeongmin/pytest-266/test_fee_item_basis_pairs_timi5')
+
+    @pytest.mark.parametrize("name,path", _params(PAIRS))
+    def test_fee_item_basis_pairs(name, path, tmp_path):
+>       _check(PAIRS[name], path, tmp_path)
+
+tests/test_pr68_review_r8_3_basis.py:43: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+case = {'basis': [[8420, 'actual'], [360772, 'actual']], 'doc_type': 'gas_bill', 'evidence_contains': '360772', 'expected': {'E-3-1': [20.239, 'tCO2eq'], 'E-4-1': [0.360772, 'TJ'], 'metrics': [[8420, 'm³'], [360772, 'MJ']]}, ...}
+path = 'markdown'
+tmp_path = PosixPath('/private/var/folders/gv/v1k12j3j7md1v39gzbkw5qg40000gn/T/pytest-of-heojeongmin/pytest-266/test_fee_item_basis_pairs_timi5')
+
+    def _check(case, path, tmp_path):
+        if path == "local_pdf":
+            pytest.importorskip("fitz")
+        obs = observe(run_path(case, path, tmp_path), case["forbidden_values"])
+>       assert violations(case, obs) == [], obs
+E       AssertionError: {'answer_status': {'E-3-1': ['insufficient'], 'E-4-1': ['insufficient']}, 'answers': {'E-3-1': None, 'E-4-1': None}, 'fake_3_m3': False, 'forbidden_in_graph': [], ...}
+E       assert ["E-4-1 None ... != [actual]"] == []
+E         
+E         Left contains 5 more items, first extra item: "E-4-1 None != [0.360772, 'TJ']"
+E         Use -v to get more diff
+
+tests/test_pr68_review_r8_3_basis.py:36: AssertionError
+_________ test_fee_item_basis_pairs[timing_bill_scheduled@text_lines] __________
+
+name = 'timing_bill_scheduled', path = 'text_lines'
+tmp_path = PosixPath('/private/var/folders/gv/v1k12j3j7md1v39gzbkw5qg40000gn/T/pytest-of-heojeongmin/pytest-266/test_fee_item_basis_pairs_timi6')
+
+    @pytest.mark.parametrize("name,path", _params(PAIRS))
+    def test_fee_item_basis_pairs(name, path, tmp_path):
+>       _check(PAIRS[name], path, tmp_path)
+
+tests/test_pr68_review_r8_3_basis.py:43: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+case = {'basis': [[8420, 'actual'], [360772, 'actual']], 'doc_type': 'gas_bill', 'evidence_contains': '360772', 'expected': {'E-3-1': [20.239, 'tCO2eq'], 'E-4-1': [0.360772, 'TJ'], 'metrics': [[8420, 'm³'], [360772, 'MJ']]}, ...}
+path = 'text_lines'
+tmp_path = PosixPath('/private/var/folders/gv/v1k12j3j7md1v39gzbkw5qg40000gn/T/pytest-of-heojeongmin/pytest-266/test_fee_item_basis_pairs_timi6')
+
+    def _check(case, path, tmp_path):
+        if path == "local_pdf":
+            pytest.importorskip("fitz")
+        obs = observe(run_path(case, path, tmp_path), case["forbidden_values"])
+>       assert violations(case, obs) == [], obs
+E       AssertionError: {'answer_status': {'E-3-1': ['insufficient'], 'E-4-1': ['insufficient']}, 'answers': {'E-3-1': None, 'E-4-1': None}, 'fake_3_m3': False, 'forbidden_in_graph': [], ...}
+E       assert ["E-4-1 None ... != [actual]"] == []
+E         
+E         Left contains 5 more items, first extra item: "E-4-1 None != [0.360772, 'TJ']"
+E         Use -v to get more diff
+
+tests/test_pr68_review_r8_3_basis.py:36: AssertionError
+__________ test_fee_item_basis_pairs[timing_bill_scheduled@local_pdf] __________
+
+name = 'timing_bill_scheduled', path = 'local_pdf'
+tmp_path = PosixPath('/private/var/folders/gv/v1k12j3j7md1v39gzbkw5qg40000gn/T/pytest-of-heojeongmin/pytest-266/test_fee_item_basis_pairs_timi7')
+
+    @pytest.mark.parametrize("name,path", _params(PAIRS))
+    def test_fee_item_basis_pairs(name, path, tmp_path):
+>       _check(PAIRS[name], path, tmp_path)
+
+tests/test_pr68_review_r8_3_basis.py:43: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+case = {'basis': [[8420, 'actual'], [360772, 'actual']], 'doc_type': 'gas_bill', 'evidence_contains': '360772', 'expected': {'E-3-1': [20.239, 'tCO2eq'], 'E-4-1': [0.360772, 'TJ'], 'metrics': [[8420, 'm³'], [360772, 'MJ']]}, ...}
+path = 'local_pdf'
+tmp_path = PosixPath('/private/var/folders/gv/v1k12j3j7md1v39gzbkw5qg40000gn/T/pytest-of-heojeongmin/pytest-266/test_fee_item_basis_pairs_timi7')
+
+    def _check(case, path, tmp_path):
+        if path == "local_pdf":
+            pytest.importorskip("fitz")
+        obs = observe(run_path(case, path, tmp_path), case["forbidden_values"])
+>       assert violations(case, obs) == [], obs
+E       AssertionError: {'answer_status': {'E-3-1': ['insufficient'], 'E-4-1': ['insufficient']}, 'answers': {'E-3-1': None, 'E-4-1': None}, 'fake_3_m3': False, 'forbidden_in_graph': [], ...}
+E       assert ["E-4-1 None ... != [actual]"] == []
+E         
+E         Left contains 5 more items, first extra item: "E-4-1 None != [0.360772, 'TJ']"
+E         Use -v to get more diff
+
+tests/test_pr68_review_r8_3_basis.py:36: AssertionError
+______ test_fee_item_basis_pairs[timing_pay_scheduled_spaced@table_cells] ______
+
+name = 'timing_pay_scheduled_spaced', path = 'table_cells'
+tmp_path = PosixPath('/private/var/folders/gv/v1k12j3j7md1v39gzbkw5qg40000gn/T/pytest-of-heojeongmin/pytest-266/test_fee_item_basis_pairs_timi8')
+
+    @pytest.mark.parametrize("name,path", _params(PAIRS))
+    def test_fee_item_basis_pairs(name, path, tmp_path):
+>       _check(PAIRS[name], path, tmp_path)
+
+tests/test_pr68_review_r8_3_basis.py:43: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+case = {'basis': [[8420, 'actual'], [360772, 'actual']], 'doc_type': 'gas_bill', 'evidence_contains': '360772', 'expected': {'E-3-1': [20.239, 'tCO2eq'], 'E-4-1': [0.360772, 'TJ'], 'metrics': [[8420, 'm³'], [360772, 'MJ']]}, ...}
+path = 'table_cells'
+tmp_path = PosixPath('/private/var/folders/gv/v1k12j3j7md1v39gzbkw5qg40000gn/T/pytest-of-heojeongmin/pytest-266/test_fee_item_basis_pairs_timi8')
+
+    def _check(case, path, tmp_path):
+        if path == "local_pdf":
+            pytest.importorskip("fitz")
+        obs = observe(run_path(case, path, tmp_path), case["forbidden_values"])
+>       assert violations(case, obs) == [], obs
+E       AssertionError: {'answer_status': {'E-3-1': ['insufficient'], 'E-4-1': ['insufficient']}, 'answers': {'E-3-1': None, 'E-4-1': None}, 'fake_3_m3': False, 'forbidden_in_graph': [], ...}
+E       assert ["E-4-1 None ... != [actual]"] == []
+E         
+E         Left contains 5 more items, first extra item: "E-4-1 None != [0.360772, 'TJ']"
+E         Use -v to get more diff
+
+tests/test_pr68_review_r8_3_basis.py:36: AssertionError
+_______ test_fee_item_basis_pairs[timing_pay_scheduled_spaced@markdown] ________
+
+name = 'timing_pay_scheduled_spaced', path = 'markdown'
+tmp_path = PosixPath('/private/var/folders/gv/v1k12j3j7md1v39gzbkw5qg40000gn/T/pytest-of-heojeongmin/pytest-266/test_fee_item_basis_pairs_timi9')
+
+    @pytest.mark.parametrize("name,path", _params(PAIRS))
+    def test_fee_item_basis_pairs(name, path, tmp_path):
+>       _check(PAIRS[name], path, tmp_path)
+
+tests/test_pr68_review_r8_3_basis.py:43: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+case = {'basis': [[8420, 'actual'], [360772, 'actual']], 'doc_type': 'gas_bill', 'evidence_contains': '360772', 'expected': {'E-3-1': [20.239, 'tCO2eq'], 'E-4-1': [0.360772, 'TJ'], 'metrics': [[8420, 'm³'], [360772, 'MJ']]}, ...}
+path = 'markdown'
+tmp_path = PosixPath('/private/var/folders/gv/v1k12j3j7md1v39gzbkw5qg40000gn/T/pytest-of-heojeongmin/pytest-266/test_fee_item_basis_pairs_timi9')
+
+    def _check(case, path, tmp_path):
+        if path == "local_pdf":
+            pytest.importorskip("fitz")
+        obs = observe(run_path(case, path, tmp_path), case["forbidden_values"])
+>       assert violations(case, obs) == [], obs
+E       AssertionError: {'answer_status': {'E-3-1': ['insufficient'], 'E-4-1': ['insufficient']}, 'answers': {'E-3-1': None, 'E-4-1': None}, 'fake_3_m3': False, 'forbidden_in_graph': [], ...}
+E       assert ["E-4-1 None ... != [actual]"] == []
+E         
+E         Left contains 5 more items, first extra item: "E-4-1 None != [0.360772, 'TJ']"
+E         Use -v to get more diff
+
+tests/test_pr68_review_r8_3_basis.py:36: AssertionError
+______ test_fee_item_basis_pairs[timing_pay_scheduled_spaced@text_lines] _______
+
+name = 'timing_pay_scheduled_spaced', path = 'text_lines'
+tmp_path = PosixPath('/private/var/folders/gv/v1k12j3j7md1v39gzbkw5qg40000gn/T/pytest-of-heojeongmin/pytest-266/test_fee_item_basis_pairs_timi10')
+
+    @pytest.mark.parametrize("name,path", _params(PAIRS))
+    def test_fee_item_basis_pairs(name, path, tmp_path):
+>       _check(PAIRS[name], path, tmp_path)
+
+tests/test_pr68_review_r8_3_basis.py:43: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+case = {'basis': [[8420, 'actual'], [360772, 'actual']], 'doc_type': 'gas_bill', 'evidence_contains': '360772', 'expected': {'E-3-1': [20.239, 'tCO2eq'], 'E-4-1': [0.360772, 'TJ'], 'metrics': [[8420, 'm³'], [360772, 'MJ']]}, ...}
+path = 'text_lines'
+tmp_path = PosixPath('/private/var/folders/gv/v1k12j3j7md1v39gzbkw5qg40000gn/T/pytest-of-heojeongmin/pytest-266/test_fee_item_basis_pairs_timi10')
+
+    def _check(case, path, tmp_path):
+        if path == "local_pdf":
+            pytest.importorskip("fitz")
+        obs = observe(run_path(case, path, tmp_path), case["forbidden_values"])
+>       assert violations(case, obs) == [], obs
+E       AssertionError: {'answer_status': {'E-3-1': ['insufficient'], 'E-4-1': ['insufficient']}, 'answers': {'E-3-1': None, 'E-4-1': None}, 'fake_3_m3': False, 'forbidden_in_graph': [], ...}
+E       assert ["E-4-1 None ... != [actual]"] == []
+E         
+E         Left contains 5 more items, first extra item: "E-4-1 None != [0.360772, 'TJ']"
+E         Use -v to get more diff
+
+tests/test_pr68_review_r8_3_basis.py:36: AssertionError
+_______ test_fee_item_basis_pairs[timing_pay_scheduled_spaced@local_pdf] _______
+
+name = 'timing_pay_scheduled_spaced', path = 'local_pdf'
+tmp_path = PosixPath('/private/var/folders/gv/v1k12j3j7md1v39gzbkw5qg40000gn/T/pytest-of-heojeongmin/pytest-266/test_fee_item_basis_pairs_timi11')
+
+    @pytest.mark.parametrize("name,path", _params(PAIRS))
+    def test_fee_item_basis_pairs(name, path, tmp_path):
+>       _check(PAIRS[name], path, tmp_path)
+
+tests/test_pr68_review_r8_3_basis.py:43: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+case = {'basis': [[8420, 'actual'], [360772, 'actual']], 'doc_type': 'gas_bill', 'evidence_contains': '360772', 'expected': {'E-3-1': [20.239, 'tCO2eq'], 'E-4-1': [0.360772, 'TJ'], 'metrics': [[8420, 'm³'], [360772, 'MJ']]}, ...}
+path = 'local_pdf'
+tmp_path = PosixPath('/private/var/folders/gv/v1k12j3j7md1v39gzbkw5qg40000gn/T/pytest-of-heojeongmin/pytest-266/test_fee_item_basis_pairs_timi11')
+
+    def _check(case, path, tmp_path):
+        if path == "local_pdf":
+            pytest.importorskip("fitz")
+        obs = observe(run_path(case, path, tmp_path), case["forbidden_values"])
+>       assert violations(case, obs) == [], obs
+E       AssertionError: {'answer_status': {'E-3-1': ['insufficient'], 'E-4-1': ['insufficient']}, 'answers': {'E-3-1': None, 'E-4-1': None}, 'fake_3_m3': False, 'forbidden_in_graph': [], ...}
+E       assert ["E-4-1 None ... != [actual]"] == []
+E         
+E         Left contains 5 more items, first extra item: "E-4-1 None != [0.360772, 'TJ']"
+E         Use -v to get more diff
+
+tests/test_pr68_review_r8_3_basis.py:36: AssertionError
+_____ test_fee_item_basis_pairs[timing_bill_scheduled_spaced@table_cells] ______
+
+name = 'timing_bill_scheduled_spaced', path = 'table_cells'
+tmp_path = PosixPath('/private/var/folders/gv/v1k12j3j7md1v39gzbkw5qg40000gn/T/pytest-of-heojeongmin/pytest-266/test_fee_item_basis_pairs_timi12')
+
+    @pytest.mark.parametrize("name,path", _params(PAIRS))
+    def test_fee_item_basis_pairs(name, path, tmp_path):
+>       _check(PAIRS[name], path, tmp_path)
+
+tests/test_pr68_review_r8_3_basis.py:43: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+case = {'basis': [[8420, 'actual'], [360772, 'actual']], 'doc_type': 'gas_bill', 'evidence_contains': '360772', 'expected': {'E-3-1': [20.239, 'tCO2eq'], 'E-4-1': [0.360772, 'TJ'], 'metrics': [[8420, 'm³'], [360772, 'MJ']]}, ...}
+path = 'table_cells'
+tmp_path = PosixPath('/private/var/folders/gv/v1k12j3j7md1v39gzbkw5qg40000gn/T/pytest-of-heojeongmin/pytest-266/test_fee_item_basis_pairs_timi12')
+
+    def _check(case, path, tmp_path):
+        if path == "local_pdf":
+            pytest.importorskip("fitz")
+        obs = observe(run_path(case, path, tmp_path), case["forbidden_values"])
+>       assert violations(case, obs) == [], obs
+E       AssertionError: {'answer_status': {'E-3-1': ['insufficient'], 'E-4-1': ['insufficient']}, 'answers': {'E-3-1': None, 'E-4-1': None}, 'fake_3_m3': False, 'forbidden_in_graph': [], ...}
+E       assert ["E-4-1 None ... != [actual]"] == []
+E         
+E         Left contains 5 more items, first extra item: "E-4-1 None != [0.360772, 'TJ']"
+E         Use -v to get more diff
+
+tests/test_pr68_review_r8_3_basis.py:36: AssertionError
+_______ test_fee_item_basis_pairs[timing_bill_scheduled_spaced@markdown] _______
+
+name = 'timing_bill_scheduled_spaced', path = 'markdown'
+tmp_path = PosixPath('/private/var/folders/gv/v1k12j3j7md1v39gzbkw5qg40000gn/T/pytest-of-heojeongmin/pytest-266/test_fee_item_basis_pairs_timi13')
+
+    @pytest.mark.parametrize("name,path", _params(PAIRS))
+    def test_fee_item_basis_pairs(name, path, tmp_path):
+>       _check(PAIRS[name], path, tmp_path)
+
+tests/test_pr68_review_r8_3_basis.py:43: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+case = {'basis': [[8420, 'actual'], [360772, 'actual']], 'doc_type': 'gas_bill', 'evidence_contains': '360772', 'expected': {'E-3-1': [20.239, 'tCO2eq'], 'E-4-1': [0.360772, 'TJ'], 'metrics': [[8420, 'm³'], [360772, 'MJ']]}, ...}
+path = 'markdown'
+tmp_path = PosixPath('/private/var/folders/gv/v1k12j3j7md1v39gzbkw5qg40000gn/T/pytest-of-heojeongmin/pytest-266/test_fee_item_basis_pairs_timi13')
+
+    def _check(case, path, tmp_path):
+        if path == "local_pdf":
+            pytest.importorskip("fitz")
+        obs = observe(run_path(case, path, tmp_path), case["forbidden_values"])
+>       assert violations(case, obs) == [], obs
+E       AssertionError: {'answer_status': {'E-3-1': ['insufficient'], 'E-4-1': ['insufficient']}, 'answers': {'E-3-1': None, 'E-4-1': None}, 'fake_3_m3': False, 'forbidden_in_graph': [], ...}
+E       assert ["E-4-1 None ... != [actual]"] == []
+E         
+E         Left contains 5 more items, first extra item: "E-4-1 None != [0.360772, 'TJ']"
+E         Use -v to get more diff
+
+tests/test_pr68_review_r8_3_basis.py:36: AssertionError
+______ test_fee_item_basis_pairs[timing_bill_scheduled_spaced@text_lines] ______
+
+name = 'timing_bill_scheduled_spaced', path = 'text_lines'
+tmp_path = PosixPath('/private/var/folders/gv/v1k12j3j7md1v39gzbkw5qg40000gn/T/pytest-of-heojeongmin/pytest-266/test_fee_item_basis_pairs_timi14')
+
+    @pytest.mark.parametrize("name,path", _params(PAIRS))
+    def test_fee_item_basis_pairs(name, path, tmp_path):
+>       _check(PAIRS[name], path, tmp_path)
+
+tests/test_pr68_review_r8_3_basis.py:43: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+case = {'basis': [[8420, 'actual'], [360772, 'actual']], 'doc_type': 'gas_bill', 'evidence_contains': '360772', 'expected': {'E-3-1': [20.239, 'tCO2eq'], 'E-4-1': [0.360772, 'TJ'], 'metrics': [[8420, 'm³'], [360772, 'MJ']]}, ...}
+path = 'text_lines'
+tmp_path = PosixPath('/private/var/folders/gv/v1k12j3j7md1v39gzbkw5qg40000gn/T/pytest-of-heojeongmin/pytest-266/test_fee_item_basis_pairs_timi14')
+
+    def _check(case, path, tmp_path):
+        if path == "local_pdf":
+            pytest.importorskip("fitz")
+        obs = observe(run_path(case, path, tmp_path), case["forbidden_values"])
+>       assert violations(case, obs) == [], obs
+E       AssertionError: {'answer_status': {'E-3-1': ['insufficient'], 'E-4-1': ['insufficient']}, 'answers': {'E-3-1': None, 'E-4-1': None}, 'fake_3_m3': False, 'forbidden_in_graph': [], ...}
+E       assert ["E-4-1 None ... != [actual]"] == []
+E         
+E         Left contains 5 more items, first extra item: "E-4-1 None != [0.360772, 'TJ']"
+E         Use -v to get more diff
+
+tests/test_pr68_review_r8_3_basis.py:36: AssertionError
+______ test_fee_item_basis_pairs[timing_bill_scheduled_spaced@local_pdf] _______
+
+name = 'timing_bill_scheduled_spaced', path = 'local_pdf'
+tmp_path = PosixPath('/private/var/folders/gv/v1k12j3j7md1v39gzbkw5qg40000gn/T/pytest-of-heojeongmin/pytest-266/test_fee_item_basis_pairs_timi15')
+
+    @pytest.mark.parametrize("name,path", _params(PAIRS))
+    def test_fee_item_basis_pairs(name, path, tmp_path):
+>       _check(PAIRS[name], path, tmp_path)
+
+tests/test_pr68_review_r8_3_basis.py:43: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+case = {'basis': [[8420, 'actual'], [360772, 'actual']], 'doc_type': 'gas_bill', 'evidence_contains': '360772', 'expected': {'E-3-1': [20.239, 'tCO2eq'], 'E-4-1': [0.360772, 'TJ'], 'metrics': [[8420, 'm³'], [360772, 'MJ']]}, ...}
+path = 'local_pdf'
+tmp_path = PosixPath('/private/var/folders/gv/v1k12j3j7md1v39gzbkw5qg40000gn/T/pytest-of-heojeongmin/pytest-266/test_fee_item_basis_pairs_timi15')
+
+    def _check(case, path, tmp_path):
+        if path == "local_pdf":
+            pytest.importorskip("fitz")
+        obs = observe(run_path(case, path, tmp_path), case["forbidden_values"])
+>       assert violations(case, obs) == [], obs
+E       AssertionError: {'answer_status': {'E-3-1': ['insufficient'], 'E-4-1': ['insufficient']}, 'answers': {'E-3-1': None, 'E-4-1': None}, 'fake_3_m3': False, 'forbidden_in_graph': [], ...}
+E       assert ["E-4-1 None ... != [actual]"] == []
+E         
+E         Left contains 5 more items, first extra item: "E-4-1 None != [0.360772, 'TJ']"
+E         Use -v to get more diff
+
+tests/test_pr68_review_r8_3_basis.py:36: AssertionError
+______ test_fee_item_basis_pairs[timing_month_pay_scheduled@table_cells] _______
+
+name = 'timing_month_pay_scheduled', path = 'table_cells'
+tmp_path = PosixPath('/private/var/folders/gv/v1k12j3j7md1v39gzbkw5qg40000gn/T/pytest-of-heojeongmin/pytest-266/test_fee_item_basis_pairs_timi16')
+
+    @pytest.mark.parametrize("name,path", _params(PAIRS))
+    def test_fee_item_basis_pairs(name, path, tmp_path):
+>       _check(PAIRS[name], path, tmp_path)
+
+tests/test_pr68_review_r8_3_basis.py:43: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+case = {'basis': [[8420, 'actual'], [360772, 'actual']], 'doc_type': 'gas_bill', 'evidence_contains': '360772', 'expected': {'E-3-1': [20.239, 'tCO2eq'], 'E-4-1': [0.360772, 'TJ'], 'metrics': [[8420, 'm³'], [360772, 'MJ']]}, ...}
+path = 'table_cells'
+tmp_path = PosixPath('/private/var/folders/gv/v1k12j3j7md1v39gzbkw5qg40000gn/T/pytest-of-heojeongmin/pytest-266/test_fee_item_basis_pairs_timi16')
+
+    def _check(case, path, tmp_path):
+        if path == "local_pdf":
+            pytest.importorskip("fitz")
+        obs = observe(run_path(case, path, tmp_path), case["forbidden_values"])
+>       assert violations(case, obs) == [], obs
+E       AssertionError: {'answer_status': {'E-3-1': ['insufficient'], 'E-4-1': ['insufficient']}, 'answers': {'E-3-1': None, 'E-4-1': None}, 'fake_3_m3': False, 'forbidden_in_graph': [], ...}
+E       assert ["E-4-1 None ... != [actual]"] == []
+E         
+E         Left contains 5 more items, first extra item: "E-4-1 None != [0.360772, 'TJ']"
+E         Use -v to get more diff
+
+tests/test_pr68_review_r8_3_basis.py:36: AssertionError
+________ test_fee_item_basis_pairs[timing_month_pay_scheduled@markdown] ________
+
+name = 'timing_month_pay_scheduled', path = 'markdown'
+tmp_path = PosixPath('/private/var/folders/gv/v1k12j3j7md1v39gzbkw5qg40000gn/T/pytest-of-heojeongmin/pytest-266/test_fee_item_basis_pairs_timi17')
+
+    @pytest.mark.parametrize("name,path", _params(PAIRS))
+    def test_fee_item_basis_pairs(name, path, tmp_path):
+>       _check(PAIRS[name], path, tmp_path)
+
+tests/test_pr68_review_r8_3_basis.py:43: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+case = {'basis': [[8420, 'actual'], [360772, 'actual']], 'doc_type': 'gas_bill', 'evidence_contains': '360772', 'expected': {'E-3-1': [20.239, 'tCO2eq'], 'E-4-1': [0.360772, 'TJ'], 'metrics': [[8420, 'm³'], [360772, 'MJ']]}, ...}
+path = 'markdown'
+tmp_path = PosixPath('/private/var/folders/gv/v1k12j3j7md1v39gzbkw5qg40000gn/T/pytest-of-heojeongmin/pytest-266/test_fee_item_basis_pairs_timi17')
+
+    def _check(case, path, tmp_path):
+        if path == "local_pdf":
+            pytest.importorskip("fitz")
+        obs = observe(run_path(case, path, tmp_path), case["forbidden_values"])
+>       assert violations(case, obs) == [], obs
+E       AssertionError: {'answer_status': {'E-3-1': ['insufficient'], 'E-4-1': ['insufficient']}, 'answers': {'E-3-1': None, 'E-4-1': None}, 'fake_3_m3': False, 'forbidden_in_graph': [], ...}
+E       assert ["E-4-1 None ... != [actual]"] == []
+E         
+E         Left contains 5 more items, first extra item: "E-4-1 None != [0.360772, 'TJ']"
+E         Use -v to get more diff
+
+tests/test_pr68_review_r8_3_basis.py:36: AssertionError
+_______ test_fee_item_basis_pairs[timing_month_pay_scheduled@text_lines] _______
+
+name = 'timing_month_pay_scheduled', path = 'text_lines'
+tmp_path = PosixPath('/private/var/folders/gv/v1k12j3j7md1v39gzbkw5qg40000gn/T/pytest-of-heojeongmin/pytest-266/test_fee_item_basis_pairs_timi18')
+
+    @pytest.mark.parametrize("name,path", _params(PAIRS))
+    def test_fee_item_basis_pairs(name, path, tmp_path):
+>       _check(PAIRS[name], path, tmp_path)
+
+tests/test_pr68_review_r8_3_basis.py:43: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+case = {'basis': [[8420, 'actual'], [360772, 'actual']], 'doc_type': 'gas_bill', 'evidence_contains': '360772', 'expected': {'E-3-1': [20.239, 'tCO2eq'], 'E-4-1': [0.360772, 'TJ'], 'metrics': [[8420, 'm³'], [360772, 'MJ']]}, ...}
+path = 'text_lines'
+tmp_path = PosixPath('/private/var/folders/gv/v1k12j3j7md1v39gzbkw5qg40000gn/T/pytest-of-heojeongmin/pytest-266/test_fee_item_basis_pairs_timi18')
+
+    def _check(case, path, tmp_path):
+        if path == "local_pdf":
+            pytest.importorskip("fitz")
+        obs = observe(run_path(case, path, tmp_path), case["forbidden_values"])
+>       assert violations(case, obs) == [], obs
+E       AssertionError: {'answer_status': {'E-3-1': ['insufficient'], 'E-4-1': ['insufficient']}, 'answers': {'E-3-1': None, 'E-4-1': None}, 'fake_3_m3': False, 'forbidden_in_graph': [], ...}
+E       assert ["E-4-1 None ... != [actual]"] == []
+E         
+E         Left contains 5 more items, first extra item: "E-4-1 None != [0.360772, 'TJ']"
+E         Use -v to get more diff
+
+tests/test_pr68_review_r8_3_basis.py:36: AssertionError
+_______ test_fee_item_basis_pairs[timing_month_pay_scheduled@local_pdf] ________
+
+name = 'timing_month_pay_scheduled', path = 'local_pdf'
+tmp_path = PosixPath('/private/var/folders/gv/v1k12j3j7md1v39gzbkw5qg40000gn/T/pytest-of-heojeongmin/pytest-266/test_fee_item_basis_pairs_timi19')
+
+    @pytest.mark.parametrize("name,path", _params(PAIRS))
+    def test_fee_item_basis_pairs(name, path, tmp_path):
+>       _check(PAIRS[name], path, tmp_path)
+
+tests/test_pr68_review_r8_3_basis.py:43: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+case = {'basis': [[8420, 'actual'], [360772, 'actual']], 'doc_type': 'gas_bill', 'evidence_contains': '360772', 'expected': {'E-3-1': [20.239, 'tCO2eq'], 'E-4-1': [0.360772, 'TJ'], 'metrics': [[8420, 'm³'], [360772, 'MJ']]}, ...}
+path = 'local_pdf'
+tmp_path = PosixPath('/private/var/folders/gv/v1k12j3j7md1v39gzbkw5qg40000gn/T/pytest-of-heojeongmin/pytest-266/test_fee_item_basis_pairs_timi19')
+
+    def _check(case, path, tmp_path):
+        if path == "local_pdf":
+            pytest.importorskip("fitz")
+        obs = observe(run_path(case, path, tmp_path), case["forbidden_values"])
+>       assert violations(case, obs) == [], obs
+E       AssertionError: {'answer_status': {'E-3-1': ['insufficient'], 'E-4-1': ['insufficient']}, 'answers': {'E-3-1': None, 'E-4-1': None}, 'fake_3_m3': False, 'forbidden_in_graph': [], ...}
+E       assert ["E-4-1 None ... != [actual]"] == []
+E         
+E         Left contains 5 more items, first extra item: "E-4-1 None != [0.360772, 'TJ']"
+E         Use -v to get more diff
+
+tests/test_pr68_review_r8_3_basis.py:36: AssertionError
+_______ test_fee_item_basis_pairs[timing_scheduled_payment@table_cells] ________
+
+name = 'timing_scheduled_payment', path = 'table_cells'
+tmp_path = PosixPath('/private/var/folders/gv/v1k12j3j7md1v39gzbkw5qg40000gn/T/pytest-of-heojeongmin/pytest-266/test_fee_item_basis_pairs_timi20')
+
+    @pytest.mark.parametrize("name,path", _params(PAIRS))
+    def test_fee_item_basis_pairs(name, path, tmp_path):
+>       _check(PAIRS[name], path, tmp_path)
+
+tests/test_pr68_review_r8_3_basis.py:43: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+case = {'basis': [[8420, 'actual'], [360772, 'actual']], 'doc_type': 'gas_bill', 'evidence_contains': '360772', 'expected': {'E-3-1': [20.239, 'tCO2eq'], 'E-4-1': [0.360772, 'TJ'], 'metrics': [[8420, 'm³'], [360772, 'MJ']]}, ...}
+path = 'table_cells'
+tmp_path = PosixPath('/private/var/folders/gv/v1k12j3j7md1v39gzbkw5qg40000gn/T/pytest-of-heojeongmin/pytest-266/test_fee_item_basis_pairs_timi20')
+
+    def _check(case, path, tmp_path):
+        if path == "local_pdf":
+            pytest.importorskip("fitz")
+        obs = observe(run_path(case, path, tmp_path), case["forbidden_values"])
+>       assert violations(case, obs) == [], obs
+E       AssertionError: {'answer_status': {'E-3-1': ['insufficient'], 'E-4-1': ['insufficient']}, 'answers': {'E-3-1': None, 'E-4-1': None}, 'fake_3_m3': False, 'forbidden_in_graph': [], ...}
+E       assert ["E-4-1 None ... != [actual]"] == []
+E         
+E         Left contains 5 more items, first extra item: "E-4-1 None != [0.360772, 'TJ']"
+E         Use -v to get more diff
+
+tests/test_pr68_review_r8_3_basis.py:36: AssertionError
+_________ test_fee_item_basis_pairs[timing_scheduled_payment@markdown] _________
+
+name = 'timing_scheduled_payment', path = 'markdown'
+tmp_path = PosixPath('/private/var/folders/gv/v1k12j3j7md1v39gzbkw5qg40000gn/T/pytest-of-heojeongmin/pytest-266/test_fee_item_basis_pairs_timi21')
+
+    @pytest.mark.parametrize("name,path", _params(PAIRS))
+    def test_fee_item_basis_pairs(name, path, tmp_path):
+>       _check(PAIRS[name], path, tmp_path)
+
+tests/test_pr68_review_r8_3_basis.py:43: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+case = {'basis': [[8420, 'actual'], [360772, 'actual']], 'doc_type': 'gas_bill', 'evidence_contains': '360772', 'expected': {'E-3-1': [20.239, 'tCO2eq'], 'E-4-1': [0.360772, 'TJ'], 'metrics': [[8420, 'm³'], [360772, 'MJ']]}, ...}
+path = 'markdown'
+tmp_path = PosixPath('/private/var/folders/gv/v1k12j3j7md1v39gzbkw5qg40000gn/T/pytest-of-heojeongmin/pytest-266/test_fee_item_basis_pairs_timi21')
+
+    def _check(case, path, tmp_path):
+        if path == "local_pdf":
+            pytest.importorskip("fitz")
+        obs = observe(run_path(case, path, tmp_path), case["forbidden_values"])
+>       assert violations(case, obs) == [], obs
+E       AssertionError: {'answer_status': {'E-3-1': ['insufficient'], 'E-4-1': ['insufficient']}, 'answers': {'E-3-1': None, 'E-4-1': None}, 'fake_3_m3': False, 'forbidden_in_graph': [], ...}
+E       assert ["E-4-1 None ... != [actual]"] == []
+E         
+E         Left contains 5 more items, first extra item: "E-4-1 None != [0.360772, 'TJ']"
+E         Use -v to get more diff
+
+tests/test_pr68_review_r8_3_basis.py:36: AssertionError
+________ test_fee_item_basis_pairs[timing_scheduled_payment@text_lines] ________
+
+name = 'timing_scheduled_payment', path = 'text_lines'
+tmp_path = PosixPath('/private/var/folders/gv/v1k12j3j7md1v39gzbkw5qg40000gn/T/pytest-of-heojeongmin/pytest-266/test_fee_item_basis_pairs_timi22')
+
+    @pytest.mark.parametrize("name,path", _params(PAIRS))
+    def test_fee_item_basis_pairs(name, path, tmp_path):
+>       _check(PAIRS[name], path, tmp_path)
+
+tests/test_pr68_review_r8_3_basis.py:43: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+case = {'basis': [[8420, 'actual'], [360772, 'actual']], 'doc_type': 'gas_bill', 'evidence_contains': '360772', 'expected': {'E-3-1': [20.239, 'tCO2eq'], 'E-4-1': [0.360772, 'TJ'], 'metrics': [[8420, 'm³'], [360772, 'MJ']]}, ...}
+path = 'text_lines'
+tmp_path = PosixPath('/private/var/folders/gv/v1k12j3j7md1v39gzbkw5qg40000gn/T/pytest-of-heojeongmin/pytest-266/test_fee_item_basis_pairs_timi22')
+
+    def _check(case, path, tmp_path):
+        if path == "local_pdf":
+            pytest.importorskip("fitz")
+        obs = observe(run_path(case, path, tmp_path), case["forbidden_values"])
+>       assert violations(case, obs) == [], obs
+E       AssertionError: {'answer_status': {'E-3-1': ['insufficient'], 'E-4-1': ['insufficient']}, 'answers': {'E-3-1': None, 'E-4-1': None}, 'fake_3_m3': False, 'forbidden_in_graph': [], ...}
+E       assert ["E-4-1 None ... != [actual]"] == []
+E         
+E         Left contains 5 more items, first extra item: "E-4-1 None != [0.360772, 'TJ']"
+E         Use -v to get more diff
+
+tests/test_pr68_review_r8_3_basis.py:36: AssertionError
+________ test_fee_item_basis_pairs[timing_scheduled_payment@local_pdf] _________
+
+name = 'timing_scheduled_payment', path = 'local_pdf'
+tmp_path = PosixPath('/private/var/folders/gv/v1k12j3j7md1v39gzbkw5qg40000gn/T/pytest-of-heojeongmin/pytest-266/test_fee_item_basis_pairs_timi23')
+
+    @pytest.mark.parametrize("name,path", _params(PAIRS))
+    def test_fee_item_basis_pairs(name, path, tmp_path):
+>       _check(PAIRS[name], path, tmp_path)
+
+tests/test_pr68_review_r8_3_basis.py:43: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+case = {'basis': [[8420, 'actual'], [360772, 'actual']], 'doc_type': 'gas_bill', 'evidence_contains': '360772', 'expected': {'E-3-1': [20.239, 'tCO2eq'], 'E-4-1': [0.360772, 'TJ'], 'metrics': [[8420, 'm³'], [360772, 'MJ']]}, ...}
+path = 'local_pdf'
+tmp_path = PosixPath('/private/var/folders/gv/v1k12j3j7md1v39gzbkw5qg40000gn/T/pytest-of-heojeongmin/pytest-266/test_fee_item_basis_pairs_timi23')
+
+    def _check(case, path, tmp_path):
+        if path == "local_pdf":
+            pytest.importorskip("fitz")
+        obs = observe(run_path(case, path, tmp_path), case["forbidden_values"])
+>       assert violations(case, obs) == [], obs
+E       AssertionError: {'answer_status': {'E-3-1': ['insufficient'], 'E-4-1': ['insufficient']}, 'answers': {'E-3-1': None, 'E-4-1': None}, 'fake_3_m3': False, 'forbidden_in_graph': [], ...}
+E       assert ["E-4-1 None ... != [actual]"] == []
+E         
+E         Left contains 5 more items, first extra item: "E-4-1 None != [0.360772, 'TJ']"
+E         Use -v to get more diff
+
+tests/test_pr68_review_r8_3_basis.py:36: AssertionError
+______ test_fee_item_basis_pairs[timing_next_bill_scheduled@table_cells] _______
+
+name = 'timing_next_bill_scheduled', path = 'table_cells'
+tmp_path = PosixPath('/private/var/folders/gv/v1k12j3j7md1v39gzbkw5qg40000gn/T/pytest-of-heojeongmin/pytest-266/test_fee_item_basis_pairs_timi24')
+
+    @pytest.mark.parametrize("name,path", _params(PAIRS))
+    def test_fee_item_basis_pairs(name, path, tmp_path):
+>       _check(PAIRS[name], path, tmp_path)
+
+tests/test_pr68_review_r8_3_basis.py:43: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+case = {'basis': [[8420, 'actual'], [360772, 'actual']], 'doc_type': 'gas_bill', 'evidence_contains': '360772', 'expected': {'E-3-1': [20.239, 'tCO2eq'], 'E-4-1': [0.360772, 'TJ'], 'metrics': [[8420, 'm³'], [360772, 'MJ']]}, ...}
+path = 'table_cells'
+tmp_path = PosixPath('/private/var/folders/gv/v1k12j3j7md1v39gzbkw5qg40000gn/T/pytest-of-heojeongmin/pytest-266/test_fee_item_basis_pairs_timi24')
+
+    def _check(case, path, tmp_path):
+        if path == "local_pdf":
+            pytest.importorskip("fitz")
+        obs = observe(run_path(case, path, tmp_path), case["forbidden_values"])
+>       assert violations(case, obs) == [], obs
+E       AssertionError: {'answer_status': {'E-3-1': ['insufficient'], 'E-4-1': ['insufficient']}, 'answers': {'E-3-1': None, 'E-4-1': None}, 'fake_3_m3': False, 'forbidden_in_graph': [], ...}
+E       assert ["E-4-1 None ... != [actual]"] == []
+E         
+E         Left contains 5 more items, first extra item: "E-4-1 None != [0.360772, 'TJ']"
+E         Use -v to get more diff
+
+tests/test_pr68_review_r8_3_basis.py:36: AssertionError
+________ test_fee_item_basis_pairs[timing_next_bill_scheduled@markdown] ________
+
+name = 'timing_next_bill_scheduled', path = 'markdown'
+tmp_path = PosixPath('/private/var/folders/gv/v1k12j3j7md1v39gzbkw5qg40000gn/T/pytest-of-heojeongmin/pytest-266/test_fee_item_basis_pairs_timi25')
+
+    @pytest.mark.parametrize("name,path", _params(PAIRS))
+    def test_fee_item_basis_pairs(name, path, tmp_path):
+>       _check(PAIRS[name], path, tmp_path)
+
+tests/test_pr68_review_r8_3_basis.py:43: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+case = {'basis': [[8420, 'actual'], [360772, 'actual']], 'doc_type': 'gas_bill', 'evidence_contains': '360772', 'expected': {'E-3-1': [20.239, 'tCO2eq'], 'E-4-1': [0.360772, 'TJ'], 'metrics': [[8420, 'm³'], [360772, 'MJ']]}, ...}
+path = 'markdown'
+tmp_path = PosixPath('/private/var/folders/gv/v1k12j3j7md1v39gzbkw5qg40000gn/T/pytest-of-heojeongmin/pytest-266/test_fee_item_basis_pairs_timi25')
+
+    def _check(case, path, tmp_path):
+        if path == "local_pdf":
+            pytest.importorskip("fitz")
+        obs = observe(run_path(case, path, tmp_path), case["forbidden_values"])
+>       assert violations(case, obs) == [], obs
+E       AssertionError: {'answer_status': {'E-3-1': ['insufficient'], 'E-4-1': ['insufficient']}, 'answers': {'E-3-1': None, 'E-4-1': None}, 'fake_3_m3': False, 'forbidden_in_graph': [], ...}
+E       assert ["E-4-1 None ... != [actual]"] == []
+E         
+E         Left contains 5 more items, first extra item: "E-4-1 None != [0.360772, 'TJ']"
+E         Use -v to get more diff
+
+tests/test_pr68_review_r8_3_basis.py:36: AssertionError
+_______ test_fee_item_basis_pairs[timing_next_bill_scheduled@text_lines] _______
+
+name = 'timing_next_bill_scheduled', path = 'text_lines'
+tmp_path = PosixPath('/private/var/folders/gv/v1k12j3j7md1v39gzbkw5qg40000gn/T/pytest-of-heojeongmin/pytest-266/test_fee_item_basis_pairs_timi26')
+
+    @pytest.mark.parametrize("name,path", _params(PAIRS))
+    def test_fee_item_basis_pairs(name, path, tmp_path):
+>       _check(PAIRS[name], path, tmp_path)
+
+tests/test_pr68_review_r8_3_basis.py:43: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+case = {'basis': [[8420, 'actual'], [360772, 'actual']], 'doc_type': 'gas_bill', 'evidence_contains': '360772', 'expected': {'E-3-1': [20.239, 'tCO2eq'], 'E-4-1': [0.360772, 'TJ'], 'metrics': [[8420, 'm³'], [360772, 'MJ']]}, ...}
+path = 'text_lines'
+tmp_path = PosixPath('/private/var/folders/gv/v1k12j3j7md1v39gzbkw5qg40000gn/T/pytest-of-heojeongmin/pytest-266/test_fee_item_basis_pairs_timi26')
+
+    def _check(case, path, tmp_path):
+        if path == "local_pdf":
+            pytest.importorskip("fitz")
+        obs = observe(run_path(case, path, tmp_path), case["forbidden_values"])
+>       assert violations(case, obs) == [], obs
+E       AssertionError: {'answer_status': {'E-3-1': ['insufficient'], 'E-4-1': ['insufficient']}, 'answers': {'E-3-1': None, 'E-4-1': None}, 'fake_3_m3': False, 'forbidden_in_graph': [], ...}
+E       assert ["E-4-1 None ... != [actual]"] == []
+E         
+E         Left contains 5 more items, first extra item: "E-4-1 None != [0.360772, 'TJ']"
+E         Use -v to get more diff
+
+tests/test_pr68_review_r8_3_basis.py:36: AssertionError
+________ test_fee_item_basis_pairs[timing_settle_scheduled@table_cells] ________
+
+name = 'timing_settle_scheduled', path = 'table_cells'
+tmp_path = PosixPath('/private/var/folders/gv/v1k12j3j7md1v39gzbkw5qg40000gn/T/pytest-of-heojeongmin/pytest-266/test_fee_item_basis_pairs_timi27')
+
+    @pytest.mark.parametrize("name,path", _params(PAIRS))
+    def test_fee_item_basis_pairs(name, path, tmp_path):
+>       _check(PAIRS[name], path, tmp_path)
+
+tests/test_pr68_review_r8_3_basis.py:43: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+case = {'basis': [[8420, 'actual'], [360772, 'actual']], 'doc_type': 'gas_bill', 'evidence_contains': '360772', 'expected': {'E-3-1': [20.239, 'tCO2eq'], 'E-4-1': [0.360772, 'TJ'], 'metrics': [[8420, 'm³'], [360772, 'MJ']]}, ...}
+path = 'table_cells'
+tmp_path = PosixPath('/private/var/folders/gv/v1k12j3j7md1v39gzbkw5qg40000gn/T/pytest-of-heojeongmin/pytest-266/test_fee_item_basis_pairs_timi27')
+
+    def _check(case, path, tmp_path):
+        if path == "local_pdf":
+            pytest.importorskip("fitz")
+        obs = observe(run_path(case, path, tmp_path), case["forbidden_values"])
+>       assert violations(case, obs) == [], obs
+E       AssertionError: {'answer_status': {'E-3-1': ['insufficient'], 'E-4-1': ['insufficient']}, 'answers': {'E-3-1': None, 'E-4-1': None}, 'fake_3_m3': False, 'forbidden_in_graph': [], ...}
+E       assert ["E-4-1 None ... != [actual]"] == []
+E         
+E         Left contains 5 more items, first extra item: "E-4-1 None != [0.360772, 'TJ']"
+E         Use -v to get more diff
+
+tests/test_pr68_review_r8_3_basis.py:36: AssertionError
+_________ test_fee_item_basis_pairs[timing_settle_scheduled@markdown] __________
+
+name = 'timing_settle_scheduled', path = 'markdown'
+tmp_path = PosixPath('/private/var/folders/gv/v1k12j3j7md1v39gzbkw5qg40000gn/T/pytest-of-heojeongmin/pytest-266/test_fee_item_basis_pairs_timi28')
+
+    @pytest.mark.parametrize("name,path", _params(PAIRS))
+    def test_fee_item_basis_pairs(name, path, tmp_path):
+>       _check(PAIRS[name], path, tmp_path)
+
+tests/test_pr68_review_r8_3_basis.py:43: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+case = {'basis': [[8420, 'actual'], [360772, 'actual']], 'doc_type': 'gas_bill', 'evidence_contains': '360772', 'expected': {'E-3-1': [20.239, 'tCO2eq'], 'E-4-1': [0.360772, 'TJ'], 'metrics': [[8420, 'm³'], [360772, 'MJ']]}, ...}
+path = 'markdown'
+tmp_path = PosixPath('/private/var/folders/gv/v1k12j3j7md1v39gzbkw5qg40000gn/T/pytest-of-heojeongmin/pytest-266/test_fee_item_basis_pairs_timi28')
+
+    def _check(case, path, tmp_path):
+        if path == "local_pdf":
+            pytest.importorskip("fitz")
+        obs = observe(run_path(case, path, tmp_path), case["forbidden_values"])
+>       assert violations(case, obs) == [], obs
+E       AssertionError: {'answer_status': {'E-3-1': ['insufficient'], 'E-4-1': ['insufficient']}, 'answers': {'E-3-1': None, 'E-4-1': None}, 'fake_3_m3': False, 'forbidden_in_graph': [], ...}
+E       assert ["E-4-1 None ... != [actual]"] == []
+E         
+E         Left contains 5 more items, first extra item: "E-4-1 None != [0.360772, 'TJ']"
+E         Use -v to get more diff
+
+tests/test_pr68_review_r8_3_basis.py:36: AssertionError
+________ test_fee_item_basis_pairs[timing_settle_scheduled@text_lines] _________
+
+name = 'timing_settle_scheduled', path = 'text_lines'
+tmp_path = PosixPath('/private/var/folders/gv/v1k12j3j7md1v39gzbkw5qg40000gn/T/pytest-of-heojeongmin/pytest-266/test_fee_item_basis_pairs_timi29')
+
+    @pytest.mark.parametrize("name,path", _params(PAIRS))
+    def test_fee_item_basis_pairs(name, path, tmp_path):
+>       _check(PAIRS[name], path, tmp_path)
+
+tests/test_pr68_review_r8_3_basis.py:43: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+case = {'basis': [[8420, 'actual'], [360772, 'actual']], 'doc_type': 'gas_bill', 'evidence_contains': '360772', 'expected': {'E-3-1': [20.239, 'tCO2eq'], 'E-4-1': [0.360772, 'TJ'], 'metrics': [[8420, 'm³'], [360772, 'MJ']]}, ...}
+path = 'text_lines'
+tmp_path = PosixPath('/private/var/folders/gv/v1k12j3j7md1v39gzbkw5qg40000gn/T/pytest-of-heojeongmin/pytest-266/test_fee_item_basis_pairs_timi29')
+
+    def _check(case, path, tmp_path):
+        if path == "local_pdf":
+            pytest.importorskip("fitz")
+        obs = observe(run_path(case, path, tmp_path), case["forbidden_values"])
+>       assert violations(case, obs) == [], obs
+E       AssertionError: {'answer_status': {'E-3-1': ['insufficient'], 'E-4-1': ['insufficient']}, 'answers': {'E-3-1': None, 'E-4-1': None}, 'fake_3_m3': False, 'forbidden_in_graph': [], ...}
+E       assert ["E-4-1 None ... != [actual]"] == []
+E         
+E         Left contains 5 more items, first extra item: "E-4-1 None != [0.360772, 'TJ']"
+E         Use -v to get more diff
+
+tests/test_pr68_review_r8_3_basis.py:36: AssertionError
+_________ test_fee_item_basis_pairs[timing_settle_scheduled@local_pdf] _________
+
+name = 'timing_settle_scheduled', path = 'local_pdf'
+tmp_path = PosixPath('/private/var/folders/gv/v1k12j3j7md1v39gzbkw5qg40000gn/T/pytest-of-heojeongmin/pytest-266/test_fee_item_basis_pairs_timi30')
+
+    @pytest.mark.parametrize("name,path", _params(PAIRS))
+    def test_fee_item_basis_pairs(name, path, tmp_path):
+>       _check(PAIRS[name], path, tmp_path)
+
+tests/test_pr68_review_r8_3_basis.py:43: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+case = {'basis': [[8420, 'actual'], [360772, 'actual']], 'doc_type': 'gas_bill', 'evidence_contains': '360772', 'expected': {'E-3-1': [20.239, 'tCO2eq'], 'E-4-1': [0.360772, 'TJ'], 'metrics': [[8420, 'm³'], [360772, 'MJ']]}, ...}
+path = 'local_pdf'
+tmp_path = PosixPath('/private/var/folders/gv/v1k12j3j7md1v39gzbkw5qg40000gn/T/pytest-of-heojeongmin/pytest-266/test_fee_item_basis_pairs_timi30')
+
+    def _check(case, path, tmp_path):
+        if path == "local_pdf":
+            pytest.importorskip("fitz")
+        obs = observe(run_path(case, path, tmp_path), case["forbidden_values"])
+>       assert violations(case, obs) == [], obs
+E       AssertionError: {'answer_status': {'E-3-1': ['insufficient'], 'E-4-1': ['insufficient']}, 'answers': {'E-3-1': None, 'E-4-1': None}, 'fake_3_m3': False, 'forbidden_in_graph': [], ...}
+E       assert ["E-4-1 None ... != [actual]"] == []
+E         
+E         Left contains 5 more items, first extra item: "E-4-1 None != [0.360772, 'TJ']"
+E         Use -v to get more diff
+
+tests/test_pr68_review_r8_3_basis.py:36: AssertionError
+___________ test_fee_item_basis_pairs[timing_pay_paren@table_cells] ____________
+
+name = 'timing_pay_paren', path = 'table_cells'
+tmp_path = PosixPath('/private/var/folders/gv/v1k12j3j7md1v39gzbkw5qg40000gn/T/pytest-of-heojeongmin/pytest-266/test_fee_item_basis_pairs_timi31')
+
+    @pytest.mark.parametrize("name,path", _params(PAIRS))
+    def test_fee_item_basis_pairs(name, path, tmp_path):
+>       _check(PAIRS[name], path, tmp_path)
+
+tests/test_pr68_review_r8_3_basis.py:43: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+case = {'basis': [[8420, 'actual'], [360772, 'actual']], 'doc_type': 'gas_bill', 'evidence_contains': '360772', 'expected': {'E-3-1': [20.239, 'tCO2eq'], 'E-4-1': [0.360772, 'TJ'], 'metrics': [[8420, 'm³'], [360772, 'MJ']]}, ...}
+path = 'table_cells'
+tmp_path = PosixPath('/private/var/folders/gv/v1k12j3j7md1v39gzbkw5qg40000gn/T/pytest-of-heojeongmin/pytest-266/test_fee_item_basis_pairs_timi31')
+
+    def _check(case, path, tmp_path):
+        if path == "local_pdf":
+            pytest.importorskip("fitz")
+        obs = observe(run_path(case, path, tmp_path), case["forbidden_values"])
+>       assert violations(case, obs) == [], obs
+E       AssertionError: {'answer_status': {'E-3-1': ['insufficient'], 'E-4-1': ['insufficient']}, 'answers': {'E-3-1': None, 'E-4-1': None}, 'fake_3_m3': False, 'forbidden_in_graph': [], ...}
+E       assert ["E-4-1 None ... != [actual]"] == []
+E         
+E         Left contains 5 more items, first extra item: "E-4-1 None != [0.360772, 'TJ']"
+E         Use -v to get more diff
+
+tests/test_pr68_review_r8_3_basis.py:36: AssertionError
+_____________ test_fee_item_basis_pairs[timing_pay_paren@markdown] _____________
+
+name = 'timing_pay_paren', path = 'markdown'
+tmp_path = PosixPath('/private/var/folders/gv/v1k12j3j7md1v39gzbkw5qg40000gn/T/pytest-of-heojeongmin/pytest-266/test_fee_item_basis_pairs_timi32')
+
+    @pytest.mark.parametrize("name,path", _params(PAIRS))
+    def test_fee_item_basis_pairs(name, path, tmp_path):
+>       _check(PAIRS[name], path, tmp_path)
+
+tests/test_pr68_review_r8_3_basis.py:43: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+case = {'basis': [[8420, 'actual'], [360772, 'actual']], 'doc_type': 'gas_bill', 'evidence_contains': '360772', 'expected': {'E-3-1': [20.239, 'tCO2eq'], 'E-4-1': [0.360772, 'TJ'], 'metrics': [[8420, 'm³'], [360772, 'MJ']]}, ...}
+path = 'markdown'
+tmp_path = PosixPath('/private/var/folders/gv/v1k12j3j7md1v39gzbkw5qg40000gn/T/pytest-of-heojeongmin/pytest-266/test_fee_item_basis_pairs_timi32')
+
+    def _check(case, path, tmp_path):
+        if path == "local_pdf":
+            pytest.importorskip("fitz")
+        obs = observe(run_path(case, path, tmp_path), case["forbidden_values"])
+>       assert violations(case, obs) == [], obs
+E       AssertionError: {'answer_status': {'E-3-1': ['insufficient'], 'E-4-1': ['insufficient']}, 'answers': {'E-3-1': None, 'E-4-1': None}, 'fake_3_m3': False, 'forbidden_in_graph': [], ...}
+E       assert ["E-4-1 None ... != [actual]"] == []
+E         
+E         Left contains 5 more items, first extra item: "E-4-1 None != [0.360772, 'TJ']"
+E         Use -v to get more diff
+
+tests/test_pr68_review_r8_3_basis.py:36: AssertionError
+____________ test_fee_item_basis_pairs[timing_pay_paren@text_lines] ____________
+
+name = 'timing_pay_paren', path = 'text_lines'
+tmp_path = PosixPath('/private/var/folders/gv/v1k12j3j7md1v39gzbkw5qg40000gn/T/pytest-of-heojeongmin/pytest-266/test_fee_item_basis_pairs_timi33')
+
+    @pytest.mark.parametrize("name,path", _params(PAIRS))
+    def test_fee_item_basis_pairs(name, path, tmp_path):
+>       _check(PAIRS[name], path, tmp_path)
+
+tests/test_pr68_review_r8_3_basis.py:43: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+case = {'basis': [[8420, 'actual'], [360772, 'actual']], 'doc_type': 'gas_bill', 'evidence_contains': '360772', 'expected': {'E-3-1': [20.239, 'tCO2eq'], 'E-4-1': [0.360772, 'TJ'], 'metrics': [[8420, 'm³'], [360772, 'MJ']]}, ...}
+path = 'text_lines'
+tmp_path = PosixPath('/private/var/folders/gv/v1k12j3j7md1v39gzbkw5qg40000gn/T/pytest-of-heojeongmin/pytest-266/test_fee_item_basis_pairs_timi33')
+
+    def _check(case, path, tmp_path):
+        if path == "local_pdf":
+            pytest.importorskip("fitz")
+        obs = observe(run_path(case, path, tmp_path), case["forbidden_values"])
+>       assert violations(case, obs) == [], obs
+E       AssertionError: {'answer_status': {'E-3-1': ['insufficient'], 'E-4-1': ['insufficient']}, 'answers': {'E-3-1': None, 'E-4-1': None}, 'fake_3_m3': False, 'forbidden_in_graph': [], ...}
+E       assert ["E-4-1 None ... != [actual]"] == []
+E         
+E         Left contains 5 more items, first extra item: "E-4-1 None != [0.360772, 'TJ']"
+E         Use -v to get more diff
+
+tests/test_pr68_review_r8_3_basis.py:36: AssertionError
+____________ test_fee_item_basis_pairs[timing_pay_paren@local_pdf] _____________
+
+name = 'timing_pay_paren', path = 'local_pdf'
+tmp_path = PosixPath('/private/var/folders/gv/v1k12j3j7md1v39gzbkw5qg40000gn/T/pytest-of-heojeongmin/pytest-266/test_fee_item_basis_pairs_timi34')
+
+    @pytest.mark.parametrize("name,path", _params(PAIRS))
+    def test_fee_item_basis_pairs(name, path, tmp_path):
+>       _check(PAIRS[name], path, tmp_path)
+
+tests/test_pr68_review_r8_3_basis.py:43: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+case = {'basis': [[8420, 'actual'], [360772, 'actual']], 'doc_type': 'gas_bill', 'evidence_contains': '360772', 'expected': {'E-3-1': [20.239, 'tCO2eq'], 'E-4-1': [0.360772, 'TJ'], 'metrics': [[8420, 'm³'], [360772, 'MJ']]}, ...}
+path = 'local_pdf'
+tmp_path = PosixPath('/private/var/folders/gv/v1k12j3j7md1v39gzbkw5qg40000gn/T/pytest-of-heojeongmin/pytest-266/test_fee_item_basis_pairs_timi34')
+
+    def _check(case, path, tmp_path):
+        if path == "local_pdf":
+            pytest.importorskip("fitz")
+        obs = observe(run_path(case, path, tmp_path), case["forbidden_values"])
+>       assert violations(case, obs) == [], obs
+E       AssertionError: {'answer_status': {'E-3-1': ['insufficient'], 'E-4-1': ['insufficient']}, 'answers': {'E-3-1': None, 'E-4-1': None}, 'fake_3_m3': False, 'forbidden_in_graph': [], ...}
+E       assert ["E-4-1 None ... != [actual]"] == []
+E         
+E         Left contains 5 more items, first extra item: "E-4-1 None != [0.360772, 'TJ']"
+E         Use -v to get more diff
+
+tests/test_pr68_review_r8_3_basis.py:36: AssertionError
+________ test_fee_item_basis_pairs[timing_notice_scheduled@table_cells] ________
+
+name = 'timing_notice_scheduled', path = 'table_cells'
+tmp_path = PosixPath('/private/var/folders/gv/v1k12j3j7md1v39gzbkw5qg40000gn/T/pytest-of-heojeongmin/pytest-266/test_fee_item_basis_pairs_timi35')
+
+    @pytest.mark.parametrize("name,path", _params(PAIRS))
+    def test_fee_item_basis_pairs(name, path, tmp_path):
+>       _check(PAIRS[name], path, tmp_path)
+
+tests/test_pr68_review_r8_3_basis.py:43: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+case = {'basis': [[8420, 'actual'], [360772, 'actual']], 'doc_type': 'gas_bill', 'evidence_contains': '360772', 'expected': {'E-3-1': [20.239, 'tCO2eq'], 'E-4-1': [0.360772, 'TJ'], 'metrics': [[8420, 'm³'], [360772, 'MJ']]}, ...}
+path = 'table_cells'
+tmp_path = PosixPath('/private/var/folders/gv/v1k12j3j7md1v39gzbkw5qg40000gn/T/pytest-of-heojeongmin/pytest-266/test_fee_item_basis_pairs_timi35')
+
+    def _check(case, path, tmp_path):
+        if path == "local_pdf":
+            pytest.importorskip("fitz")
+        obs = observe(run_path(case, path, tmp_path), case["forbidden_values"])
+>       assert violations(case, obs) == [], obs
+E       AssertionError: {'answer_status': {'E-3-1': ['insufficient'], 'E-4-1': ['insufficient']}, 'answers': {'E-3-1': None, 'E-4-1': None}, 'fake_3_m3': False, 'forbidden_in_graph': [], ...}
+E       assert ["E-4-1 None ... != [actual]"] == []
+E         
+E         Left contains 5 more items, first extra item: "E-4-1 None != [0.360772, 'TJ']"
+E         Use -v to get more diff
+
+tests/test_pr68_review_r8_3_basis.py:36: AssertionError
+_________ test_fee_item_basis_pairs[timing_notice_scheduled@markdown] __________
+
+name = 'timing_notice_scheduled', path = 'markdown'
+tmp_path = PosixPath('/private/var/folders/gv/v1k12j3j7md1v39gzbkw5qg40000gn/T/pytest-of-heojeongmin/pytest-266/test_fee_item_basis_pairs_timi36')
+
+    @pytest.mark.parametrize("name,path", _params(PAIRS))
+    def test_fee_item_basis_pairs(name, path, tmp_path):
+>       _check(PAIRS[name], path, tmp_path)
+
+tests/test_pr68_review_r8_3_basis.py:43: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+case = {'basis': [[8420, 'actual'], [360772, 'actual']], 'doc_type': 'gas_bill', 'evidence_contains': '360772', 'expected': {'E-3-1': [20.239, 'tCO2eq'], 'E-4-1': [0.360772, 'TJ'], 'metrics': [[8420, 'm³'], [360772, 'MJ']]}, ...}
+path = 'markdown'
+tmp_path = PosixPath('/private/var/folders/gv/v1k12j3j7md1v39gzbkw5qg40000gn/T/pytest-of-heojeongmin/pytest-266/test_fee_item_basis_pairs_timi36')
+
+    def _check(case, path, tmp_path):
+        if path == "local_pdf":
+            pytest.importorskip("fitz")
+        obs = observe(run_path(case, path, tmp_path), case["forbidden_values"])
+>       assert violations(case, obs) == [], obs
+E       AssertionError: {'answer_status': {'E-3-1': ['insufficient'], 'E-4-1': ['insufficient']}, 'answers': {'E-3-1': None, 'E-4-1': None}, 'fake_3_m3': False, 'forbidden_in_graph': [], ...}
+E       assert ["E-4-1 None ... != [actual]"] == []
+E         
+E         Left contains 5 more items, first extra item: "E-4-1 None != [0.360772, 'TJ']"
+E         Use -v to get more diff
+
+tests/test_pr68_review_r8_3_basis.py:36: AssertionError
+________ test_fee_item_basis_pairs[timing_notice_scheduled@text_lines] _________
+
+name = 'timing_notice_scheduled', path = 'text_lines'
+tmp_path = PosixPath('/private/var/folders/gv/v1k12j3j7md1v39gzbkw5qg40000gn/T/pytest-of-heojeongmin/pytest-266/test_fee_item_basis_pairs_timi37')
+
+    @pytest.mark.parametrize("name,path", _params(PAIRS))
+    def test_fee_item_basis_pairs(name, path, tmp_path):
+>       _check(PAIRS[name], path, tmp_path)
+
+tests/test_pr68_review_r8_3_basis.py:43: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+case = {'basis': [[8420, 'actual'], [360772, 'actual']], 'doc_type': 'gas_bill', 'evidence_contains': '360772', 'expected': {'E-3-1': [20.239, 'tCO2eq'], 'E-4-1': [0.360772, 'TJ'], 'metrics': [[8420, 'm³'], [360772, 'MJ']]}, ...}
+path = 'text_lines'
+tmp_path = PosixPath('/private/var/folders/gv/v1k12j3j7md1v39gzbkw5qg40000gn/T/pytest-of-heojeongmin/pytest-266/test_fee_item_basis_pairs_timi37')
+
+    def _check(case, path, tmp_path):
+        if path == "local_pdf":
+            pytest.importorskip("fitz")
+        obs = observe(run_path(case, path, tmp_path), case["forbidden_values"])
+>       assert violations(case, obs) == [], obs
+E       AssertionError: {'answer_status': {'E-3-1': ['insufficient'], 'E-4-1': ['insufficient']}, 'answers': {'E-3-1': None, 'E-4-1': None}, 'fake_3_m3': False, 'forbidden_in_graph': [], ...}
+E       assert ["E-4-1 None ... != [actual]"] == []
+E         
+E         Left contains 5 more items, first extra item: "E-4-1 None != [0.360772, 'TJ']"
+E         Use -v to get more diff
+
+tests/test_pr68_review_r8_3_basis.py:36: AssertionError
+_________ test_fee_item_basis_pairs[timing_notice_scheduled@local_pdf] _________
+
+name = 'timing_notice_scheduled', path = 'local_pdf'
+tmp_path = PosixPath('/private/var/folders/gv/v1k12j3j7md1v39gzbkw5qg40000gn/T/pytest-of-heojeongmin/pytest-266/test_fee_item_basis_pairs_timi38')
+
+    @pytest.mark.parametrize("name,path", _params(PAIRS))
+    def test_fee_item_basis_pairs(name, path, tmp_path):
+>       _check(PAIRS[name], path, tmp_path)
+
+tests/test_pr68_review_r8_3_basis.py:43: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+case = {'basis': [[8420, 'actual'], [360772, 'actual']], 'doc_type': 'gas_bill', 'evidence_contains': '360772', 'expected': {'E-3-1': [20.239, 'tCO2eq'], 'E-4-1': [0.360772, 'TJ'], 'metrics': [[8420, 'm³'], [360772, 'MJ']]}, ...}
+path = 'local_pdf'
+tmp_path = PosixPath('/private/var/folders/gv/v1k12j3j7md1v39gzbkw5qg40000gn/T/pytest-of-heojeongmin/pytest-266/test_fee_item_basis_pairs_timi38')
+
+    def _check(case, path, tmp_path):
+        if path == "local_pdf":
+            pytest.importorskip("fitz")
+        obs = observe(run_path(case, path, tmp_path), case["forbidden_values"])
+>       assert violations(case, obs) == [], obs
+E       AssertionError: {'answer_status': {'E-3-1': ['insufficient'], 'E-4-1': ['insufficient']}, 'answers': {'E-3-1': None, 'E-4-1': None}, 'fake_3_m3': False, 'forbidden_in_graph': [], ...}
+E       assert ["E-4-1 None ... != [actual]"] == []
+E         
+E         Left contains 5 more items, first extra item: "E-4-1 None != [0.360772, 'TJ']"
+E         Use -v to get more diff
+
+tests/test_pr68_review_r8_3_basis.py:36: AssertionError
+____ test_fee_item_basis_pairs[timing_usage_and_pay_scheduled@table_cells] _____
+
+name = 'timing_usage_and_pay_scheduled', path = 'table_cells'
+tmp_path = PosixPath('/private/var/folders/gv/v1k12j3j7md1v39gzbkw5qg40000gn/T/pytest-of-heojeongmin/pytest-266/test_fee_item_basis_pairs_timi39')
+
+    @pytest.mark.parametrize("name,path", _params(PAIRS))
+    def test_fee_item_basis_pairs(name, path, tmp_path):
+>       _check(PAIRS[name], path, tmp_path)
+
+tests/test_pr68_review_r8_3_basis.py:43: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+case = {'basis': [[8420, 'actual'], [360772, 'actual']], 'doc_type': 'gas_bill', 'evidence_contains': '360772', 'expected': {'E-3-1': [20.239, 'tCO2eq'], 'E-4-1': [0.360772, 'TJ'], 'metrics': [[8420, 'm³'], [360772, 'MJ']]}, ...}
+path = 'table_cells'
+tmp_path = PosixPath('/private/var/folders/gv/v1k12j3j7md1v39gzbkw5qg40000gn/T/pytest-of-heojeongmin/pytest-266/test_fee_item_basis_pairs_timi39')
+
+    def _check(case, path, tmp_path):
+        if path == "local_pdf":
+            pytest.importorskip("fitz")
+        obs = observe(run_path(case, path, tmp_path), case["forbidden_values"])
+>       assert violations(case, obs) == [], obs
+E       AssertionError: {'answer_status': {'E-3-1': ['insufficient'], 'E-4-1': ['insufficient']}, 'answers': {'E-3-1': None, 'E-4-1': None}, 'fake_3_m3': False, 'forbidden_in_graph': [], ...}
+E       assert ["E-4-1 None ... != [actual]"] == []
+E         
+E         Left contains 5 more items, first extra item: "E-4-1 None != [0.360772, 'TJ']"
+E         Use -v to get more diff
+
+tests/test_pr68_review_r8_3_basis.py:36: AssertionError
+______ test_fee_item_basis_pairs[timing_usage_and_pay_scheduled@markdown] ______
+
+name = 'timing_usage_and_pay_scheduled', path = 'markdown'
+tmp_path = PosixPath('/private/var/folders/gv/v1k12j3j7md1v39gzbkw5qg40000gn/T/pytest-of-heojeongmin/pytest-266/test_fee_item_basis_pairs_timi40')
+
+    @pytest.mark.parametrize("name,path", _params(PAIRS))
+    def test_fee_item_basis_pairs(name, path, tmp_path):
+>       _check(PAIRS[name], path, tmp_path)
+
+tests/test_pr68_review_r8_3_basis.py:43: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+case = {'basis': [[8420, 'actual'], [360772, 'actual']], 'doc_type': 'gas_bill', 'evidence_contains': '360772', 'expected': {'E-3-1': [20.239, 'tCO2eq'], 'E-4-1': [0.360772, 'TJ'], 'metrics': [[8420, 'm³'], [360772, 'MJ']]}, ...}
+path = 'markdown'
+tmp_path = PosixPath('/private/var/folders/gv/v1k12j3j7md1v39gzbkw5qg40000gn/T/pytest-of-heojeongmin/pytest-266/test_fee_item_basis_pairs_timi40')
+
+    def _check(case, path, tmp_path):
+        if path == "local_pdf":
+            pytest.importorskip("fitz")
+        obs = observe(run_path(case, path, tmp_path), case["forbidden_values"])
+>       assert violations(case, obs) == [], obs
+E       AssertionError: {'answer_status': {'E-3-1': ['insufficient'], 'E-4-1': ['insufficient']}, 'answers': {'E-3-1': None, 'E-4-1': None}, 'fake_3_m3': False, 'forbidden_in_graph': [], ...}
+E       assert ["E-4-1 None ... != [actual]"] == []
+E         
+E         Left contains 5 more items, first extra item: "E-4-1 None != [0.360772, 'TJ']"
+E         Use -v to get more diff
+
+tests/test_pr68_review_r8_3_basis.py:36: AssertionError
+_____ test_fee_item_basis_pairs[timing_usage_and_pay_scheduled@text_lines] _____
+
+name = 'timing_usage_and_pay_scheduled', path = 'text_lines'
+tmp_path = PosixPath('/private/var/folders/gv/v1k12j3j7md1v39gzbkw5qg40000gn/T/pytest-of-heojeongmin/pytest-266/test_fee_item_basis_pairs_timi41')
+
+    @pytest.mark.parametrize("name,path", _params(PAIRS))
+    def test_fee_item_basis_pairs(name, path, tmp_path):
+>       _check(PAIRS[name], path, tmp_path)
+
+tests/test_pr68_review_r8_3_basis.py:43: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+case = {'basis': [[8420, 'actual'], [360772, 'actual']], 'doc_type': 'gas_bill', 'evidence_contains': '360772', 'expected': {'E-3-1': [20.239, 'tCO2eq'], 'E-4-1': [0.360772, 'TJ'], 'metrics': [[8420, 'm³'], [360772, 'MJ']]}, ...}
+path = 'text_lines'
+tmp_path = PosixPath('/private/var/folders/gv/v1k12j3j7md1v39gzbkw5qg40000gn/T/pytest-of-heojeongmin/pytest-266/test_fee_item_basis_pairs_timi41')
+
+    def _check(case, path, tmp_path):
+        if path == "local_pdf":
+            pytest.importorskip("fitz")
+        obs = observe(run_path(case, path, tmp_path), case["forbidden_values"])
+>       assert violations(case, obs) == [], obs
+E       AssertionError: {'answer_status': {'E-3-1': ['insufficient'], 'E-4-1': ['insufficient']}, 'answers': {'E-3-1': None, 'E-4-1': None}, 'fake_3_m3': False, 'forbidden_in_graph': [], ...}
+E       assert ["E-4-1 None ... != [actual]"] == []
+E         
+E         Left contains 5 more items, first extra item: "E-4-1 None != [0.360772, 'TJ']"
+E         Use -v to get more diff
+
+tests/test_pr68_review_r8_3_basis.py:36: AssertionError
+________ test_fee_item_basis_pairs[pair_timing_empty_heat@table_cells] _________
+
+name = 'pair_timing_empty_heat', path = 'table_cells'
+tmp_path = PosixPath('/private/var/folders/gv/v1k12j3j7md1v39gzbkw5qg40000gn/T/pytest-of-heojeongmin/pytest-266/test_fee_item_basis_pairs_pair0')
+
+    @pytest.mark.parametrize("name,path", _params(PAIRS))
+    def test_fee_item_basis_pairs(name, path, tmp_path):
+>       _check(PAIRS[name], path, tmp_path)
+
+tests/test_pr68_review_r8_3_basis.py:43: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+case = {'basis': [[8420, 'actual']], 'doc_type': 'gas_bill', 'expected': {'E-3-1': None, 'E-4-1': None, 'metrics': [[8420, 'm³']]}, 'extra': ['사용 기간: 2026-04-01 ~ 2026-04-30'], ...}
+path = 'table_cells'
+tmp_path = PosixPath('/private/var/folders/gv/v1k12j3j7md1v39gzbkw5qg40000gn/T/pytest-of-heojeongmin/pytest-266/test_fee_item_basis_pairs_pair0')
+
+    def _check(case, path, tmp_path):
+        if path == "local_pdf":
+            pytest.importorskip("fitz")
+        obs = observe(run_path(case, path, tmp_path), case["forbidden_values"])
+>       assert violations(case, obs) == [], obs
+E       AssertionError: {'answer_status': {'E-3-1': ['insufficient'], 'E-4-1': ['insufficient']}, 'answers': {'E-3-1': None, 'E-4-1': None}, 'fake_3_m3': False, 'forbidden_in_graph': [], ...}
+E       assert ["basis of 84... != [actual]"] == []
+E         
+E         Left contains one more item: "basis of 8420 ['plan'] != [actual]"
+E         Use -v to get more diff
+
+tests/test_pr68_review_r8_3_basis.py:36: AssertionError
+__________ test_fee_item_basis_pairs[pair_timing_empty_heat@markdown] __________
+
+name = 'pair_timing_empty_heat', path = 'markdown'
+tmp_path = PosixPath('/private/var/folders/gv/v1k12j3j7md1v39gzbkw5qg40000gn/T/pytest-of-heojeongmin/pytest-266/test_fee_item_basis_pairs_pair1')
+
+    @pytest.mark.parametrize("name,path", _params(PAIRS))
+    def test_fee_item_basis_pairs(name, path, tmp_path):
+>       _check(PAIRS[name], path, tmp_path)
+
+tests/test_pr68_review_r8_3_basis.py:43: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+case = {'basis': [[8420, 'actual']], 'doc_type': 'gas_bill', 'expected': {'E-3-1': None, 'E-4-1': None, 'metrics': [[8420, 'm³']]}, 'extra': ['사용 기간: 2026-04-01 ~ 2026-04-30'], ...}
+path = 'markdown'
+tmp_path = PosixPath('/private/var/folders/gv/v1k12j3j7md1v39gzbkw5qg40000gn/T/pytest-of-heojeongmin/pytest-266/test_fee_item_basis_pairs_pair1')
+
+    def _check(case, path, tmp_path):
+        if path == "local_pdf":
+            pytest.importorskip("fitz")
+        obs = observe(run_path(case, path, tmp_path), case["forbidden_values"])
+>       assert violations(case, obs) == [], obs
+E       AssertionError: {'answer_status': {'E-3-1': ['insufficient'], 'E-4-1': ['insufficient']}, 'answers': {'E-3-1': None, 'E-4-1': None}, 'fake_3_m3': False, 'forbidden_in_graph': [], ...}
+E       assert ["basis of 84... != [actual]"] == []
+E         
+E         Left contains one more item: "basis of 8420 ['plan'] != [actual]"
+E         Use -v to get more diff
+
+tests/test_pr68_review_r8_3_basis.py:36: AssertionError
+_________ test_fee_item_basis_pairs[pair_timing_empty_heat@text_lines] _________
+
+name = 'pair_timing_empty_heat', path = 'text_lines'
+tmp_path = PosixPath('/private/var/folders/gv/v1k12j3j7md1v39gzbkw5qg40000gn/T/pytest-of-heojeongmin/pytest-266/test_fee_item_basis_pairs_pair2')
+
+    @pytest.mark.parametrize("name,path", _params(PAIRS))
+    def test_fee_item_basis_pairs(name, path, tmp_path):
+>       _check(PAIRS[name], path, tmp_path)
+
+tests/test_pr68_review_r8_3_basis.py:43: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+case = {'basis': [[8420, 'actual']], 'doc_type': 'gas_bill', 'expected': {'E-3-1': None, 'E-4-1': None, 'metrics': [[8420, 'm³']]}, 'extra': ['사용 기간: 2026-04-01 ~ 2026-04-30'], ...}
+path = 'text_lines'
+tmp_path = PosixPath('/private/var/folders/gv/v1k12j3j7md1v39gzbkw5qg40000gn/T/pytest-of-heojeongmin/pytest-266/test_fee_item_basis_pairs_pair2')
+
+    def _check(case, path, tmp_path):
+        if path == "local_pdf":
+            pytest.importorskip("fitz")
+        obs = observe(run_path(case, path, tmp_path), case["forbidden_values"])
+>       assert violations(case, obs) == [], obs
+E       AssertionError: {'answer_status': {'E-3-1': ['insufficient'], 'E-4-1': ['insufficient']}, 'answers': {'E-3-1': None, 'E-4-1': None}, 'fake_3_m3': False, 'forbidden_in_graph': [], ...}
+E       assert ["basis of 84... != [actual]"] == []
+E         
+E         Left contains one more item: "basis of 8420 ['plan'] != [actual]"
+E         Use -v to get more diff
+
+tests/test_pr68_review_r8_3_basis.py:36: AssertionError
+_________ test_fee_item_basis_pairs[pair_timing_empty_heat@local_pdf] __________
+
+name = 'pair_timing_empty_heat', path = 'local_pdf'
+tmp_path = PosixPath('/private/var/folders/gv/v1k12j3j7md1v39gzbkw5qg40000gn/T/pytest-of-heojeongmin/pytest-266/test_fee_item_basis_pairs_pair3')
+
+    @pytest.mark.parametrize("name,path", _params(PAIRS))
+    def test_fee_item_basis_pairs(name, path, tmp_path):
+>       _check(PAIRS[name], path, tmp_path)
+
+tests/test_pr68_review_r8_3_basis.py:43: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+case = {'basis': [[8420, 'actual']], 'doc_type': 'gas_bill', 'expected': {'E-3-1': None, 'E-4-1': None, 'metrics': [[8420, 'm³']]}, 'extra': ['사용 기간: 2026-04-01 ~ 2026-04-30'], ...}
+path = 'local_pdf'
+tmp_path = PosixPath('/private/var/folders/gv/v1k12j3j7md1v39gzbkw5qg40000gn/T/pytest-of-heojeongmin/pytest-266/test_fee_item_basis_pairs_pair3')
+
+    def _check(case, path, tmp_path):
+        if path == "local_pdf":
+            pytest.importorskip("fitz")
+        obs = observe(run_path(case, path, tmp_path), case["forbidden_values"])
+>       assert violations(case, obs) == [], obs
+E       AssertionError: {'answer_status': {'E-3-1': ['insufficient'], 'E-4-1': ['insufficient']}, 'answers': {'E-3-1': None, 'E-4-1': None}, 'fake_3_m3': False, 'forbidden_in_graph': [], ...}
+E       assert ["basis of 84... != [actual]"] == []
+E         
+E         Left contains one more item: "basis of 8420 ['plan'] != [actual]"
+E         Use -v to get more diff
+
+tests/test_pr68_review_r8_3_basis.py:36: AssertionError
+___________ test_fee_item_basis_pairs[pair_timing_kepco@table_cells] ___________
+
+name = 'pair_timing_kepco', path = 'table_cells'
+tmp_path = PosixPath('/private/var/folders/gv/v1k12j3j7md1v39gzbkw5qg40000gn/T/pytest-of-heojeongmin/pytest-266/test_fee_item_basis_pairs_pair8')
+
+    @pytest.mark.parametrize("name,path", _params(PAIRS))
+    def test_fee_item_basis_pairs(name, path, tmp_path):
+>       _check(PAIRS[name], path, tmp_path)
+
+tests/test_pr68_review_r8_3_basis.py:43: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+case = {'basis': [[1000, 'actual']], 'doc_type': 'kepco_bill', 'expected': {'metrics': [[1000, 'kWh']]}, 'extra': [], ...}
+path = 'table_cells'
+tmp_path = PosixPath('/private/var/folders/gv/v1k12j3j7md1v39gzbkw5qg40000gn/T/pytest-of-heojeongmin/pytest-266/test_fee_item_basis_pairs_pair8')
+
+    def _check(case, path, tmp_path):
+        if path == "local_pdf":
+            pytest.importorskip("fitz")
+        obs = observe(run_path(case, path, tmp_path), case["forbidden_values"])
+>       assert violations(case, obs) == [], obs
+E       AssertionError: {'answer_status': {'E-3-1': ['insufficient'], 'E-4-1': ['insufficient']}, 'answers': {'E-3-1': None, 'E-4-1': None}, 'fake_3_m3': False, 'forbidden_in_graph': [], ...}
+E       assert ["basis of 10... != [actual]"] == []
+E         
+E         Left contains one more item: "basis of 1000 ['plan'] != [actual]"
+E         Use -v to get more diff
+
+tests/test_pr68_review_r8_3_basis.py:36: AssertionError
+____________ test_fee_item_basis_pairs[pair_timing_kepco@markdown] _____________
+
+name = 'pair_timing_kepco', path = 'markdown'
+tmp_path = PosixPath('/private/var/folders/gv/v1k12j3j7md1v39gzbkw5qg40000gn/T/pytest-of-heojeongmin/pytest-266/test_fee_item_basis_pairs_pair9')
+
+    @pytest.mark.parametrize("name,path", _params(PAIRS))
+    def test_fee_item_basis_pairs(name, path, tmp_path):
+>       _check(PAIRS[name], path, tmp_path)
+
+tests/test_pr68_review_r8_3_basis.py:43: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+case = {'basis': [[1000, 'actual']], 'doc_type': 'kepco_bill', 'expected': {'metrics': [[1000, 'kWh']]}, 'extra': [], ...}
+path = 'markdown'
+tmp_path = PosixPath('/private/var/folders/gv/v1k12j3j7md1v39gzbkw5qg40000gn/T/pytest-of-heojeongmin/pytest-266/test_fee_item_basis_pairs_pair9')
+
+    def _check(case, path, tmp_path):
+        if path == "local_pdf":
+            pytest.importorskip("fitz")
+        obs = observe(run_path(case, path, tmp_path), case["forbidden_values"])
+>       assert violations(case, obs) == [], obs
+E       AssertionError: {'answer_status': {'E-3-1': ['insufficient'], 'E-4-1': ['insufficient']}, 'answers': {'E-3-1': None, 'E-4-1': None}, 'fake_3_m3': False, 'forbidden_in_graph': [], ...}
+E       assert ["basis of 10... != [actual]"] == []
+E         
+E         Left contains one more item: "basis of 1000 ['plan'] != [actual]"
+E         Use -v to get more diff
+
+tests/test_pr68_review_r8_3_basis.py:36: AssertionError
+___________ test_fee_item_basis_pairs[pair_timing_kepco@text_lines] ____________
+
+name = 'pair_timing_kepco', path = 'text_lines'
+tmp_path = PosixPath('/private/var/folders/gv/v1k12j3j7md1v39gzbkw5qg40000gn/T/pytest-of-heojeongmin/pytest-266/test_fee_item_basis_pairs_pair10')
+
+    @pytest.mark.parametrize("name,path", _params(PAIRS))
+    def test_fee_item_basis_pairs(name, path, tmp_path):
+>       _check(PAIRS[name], path, tmp_path)
+
+tests/test_pr68_review_r8_3_basis.py:43: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+case = {'basis': [[1000, 'actual']], 'doc_type': 'kepco_bill', 'expected': {'metrics': [[1000, 'kWh']]}, 'extra': [], ...}
+path = 'text_lines'
+tmp_path = PosixPath('/private/var/folders/gv/v1k12j3j7md1v39gzbkw5qg40000gn/T/pytest-of-heojeongmin/pytest-266/test_fee_item_basis_pairs_pair10')
+
+    def _check(case, path, tmp_path):
+        if path == "local_pdf":
+            pytest.importorskip("fitz")
+        obs = observe(run_path(case, path, tmp_path), case["forbidden_values"])
+>       assert violations(case, obs) == [], obs
+E       AssertionError: {'answer_status': {'E-3-1': ['insufficient'], 'E-4-1': ['insufficient']}, 'answers': {'E-3-1': None, 'E-4-1': None}, 'fake_3_m3': False, 'forbidden_in_graph': [], ...}
+E       assert ["basis of 10... != [actual]"] == []
+E         
+E         Left contains one more item: "basis of 1000 ['plan'] != [actual]"
+E         Use -v to get more diff
+
+tests/test_pr68_review_r8_3_basis.py:36: AssertionError
+____________ test_fee_item_basis_pairs[pair_timing_kepco@local_pdf] ____________
+
+name = 'pair_timing_kepco', path = 'local_pdf'
+tmp_path = PosixPath('/private/var/folders/gv/v1k12j3j7md1v39gzbkw5qg40000gn/T/pytest-of-heojeongmin/pytest-266/test_fee_item_basis_pairs_pair11')
+
+    @pytest.mark.parametrize("name,path", _params(PAIRS))
+    def test_fee_item_basis_pairs(name, path, tmp_path):
+>       _check(PAIRS[name], path, tmp_path)
+
+tests/test_pr68_review_r8_3_basis.py:43: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+case = {'basis': [[1000, 'actual']], 'doc_type': 'kepco_bill', 'expected': {'metrics': [[1000, 'kWh']]}, 'extra': [], ...}
+path = 'local_pdf'
+tmp_path = PosixPath('/private/var/folders/gv/v1k12j3j7md1v39gzbkw5qg40000gn/T/pytest-of-heojeongmin/pytest-266/test_fee_item_basis_pairs_pair11')
+
+    def _check(case, path, tmp_path):
+        if path == "local_pdf":
+            pytest.importorskip("fitz")
+        obs = observe(run_path(case, path, tmp_path), case["forbidden_values"])
+>       assert violations(case, obs) == [], obs
+E       AssertionError: {'answer_status': {'E-3-1': ['insufficient'], 'E-4-1': ['insufficient']}, 'answers': {'E-3-1': None, 'E-4-1': None}, 'fake_3_m3': False, 'forbidden_in_graph': [], ...}
+E       assert ["basis of 10... != [actual]"] == []
+E         
+E         Left contains one more item: "basis of 1000 ['plan'] != [actual]"
+E         Use -v to get more diff
+
+tests/test_pr68_review_r8_3_basis.py:36: AssertionError
+___________ test_fee_item_basis_pairs[pair_qty_columns@table_cells] ____________
+
+name = 'pair_qty_columns', path = 'table_cells'
+tmp_path = PosixPath('/private/var/folders/gv/v1k12j3j7md1v39gzbkw5qg40000gn/T/pytest-of-heojeongmin/pytest-266/test_fee_item_basis_pairs_pair19')
+
+    @pytest.mark.parametrize("name,path", _params(PAIRS))
+    def test_fee_item_basis_pairs(name, path, tmp_path):
+>       _check(PAIRS[name], path, tmp_path)
+
+tests/test_pr68_review_r8_3_basis.py:43: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+case = {'basis': [[8420, 'plan'], [360772, 'plan']], 'doc_type': 'gas_bill', 'expected': {'E-3-1': None, 'E-4-1': None, 'metrics': [[8420, 'm³'], [360772, 'MJ']]}, 'extra': ['사용 기간: 2026-04-01 ~ 2026-04-30'], ...}
+path = 'table_cells'
+tmp_path = PosixPath('/private/var/folders/gv/v1k12j3j7md1v39gzbkw5qg40000gn/T/pytest-of-heojeongmin/pytest-266/test_fee_item_basis_pairs_pair19')
+
+    def _check(case, path, tmp_path):
+        if path == "local_pdf":
+            pytest.importorskip("fitz")
+        obs = observe(run_path(case, path, tmp_path), case["forbidden_values"])
+>       assert violations(case, obs) == [], obs
+E       AssertionError: {'answer_status': {'E-3-1': ['self_reported'], 'E-4-1': ['self_reported']}, 'answers': {'E-3-1': {'evidence': ['도시가스 사...'], 'reference': [], 'status': 'self_reported', 'unit': 'TJ', ...}}, 'fake_3_m3': False, 'forbidden_in_graph': [], ...}
+E       assert ['E-4-1 shoul...'] != [plan]"] == []
+E         
+E         Left contains 4 more items, first extra item: 'E-4-1 should be absent, got 0.360772'
+E         Use -v to get more diff
+
+tests/test_pr68_review_r8_3_basis.py:36: AssertionError
+_____________ test_fee_item_basis_pairs[pair_qty_columns@markdown] _____________
+
+name = 'pair_qty_columns', path = 'markdown'
+tmp_path = PosixPath('/private/var/folders/gv/v1k12j3j7md1v39gzbkw5qg40000gn/T/pytest-of-heojeongmin/pytest-266/test_fee_item_basis_pairs_pair20')
+
+    @pytest.mark.parametrize("name,path", _params(PAIRS))
+    def test_fee_item_basis_pairs(name, path, tmp_path):
+>       _check(PAIRS[name], path, tmp_path)
+
+tests/test_pr68_review_r8_3_basis.py:43: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+case = {'basis': [[8420, 'plan'], [360772, 'plan']], 'doc_type': 'gas_bill', 'expected': {'E-3-1': None, 'E-4-1': None, 'metrics': [[8420, 'm³'], [360772, 'MJ']]}, 'extra': ['사용 기간: 2026-04-01 ~ 2026-04-30'], ...}
+path = 'markdown'
+tmp_path = PosixPath('/private/var/folders/gv/v1k12j3j7md1v39gzbkw5qg40000gn/T/pytest-of-heojeongmin/pytest-266/test_fee_item_basis_pairs_pair20')
+
+    def _check(case, path, tmp_path):
+        if path == "local_pdf":
+            pytest.importorskip("fitz")
+        obs = observe(run_path(case, path, tmp_path), case["forbidden_values"])
+>       assert violations(case, obs) == [], obs
+E       AssertionError: {'answer_status': {'E-3-1': ['self_reported'], 'E-4-1': ['self_reported']}, 'answers': {'E-3-1': {'evidence': ['도시가스 사...'], 'reference': [], 'status': 'self_reported', 'unit': 'TJ', ...}}, 'fake_3_m3': False, 'forbidden_in_graph': [], ...}
+E       assert ['E-4-1 shoul...'] != [plan]"] == []
+E         
+E         Left contains 4 more items, first extra item: 'E-4-1 should be absent, got 0.360772'
+E         Use -v to get more diff
+
+tests/test_pr68_review_r8_3_basis.py:36: AssertionError
+____________ test_fee_item_basis_pairs[pair_qty_columns@text_lines] ____________
+
+name = 'pair_qty_columns', path = 'text_lines'
+tmp_path = PosixPath('/private/var/folders/gv/v1k12j3j7md1v39gzbkw5qg40000gn/T/pytest-of-heojeongmin/pytest-266/test_fee_item_basis_pairs_pair21')
+
+    @pytest.mark.parametrize("name,path", _params(PAIRS))
+    def test_fee_item_basis_pairs(name, path, tmp_path):
+>       _check(PAIRS[name], path, tmp_path)
+
+tests/test_pr68_review_r8_3_basis.py:43: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+case = {'basis': [[8420, 'plan'], [360772, 'plan']], 'doc_type': 'gas_bill', 'expected': {'E-3-1': None, 'E-4-1': None, 'metrics': [[8420, 'm³'], [360772, 'MJ']]}, 'extra': ['사용 기간: 2026-04-01 ~ 2026-04-30'], ...}
+path = 'text_lines'
+tmp_path = PosixPath('/private/var/folders/gv/v1k12j3j7md1v39gzbkw5qg40000gn/T/pytest-of-heojeongmin/pytest-266/test_fee_item_basis_pairs_pair21')
+
+    def _check(case, path, tmp_path):
+        if path == "local_pdf":
+            pytest.importorskip("fitz")
+        obs = observe(run_path(case, path, tmp_path), case["forbidden_values"])
+>       assert violations(case, obs) == [], obs
+E       AssertionError: {'answer_status': {'E-3-1': ['self_reported'], 'E-4-1': ['self_reported']}, 'answers': {'E-3-1': {'evidence': ['도시가스 사...'], 'reference': [], 'status': 'self_reported', 'unit': 'TJ', ...}}, 'fake_3_m3': False, 'forbidden_in_graph': [], ...}
+E       assert ['E-4-1 shoul...'] != [plan]"] == []
+E         
+E         Left contains 4 more items, first extra item: 'E-4-1 should be absent, got 0.360772'
+E         Use -v to get more diff
+
+tests/test_pr68_review_r8_3_basis.py:36: AssertionError
+____________ test_fee_item_basis_pairs[pair_qty_columns@local_pdf] _____________
+
+name = 'pair_qty_columns', path = 'local_pdf'
+tmp_path = PosixPath('/private/var/folders/gv/v1k12j3j7md1v39gzbkw5qg40000gn/T/pytest-of-heojeongmin/pytest-266/test_fee_item_basis_pairs_pair22')
+
+    @pytest.mark.parametrize("name,path", _params(PAIRS))
+    def test_fee_item_basis_pairs(name, path, tmp_path):
+>       _check(PAIRS[name], path, tmp_path)
+
+tests/test_pr68_review_r8_3_basis.py:43: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+case = {'basis': [[8420, 'plan'], [360772, 'plan']], 'doc_type': 'gas_bill', 'expected': {'E-3-1': None, 'E-4-1': None, 'metrics': [[8420, 'm³'], [360772, 'MJ']]}, 'extra': ['사용 기간: 2026-04-01 ~ 2026-04-30'], ...}
+path = 'local_pdf'
+tmp_path = PosixPath('/private/var/folders/gv/v1k12j3j7md1v39gzbkw5qg40000gn/T/pytest-of-heojeongmin/pytest-266/test_fee_item_basis_pairs_pair22')
+
+    def _check(case, path, tmp_path):
+        if path == "local_pdf":
+            pytest.importorskip("fitz")
+        obs = observe(run_path(case, path, tmp_path), case["forbidden_values"])
+>       assert violations(case, obs) == [], obs
+E       AssertionError: {'answer_status': {'E-3-1': ['self_reported'], 'E-4-1': ['self_reported']}, 'answers': {'E-3-1': {'evidence': ['도시가스 사...'], 'reference': [], 'status': 'self_reported', 'unit': 'TJ', ...}}, 'fake_3_m3': False, 'forbidden_in_graph': [], ...}
+E       assert ['E-4-1 shoul...'] != [plan]"] == []
+E         
+E         Left contains 4 more items, first extra item: 'E-4-1 should be absent, got 0.360772'
+E         Use -v to get more diff
+
+tests/test_pr68_review_r8_3_basis.py:36: AssertionError
+____________ test_fee_item_basis_pairs[pair_qty_scoped@table_cells] ____________
+
+name = 'pair_qty_scoped', path = 'table_cells'
+tmp_path = PosixPath('/private/var/folders/gv/v1k12j3j7md1v39gzbkw5qg40000gn/T/pytest-of-heojeongmin/pytest-266/test_fee_item_basis_pairs_pair27')
+
+    @pytest.mark.parametrize("name,path", _params(PAIRS))
+    def test_fee_item_basis_pairs(name, path, tmp_path):
+>       _check(PAIRS[name], path, tmp_path)
+
+tests/test_pr68_review_r8_3_basis.py:43: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+case = {'basis': [[1000, 'plan']], 'doc_type': 'kepco_bill', 'expected': {'metrics': [[1000, 'kWh']], 'scope': {'meter': ['전력계 A'], 'period': ['2026년 4월'], 'site': ['김해 제1공장']}}, 'extra': [], ...}
+path = 'table_cells'
+tmp_path = PosixPath('/private/var/folders/gv/v1k12j3j7md1v39gzbkw5qg40000gn/T/pytest-of-heojeongmin/pytest-266/test_fee_item_basis_pairs_pair27')
+
+    def _check(case, path, tmp_path):
+        if path == "local_pdf":
+            pytest.importorskip("fitz")
+        obs = observe(run_path(case, path, tmp_path), case["forbidden_values"])
+>       assert violations(case, obs) == [], obs
+E       AssertionError: {'answer_status': {'E-3-1': ['self_reported'], 'E-4-1': ['self_reported']}, 'answers': {'E-3-1': {'evidence': ['사용전력량 ...'], 'reference': [], 'status': 'self_reported', 'unit': 'TJ', ...}}, 'fake_3_m3': False, 'forbidden_in_graph': [], ...}
+E       assert ["basis of 10...'] != [plan]"] == []
+E         
+E         Left contains one more item: "basis of 1000 ['actual'] != [plan]"
+E         Use -v to get more diff
+
+tests/test_pr68_review_r8_3_basis.py:36: AssertionError
+_____________ test_fee_item_basis_pairs[pair_qty_scoped@markdown] ______________
+
+name = 'pair_qty_scoped', path = 'markdown'
+tmp_path = PosixPath('/private/var/folders/gv/v1k12j3j7md1v39gzbkw5qg40000gn/T/pytest-of-heojeongmin/pytest-266/test_fee_item_basis_pairs_pair28')
+
+    @pytest.mark.parametrize("name,path", _params(PAIRS))
+    def test_fee_item_basis_pairs(name, path, tmp_path):
+>       _check(PAIRS[name], path, tmp_path)
+
+tests/test_pr68_review_r8_3_basis.py:43: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+case = {'basis': [[1000, 'plan']], 'doc_type': 'kepco_bill', 'expected': {'metrics': [[1000, 'kWh']], 'scope': {'meter': ['전력계 A'], 'period': ['2026년 4월'], 'site': ['김해 제1공장']}}, 'extra': [], ...}
+path = 'markdown'
+tmp_path = PosixPath('/private/var/folders/gv/v1k12j3j7md1v39gzbkw5qg40000gn/T/pytest-of-heojeongmin/pytest-266/test_fee_item_basis_pairs_pair28')
+
+    def _check(case, path, tmp_path):
+        if path == "local_pdf":
+            pytest.importorskip("fitz")
+        obs = observe(run_path(case, path, tmp_path), case["forbidden_values"])
+>       assert violations(case, obs) == [], obs
+E       AssertionError: {'answer_status': {'E-3-1': ['self_reported'], 'E-4-1': ['self_reported']}, 'answers': {'E-3-1': {'evidence': ['사용전력량 ...'], 'reference': [], 'status': 'self_reported', 'unit': 'TJ', ...}}, 'fake_3_m3': False, 'forbidden_in_graph': [], ...}
+E       assert ["basis of 10...'] != [plan]"] == []
+E         
+E         Left contains one more item: "basis of 1000 ['actual'] != [plan]"
+E         Use -v to get more diff
+
+tests/test_pr68_review_r8_3_basis.py:36: AssertionError
+____________ test_fee_item_basis_pairs[pair_qty_scoped@text_lines] _____________
+
+name = 'pair_qty_scoped', path = 'text_lines'
+tmp_path = PosixPath('/private/var/folders/gv/v1k12j3j7md1v39gzbkw5qg40000gn/T/pytest-of-heojeongmin/pytest-266/test_fee_item_basis_pairs_pair29')
+
+    @pytest.mark.parametrize("name,path", _params(PAIRS))
+    def test_fee_item_basis_pairs(name, path, tmp_path):
+>       _check(PAIRS[name], path, tmp_path)
+
+tests/test_pr68_review_r8_3_basis.py:43: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+case = {'basis': [[1000, 'plan']], 'doc_type': 'kepco_bill', 'expected': {'metrics': [[1000, 'kWh']], 'scope': {'meter': ['전력계 A'], 'period': ['2026년 4월'], 'site': ['김해 제1공장']}}, 'extra': [], ...}
+path = 'text_lines'
+tmp_path = PosixPath('/private/var/folders/gv/v1k12j3j7md1v39gzbkw5qg40000gn/T/pytest-of-heojeongmin/pytest-266/test_fee_item_basis_pairs_pair29')
+
+    def _check(case, path, tmp_path):
+        if path == "local_pdf":
+            pytest.importorskip("fitz")
+        obs = observe(run_path(case, path, tmp_path), case["forbidden_values"])
+>       assert violations(case, obs) == [], obs
+E       AssertionError: {'answer_status': {'E-3-1': ['self_reported'], 'E-4-1': ['self_reported']}, 'answers': {'E-3-1': {'evidence': ['사용전력량 ...'], 'reference': [], 'status': 'self_reported', 'unit': 'TJ', ...}}, 'fake_3_m3': False, 'forbidden_in_graph': [], ...}
+E       assert ["basis of 10...'] != [plan]"] == []
+E         
+E         Left contains one more item: "basis of 1000 ['actual'] != [plan]"
+E         Use -v to get more diff
+
+tests/test_pr68_review_r8_3_basis.py:36: AssertionError
+___ test_fee_item_basis_pairs[pair_two_rows_pay_scheduled_twice@table_cells] ___
+
+name = 'pair_two_rows_pay_scheduled_twice', path = 'table_cells'
+tmp_path = PosixPath('/private/var/folders/gv/v1k12j3j7md1v39gzbkw5qg40000gn/T/pytest-of-heojeongmin/pytest-266/test_fee_item_basis_pairs_pair34')
+
+    @pytest.mark.parametrize("name,path", _params(PAIRS))
+    def test_fee_item_basis_pairs(name, path, tmp_path):
+>       _check(PAIRS[name], path, tmp_path)
+
+tests/test_pr68_review_r8_3_basis.py:43: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+case = {'basis': [[8420, 'actual'], [360772, 'actual'], [8100, 'actual'], [347000, 'actual']], 'doc_type': 'gas_bill', 'expec...rics': [[8100, 'm³'], [8420, 'm³'], [347000, 'MJ'], [360772, 'MJ']]}, 'extra': ['사용 기간: 2026-04-01 ~ 2026-04-30'], ...}
+path = 'table_cells'
+tmp_path = PosixPath('/private/var/folders/gv/v1k12j3j7md1v39gzbkw5qg40000gn/T/pytest-of-heojeongmin/pytest-266/test_fee_item_basis_pairs_pair34')
+
+    def _check(case, path, tmp_path):
+        if path == "local_pdf":
+            pytest.importorskip("fitz")
+        obs = observe(run_path(case, path, tmp_path), case["forbidden_values"])
+>       assert violations(case, obs) == [], obs
+E       AssertionError: {'answer_status': {'E-3-1': ['insufficient'], 'E-4-1': ['insufficient']}, 'answers': {'E-3-1': None, 'E-4-1': None}, 'fake_3_m3': False, 'forbidden_in_graph': [], ...}
+E       assert ["basis of 84... != [actual]"] == []
+E         
+E         Left contains 4 more items, first extra item: "basis of 8420 ['plan'] != [actual]"
+E         Use -v to get more diff
+
+tests/test_pr68_review_r8_3_basis.py:36: AssertionError
+____ test_fee_item_basis_pairs[pair_two_rows_pay_scheduled_twice@markdown] _____
+
+name = 'pair_two_rows_pay_scheduled_twice', path = 'markdown'
+tmp_path = PosixPath('/private/var/folders/gv/v1k12j3j7md1v39gzbkw5qg40000gn/T/pytest-of-heojeongmin/pytest-266/test_fee_item_basis_pairs_pair35')
+
+    @pytest.mark.parametrize("name,path", _params(PAIRS))
+    def test_fee_item_basis_pairs(name, path, tmp_path):
+>       _check(PAIRS[name], path, tmp_path)
+
+tests/test_pr68_review_r8_3_basis.py:43: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+case = {'basis': [[8420, 'actual'], [360772, 'actual'], [8100, 'actual'], [347000, 'actual']], 'doc_type': 'gas_bill', 'expec...rics': [[8100, 'm³'], [8420, 'm³'], [347000, 'MJ'], [360772, 'MJ']]}, 'extra': ['사용 기간: 2026-04-01 ~ 2026-04-30'], ...}
+path = 'markdown'
+tmp_path = PosixPath('/private/var/folders/gv/v1k12j3j7md1v39gzbkw5qg40000gn/T/pytest-of-heojeongmin/pytest-266/test_fee_item_basis_pairs_pair35')
+
+    def _check(case, path, tmp_path):
+        if path == "local_pdf":
+            pytest.importorskip("fitz")
+        obs = observe(run_path(case, path, tmp_path), case["forbidden_values"])
+>       assert violations(case, obs) == [], obs
+E       AssertionError: {'answer_status': {'E-3-1': ['insufficient'], 'E-4-1': ['insufficient']}, 'answers': {'E-3-1': None, 'E-4-1': None}, 'fake_3_m3': False, 'forbidden_in_graph': [], ...}
+E       assert ["basis of 84... != [actual]"] == []
+E         
+E         Left contains 4 more items, first extra item: "basis of 8420 ['plan'] != [actual]"
+E         Use -v to get more diff
+
+tests/test_pr68_review_r8_3_basis.py:36: AssertionError
+___ test_fee_item_basis_pairs[pair_two_rows_pay_scheduled_twice@text_lines] ____
+
+name = 'pair_two_rows_pay_scheduled_twice', path = 'text_lines'
+tmp_path = PosixPath('/private/var/folders/gv/v1k12j3j7md1v39gzbkw5qg40000gn/T/pytest-of-heojeongmin/pytest-266/test_fee_item_basis_pairs_pair36')
+
+    @pytest.mark.parametrize("name,path", _params(PAIRS))
+    def test_fee_item_basis_pairs(name, path, tmp_path):
+>       _check(PAIRS[name], path, tmp_path)
+
+tests/test_pr68_review_r8_3_basis.py:43: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+case = {'basis': [[8420, 'actual'], [360772, 'actual'], [8100, 'actual'], [347000, 'actual']], 'doc_type': 'gas_bill', 'expec...rics': [[8100, 'm³'], [8420, 'm³'], [347000, 'MJ'], [360772, 'MJ']]}, 'extra': ['사용 기간: 2026-04-01 ~ 2026-04-30'], ...}
+path = 'text_lines'
+tmp_path = PosixPath('/private/var/folders/gv/v1k12j3j7md1v39gzbkw5qg40000gn/T/pytest-of-heojeongmin/pytest-266/test_fee_item_basis_pairs_pair36')
+
+    def _check(case, path, tmp_path):
+        if path == "local_pdf":
+            pytest.importorskip("fitz")
+        obs = observe(run_path(case, path, tmp_path), case["forbidden_values"])
+>       assert violations(case, obs) == [], obs
+E       AssertionError: {'answer_status': {'E-3-1': ['insufficient'], 'E-4-1': ['insufficient']}, 'answers': {'E-3-1': None, 'E-4-1': None}, 'fake_3_m3': False, 'forbidden_in_graph': [], ...}
+E       assert ["basis of 84... != [actual]"] == []
+E         
+E         Left contains 4 more items, first extra item: "basis of 8420 ['plan'] != [actual]"
+E         Use -v to get more diff
+
+tests/test_pr68_review_r8_3_basis.py:36: AssertionError
+____ test_fee_item_basis_pairs[pair_two_rows_pay_scheduled_twice@local_pdf] ____
+
+name = 'pair_two_rows_pay_scheduled_twice', path = 'local_pdf'
+tmp_path = PosixPath('/private/var/folders/gv/v1k12j3j7md1v39gzbkw5qg40000gn/T/pytest-of-heojeongmin/pytest-266/test_fee_item_basis_pairs_pair37')
+
+    @pytest.mark.parametrize("name,path", _params(PAIRS))
+    def test_fee_item_basis_pairs(name, path, tmp_path):
+>       _check(PAIRS[name], path, tmp_path)
+
+tests/test_pr68_review_r8_3_basis.py:43: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+case = {'basis': [[8420, 'actual'], [360772, 'actual'], [8100, 'actual'], [347000, 'actual']], 'doc_type': 'gas_bill', 'expec...rics': [[8100, 'm³'], [8420, 'm³'], [347000, 'MJ'], [360772, 'MJ']]}, 'extra': ['사용 기간: 2026-04-01 ~ 2026-04-30'], ...}
+path = 'local_pdf'
+tmp_path = PosixPath('/private/var/folders/gv/v1k12j3j7md1v39gzbkw5qg40000gn/T/pytest-of-heojeongmin/pytest-266/test_fee_item_basis_pairs_pair37')
+
+    def _check(case, path, tmp_path):
+        if path == "local_pdf":
+            pytest.importorskip("fitz")
+        obs = observe(run_path(case, path, tmp_path), case["forbidden_values"])
+>       assert violations(case, obs) == [], obs
+E       AssertionError: {'answer_status': {'E-3-1': ['insufficient'], 'E-4-1': ['insufficient']}, 'answers': {'E-3-1': None, 'E-4-1': None}, 'fake_3_m3': False, 'forbidden_in_graph': [], ...}
+E       assert ["basis of 84... != [actual]"] == []
+E         
+E         Left contains 4 more items, first extra item: "basis of 8420 ['plan'] != [actual]"
+E         Use -v to get more diff
+
+tests/test_pr68_review_r8_3_basis.py:36: AssertionError
+_____ test_fee_item_basis_combos[combo_actual_due_date_amount@table_cells] _____
+
+name = 'combo_actual_due_date_amount', path = 'table_cells'
+tmp_path = PosixPath('/private/var/folders/gv/v1k12j3j7md1v39gzbkw5qg40000gn/T/pytest-of-heojeongmin/pytest-266/test_fee_item_basis_combos_com0')
+
+    @pytest.mark.parametrize("name,path", _params(COMBOS))
+    def test_fee_item_basis_combos(name, path, tmp_path):
+>       _check(COMBOS[name], path, tmp_path)
+
+tests/test_pr68_review_r8_3_basis.py:48: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+case = {'basis': [[8420, 'actual'], [360772, 'actual']], 'doc_type': 'gas_bill', 'evidence_contains': '360772', 'expected': {'E-3-1': [20.239, 'tCO2eq'], 'E-4-1': [0.360772, 'TJ'], 'metrics': [[8420, 'm³'], [360772, 'MJ']]}, ...}
+path = 'table_cells'
+tmp_path = PosixPath('/private/var/folders/gv/v1k12j3j7md1v39gzbkw5qg40000gn/T/pytest-of-heojeongmin/pytest-266/test_fee_item_basis_combos_com0')
+
+    def _check(case, path, tmp_path):
+        if path == "local_pdf":
+            pytest.importorskip("fitz")
+        obs = observe(run_path(case, path, tmp_path), case["forbidden_values"])
+>       assert violations(case, obs) == [], obs
+E       AssertionError: {'answer_status': {'E-3-1': ['insufficient'], 'E-4-1': ['insufficient']}, 'answers': {'E-3-1': None, 'E-4-1': None}, 'fake_3_m3': False, 'forbidden_in_graph': [], ...}
+E       assert ["E-4-1 None ... != [actual]"] == []
+E         
+E         Left contains 5 more items, first extra item: "E-4-1 None != [0.360772, 'TJ']"
+E         Use -v to get more diff
+
+tests/test_pr68_review_r8_3_basis.py:36: AssertionError
+______ test_fee_item_basis_combos[combo_actual_due_date_amount@markdown] _______
+
+name = 'combo_actual_due_date_amount', path = 'markdown'
+tmp_path = PosixPath('/private/var/folders/gv/v1k12j3j7md1v39gzbkw5qg40000gn/T/pytest-of-heojeongmin/pytest-266/test_fee_item_basis_combos_com1')
+
+    @pytest.mark.parametrize("name,path", _params(COMBOS))
+    def test_fee_item_basis_combos(name, path, tmp_path):
+>       _check(COMBOS[name], path, tmp_path)
+
+tests/test_pr68_review_r8_3_basis.py:48: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+case = {'basis': [[8420, 'actual'], [360772, 'actual']], 'doc_type': 'gas_bill', 'evidence_contains': '360772', 'expected': {'E-3-1': [20.239, 'tCO2eq'], 'E-4-1': [0.360772, 'TJ'], 'metrics': [[8420, 'm³'], [360772, 'MJ']]}, ...}
+path = 'markdown'
+tmp_path = PosixPath('/private/var/folders/gv/v1k12j3j7md1v39gzbkw5qg40000gn/T/pytest-of-heojeongmin/pytest-266/test_fee_item_basis_combos_com1')
+
+    def _check(case, path, tmp_path):
+        if path == "local_pdf":
+            pytest.importorskip("fitz")
+        obs = observe(run_path(case, path, tmp_path), case["forbidden_values"])
+>       assert violations(case, obs) == [], obs
+E       AssertionError: {'answer_status': {'E-3-1': ['insufficient'], 'E-4-1': ['insufficient']}, 'answers': {'E-3-1': None, 'E-4-1': None}, 'fake_3_m3': False, 'forbidden_in_graph': [], ...}
+E       assert ["E-4-1 None ... != [actual]"] == []
+E         
+E         Left contains 5 more items, first extra item: "E-4-1 None != [0.360772, 'TJ']"
+E         Use -v to get more diff
+
+tests/test_pr68_review_r8_3_basis.py:36: AssertionError
+_____ test_fee_item_basis_combos[combo_actual_due_date_amount@text_lines] ______
+
+name = 'combo_actual_due_date_amount', path = 'text_lines'
+tmp_path = PosixPath('/private/var/folders/gv/v1k12j3j7md1v39gzbkw5qg40000gn/T/pytest-of-heojeongmin/pytest-266/test_fee_item_basis_combos_com2')
+
+    @pytest.mark.parametrize("name,path", _params(COMBOS))
+    def test_fee_item_basis_combos(name, path, tmp_path):
+>       _check(COMBOS[name], path, tmp_path)
+
+tests/test_pr68_review_r8_3_basis.py:48: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+case = {'basis': [[8420, 'actual'], [360772, 'actual']], 'doc_type': 'gas_bill', 'evidence_contains': '360772', 'expected': {'E-3-1': [20.239, 'tCO2eq'], 'E-4-1': [0.360772, 'TJ'], 'metrics': [[8420, 'm³'], [360772, 'MJ']]}, ...}
+path = 'text_lines'
+tmp_path = PosixPath('/private/var/folders/gv/v1k12j3j7md1v39gzbkw5qg40000gn/T/pytest-of-heojeongmin/pytest-266/test_fee_item_basis_combos_com2')
+
+    def _check(case, path, tmp_path):
+        if path == "local_pdf":
+            pytest.importorskip("fitz")
+        obs = observe(run_path(case, path, tmp_path), case["forbidden_values"])
+>       assert violations(case, obs) == [], obs
+E       AssertionError: {'answer_status': {'E-3-1': ['insufficient'], 'E-4-1': ['insufficient']}, 'answers': {'E-3-1': None, 'E-4-1': None}, 'fake_3_m3': False, 'forbidden_in_graph': [], ...}
+E       assert ["E-4-1 None ... != [actual]"] == []
+E         
+E         Left contains 5 more items, first extra item: "E-4-1 None != [0.360772, 'TJ']"
+E         Use -v to get more diff
+
+tests/test_pr68_review_r8_3_basis.py:36: AssertionError
+______ test_fee_item_basis_combos[combo_actual_due_date_amount@local_pdf] ______
+
+name = 'combo_actual_due_date_amount', path = 'local_pdf'
+tmp_path = PosixPath('/private/var/folders/gv/v1k12j3j7md1v39gzbkw5qg40000gn/T/pytest-of-heojeongmin/pytest-266/test_fee_item_basis_combos_com3')
+
+    @pytest.mark.parametrize("name,path", _params(COMBOS))
+    def test_fee_item_basis_combos(name, path, tmp_path):
+>       _check(COMBOS[name], path, tmp_path)
+
+tests/test_pr68_review_r8_3_basis.py:48: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+case = {'basis': [[8420, 'actual'], [360772, 'actual']], 'doc_type': 'gas_bill', 'evidence_contains': '360772', 'expected': {'E-3-1': [20.239, 'tCO2eq'], 'E-4-1': [0.360772, 'TJ'], 'metrics': [[8420, 'm³'], [360772, 'MJ']]}, ...}
+path = 'local_pdf'
+tmp_path = PosixPath('/private/var/folders/gv/v1k12j3j7md1v39gzbkw5qg40000gn/T/pytest-of-heojeongmin/pytest-266/test_fee_item_basis_combos_com3')
+
+    def _check(case, path, tmp_path):
+        if path == "local_pdf":
+            pytest.importorskip("fitz")
+        obs = observe(run_path(case, path, tmp_path), case["forbidden_values"])
+>       assert violations(case, obs) == [], obs
+E       AssertionError: {'answer_status': {'E-3-1': ['insufficient'], 'E-4-1': ['insufficient']}, 'answers': {'E-3-1': None, 'E-4-1': None}, 'fake_3_m3': False, 'forbidden_in_graph': [], ...}
+E       assert ["E-4-1 None ... != [actual]"] == []
+E         
+E         Left contains 5 more items, first extra item: "E-4-1 None != [0.360772, 'TJ']"
+E         Use -v to get more diff
+
+tests/test_pr68_review_r8_3_basis.py:36: AssertionError
+___ test_fee_item_basis_combos[combo_actual_pay_due_day_amount@table_cells] ____
+
+name = 'combo_actual_pay_due_day_amount', path = 'table_cells'
+tmp_path = PosixPath('/private/var/folders/gv/v1k12j3j7md1v39gzbkw5qg40000gn/T/pytest-of-heojeongmin/pytest-266/test_fee_item_basis_combos_com4')
+
+    @pytest.mark.parametrize("name,path", _params(COMBOS))
+    def test_fee_item_basis_combos(name, path, tmp_path):
+>       _check(COMBOS[name], path, tmp_path)
+
+tests/test_pr68_review_r8_3_basis.py:48: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+case = {'basis': [[8420, 'actual'], [360772, 'actual']], 'doc_type': 'gas_bill', 'evidence_contains': '360772', 'expected': {'E-3-1': [20.239, 'tCO2eq'], 'E-4-1': [0.360772, 'TJ'], 'metrics': [[8420, 'm³'], [360772, 'MJ']]}, ...}
+path = 'table_cells'
+tmp_path = PosixPath('/private/var/folders/gv/v1k12j3j7md1v39gzbkw5qg40000gn/T/pytest-of-heojeongmin/pytest-266/test_fee_item_basis_combos_com4')
+
+    def _check(case, path, tmp_path):
+        if path == "local_pdf":
+            pytest.importorskip("fitz")
+        obs = observe(run_path(case, path, tmp_path), case["forbidden_values"])
+>       assert violations(case, obs) == [], obs
+E       AssertionError: {'answer_status': {'E-3-1': ['insufficient'], 'E-4-1': ['insufficient']}, 'answers': {'E-3-1': None, 'E-4-1': None}, 'fake_3_m3': False, 'forbidden_in_graph': [], ...}
+E       assert ["E-4-1 None ... != [actual]"] == []
+E         
+E         Left contains 5 more items, first extra item: "E-4-1 None != [0.360772, 'TJ']"
+E         Use -v to get more diff
+
+tests/test_pr68_review_r8_3_basis.py:36: AssertionError
+_____ test_fee_item_basis_combos[combo_actual_pay_due_day_amount@markdown] _____
+
+name = 'combo_actual_pay_due_day_amount', path = 'markdown'
+tmp_path = PosixPath('/private/var/folders/gv/v1k12j3j7md1v39gzbkw5qg40000gn/T/pytest-of-heojeongmin/pytest-266/test_fee_item_basis_combos_com5')
+
+    @pytest.mark.parametrize("name,path", _params(COMBOS))
+    def test_fee_item_basis_combos(name, path, tmp_path):
+>       _check(COMBOS[name], path, tmp_path)
+
+tests/test_pr68_review_r8_3_basis.py:48: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+case = {'basis': [[8420, 'actual'], [360772, 'actual']], 'doc_type': 'gas_bill', 'evidence_contains': '360772', 'expected': {'E-3-1': [20.239, 'tCO2eq'], 'E-4-1': [0.360772, 'TJ'], 'metrics': [[8420, 'm³'], [360772, 'MJ']]}, ...}
+path = 'markdown'
+tmp_path = PosixPath('/private/var/folders/gv/v1k12j3j7md1v39gzbkw5qg40000gn/T/pytest-of-heojeongmin/pytest-266/test_fee_item_basis_combos_com5')
+
+    def _check(case, path, tmp_path):
+        if path == "local_pdf":
+            pytest.importorskip("fitz")
+        obs = observe(run_path(case, path, tmp_path), case["forbidden_values"])
+>       assert violations(case, obs) == [], obs
+E       AssertionError: {'answer_status': {'E-3-1': ['insufficient'], 'E-4-1': ['insufficient']}, 'answers': {'E-3-1': None, 'E-4-1': None}, 'fake_3_m3': False, 'forbidden_in_graph': [], ...}
+E       assert ["E-4-1 None ... != [actual]"] == []
+E         
+E         Left contains 5 more items, first extra item: "E-4-1 None != [0.360772, 'TJ']"
+E         Use -v to get more diff
+
+tests/test_pr68_review_r8_3_basis.py:36: AssertionError
+____ test_fee_item_basis_combos[combo_actual_pay_due_day_amount@text_lines] ____
+
+name = 'combo_actual_pay_due_day_amount', path = 'text_lines'
+tmp_path = PosixPath('/private/var/folders/gv/v1k12j3j7md1v39gzbkw5qg40000gn/T/pytest-of-heojeongmin/pytest-266/test_fee_item_basis_combos_com6')
+
+    @pytest.mark.parametrize("name,path", _params(COMBOS))
+    def test_fee_item_basis_combos(name, path, tmp_path):
+>       _check(COMBOS[name], path, tmp_path)
+
+tests/test_pr68_review_r8_3_basis.py:48: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+case = {'basis': [[8420, 'actual'], [360772, 'actual']], 'doc_type': 'gas_bill', 'evidence_contains': '360772', 'expected': {'E-3-1': [20.239, 'tCO2eq'], 'E-4-1': [0.360772, 'TJ'], 'metrics': [[8420, 'm³'], [360772, 'MJ']]}, ...}
+path = 'text_lines'
+tmp_path = PosixPath('/private/var/folders/gv/v1k12j3j7md1v39gzbkw5qg40000gn/T/pytest-of-heojeongmin/pytest-266/test_fee_item_basis_combos_com6')
+
+    def _check(case, path, tmp_path):
+        if path == "local_pdf":
+            pytest.importorskip("fitz")
+        obs = observe(run_path(case, path, tmp_path), case["forbidden_values"])
+>       assert violations(case, obs) == [], obs
+E       AssertionError: {'answer_status': {'E-3-1': ['insufficient'], 'E-4-1': ['insufficient']}, 'answers': {'E-3-1': None, 'E-4-1': None}, 'fake_3_m3': False, 'forbidden_in_graph': [], ...}
+E       assert ["E-4-1 None ... != [actual]"] == []
+E         
+E         Left contains 5 more items, first extra item: "E-4-1 None != [0.360772, 'TJ']"
+E         Use -v to get more diff
+
+tests/test_pr68_review_r8_3_basis.py:36: AssertionError
+____ test_fee_item_basis_combos[combo_actual_pay_due_day_amount@local_pdf] _____
+
+name = 'combo_actual_pay_due_day_amount', path = 'local_pdf'
+tmp_path = PosixPath('/private/var/folders/gv/v1k12j3j7md1v39gzbkw5qg40000gn/T/pytest-of-heojeongmin/pytest-266/test_fee_item_basis_combos_com7')
+
+    @pytest.mark.parametrize("name,path", _params(COMBOS))
+    def test_fee_item_basis_combos(name, path, tmp_path):
+>       _check(COMBOS[name], path, tmp_path)
+
+tests/test_pr68_review_r8_3_basis.py:48: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+case = {'basis': [[8420, 'actual'], [360772, 'actual']], 'doc_type': 'gas_bill', 'evidence_contains': '360772', 'expected': {'E-3-1': [20.239, 'tCO2eq'], 'E-4-1': [0.360772, 'TJ'], 'metrics': [[8420, 'm³'], [360772, 'MJ']]}, ...}
+path = 'local_pdf'
+tmp_path = PosixPath('/private/var/folders/gv/v1k12j3j7md1v39gzbkw5qg40000gn/T/pytest-of-heojeongmin/pytest-266/test_fee_item_basis_combos_com7')
+
+    def _check(case, path, tmp_path):
+        if path == "local_pdf":
+            pytest.importorskip("fitz")
+        obs = observe(run_path(case, path, tmp_path), case["forbidden_values"])
+>       assert violations(case, obs) == [], obs
+E       AssertionError: {'answer_status': {'E-3-1': ['insufficient'], 'E-4-1': ['insufficient']}, 'answers': {'E-3-1': None, 'E-4-1': None}, 'fake_3_m3': False, 'forbidden_in_graph': [], ...}
+E       assert ["E-4-1 None ... != [actual]"] == []
+E         
+E         Left contains 5 more items, first extra item: "E-4-1 None != [0.360772, 'TJ']"
+E         Use -v to get more diff
+
+tests/test_pr68_review_r8_3_basis.py:36: AssertionError
+_ test_fee_item_basis_combos[combo_actual_bill_scheduled_usage_fee@table_cells] _
+
+name = 'combo_actual_bill_scheduled_usage_fee', path = 'table_cells'
+tmp_path = PosixPath('/private/var/folders/gv/v1k12j3j7md1v39gzbkw5qg40000gn/T/pytest-of-heojeongmin/pytest-266/test_fee_item_basis_combos_com8')
+
+    @pytest.mark.parametrize("name,path", _params(COMBOS))
+    def test_fee_item_basis_combos(name, path, tmp_path):
+>       _check(COMBOS[name], path, tmp_path)
+
+tests/test_pr68_review_r8_3_basis.py:48: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+case = {'basis': [[8420, 'actual'], [360772, 'actual']], 'doc_type': 'gas_bill', 'evidence_contains': '360772', 'expected': {'E-3-1': [20.239, 'tCO2eq'], 'E-4-1': [0.360772, 'TJ'], 'metrics': [[8420, 'm³'], [360772, 'MJ']]}, ...}
+path = 'table_cells'
+tmp_path = PosixPath('/private/var/folders/gv/v1k12j3j7md1v39gzbkw5qg40000gn/T/pytest-of-heojeongmin/pytest-266/test_fee_item_basis_combos_com8')
+
+    def _check(case, path, tmp_path):
+        if path == "local_pdf":
+            pytest.importorskip("fitz")
+        obs = observe(run_path(case, path, tmp_path), case["forbidden_values"])
+>       assert violations(case, obs) == [], obs
+E       AssertionError: {'answer_status': {'E-3-1': ['insufficient'], 'E-4-1': ['insufficient']}, 'answers': {'E-3-1': None, 'E-4-1': None}, 'fake_3_m3': False, 'forbidden_in_graph': [], ...}
+E       assert ["E-4-1 None ... != [actual]"] == []
+E         
+E         Left contains 5 more items, first extra item: "E-4-1 None != [0.360772, 'TJ']"
+E         Use -v to get more diff
+
+tests/test_pr68_review_r8_3_basis.py:36: AssertionError
+__ test_fee_item_basis_combos[combo_actual_bill_scheduled_usage_fee@markdown] __
+
+name = 'combo_actual_bill_scheduled_usage_fee', path = 'markdown'
+tmp_path = PosixPath('/private/var/folders/gv/v1k12j3j7md1v39gzbkw5qg40000gn/T/pytest-of-heojeongmin/pytest-266/test_fee_item_basis_combos_com9')
+
+    @pytest.mark.parametrize("name,path", _params(COMBOS))
+    def test_fee_item_basis_combos(name, path, tmp_path):
+>       _check(COMBOS[name], path, tmp_path)
+
+tests/test_pr68_review_r8_3_basis.py:48: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+case = {'basis': [[8420, 'actual'], [360772, 'actual']], 'doc_type': 'gas_bill', 'evidence_contains': '360772', 'expected': {'E-3-1': [20.239, 'tCO2eq'], 'E-4-1': [0.360772, 'TJ'], 'metrics': [[8420, 'm³'], [360772, 'MJ']]}, ...}
+path = 'markdown'
+tmp_path = PosixPath('/private/var/folders/gv/v1k12j3j7md1v39gzbkw5qg40000gn/T/pytest-of-heojeongmin/pytest-266/test_fee_item_basis_combos_com9')
+
+    def _check(case, path, tmp_path):
+        if path == "local_pdf":
+            pytest.importorskip("fitz")
+        obs = observe(run_path(case, path, tmp_path), case["forbidden_values"])
+>       assert violations(case, obs) == [], obs
+E       AssertionError: {'answer_status': {'E-3-1': ['insufficient'], 'E-4-1': ['insufficient']}, 'answers': {'E-3-1': None, 'E-4-1': None}, 'fake_3_m3': False, 'forbidden_in_graph': [], ...}
+E       assert ["E-4-1 None ... != [actual]"] == []
+E         
+E         Left contains 5 more items, first extra item: "E-4-1 None != [0.360772, 'TJ']"
+E         Use -v to get more diff
+
+tests/test_pr68_review_r8_3_basis.py:36: AssertionError
+_ test_fee_item_basis_combos[combo_actual_bill_scheduled_usage_fee@text_lines] _
+
+name = 'combo_actual_bill_scheduled_usage_fee', path = 'text_lines'
+tmp_path = PosixPath('/private/var/folders/gv/v1k12j3j7md1v39gzbkw5qg40000gn/T/pytest-of-heojeongmin/pytest-266/test_fee_item_basis_combos_com10')
+
+    @pytest.mark.parametrize("name,path", _params(COMBOS))
+    def test_fee_item_basis_combos(name, path, tmp_path):
+>       _check(COMBOS[name], path, tmp_path)
+
+tests/test_pr68_review_r8_3_basis.py:48: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+case = {'basis': [[8420, 'actual'], [360772, 'actual']], 'doc_type': 'gas_bill', 'evidence_contains': '360772', 'expected': {'E-3-1': [20.239, 'tCO2eq'], 'E-4-1': [0.360772, 'TJ'], 'metrics': [[8420, 'm³'], [360772, 'MJ']]}, ...}
+path = 'text_lines'
+tmp_path = PosixPath('/private/var/folders/gv/v1k12j3j7md1v39gzbkw5qg40000gn/T/pytest-of-heojeongmin/pytest-266/test_fee_item_basis_combos_com10')
+
+    def _check(case, path, tmp_path):
+        if path == "local_pdf":
+            pytest.importorskip("fitz")
+        obs = observe(run_path(case, path, tmp_path), case["forbidden_values"])
+>       assert violations(case, obs) == [], obs
+E       AssertionError: {'answer_status': {'E-3-1': ['insufficient'], 'E-4-1': ['insufficient']}, 'answers': {'E-3-1': None, 'E-4-1': None}, 'fake_3_m3': False, 'forbidden_in_graph': [], ...}
+E       assert ["E-4-1 None ... != [actual]"] == []
+E         
+E         Left contains 5 more items, first extra item: "E-4-1 None != [0.360772, 'TJ']"
+E         Use -v to get more diff
+
+tests/test_pr68_review_r8_3_basis.py:36: AssertionError
+____ test_fee_item_basis_combos[combo_actual_autopay_scheduled@table_cells] ____
+
+name = 'combo_actual_autopay_scheduled', path = 'table_cells'
+tmp_path = PosixPath('/private/var/folders/gv/v1k12j3j7md1v39gzbkw5qg40000gn/T/pytest-of-heojeongmin/pytest-266/test_fee_item_basis_combos_com11')
+
+    @pytest.mark.parametrize("name,path", _params(COMBOS))
+    def test_fee_item_basis_combos(name, path, tmp_path):
+>       _check(COMBOS[name], path, tmp_path)
+
+tests/test_pr68_review_r8_3_basis.py:48: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+case = {'basis': [[8420, 'actual'], [360772, 'actual']], 'doc_type': 'gas_bill', 'evidence_contains': '360772', 'expected': {'E-3-1': [20.239, 'tCO2eq'], 'E-4-1': [0.360772, 'TJ'], 'metrics': [[8420, 'm³'], [360772, 'MJ']]}, ...}
+path = 'table_cells'
+tmp_path = PosixPath('/private/var/folders/gv/v1k12j3j7md1v39gzbkw5qg40000gn/T/pytest-of-heojeongmin/pytest-266/test_fee_item_basis_combos_com11')
+
+    def _check(case, path, tmp_path):
+        if path == "local_pdf":
+            pytest.importorskip("fitz")
+        obs = observe(run_path(case, path, tmp_path), case["forbidden_values"])
+>       assert violations(case, obs) == [], obs
+E       AssertionError: {'answer_status': {'E-3-1': ['insufficient'], 'E-4-1': ['insufficient']}, 'answers': {'E-3-1': None, 'E-4-1': None}, 'fake_3_m3': False, 'forbidden_in_graph': [], ...}
+E       assert ["E-4-1 None ... != [actual]"] == []
+E         
+E         Left contains 5 more items, first extra item: "E-4-1 None != [0.360772, 'TJ']"
+E         Use -v to get more diff
+
+tests/test_pr68_review_r8_3_basis.py:36: AssertionError
+_____ test_fee_item_basis_combos[combo_actual_autopay_scheduled@markdown] ______
+
+name = 'combo_actual_autopay_scheduled', path = 'markdown'
+tmp_path = PosixPath('/private/var/folders/gv/v1k12j3j7md1v39gzbkw5qg40000gn/T/pytest-of-heojeongmin/pytest-266/test_fee_item_basis_combos_com12')
+
+    @pytest.mark.parametrize("name,path", _params(COMBOS))
+    def test_fee_item_basis_combos(name, path, tmp_path):
+>       _check(COMBOS[name], path, tmp_path)
+
+tests/test_pr68_review_r8_3_basis.py:48: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+case = {'basis': [[8420, 'actual'], [360772, 'actual']], 'doc_type': 'gas_bill', 'evidence_contains': '360772', 'expected': {'E-3-1': [20.239, 'tCO2eq'], 'E-4-1': [0.360772, 'TJ'], 'metrics': [[8420, 'm³'], [360772, 'MJ']]}, ...}
+path = 'markdown'
+tmp_path = PosixPath('/private/var/folders/gv/v1k12j3j7md1v39gzbkw5qg40000gn/T/pytest-of-heojeongmin/pytest-266/test_fee_item_basis_combos_com12')
+
+    def _check(case, path, tmp_path):
+        if path == "local_pdf":
+            pytest.importorskip("fitz")
+        obs = observe(run_path(case, path, tmp_path), case["forbidden_values"])
+>       assert violations(case, obs) == [], obs
+E       AssertionError: {'answer_status': {'E-3-1': ['insufficient'], 'E-4-1': ['insufficient']}, 'answers': {'E-3-1': None, 'E-4-1': None}, 'fake_3_m3': False, 'forbidden_in_graph': [], ...}
+E       assert ["E-4-1 None ... != [actual]"] == []
+E         
+E         Left contains 5 more items, first extra item: "E-4-1 None != [0.360772, 'TJ']"
+E         Use -v to get more diff
+
+tests/test_pr68_review_r8_3_basis.py:36: AssertionError
+____ test_fee_item_basis_combos[combo_actual_autopay_scheduled@text_lines] _____
+
+name = 'combo_actual_autopay_scheduled', path = 'text_lines'
+tmp_path = PosixPath('/private/var/folders/gv/v1k12j3j7md1v39gzbkw5qg40000gn/T/pytest-of-heojeongmin/pytest-266/test_fee_item_basis_combos_com13')
+
+    @pytest.mark.parametrize("name,path", _params(COMBOS))
+    def test_fee_item_basis_combos(name, path, tmp_path):
+>       _check(COMBOS[name], path, tmp_path)
+
+tests/test_pr68_review_r8_3_basis.py:48: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+case = {'basis': [[8420, 'actual'], [360772, 'actual']], 'doc_type': 'gas_bill', 'evidence_contains': '360772', 'expected': {'E-3-1': [20.239, 'tCO2eq'], 'E-4-1': [0.360772, 'TJ'], 'metrics': [[8420, 'm³'], [360772, 'MJ']]}, ...}
+path = 'text_lines'
+tmp_path = PosixPath('/private/var/folders/gv/v1k12j3j7md1v39gzbkw5qg40000gn/T/pytest-of-heojeongmin/pytest-266/test_fee_item_basis_combos_com13')
+
+    def _check(case, path, tmp_path):
+        if path == "local_pdf":
+            pytest.importorskip("fitz")
+        obs = observe(run_path(case, path, tmp_path), case["forbidden_values"])
+>       assert violations(case, obs) == [], obs
+E       AssertionError: {'answer_status': {'E-3-1': ['insufficient'], 'E-4-1': ['insufficient']}, 'answers': {'E-3-1': None, 'E-4-1': None}, 'fake_3_m3': False, 'forbidden_in_graph': [], ...}
+E       assert ["E-4-1 None ... != [actual]"] == []
+E         
+E         Left contains 5 more items, first extra item: "E-4-1 None != [0.360772, 'TJ']"
+E         Use -v to get more diff
+
+tests/test_pr68_review_r8_3_basis.py:36: AssertionError
+_____ test_fee_item_basis_combos[combo_actual_autopay_scheduled@local_pdf] _____
+
+name = 'combo_actual_autopay_scheduled', path = 'local_pdf'
+tmp_path = PosixPath('/private/var/folders/gv/v1k12j3j7md1v39gzbkw5qg40000gn/T/pytest-of-heojeongmin/pytest-266/test_fee_item_basis_combos_com14')
+
+    @pytest.mark.parametrize("name,path", _params(COMBOS))
+    def test_fee_item_basis_combos(name, path, tmp_path):
+>       _check(COMBOS[name], path, tmp_path)
+
+tests/test_pr68_review_r8_3_basis.py:48: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+case = {'basis': [[8420, 'actual'], [360772, 'actual']], 'doc_type': 'gas_bill', 'evidence_contains': '360772', 'expected': {'E-3-1': [20.239, 'tCO2eq'], 'E-4-1': [0.360772, 'TJ'], 'metrics': [[8420, 'm³'], [360772, 'MJ']]}, ...}
+path = 'local_pdf'
+tmp_path = PosixPath('/private/var/folders/gv/v1k12j3j7md1v39gzbkw5qg40000gn/T/pytest-of-heojeongmin/pytest-266/test_fee_item_basis_combos_com14')
+
+    def _check(case, path, tmp_path):
+        if path == "local_pdf":
+            pytest.importorskip("fitz")
+        obs = observe(run_path(case, path, tmp_path), case["forbidden_values"])
+>       assert violations(case, obs) == [], obs
+E       AssertionError: {'answer_status': {'E-3-1': ['insufficient'], 'E-4-1': ['insufficient']}, 'answers': {'E-3-1': None, 'E-4-1': None}, 'fake_3_m3': False, 'forbidden_in_graph': [], ...}
+E       assert ["E-4-1 None ... != [actual]"] == []
+E         
+E         Left contains 5 more items, first extra item: "E-4-1 None != [0.360772, 'TJ']"
+E         Use -v to get more diff
+
+tests/test_pr68_review_r8_3_basis.py:36: AssertionError
+___ test_fee_item_basis_combos[combo_actual_bill_scheduled_vat@table_cells] ____
+
+name = 'combo_actual_bill_scheduled_vat', path = 'table_cells'
+tmp_path = PosixPath('/private/var/folders/gv/v1k12j3j7md1v39gzbkw5qg40000gn/T/pytest-of-heojeongmin/pytest-266/test_fee_item_basis_combos_com15')
+
+    @pytest.mark.parametrize("name,path", _params(COMBOS))
+    def test_fee_item_basis_combos(name, path, tmp_path):
+>       _check(COMBOS[name], path, tmp_path)
+
+tests/test_pr68_review_r8_3_basis.py:48: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+case = {'basis': [[8420, 'actual'], [360772, 'actual']], 'doc_type': 'gas_bill', 'evidence_contains': '360772', 'expected': {'E-3-1': [20.239, 'tCO2eq'], 'E-4-1': [0.360772, 'TJ'], 'metrics': [[8420, 'm³'], [360772, 'MJ']]}, ...}
+path = 'table_cells'
+tmp_path = PosixPath('/private/var/folders/gv/v1k12j3j7md1v39gzbkw5qg40000gn/T/pytest-of-heojeongmin/pytest-266/test_fee_item_basis_combos_com15')
+
+    def _check(case, path, tmp_path):
+        if path == "local_pdf":
+            pytest.importorskip("fitz")
+        obs = observe(run_path(case, path, tmp_path), case["forbidden_values"])
+>       assert violations(case, obs) == [], obs
+E       AssertionError: {'answer_status': {'E-3-1': ['insufficient'], 'E-4-1': ['insufficient']}, 'answers': {'E-3-1': None, 'E-4-1': None}, 'fake_3_m3': False, 'forbidden_in_graph': [], ...}
+E       assert ["E-4-1 None ... != [actual]"] == []
+E         
+E         Left contains 5 more items, first extra item: "E-4-1 None != [0.360772, 'TJ']"
+E         Use -v to get more diff
+
+tests/test_pr68_review_r8_3_basis.py:36: AssertionError
+_____ test_fee_item_basis_combos[combo_actual_bill_scheduled_vat@markdown] _____
+
+name = 'combo_actual_bill_scheduled_vat', path = 'markdown'
+tmp_path = PosixPath('/private/var/folders/gv/v1k12j3j7md1v39gzbkw5qg40000gn/T/pytest-of-heojeongmin/pytest-266/test_fee_item_basis_combos_com16')
+
+    @pytest.mark.parametrize("name,path", _params(COMBOS))
+    def test_fee_item_basis_combos(name, path, tmp_path):
+>       _check(COMBOS[name], path, tmp_path)
+
+tests/test_pr68_review_r8_3_basis.py:48: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+case = {'basis': [[8420, 'actual'], [360772, 'actual']], 'doc_type': 'gas_bill', 'evidence_contains': '360772', 'expected': {'E-3-1': [20.239, 'tCO2eq'], 'E-4-1': [0.360772, 'TJ'], 'metrics': [[8420, 'm³'], [360772, 'MJ']]}, ...}
+path = 'markdown'
+tmp_path = PosixPath('/private/var/folders/gv/v1k12j3j7md1v39gzbkw5qg40000gn/T/pytest-of-heojeongmin/pytest-266/test_fee_item_basis_combos_com16')
+
+    def _check(case, path, tmp_path):
+        if path == "local_pdf":
+            pytest.importorskip("fitz")
+        obs = observe(run_path(case, path, tmp_path), case["forbidden_values"])
+>       assert violations(case, obs) == [], obs
+E       AssertionError: {'answer_status': {'E-3-1': ['insufficient'], 'E-4-1': ['insufficient']}, 'answers': {'E-3-1': None, 'E-4-1': None}, 'fake_3_m3': False, 'forbidden_in_graph': [], ...}
+E       assert ["E-4-1 None ... != [actual]"] == []
+E         
+E         Left contains 5 more items, first extra item: "E-4-1 None != [0.360772, 'TJ']"
+E         Use -v to get more diff
+
+tests/test_pr68_review_r8_3_basis.py:36: AssertionError
+____ test_fee_item_basis_combos[combo_actual_bill_scheduled_vat@text_lines] ____
+
+name = 'combo_actual_bill_scheduled_vat', path = 'text_lines'
+tmp_path = PosixPath('/private/var/folders/gv/v1k12j3j7md1v39gzbkw5qg40000gn/T/pytest-of-heojeongmin/pytest-266/test_fee_item_basis_combos_com17')
+
+    @pytest.mark.parametrize("name,path", _params(COMBOS))
+    def test_fee_item_basis_combos(name, path, tmp_path):
+>       _check(COMBOS[name], path, tmp_path)
+
+tests/test_pr68_review_r8_3_basis.py:48: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+case = {'basis': [[8420, 'actual'], [360772, 'actual']], 'doc_type': 'gas_bill', 'evidence_contains': '360772', 'expected': {'E-3-1': [20.239, 'tCO2eq'], 'E-4-1': [0.360772, 'TJ'], 'metrics': [[8420, 'm³'], [360772, 'MJ']]}, ...}
+path = 'text_lines'
+tmp_path = PosixPath('/private/var/folders/gv/v1k12j3j7md1v39gzbkw5qg40000gn/T/pytest-of-heojeongmin/pytest-266/test_fee_item_basis_combos_com17')
+
+    def _check(case, path, tmp_path):
+        if path == "local_pdf":
+            pytest.importorskip("fitz")
+        obs = observe(run_path(case, path, tmp_path), case["forbidden_values"])
+>       assert violations(case, obs) == [], obs
+E       AssertionError: {'answer_status': {'E-3-1': ['insufficient'], 'E-4-1': ['insufficient']}, 'answers': {'E-3-1': None, 'E-4-1': None}, 'fake_3_m3': False, 'forbidden_in_graph': [], ...}
+E       assert ["E-4-1 None ... != [actual]"] == []
+E         
+E         Left contains 5 more items, first extra item: "E-4-1 None != [0.360772, 'TJ']"
+E         Use -v to get more diff
+
+tests/test_pr68_review_r8_3_basis.py:36: AssertionError
+_ test_fee_item_basis_combos[combo_actual_settle_scheduled_amount@table_cells] _
+
+name = 'combo_actual_settle_scheduled_amount', path = 'table_cells'
+tmp_path = PosixPath('/private/var/folders/gv/v1k12j3j7md1v39gzbkw5qg40000gn/T/pytest-of-heojeongmin/pytest-266/test_fee_item_basis_combos_com18')
+
+    @pytest.mark.parametrize("name,path", _params(COMBOS))
+    def test_fee_item_basis_combos(name, path, tmp_path):
+>       _check(COMBOS[name], path, tmp_path)
+
+tests/test_pr68_review_r8_3_basis.py:48: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+case = {'basis': [[8420, 'actual'], [360772, 'actual']], 'doc_type': 'gas_bill', 'evidence_contains': '360772', 'expected': {'E-3-1': [20.239, 'tCO2eq'], 'E-4-1': [0.360772, 'TJ'], 'metrics': [[8420, 'm³'], [360772, 'MJ']]}, ...}
+path = 'table_cells'
+tmp_path = PosixPath('/private/var/folders/gv/v1k12j3j7md1v39gzbkw5qg40000gn/T/pytest-of-heojeongmin/pytest-266/test_fee_item_basis_combos_com18')
+
+    def _check(case, path, tmp_path):
+        if path == "local_pdf":
+            pytest.importorskip("fitz")
+        obs = observe(run_path(case, path, tmp_path), case["forbidden_values"])
+>       assert violations(case, obs) == [], obs
+E       AssertionError: {'answer_status': {'E-3-1': ['insufficient'], 'E-4-1': ['insufficient']}, 'answers': {'E-3-1': None, 'E-4-1': None}, 'fake_3_m3': False, 'forbidden_in_graph': [], ...}
+E       assert ["E-4-1 None ... != [actual]"] == []
+E         
+E         Left contains 5 more items, first extra item: "E-4-1 None != [0.360772, 'TJ']"
+E         Use -v to get more diff
+
+tests/test_pr68_review_r8_3_basis.py:36: AssertionError
+__ test_fee_item_basis_combos[combo_actual_settle_scheduled_amount@markdown] ___
+
+name = 'combo_actual_settle_scheduled_amount', path = 'markdown'
+tmp_path = PosixPath('/private/var/folders/gv/v1k12j3j7md1v39gzbkw5qg40000gn/T/pytest-of-heojeongmin/pytest-266/test_fee_item_basis_combos_com19')
+
+    @pytest.mark.parametrize("name,path", _params(COMBOS))
+    def test_fee_item_basis_combos(name, path, tmp_path):
+>       _check(COMBOS[name], path, tmp_path)
+
+tests/test_pr68_review_r8_3_basis.py:48: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+case = {'basis': [[8420, 'actual'], [360772, 'actual']], 'doc_type': 'gas_bill', 'evidence_contains': '360772', 'expected': {'E-3-1': [20.239, 'tCO2eq'], 'E-4-1': [0.360772, 'TJ'], 'metrics': [[8420, 'm³'], [360772, 'MJ']]}, ...}
+path = 'markdown'
+tmp_path = PosixPath('/private/var/folders/gv/v1k12j3j7md1v39gzbkw5qg40000gn/T/pytest-of-heojeongmin/pytest-266/test_fee_item_basis_combos_com19')
+
+    def _check(case, path, tmp_path):
+        if path == "local_pdf":
+            pytest.importorskip("fitz")
+        obs = observe(run_path(case, path, tmp_path), case["forbidden_values"])
+>       assert violations(case, obs) == [], obs
+E       AssertionError: {'answer_status': {'E-3-1': ['insufficient'], 'E-4-1': ['insufficient']}, 'answers': {'E-3-1': None, 'E-4-1': None}, 'fake_3_m3': False, 'forbidden_in_graph': [], ...}
+E       assert ["E-4-1 None ... != [actual]"] == []
+E         
+E         Left contains 5 more items, first extra item: "E-4-1 None != [0.360772, 'TJ']"
+E         Use -v to get more diff
+
+tests/test_pr68_review_r8_3_basis.py:36: AssertionError
+_ test_fee_item_basis_combos[combo_actual_settle_scheduled_amount@text_lines] __
+
+name = 'combo_actual_settle_scheduled_amount', path = 'text_lines'
+tmp_path = PosixPath('/private/var/folders/gv/v1k12j3j7md1v39gzbkw5qg40000gn/T/pytest-of-heojeongmin/pytest-266/test_fee_item_basis_combos_com20')
+
+    @pytest.mark.parametrize("name,path", _params(COMBOS))
+    def test_fee_item_basis_combos(name, path, tmp_path):
+>       _check(COMBOS[name], path, tmp_path)
+
+tests/test_pr68_review_r8_3_basis.py:48: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+case = {'basis': [[8420, 'actual'], [360772, 'actual']], 'doc_type': 'gas_bill', 'evidence_contains': '360772', 'expected': {'E-3-1': [20.239, 'tCO2eq'], 'E-4-1': [0.360772, 'TJ'], 'metrics': [[8420, 'm³'], [360772, 'MJ']]}, ...}
+path = 'text_lines'
+tmp_path = PosixPath('/private/var/folders/gv/v1k12j3j7md1v39gzbkw5qg40000gn/T/pytest-of-heojeongmin/pytest-266/test_fee_item_basis_combos_com20')
+
+    def _check(case, path, tmp_path):
+        if path == "local_pdf":
+            pytest.importorskip("fitz")
+        obs = observe(run_path(case, path, tmp_path), case["forbidden_values"])
+>       assert violations(case, obs) == [], obs
+E       AssertionError: {'answer_status': {'E-3-1': ['insufficient'], 'E-4-1': ['insufficient']}, 'answers': {'E-3-1': None, 'E-4-1': None}, 'fake_3_m3': False, 'forbidden_in_graph': [], ...}
+E       assert ["E-4-1 None ... != [actual]"] == []
+E         
+E         Left contains 5 more items, first extra item: "E-4-1 None != [0.360772, 'TJ']"
+E         Use -v to get more diff
+
+tests/test_pr68_review_r8_3_basis.py:36: AssertionError
+__ test_fee_item_basis_combos[combo_actual_settle_scheduled_amount@local_pdf] __
+
+name = 'combo_actual_settle_scheduled_amount', path = 'local_pdf'
+tmp_path = PosixPath('/private/var/folders/gv/v1k12j3j7md1v39gzbkw5qg40000gn/T/pytest-of-heojeongmin/pytest-266/test_fee_item_basis_combos_com21')
+
+    @pytest.mark.parametrize("name,path", _params(COMBOS))
+    def test_fee_item_basis_combos(name, path, tmp_path):
+>       _check(COMBOS[name], path, tmp_path)
+
+tests/test_pr68_review_r8_3_basis.py:48: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+case = {'basis': [[8420, 'actual'], [360772, 'actual']], 'doc_type': 'gas_bill', 'evidence_contains': '360772', 'expected': {'E-3-1': [20.239, 'tCO2eq'], 'E-4-1': [0.360772, 'TJ'], 'metrics': [[8420, 'm³'], [360772, 'MJ']]}, ...}
+path = 'local_pdf'
+tmp_path = PosixPath('/private/var/folders/gv/v1k12j3j7md1v39gzbkw5qg40000gn/T/pytest-of-heojeongmin/pytest-266/test_fee_item_basis_combos_com21')
+
+    def _check(case, path, tmp_path):
+        if path == "local_pdf":
+            pytest.importorskip("fitz")
+        obs = observe(run_path(case, path, tmp_path), case["forbidden_values"])
+>       assert violations(case, obs) == [], obs
+E       AssertionError: {'answer_status': {'E-3-1': ['insufficient'], 'E-4-1': ['insufficient']}, 'answers': {'E-3-1': None, 'E-4-1': None}, 'fake_3_m3': False, 'forbidden_in_graph': [], ...}
+E       assert ["E-4-1 None ... != [actual]"] == []
+E         
+E         Left contains 5 more items, first extra item: "E-4-1 None != [0.360772, 'TJ']"
+E         Use -v to get more diff
+
+tests/test_pr68_review_r8_3_basis.py:36: AssertionError
+_____ test_fee_item_basis_combos[combo_columns_expected_last@table_cells] ______
+
+name = 'combo_columns_expected_last', path = 'table_cells'
+tmp_path = PosixPath('/private/var/folders/gv/v1k12j3j7md1v39gzbkw5qg40000gn/T/pytest-of-heojeongmin/pytest-266/test_fee_item_basis_combos_com50')
+
+    @pytest.mark.parametrize("name,path", _params(COMBOS))
+    def test_fee_item_basis_combos(name, path, tmp_path):
+>       _check(COMBOS[name], path, tmp_path)
+
+tests/test_pr68_review_r8_3_basis.py:48: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+case = {'basis': [[8420, 'plan'], [360772, 'plan']], 'doc_type': 'gas_bill', 'expected': {'E-3-1': None, 'E-4-1': None, 'metrics': [[8420, 'm³'], [360772, 'MJ']]}, 'extra': ['사용 기간: 2026-04-01 ~ 2026-04-30'], ...}
+path = 'table_cells'
+tmp_path = PosixPath('/private/var/folders/gv/v1k12j3j7md1v39gzbkw5qg40000gn/T/pytest-of-heojeongmin/pytest-266/test_fee_item_basis_combos_com50')
+
+    def _check(case, path, tmp_path):
+        if path == "local_pdf":
+            pytest.importorskip("fitz")
+        obs = observe(run_path(case, path, tmp_path), case["forbidden_values"])
+>       assert violations(case, obs) == [], obs
+E       AssertionError: {'answer_status': {'E-3-1': ['self_reported'], 'E-4-1': ['self_reported']}, 'answers': {'E-3-1': {'evidence': ['도시가스 사...'], 'reference': [], 'status': 'self_reported', 'unit': 'TJ', ...}}, 'fake_3_m3': False, 'forbidden_in_graph': [], ...}
+E       assert ['E-4-1 shoul...'] != [plan]"] == []
+E         
+E         Left contains 4 more items, first extra item: 'E-4-1 should be absent, got 0.360772'
+E         Use -v to get more diff
+
+tests/test_pr68_review_r8_3_basis.py:36: AssertionError
+_______ test_fee_item_basis_combos[combo_columns_expected_last@markdown] _______
+
+name = 'combo_columns_expected_last', path = 'markdown'
+tmp_path = PosixPath('/private/var/folders/gv/v1k12j3j7md1v39gzbkw5qg40000gn/T/pytest-of-heojeongmin/pytest-266/test_fee_item_basis_combos_com51')
+
+    @pytest.mark.parametrize("name,path", _params(COMBOS))
+    def test_fee_item_basis_combos(name, path, tmp_path):
+>       _check(COMBOS[name], path, tmp_path)
+
+tests/test_pr68_review_r8_3_basis.py:48: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+case = {'basis': [[8420, 'plan'], [360772, 'plan']], 'doc_type': 'gas_bill', 'expected': {'E-3-1': None, 'E-4-1': None, 'metrics': [[8420, 'm³'], [360772, 'MJ']]}, 'extra': ['사용 기간: 2026-04-01 ~ 2026-04-30'], ...}
+path = 'markdown'
+tmp_path = PosixPath('/private/var/folders/gv/v1k12j3j7md1v39gzbkw5qg40000gn/T/pytest-of-heojeongmin/pytest-266/test_fee_item_basis_combos_com51')
+
+    def _check(case, path, tmp_path):
+        if path == "local_pdf":
+            pytest.importorskip("fitz")
+        obs = observe(run_path(case, path, tmp_path), case["forbidden_values"])
+>       assert violations(case, obs) == [], obs
+E       AssertionError: {'answer_status': {'E-3-1': ['self_reported'], 'E-4-1': ['self_reported']}, 'answers': {'E-3-1': {'evidence': ['도시가스 사...'], 'reference': [], 'status': 'self_reported', 'unit': 'TJ', ...}}, 'fake_3_m3': False, 'forbidden_in_graph': [], ...}
+E       assert ['E-4-1 shoul...'] != [plan]"] == []
+E         
+E         Left contains 4 more items, first extra item: 'E-4-1 should be absent, got 0.360772'
+E         Use -v to get more diff
+
+tests/test_pr68_review_r8_3_basis.py:36: AssertionError
+______ test_fee_item_basis_combos[combo_columns_expected_last@text_lines] ______
+
+name = 'combo_columns_expected_last', path = 'text_lines'
+tmp_path = PosixPath('/private/var/folders/gv/v1k12j3j7md1v39gzbkw5qg40000gn/T/pytest-of-heojeongmin/pytest-266/test_fee_item_basis_combos_com52')
+
+    @pytest.mark.parametrize("name,path", _params(COMBOS))
+    def test_fee_item_basis_combos(name, path, tmp_path):
+>       _check(COMBOS[name], path, tmp_path)
+
+tests/test_pr68_review_r8_3_basis.py:48: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+case = {'basis': [[8420, 'plan'], [360772, 'plan']], 'doc_type': 'gas_bill', 'expected': {'E-3-1': None, 'E-4-1': None, 'metrics': [[8420, 'm³'], [360772, 'MJ']]}, 'extra': ['사용 기간: 2026-04-01 ~ 2026-04-30'], ...}
+path = 'text_lines'
+tmp_path = PosixPath('/private/var/folders/gv/v1k12j3j7md1v39gzbkw5qg40000gn/T/pytest-of-heojeongmin/pytest-266/test_fee_item_basis_combos_com52')
+
+    def _check(case, path, tmp_path):
+        if path == "local_pdf":
+            pytest.importorskip("fitz")
+        obs = observe(run_path(case, path, tmp_path), case["forbidden_values"])
+>       assert violations(case, obs) == [], obs
+E       AssertionError: {'answer_status': {'E-3-1': ['self_reported'], 'E-4-1': ['self_reported']}, 'answers': {'E-3-1': {'evidence': ['도시가스 사...'], 'reference': [], 'status': 'self_reported', 'unit': 'TJ', ...}}, 'fake_3_m3': False, 'forbidden_in_graph': [], ...}
+E       assert ['E-4-1 shoul...'] != [plan]"] == []
+E         
+E         Left contains 4 more items, first extra item: 'E-4-1 should be absent, got 0.360772'
+E         Use -v to get more diff
+
+tests/test_pr68_review_r8_3_basis.py:36: AssertionError
+______ test_fee_item_basis_combos[combo_columns_expected_last@local_pdf] _______
+
+name = 'combo_columns_expected_last', path = 'local_pdf'
+tmp_path = PosixPath('/private/var/folders/gv/v1k12j3j7md1v39gzbkw5qg40000gn/T/pytest-of-heojeongmin/pytest-266/test_fee_item_basis_combos_com53')
+
+    @pytest.mark.parametrize("name,path", _params(COMBOS))
+    def test_fee_item_basis_combos(name, path, tmp_path):
+>       _check(COMBOS[name], path, tmp_path)
+
+tests/test_pr68_review_r8_3_basis.py:48: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+case = {'basis': [[8420, 'plan'], [360772, 'plan']], 'doc_type': 'gas_bill', 'expected': {'E-3-1': None, 'E-4-1': None, 'metrics': [[8420, 'm³'], [360772, 'MJ']]}, 'extra': ['사용 기간: 2026-04-01 ~ 2026-04-30'], ...}
+path = 'local_pdf'
+tmp_path = PosixPath('/private/var/folders/gv/v1k12j3j7md1v39gzbkw5qg40000gn/T/pytest-of-heojeongmin/pytest-266/test_fee_item_basis_combos_com53')
+
+    def _check(case, path, tmp_path):
+        if path == "local_pdf":
+            pytest.importorskip("fitz")
+        obs = observe(run_path(case, path, tmp_path), case["forbidden_values"])
+>       assert violations(case, obs) == [], obs
+E       AssertionError: {'answer_status': {'E-3-1': ['self_reported'], 'E-4-1': ['self_reported']}, 'answers': {'E-3-1': {'evidence': ['도시가스 사...'], 'reference': [], 'status': 'self_reported', 'unit': 'TJ', ...}}, 'fake_3_m3': False, 'forbidden_in_graph': [], ...}
+E       assert ['E-4-1 shoul...'] != [plan]"] == []
+E         
+E         Left contains 4 more items, first extra item: 'E-4-1 should be absent, got 0.360772'
+E         Use -v to get more diff
+
+tests/test_pr68_review_r8_3_basis.py:36: AssertionError
+_________ test_fee_item_basis_combos[combo_site_expected@table_cells] __________
+
+name = 'combo_site_expected', path = 'table_cells'
+tmp_path = PosixPath('/private/var/folders/gv/v1k12j3j7md1v39gzbkw5qg40000gn/T/pytest-of-heojeongmin/pytest-266/test_fee_item_basis_combos_com54')
+
+    @pytest.mark.parametrize("name,path", _params(COMBOS))
+    def test_fee_item_basis_combos(name, path, tmp_path):
+>       _check(COMBOS[name], path, tmp_path)
+
+tests/test_pr68_review_r8_3_basis.py:48: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+case = {'basis': [[8420, 'plan']], 'doc_type': 'gas_bill', 'expected': {'metrics': [[8420, 'm³']], 'scope': {'site': ['김해 제1공장']}}, 'extra': ['사용 기간: 2026-04-01 ~ 2026-04-30'], ...}
+path = 'table_cells'
+tmp_path = PosixPath('/private/var/folders/gv/v1k12j3j7md1v39gzbkw5qg40000gn/T/pytest-of-heojeongmin/pytest-266/test_fee_item_basis_combos_com54')
+
+    def _check(case, path, tmp_path):
+        if path == "local_pdf":
+            pytest.importorskip("fitz")
+        obs = observe(run_path(case, path, tmp_path), case["forbidden_values"])
+>       assert violations(case, obs) == [], obs
+E       AssertionError: {'answer_status': {'E-3-1': ['insufficient'], 'E-4-1': ['insufficient']}, 'answers': {'E-3-1': None, 'E-4-1': None}, 'fake_3_m3': False, 'forbidden_in_graph': [], ...}
+E       assert ["basis of 84...'] != [plan]"] == []
+E         
+E         Left contains one more item: "basis of 8420 ['actual'] != [plan]"
+E         Use -v to get more diff
+
+tests/test_pr68_review_r8_3_basis.py:36: AssertionError
+___________ test_fee_item_basis_combos[combo_site_expected@markdown] ___________
+
+name = 'combo_site_expected', path = 'markdown'
+tmp_path = PosixPath('/private/var/folders/gv/v1k12j3j7md1v39gzbkw5qg40000gn/T/pytest-of-heojeongmin/pytest-266/test_fee_item_basis_combos_com55')
+
+    @pytest.mark.parametrize("name,path", _params(COMBOS))
+    def test_fee_item_basis_combos(name, path, tmp_path):
+>       _check(COMBOS[name], path, tmp_path)
+
+tests/test_pr68_review_r8_3_basis.py:48: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+case = {'basis': [[8420, 'plan']], 'doc_type': 'gas_bill', 'expected': {'metrics': [[8420, 'm³']], 'scope': {'site': ['김해 제1공장']}}, 'extra': ['사용 기간: 2026-04-01 ~ 2026-04-30'], ...}
+path = 'markdown'
+tmp_path = PosixPath('/private/var/folders/gv/v1k12j3j7md1v39gzbkw5qg40000gn/T/pytest-of-heojeongmin/pytest-266/test_fee_item_basis_combos_com55')
+
+    def _check(case, path, tmp_path):
+        if path == "local_pdf":
+            pytest.importorskip("fitz")
+        obs = observe(run_path(case, path, tmp_path), case["forbidden_values"])
+>       assert violations(case, obs) == [], obs
+E       AssertionError: {'answer_status': {'E-3-1': ['insufficient'], 'E-4-1': ['insufficient']}, 'answers': {'E-3-1': None, 'E-4-1': None}, 'fake_3_m3': False, 'forbidden_in_graph': [], ...}
+E       assert ["basis of 84...'] != [plan]"] == []
+E         
+E         Left contains one more item: "basis of 8420 ['actual'] != [plan]"
+E         Use -v to get more diff
+
+tests/test_pr68_review_r8_3_basis.py:36: AssertionError
+__________ test_fee_item_basis_combos[combo_site_expected@text_lines] __________
+
+name = 'combo_site_expected', path = 'text_lines'
+tmp_path = PosixPath('/private/var/folders/gv/v1k12j3j7md1v39gzbkw5qg40000gn/T/pytest-of-heojeongmin/pytest-266/test_fee_item_basis_combos_com56')
+
+    @pytest.mark.parametrize("name,path", _params(COMBOS))
+    def test_fee_item_basis_combos(name, path, tmp_path):
+>       _check(COMBOS[name], path, tmp_path)
+
+tests/test_pr68_review_r8_3_basis.py:48: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+case = {'basis': [[8420, 'plan']], 'doc_type': 'gas_bill', 'expected': {'metrics': [[8420, 'm³']], 'scope': {'site': ['김해 제1공장']}}, 'extra': ['사용 기간: 2026-04-01 ~ 2026-04-30'], ...}
+path = 'text_lines'
+tmp_path = PosixPath('/private/var/folders/gv/v1k12j3j7md1v39gzbkw5qg40000gn/T/pytest-of-heojeongmin/pytest-266/test_fee_item_basis_combos_com56')
+
+    def _check(case, path, tmp_path):
+        if path == "local_pdf":
+            pytest.importorskip("fitz")
+        obs = observe(run_path(case, path, tmp_path), case["forbidden_values"])
+>       assert violations(case, obs) == [], obs
+E       AssertionError: {'answer_status': {'E-3-1': ['insufficient'], 'E-4-1': ['insufficient']}, 'answers': {'E-3-1': None, 'E-4-1': None}, 'fake_3_m3': False, 'forbidden_in_graph': [], ...}
+E       assert ["basis of 84...'] != [plan]"] == []
+E         
+E         Left contains one more item: "basis of 8420 ['actual'] != [plan]"
+E         Use -v to get more diff
+
+tests/test_pr68_review_r8_3_basis.py:36: AssertionError
+_ test_reviewer_quantity_plan_row_keeps_plan_label[\uc608\uc0c1 \uc0ac\uc6a9\ub7c9 \ubc0f \uc694\uae08] _
+
+label = '예상 사용량 및 요금'
+tmp_path = PosixPath('/private/var/folders/gv/v1k12j3j7md1v39gzbkw5qg40000gn/T/pytest-of-heojeongmin/pytest-266/test_reviewer_quantity_plan_ro0')
+
+    @pytest.mark.parametrize("label", ["예상 사용량 및 요금", "계획 사용량 및 요금"])
+    def test_reviewer_quantity_plan_row_keeps_plan_label(label, tmp_path):
+        ext = run_path(PAIRS["qty_expected_usage" if label.startswith("예상") else "qty_planned_usage"], "table_cells", tmp_path)
+>       assert {m.source_detail["row_item"] for m in ext.metrics} == {label}
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       KeyError: 'row_item'
+
+tests/test_pr68_review_r8_3_basis.py:57: KeyError
+_ test_reviewer_quantity_plan_row_keeps_plan_label[\uacc4\ud68d \uc0ac\uc6a9\ub7c9 \ubc0f \uc694\uae08] _
+
+label = '계획 사용량 및 요금'
+tmp_path = PosixPath('/private/var/folders/gv/v1k12j3j7md1v39gzbkw5qg40000gn/T/pytest-of-heojeongmin/pytest-266/test_reviewer_quantity_plan_ro1')
+
+    @pytest.mark.parametrize("label", ["예상 사용량 및 요금", "계획 사용량 및 요금"])
+    def test_reviewer_quantity_plan_row_keeps_plan_label(label, tmp_path):
+        ext = run_path(PAIRS["qty_expected_usage" if label.startswith("예상") else "qty_planned_usage"], "table_cells", tmp_path)
+>       assert {m.source_detail["row_item"] for m in ext.metrics} == {label}
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       KeyError: 'row_item'
+
+tests/test_pr68_review_r8_3_basis.py:57: KeyError
+__________________ test_reviewer_pay_scheduled_row_is_actual ___________________
+
+tmp_path = PosixPath('/private/var/folders/gv/v1k12j3j7md1v39gzbkw5qg40000gn/T/pytest-of-heojeongmin/pytest-266/test_reviewer_pay_scheduled_ro0')
+
+    def test_reviewer_pay_scheduled_row_is_actual(tmp_path):
+        ext = run_path(PAIRS["timing_pay_scheduled"], "table_cells", tmp_path)
+>       assert [(m.source_detail["row_label"], m.source_detail["row_item"]) for m in ext.metrics] == [("", "납부예정금액")] * 2
+                                               ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       KeyError: 'row_item'
+
+tests/test_pr68_review_r8_3_basis.py:63: KeyError
+=========================== short test summary info ============================
+FAILED tests/test_pr68_review_r8_3_basis.py::test_fee_item_basis_pairs[timing_pay_scheduled@table_cells]
+FAILED tests/test_pr68_review_r8_3_basis.py::test_fee_item_basis_pairs[timing_pay_scheduled@markdown]
+FAILED tests/test_pr68_review_r8_3_basis.py::test_fee_item_basis_pairs[timing_pay_scheduled@text_lines]
+FAILED tests/test_pr68_review_r8_3_basis.py::test_fee_item_basis_pairs[timing_pay_scheduled@local_pdf]
+FAILED tests/test_pr68_review_r8_3_basis.py::test_fee_item_basis_pairs[timing_bill_scheduled@table_cells]
+FAILED tests/test_pr68_review_r8_3_basis.py::test_fee_item_basis_pairs[timing_bill_scheduled@markdown]
+FAILED tests/test_pr68_review_r8_3_basis.py::test_fee_item_basis_pairs[timing_bill_scheduled@text_lines]
+FAILED tests/test_pr68_review_r8_3_basis.py::test_fee_item_basis_pairs[timing_bill_scheduled@local_pdf]
+FAILED tests/test_pr68_review_r8_3_basis.py::test_fee_item_basis_pairs[timing_pay_scheduled_spaced@table_cells]
+FAILED tests/test_pr68_review_r8_3_basis.py::test_fee_item_basis_pairs[timing_pay_scheduled_spaced@markdown]
+FAILED tests/test_pr68_review_r8_3_basis.py::test_fee_item_basis_pairs[timing_pay_scheduled_spaced@text_lines]
+FAILED tests/test_pr68_review_r8_3_basis.py::test_fee_item_basis_pairs[timing_pay_scheduled_spaced@local_pdf]
+FAILED tests/test_pr68_review_r8_3_basis.py::test_fee_item_basis_pairs[timing_bill_scheduled_spaced@table_cells]
+FAILED tests/test_pr68_review_r8_3_basis.py::test_fee_item_basis_pairs[timing_bill_scheduled_spaced@markdown]
+FAILED tests/test_pr68_review_r8_3_basis.py::test_fee_item_basis_pairs[timing_bill_scheduled_spaced@text_lines]
+FAILED tests/test_pr68_review_r8_3_basis.py::test_fee_item_basis_pairs[timing_bill_scheduled_spaced@local_pdf]
+FAILED tests/test_pr68_review_r8_3_basis.py::test_fee_item_basis_pairs[timing_month_pay_scheduled@table_cells]
+FAILED tests/test_pr68_review_r8_3_basis.py::test_fee_item_basis_pairs[timing_month_pay_scheduled@markdown]
+FAILED tests/test_pr68_review_r8_3_basis.py::test_fee_item_basis_pairs[timing_month_pay_scheduled@text_lines]
+FAILED tests/test_pr68_review_r8_3_basis.py::test_fee_item_basis_pairs[timing_month_pay_scheduled@local_pdf]
+FAILED tests/test_pr68_review_r8_3_basis.py::test_fee_item_basis_pairs[timing_scheduled_payment@table_cells]
+FAILED tests/test_pr68_review_r8_3_basis.py::test_fee_item_basis_pairs[timing_scheduled_payment@markdown]
+FAILED tests/test_pr68_review_r8_3_basis.py::test_fee_item_basis_pairs[timing_scheduled_payment@text_lines]
+FAILED tests/test_pr68_review_r8_3_basis.py::test_fee_item_basis_pairs[timing_scheduled_payment@local_pdf]
+FAILED tests/test_pr68_review_r8_3_basis.py::test_fee_item_basis_pairs[timing_next_bill_scheduled@table_cells]
+FAILED tests/test_pr68_review_r8_3_basis.py::test_fee_item_basis_pairs[timing_next_bill_scheduled@markdown]
+FAILED tests/test_pr68_review_r8_3_basis.py::test_fee_item_basis_pairs[timing_next_bill_scheduled@text_lines]
+FAILED tests/test_pr68_review_r8_3_basis.py::test_fee_item_basis_pairs[timing_settle_scheduled@table_cells]
+FAILED tests/test_pr68_review_r8_3_basis.py::test_fee_item_basis_pairs[timing_settle_scheduled@markdown]
+FAILED tests/test_pr68_review_r8_3_basis.py::test_fee_item_basis_pairs[timing_settle_scheduled@text_lines]
+FAILED tests/test_pr68_review_r8_3_basis.py::test_fee_item_basis_pairs[timing_settle_scheduled@local_pdf]
+FAILED tests/test_pr68_review_r8_3_basis.py::test_fee_item_basis_pairs[timing_pay_paren@table_cells]
+FAILED tests/test_pr68_review_r8_3_basis.py::test_fee_item_basis_pairs[timing_pay_paren@markdown]
+FAILED tests/test_pr68_review_r8_3_basis.py::test_fee_item_basis_pairs[timing_pay_paren@text_lines]
+FAILED tests/test_pr68_review_r8_3_basis.py::test_fee_item_basis_pairs[timing_pay_paren@local_pdf]
+FAILED tests/test_pr68_review_r8_3_basis.py::test_fee_item_basis_pairs[timing_notice_scheduled@table_cells]
+FAILED tests/test_pr68_review_r8_3_basis.py::test_fee_item_basis_pairs[timing_notice_scheduled@markdown]
+FAILED tests/test_pr68_review_r8_3_basis.py::test_fee_item_basis_pairs[timing_notice_scheduled@text_lines]
+FAILED tests/test_pr68_review_r8_3_basis.py::test_fee_item_basis_pairs[timing_notice_scheduled@local_pdf]
+FAILED tests/test_pr68_review_r8_3_basis.py::test_fee_item_basis_pairs[timing_usage_and_pay_scheduled@table_cells]
+FAILED tests/test_pr68_review_r8_3_basis.py::test_fee_item_basis_pairs[timing_usage_and_pay_scheduled@markdown]
+FAILED tests/test_pr68_review_r8_3_basis.py::test_fee_item_basis_pairs[timing_usage_and_pay_scheduled@text_lines]
+FAILED tests/test_pr68_review_r8_3_basis.py::test_fee_item_basis_pairs[pair_timing_empty_heat@table_cells]
+FAILED tests/test_pr68_review_r8_3_basis.py::test_fee_item_basis_pairs[pair_timing_empty_heat@markdown]
+FAILED tests/test_pr68_review_r8_3_basis.py::test_fee_item_basis_pairs[pair_timing_empty_heat@text_lines]
+FAILED tests/test_pr68_review_r8_3_basis.py::test_fee_item_basis_pairs[pair_timing_empty_heat@local_pdf]
+FAILED tests/test_pr68_review_r8_3_basis.py::test_fee_item_basis_pairs[pair_timing_kepco@table_cells]
+FAILED tests/test_pr68_review_r8_3_basis.py::test_fee_item_basis_pairs[pair_timing_kepco@markdown]
+FAILED tests/test_pr68_review_r8_3_basis.py::test_fee_item_basis_pairs[pair_timing_kepco@text_lines]
+FAILED tests/test_pr68_review_r8_3_basis.py::test_fee_item_basis_pairs[pair_timing_kepco@local_pdf]
+FAILED tests/test_pr68_review_r8_3_basis.py::test_fee_item_basis_pairs[pair_qty_columns@table_cells]
+FAILED tests/test_pr68_review_r8_3_basis.py::test_fee_item_basis_pairs[pair_qty_columns@markdown]
+FAILED tests/test_pr68_review_r8_3_basis.py::test_fee_item_basis_pairs[pair_qty_columns@text_lines]
+FAILED tests/test_pr68_review_r8_3_basis.py::test_fee_item_basis_pairs[pair_qty_columns@local_pdf]
+FAILED tests/test_pr68_review_r8_3_basis.py::test_fee_item_basis_pairs[pair_qty_scoped@table_cells]
+FAILED tests/test_pr68_review_r8_3_basis.py::test_fee_item_basis_pairs[pair_qty_scoped@markdown]
+FAILED tests/test_pr68_review_r8_3_basis.py::test_fee_item_basis_pairs[pair_qty_scoped@text_lines]
+FAILED tests/test_pr68_review_r8_3_basis.py::test_fee_item_basis_pairs[pair_two_rows_pay_scheduled_twice@table_cells]
+FAILED tests/test_pr68_review_r8_3_basis.py::test_fee_item_basis_pairs[pair_two_rows_pay_scheduled_twice@markdown]
+FAILED tests/test_pr68_review_r8_3_basis.py::test_fee_item_basis_pairs[pair_two_rows_pay_scheduled_twice@text_lines]
+FAILED tests/test_pr68_review_r8_3_basis.py::test_fee_item_basis_pairs[pair_two_rows_pay_scheduled_twice@local_pdf]
+FAILED tests/test_pr68_review_r8_3_basis.py::test_fee_item_basis_combos[combo_actual_due_date_amount@table_cells]
+FAILED tests/test_pr68_review_r8_3_basis.py::test_fee_item_basis_combos[combo_actual_due_date_amount@markdown]
+FAILED tests/test_pr68_review_r8_3_basis.py::test_fee_item_basis_combos[combo_actual_due_date_amount@text_lines]
+FAILED tests/test_pr68_review_r8_3_basis.py::test_fee_item_basis_combos[combo_actual_due_date_amount@local_pdf]
+FAILED tests/test_pr68_review_r8_3_basis.py::test_fee_item_basis_combos[combo_actual_pay_due_day_amount@table_cells]
+FAILED tests/test_pr68_review_r8_3_basis.py::test_fee_item_basis_combos[combo_actual_pay_due_day_amount@markdown]
+FAILED tests/test_pr68_review_r8_3_basis.py::test_fee_item_basis_combos[combo_actual_pay_due_day_amount@text_lines]
+FAILED tests/test_pr68_review_r8_3_basis.py::test_fee_item_basis_combos[combo_actual_pay_due_day_amount@local_pdf]
+FAILED tests/test_pr68_review_r8_3_basis.py::test_fee_item_basis_combos[combo_actual_bill_scheduled_usage_fee@table_cells]
+FAILED tests/test_pr68_review_r8_3_basis.py::test_fee_item_basis_combos[combo_actual_bill_scheduled_usage_fee@markdown]
+FAILED tests/test_pr68_review_r8_3_basis.py::test_fee_item_basis_combos[combo_actual_bill_scheduled_usage_fee@text_lines]
+FAILED tests/test_pr68_review_r8_3_basis.py::test_fee_item_basis_combos[combo_actual_autopay_scheduled@table_cells]
+FAILED tests/test_pr68_review_r8_3_basis.py::test_fee_item_basis_combos[combo_actual_autopay_scheduled@markdown]
+FAILED tests/test_pr68_review_r8_3_basis.py::test_fee_item_basis_combos[combo_actual_autopay_scheduled@text_lines]
+FAILED tests/test_pr68_review_r8_3_basis.py::test_fee_item_basis_combos[combo_actual_autopay_scheduled@local_pdf]
+FAILED tests/test_pr68_review_r8_3_basis.py::test_fee_item_basis_combos[combo_actual_bill_scheduled_vat@table_cells]
+FAILED tests/test_pr68_review_r8_3_basis.py::test_fee_item_basis_combos[combo_actual_bill_scheduled_vat@markdown]
+FAILED tests/test_pr68_review_r8_3_basis.py::test_fee_item_basis_combos[combo_actual_bill_scheduled_vat@text_lines]
+FAILED tests/test_pr68_review_r8_3_basis.py::test_fee_item_basis_combos[combo_actual_settle_scheduled_amount@table_cells]
+FAILED tests/test_pr68_review_r8_3_basis.py::test_fee_item_basis_combos[combo_actual_settle_scheduled_amount@markdown]
+FAILED tests/test_pr68_review_r8_3_basis.py::test_fee_item_basis_combos[combo_actual_settle_scheduled_amount@text_lines]
+FAILED tests/test_pr68_review_r8_3_basis.py::test_fee_item_basis_combos[combo_actual_settle_scheduled_amount@local_pdf]
+FAILED tests/test_pr68_review_r8_3_basis.py::test_fee_item_basis_combos[combo_columns_expected_last@table_cells]
+FAILED tests/test_pr68_review_r8_3_basis.py::test_fee_item_basis_combos[combo_columns_expected_last@markdown]
+FAILED tests/test_pr68_review_r8_3_basis.py::test_fee_item_basis_combos[combo_columns_expected_last@text_lines]
+FAILED tests/test_pr68_review_r8_3_basis.py::test_fee_item_basis_combos[combo_columns_expected_last@local_pdf]
+FAILED tests/test_pr68_review_r8_3_basis.py::test_fee_item_basis_combos[combo_site_expected@table_cells]
+FAILED tests/test_pr68_review_r8_3_basis.py::test_fee_item_basis_combos[combo_site_expected@markdown]
+FAILED tests/test_pr68_review_r8_3_basis.py::test_fee_item_basis_combos[combo_site_expected@text_lines]
+FAILED tests/test_pr68_review_r8_3_basis.py::test_reviewer_quantity_plan_row_keeps_plan_label[\uc608\uc0c1 \uc0ac\uc6a9\ub7c9 \ubc0f \uc694\uae08]
+FAILED tests/test_pr68_review_r8_3_basis.py::test_reviewer_quantity_plan_row_keeps_plan_label[\uacc4\ud68d \uc0ac\uc6a9\ub7c9 \ubc0f \uc694\uae08]
+FAILED tests/test_pr68_review_r8_3_basis.py::test_reviewer_pay_scheduled_row_is_actual
+93 failed, 106 passed in 1.81s

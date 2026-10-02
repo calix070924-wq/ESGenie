@@ -1,0 +1,174 @@
+{
+ "_source": "PR #68 검토 재현 입력(repro.py, 검토 파일 /private/tmp/ESGenie-pr68-review-20260929). 가상 변형 입력 — 실제 회사 문서가 아니다.",
+ "cases": {
+  "gas_MJ_usage_header": {
+   "doc_type": "gas_bill",
+   "tables": [
+    [
+     [
+      "가스사용량(MJ)"
+     ],
+     [
+      "360,772"
+     ]
+    ]
+   ],
+   "extra": []
+  },
+  "two_sites_equal_values": {
+   "doc_type": "kepco_bill",
+   "tables": [
+    [
+     [
+      "사업장",
+      "사용량(kWh)"
+     ],
+     [
+      "김해 제1공장",
+      "1,000"
+     ]
+    ],
+    [
+     [
+      "사업장",
+      "사용량(kWh)"
+     ],
+     [
+      "양산 제2공장",
+      "1,000"
+     ]
+    ]
+   ],
+   "extra": []
+  },
+  "two_months_equal_values": {
+   "doc_type": "kepco_bill",
+   "tables": [
+    [
+     [
+      "기간",
+      "사용량(kWh)"
+     ],
+     [
+      "2026년 4월",
+      "1,000"
+     ]
+    ],
+    [
+     [
+      "기간",
+      "사용량(kWh)"
+     ],
+     [
+      "2026년 5월",
+      "1,000"
+     ]
+    ]
+   ],
+   "extra": []
+  },
+  "computed_mixed_energy_units": {
+   "doc_type": "kepco_bill",
+   "tables": [
+    [
+     [
+      "전월지침(kWh)",
+      "당월지침(MWh)",
+      "배율"
+     ],
+     [
+      "1,000",
+      "2",
+      "1"
+     ]
+    ]
+   ],
+   "extra": []
+  },
+  "computed_usage_unit_differs_from_index": {
+   "doc_type": "kepco_bill",
+   "tables": [
+    [
+     [
+      "전월지침(MWh)",
+      "당월지침(MWh)",
+      "배율",
+      "사용량(kWh)"
+     ],
+     [
+      "1",
+      "2",
+      "1",
+      "-"
+     ]
+    ]
+   ],
+   "extra": []
+  },
+  "explicit_false_agreement_different_units": {
+   "doc_type": "kepco_bill",
+   "tables": [
+    [
+     [
+      "전월지침(MWh)",
+      "당월지침(MWh)",
+      "배율",
+      "사용량(kWh)"
+     ],
+     [
+      "1",
+      "2",
+      "1",
+      "1"
+     ]
+    ]
+   ],
+   "extra": []
+  },
+  "rounded_integer_rate": {
+   "doc_type": "waste_ledger",
+   "tables": [
+    [
+     [
+      "재활용",
+      "소각",
+      "매립",
+      "합계"
+     ],
+     [
+      "29.3 kg",
+      "30 kg",
+      "40.7 kg",
+      "100 kg"
+     ]
+    ]
+   ],
+   "extra": [
+    "폐기물 재활용률 29%"
+   ]
+  },
+  "explicit_meter_mismatch": {
+   "doc_type": "kepco_bill",
+   "tables": [
+    [
+     [
+      "이전 지침",
+      "당월 지침",
+      "계기 배율",
+      "당월 전력 사용량"
+     ],
+     [
+      "48,210",
+      "50,586",
+      "60",
+      "150,000 kWh"
+     ]
+    ]
+   ],
+   "extra": [
+    "사용 기간: 2026-04-01 ~ 2026-04-30",
+    "사업장: 김해 제1공장"
+   ]
+  }
+ }
+}

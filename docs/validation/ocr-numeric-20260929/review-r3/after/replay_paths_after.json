@@ -1,0 +1,98 @@
+{
+ "code_path": "/private/tmp/ESGenie-ocr-numeric-20260929",
+ "imported": "/private/tmp/ESGenie-ocr-numeric-20260929/esgenie/ssot/ocr_router.py",
+ "paths": {
+  "A_valid_heat/table_cells": {
+   "metrics": [
+    [
+     8420.0,
+     "m³",
+     null
+    ],
+    [
+     360772.0,
+     "MJ",
+     "E-4-1"
+    ]
+   ],
+   "review": [
+    "money_row_excluded"
+   ]
+  },
+  "A_valid_heat/text_lines": {
+   "metrics": [
+    [
+     8420.0,
+     "m³",
+     null
+    ],
+    [
+     360772.0,
+     "MJ",
+     "E-4-1"
+    ]
+   ],
+   "review": [
+    "money_row_excluded"
+   ]
+  },
+  "A_valid_heat/markdown": {
+   "metrics": [
+    [
+     8420.0,
+     "m³",
+     null
+    ],
+    [
+     360772.0,
+     "MJ",
+     "E-4-1"
+    ]
+   ],
+   "review": [
+    "money_row_excluded"
+   ]
+  },
+  "B_empty_heat/table_cells": {
+   "metrics": [
+    [
+     8420.0,
+     "m³",
+     null
+    ]
+   ],
+   "review": [
+    "money_row_excluded",
+    "template_candidate_from_other_cell",
+    "value_absent"
+   ]
+  },
+  "B_empty_heat/text_lines": {
+   "metrics": [
+    [
+     8420.0,
+     "m³",
+     null
+    ]
+   ],
+   "review": [
+    "money_row_excluded",
+    "template_candidate_from_other_cell",
+    "value_absent"
+   ]
+  },
+  "B_empty_heat/markdown": {
+   "metrics": [
+    [
+     8420.0,
+     "m³",
+     null
+    ]
+   ],
+   "review": [
+    "money_row_excluded",
+    "value_absent"
+   ]
+  }
+ }
+}

@@ -1,0 +1,38 @@
+{
+  "elapsed_seconds": 1.425,
+  "llm": {
+    "mode": "on",
+    "hits": 2,
+    "misses": 0,
+    "live_calls": 0,
+    "successes": 0,
+    "failures": 0
+  },
+  "llm_response_events": [],
+  "upstage": {
+    "requests": 1,
+    "successes": 1,
+    "failures": 0,
+    "events": [
+      {
+        "function": "_call_upstage_dp_payload",
+        "file": "R6d_가스_열량칸공백_전월지침만.pdf",
+        "pages": null,
+        "status": "success",
+        "seconds": 1.408
+      }
+    ]
+  },
+  "input_revision": 2,
+  "document_count": 1,
+  "run_directory": "/private/tmp/ESGenie-ocr-numeric-20260929/docs/validation/ocr-numeric-20260929/review-r2/live/web_server_d82e77b/runs/20260929T084714Z_rev2",
+  "cache_files_at_end": {
+    "ocr": 8,
+    "llm": 34
+  },
+  "ocr_vlm_cache": {
+    "hits": 0,
+    "misses": 0,
+    "mode": "on"
+  }
+}

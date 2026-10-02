@@ -1,0 +1,290 @@
+{
+ "source_file": "06_환경안전관리규정_2026.pdf",
+ "recorded_doc_type": "waste_ledger",
+ "source_sha256": "ad45751200c110de869abe5dac6f04cbe4e78152674189bef49045b690be4b20",
+ "stage": "upstage_dp_output (raw_text elements + parsed HTML table cells)",
+ "origin": {
+  "pipeline_json": "/Users/heojeongmin/Documents/Claude/Projects/ESGenie/output/rehearsal/hanwool_bm_20260928/runs/20260928T035715Z_11976e3b984b43f6941f780a7f4a80cb_rev13/pipeline.json",
+  "pipeline_json_sha256": "6b4c54164b2520f20b42ad05578672841751230195e183da853fb8aca7f18ac2",
+  "code_commit": "6bf975005364e1a32aee1ca6e58c761edb11db08"
+ },
+ "recorded_metrics": [
+  {
+   "metric_hint": "재활용량",
+   "value": 3.0,
+   "unit": "ton",
+   "period": "None",
+   "kesg_code_guess": "E-6-2",
+   "bbox": [
+    0.0978,
+    0.4526,
+    0.251,
+    0.4684
+   ],
+   "page": null,
+   "confidence": 1.0,
+   "boundary": {}
+  }
+ ],
+ "tokens": [
+  {
+   "text": "ESGenie / FICTIONAL DOCUMENT",
+   "bbox": null,
+   "page": 0
+  },
+  {
+   "text": "HW-POL-202601",
+   "bbox": null,
+   "page": 0
+  },
+  {
+   "text": "환경 ● 안전 관리규정",
+   "bbox": null,
+   "page": 0
+  },
+  {
+   "text": "한울정밀공업(주) / 시행 2026-01-02 / 버전 1.1",
+   "bbox": null,
+   "page": 0
+  },
+  {
+   "text": "| 항목 | 내용 |\n| --- | --- |\n| 적용 범위 | 김해 제1공장·양산 제2공장, 각 사업장의 근무 인원 |\n| 관리 책임 | 생산·안전 담당자 / 경영지원 담당자 |\n| 승인 | 대표이사 / 2026-01-02 |",
+   "bbox": [
+    0.0993,
+    0.1644,
+    0.9197,
+    0.2829
+   ],
+   "page": 0
+  },
+  {
+   "text": "1. 에너지와 용수 기록",
+   "bbox": null,
+   "page": 0
+  },
+  {
+   "text": "전기·가스·상수도 고지서를 사업장별·월별로 보관하고 사용량과 단위를 확인한다. 연간 합계는 동일 연도 12개월과 대상",
+   "bbox": null,
+   "page": 0
+  },
+  {
+   "text": "사업장 전체 자료가 모인 뒤 산정한다. 일부 월 값을 실제 연간 실적으로 표시하지 않는다.",
+   "bbox": null,
+   "page": 0
+  },
+  {
+   "text": "2. 폐기물과 공정 스크랩",
+   "bbox": null,
+   "page": 0
+  },
+  {
+   "text": "외부 위탁 폐기물의 인계·처리 기록을 보관한다. 내부 스크랩 재투입량과 외부 위탁 폐기물 재활용량을 서로 다른 대장으로",
+   "bbox": null,
+   "page": 0
+  },
+  {
+   "text": "관리하고, 비율에는 계산식과 기간·사업장을 함께 적는다. 처리업체 자격은 별도 등록·허가 자료로 확인한다.",
+   "bbox": null,
+   "page": 0
+  },
+  {
+   "text": "3. 현장 안전과 교육",
+   "bbox": null,
+   "page": 0
+  },
+  {
+   "text": "사업장 위험요인을 점검하고 작업별 보호구·비상연락 체계를 안내한다. 교육 시 대상 인원, 실제 참석 인원, 교육 내용과 시간을",
+   "bbox": null,
+   "page": 0
+  },
+  {
+   "text": "기록한다. 미참석자는 추가 일정을 안내하고 실시 후 출석 기록을 보관한다.",
+   "bbox": null,
+   "page": 0
+  },
+  {
+   "text": "4. 실사 요청 대응",
+   "bbox": null,
+   "page": 0
+  },
+  {
+   "text": "경영지원 담당자가 고객사 질문의 기간·사업장·요구 증빙을 확인하고 담당 부서에 자료를 요청한다. 자료가 부족하면 미확인",
+   "bbox": null,
+   "page": 0
+  },
+  {
+   "text": "사유를 남기고, 작성한 답변과 근거를 대표이사가 확인한 뒤 회신한다.",
+   "bbox": null,
+   "page": 0
+  },
+  {
+   "text": "5. 자료 관리",
+   "bbox": null,
+   "page": 0
+  },
+  {
+   "text": "원본과 수정 이력을 구분해 보관한다. 외부 제공 자료는 필요한 항목과 범위를 확인하고 개인정보는 최소화한다. 이 규정의",
+   "bbox": null,
+   "page": 0
+  },
+  {
+   "text": "보유만으로 개별 활동의 실시 또는 법규 준수가 입증되는 것은 아니므로 운영 기록을 함께 관리한다.",
+   "bbox": null,
+   "page": 0
+  },
+  {
+   "text": "시연용 가상자료 | 모든 기업·인물·수치·기록은 가상이며 실제 제출용이 아닙니다.",
+   "bbox": null,
+   "page": 0
+  },
+  {
+   "text": "BM 개편 2026-09-28 / 1",
+   "bbox": null,
+   "page": 0
+  }
+ ],
+ "tables": [
+  {
+   "table_id": "upstage_table_0",
+   "row_count": 4,
+   "column_count": 2,
+   "cells": [
+    {
+     "row_index": 0,
+     "column_index": 0,
+     "content": "항목",
+     "row_span": 1,
+     "column_span": 1,
+     "kind": null,
+     "bbox": [
+      0.0993,
+      0.1644,
+      0.9197,
+      0.2829
+     ],
+     "page": 0,
+     "confidence": null
+    },
+    {
+     "row_index": 0,
+     "column_index": 1,
+     "content": "내용",
+     "row_span": 1,
+     "column_span": 1,
+     "kind": null,
+     "bbox": [
+      0.0993,
+      0.1644,
+      0.9197,
+      0.2829
+     ],
+     "page": 0,
+     "confidence": null
+    },
+    {
+     "row_index": 1,
+     "column_index": 0,
+     "content": "적용 범위",
+     "row_span": 1,
+     "column_span": 1,
+     "kind": null,
+     "bbox": [
+      0.0993,
+      0.1644,
+      0.9197,
+      0.2829
+     ],
+     "page": 0,
+     "confidence": null
+    },
+    {
+     "row_index": 1,
+     "column_index": 1,
+     "content": "김해 제1공장·양산 제2공장, 각 사업장의 근무 인원",
+     "row_span": 1,
+     "column_span": 1,
+     "kind": null,
+     "bbox": [
+      0.0993,
+      0.1644,
+      0.9197,
+      0.2829
+     ],
+     "page": 0,
+     "confidence": null
+    },
+    {
+     "row_index": 2,
+     "column_index": 0,
+     "content": "관리 책임",
+     "row_span": 1,
+     "column_span": 1,
+     "kind": null,
+     "bbox": [
+      0.0993,
+      0.1644,
+      0.9197,
+      0.2829
+     ],
+     "page": 0,
+     "confidence": null
+    },
+    {
+     "row_index": 2,
+     "column_index": 1,
+     "content": "생산·안전 담당자 / 경영지원 담당자",
+     "row_span": 1,
+     "column_span": 1,
+     "kind": null,
+     "bbox": [
+      0.0993,
+      0.1644,
+      0.9197,
+      0.2829
+     ],
+     "page": 0,
+     "confidence": null
+    },
+    {
+     "row_index": 3,
+     "column_index": 0,
+     "content": "승인",
+     "row_span": 1,
+     "column_span": 1,
+     "kind": null,
+     "bbox": [
+      0.0993,
+      0.1644,
+      0.9197,
+      0.2829
+     ],
+     "page": 0,
+     "confidence": null
+    },
+    {
+     "row_index": 3,
+     "column_index": 1,
+     "content": "대표이사 / 2026-01-02",
+     "row_span": 1,
+     "column_span": 1,
+     "kind": null,
+     "bbox": [
+      0.0993,
+      0.1644,
+      0.9197,
+      0.2829
+     ],
+     "page": 0,
+     "confidence": null
+    }
+   ],
+   "source": "upstage_dp",
+   "page": 0,
+   "meta": {
+    "resolved_tier": 0,
+    "gate_flags": [],
+    "hard_fail_codes": []
+   }
+  }
+ ]
+}
