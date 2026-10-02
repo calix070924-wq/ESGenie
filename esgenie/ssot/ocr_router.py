@@ -24,10 +24,12 @@ from html.parser import HTMLParser
 from pathlib import Path
 from typing import Any
 
-# Upstage Document Parse 모델 pin.
-# 구버전 alias "document-parse"(=document-parse-250618 계열)는 2026-07-31 지원 종료 —
-# 신버전을 명시 pin하고, 롤백·비교 실험은 UPSTAGE_DP_MODEL 환경변수로 오버라이드한다.
-UPSTAGE_DP_MODEL: str = os.getenv("UPSTAGE_DP_MODEL", "document-parse-260630")
+# Upstage Document Parse 모델.
+# document-parse-260630 명시 pin은 2026-11-02(KST) 지원 종료 — Upstage 권고에 따라 alias로 전환.
+# 2026-10-02 확인: alias "document-parse" → document-parse-260930(샘플 01~03 추출 결과 260630과 동일).
+# alias는 신버전을 자동 추종하므로 실제 버전은 response_meta.returned_model로 기록하고,
+# 롤백·비교 실험은 UPSTAGE_DP_MODEL 환경변수로 오버라이드한다.
+UPSTAGE_DP_MODEL: str = os.getenv("UPSTAGE_DP_MODEL", "document-parse")
 
 # 모듈 로거 — 청크 JSON 파싱 실패 경고가 이미 참조하고 있었으나 정의가 없었다(NameError).
 logger = logging.getLogger(__name__)
@@ -904,7 +906,7 @@ def _call_upstage_dp_payload(
 
     POST multipart/form-data:
       files: document=<파일 bytes>
-      data : model=UPSTAGE_DP_MODEL(기본 document-parse-260630), ocr=force|auto, output_formats=['html','text'],
+      data : model=UPSTAGE_DP_MODEL(기본 document-parse alias), ocr=force|auto, output_formats=['html','text'],
              coordinates=true, base64_encoding=[]
     응답 JSON: {content, elements:[{id,category,content:{html,text},page,coordinates}], usage}
       · 텍스트 토큰: 모든 요소의 content.text + coordinates(외접 bbox) + page(0-기준 변환)
