@@ -1,0 +1,80 @@
+{
+ "file": "R8p_가스_혼합표_예상사용량및요금행.pdf",
+ "call": 1,
+ "pdf_sha256": "0146fda4cf42ee16bf6c62618912a6b3b79e5a66d8e800b5cf47ae3436522d2b",
+ "model_requested": "document-parse-260630",
+ "response": {
+  "api": "2.0",
+  "content": {
+   "html": "<p id='0' data-category='paragraph' style='font-size:14px'>검증용 가상 변형본 - 원본 아님<br>도시가스 요금 청구서<br>사용 기간: 2026-04-01 ~ 2026-04-30</p>\n<table id='1' style='font-size:18px'><thead><tr><td>항목</td><td>사용량(m3)</td><td>사용열량(MJ)</td><td>요금(원)</td></tr></thead><tbody><tr><td>예상 사용량 및 요금</td><td>8,420</td><td>360,772</td><td>247,500</td></tr></tbody></table>",
+   "markdown": "",
+   "text": "검증용 가상 변형본 - 원본 아님\n도시가스 요금 청구서\n사용 기간: 2026-04-01 ~ 2026-04-30\n| 항목 | 사용량(m3) | 사용열량(MJ) | 요금(원) |\n| --- | --- | --- | --- |\n| 예상 사용량 및 요금 | 8,420 | 360,772 | 247,500 |"
+  },
+  "elements": [
+   {
+    "id": 0,
+    "page": 1,
+    "category": "paragraph",
+    "content": {
+     "html": "<p id='0' data-category='paragraph' style='font-size:14px'>검증용 가상 변형본 - 원본 아님<br>도시가스 요금 청구서<br>사용 기간: 2026-04-01 ~ 2026-04-30</p>",
+     "markdown": "",
+     "text": "검증용 가상 변형본 - 원본 아님\n도시가스 요금 청구서\n사용 기간: 2026-04-01 ~ 2026-04-30"
+    },
+    "coordinates": [
+     {
+      "x": 0.0961,
+      "y": 0.0682
+     },
+     {
+      "x": 0.4215,
+      "y": 0.0682
+     },
+     {
+      "x": 0.4215,
+      "y": 0.1453
+     },
+     {
+      "x": 0.0961,
+      "y": 0.1453
+     }
+    ]
+   },
+   {
+    "id": 1,
+    "page": 1,
+    "category": "table",
+    "content": {
+     "html": "<table id='1' style='font-size:18px'><thead><tr><td>항목</td><td>사용량(m3)</td><td>사용열량(MJ)</td><td>요금(원)</td></tr></thead><tbody><tr><td>예상 사용량 및 요금</td><td>8,420</td><td>360,772</td><td>247,500</td></tr></tbody></table>",
+     "markdown": "",
+     "text": "| 항목 | 사용량(m3) | 사용열량(MJ) | 요금(원) |\n| --- | --- | --- | --- |\n| 예상 사용량 및 요금 | 8,420 | 360,772 | 247,500 |\n"
+    },
+    "coordinates": [
+     {
+      "x": 0.0491,
+      "y": 0.1769
+     },
+     {
+      "x": 0.9502,
+      "y": 0.1769
+     },
+     {
+      "x": 0.9502,
+      "y": 0.2501
+     },
+     {
+      "x": 0.0491,
+      "y": 0.2501
+     }
+    ]
+   }
+  ],
+  "model": "document-parse-260630",
+  "ocr": true,
+  "usage": {
+   "pages": 1,
+   "standard": [
+    1
+   ]
+  }
+ }
+}
