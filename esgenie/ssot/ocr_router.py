@@ -2539,6 +2539,12 @@ class _ZeroVerdict:
     candidate: str = ""           # numeric(숫자 0) | negation(미발생·미보유 서술)
     requested_scope: str = ""     # 요청 기간의 의미(`_DateSpan.kind`). 읽지 못하면 ""
     source_scope: Any = None      # 원문 범위(`_DateSpan`). 없으면 None
+    evidence_column: str = ""     # 후보 셀의 열 머리(표). 목표·실적 칸이 모두 0이면 실적 칸이다
+    column_state: str = ""        # `_ZeroCandidate.column_state`
+    source_unit: str = ""         # 원문에 적힌 단위 표기(값 뒤·행 라벨·열 머리). 없으면 ""
+    unit_location: str = ""       # after_value | label(행 라벨·열 머리 괄호) | ""(원문에 단위 없음)
+    scope_from: str = ""          # 기간·사업장을 읽은 곳: statement | column | heading | ""(읽지 않음)
+    scope_heading: str = ""       # scope_from=heading이면 그 머리말 원문
 
     @property
     def accepted(self) -> bool:
@@ -2566,7 +2572,13 @@ _ZERO_CAUSES = frozenset({
     "period_unproven",          # 기간이 겹치지만 같은 범위임을 확인하지 못했다
     "period_ambiguous",         # 원문에 기간이 여럿이라 이 0이 어느 기간인지 특정하지 못했다
     "site_mismatch",            # 원문 사업장이 지표 사업장과 다르다
+    "unit_incomplete",          # 0 뒤 단위의 분모를 끝까지 읽지 못했다(`0 MJ/`) — 사실성과 별개
+    "unit_unknown",             # 0 뒤 단위가 사전 밖이고 모델 단위와도 다르다(`0 tCO2eqx`)
+    "column_unresolved",        # 표에 머리글 행은 있으나 이 값의 열을 특정하지 못했다
 })
+# 판단 보류(UNRESOLVED)로 남기는 사유. 나머지 사유는 REJECTED다.
+_ZERO_UNRESOLVED_CAUSES = frozenset({
+    "interpretation_unknown", "unit_incomplete", "unit_unknown", "column_unresolved"})
 # 보존한 0의 사유. SOURCE_ONLY는 무엇이 확인되지 않았는지를 남긴다.
 _ZERO_KEPT_CAUSES = {
     "stated_zero": "",
@@ -2589,18 +2601,25 @@ class _ZeroCandidate:
     start: int            # statement 안 후보의 시작·끝
     end: int
     offset: int           # 인용 안 후보의 위치
-    context: str          # 같은 절의 뒤 서술을 뺀 나머지 문구(기간·사업장 폴백)
-    column: str = ""      # 표 열 머리(같은 칸 수의 앞 행). 없으면 ""
+    # 후보 **앞**의 절·서술(인용 안 위치, 문구). 범위를 상속할 수 있는 것은 이 가운데 범위만 적힌
+    # 공통 머리말뿐이다(`_zero_heading`). 다른 지표의 서술·뒤 절은 넣지 않는다(PR 69 4차 검토).
+    preceding: tuple = ()
+    column: str = ""      # 후보 셀의 열 머리(`_column_header`). 없으면 ""
+    column_state: str = ""  # cell(값에 붙은 구조화 표 머리) | header(같은 표의 머리글 행) |
+                            # none(머리글 행 없는 표·표 아님) | unresolved(머리글은 있으나 열을 특정 못 함)
+    header_offset: int = -1  # 열 머리의 인용 안 위치. 없으면 -1
     match: Any = None     # 부정 서술의 정규식 결과
 
 
 def _zero_verdict(quote: str, hint: str = "", period: str = "",
-                  boundary: dict[str, Any] | None = None) -> _ZeroVerdict:
+                  boundary: dict[str, Any] | None = None, unit: str = "") -> _ZeroVerdict:
     """숫자 0과 부정 서술 후보를 모두 찾고, **같은 검사**(대상 → 사실성 → 사업장·기간)로 판정한다.
 
     `if 인용에 0이 있음: 채택` 구조를 없앴다(PR 69 3차 검토: `목표 0건`·`4월 1일 기준 0건`이
     4월 실적 0으로 채택됐다). 한 후보의 성공으로 다른 후보를 덮지 않도록 후보마다 자기 서술·
-    표 행·열 머리에서 범위를 읽고, 그 서술에 없을 때만 같은 절의 앞 서술과 다른 절을 본다.
+    표 행·열 머리에서 범위를 읽고, 그 서술에 없을 때만 **범위만 적힌 앞 머리말**을 본다(4차 검토:
+    `산업재해 0건, 2026년 4월 김해 제1공장 교육 50명`의 교육 날짜·사업장을 빌려 CONFIRMED가 됐다).
+    `unit`은 모델이 보고한 단위다 — 사전 밖 원문 단위를 대조할 때만 쓴다(`_zero_unit`).
     """
     boundary = boundary or {}
     hint_tokens = _label_tokens(hint)
@@ -2613,7 +2632,15 @@ def _zero_verdict(quote: str, hint: str = "", period: str = "",
     verdicts: list[_ZeroVerdict] = []
     for candidate in candidates:
         base = {"evidence_text": candidate.statement.strip(), "evidence_offset": candidate.offset,
-                "candidate": candidate.kind, "requested_scope": requested.kind if requested else ""}
+                "candidate": candidate.kind, "requested_scope": requested.kind if requested else "",
+                "evidence_column": candidate.column, "column_state": candidate.column_state}
+        if candidate.kind == "numeric":
+            read = _zero_unit(candidate.statement, candidate.end, unit)
+            label_unit = _zero_label_unit(candidate.statement, candidate.start, candidate.column)
+            if read.text:
+                base.update(source_unit=read.text, unit_location="after_value")
+            elif label_unit:
+                base.update(source_unit=label_unit, unit_location="label")
         subject = _zero_subject(candidate, specific, hint_tokens, allowed)
         if subject != "same":
             status = "UNRESOLVED" if subject == "unclear" else "REJECTED"
@@ -2623,14 +2650,16 @@ def _zero_verdict(quote: str, hint: str = "", period: str = "",
         if candidate.kind == "negation":
             cause = _negation_mood(candidate.statement, candidate.match)
         else:
-            cause = _numeric_zero_mood(candidate.statement, candidate.end)
+            cause = _numeric_zero_mood(candidate.statement, candidate.end, unit)
         if cause is None and _ZERO_INTENT_RE.search(candidate.column):
             cause = "future_or_intent"   # 표의 목표·계획 열에 있는 0
+        if cause is None and candidate.column_state == "unresolved":
+            cause = "column_unresolved"  # 머리글은 있는데 어느 열인지 모른다 — 목표·실적을 임의로 고르지 않는다
         if cause is not None:
             verdicts.append(_ZeroVerdict(
-                "UNRESOLVED" if cause == "interpretation_unknown" else "REJECTED", cause, **base))
+                "UNRESOLVED" if cause in _ZERO_UNRESOLVED_CAUSES else "REJECTED", cause, **base))
             continue
-        verdicts.append(_zero_scope_verdict(candidate, requested, boundary, base))
+        verdicts.append(_zero_scope_verdict(candidate, requested, boundary, base, hint_tokens))
     # 지표 대상이 맞은 후보의 판정이 대상이 다른 후보의 판정보다 앞선다(같은 순위 안에서는 앞 후보).
     return min(verdicts, key=lambda v: (_ZERO_STATUS_RANK[v.status],
                                         v.cause in ("other_subject", "no_zero_statement")))
@@ -2677,10 +2706,10 @@ _ZERO_NOUN_FACT_TAIL_RE = re.compile(
 # 사실 서술 뒤에 와도 되는 것: 문장부호, 날짜·기준일 괄호, 숫자·날짜만 든 표 칸.
 _ZERO_TRAILING_NOISE_RE = re.compile(
     r"(?:\s*(?:\|[\s\d.,\-~/년월일%]*|[(（][\s\d.,\-~/년월일]*(?:기준|현재)?\s*[)）]))*[\s.。!]*")
-# 숫자 0 뒤: 단위 한 낱말·조사·서술어(`0건이다`·`0건으로 집계됐다`)와 숫자만 든 표 칸.
+# 숫자 0의 단위(`_zero_unit`) 뒤: 조사·서술어(`0건이다`·`0건으로 집계됐다`)와 숫자만 든 표 칸.
+# 단위는 여기서 다시 정의하지 않는다(PR 69 4차 검토).
 _ZERO_NUMERIC_FACT_TAIL_RE = re.compile(
-    r"\s*(?:[A-Za-z%]+\d*|[가-힣]{1,2})?"
-    r"(?:이다|입니다|이었다|였다|이며|이고|임|으로|로|을|를|이|가|은|는|의|이었으며)?"
+    r"\s*(?:이다|입니다|이었다|였다|이며|이고|임|으로|로|을|를|이|가|은|는|의|이었으며)?"
     r"(?:\s*(?:집계|확인|기록|발생|나타|보고)(?:됐다|되었다|됨|했다|하였다|했음|됐음|났다|되었음|하였음)?)?"
     r"(?:\s*\|[\s\d.,\-~/%]*)*[\s.。!]*")
 # 한 절 안의 서술 경계. 연결 어미(`미보유이며`·`않았고`·`있으나`) 뒤는 다른 서술이다 —
@@ -2714,13 +2743,9 @@ def _zero_candidates(quote: str) -> list[_ZeroCandidate]:
     """인용의 숫자 0과 부정 서술을 **위치를 가진 후보**로 찾는다(판정은 하지 않는다)."""
     numeric = [m.start() for m in _ZERO_NUMERIC_RE.finditer(quote)]
     candidates: list[_ZeroCandidate] = []
+    earlier: list[tuple[int, str]] = []      # 지금 후보보다 앞의 절·서술
     for clause_start, clause in _pieces(quote, _ZERO_CLAUSE_SPLIT_RE):
-        clause_end = clause_start + len(clause)
         for statement_start, statement in _pieces(clause, _ZERO_STATEMENT_SPLIT_RE, clause_start):
-            # 서술에 기간·사업장이 없을 때 볼 문맥: 다른 절 + 같은 절의 **앞** 서술(연결 어미 뒤
-            # `2027년 취득을 목표로`의 날짜·사업장은 빼고 본다).
-            context = quote[:clause_start] + " " + quote[clause_start:statement_start] + " " + quote[clause_end:]
-            column = ""
             found = [("numeric", p - statement_start, p - statement_start + 1, None) for p in numeric
                      if statement_start <= p < statement_start + len(statement)]
             found += [("negation", m.start(), m.end(), m) for m in _ZERO_NEGATION_RE.finditer(statement)]
@@ -2728,25 +2753,86 @@ def _zero_candidates(quote: str) -> list[_ZeroCandidate]:
                 if kind == "numeric":
                     zero = _ZERO_NUMERIC_RE.match(statement, start)
                     end = zero.end() if zero else end
-                column = _column_header(quote, statement_start + start)
+                column, state, header_offset = _column_header(quote, statement_start + start, end - start)
+                if state == "cell":
+                    # 셀 머리(`0(합계|2026)`)는 값의 좌표다 — 단위·서술은 그 뒤부터 읽는다.
+                    end = _ZERO_CELL_HEADER_RE.match(statement, end).end()
                 candidates.append(_ZeroCandidate(kind, statement, start, end, statement_start + start,
-                                                 context, column, match))
+                                                 tuple(earlier), column, state, header_offset, match))
+            earlier.append((statement_start, statement))
     return candidates
 
 
-def _column_header(quote: str, offset: int) -> str:
-    """표 행(`|`로 칸을 나눈 줄)의 후보가 속한 열의 머리. 칸 수가 같은 가장 가까운 앞 행을 쓴다."""
+# 구조화 표 경로(`_attach_column_headers`)가 값 뒤에 붙인 셀 머리(`0(합계|2030 목표)`).
+_ZERO_CELL_HEADER_RE = re.compile(r"\s*\(([^()]*)\)")
+# 데이터 칸: 수량으로 시작하거나(`50`·`46명`·`12.4`) 미공시 표기(`-`). 연도 머리(`2026`)는 아니다.
+_TABLE_VALUE_CELL_RE = re.compile(r"\s*(?:[-+]?\d[\d.,]*|[-–—]\s*$)")
+
+
+def _is_table_header_row(cells: list[str]) -> bool:
+    """머리글 행인가: 첫 칸(행 제목 자리) 뒤 칸이 모두 비었거나 이름·연도이고, 하나 이상 채워졌다.
+
+    숫자 데이터 행(`교육 참여 인원 | 0 | 50`)은 칸 수가 같아도 머리글이 아니다. 미발생·미보유
+    서술이 든 행도 사실을 적은 데이터 행이다.
+    """
+    rest = [c.strip() for c in cells[1:]]
+    if not any(rest) or _ZERO_NEGATION_RE.search("|".join(cells)):
+        return False
+    return all(not c or _YEAR_HEADER_RE.fullmatch(c) or not _TABLE_VALUE_CELL_RE.match(c) for c in rest)
+
+
+def _column_header(quote: str, offset: int, length: int = 1) -> tuple[str, str, int]:
+    """후보 셀의 열 머리, 연결 상태, 머리의 인용 안 위치.
+
+    PR 69 4차 검토(2026-10-02): 칸 수가 같은 가장 가까운 앞 행을 머리글로 써서 `교육 참여 인원 |
+    0 | 50`의 `0`을 산업재해 행의 열 머리로 읽었다(목표 0이 실적이 됨). 연도 표에서는 사이에 낀
+    데이터 행 때문에 연도 열을 잃었다. 이제
+      1. 값에 셀 머리가 붙어 있으면(구조화 표의 셀 좌표) 그것을 쓴다 — `cell`.
+      2. 평문 표는 **같은 표**(`|`가 든 줄이 이어진 구간) 안에서 머리글로 확인된 행만 본다.
+         데이터 행은 건너뛴다. 칸 수가 같은 가장 가까운 머리글 행과 그 바로 위의 머리글 행들
+         (여러 줄 머리글)을 열마다 이어 붙인다 — `header`.
+      3. 같은 표에 머리글 행이 없으면 열 정보 없음 — `none`(머리글이 없다는 이유로 값을 지우지 않는다).
+      4. 머리글 행은 있으나 칸 수가 맞는 것이 없으면 `unresolved` — 열을 임의로 고르지 않는다.
+    """
+    cell = _ZERO_CELL_HEADER_RE.match(quote, offset + length)
+    if cell and all(_YEAR_HEADER_RE.fullmatch(part.strip()) or any(k in part for k in _COL_HEADER_KEYWORDS)
+                    or re.search(r"목표|실적|계획|전망", part) for part in cell.group(1).split("|")):
+        return cell.group(1).strip(), "cell", cell.start(1)
     line_start = quote.rfind("\n", 0, offset) + 1
     line_end = quote.find("\n", offset)
     line = quote[line_start:line_end if line_end >= 0 else len(quote)]
     if "|" not in line:
-        return ""
+        return "", "none", -1
     index = quote[line_start:offset].count("|")
     width = line.count("|")
-    for header in reversed(quote[:line_start].splitlines()):
-        if header.count("|") == width:
-            return header.split("|")[index].strip()
-    return ""
+    rows: list[tuple[int, str]] = []       # 같은 표의 앞 행(가까운 것부터)
+    cursor = line_start
+    while cursor > 0:
+        start = quote.rfind("\n", 0, cursor - 1) + 1
+        row = quote[start:cursor - 1]
+        if "|" not in row:
+            break                          # 표가 끝났다 — 다른 표·본문의 행은 보지 않는다
+        rows.append((start, row))
+        cursor = start
+    headers = [(start, row) for start, row in rows
+               if not re.fullmatch(r"[\s|:\-–—]*", row) and _is_table_header_row(row.split("|"))]
+    if not headers:
+        return "", "none", -1
+    nearest = next(((start, row) for start, row in headers if row.count("|") == width), None)
+    if nearest is None:
+        return "", "unresolved", -1
+    # 여러 줄 머리글: 가장 가까운 머리글 행 바로 위로 이어진 같은 칸 수의 머리글 행.
+    stack = [nearest]
+    for start, row in rows[rows.index(nearest) + 1:]:
+        if re.fullmatch(r"[\s|:\-–—]*", row):
+            continue
+        if row.count("|") != width or not _is_table_header_row(row.split("|")):
+            break
+        stack.append((start, row))
+    parts = [row.split("|")[index].strip() for _start, row in reversed(stack)]
+    text = " ".join(p for p in parts if p)
+    head_start, head_row = nearest
+    return text, "header", head_start + sum(len(c) + 1 for c in head_row.split("|")[:index])
 
 
 def _zero_subject(candidate: _ZeroCandidate, specific: list[str], hint_tokens: list[str],
@@ -2843,31 +2929,152 @@ def _negation_mood(statement: str, negation: re.Match[str]) -> str | None:
     return "interpretation_unknown"
 
 
-def _numeric_zero_mood(statement: str, end: int) -> str | None:
+@dataclass(frozen=True)
+class _ZeroUnit:
+    """숫자 0 바로 뒤 단위를 읽은 결과. `tail`부터가 조사·서술어다(단위가 소비한 범위 뒤)."""
+    status: str      # read(사전 단위) | reported(사전 밖이지만 원문 표기 = 모델 단위) | compound |
+                     # absent(값 뒤 단위 없음) | incomplete(`/` 뒤를 못 읽음) | unknown(사전 밖)
+    text: str        # 원문 단위 표기. 없으면 ""
+    tail: int        # statement 안 조사·서술어의 시작
+
+
+# 단위 없이 숫자 0에 바로 붙는 조사·서술어의 첫머리(`0으로`·`0이다`·`0인 경우`).
+_ZERO_UNITLESS_TAIL_RE = re.compile(r"(?:으로|로|이|가|은|는|을|를|의|일|인|임|입니|였)")
+
+
+def _zero_unit(statement: str, end: int, reported_unit: str = "") -> _ZeroUnit:
+    """숫자 0 뒤 단위를 `_read_unit`·단위 사전(`normalize_unit`)으로 읽는다. 0 전용 단위표는 두지 않는다.
+
+    PR 69 4차 검토(2026-10-02): `[A-Za-z%]+\\d*` 또는 한글 1~2글자로 단위를 다시 정의해 사전이
+    지원하는 `0 tCO2eq`·`0 백만원`이 미분류 문장으로 지워졌다.
+    - 분모 표지가 있으면 F1 판독 그대로다 — 끝까지 읽으면 compound, 못 읽으면 incomplete.
+    - 단순 단위는 낱말의 **가장 긴 사전 단위 앞머리**를 단위로, 나머지 한글을 조사·어미로 본다
+      (`건이었으며` → `건` + `이었으며`). 나머지에 영문·숫자·기호가 붙으면(`tCO2eqx`) 단위 표기의
+      일부이므로 사전 밖 단위다 — 알려진 앞머리만 떼어 채택하지 않는다.
+    - 사전 밖 한글 단위(`0곳`)는 원문 표기가 모델 단위와 같을 때만 단위로 인정한다(reported).
+      모델 단위만으로 원문에 없는 단위를 확인했다고 하지 않는다.
+    """
+    from ..rag_gates.units import normalize_unit
+
+    read = _read_unit(statement, end)
+    if read.status == "ABSENT":
+        return _ZeroUnit("absent", "", end)
+    if read.has_denominator_marker:
+        if read.status != "COMPOUND_COMPLETE":
+            return _ZeroUnit("incomplete", read.text, read.span[1])
+        word_end = read.span[1]
+        slash = max(statement.rfind("/", 0, word_end), statement.rfind("／", 0, word_end))
+        denominator = statement[slash + 1:word_end].strip()
+        known = max((n for n in range(1, len(denominator) + 1)
+                     if normalize_unit(denominator[:n]) is not None), default=len(denominator))
+        return _ZeroUnit("compound", read.text, word_end - len(denominator) + known)
+    start, word_end = read.span[0], _UNIT_WORD_RE.match(statement, end).end()
+    word = statement[start:word_end]
+    reported = re.sub(r"\s+", "", reported_unit or "")
+    prefixes = [n for n in range(len(word), 0, -1) if normalize_unit(word[:n]) is not None]
+    if reported and word.startswith(reported) and (not prefixes or len(reported) > prefixes[0]):
+        prefixes.insert(0, len(reported))
+    for n in prefixes:
+        if re.fullmatch(r"[가-힣]*", word[n:]):
+            status = "read" if normalize_unit(word[:n]) is not None else "reported"
+            return _ZeroUnit(status, word[:n], start + n)
+    if _ZERO_UNITLESS_TAIL_RE.match(word):
+        return _ZeroUnit("absent", "", start)   # `0으로 집계`·`0이다` — 단위 없이 조사·서술어가 붙었다
+    return _ZeroUnit("unknown", word, word_end)
+
+
+def _zero_label_unit(statement: str, start: int, column: str) -> str:
+    """값 앞(행 라벨 `산업재해율(‰)`)이나 열 머리(`배출량(tCO2eq)`)에 적힌 단위. 없으면 ""."""
+    from ..rag_gates.units import normalize_unit
+
+    for text in (statement[:start], column):
+        for m in reversed(list(re.finditer(r"[(（]\s*([^()（）]+?)\s*[)）]", text))):
+            if normalize_unit(m.group(1)) is not None:
+                return m.group(1)
+    return ""
+
+
+def _numeric_zero_mood(statement: str, end: int, reported_unit: str = "") -> str | None:
     """숫자 0이 실제 실적으로 적혔으면 None, 아니면 채택하지 않는 사유. 부정 서술과 같은 규약이다.
 
     표의 `산업재해 발생 건수 | 0`과 `0건이다`·`0건으로 집계됐다`는 사실이다. 목표·예상·조건·가정·
     미확인 서술 안의 0, 그리고 **인식하지 못한 뒤 서술**의 0은 사실로 보지 않는다.
+    단위(`_zero_unit`)가 소비한 범위 뒤만 조사·서술어로 판정한다. 단위를 읽었다는 것만으로
+    채택하지 않고, 단위를 읽지 못한 0(`unit_incomplete`·`unit_unknown`)은 사실성 미판정
+    (`interpretation_unknown`)과 따로 기록한다.
     """
     head, rest = statement[:end], statement[end:]
     if _ZERO_UNCONFIRMED_RE.search(statement):
         return "not_confirmed"
     if _ZERO_NO_PROOF_RE.search(rest):
         return "evidence_insufficient"
-    if re.match(r"\s*(?:[A-Za-z%]+\d*|[가-힣]{1,2})?(?:이|일|인)?(?:면|라면|다면|더라도)", rest) \
-            or re.match(r"\s*(?:[A-Za-z%]+\d*|[가-힣]{1,2})?(?:일|인)\s*(?:경우|때)", rest):
+    unit = _zero_unit(statement, end, reported_unit)
+    tail = statement[unit.tail:]
+    if re.match(r"\s*(?:이|일|인)?(?:면|라면|다면|더라도)", tail) \
+            or re.match(r"\s*(?:일|인)\s*(?:경우|때)", tail):
         return "conditional"
     if _ZERO_ASSUMPTION_RE.search(rest):
         return "assumption"
     if _ZERO_INTENT_RE.search(rest) or re.search(r"(?:목표|계획|예정|예상|전망)\s*$", head[:-1]):
         return "future_or_intent"
-    if _ZERO_NUMERIC_FACT_TAIL_RE.fullmatch(rest):
+    if unit.status in ("incomplete", "unknown"):
+        return f"unit_{unit.status}"
+    if _ZERO_NUMERIC_FACT_TAIL_RE.fullmatch(tail):
         return None
     return "interpretation_unknown"
 
 
+# 공통 머리말에 와도 되는 말: 범위·보고 단위를 가리킬 뿐 따로 센 수량이 없는 낱말.
+_ZERO_HEADING_WORDS = frozenset({
+    "현황", "실적", "기준", "기간", "보고", "결과", "요약", "현재", "시점", "월간", "연간", "전체",
+    "구분", "항목", "주요", "데이터", "지표", "성과", "기록", "대상", "사업장", "공장", "본사",
+    "안전", "보건", "환경", "사회", "지배구조", "ESG", "esg"})
+
+
+def _zero_heading(candidate: _ZeroCandidate, hint_tokens: list[str]) -> tuple[list, set[str], str]:
+    """후보에 범위를 물려줄 수 있는 **공통 머리말**의 기간·사업장과 그 원문.
+
+    PR 69 4차 검토(2026-10-02): 다른 절 전체를 폴백 문맥으로 써서 `산업재해 0건, 2026년 4월 김해
+    제1공장 교육 참석 인원 50명`의 산업재해가 교육의 날짜·사업장으로 CONFIRMED가 됐다. 이제
+      - 후보보다 **앞**의 절·서술만 본다(뒤 절은 다른 사실의 서술이다).
+      - 날짜·사업장 표기를 뺀 나머지에 숫자·0 후보가 없고, 낱말이 모두 범위 머리말 낱말
+        (`_ZERO_HEADING_WORDS`)·일반 낱말·이 지표의 낱말일 때만 머리말이다. `교육 참석 인원 50명`·
+        `교육 현황`처럼 다른 대상을 세거나 가리키는 앞 문구는 머리말이 아니다.
+      - 가장 가까운 머리말부터 기간·사업장을 따로 찾는다.
+    """
+    allowed = _ZERO_HEADING_WORDS | _ZERO_GENERIC_TOKENS | set(hint_tokens)
+    spans: list = []
+    sites: set[str] = set()
+    used: list[str] = []
+    for _start, piece in reversed(candidate.preceding):
+        if "|" in piece and not _is_table_header_row(piece.split("|")):
+            continue                       # 표의 데이터 행은 머리말이 아니다
+        rest = piece
+        for span in _date_spans(piece):
+            rest = rest.replace(span.text, " ")
+        rest = _SITE_MENTION_RE.sub(" ", rest)
+        if re.search(r"\d", rest) or _ZERO_NEGATION_RE.search(rest):
+            continue
+        if any(w not in allowed for w in _label_tokens(rest)):
+            continue
+        piece_spans, piece_sites = _date_spans(piece), _site_keys(piece)
+        if not piece_spans and not piece_sites:
+            continue
+        if not spans and piece_spans:
+            spans = piece_spans
+            used.append(piece.strip())
+        if not sites and piece_sites:
+            sites = piece_sites
+            if piece.strip() not in used:
+                used.append(piece.strip())
+        if spans and sites:
+            break
+    return spans, sites, " / ".join(used)
+
+
 def _zero_scope_verdict(candidate: _ZeroCandidate, requested: "_DateSpan | None",
-                        boundary: dict[str, Any], base: dict[str, Any]) -> _ZeroVerdict:
+                        boundary: dict[str, Any], base: dict[str, Any],
+                        hint_tokens: list[str] = ()) -> _ZeroVerdict:
     """사실로 확인된 후보의 **사업장 → 기간** 대조. 숫자 0과 부정 서술이 같은 결정표를 쓴다.
 
     | 요청 ↔ 원문                                      | 판정                         |
@@ -2879,10 +3086,21 @@ def _zero_scope_verdict(candidate: _ZeroCandidate, requested: "_DateSpan | None"
     | 원문에 범위 없음 · 요청 기간 미상 · 원문 연도 미상  | SOURCE_ONLY                  |
     | 원문 범위가 여럿이라 연결을 특정하지 못함           | UNRESOLVED(period_ambiguous) |
     """
-    own = _date_spans(candidate.statement) or _date_spans(candidate.column)
-    spans = own or _date_spans(candidate.context)
-    sites = (_site_keys(candidate.statement) or _site_keys(candidate.column)
-             or _site_keys(candidate.context))
+    statement_spans, column_spans = _date_spans(candidate.statement), _date_spans(candidate.column)
+    statement_sites, column_sites = _site_keys(candidate.statement), _site_keys(candidate.column)
+    spans = statement_spans or column_spans
+    sites = statement_sites or column_sites
+    origin = "statement" if statement_spans or statement_sites else "column" if spans or sites else ""
+    heading = ""
+    if not spans or not sites:
+        heading_spans, heading_sites, heading = _zero_heading(candidate, list(hint_tokens))
+        if (not spans and heading_spans) or (not sites and heading_sites):
+            origin = f"{origin}+heading" if origin else "heading"
+        else:
+            heading = ""
+        spans = spans or heading_spans
+        sites = sites or heading_sites
+    base = {**base, "scope_from": origin, "scope_heading": heading}
     site_text = ", ".join(sorted(sites))
     if not _site_matches(boundary, sites):
         return _ZeroVerdict("REJECTED", "site_mismatch", evidence_site=site_text, **base)
@@ -2905,6 +3123,17 @@ def _zero_scope_verdict(candidate: _ZeroCandidate, requested: "_DateSpan | None"
     if sites and not site:
         return _ZeroVerdict("SOURCE_ONLY", "source_site_only", **scope)
     return _ZeroVerdict("CONFIRMED", "stated_zero", **scope)
+
+
+def _zero_trace(verdict: _ZeroVerdict) -> dict[str, Any]:
+    """0 판정의 연결 근거(위치·열 머리·원문 단위·범위 출처). 감사 기록과 경계 출처에 함께 싣는다.
+
+    `source_unit`은 **원문에 적힌** 단위다. 모델 단위는 별도 필드(`unit`)로 남기고 섞지 않는다.
+    """
+    return {"evidence_offset": verdict.evidence_offset,
+            "evidence_column": verdict.evidence_column, "column_state": verdict.column_state,
+            "source_unit": verdict.source_unit, "unit_location": verdict.unit_location,
+            "scope_from": verdict.scope_from, "scope_heading": verdict.scope_heading[:_QUOTE_MAX_CHARS]}
 
 
 def _zero_scope_boundary(boundary: dict[str, Any], verdict: _ZeroVerdict, period: str) -> dict[str, Any]:
@@ -2937,7 +3166,8 @@ def _zero_scope_boundary(boundary: dict[str, Any], verdict: _ZeroVerdict, period
               "candidate": verdict.candidate, "requested_period": period,
               "requested_scope": verdict.requested_scope,
               "source_period": verdict.evidence_period, "source_site": verdict.evidence_site,
-              "evidence": verdict.evidence_text[:_QUOTE_MAX_CHARS], "method": "rule"}
+              "evidence": verdict.evidence_text[:_QUOTE_MAX_CHARS], **_zero_trace(verdict),
+              "method": "rule"}
     merged = {**boundary, **scope}
     merged["provenance"] = [*(boundary.get("provenance") or []), record]
     if verdict.status == "SOURCE_ONLY":
@@ -3388,7 +3618,7 @@ def _map_vlm_json(
             # 아무것도 단정하지 않고 그대로 둔다(추측으로 값을 바꾸지 않는다).
             if quote:
                 boundary = m.get("boundary") if isinstance(m.get("boundary"), dict) else {}
-                zero = _zero_verdict(quote, hint, period, boundary) if value == 0 else None
+                zero = _zero_verdict(quote, hint, period, boundary, unit) if value == 0 else None
                 if zero is not None and not zero.accepted:
                     # 실측 결함: 원문 칸이 `-`(미공시)인데 0으로 실렸다(삼성전기 4건 —
                     # 유동성장기차입금·장기차입금·지역전문가·Category 9). 자기 근거 문구에
@@ -3407,6 +3637,7 @@ def _map_vlm_json(
                                        "evidence_period": zero.evidence_period,
                                        "evidence_site": zero.evidence_site,
                                        "evidence_text": zero.evidence_text[:_QUOTE_MAX_CHARS],
+                                       **_zero_trace(zero),
                                        "quote": quote[:_QUOTE_MAX_CHARS]})
                     continue
                 if zero is not None:
