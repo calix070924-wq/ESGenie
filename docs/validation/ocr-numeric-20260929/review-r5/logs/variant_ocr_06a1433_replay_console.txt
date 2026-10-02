@@ -1,0 +1,6 @@
+Consider using the pymupdf_layout package for a greatly improved page layout analysis.
+R8l_가스_정상열량_아래납부예정금액.pdf gas_bill upstage_dp {'requests': 1, 'successes': 1, 'failures': 0} [(8420.0, 'm³', None, '', None), (360772.0, 'MJ', 'E-4-1', '', None)]
+R8m_가스_열량칸대시_아래납부예정금액.pdf gas_bill upstage_dp {'requests': 1, 'successes': 1, 'failures': 0} [(8420.0, 'm³', None, '', None)]
+R8n_가스_열량칸검침예정_아래청구예정금액.pdf gas_bill upstage_dp {'requests': 1, 'successes': 1, 'failures': 0} [(8420.0, 'm³', None, '', None)]
+R8o_가스_혼합표_납부예정금액행_정상열량.pdf gas_bill upstage_dp {'requests': 1, 'successes': 1, 'failures': 0} []
+llm {'mode': 'on', 'hits': 0, 'misses': 0, 'live_calls': 0, 'successes': 0, 'failures': 0}

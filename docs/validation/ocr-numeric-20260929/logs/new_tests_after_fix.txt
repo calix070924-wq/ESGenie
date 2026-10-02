@@ -1,0 +1,69 @@
+# code: 387999b05b4a7e0ccd0b1725035f521a36d67d55 + working tree changes (uncommitted fix)
+============================= test session starts ==============================
+platform darwin -- Python 3.13.13, pytest-9.1.1, pluggy-1.6.0
+rootdir: /private/tmp/ESGenie-ocr-numeric-20260929
+configfile: pyproject.toml
+plugins: anyio-4.14.0
+collected 52 items
+
+tests/test_ocr_numeric_extraction.py ................................... [ 67%]
+.................                                                        [100%]
+
+==================================== PASSES ====================================
+__________________ test_route_bills_unchanged[02-kepco_bill] ___________________
+----------------------------- Captured stdout call -----------------------------
+Consider using the pymupdf_layout package for a greatly improved page layout analysis.
+=========================== short test summary info ============================
+PASSED tests/test_ocr_numeric_extraction.py::test_replay_02_electricity_reads_usage_not_index_or_amount
+PASSED tests/test_ocr_numeric_extraction.py::test_replay_03_gas_reads_volume_without_inventing_heat
+PASSED tests/test_ocr_numeric_extraction.py::test_replay_07_water_reads_usage_in_m3
+PASSED tests/test_ocr_numeric_extraction.py::test_replay_04_waste_total_recycled_and_rate_are_consistent
+PASSED tests/test_ocr_numeric_extraction.py::test_replay_06_regulation_heading_never_becomes_quantity
+PASSED tests/test_ocr_numeric_extraction.py::test_replay_01_company_profile_forced_as_waste_yields_nothing
+PASSED tests/test_ocr_numeric_extraction.py::test_pdf_usage_value_and_cell_location[02-kepco_bill-142560-kWh-E-4-1-0.635]
+PASSED tests/test_ocr_numeric_extraction.py::test_pdf_usage_value_and_cell_location[03-gas_bill-8420-m\xb3-None-0.594]
+PASSED tests/test_ocr_numeric_extraction.py::test_pdf_usage_value_and_cell_location[07-water_bill-680-m\xb3-E-5-1-0.58]
+PASSED tests/test_ocr_numeric_extraction.py::test_pdf_waste_values_and_locations
+PASSED tests/test_ocr_numeric_extraction.py::test_pdf_regulation_yields_no_quantity_even_if_misrouted
+PASSED tests/test_ocr_numeric_extraction.py::test_route_bills_unchanged[02-kepco_bill]
+PASSED tests/test_ocr_numeric_extraction.py::test_route_bills_unchanged[03-gas_bill]
+PASSED tests/test_ocr_numeric_extraction.py::test_route_bills_unchanged[04-waste_ledger]
+PASSED tests/test_ocr_numeric_extraction.py::test_route_bills_unchanged[07-water_bill]
+PASSED tests/test_ocr_numeric_extraction.py::test_route_waste_keyword_alone_does_not_force_ledger[01]
+PASSED tests/test_ocr_numeric_extraction.py::test_route_waste_keyword_alone_does_not_force_ledger[06]
+PASSED tests/test_ocr_numeric_extraction.py::test_bm_metrics_keep_month_and_site_through_graph
+PASSED tests/test_ocr_numeric_extraction.py::test_elec_changed_numbers
+PASSED tests/test_ocr_numeric_extraction.py::test_elec_column_order_and_unit_only_in_header
+PASSED tests/test_ocr_numeric_extraction.py::test_elec_markdown_only_row_without_table_objects
+PASSED tests/test_ocr_numeric_extraction.py::test_elec_index_only_is_computed_and_marked
+PASSED tests/test_ocr_numeric_extraction.py::test_elec_missing_multiplier_is_not_assumed
+PASSED tests/test_ocr_numeric_extraction.py::test_elec_explicit_differs_from_index_keeps_both_and_flags_review
+PASSED tests/test_ocr_numeric_extraction.py::test_elec_zero_usage_is_a_value
+PASSED tests/test_ocr_numeric_extraction.py::test_elec_missing_unit_is_not_filled_by_template_default
+PASSED tests/test_ocr_numeric_extraction.py::test_elec_amount_tax_date_noise_not_usage
+PASSED tests/test_ocr_numeric_extraction.py::test_elec_rows_per_site_are_kept_apart
+PASSED tests/test_ocr_numeric_extraction.py::test_gas_changed_numbers_and_square_meter_glyph
+PASSED tests/test_ocr_numeric_extraction.py::test_gas_unit_only_in_header_cells_per_token
+PASSED tests/test_ocr_numeric_extraction.py::test_gas_index_only_with_volume_units_is_computed
+PASSED tests/test_ocr_numeric_extraction.py::test_gas_explicit_heat_column_is_kept_separately
+PASSED tests/test_ocr_numeric_extraction.py::test_gas_current_below_previous_is_not_computed
+PASSED tests/test_ocr_numeric_extraction.py::test_water_changed_numbers_m3
+PASSED tests/test_ocr_numeric_extraction.py::test_water_swapped_order_ton_header
+PASSED tests/test_ocr_numeric_extraction.py::test_water_previous_month_column_is_not_current_usage
+PASSED tests/test_ocr_numeric_extraction.py::test_water_zero_usage
+PASSED tests/test_ocr_numeric_extraction.py::test_waste_changed_numbers
+PASSED tests/test_ocr_numeric_extraction.py::test_waste_ton_units_preserved
+PASSED tests/test_ocr_numeric_extraction.py::test_waste_key_value_rows
+PASSED tests/test_ocr_numeric_extraction.py::test_waste_components_mismatch_flags_review
+PASSED tests/test_ocr_numeric_extraction.py::test_waste_detail_rows_alone_do_not_fabricate_total
+PASSED tests/test_ocr_numeric_extraction.py::test_heading_numbers_after_label_sentence_never_quantity[waste_ledger]
+PASSED tests/test_ocr_numeric_extraction.py::test_heading_numbers_after_label_sentence_never_quantity[gas_bill]
+PASSED tests/test_ocr_numeric_extraction.py::test_heading_numbers_after_label_sentence_never_quantity[water_bill]
+PASSED tests/test_ocr_numeric_extraction.py::test_heading_numbers_after_label_sentence_never_quantity[kepco_bill]
+PASSED tests/test_ocr_numeric_extraction.py::test_route_long_policy_text_with_waste_words_not_ledger
+PASSED tests/test_ocr_numeric_extraction.py::test_route_long_ledger_text_with_mass_units_is_ledger
+PASSED tests/test_ocr_numeric_extraction.py::test_old_set_values_are_preserved
+PASSED tests/test_ocr_numeric_extraction.py::test_units_volume_aliases_do_not_mix_dimensions
+PASSED tests/test_ocr_numeric_extraction.py::test_two_tables_disagreeing_on_usage_flag_review
+PASSED tests/test_ocr_numeric_extraction.py::test_route_ledger_with_unit_only_in_section_header_is_ledger
+============================== 52 passed in 0.56s ==============================

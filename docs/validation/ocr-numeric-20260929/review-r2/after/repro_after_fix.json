@@ -1,0 +1,480 @@
+[
+  {
+    "case": "empty_electric_missing_multiplier",
+    "metrics": [],
+    "meta": {
+      "engine": "upstage_dp",
+      "table_metrics": {
+        "records": [],
+        "review": [
+          {
+            "reason": "multiplier_missing",
+            "table_id": "t0",
+            "cells": [
+              "1,000",
+              "1,250"
+            ],
+            "input_units": {
+              "previous": null,
+              "current": null
+            }
+          },
+          {
+            "reason": "value_absent",
+            "role": "usage",
+            "header": "사용량(kWh)",
+            "raw_text": "-",
+            "state": "held:multiplier_missing",
+            "table_id": "t0"
+          },
+          {
+            "reason": "multiplier_missing",
+            "table_id": "text_block_0",
+            "cells": [
+              "1,000",
+              "1,250"
+            ],
+            "input_units": {
+              "previous": null,
+              "current": null
+            }
+          },
+          {
+            "reason": "value_absent",
+            "role": "usage",
+            "header": "사용량(kWh)",
+            "raw_text": "-",
+            "state": "held:multiplier_missing",
+            "table_id": "text_block_0"
+          },
+          {
+            "reason": "template_candidate_from_other_cell",
+            "label": "사용전력량",
+            "value": 1000.0,
+            "absent_role": "usage",
+            "absent_header": "사용량(kWh)",
+            "table_id": "t0"
+          }
+        ],
+        "checks": [],
+        "claimed_roles": [],
+        "absent_cells": [
+          {
+            "role": "usage",
+            "header": "사용량(kWh)",
+            "raw_text": "-",
+            "table_id": "t0",
+            "page": 0,
+            "area": [
+              0.05,
+              0.2,
+              0.51,
+              0.24
+            ],
+            "row_label": "",
+            "state": "held:multiplier_missing"
+          },
+          {
+            "role": "usage",
+            "header": "사용량(kWh)",
+            "raw_text": "-",
+            "table_id": "text_block_0",
+            "page": 0,
+            "area": [
+              0.05,
+              0.2,
+              0.51,
+              0.24
+            ],
+            "row_label": "",
+            "state": "held:multiplier_missing"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "case": "empty_heat_with_only_previous",
+    "metrics": [],
+    "meta": {
+      "engine": "upstage_dp",
+      "table_metrics": {
+        "records": [],
+        "review": [
+          {
+            "reason": "value_absent",
+            "role": "heat",
+            "header": "가스사용량(MJ)",
+            "raw_text": "-",
+            "state": "absent",
+            "table_id": "t0"
+          },
+          {
+            "reason": "value_absent",
+            "role": "heat",
+            "header": "가스사용량(MJ)",
+            "raw_text": "-",
+            "state": "absent",
+            "table_id": "text_block_0"
+          },
+          {
+            "reason": "template_candidate_from_other_cell",
+            "label": "가스사용량",
+            "value": 31580.0,
+            "absent_role": "heat",
+            "absent_header": "가스사용량(MJ)",
+            "table_id": "t0"
+          }
+        ],
+        "checks": [],
+        "claimed_roles": [],
+        "absent_cells": [
+          {
+            "role": "heat",
+            "header": "가스사용량(MJ)",
+            "raw_text": "-",
+            "table_id": "t0",
+            "page": 0,
+            "area": [
+              0.05,
+              0.2,
+              0.35,
+              0.24
+            ],
+            "row_label": "",
+            "state": "absent"
+          },
+          {
+            "role": "heat",
+            "header": "가스사용량(MJ)",
+            "raw_text": "-",
+            "table_id": "text_block_0",
+            "page": 0,
+            "area": [
+              0.05,
+              0.2,
+              0.35,
+              0.24
+            ],
+            "row_label": "",
+            "state": "absent"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "case": "same_site_different_period",
+    "metrics": [
+      {
+        "metric_hint": "사용전력량 (김해 제1공장 · 2026년 4월)",
+        "value": 1000.0,
+        "unit": "kWh",
+        "period": "2026년 4월",
+        "kesg_code_guess": "E-4-1",
+        "bbox": [
+          0.37,
+          0.23,
+          0.51,
+          0.24
+        ],
+        "page": 0,
+        "confidence": 0.9,
+        "boundary": {},
+        "source_detail": {
+          "extractor": "ocr_table_metrics",
+          "role": "usage",
+          "table_id": "t0",
+          "grid_source": "table_cells",
+          "header": "사용량(kWh)",
+          "row_label": "김해 제1공장 · 2026년 4월",
+          "raw_text": "1,000",
+          "raw_value": 1000.0,
+          "raw_unit": "kWh",
+          "unit": "kWh",
+          "unit_source": "header",
+          "value_source": "explicit",
+          "precision": "cell",
+          "cells": [
+            {
+              "text": "1,000",
+              "bbox": [
+                0.37,
+                0.23,
+                0.51,
+                0.24
+              ],
+              "page": 0,
+              "precision": "cell"
+            }
+          ],
+          "row_label_axis": "site",
+          "scope": {
+            "site": "김해 제1공장",
+            "period": "2026년 4월"
+          }
+        }
+      },
+      {
+        "metric_hint": "사용전력량 (김해 제1공장 · 2026년 5월)",
+        "value": 1000.0,
+        "unit": "kWh",
+        "period": "2026년 5월",
+        "kesg_code_guess": "E-4-1",
+        "bbox": [
+          0.37,
+          0.43000000000000005,
+          0.51,
+          0.44000000000000006
+        ],
+        "page": 0,
+        "confidence": 0.9,
+        "boundary": {},
+        "source_detail": {
+          "extractor": "ocr_table_metrics",
+          "role": "usage",
+          "table_id": "t1",
+          "grid_source": "table_cells",
+          "header": "사용량(kWh)",
+          "row_label": "김해 제1공장 · 2026년 5월",
+          "raw_text": "1,000",
+          "raw_value": 1000.0,
+          "raw_unit": "kWh",
+          "unit": "kWh",
+          "unit_source": "header",
+          "value_source": "explicit",
+          "precision": "cell",
+          "cells": [
+            {
+              "text": "1,000",
+              "bbox": [
+                0.37,
+                0.43000000000000005,
+                0.51,
+                0.44000000000000006
+              ],
+              "page": 0,
+              "precision": "cell"
+            }
+          ],
+          "row_label_axis": "site",
+          "scope": {
+            "site": "김해 제1공장",
+            "period": "2026년 5월"
+          }
+        }
+      }
+    ],
+    "meta": {
+      "engine": "upstage_dp",
+      "table_metrics": {
+        "records": [
+          {
+            "extractor": "ocr_table_metrics",
+            "role": "usage",
+            "table_id": "t0",
+            "grid_source": "table_cells",
+            "header": "사용량(kWh)",
+            "row_label": "김해 제1공장 · 2026년 4월",
+            "raw_text": "1,000",
+            "raw_value": 1000.0,
+            "raw_unit": "kWh",
+            "unit": "kWh",
+            "unit_source": "header",
+            "value_source": "explicit",
+            "precision": "cell",
+            "row_label_axis": "site",
+            "scope": {
+              "site": "김해 제1공장",
+              "period": "2026년 4월"
+            },
+            "metric_hint": "사용전력량 (김해 제1공장 · 2026년 4월)"
+          },
+          {
+            "extractor": "ocr_table_metrics",
+            "role": "usage",
+            "table_id": "t1",
+            "grid_source": "table_cells",
+            "header": "사용량(kWh)",
+            "row_label": "김해 제1공장 · 2026년 5월",
+            "raw_text": "1,000",
+            "raw_value": 1000.0,
+            "raw_unit": "kWh",
+            "unit": "kWh",
+            "unit_source": "header",
+            "value_source": "explicit",
+            "precision": "cell",
+            "row_label_axis": "site",
+            "scope": {
+              "site": "김해 제1공장",
+              "period": "2026년 5월"
+            },
+            "metric_hint": "사용전력량 (김해 제1공장 · 2026년 5월)"
+          }
+        ],
+        "review": [],
+        "checks": [],
+        "claimed_roles": [
+          "usage"
+        ]
+      }
+    }
+  },
+  {
+    "case": "different_meters_same_site",
+    "metrics": [
+      {
+        "metric_hint": "사용전력량 (김해 제1공장 · 전력계 A)",
+        "value": 1000.0,
+        "unit": "kWh",
+        "period": "",
+        "kesg_code_guess": "E-4-1",
+        "bbox": [
+          0.37,
+          0.23,
+          0.51,
+          0.24
+        ],
+        "page": 0,
+        "confidence": 0.9,
+        "boundary": {},
+        "source_detail": {
+          "extractor": "ocr_table_metrics",
+          "role": "usage",
+          "table_id": "t0",
+          "grid_source": "table_cells",
+          "header": "사용량(kWh)",
+          "row_label": "김해 제1공장 · 전력계 A",
+          "raw_text": "1,000",
+          "raw_value": 1000.0,
+          "raw_unit": "kWh",
+          "unit": "kWh",
+          "unit_source": "header",
+          "value_source": "explicit",
+          "precision": "cell",
+          "cells": [
+            {
+              "text": "1,000",
+              "bbox": [
+                0.37,
+                0.23,
+                0.51,
+                0.24
+              ],
+              "page": 0,
+              "precision": "cell"
+            }
+          ],
+          "row_label_axis": "site",
+          "scope": {
+            "site": "김해 제1공장",
+            "meter": "전력계 A"
+          }
+        }
+      },
+      {
+        "metric_hint": "사용전력량 (김해 제1공장 · 전력계 B)",
+        "value": 1000.0,
+        "unit": "kWh",
+        "period": "",
+        "kesg_code_guess": "E-4-1",
+        "bbox": [
+          0.37,
+          0.43000000000000005,
+          0.51,
+          0.44000000000000006
+        ],
+        "page": 0,
+        "confidence": 0.9,
+        "boundary": {},
+        "source_detail": {
+          "extractor": "ocr_table_metrics",
+          "role": "usage",
+          "table_id": "t1",
+          "grid_source": "table_cells",
+          "header": "사용량(kWh)",
+          "row_label": "김해 제1공장 · 전력계 B",
+          "raw_text": "1,000",
+          "raw_value": 1000.0,
+          "raw_unit": "kWh",
+          "unit": "kWh",
+          "unit_source": "header",
+          "value_source": "explicit",
+          "precision": "cell",
+          "cells": [
+            {
+              "text": "1,000",
+              "bbox": [
+                0.37,
+                0.43000000000000005,
+                0.51,
+                0.44000000000000006
+              ],
+              "page": 0,
+              "precision": "cell"
+            }
+          ],
+          "row_label_axis": "site",
+          "scope": {
+            "site": "김해 제1공장",
+            "meter": "전력계 B"
+          }
+        }
+      }
+    ],
+    "meta": {
+      "engine": "upstage_dp",
+      "table_metrics": {
+        "records": [
+          {
+            "extractor": "ocr_table_metrics",
+            "role": "usage",
+            "table_id": "t0",
+            "grid_source": "table_cells",
+            "header": "사용량(kWh)",
+            "row_label": "김해 제1공장 · 전력계 A",
+            "raw_text": "1,000",
+            "raw_value": 1000.0,
+            "raw_unit": "kWh",
+            "unit": "kWh",
+            "unit_source": "header",
+            "value_source": "explicit",
+            "precision": "cell",
+            "row_label_axis": "site",
+            "scope": {
+              "site": "김해 제1공장",
+              "meter": "전력계 A"
+            },
+            "metric_hint": "사용전력량 (김해 제1공장 · 전력계 A)"
+          },
+          {
+            "extractor": "ocr_table_metrics",
+            "role": "usage",
+            "table_id": "t1",
+            "grid_source": "table_cells",
+            "header": "사용량(kWh)",
+            "row_label": "김해 제1공장 · 전력계 B",
+            "raw_text": "1,000",
+            "raw_value": 1000.0,
+            "raw_unit": "kWh",
+            "unit": "kWh",
+            "unit_source": "header",
+            "value_source": "explicit",
+            "precision": "cell",
+            "row_label_axis": "site",
+            "scope": {
+              "site": "김해 제1공장",
+              "meter": "전력계 B"
+            },
+            "metric_hint": "사용전력량 (김해 제1공장 · 전력계 B)"
+          }
+        ],
+        "review": [],
+        "checks": [],
+        "claimed_roles": [
+          "usage"
+        ]
+      }
+    }
+  }
+]

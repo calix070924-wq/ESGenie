@@ -1,0 +1,164 @@
+{
+ "01_기업및임직원현황_2026-04.pdf": "ambiguous_fallback_vlm",
+ "01_전기요금청구서_2026-05.pdf": {
+  "doc_type": "kepco_bill",
+  "metrics": [
+   [
+    142560.0,
+    "kWh",
+    "E-4-1",
+    0
+   ],
+   [
+    27748160.0,
+    "원",
+    "",
+    0
+   ]
+  ]
+ },
+ "02_도시가스요금고지서_2026-05.pdf": {
+  "doc_type": "gas_bill",
+  "metrics": [
+   [
+    8420.0,
+    "m³",
+    "",
+    0
+   ],
+   [
+    360772.0,
+    "MJ",
+    "E-4-1",
+    0
+   ]
+  ]
+ },
+ "02_전기요금청구서_2026-04.pdf": {
+  "doc_type": "kepco_bill",
+  "metrics": [
+   [
+    142560.0,
+    "kWh",
+    "E-4-1",
+    0
+   ],
+   [
+    25938000.0,
+    "원",
+    "",
+    0
+   ]
+  ]
+ },
+ "03_도시가스요금고지서_2026-04.pdf": {
+  "doc_type": "gas_bill",
+  "metrics": [
+   [
+    8420.0,
+    "m³",
+    "",
+    0
+   ]
+  ]
+ },
+ "03_사업장폐기물_위탁처리명세_2026-04.pdf": {
+  "doc_type": "waste_ledger",
+  "metrics": [
+   [
+    18.4,
+    "ton",
+    "E-6-1",
+    0
+   ],
+   [
+    29.3,
+    "%",
+    "E-6-2",
+    0
+   ],
+   [
+    5400.0,
+    "kg",
+    "",
+    0
+   ],
+   [
+    5400.0,
+    "kg",
+    "",
+    0
+   ]
+  ]
+ },
+ "04_사내_환경ESG경영방침_규정.pdf": "policy_manual",
+ "04_사업장폐기물위탁처리명세_2026-04.pdf": {
+  "doc_type": "waste_ledger",
+  "metrics": [
+   [
+    29.3,
+    "%",
+    "E-6-2",
+    0
+   ],
+   [
+    5400.0,
+    "kg",
+    "",
+    0
+   ],
+   [
+    18400.0,
+    "kg",
+    "E-6-1",
+    0
+   ]
+  ]
+ },
+ "05_OEM_ESG자가진단설문_한성모터스.pdf": "policy_manual",
+ "05_한성모터스_자가진단응답초안_2026-09.pdf": "policy_manual",
+ "06_OEM_ESG자가진단설문_대주오토.pdf": "policy_manual",
+ "06_환경안전관리규정_2026.pdf": "policy_manual",
+ "07_OEM_ESG자가진단설문_GL모빌리티.pdf": "policy_manual",
+ "07_상수도청구서_2026-04.pdf": {
+  "doc_type": "water_bill",
+  "metrics": [
+   [
+    680.0,
+    "m³",
+    "E-5-1",
+    0
+   ]
+  ]
+ },
+ "08_공정스크랩관리대장_2026-04.pdf": "ambiguous_fallback_vlm",
+ "08_이사회_회의록_2026-06.pdf": "safety_minutes",
+ "09_상수도청구서_2026-05.pdf": "ambiguous_fallback_vlm",
+ "09_안전보건교육실시기록_2026-04-22.pdf": "emergency_manual",
+ "10_윤리경영및고충처리규정_2026.pdf": "ambiguous_fallback_vlm",
+ "10_임직원현황표_2026-06.pdf": "ambiguous_fallback_vlm",
+ "11_원부자재사용현황_2026-06.pdf": "ambiguous_fallback_vlm",
+ "11_정보보호관리규정_2026.pdf": "policy_manual",
+ "12_개인별주간근로시간기록_2026-04-13_19.pdf": "ambiguous_fallback_vlm",
+ "12_재생에너지사용현황_2026-06.pdf": "ambiguous_fallback_vlm",
+ "13_근로시간현황_2026-06.pdf": "ambiguous_fallback_vlm",
+ "13_안전보건추가교육실시기록_2026-04-27.pdf": "emergency_manual",
+ "14_임금및복리후생규정_2026-06.pdf": "policy_manual",
+ "15_노사협의회규정_2026-06.pdf": "ambiguous_fallback_vlm",
+ "16_부패방지윤리경영규정_2026-06.pdf": "policy_manual",
+ "17_고충처리및신원보호규정_2026-06.pdf": "ambiguous_fallback_vlm",
+ "18_정보보호정책_2026-06.pdf": "ambiguous_fallback_vlm",
+ "19_법규준수현황및ESG대응선언_2026-06.pdf": "policy_manual",
+ "20_RBA자가평가체크리스트_2026-06.pdf": "policy_manual",
+ "test.pdf": "ambiguous_fallback_vlm",
+ "근로시간관리규정_2025.pdf": "policy_manual",
+ "문서기록관리규정_2025.pdf": "policy_manual",
+ "물질규제_RoHS_REACH_2025.pdf": "ambiguous_fallback_vlm",
+ "법규_고객요구사항관리_2025.pdf": "policy_manual",
+ "시정조치_CAPA절차서_2025.pdf": "ambiguous_fallback_vlm",
+ "위생_기숙사관리규정_2025.pdf": "policy_manual",
+ "유해물질관리규정_2025.pdf": "ambiguous_fallback_vlm",
+ "의사소통절차서_2025.pdf": "policy_manual",
+ "지식재산보호규정_2025.pdf": "ambiguous_fallback_vlm",
+ "책임광물실사정책_2025.pdf": "ambiguous_fallback_vlm"
+}

@@ -47,8 +47,9 @@ def test_scaled_mass_and_headcount_keep_their_multiplier():
 
 
 def test_volume_units_are_read():
-    assert normalize_unit("m3") == "m3"
-    assert normalize_unit("㎥") == "m3"
+    # 대표 표기는 `m³`다(main 병합 때 통일, K-ESG E-5-1 정의 단위). 외부 표기는 모두 같은 단위다.
+    for written in ("m3", "m³", "㎥", "m^3", "세제곱미터", "M3"):
+        assert normalize_unit(written) == "m³", written
     assert normalize_unit("리터") == "L"
     assert normalize_unit("kL") == "kL"
 
@@ -69,7 +70,9 @@ def test_korean_currency_scales_convert_within_the_won_family():
 
 
 def test_volume_converts_within_its_own_family():
-    assert convert_to_common(1.0, "m3", "L") == pytest.approx(1_000.0)
+    assert convert_to_common(1.0, "m³", "L") == pytest.approx(1_000.0)
+    assert convert_to_common(1.0, "m³", "kL") == pytest.approx(1.0)
+    assert convert_to_common(2_500.0, "L", "m³") == pytest.approx(2.5)
 
 
 def test_emission_scales_convert():
@@ -95,8 +98,8 @@ def test_volume_and_mass_stay_separate_outside_water_metrics():
 
     전역에서 합치면 폐기물 발생량 톤이 m³로 환산된다.
     """
-    assert units_compatible("m3", "t") is False
-    assert convert_to_common(100.0, "m3", "t") is None
+    assert units_compatible("m³", "t") is False
+    assert convert_to_common(100.0, "m³", "t") is None
 
 
 def test_emissions_are_not_plain_mass():

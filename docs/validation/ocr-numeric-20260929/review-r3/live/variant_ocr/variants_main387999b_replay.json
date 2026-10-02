@@ -1,0 +1,123 @@
+{
+ "code_path": "/private/tmp/ESGenie-main-387999b",
+ "commit": "387999b05b4a7e0ccd0b1725035f521a36d67d55",
+ "ocr_mode": "replay",
+ "raw_dir": "/private/tmp/ESGenie-ocr-numeric-20260929/docs/validation/ocr-numeric-20260929/review-r3/live/variant_ocr/raw_upstage",
+ "imported_esgenie": "/private/tmp/ESGenie-main-387999b/esgenie/__init__.py",
+ "force_mock": false,
+ "llm_key_present": true,
+ "ocr_key_present": true,
+ "cache_dir": "/private/tmp/ESGenie-ocr-numeric-20260929/docs/validation/ocr-numeric-20260929/review-r3/live/variant_ocr/cache_main387999b_replay",
+ "llm": {
+  "mode": "on",
+  "hits": 0,
+  "misses": 0,
+  "live_calls": 0,
+  "successes": 0,
+  "failures": 0
+ },
+ "documents": [
+  {
+   "file": "R8a_가스_정상열량_아래기본요금.pdf",
+   "sha256": "26f07a8657fba521f17e901e306c1319c822315312fcd8824c88687fa4ef7917",
+   "doc_type": "gas_bill",
+   "engine": "upstage_dp",
+   "seconds": 0.07,
+   "upstage": {
+    "requests": 1,
+    "successes": 1,
+    "failures": 0
+   },
+   "metrics": [],
+   "review": [],
+   "absent_cells": [],
+   "money_rows": [],
+   "hitl_required": null
+  },
+  {
+   "file": "R8b_가스_열량칸대시_아래기본요금.pdf",
+   "sha256": "f8b57cb129560e76e978243256c4fb990932a63f175ff06e3e4c41053488fda4",
+   "doc_type": "gas_bill",
+   "engine": "upstage_dp",
+   "seconds": 0.0,
+   "upstage": {
+    "requests": 1,
+    "successes": 1,
+    "failures": 0
+   },
+   "metrics": [],
+   "review": [],
+   "absent_cells": [],
+   "money_rows": [],
+   "hitl_required": null
+  },
+  {
+   "file": "R8c_가스_표선_정상열량_아래기본요금.pdf",
+   "sha256": "cccced343174f082521951c10d4bf41af7e46537b48f669e785da68d9c65261d",
+   "doc_type": "gas_bill",
+   "engine": "upstage_dp",
+   "seconds": 0.01,
+   "upstage": {
+    "requests": 1,
+    "successes": 1,
+    "failures": 0
+   },
+   "metrics": [],
+   "review": [],
+   "absent_cells": [],
+   "money_rows": [],
+   "hitl_required": null
+  },
+  {
+   "file": "R8d_가스_표선_열량칸대시_아래기본요금.pdf",
+   "sha256": "25affbf577e8b16c2ab989962a3957ec8c6a7b0e8463f66021489cf16ad28de1",
+   "doc_type": "gas_bill",
+   "engine": "upstage_dp",
+   "seconds": 0.01,
+   "upstage": {
+    "requests": 1,
+    "successes": 1,
+    "failures": 0
+   },
+   "metrics": [],
+   "review": [],
+   "absent_cells": [],
+   "money_rows": [],
+   "hitl_required": null
+  },
+  {
+   "file": "R8e_가스_표선NotoKR_정상열량_아래기본요금.pdf",
+   "sha256": "06fd9a9815468432bdb70f6341d725f6070e2bc9be34b8ea8385de5761b20565",
+   "doc_type": "gas_bill",
+   "engine": "upstage_dp",
+   "seconds": 0.01,
+   "upstage": {
+    "requests": 1,
+    "successes": 1,
+    "failures": 0
+   },
+   "metrics": [],
+   "review": [],
+   "absent_cells": [],
+   "money_rows": [],
+   "hitl_required": null
+  },
+  {
+   "file": "R8f_가스_표선NotoKR_열량칸대시_아래기본요금.pdf",
+   "sha256": "ea5dedeab47fe0e970a81ad1a2cc624e685539729cbdc091fa85312d8728bbcb",
+   "doc_type": "gas_bill",
+   "engine": "upstage_dp",
+   "seconds": 0.01,
+   "upstage": {
+    "requests": 1,
+    "successes": 1,
+    "failures": 0
+   },
+   "metrics": [],
+   "review": [],
+   "absent_cells": [],
+   "money_rows": [],
+   "hitl_required": null
+  }
+ ]
+}

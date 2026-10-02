@@ -1,0 +1,55 @@
+2026-09-29 13:31:30,614 INFO esgenie.pipeline [L0] SSOT Evidence Graph 구축 중...
+2026-09-29 13:31:30,667 INFO esgenie.ssot.ocr_router [OCR] 캐시 on — hit 1 / miss 0 [01_기업및임직원현황_2026-04.pdf]
+2026-09-29 13:31:35,265 INFO esgenie.ssot.ocr_router [OCR] 캐시 on — hit 1 / miss 0 [06_환경안전관리규정_2026.pdf]
+2026-09-29 13:31:36,776 INFO esgenie.ssot.ocr_router [OCR] 캐시 on — hit 1 / miss 0 [08_공정스크랩관리대장_2026-04.pdf]
+2026-09-29 13:31:36,836 INFO esgenie.ssot.ocr_router [OCR] 캐시 on — hit 1 / miss 0 [09_안전보건교육실시기록_2026-04-22.pdf]
+2026-09-29 13:31:36,894 INFO esgenie.ssot.ocr_router [OCR] 캐시 on — hit 1 / miss 0 [10_윤리경영및고충처리규정_2026.pdf]
+2026-09-29 13:31:36,943 INFO esgenie.ssot.ocr_router [OCR] 캐시 on — hit 1 / miss 0 [11_정보보호관리규정_2026.pdf]
+2026-09-29 13:31:37,007 INFO esgenie.ssot.ocr_router [OCR] 캐시 on — hit 1 / miss 0 [12_개인별주간근로시간기록_2026-04-13_19.pdf]
+2026-09-29 13:31:37,015 INFO esgenie.pipeline [OCR] 캐시 hit 7 / miss 0 (mode=hit)
+2026-09-29 13:31:37,037 INFO esgenie.pipeline [L0] 완료: 30 노드, 36 텍스트노드, 0 엣지
+2026-09-29 13:31:37,037 INFO esgenie.pipeline [L0] 비DART 증빙을 빈 CompanyReport에 연결 — 단일 L1~L5 경로 사용
+2026-09-29 13:31:37,037 INFO esgenie.pipeline [L1] K-ESG 항목 추출 중...
+2026-09-29 13:31:37,041 INFO esgenie.pipeline [L1] 완료: 17.9% 커버리지 (중소기업 기본형 (28항목))
+2026-09-29 13:31:37,041 INFO esgenie.pipeline [D6] 선택적 공시 의심도=0.56 (high)
+2026-09-29 13:31:37,041 INFO esgenie.pipeline [ISSB] 프로파일 내 2/6 공시, 누락 4
+2026-09-29 13:31:37,726 WARNING esgenie.pipeline [L2] ⚠ 임베딩 폴백 모드(hash-fallback) — D3 의미검증 품질 저하. sentence-transformers 설치 권장
+2026-09-29 13:31:37,726 INFO esgenie.pipeline [L2] Hybrid RAG 인덱스 로드 중... (backend=hash-fallback)
+2026-09-29 13:31:37,727 INFO faiss.loader Loading faiss.
+2026-09-29 13:31:37,743 INFO faiss.loader Successfully loaded faiss.
+2026-09-29 13:31:37,764 INFO esgenie.pipeline [L3-L4] 영역 E 탐지·검증 중...
+2026-09-29 13:31:58,431 INFO esgenie.pipeline [L4] 영역 E 완료: 위험도=14.680000000000001, 수렴=False, HITL=True
+2026-09-29 13:31:58,431 INFO esgenie.pipeline [L5] Audit Trace 생성 중 (영역 E)...
+2026-09-29 13:31:58,441 INFO esgenie.pipeline [L3-L4] 영역 S 탐지·검증 중...
+2026-09-29 13:32:04,060 INFO esgenie.pipeline [L4] 영역 S 완료: 위험도=16.38, 수렴=True, HITL=False
+2026-09-29 13:32:04,060 INFO esgenie.pipeline [L5] Audit Trace 생성 중 (영역 S)...
+2026-09-29 13:32:04,065 INFO esgenie.pipeline [L3-L4] 영역 G 탐지·검증 중...
+2026-09-29 13:32:08,454 INFO esgenie.pipeline [L4] 영역 G 완료: 위험도=16.08, 수렴=True, HITL=False
+2026-09-29 13:32:08,454 INFO esgenie.pipeline [L5] Audit Trace 생성 중 (영역 G)...
+2026-09-29 13:32:11,522 INFO esgenie.pipeline [L0] SSOT Evidence Graph 구축 중...
+2026-09-29 13:32:11,580 INFO esgenie.ssot.ocr_router [OCR] 캐시 on — hit 1 / miss 0 [01_기업및임직원현황_2026-04.pdf]
+2026-09-29 13:32:16,321 INFO esgenie.ssot.ocr_router [OCR] 캐시 on — hit 1 / miss 0 [06_환경안전관리규정_2026.pdf]
+2026-09-29 13:32:17,815 INFO esgenie.ssot.ocr_router [OCR] 캐시 on — hit 1 / miss 0 [08_공정스크랩관리대장_2026-04.pdf]
+2026-09-29 13:32:17,877 INFO esgenie.ssot.ocr_router [OCR] 캐시 on — hit 1 / miss 0 [09_안전보건교육실시기록_2026-04-22.pdf]
+2026-09-29 13:32:17,932 INFO esgenie.ssot.ocr_router [OCR] 캐시 on — hit 1 / miss 0 [10_윤리경영및고충처리규정_2026.pdf]
+2026-09-29 13:32:17,981 INFO esgenie.ssot.ocr_router [OCR] 캐시 on — hit 1 / miss 0 [11_정보보호관리규정_2026.pdf]
+2026-09-29 13:32:18,044 INFO esgenie.ssot.ocr_router [OCR] 캐시 on — hit 1 / miss 0 [12_개인별주간근로시간기록_2026-04-13_19.pdf]
+2026-09-29 13:32:18,100 INFO esgenie.ssot.ocr_router [OCR] 캐시 on — hit 1 / miss 0 [13_안전보건추가교육실시기록_2026-04-27.pdf]
+2026-09-29 13:32:18,106 INFO esgenie.pipeline [OCR] 캐시 hit 8 / miss 0 (mode=hit)
+2026-09-29 13:32:18,126 INFO esgenie.pipeline [L0] 완료: 33 노드, 38 텍스트노드, 0 엣지
+2026-09-29 13:32:18,126 INFO esgenie.pipeline [L0] 비DART 증빙을 빈 CompanyReport에 연결 — 단일 L1~L5 경로 사용
+2026-09-29 13:32:18,126 INFO esgenie.pipeline [L1] K-ESG 항목 추출 중...
+2026-09-29 13:32:18,128 INFO esgenie.pipeline [L1] 완료: 17.9% 커버리지 (중소기업 기본형 (28항목))
+2026-09-29 13:32:18,128 INFO esgenie.pipeline [D6] 선택적 공시 의심도=0.56 (high)
+2026-09-29 13:32:18,129 INFO esgenie.pipeline [ISSB] 프로파일 내 2/6 공시, 누락 4
+2026-09-29 13:32:18,129 WARNING esgenie.pipeline [L2] ⚠ 임베딩 폴백 모드(hash-fallback) — D3 의미검증 품질 저하. sentence-transformers 설치 권장
+2026-09-29 13:32:18,129 INFO esgenie.pipeline [L2] Hybrid RAG 인덱스 로드 중... (backend=hash-fallback)
+2026-09-29 13:32:18,139 INFO esgenie.pipeline [L3-L4] 영역 E 탐지·검증 중...
+2026-09-29 13:32:18,187 INFO esgenie.pipeline [L4] 영역 E 완료: 위험도=14.680000000000001, 수렴=False, HITL=True
+2026-09-29 13:32:18,187 INFO esgenie.pipeline [L5] Audit Trace 생성 중 (영역 E)...
+2026-09-29 13:32:18,194 INFO esgenie.pipeline [L3-L4] 영역 S 탐지·검증 중...
+2026-09-29 13:32:18,210 INFO esgenie.pipeline [L4] 영역 S 완료: 위험도=16.38, 수렴=True, HITL=False
+2026-09-29 13:32:18,210 INFO esgenie.pipeline [L5] Audit Trace 생성 중 (영역 S)...
+2026-09-29 13:32:18,213 INFO esgenie.pipeline [L3-L4] 영역 G 탐지·검증 중...
+2026-09-29 13:32:18,227 INFO esgenie.pipeline [L4] 영역 G 완료: 위험도=16.08, 수렴=True, HITL=False
+2026-09-29 13:32:18,227 INFO esgenie.pipeline [L5] Audit Trace 생성 중 (영역 G)...

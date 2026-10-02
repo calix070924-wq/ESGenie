@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-"""probe_words_option.py — Upstage document-parse-260630 'words' 옵션 응답 구조 확인.
+"""probe_words_option.py — Upstage Document Parse(R.UPSTAGE_DP_MODEL) 'words' 옵션 응답 구조 확인.
 
 목적: 새 words 옵션이 단어 단위 bbox를 주는지, 어떤 요청 파라미터로 켜지는지 확인.
 공식 문서가 릴리즈일(6/30)에 갱신된다고 공지됐으므로, 파라미터명은 아래 후보를
@@ -44,7 +44,7 @@ def main() -> None:
 
     for extra in CANDIDATES:
         data = {
-            "model": "document-parse-260630",
+            "model": R.UPSTAGE_DP_MODEL,
             "ocr": "force",
             "output_formats": "['html', 'text']",
             "coordinates": "true",

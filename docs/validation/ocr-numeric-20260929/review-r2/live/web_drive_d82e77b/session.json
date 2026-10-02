@@ -1,0 +1,106 @@
+{
+  "project_id": "fde91953f976454cb4396c27b5039c90",
+  "base_url": "http://127.0.0.1:8796",
+  "framework": "rba42",
+  "inputs_initial": [
+    {
+      "file": "01_처음업로드_12건/01_기업및임직원현황_2026-04.pdf",
+      "path": "/Users/heojeongmin/Documents/Claude/Projects/ESGenie/output/pdf/한울정밀_촬영세트_BM개편_20260928/01_처음업로드_12건/01_기업및임직원현황_2026-04.pdf",
+      "name": "01_기업및임직원현황_2026-04.pdf",
+      "role": "evidence",
+      "sha256": "380b85acd568fa085fb0fb3ded6581ebccd5ac17630fdbf66a6f58346d0dcc08",
+      "manifest_sha256_match": true
+    },
+    {
+      "file": "01_처음업로드_12건/02_전기요금청구서_2026-04.pdf",
+      "path": "/Users/heojeongmin/Documents/Claude/Projects/ESGenie/output/pdf/한울정밀_촬영세트_BM개편_20260928/01_처음업로드_12건/02_전기요금청구서_2026-04.pdf",
+      "name": "02_전기요금청구서_2026-04.pdf",
+      "role": "evidence",
+      "sha256": "cc0a3ee26da633572e0d76b34876d78375e4067df0e59625f659fbe61059fe2f",
+      "manifest_sha256_match": true
+    },
+    {
+      "file": "01_처음업로드_12건/03_도시가스요금고지서_2026-04.pdf",
+      "path": "/Users/heojeongmin/Documents/Claude/Projects/ESGenie/output/pdf/한울정밀_촬영세트_BM개편_20260928/01_처음업로드_12건/03_도시가스요금고지서_2026-04.pdf",
+      "name": "03_도시가스요금고지서_2026-04.pdf",
+      "role": "evidence",
+      "sha256": "42f22294502cbc48a95b93de2a20f79f89aec4786206535d57b85066f84e0906",
+      "manifest_sha256_match": true
+    },
+    {
+      "file": "01_처음업로드_12건/04_사업장폐기물위탁처리명세_2026-04.pdf",
+      "path": "/Users/heojeongmin/Documents/Claude/Projects/ESGenie/output/pdf/한울정밀_촬영세트_BM개편_20260928/01_처음업로드_12건/04_사업장폐기물위탁처리명세_2026-04.pdf",
+      "name": "04_사업장폐기물위탁처리명세_2026-04.pdf",
+      "role": "evidence",
+      "sha256": "6fed320f47c59297eee75508fcbbf9caccf387603ca35a640c8de21f98a1ab07",
+      "manifest_sha256_match": true
+    },
+    {
+      "file": "01_처음업로드_12건/05_한성모터스_자가진단응답초안_2026-09.pdf",
+      "path": "/Users/heojeongmin/Documents/Claude/Projects/ESGenie/output/pdf/한울정밀_촬영세트_BM개편_20260928/01_처음업로드_12건/05_한성모터스_자가진단응답초안_2026-09.pdf",
+      "name": "05_한성모터스_자가진단응답초안_2026-09.pdf",
+      "role": "company_answer",
+      "sha256": "564435e19860989885b0cbe063b56c058e5a1c6ed23d0a8c3d99f5f5d9e4c822",
+      "manifest_sha256_match": true
+    },
+    {
+      "file": "01_처음업로드_12건/06_환경안전관리규정_2026.pdf",
+      "path": "/Users/heojeongmin/Documents/Claude/Projects/ESGenie/output/pdf/한울정밀_촬영세트_BM개편_20260928/01_처음업로드_12건/06_환경안전관리규정_2026.pdf",
+      "name": "06_환경안전관리규정_2026.pdf",
+      "role": "evidence",
+      "sha256": "ad45751200c110de869abe5dac6f04cbe4e78152674189bef49045b690be4b20",
+      "manifest_sha256_match": true
+    },
+    {
+      "file": "01_처음업로드_12건/07_상수도청구서_2026-04.pdf",
+      "path": "/Users/heojeongmin/Documents/Claude/Projects/ESGenie/output/pdf/한울정밀_촬영세트_BM개편_20260928/01_처음업로드_12건/07_상수도청구서_2026-04.pdf",
+      "name": "07_상수도청구서_2026-04.pdf",
+      "role": "evidence",
+      "sha256": "09a5f17e97675eefbc5df1b1a4b18e6f0edb1b40aa0ebd030b7f421118999ac9",
+      "manifest_sha256_match": true
+    },
+    {
+      "file": "01_처음업로드_12건/08_공정스크랩관리대장_2026-04.pdf",
+      "path": "/Users/heojeongmin/Documents/Claude/Projects/ESGenie/output/pdf/한울정밀_촬영세트_BM개편_20260928/01_처음업로드_12건/08_공정스크랩관리대장_2026-04.pdf",
+      "name": "08_공정스크랩관리대장_2026-04.pdf",
+      "role": "evidence",
+      "sha256": "97a2de17616cbdafe5c7f600397bb5d9be45becd5215972d739788c07a2f197e",
+      "manifest_sha256_match": true
+    },
+    {
+      "file": "01_처음업로드_12건/09_안전보건교육실시기록_2026-04-22.pdf",
+      "path": "/Users/heojeongmin/Documents/Claude/Projects/ESGenie/output/pdf/한울정밀_촬영세트_BM개편_20260928/01_처음업로드_12건/09_안전보건교육실시기록_2026-04-22.pdf",
+      "name": "09_안전보건교육실시기록_2026-04-22.pdf",
+      "role": "evidence",
+      "sha256": "f27baad4ce8e31c4feecbeee359d55cef6d9a9472dd1d30f379917e86a53b109",
+      "manifest_sha256_match": true
+    },
+    {
+      "file": "01_처음업로드_12건/10_윤리경영및고충처리규정_2026.pdf",
+      "path": "/Users/heojeongmin/Documents/Claude/Projects/ESGenie/output/pdf/한울정밀_촬영세트_BM개편_20260928/01_처음업로드_12건/10_윤리경영및고충처리규정_2026.pdf",
+      "name": "10_윤리경영및고충처리규정_2026.pdf",
+      "role": "evidence",
+      "sha256": "98da23a43336d69302e75491603474a31e57811534474d7a768959c4b399034a",
+      "manifest_sha256_match": true
+    },
+    {
+      "file": "01_처음업로드_12건/11_정보보호관리규정_2026.pdf",
+      "path": "/Users/heojeongmin/Documents/Claude/Projects/ESGenie/output/pdf/한울정밀_촬영세트_BM개편_20260928/01_처음업로드_12건/11_정보보호관리규정_2026.pdf",
+      "name": "11_정보보호관리규정_2026.pdf",
+      "role": "evidence",
+      "sha256": "af32e08354ac1f41eb8012e25ff196ad53ab4f28d2643ef0ea4493e28f2880ac",
+      "manifest_sha256_match": true
+    },
+    {
+      "file": "01_처음업로드_12건/12_개인별주간근로시간기록_2026-04-13_19.pdf",
+      "path": "/Users/heojeongmin/Documents/Claude/Projects/ESGenie/output/pdf/한울정밀_촬영세트_BM개편_20260928/01_처음업로드_12건/12_개인별주간근로시간기록_2026-04-13_19.pdf",
+      "name": "12_개인별주간근로시간기록_2026-04-13_19.pdf",
+      "role": "evidence",
+      "sha256": "dea5414ee1eda7e8f2bb103b6af09a97f5115dbe4b00339f0e2abe7c73b8fa40",
+      "manifest_sha256_match": true
+    }
+  ],
+  "manifest": "/Users/heojeongmin/Documents/Claude/Projects/ESGenie/output/pdf/한울정밀_촬영세트_BM개편_20260928/00_촬영안내_업로드하지않음/구성_검산_목록.json",
+  "manifest_version": "2026-09-28",
+  "started_at": "2026-09-29T08:44:11.069220+00:00"
+}

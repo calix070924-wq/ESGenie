@@ -243,8 +243,12 @@ def select_fact_nodes(graph, code):
             derived = plan_derived_emissions(graph, derived)[0]
         if derived:
             period = min({n.period for n in derived}, key=lambda p: (abs(p-year), -p)) if year else max(n.period for n in derived)
-            from .boundary import same_period, compatible_sites
-            candidates = sorted((n for n in derived if n.period == period), key=lambda n: n.id)
+            from .boundary import same_period, compatible_sites, different_meters
+            # 환산 근거가 E-4-1 대표값과 같은 원측정값인 후보를 먼저 본다 — 사업장·월만
+            # 다른 같은 값의 사용량이 여럿이면 E-4-1과 E-3-1이 서로 다른 범위를 고른다.
+            anchor = getattr(graph, "representative_node_ids", {}).get("E-4-1")
+            candidates = sorted((n for n in derived if n.period == period), key=lambda n: (
+                getattr(_derived_parent(graph, n), "id", None) != anchor, n.id))
             chosen, seen = [], set()
             for n in candidates:
                 b = Boundary.from_dict(n.boundary)
@@ -252,7 +256,8 @@ def select_fact_nodes(graph, code):
                 if identity in seen:
                     continue
                 if chosen and (same_period(chosen[0].boundary, b)[0] != "compared"
-                               or not compatible_sites(Boundary.from_dict(chosen[0].boundary), b, inclusion=True)):
+                               or not compatible_sites(Boundary.from_dict(chosen[0].boundary), b, inclusion=True)
+                               or different_meters(chosen[0].boundary, b)):
                     continue
                 seen.add(identity)
                 chosen.append(n)
@@ -552,7 +557,12 @@ def finalize_ledger(result, graph):
                     node = min(matching, key=lambda n: n.id)
                 chosen = [node] if node else []
         if decision and not sum_notes:
-            reference = [n for n, _ in (*decision.blocked, *decision.reference)]
+            chosen_ids = {n.id for n in chosen}
+            reference = [n for n, _ in (*decision.blocked, *decision.reference) if n.id not in chosen_ids]
+            # 같은 값의 다른 기간·계량기 노드가 대표가 되면 합산 판정의 기준 노드를 참고 근거로
+            # 남긴다 — 채택 근거가 참고 근거 자리에 다시 서고 보류된 근거가 사라지지 않게 한다.
+            if len(reference) < len(decision.blocked) + len(decision.reference):
+                reference += [n for n in decision.summable if n.id not in chosen_ids]
             sum_notes = [f"{code}: {r}" for r in decision.reasons]
         ids = [n.id for n in chosen]
         if not ids:
@@ -569,8 +579,14 @@ def finalize_ledger(result, graph):
         boundary = replace(boundary, completeness=completeness)
         scope_notes = list(sum_notes)
         scope_notes.extend(boundary.review_notes)
+        # 두 표식은 서로 다른 사유다 — 범위 미확정(원문 0이 요청 범위로 확인되지 않음)과
+        # 원문 상충(같은 문서 검산 불일치 등)은 함께 붙을 수 있고, 어느 하나가 다른 하나를 대신하지 않는다.
         if _scope_source_only(boundary):
             flags.append("scope_source_only")
+        # 채택한 원측정값 자체에 상충 사유(예: 같은 문서 검산 불일치)가 있으면 상충 표식을
+        # 붙인다 — 답변 단계가 불일치·미검증으로 올리고 사유를 그대로 보인다.
+        if any(SOURCE_CONFLICT_NOTE in n for n in boundary.review_notes):
+            flags.append("source_conflict")
         if code in WHOLE_SCOPE_CODES and completeness != "total":
             flags.append("incomplete_scope")
             scope_notes.append(_scope_note(code, boundary, completeness))

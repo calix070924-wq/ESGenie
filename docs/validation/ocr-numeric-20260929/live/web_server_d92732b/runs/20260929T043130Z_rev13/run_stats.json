@@ -1,0 +1,264 @@
+{
+  "elapsed_seconds": 37.865,
+  "llm": {
+    "mode": "on",
+    "hits": 4,
+    "misses": 6,
+    "live_calls": 6,
+    "successes": 6,
+    "failures": 0
+  },
+  "llm_response_events": [
+    {
+      "provider": "openai",
+      "requested_model": "gpt-4.1-mini",
+      "model": "gpt-4.1-mini-2025-04-14",
+      "returned_model": "gpt-4.1-mini-2025-04-14",
+      "request_id": "68d3a86d-d51f-448c-9af4-37456d83d4e2",
+      "response_id": "chatcmpl-ETJnCwJQbtakwJYdIYuMJ67MGp6NZ",
+      "usage": {
+        "completion_tokens": 521,
+        "prompt_tokens": 1609,
+        "total_tokens": 2130,
+        "completion_tokens_details": {
+          "accepted_prediction_tokens": 0,
+          "audio_tokens": 0,
+          "reasoning_tokens": 0,
+          "rejected_prediction_tokens": 0
+        },
+        "prompt_tokens_details": {
+          "audio_tokens": 0,
+          "cached_tokens": 0
+        },
+        "latency_checkpoint": {
+          "engine_tbt_ms": 7,
+          "engine_ttft_ms": 36,
+          "engine_ttlt_ms": 3625,
+          "pre_inference_ms": 107,
+          "service_tbt_ms": 7,
+          "service_ttft_ms": 495,
+          "service_ttlt_ms": 4118,
+          "user_visible_ttft_ms": 388
+        }
+      },
+      "used_mock": false
+    },
+    {
+      "provider": "openai",
+      "requested_model": "gpt-4.1-mini",
+      "model": "gpt-4.1-mini-2025-04-14",
+      "returned_model": "gpt-4.1-mini-2025-04-14",
+      "request_id": "2d220712-c283-402a-9f81-01e7cf1f9f2d",
+      "response_id": "chatcmpl-ETJnHnZlnkChIVj0Ehz8JGqEazdDx",
+      "usage": {
+        "completion_tokens": 601,
+        "prompt_tokens": 2020,
+        "total_tokens": 2621,
+        "completion_tokens_details": {
+          "accepted_prediction_tokens": 0,
+          "audio_tokens": 0,
+          "reasoning_tokens": 0,
+          "rejected_prediction_tokens": 0
+        },
+        "prompt_tokens_details": {
+          "audio_tokens": 0,
+          "cached_tokens": 1536
+        },
+        "latency_checkpoint": {
+          "engine_tbt_ms": 7,
+          "engine_ttft_ms": 29,
+          "engine_ttlt_ms": 4289,
+          "pre_inference_ms": 176,
+          "service_tbt_ms": 7,
+          "service_ttft_ms": 653,
+          "service_ttlt_ms": 4834,
+          "user_visible_ttft_ms": 477
+        }
+      },
+      "used_mock": false
+    },
+    {
+      "provider": "openai",
+      "requested_model": "gpt-4.1-mini",
+      "model": "gpt-4.1-mini-2025-04-14",
+      "returned_model": "gpt-4.1-mini-2025-04-14",
+      "request_id": "65817ccc-8bae-4df6-b1c1-698dc9349a91",
+      "response_id": "chatcmpl-ETJnMWLvrViozVtws7U2iSqOB3Q6y",
+      "usage": {
+        "completion_tokens": 473,
+        "prompt_tokens": 1827,
+        "total_tokens": 2300,
+        "completion_tokens_details": {
+          "accepted_prediction_tokens": 0,
+          "audio_tokens": 0,
+          "reasoning_tokens": 0,
+          "rejected_prediction_tokens": 0
+        },
+        "prompt_tokens_details": {
+          "audio_tokens": 0,
+          "cached_tokens": 1664
+        },
+        "latency_checkpoint": {
+          "engine_tbt_ms": 7,
+          "engine_ttft_ms": 36,
+          "engine_ttlt_ms": 3269,
+          "pre_inference_ms": 85,
+          "service_tbt_ms": 7,
+          "service_ttft_ms": 443,
+          "service_ttlt_ms": 3677,
+          "user_visible_ttft_ms": 358
+        }
+      },
+      "used_mock": false
+    },
+    {
+      "provider": "openai",
+      "requested_model": "gpt-4.1-mini",
+      "model": "gpt-4.1-mini-2025-04-14",
+      "returned_model": "gpt-4.1-mini-2025-04-14",
+      "request_id": "2024521f-507d-4d01-914f-fe22f2177df9",
+      "response_id": "chatcmpl-ETJnQtsLImO3GfUyX6YDuxrthcgMT",
+      "usage": {
+        "completion_tokens": 510,
+        "prompt_tokens": 1823,
+        "total_tokens": 2333,
+        "completion_tokens_details": {
+          "accepted_prediction_tokens": 0,
+          "audio_tokens": 0,
+          "reasoning_tokens": 0,
+          "rejected_prediction_tokens": 0
+        },
+        "prompt_tokens_details": {
+          "audio_tokens": 0,
+          "cached_tokens": 0
+        },
+        "latency_checkpoint": {
+          "engine_tbt_ms": 7,
+          "engine_ttft_ms": 36,
+          "engine_ttlt_ms": 3379,
+          "pre_inference_ms": 209,
+          "service_tbt_ms": 7,
+          "service_ttft_ms": 459,
+          "service_ttlt_ms": 3791,
+          "user_visible_ttft_ms": 249
+        }
+      },
+      "used_mock": false
+    },
+    {
+      "provider": "openai",
+      "requested_model": "gpt-4.1-mini",
+      "model": "gpt-4.1-mini-2025-04-14",
+      "returned_model": "gpt-4.1-mini-2025-04-14",
+      "request_id": "d8e12560-89dd-423f-abe7-5fe6c435c9ae",
+      "response_id": "chatcmpl-ETJnUaqNwZ7DXssVINnngb6gIQccj",
+      "usage": {
+        "completion_tokens": 524,
+        "prompt_tokens": 1505,
+        "total_tokens": 2029,
+        "completion_tokens_details": {
+          "accepted_prediction_tokens": 0,
+          "audio_tokens": 0,
+          "reasoning_tokens": 0,
+          "rejected_prediction_tokens": 0
+        },
+        "prompt_tokens_details": {
+          "audio_tokens": 0,
+          "cached_tokens": 0
+        },
+        "latency_checkpoint": {
+          "engine_tbt_ms": 9,
+          "engine_ttft_ms": 43,
+          "engine_ttlt_ms": 4724,
+          "pre_inference_ms": 234,
+          "service_tbt_ms": 9,
+          "service_ttft_ms": 375,
+          "service_ttlt_ms": 5037,
+          "user_visible_ttft_ms": 142
+        }
+      },
+      "used_mock": false
+    },
+    {
+      "provider": "openai",
+      "requested_model": "gpt-4.1-mini",
+      "model": "gpt-4.1-mini-2025-04-14",
+      "returned_model": "gpt-4.1-mini-2025-04-14",
+      "request_id": "7d0f6584-f9e5-4a5c-945d-cef80e95ffe3",
+      "response_id": "chatcmpl-ETJnaHyBCaNlocrRSNlDHHd8bHjKJ",
+      "usage": {
+        "completion_tokens": 466,
+        "prompt_tokens": 1456,
+        "total_tokens": 1922,
+        "completion_tokens_details": {
+          "accepted_prediction_tokens": 0,
+          "audio_tokens": 0,
+          "reasoning_tokens": 0,
+          "rejected_prediction_tokens": 0
+        },
+        "prompt_tokens_details": {
+          "audio_tokens": 0,
+          "cached_tokens": 0
+        },
+        "latency_checkpoint": {
+          "engine_tbt_ms": 7,
+          "engine_ttft_ms": 50,
+          "engine_ttlt_ms": 3499,
+          "pre_inference_ms": 250,
+          "service_tbt_ms": 7,
+          "service_ttft_ms": 399,
+          "service_ttlt_ms": 3832,
+          "user_visible_ttft_ms": 149
+        }
+      },
+      "used_mock": false
+    }
+  ],
+  "upstage": {
+    "requests": 4,
+    "successes": 4,
+    "failures": 0,
+    "events": [
+      {
+        "function": "_call_upstage_dp_payload",
+        "file": "02_전기요금청구서_2026-04.pdf",
+        "pages": null,
+        "status": "success",
+        "seconds": 1.444
+      },
+      {
+        "function": "_call_upstage_dp_payload",
+        "file": "03_도시가스요금고지서_2026-04.pdf",
+        "pages": null,
+        "status": "success",
+        "seconds": 1.404
+      },
+      {
+        "function": "_call_upstage_dp_payload",
+        "file": "04_사업장폐기물위탁처리명세_2026-04.pdf",
+        "pages": null,
+        "status": "success",
+        "seconds": 1.575
+      },
+      {
+        "function": "_call_upstage_dp_payload",
+        "file": "07_상수도청구서_2026-04.pdf",
+        "pages": null,
+        "status": "success",
+        "seconds": 1.435
+      }
+    ]
+  },
+  "input_revision": 13,
+  "document_count": 12,
+  "run_directory": "/private/tmp/ESGenie-ocr-numeric-20260929/docs/validation/ocr-numeric-20260929/live/web_server_d92732b/runs/20260929T043130Z_rev13",
+  "cache_files_at_end": {
+    "ocr": 8,
+    "llm": 26
+  },
+  "ocr_vlm_cache": {
+    "hits": 7,
+    "misses": 0,
+    "mode": "hit"
+  }
+}

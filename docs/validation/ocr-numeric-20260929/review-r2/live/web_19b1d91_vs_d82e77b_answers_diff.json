@@ -1,0 +1,45 @@
+{
+ "note": "project.result 비교(식별자·시각·경로 키 제외). 기준 d82e77b → 19b1d91(873c5fa 반영)",
+ "ignored_key_substrings": [
+  "document_id",
+  "id",
+  "project_id",
+  "updated_at",
+  "created_at",
+  "job",
+  "started",
+  "finished",
+  "revision",
+  "seconds",
+  "_at",
+  "url",
+  "path"
+ ],
+ "results": {
+  "normal_initial": [],
+  "normal_followup": [],
+  "R6a": [],
+  "R6b": [],
+  "R6c": [],
+  "R6d": [],
+  "R6e": [],
+  "R7a": [
+   {
+    "key": "/answers[26]/reference_sources[0]/bbox[1]",
+    "d82e77b": 0.3817,
+    "19b1d91": 0.2391
+   },
+   {
+    "key": "/answers[26]/reference_sources[0]/bbox[3]",
+    "d82e77b": 0.3964,
+    "19b1d91": 0.2538
+   },
+   {
+    "key": "/answers[26]/reference_sources[0]/quote",
+    "d82e77b": "사용전력량 (김해 제1공장 · 2026년 5월)=1000.0kWh (R7a_전기_같은쪽_4월5월표.pdf)",
+    "19b1d91": "사용전력량 (김해 제1공장 · 2026년 4월)=1000.0kWh (R7a_전기_같은쪽_4월5월표.pdf)"
+   }
+  ],
+  "R7b": []
+ }
+}

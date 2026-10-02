@@ -25,10 +25,12 @@ from html.parser import HTMLParser
 from pathlib import Path
 from typing import Any
 
-# Upstage Document Parse 모델 pin.
-# 구버전 alias "document-parse"(=document-parse-250618 계열)는 2026-07-31 지원 종료 —
-# 신버전을 명시 pin하고, 롤백·비교 실험은 UPSTAGE_DP_MODEL 환경변수로 오버라이드한다.
-UPSTAGE_DP_MODEL: str = os.getenv("UPSTAGE_DP_MODEL", "document-parse-260630")
+# Upstage Document Parse 모델.
+# document-parse-260630 명시 pin은 2026-11-02(KST) 지원 종료 — Upstage 권고에 따라 alias로 전환.
+# 2026-10-02 확인: alias "document-parse" → document-parse-260930(샘플 01~03 추출 결과 260630과 동일).
+# alias는 신버전을 자동 추종하므로 실제 버전은 response_meta.returned_model로 기록하고,
+# 롤백·비교 실험은 UPSTAGE_DP_MODEL 환경변수로 오버라이드한다.
+UPSTAGE_DP_MODEL: str = os.getenv("UPSTAGE_DP_MODEL", "document-parse")
 
 # 모듈 로거 — 청크 JSON 파싱 실패 경고가 이미 참조하고 있었으나 정의가 없었다(NameError).
 logger = logging.getLogger(__name__)
@@ -61,6 +63,10 @@ class ExtractedMetric:
     # 규칙으로 도출한다. dict로 두는 이유는 캐시 JSON 왕복 호환이다(from_dict는
     # 모르는 키를 무시하므로 구버전 캐시는 빈 dict로 읽힌다).
     boundary: dict[str, Any] = field(default_factory=dict)
+    # 표 추출기(ocr_table_metrics)가 남기는 원문 근거 — 셀 원문·머리글·원 단위·단위 출처·
+    # 지침 검산·계산식·입력 칸·위치 정밀도("cell"|"table"|"pdf_text"|"text_block"). 비어 있으면
+    # 템플릿/LLM 산출. 본문 비율 고정(_pin_rates_from_raw)도 위치 정밀도를 남긴다.
+    source_detail: dict[str, Any] = field(default_factory=dict)
 
 
 @dataclass
@@ -208,6 +214,7 @@ def route_document(
 
     structured_hits = _score_signatures(text, fname, _STRUCTURED_SIGNATURES)
     unstructured_hits = _score_signatures(text, fname, _UNSTRUCTURED_SIGNATURES)
+    unit_guard = _apply_unit_evidence_guard(structured_hits, text)
 
     s_best = max(structured_hits.items(), key=lambda kv: kv[1]["score"], default=(None, {"score": 0, "kw": []}))
     u_best = max(unstructured_hits.items(), key=lambda kv: kv[1]["score"], default=(None, {"score": 0, "kw": []}))
@@ -223,7 +230,7 @@ def route_document(
             doc_type=s_best[0] or "structured_unknown",
             confidence=round(min(s_score, 1.0), 3),
             matched_keywords=s_best[1]["kw"],
-            rationale=f"정형 시그니처 우세(table_ratio={table_ratio:.2f})",
+            rationale=f"정형 시그니처 우세(table_ratio={table_ratio:.2f})" + unit_guard,
         )
     if u_score >= _ROUTE_FALLBACK_THRESHOLD:
         return RouteDecision(
@@ -231,7 +238,7 @@ def route_document(
             doc_type=u_best[0] or "unstructured_unknown",
             confidence=round(min(u_score, 1.0), 3),
             matched_keywords=u_best[1]["kw"],
-            rationale="비정형 시그니처 우세",
+            rationale="비정형 시그니처 우세" + unit_guard,
         )
     # 애매 → 안전 폴백(VLM)
     return RouteDecision(
@@ -239,8 +246,35 @@ def route_document(
         doc_type="ambiguous_fallback_vlm",
         confidence=round(max(s_score, u_score), 3),
         matched_keywords=(s_best[1]["kw"] + u_best[1]["kw"]),
-        rationale="신뢰도 미달 → VLM 폴백",
+        rationale="신뢰도 미달 → VLM 폴백" + unit_guard,
     )
+
+
+# 정형 실적 문서는 본문에 해당 수량 단위가 있다. 본문이 충분히 긴데 단위가 한 번도 없으면
+# 키워드('폐기물'·'인계' 등)만 겹친 규정·회사 소개로 보고 그 정형 유형 점수를 0으로 둔다.
+_ROUTE_UNIT_EVIDENCE: dict[str, str] = {
+    "kepco_bill": r"kwh|mwh",
+    "gas_bill": r"m3|m³|㎥|mj",
+    "water_bill": r"m3|m³|㎥|톤|ton",
+    # '18,400 kg'·'(kg)'·'(단위: ton)'처럼 단위어가 독립해 있으면 된다(영단어 안의 ton 제외).
+    "waste_ledger": r"(?<![a-z])(?:kg|㎏|tons?|톤)(?![a-z])|\d\s*t\b|\(t\)",
+    "fuel_receipt": r"\d\s*(?:l\b|ℓ|리터)",
+}
+_ROUTE_UNIT_MIN_CHARS = 120   # 짧은 프리뷰(파일명·스캔 1p 일부)는 단위 부재를 판단하지 않는다
+
+
+def _apply_unit_evidence_guard(hits: dict[str, dict[str, Any]], text: str) -> str:
+    import re
+    if len(re.sub(r"\s+", "", text)) < _ROUTE_UNIT_MIN_CHARS:
+        return ""
+    dropped = []
+    for doc_type, info in hits.items():
+        pat = _ROUTE_UNIT_EVIDENCE.get(doc_type)
+        if info["score"] > 0 and pat and not re.search(pat, text, re.IGNORECASE):
+            if info["score"] >= _ROUTE_FALLBACK_THRESHOLD:
+                dropped.append(doc_type)   # 근거에는 실제로 순위를 잃은 유형만 남긴다
+            info["score"] = 0.0
+    return f" · 수량 단위 없음으로 제외: {', '.join(dropped)}" if dropped else ""
 
 
 def extract_document(file_path: str, decision: RouteDecision | None = None) -> OcrExtraction:
@@ -330,7 +364,9 @@ def _backfill_kesg_codes(ext: OcrExtraction) -> None:
     """
     import re
 
-    from ..knowledge.kesg_items import _normalize_label, resolve_kesg_code
+    from ..knowledge.kesg_items import _normalize_label, by_code, resolve_kesg_code
+    from ..layer1_extract import _unit_suspect
+    from ..rag_gates.units import normalize_unit
 
     def _metric_body(label: str) -> str:
         """집계수준·연도만 떼어 코드 점유를 비교할 지표 본체를 만든다.
@@ -365,6 +401,12 @@ def _backfill_kesg_codes(ext: OcrExtraction) -> None:
             continue
         code, score, method = resolve_kesg_code(m.metric_hint)
         if not code or method != "exact":
+            continue
+        # 단위가 항목 정의와 다르면(도시가스 m³ → E-4-1 TJ) 라벨만으로 코드를 붙이지 않는다.
+        # 병합 단계(_resolve_kesg_code G3)와 같은 판정이며 용수 m³↔ton 동치만 허용한다.
+        item = by_code(code)
+        water_volume = code in {"E-5-1", "E-5-2"} and normalize_unit(str(m.unit or "")) == "m³"
+        if item and item.unit and not water_volume and _unit_suspect(m.unit, item.unit):
             continue
         label = _normalize_label(m.metric_hint)
         holders = taken_by_label.get(code)
@@ -532,6 +574,8 @@ def _tokens_to_extraction(
         kv_pairs = _apply_template(tokens, template)
     except NotImplementedError:
         kv_pairs = _keyword_extract(tokens, doc_type)
+    # 표 셀(행·열·머리글·단위)로 먼저 읽고, 표가 차지한 역할의 템플릿 라벨은 버린다.
+    table_result = _table_metric_pass(tokens, tables, doc_type, kv_pairs)
 
     if openai_key and kv_pairs:
         metrics = _llm_normalize(kv_pairs, doc_type=doc_type, api_key=openai_key)
@@ -539,12 +583,19 @@ def _tokens_to_extraction(
         metrics = _enforce_pinned_rates(metrics, kv_pairs)  # 비율(%) 코드는 템플릿값 고정
     else:
         metrics = _rule_normalize(kv_pairs, doc_type=doc_type)
+    metrics = _merge_table_metrics(metrics, table_result)
 
     # 비율(%) 항목은 표 토큰 인접매칭이 깨지기 쉬워, raw 텍스트 정규식으로 결정적 고정
     metrics = _pin_rates_from_raw(metrics, tokens)
     # 대표 사용량·총량(전력·가스·폐기물)도 본문 명시값으로 결정적 고정
     metrics = _pin_totals_from_raw(metrics, tokens, doc_type)
+    if engine == "upstage_dp":
+        # Upstage 셀은 표 외접 bbox만 공유한다 — PDF 문자 좌표로 좁힐 수 있을 때만 좁힌다.
+        from .ocr_table_metrics import refine_bboxes_with_pdf
+        refine_bboxes_with_pdf(metrics, file_path)
 
+    router_meta = {"engine": engine, **(engine_meta or {})}
+    _finish_table_meta(router_meta, table_result, metrics)
     return OcrExtraction(
         source_file=Path(file_path).name,
         channel=DocChannel.STRUCTURED,
@@ -552,8 +603,50 @@ def _tokens_to_extraction(
         metrics=metrics,
         tables=list(tables or []),
         raw_text=raw_text,
-        router_meta={"engine": engine, **(engine_meta or {})},
+        router_meta=router_meta,
     )
+
+
+def _table_metric_pass(
+    tokens: list[dict[str, Any]], tables: list[ExtractedTable] | None, doc_type: str,
+    kv_pairs: dict[str, Any],
+):
+    """표 격자 추출 — 역할(사용량·총량 등)을 차지하면 같은 역할의 템플릿 KV를 제거한다."""
+    from .ocr_table_metrics import (TEMPLATE_LABELS_BY_ROLE, drop_template_candidates_from_money_cells,
+                                    drop_template_candidates_in_absent_tables, extract_table_metrics)
+    result = extract_table_metrics(tokens, tables, doc_type=doc_type)
+    for role in result.claimed_roles:
+        for label in TEMPLATE_LABELS_BY_ROLE.get(doc_type, {}).get(role, ()):
+            kv_pairs.pop(label, None)
+    # 사용량 칸이 빈 표에서 인접 숫자(지침 등)를 사용량으로 되살리지 않는다.
+    drop_template_candidates_in_absent_tables(result, kv_pairs, doc_type)
+    # 금액 행(기본요금 등)에서 뺀 숫자도 템플릿·LLM 후보로 되살리지 않는다.
+    drop_template_candidates_from_money_cells(result, kv_pairs, doc_type)
+    return result
+
+
+def _merge_table_metrics(metrics: list["ExtractedMetric"], result) -> list["ExtractedMetric"]:
+    """표 산출물을 우선한다 — 같은 코드 또는 같은 값·단위의 템플릿/LLM 산출물은 버린다."""
+    if not result.metrics:
+        return metrics
+    codes = {m.kesg_code_guess for m in result.metrics if m.kesg_code_guess}
+    keys = {(float(m.value), m.unit) for m in result.metrics}
+    kept = [m for m in metrics
+            if m.kesg_code_guess not in codes and (float(m.value), m.unit) not in keys]
+    return kept + list(result.metrics)
+
+
+def _finish_table_meta(router_meta: dict[str, Any], result, metrics: list["ExtractedMetric"]) -> None:
+    """폐기물 재활용률 검산 + 표 검산 기록. 불일치·상충은 HITL 검토로 올린다."""
+    from .ocr_table_metrics import check_recycling_rate
+    check_recycling_rate(result, metrics)
+    if not (result.metrics or result.review or result.checks):
+        return
+    router_meta["table_metrics"] = result.meta()
+    review_reasons = {"explicit_vs_index_mismatch", "conflicting_values"}
+    if any(c["status"] == "mismatch" for c in result.checks) or any(
+            r["reason"] in review_reasons for r in result.review):
+        router_meta["hitl_required"] = True
 
 
 def _attach_geometry(metrics: list["ExtractedMetric"], kv_pairs: dict[str, Any]) -> None:
@@ -650,6 +743,7 @@ def _pin_rates_from_raw(
             if kw_re.search(head):
                 val = float(nm.group(1))
                 numstr = nm.group(1)
+                rawstr = nm.group(0)
                 break
         if val is None:
             continue
@@ -666,10 +760,20 @@ def _pin_rates_from_raw(
         # raw 스캔이 비율 코드에 대해 '권위' — 같은 코드 기존 산출물(값/단위 무관)을 전부 폐기하고
         # 텍스트에서 직접 잡은 비율값으로 확정. (템플릿 인접매칭이 엉뚱한 숫자를 박는 사례 차단)
         metrics = [mm for mm in metrics if mm.kesg_code_guess != code]
-        metrics.append(ExtractedMetric(
+        pinned = ExtractedMetric(
             metric_hint=label, value=val, unit="%", period="",
             kesg_code_guess=code, bbox=bbox, page=page, confidence=0.9,
-        ))
+        )
+        # 원문 비율 문자열('29%'·'29.30%')은 표시 자릿수 검산 근거라 위치와 무관하게 보존한다.
+        pinned.source_detail = {"extractor": "raw_rate_pin", "raw_text": rawstr,
+                                "display_decimals": len(numstr.split(".")[1]) if "." in numstr else 0}
+        if bbox is not None:
+            # 위치는 값을 품은 텍스트 요소(줄·문단)의 외접 사각형이다 — 셀 위치로 표시하지 않는다.
+            pinned.source_detail.update({
+                "precision": "text_block",
+                "cells": [{"text": rawstr, "bbox": bbox, "page": page, "precision": "text_block"}],
+                "precision_note": "값을 품은 OCR·PDF 텍스트 요소의 외접 위치(셀 단위 아님)"})
+        metrics.append(pinned)
     return metrics
 
 
@@ -708,17 +812,37 @@ def _pin_totals_from_raw(
         except ValueError:
             continue
         numstr = mt.group(1)
+        # 표 추출기가 같은 코드로 같은 양을 이미 읽었다면 그 셀 근거를 유지한다.
+        # 단위만 다르면(kg ↔ ton) 고정 단위로 값을 두되 셀 위치·원문 근거를 옮긴다.
+        same = [mm for mm in metrics if mm.kesg_code_guess == code and mm.source_detail
+                and _same_quantity(mm.value, mm.unit, round(val, 3), unit)]
+        if same and same[0].unit == unit:
+            continue
         bbox = page = None
         for t in tokens:
             if numstr in str(t.get("text", "")):
                 bbox, page = t.get("bbox"), t.get("page"); break
         metrics = [mm for mm in metrics if mm.kesg_code_guess != code]
         label = {"kepco_bill": "사용전력량", "gas_bill": "도시가스 사용열량", "waste_ledger": "총 위탁량"}.get(doc_type, code)
-        metrics.append(ExtractedMetric(
+        pinned = ExtractedMetric(
             metric_hint=label, value=round(val, 3), unit=unit,
             period="", kesg_code_guess=code, bbox=bbox, page=page, confidence=0.92,
-        ))
+        )
+        if same:
+            pinned.bbox, pinned.page = same[0].bbox, same[0].page
+            pinned.source_detail = dict(same[0].source_detail, pinned_unit=unit,
+                                        pinned_by="본문 명시값 고정(_TOTAL_RAW_PATTERNS)")
+        metrics.append(pinned)
     return metrics
+
+
+def _same_quantity(v1: float, u1: str, v2: float, u2: str) -> bool:
+    from ..rag_gates.units import convert_to_common, normalize_unit
+    a, b = normalize_unit(u1 or ""), normalize_unit(u2 or "")
+    if not a or not b:
+        return False
+    conv = convert_to_common(float(v1), a, b)
+    return conv is not None and abs(conv - float(v2)) <= 1e-6 * max(1.0, abs(float(v2)))
 
 
 # ---- 정형 채널 내부 헬퍼 ------------------------------------------------------
@@ -798,7 +922,7 @@ def _call_upstage_dp_payload(
 
     POST multipart/form-data:
       files: document=<파일 bytes>
-      data : model=UPSTAGE_DP_MODEL(기본 document-parse-260630), ocr=force|auto, output_formats=['html','text'],
+      data : model=UPSTAGE_DP_MODEL(기본 document-parse alias), ocr=force|auto, output_formats=['html','text'],
              coordinates=true, base64_encoding=[]
     응답 JSON: {content, elements:[{id,category,content:{html,text},page,coordinates}], usage}
       · 텍스트 토큰: 모든 요소의 content.text + coordinates(외접 bbox) + page(0-기준 변환)
@@ -996,6 +1120,15 @@ def _find_number(text: str):
 _HEADER_UNIT_RE = __import__("re").compile(r"\(\s*(kWh|MWh|MJ|GJ|TJ|kW|ton|t|m3|㎥|L|원|%)\s*\)", __import__("re").IGNORECASE)
 
 
+# 템플릿 인접·컬럼 매칭이 값으로 받아들일 토큰: '숫자 [단위]' 한 덩어리(공백 없는 단위어).
+_VALUE_LIKE_RE = __import__("re").compile(
+    r"^\s*[+-]?(?:\d{1,3}(?:,\s?\d{3})+|\d+)(?:\.\d+)?\s*[^\d\s.,:~\-/][^\d\s]{0,7}\s*$"
+    r"|^\s*[+-]?(?:\d{1,3}(?:,\s?\d{3})+|\d+)(?:\.\d+)?\s*$")
+_HEADING_ORDINAL_RE = __import__("re").compile(r"^\s*\d{1,2}[.)]\s+")
+_OWN_UNIT_RE = __import__("re").compile(
+    r"\d\s*(kWh|MWh|MJ|GJ|TJ|m3|m³|㎥|kg|㎏|톤|ton|%)(?![A-Za-z가-힣])", __import__("re").IGNORECASE)
+
+
 def _x_center(bbox: list[float] | None) -> float | None:
     """bbox 가로 중심(0~1). 컬럼 정렬 판정용."""
     if not bbox or len(bbox) < 4:
@@ -1035,6 +1168,8 @@ def _match_column_value(
             continue  # 헤더보다 위/같은 행 제외(데이터 행만)
         if abs(tx - hx) > x_tol:
             continue  # 다른 컬럼
+        if not _VALUE_LIKE_RE.match(t.get("text", "")):
+            continue  # 값 셀이 아닌 문장·제목
         num = _find_single_number(t.get("text", ""))
         if num is None:
             continue
@@ -1072,12 +1207,17 @@ def _apply_template(tokens: list[dict[str, Any]], template: dict[str, Any]) -> d
                 # 헤더 셀 괄호 단위가 있으면 그것을 우선(템플릿 기본단위·K-ESG 라벨 덮어쓰기 방지)
                 hu = _HEADER_UNIT_RE.search(tok["text"])
                 eff_unit = hu.group(1) if hu else unit
+                # 제목 번호('3. 현장 안전과 교육')는 수치가 아니다 — 번호를 떼고 숫자를 찾는다.
+                # 머리글 단위 괄호('사용량(m3)'의 3)도 수치가 아니다.
+                own_text = _HEADER_UNIT_RE.sub("", _HEADING_ORDINAL_RE.sub("", tok["text"]))
                 # 현재 토큰에 숫자가 정확히 하나면 우선 사용 (예: "사용전력량(kWh): 128,400")
-                num = _find_single_number(tok["text"])
+                num = _find_single_number(own_text)
                 if num is not None:
+                    # 토큰 안에 단위가 적혀 있으면 템플릿 기본 단위보다 우선한다('재활용량 5,400 kg').
+                    ou = None if hu else _OWN_UNIT_RE.search(own_text)
                     result[label_key] = {
                         "value": float(num),
-                        "unit": eff_unit,
+                        "unit": ou.group(1) if ou else eff_unit,
                         "kesg_code": kesg,
                         "bbox": tok.get("bbox"),
                         "page": tok.get("page"),
@@ -1096,8 +1236,11 @@ def _apply_template(tokens: list[dict[str, Any]], template: dict[str, Any]) -> d
                         "raw_label": tok["text"],
                     }
                     break
-                # ② 폴백: 현재 토큰에 숫자 없으면 인접 토큰(최대 5개) 탐색
+                # ② 폴백: 현재 토큰에 숫자 없으면 인접 토큰(최대 5개) 탐색.
+                #    이웃은 값 셀처럼 생긴 토큰('18,400 kg')만 — 문장·제목 번호·날짜 제외.
                 for j in range(i + 1, min(i + 6, len(tokens))):
+                    if not _VALUE_LIKE_RE.match(tokens[j]["text"]):
+                        continue
                     num = _find_single_number(tokens[j]["text"])
                     if num is not None:
                         result[label_key] = {
@@ -1251,18 +1394,22 @@ def _extract_structured_no_llm(file_path: str, *, doc_type: str) -> OcrExtractio
         kv_pairs = _apply_template(tokens, template)
     except NotImplementedError:
         kv_pairs = _keyword_extract(tokens, doc_type)
+    table_result = _table_metric_pass(tokens, None, doc_type, kv_pairs)
 
     metrics = _rule_normalize(kv_pairs, doc_type=doc_type)
+    metrics = _merge_table_metrics(metrics, table_result)
     metrics = _pin_rates_from_raw(metrics, tokens)  # 비율(%) 결정적 고정 (Upstage 경로와 동일)
     metrics = _pin_totals_from_raw(metrics, tokens, doc_type)  # 대표 사용량·총량 고정
 
+    router_meta = {"fallback": "pymupdf+regex", "upstage": False}
+    _finish_table_meta(router_meta, table_result, metrics)
     return OcrExtraction(
         source_file=Path(file_path).name,
         channel=DocChannel.STRUCTURED,
         doc_type=doc_type,
         metrics=metrics,
         raw_text=raw_text,
-        router_meta={"fallback": "pymupdf+regex", "upstage": False},
+        router_meta=router_meta,
     )
 
 

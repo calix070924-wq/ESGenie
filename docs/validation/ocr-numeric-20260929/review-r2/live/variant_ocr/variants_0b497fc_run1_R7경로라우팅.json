@@ -1,0 +1,250 @@
+{
+ "code_path": "/private/tmp/ESGenie-ocr-numeric-20260929",
+ "commit": "0b497fc705154f5ecd6f111a22efcc68d0186a7f",
+ "imported_esgenie": "/private/tmp/ESGenie-ocr-numeric-20260929/esgenie/__init__.py",
+ "force_mock": false,
+ "llm_key_present": true,
+ "ocr_key_present": true,
+ "cache_dir": "/private/tmp/ESGenie-ocr-numeric-20260929/docs/validation/ocr-numeric-20260929/review-r2/live/variant_ocr/cache_0b497fc",
+ "llm": {
+  "mode": "on",
+  "hits": 0,
+  "misses": 2,
+  "live_calls": 2,
+  "successes": 2,
+  "failures": 0
+ },
+ "documents": [
+  {
+   "file": "R6a_전기_사용량칸대시_배율없음.pdf",
+   "sha256": "f050387558e433e30afaf3f91d017d2874de9e2d896fc87f3335a17cd20e9d4a",
+   "doc_type": "kepco_bill",
+   "engine": "upstage_dp",
+   "seconds": 1.64,
+   "upstage": {
+    "requests": 1,
+    "successes": 1,
+    "failures": 0
+   },
+   "metrics": [],
+   "review": [
+    "multiplier_missing",
+    "value_absent"
+   ],
+   "absent_cells": [
+    {
+     "role": "usage",
+     "header": "사용량(kWh)",
+     "raw_text": "",
+     "state": "held:multiplier_missing",
+     "table_id": "upstage_table_0"
+    }
+   ],
+   "hitl_required": null
+  },
+  {
+   "file": "R6b_전기_사용량칸공백_배율없음.pdf",
+   "sha256": "d30c65e53f9156efebe38f975455e76c185c20bf16f4edc2e2625d4e62bc2f85",
+   "doc_type": "kepco_bill",
+   "engine": "upstage_dp",
+   "seconds": 1.41,
+   "upstage": {
+    "requests": 1,
+    "successes": 1,
+    "failures": 0
+   },
+   "metrics": [],
+   "review": [
+    "multiplier_missing",
+    "value_absent"
+   ],
+   "absent_cells": [
+    {
+     "role": "usage",
+     "header": "사용량(kWh)",
+     "raw_text": "",
+     "state": "held:multiplier_missing",
+     "table_id": "upstage_table_0"
+    }
+   ],
+   "hitl_required": null
+  },
+  {
+   "file": "R6c_가스_열량칸대시_전월지침만.pdf",
+   "sha256": "70ef3a5979a8955f29b2ab68d6d5778e1dc69e4a134e8cb669f49ce6ba95199e",
+   "doc_type": "gas_bill",
+   "engine": "upstage_dp",
+   "seconds": 1.5,
+   "upstage": {
+    "requests": 1,
+    "successes": 1,
+    "failures": 0
+   },
+   "metrics": [],
+   "review": [
+    "value_absent"
+   ],
+   "absent_cells": [
+    {
+     "role": "heat",
+     "header": "가스사용량(MJ)",
+     "raw_text": "",
+     "state": "absent",
+     "table_id": "upstage_table_0"
+    }
+   ],
+   "hitl_required": null
+  },
+  {
+   "file": "R6d_가스_열량칸공백_전월지침만.pdf",
+   "sha256": "18f8aa088d50379ab64f036d6a85e9b51c78120e1f7d42dd39ef9762136495b5",
+   "doc_type": "gas_bill",
+   "engine": "upstage_dp",
+   "seconds": 1.48,
+   "upstage": {
+    "requests": 1,
+    "successes": 1,
+    "failures": 0
+   },
+   "metrics": [],
+   "review": [
+    "value_absent"
+   ],
+   "absent_cells": [
+    {
+     "role": "heat",
+     "header": "가스사용량(MJ)",
+     "raw_text": "",
+     "state": "absent",
+     "table_id": "upstage_table_0"
+    }
+   ],
+   "hitl_required": null
+  },
+  {
+   "file": "R6e변형_02_전기요금청구서_사용량칸대시.pdf",
+   "sha256": "77c2398fbe4c193ac846883cbc6ba90b33fd379288c8590f9111b351ec5bb9b2",
+   "doc_type": "kepco_bill",
+   "engine": "upstage_dp",
+   "seconds": 1.47,
+   "upstage": {
+    "requests": 1,
+    "successes": 1,
+    "failures": 0
+   },
+   "metrics": [],
+   "review": [
+    "unit_missing",
+    "value_absent"
+   ],
+   "absent_cells": [
+    {
+     "role": "usage",
+     "header": "당월 전력 사용량",
+     "raw_text": "-",
+     "state": "held:unit_missing",
+     "table_id": "upstage_table_1"
+    }
+   ],
+   "hitl_required": null
+  },
+  {
+   "file": "R7a_전기_같은쪽_4월5월표.pdf",
+   "sha256": "5078c357b38fa2002729040b98cab07552f84611030b3e572dbf8e215bd8e272",
+   "doc_type": "ambiguous_fallback_vlm",
+   "engine": "gpt-4.1-mini-text",
+   "seconds": 3.36,
+   "upstage": {
+    "requests": 0,
+    "successes": 0,
+    "failures": 0
+   },
+   "metrics": [
+    {
+     "hint": "전기 사용량",
+     "value": 1000.0,
+     "unit": "kWh",
+     "code": "E-4-1",
+     "period": "2026년 4월",
+     "page": 0,
+     "role": null,
+     "row_label": null,
+     "scope": null,
+     "value_source": null,
+     "duplicate_status": null,
+     "header": null,
+     "raw_text": null,
+     "index_check": null
+    },
+    {
+     "hint": "전기 사용량",
+     "value": 1000.0,
+     "unit": "kWh",
+     "code": "E-4-1",
+     "period": "2026년 5월",
+     "page": 0,
+     "role": null,
+     "row_label": null,
+     "scope": null,
+     "value_source": null,
+     "duplicate_status": null,
+     "header": null,
+     "raw_text": null,
+     "index_check": null
+    }
+   ],
+   "review": [],
+   "absent_cells": [],
+   "hitl_required": null
+  },
+  {
+   "file": "R7b_전기_같은쪽_계량기AB표.pdf",
+   "sha256": "6e7bd40d4140855d6b49c92af96a7c3cbf4556cbd976dec7d7e649856bf3e11c",
+   "doc_type": "ambiguous_fallback_vlm",
+   "engine": "gpt-4.1-mini-text",
+   "seconds": 5.18,
+   "upstage": {
+    "requests": 0,
+    "successes": 0,
+    "failures": 0
+   },
+   "metrics": [
+    {
+     "hint": "전기 사용량 계량기별 1",
+     "value": 1000.0,
+     "unit": "kWh",
+     "code": "E-4-1",
+     "period": "2026-04-01 ~ 2026-04-30",
+     "page": 0,
+     "role": null,
+     "row_label": null,
+     "scope": null,
+     "value_source": null,
+     "duplicate_status": null,
+     "header": null,
+     "raw_text": null,
+     "index_check": null
+    },
+    {
+     "hint": "전기 사용량 계량기별 2",
+     "value": 1200.0,
+     "unit": "kWh",
+     "code": null,
+     "period": "2026-04-01 ~ 2026-04-30",
+     "page": 0,
+     "role": null,
+     "row_label": null,
+     "scope": null,
+     "value_source": null,
+     "duplicate_status": null,
+     "header": null,
+     "raw_text": null,
+     "index_check": null
+    }
+   ],
+   "review": [],
+   "absent_cells": [],
+   "hitl_required": null
+  }
+ ]
+}

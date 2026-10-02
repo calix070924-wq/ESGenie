@@ -93,7 +93,7 @@ def test_compound_unit_is_read_whole_and_never_as_its_numerator(unit_text):
     assert read.text.replace(" ", "") == unit_text.replace(" ", "")
 
 
-@pytest.mark.parametrize("text,unit", [(" tCO2eq", "tCO2eq"), (" m3", "m3"), (" m³", "m3"),
+@pytest.mark.parametrize("text,unit", [(" tCO2eq", "tCO2eq"), (" m3", "m³"), (" m³", "m³"),
                                        ("톤을 처리했다", "t"), (" kg이며", "kg")])
 def test_simple_units_are_read_fully_with_their_particle(text, unit):
     read = router._read_unit("1만" + text, 2)

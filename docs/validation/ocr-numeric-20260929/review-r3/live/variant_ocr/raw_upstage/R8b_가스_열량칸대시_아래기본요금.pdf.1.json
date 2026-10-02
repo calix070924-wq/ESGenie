@@ -1,0 +1,52 @@
+{
+ "file": "R8b_가스_열량칸대시_아래기본요금.pdf",
+ "call": 1,
+ "pdf_sha256": "f8b57cb129560e76e978243256c4fb990932a63f175ff06e3e4c41053488fda4",
+ "model_requested": "document-parse-260630",
+ "response": {
+  "api": "2.0",
+  "content": {
+   "html": "<p id='0' data-category='paragraph' style='font-size:14px'>검증용 가상 변형본 - 원본 아님<br>도시가스 요금 청구서<br>사용 기간: 2 0 2 6 - 0 4 - 0 1 ~ 2 0 2 6 - 0 4 - 3 0<br>사용량( m3 ) 사용열량( MJ )<br>8 , 4 2 0 -<br>기본요금 2 4 7 , 5 0 0</p>",
+   "markdown": "",
+   "text": "검증용 가상 변형본 - 원본 아님\n도시가스 요금 청구서\n사용 기간: 2 0 2 6 - 0 4 - 0 1 ~ 2 0 2 6 - 0 4 - 3 0\n사용량( m3 ) 사용열량( MJ )\n8 , 4 2 0 -\n기본요금 2 4 7 , 5 0 0"
+  },
+  "elements": [
+   {
+    "id": 0,
+    "page": 1,
+    "category": "paragraph",
+    "content": {
+     "html": "<p id='0' data-category='paragraph' style='font-size:14px'>검증용 가상 변형본 - 원본 아님<br>도시가스 요금 청구서<br>사용 기간: 2 0 2 6 - 0 4 - 0 1 ~ 2 0 2 6 - 0 4 - 3 0<br>사용량( m3 ) 사용열량( MJ )<br>8 , 4 2 0 -<br>기본요금 2 4 7 , 5 0 0</p>",
+     "markdown": "",
+     "text": "검증용 가상 변형본 - 원본 아님\n도시가스 요금 청구서\n사용 기간: 2 0 2 6 - 0 4 - 0 1 ~ 2 0 2 6 - 0 4 - 3 0\n사용량( m3 ) 사용열량( MJ )\n8 , 4 2 0 -\n기본요금 2 4 7 , 5 0 0"
+    },
+    "coordinates": [
+     {
+      "x": 0.0752,
+      "y": 0.0565
+     },
+     {
+      "x": 0.5909,
+      "y": 0.0565
+     },
+     {
+      "x": 0.5909,
+      "y": 0.2108
+     },
+     {
+      "x": 0.0752,
+      "y": 0.2108
+     }
+    ]
+   }
+  ],
+  "model": "document-parse-260630",
+  "ocr": true,
+  "usage": {
+   "pages": 1,
+   "standard": [
+    1
+   ]
+  }
+ }
+}

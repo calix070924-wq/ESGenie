@@ -1,0 +1,238 @@
+{
+ "code_path": "/private/tmp/ESGenie-ocr-numeric-20260929",
+ "imported": "/private/tmp/ESGenie-ocr-numeric-20260929/esgenie/ssot/ocr_router.py",
+ "cases": {
+  "valid_heat": {
+   "pdf_sha256": "26f07a8657fba521f17e901e306c1319c822315312fcd8824c88687fa4ef7917",
+   "metrics": [
+    {
+     "value": 8420.0,
+     "unit": "m³",
+     "code": null,
+     "hint": "도시가스 사용량 (행 1)",
+     "raw_text": "8,420",
+     "header": "사용량(m3)",
+     "row_label": "행 1"
+    },
+    {
+     "value": 360772.0,
+     "unit": "MJ",
+     "code": "E-4-1",
+     "hint": "도시가스 사용열량 (행 1)",
+     "raw_text": "360,772",
+     "header": "사용열량(MJ)",
+     "row_label": "행 1"
+    },
+    {
+     "value": 247500.0,
+     "unit": "MJ",
+     "code": "E-4-1",
+     "hint": "도시가스 사용열량 (행 2)",
+     "raw_text": "247,500",
+     "header": "사용열량(MJ)",
+     "row_label": "행 2"
+    }
+   ],
+   "review": [
+    "value_absent"
+   ],
+   "nodes": [
+    [
+     "E-3-1",
+     13.885,
+     "tCO2eq"
+    ],
+    [
+     "E-3-1",
+     20.239,
+     "tCO2eq"
+    ],
+    [
+     "E-4-1",
+     247500.0,
+     "MJ"
+    ],
+    [
+     "E-4-1",
+     360772.0,
+     "MJ"
+    ],
+    [
+     "도시가스 사용량 (행 1)",
+     8420.0,
+     "m³"
+    ]
+   ],
+   "points": {
+    "E-4-1": {
+     "value": 0.2475,
+     "unit": "TJ",
+     "comparison": "scope_unconfirmed",
+     "scope_notes": [
+      "E-4-1: 사업장 범위 미상 또는 상이 — 합산 보류",
+      "E-4-1: 부분값 — 2026-04-01~2026-04-30 · 월간 · 도시가스 · 부분. 전사·연간·전체 범위 총량임이 입증되지 않아 검증 보류. 연간 실적의 실제 사용기간·집계 방식 확인; 전사/공장 조직·사업장 범위 확인; 전체 에너지원 포함 여부 확인"
+     ],
+     "evidence": [
+      "도시가스 사용열량 (행 2)=247500.0MJ (valid_heat.pdf)"
+     ],
+     "reference": [
+      "도시가스 사용열량 (행 1)=360772.0MJ (valid_heat.pdf)"
+     ]
+    },
+    "E-3-1": {
+     "value": 13.885,
+     "unit": "tCO2eq",
+     "comparison": "scope_unconfirmed",
+     "scope_notes": [
+      "E-3-1: 부분값 — 2026-04-01~2026-04-30 · 월간 · 도시가스 환산 배출량 · 부분. 전사·연간·전체 범위 총량임이 입증되지 않아 검증 보류. 연간 실적의 실제 사용기간·집계 방식 확인; 전사/공장 조직·사업장 범위 확인"
+     ],
+     "evidence": [
+      "도시가스 사용열량 (행 2)=247500.0MJ (valid_heat.pdf) → 배출계수 환산: 247500.0 MJ × 5.61e-05 = 13.885 tCO2eq (추정)"
+     ],
+     "reference": []
+    }
+   },
+   "answers": {
+    "E-3-1": {
+     "value": 13.885,
+     "unit": "tCO2eq",
+     "status": "self_reported",
+     "evidence": [
+      "도시가스 사용열량 (행 2)=247500.0MJ (valid_heat.pdf) → 배출계수 환산: 247500.0 MJ × 5.61e-05 = 13.885 tCO2eq (추정)"
+     ],
+     "reference": []
+    },
+    "E-4-1": {
+     "value": 0.2475,
+     "unit": "TJ",
+     "status": "self_reported",
+     "evidence": [
+      "도시가스 사용열량 (행 2)=247500.0MJ (valid_heat.pdf)"
+     ],
+     "reference": [
+      "도시가스 사용열량 (행 1)=360772.0MJ (valid_heat.pdf)"
+     ]
+    }
+   }
+  },
+  "empty_heat": {
+   "pdf_sha256": "f8b57cb129560e76e978243256c4fb990932a63f175ff06e3e4c41053488fda4",
+   "metrics": [
+    {
+     "value": 8420.0,
+     "unit": "m³",
+     "code": null,
+     "hint": "도시가스 사용량 (행 1)",
+     "raw_text": "8,420",
+     "header": "사용량(m3)",
+     "row_label": "행 1"
+    },
+    {
+     "value": 247500.0,
+     "unit": "MJ",
+     "code": "E-4-1",
+     "hint": "도시가스 사용열량 (행 2)",
+     "raw_text": "247,500",
+     "header": "사용열량(MJ)",
+     "row_label": "행 2"
+    }
+   ],
+   "review": [
+    "value_absent",
+    "value_absent"
+   ],
+   "nodes": [
+    [
+     "E-3-1",
+     13.885,
+     "tCO2eq"
+    ],
+    [
+     "E-4-1",
+     247500.0,
+     "MJ"
+    ],
+    [
+     "도시가스 사용량 (행 1)",
+     8420.0,
+     "m³"
+    ]
+   ],
+   "points": {
+    "E-4-1": {
+     "value": 0.2475,
+     "unit": "TJ",
+     "comparison": "scope_unconfirmed",
+     "scope_notes": [
+      "E-4-1: 부분값 — 2026-04-01~2026-04-30 · 월간 · 도시가스 · 부분. 전사·연간·전체 범위 총량임이 입증되지 않아 검증 보류. 연간 실적의 실제 사용기간·집계 방식 확인; 전사/공장 조직·사업장 범위 확인; 전체 에너지원 포함 여부 확인"
+     ],
+     "evidence": [
+      "도시가스 사용열량 (행 2)=247500.0MJ (empty_heat.pdf)"
+     ],
+     "reference": []
+    },
+    "E-3-1": {
+     "value": 13.885,
+     "unit": "tCO2eq",
+     "comparison": "scope_unconfirmed",
+     "scope_notes": [
+      "E-3-1: 부분값 — 2026-04-01~2026-04-30 · 월간 · 도시가스 환산 배출량 · 부분. 전사·연간·전체 범위 총량임이 입증되지 않아 검증 보류. 연간 실적의 실제 사용기간·집계 방식 확인; 전사/공장 조직·사업장 범위 확인"
+     ],
+     "evidence": [
+      "도시가스 사용열량 (행 2)=247500.0MJ (empty_heat.pdf) → 배출계수 환산: 247500.0 MJ × 5.61e-05 = 13.885 tCO2eq (추정)"
+     ],
+     "reference": []
+    }
+   },
+   "answers": {
+    "E-3-1": {
+     "value": 13.885,
+     "unit": "tCO2eq",
+     "status": "self_reported",
+     "evidence": [
+      "도시가스 사용열량 (행 2)=247500.0MJ (empty_heat.pdf) → 배출계수 환산: 247500.0 MJ × 5.61e-05 = 13.885 tCO2eq (추정)"
+     ],
+     "reference": []
+    },
+    "E-4-1": {
+     "value": 0.2475,
+     "unit": "TJ",
+     "status": "self_reported",
+     "evidence": [
+      "도시가스 사용열량 (행 2)=247500.0MJ (empty_heat.pdf)"
+     ],
+     "reference": []
+    }
+   }
+  },
+  "fee_with_won": {
+   "pdf_sha256": "b534febed7ca8fbdb21b36405205d8b0445587dabe072ba53fb82f72b7497376",
+   "metrics": [
+    {
+     "value": 8420.0,
+     "unit": "m³",
+     "code": null,
+     "hint": "도시가스 사용량",
+     "raw_text": "8,420",
+     "header": "사용량(m3)",
+     "row_label": ""
+    }
+   ],
+   "review": [
+    "value_absent",
+    "value_absent",
+    "value_absent",
+    "template_candidate_from_other_cell"
+   ],
+   "nodes": [
+    [
+     "도시가스 사용량",
+     8420.0,
+     "m³"
+    ]
+   ],
+   "points": {},
+   "answers": {}
+  }
+ }
+}

@@ -1,0 +1,60 @@
+{
+  "elapsed_seconds": 39.001,
+  "llm": {
+    "mode": "on",
+    "hits": 6,
+    "misses": 0,
+    "live_calls": 0,
+    "successes": 0,
+    "failures": 0
+  },
+  "llm_response_events": [],
+  "upstage": {
+    "requests": 4,
+    "successes": 4,
+    "failures": 0,
+    "events": [
+      {
+        "function": "_call_upstage_dp_payload",
+        "file": "02_전기요금청구서_2026-04.pdf",
+        "pages": null,
+        "status": "success",
+        "seconds": 5.384
+      },
+      {
+        "function": "_call_upstage_dp_payload",
+        "file": "03_도시가스요금고지서_2026-04.pdf",
+        "pages": null,
+        "status": "success",
+        "seconds": 6.545
+      },
+      {
+        "function": "_call_upstage_dp_payload",
+        "file": "04_사업장폐기물위탁처리명세_2026-04.pdf",
+        "pages": null,
+        "status": "success",
+        "seconds": 6.555
+      },
+      {
+        "function": "_call_upstage_dp_payload",
+        "file": "07_상수도청구서_2026-04.pdf",
+        "pages": null,
+        "status": "success",
+        "seconds": 5.608
+      }
+    ]
+  },
+  "stage": "initial",
+  "document_count": 12,
+  "evidence_count": 11,
+  "company_answer_count": 1,
+  "cache_files_at_end": {
+    "ocr": 8,
+    "llm": 16
+  },
+  "ocr_vlm_cache": {
+    "hits": 7,
+    "misses": 0,
+    "mode": "hit"
+  }
+}
