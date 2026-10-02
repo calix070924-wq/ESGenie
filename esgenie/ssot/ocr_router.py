@@ -2545,6 +2545,11 @@ class _ZeroVerdict:
     unit_location: str = ""       # after_value | label(행 라벨·열 머리 괄호) | ""(원문에 단위 없음)
     scope_from: str = ""          # 기간·사업장을 읽은 곳: statement | column | heading | ""(읽지 않음)
     scope_heading: str = ""       # scope_from=heading이면 그 머리말 원문
+    # 판정에 쓴 범위(PR 69 5차 검토). 감사용 `evidence_text`(표는 행 전체)와 따로 둔다.
+    evidence_start: int = -1      # 판정한 셀·서술의 인용 안 시작·끝
+    evidence_end: int = -1
+    row_label: str = ""           # 표 후보의 행 라벨(값이 없는 앞 칸들). 표가 아니면 ""
+    scope_boundary: str = ""      # 범위 상속을 끝낸 새 절 머리말 원문. 없으면 ""
 
     @property
     def accepted(self) -> bool:
@@ -2609,6 +2614,12 @@ class _ZeroCandidate:
                             # none(머리글 행 없는 표·표 아님) | unresolved(머리글은 있으나 열을 특정 못 함)
     header_offset: int = -1  # 열 머리의 인용 안 위치. 없으면 -1
     match: Any = None     # 부정 서술의 정규식 결과
+    # PR 69 5차 검토: 표 후보의 `statement`는 **행 라벨 + 자기 셀**이다(다른 값 셀의 숫자·연도·
+    # 목표 문구를 이 0의 서술·범위로 읽지 않는다). 셀 머리 괄호는 공백으로 가린다 — 그 좌표는
+    # `column`으로만 읽는다. 원문 행 전체는 감사용으로 `context`에 둔다.
+    context: str = ""     # 감사용 원문(표 행 전체 또는 서술). 비면 statement
+    label: str = ""       # 표 행 라벨. 표가 아니면 ""
+    span: tuple = ()      # 판정 범위(셀·서술)의 인용 안 시작·끝
 
 
 def _zero_verdict(quote: str, hint: str = "", period: str = "",
@@ -2631,9 +2642,12 @@ def _zero_verdict(quote: str, hint: str = "", period: str = "",
     requested = _requested_period(period, hint)
     verdicts: list[_ZeroVerdict] = []
     for candidate in candidates:
-        base = {"evidence_text": candidate.statement.strip(), "evidence_offset": candidate.offset,
+        span = candidate.span or (-1, -1)
+        base = {"evidence_text": (candidate.context or candidate.statement).strip(),
+                "evidence_offset": candidate.offset,
                 "candidate": candidate.kind, "requested_scope": requested.kind if requested else "",
-                "evidence_column": candidate.column, "column_state": candidate.column_state}
+                "evidence_column": candidate.column, "column_state": candidate.column_state,
+                "evidence_start": span[0], "evidence_end": span[1], "row_label": candidate.label}
         if candidate.kind == "numeric":
             read = _zero_unit(candidate.statement, candidate.end, unit)
             label_unit = _zero_label_unit(candidate.statement, candidate.start, candidate.column)
@@ -2740,40 +2754,131 @@ def _pieces(text: str, pattern: re.Pattern[str], base: int = 0) -> list[tuple[in
 
 
 def _zero_candidates(quote: str) -> list[_ZeroCandidate]:
-    """인용의 숫자 0과 부정 서술을 **위치를 가진 후보**로 찾는다(판정은 하지 않는다)."""
+    """인용의 숫자 0과 부정 서술을 **위치를 가진 후보**로 찾는다(판정은 하지 않는다).
+
+    표 행(`_table_cells`로 칸이 둘 이상인 줄)의 후보는 **자기 셀**과 행 라벨만 판정 범위로 삼는다
+    (PR 69 5차 검토: `산업재해율(‰) | 1(합계|2025) | 0(합계|2026)`의 0이 행 전체의 2025·2026 때문에
+    `period_ambiguous`, 뒤 셀 `1(합계|2025)` 때문에 `interpretation_unknown`이 됐다). 표가 아닌 줄은
+    절·서술로 나눈다. 앞 문맥(`preceding`)에는 표 행을 한 토막으로 넣는다.
+    """
     numeric = [m.start() for m in _ZERO_NUMERIC_RE.finditer(quote)]
     candidates: list[_ZeroCandidate] = []
-    earlier: list[tuple[int, str]] = []      # 지금 후보보다 앞의 절·서술
-    for clause_start, clause in _pieces(quote, _ZERO_CLAUSE_SPLIT_RE):
-        for statement_start, statement in _pieces(clause, _ZERO_STATEMENT_SPLIT_RE, clause_start):
-            found = [("numeric", p - statement_start, p - statement_start + 1, None) for p in numeric
-                     if statement_start <= p < statement_start + len(statement)]
-            found += [("negation", m.start(), m.end(), m) for m in _ZERO_NEGATION_RE.finditer(statement)]
-            for kind, start, end, match in sorted(found, key=lambda f: f[1]):
-                if kind == "numeric":
-                    zero = _ZERO_NUMERIC_RE.match(statement, start)
-                    end = zero.end() if zero else end
-                column, state, header_offset = _column_header(quote, statement_start + start, end - start)
-                if state == "cell":
-                    # 셀 머리(`0(합계|2026)`)는 값의 좌표다 — 단위·서술은 그 뒤부터 읽는다.
-                    end = _ZERO_CELL_HEADER_RE.match(statement, end).end()
-                candidates.append(_ZeroCandidate(kind, statement, start, end, statement_start + start,
-                                                 tuple(earlier), column, state, header_offset, match))
-            earlier.append((statement_start, statement))
+    earlier: list[tuple[int, str]] = []      # 지금 후보보다 앞의 절·서술·표 행
+
+    def add(statement: str, statement_start: int, span: tuple[int, int], context: str, label: str,
+            search: tuple[int, int]) -> None:
+        # `search`: statement 안에서 후보를 찾을 구간(표는 자기 셀). 위치는 statement 기준이다.
+        lo, hi = search
+        found = [("numeric", p - statement_start, None) for p in numeric
+                 if statement_start + lo <= p < statement_start + hi]
+        found += [("negation", m.start(), m) for m in _ZERO_NEGATION_RE.finditer(statement, lo, hi)]
+        for kind, start, match in sorted(found, key=lambda f: f[1]):
+            end = match.end() if match else start + 1
+            if kind == "numeric":
+                zero = _ZERO_NUMERIC_RE.match(statement, start)
+                end = zero.end() if zero else end
+            offset = statement_start + start
+            column, state, header_offset = _column_header(quote, offset, end - start)
+            view = statement
+            annotation = _cell_annotation(statement, end) if state == "cell" else None
+            if annotation:
+                # 셀 머리(`0(합계|2026)`)는 값의 좌표다 — 범위는 `column`으로만 읽고, 단위·서술은
+                # 그 뒤부터 읽는다. 서술의 기간·사업장으로 다시 읽지 않도록 공백으로 가린다.
+                close = annotation[2]
+                view = statement[:end] + " " * (close - end) + statement[close:]
+                end = close
+            candidates.append(_ZeroCandidate(kind, view, start, end, offset, tuple(earlier), column,
+                                             state, header_offset, match, context, label, span))
+
+    for line_start, line in _pieces(quote, re.compile(r"\n")):
+        cells = _table_cells(line)
+        if len(cells) > 1:
+            # 행 라벨: 첫 칸과, 그 뒤로 값(숫자·부정 서술·`-`·빈 칸)이 나오기 전까지의 칸(단위 칸 등).
+            lead = 1
+            while lead < len(cells) and not _is_value_cell(line[cells[lead][0]:cells[lead][1]]):
+                lead += 1
+            label = " | ".join(line[s:e].strip() for s, e in cells[:lead])
+            for k, (s, e) in enumerate(cells):
+                if k == 0:
+                    statement, prefix = line[s:e], ""
+                else:
+                    prefix = " | ".join(line[a:b] for a, b in cells[:min(k, lead)]) + " | "
+                    statement = prefix + line[s:e]
+                # statement 위치 + cell_base = 인용 위치(자기 셀 부분만 원문과 같은 위치에 있다).
+                cell_base = line_start + s - len(prefix)
+                add(statement, cell_base, (line_start + s, line_start + e), line, label,
+                    (len(prefix), len(statement)))
+            earlier.append((line_start, line))
+            continue
+        for clause_start, clause in _pieces(line, _ZERO_CLAUSE_SPLIT_RE, line_start):
+            for statement_start, statement in _pieces(clause, _ZERO_STATEMENT_SPLIT_RE, clause_start):
+                add(statement, statement_start, (statement_start, statement_start + len(statement)),
+                    statement, "", (0, len(statement)))
+                earlier.append((statement_start, statement))
     return candidates
 
 
-# 구조화 표 경로(`_attach_column_headers`)가 값 뒤에 붙인 셀 머리(`0(합계|2030 목표)`).
-_ZERO_CELL_HEADER_RE = re.compile(r"\s*\(([^()]*)\)")
+def _table_cells(line: str) -> list[tuple[int, int]]:
+    """표 행의 칸(줄 안 시작·끝). 짝이 맞는 괄호 안의 `|`는 칸 구분자가 아니다.
+
+    `_attach_column_headers`는 값 뒤에 `(합계|2026)`·`(국내(별도)|2022)`처럼 `|`가 든 셀 머리를
+    붙인다. 단순 `split('|')`은 이 좌표를 칸으로 쪼갠다(PR 69 5차 검토). 짝 없는 괄호(`4)` 각주)는
+    무시한다.
+    """
+    opens, inside = [], [0] * (len(line) + 1)
+    for i, ch in enumerate(line):
+        if ch in "(（":
+            opens.append(i)
+        elif ch in ")）" and opens:
+            inside[opens.pop() + 1] += 1
+            inside[i] -= 1
+    cells, depth, start = [], 0, 0
+    for i, ch in enumerate(line):
+        depth += inside[i]
+        if ch == "|" and depth == 0:
+            cells.append((start, i))
+            start = i + 1
+    cells.append((start, len(line)))
+    return cells
+
+
+def _cell_annotation(text: str, pos: int) -> tuple[int, int, int] | None:
+    """`pos` 바로 뒤 셀 머리 괄호의 (안쪽 시작, 안쪽 끝, 닫는 괄호 다음). 안쪽 괄호를 허용한다."""
+    m = re.compile(r"\s*[(（]").match(text, pos)
+    if not m:
+        return None
+    depth = 1
+    for j in range(m.end(), len(text)):
+        if text[j] in "(（":
+            depth += 1
+        elif text[j] in ")）":
+            depth -= 1
+            if depth == 0:
+                return m.end(), j, j + 1
+    return None
+
+
 # 데이터 칸: 수량으로 시작하거나(`50`·`46명`·`12.4`) 미공시 표기(`-`). 연도 머리(`2026`)는 아니다.
 _TABLE_VALUE_CELL_RE = re.compile(r"\s*(?:[-+]?\d[\d.,]*|[-–—]\s*$)")
+# 열의 역할·연도·축을 가리키는 머리글 낱말. 표 중간의 행이 머리글로 인정받으려면 값 칸 모두가
+# 이것(또는 연도)이어야 한다 — `완료 | 완료` 같은 문자형 값은 머리글이 아니다(PR 69 5차 검토).
+_TABLE_AXIS_RE = re.compile(
+    r"목표|실적|계획|전망|예상|추정|구분|항목|단위|비고|소계|누계|총계|전년|당해|전기|당기|상반기|하반기"
+    r"|분기|연도|년도|FY\s*\d{2,4}|" + "|".join(_COL_HEADER_KEYWORDS))
+
+
+def _is_value_cell(text: str) -> bool:
+    """값이 든 칸인가: 수량·`-`·빈 칸·숫자·미발생/미보유 서술. 행 라벨은 이런 칸 앞까지다."""
+    return (not text.strip() or bool(_TABLE_VALUE_CELL_RE.match(text)) or bool(re.search(r"\d", text))
+            or bool(_ZERO_NEGATION_RE.search(text)))
 
 
 def _is_table_header_row(cells: list[str]) -> bool:
-    """머리글 행인가: 첫 칸(행 제목 자리) 뒤 칸이 모두 비었거나 이름·연도이고, 하나 이상 채워졌다.
+    """머리글 **후보** 행인가: 첫 칸(행 제목 자리) 뒤 칸이 모두 비었거나 이름·연도이고, 하나 이상 채워졌다.
 
     숫자 데이터 행(`교육 참여 인원 | 0 | 50`)은 칸 수가 같아도 머리글이 아니다. 미발생·미보유
-    서술이 든 행도 사실을 적은 데이터 행이다.
+    서술이 든 행도 사실을 적은 데이터 행이다. 숫자가 없다는 것만으로 머리글이 되지는 않는다 —
+    `_column_header`가 열 역할 낱말이나 표 구조(첫 행·구분선)로 확인한다.
     """
     rest = [c.strip() for c in cells[1:]]
     if not any(rest) or _ZERO_NEGATION_RE.search("|".join(cells)):
@@ -2781,58 +2886,84 @@ def _is_table_header_row(cells: list[str]) -> bool:
     return all(not c or _YEAR_HEADER_RE.fullmatch(c) or not _TABLE_VALUE_CELL_RE.match(c) for c in rest)
 
 
+def _names_columns(cells: list[str]) -> bool:
+    """값 칸이 모두 열 역할·연도·축 낱말인가(`목표 | 실적`·`2025 | 2026`·`합계 | 국내`)."""
+    rest = [c.strip() for c in cells[1:] if c.strip()]
+    return bool(rest) and all(_YEAR_HEADER_RE.fullmatch(c) or _TABLE_AXIS_RE.search(c) for c in rest)
+
+
 def _column_header(quote: str, offset: int, length: int = 1) -> tuple[str, str, int]:
     """후보 셀의 열 머리, 연결 상태, 머리의 인용 안 위치.
 
     PR 69 4차 검토(2026-10-02): 칸 수가 같은 가장 가까운 앞 행을 머리글로 써서 `교육 참여 인원 |
     0 | 50`의 `0`을 산업재해 행의 열 머리로 읽었다(목표 0이 실적이 됨). 연도 표에서는 사이에 낀
-    데이터 행 때문에 연도 열을 잃었다. 이제
+    데이터 행 때문에 연도 열을 잃었다. 5차 검토: 숫자가 없는 문자형 데이터 행(`점검 상태 | 완료 |
+    완료`)이 머리글로 인정돼 실제 `목표 | 실적` 머리글을 덮었다. 이제
       1. 값에 셀 머리가 붙어 있으면(구조화 표의 셀 좌표) 그것을 쓴다 — `cell`.
-      2. 평문 표는 **같은 표**(`|`가 든 줄이 이어진 구간) 안에서 머리글로 확인된 행만 본다.
-         데이터 행은 건너뛴다. 칸 수가 같은 가장 가까운 머리글 행과 그 바로 위의 머리글 행들
-         (여러 줄 머리글)을 열마다 이어 붙인다 — `header`.
+      2. 평문 표는 **같은 표**(칸이 둘 이상인 줄이 이어진 구간) 안에서 머리글로 확인된 행만 본다.
+         머리글 확인: 값이 없는 행(`_is_table_header_row`)이면서 (a) 값 칸이 모두 열 역할·연도·축
+         낱말이거나 (b) 표의 첫 행이거나 (c) 바로 아래가 구분선(`---`)이다. 그 밖의 행은 데이터 행이라
+         건너뛴다. 칸 수가 같은 가장 가까운 머리글 행과 그 바로 위의 머리글 행들(여러 줄 머리글)을
+         열마다 이어 붙인다 — `header`.
       3. 같은 표에 머리글 행이 없으면 열 정보 없음 — `none`(머리글이 없다는 이유로 값을 지우지 않는다).
       4. 머리글 행은 있으나 칸 수가 맞는 것이 없으면 `unresolved` — 열을 임의로 고르지 않는다.
+    칸은 `_table_cells`로 나눈다(셀 머리 괄호 안 `|`는 칸 구분자가 아니다).
     """
-    cell = _ZERO_CELL_HEADER_RE.match(quote, offset + length)
-    if cell and all(_YEAR_HEADER_RE.fullmatch(part.strip()) or any(k in part for k in _COL_HEADER_KEYWORDS)
-                    or re.search(r"목표|실적|계획|전망", part) for part in cell.group(1).split("|")):
-        return cell.group(1).strip(), "cell", cell.start(1)
+    cell = _cell_annotation(quote, offset + length)
+    if cell:
+        inner = quote[cell[0]:cell[1]]
+        if all(_YEAR_HEADER_RE.fullmatch(part.strip()) or any(k in part for k in _COL_HEADER_KEYWORDS)
+               or re.search(r"목표|실적|계획|전망", part) for part in inner.split("|")):
+            return inner.strip(), "cell", cell[0]
     line_start = quote.rfind("\n", 0, offset) + 1
     line_end = quote.find("\n", offset)
     line = quote[line_start:line_end if line_end >= 0 else len(quote)]
-    if "|" not in line:
+    line_cells = _table_cells(line)
+    if len(line_cells) < 2:
         return "", "none", -1
-    index = quote[line_start:offset].count("|")
-    width = line.count("|")
-    rows: list[tuple[int, str]] = []       # 같은 표의 앞 행(가까운 것부터)
+    index = next(k for k, (s, e) in enumerate(line_cells) if offset - line_start <= e)
+    width = len(line_cells)
+    rows: list[tuple[int, list[str]]] = []   # 같은 표의 앞 행(가까운 것부터): (시작, 칸 문구)
     cursor = line_start
     while cursor > 0:
         start = quote.rfind("\n", 0, cursor - 1) + 1
         row = quote[start:cursor - 1]
-        if "|" not in row:
+        bounds = _table_cells(row)
+        if len(bounds) < 2:
             break                          # 표가 끝났다 — 다른 표·본문의 행은 보지 않는다
-        rows.append((start, row))
+        rows.append((start, [row[s:e] for s, e in bounds]))
         cursor = start
-    headers = [(start, row) for start, row in rows
-               if not re.fullmatch(r"[\s|:\-–—]*", row) and _is_table_header_row(row.split("|"))]
+
+    def rule(k: int) -> bool:
+        return re.fullmatch(r"[\s:\-–—]*", "".join(rows[k][1])) is not None
+
+    def header(k: int) -> bool:
+        cells = rows[k][1]
+        if rule(k) or not _is_table_header_row(cells):
+            return False
+        if _names_columns(cells):
+            return True
+        top = all(rule(j) for j in range(k + 1, len(rows)))     # 표의 첫 행(위로는 구분선뿐)
+        return top or (k > 0 and rule(k - 1))                    # 또는 바로 아래가 구분선
+
+    headers = [k for k in range(len(rows)) if header(k)]
     if not headers:
         return "", "none", -1
-    nearest = next(((start, row) for start, row in headers if row.count("|") == width), None)
+    nearest = next((k for k in headers if len(rows[k][1]) == width), None)
     if nearest is None:
         return "", "unresolved", -1
     # 여러 줄 머리글: 가장 가까운 머리글 행 바로 위로 이어진 같은 칸 수의 머리글 행.
     stack = [nearest]
-    for start, row in rows[rows.index(nearest) + 1:]:
-        if re.fullmatch(r"[\s|:\-–—]*", row):
+    for k in range(nearest + 1, len(rows)):
+        if rule(k):
             continue
-        if row.count("|") != width or not _is_table_header_row(row.split("|")):
+        if len(rows[k][1]) != width or not header(k):
             break
-        stack.append((start, row))
-    parts = [row.split("|")[index].strip() for _start, row in reversed(stack)]
+        stack.append(k)
+    parts = [rows[k][1][index].strip() for k in reversed(stack)]
     text = " ".join(p for p in parts if p)
-    head_start, head_row = nearest
-    return text, "header", head_start + sum(len(c) + 1 for c in head_row.split("|")[:index])
+    head_start, head_cells = rows[nearest]
+    return text, "header", head_start + sum(len(c) + 1 for c in head_cells[:index])
 
 
 def _zero_subject(candidate: _ZeroCandidate, specific: list[str], hint_tokens: list[str],
@@ -3031,35 +3162,60 @@ _ZERO_HEADING_WORDS = frozenset({
     "안전", "보건", "환경", "사회", "지배구조", "ESG", "esg"})
 
 
-def _zero_heading(candidate: _ZeroCandidate, hint_tokens: list[str]) -> tuple[list, set[str], str]:
-    """후보에 범위를 물려줄 수 있는 **공통 머리말**의 기간·사업장과 그 원문.
+# 서술을 끝맺는 어미. 숫자 없는 문장(`교육을 실시했다`)은 제목이 아니라 그 절의 서술이다.
+_SENTENCE_END_RE = re.compile(r"(?:다|음|함|됨|임|요)[\s.。!)\]]*$")
+
+
+def _heading_kind(piece: str, allowed: set[str]) -> str:
+    """앞 문맥 한 토막의 성격: blank | table(표 행) | fact(수량·부정·문장 서술) |
+    heading(이 지표에 범위를 줄 수 있는 머리말) | other_heading(다른 대상의 제목 — 새 절)."""
+    if not piece.strip():
+        return "blank"
+    if len(_table_cells(piece)) > 1:
+        return "table"
+    rest = piece
+    for span in _date_spans(piece):
+        rest = rest.replace(span.text, " ")
+    rest = _SITE_MENTION_RE.sub(" ", rest)
+    if re.search(r"\d", rest) or _ZERO_NEGATION_RE.search(rest) or _SENTENCE_END_RE.search(rest.strip()):
+        return "fact"
+    return "heading" if all(w in allowed for w in _label_tokens(rest)) else "other_heading"
+
+
+def _zero_heading(candidate: _ZeroCandidate, hint_tokens: list[str]) -> tuple[list, set[str], str, str]:
+    """후보에 범위를 물려줄 수 있는 **공통 머리말**의 기간·사업장, 그 원문, 상속을 끝낸 경계.
 
     PR 69 4차 검토(2026-10-02): 다른 절 전체를 폴백 문맥으로 써서 `산업재해 0건, 2026년 4월 김해
-    제1공장 교육 참석 인원 50명`의 산업재해가 교육의 날짜·사업장으로 CONFIRMED가 됐다. 이제
-      - 후보보다 **앞**의 절·서술만 본다(뒤 절은 다른 사실의 서술이다).
-      - 날짜·사업장 표기를 뺀 나머지에 숫자·0 후보가 없고, 낱말이 모두 범위 머리말 낱말
-        (`_ZERO_HEADING_WORDS`)·일반 낱말·이 지표의 낱말일 때만 머리말이다. `교육 참석 인원 50명`·
-        `교육 현황`처럼 다른 대상을 세거나 가리키는 앞 문구는 머리말이 아니다.
-      - 가장 가까운 머리말부터 기간·사업장을 따로 찾는다.
+    제1공장 교육 참석 인원 50명`의 산업재해가 교육의 날짜·사업장으로 CONFIRMED가 됐다.
+    5차 검토: 적용할 수 없는 머리말(`2026년 5월 부산 제1공장 교육 현황`)을 건너뛰고 더 앞 절의
+    `2026년 4월 김해 제1공장 안전 현황`까지 거슬러 올라가 CONFIRMED가 됐다. 머리말이 **이 지표에
+    범위를 줄 수 있는가**와 **새 절의 시작인가**를 따로 본다.
+      - 후보보다 **앞**의 토막만 본다(뒤 절은 다른 사실의 서술이다).
+      - 후보의 절 머리말을 찾을 때까지 같은 절의 표 행·데이터 서술·빈 줄은 건너뛴다.
+      - 처음 만난 제목이 후보의 절 머리말이다. 다른 대상의 제목(`교육 현황`)이면 그것이 새 절의
+        경계다 — 범위를 주지 않고, 더 앞으로 가지 않는다(경계 원문을 돌려준다).
+      - 이 지표에 적용되는 머리말이면 그 기간·사업장을 쓰고, **바로 위로 이어진** 머리말(빈 줄만
+        사이에 둔 상위 머리말)에서만 빠진 범위를 채운다. 그 사이에 서술·표 행·다른 대상의 제목이
+        있으면 앞 절이다 — 기간과 사업장을 서로 다른 절에서 따로 가져와 조립하지 않는다.
     """
     allowed = _ZERO_HEADING_WORDS | _ZERO_GENERIC_TOKENS | set(hint_tokens)
     spans: list = []
     sites: set[str] = set()
     used: list[str] = []
+    found = False                          # 후보의 절 머리말을 찾았는가
     for _start, piece in reversed(candidate.preceding):
-        if "|" in piece and not _is_table_header_row(piece.split("|")):
-            continue                       # 표의 데이터 행은 머리말이 아니다
-        rest = piece
-        for span in _date_spans(piece):
-            rest = rest.replace(span.text, " ")
-        rest = _SITE_MENTION_RE.sub(" ", rest)
-        if re.search(r"\d", rest) or _ZERO_NEGATION_RE.search(rest):
+        kind = _heading_kind(piece, allowed)
+        if kind == "blank":
             continue
-        if any(w not in allowed for w in _label_tokens(rest)):
-            continue
+        if not found:
+            if kind in ("table", "fact"):
+                continue                   # 같은 절의 표·데이터 행
+            if kind == "other_heading":
+                return [], set(), "", piece.strip()
+            found = True
+        elif kind != "heading":
+            break                          # 머리말 묶음이 끝났다 — 그 위는 앞 절이다
         piece_spans, piece_sites = _date_spans(piece), _site_keys(piece)
-        if not piece_spans and not piece_sites:
-            continue
         if not spans and piece_spans:
             spans = piece_spans
             used.append(piece.strip())
@@ -3069,7 +3225,7 @@ def _zero_heading(candidate: _ZeroCandidate, hint_tokens: list[str]) -> tuple[li
                 used.append(piece.strip())
         if spans and sites:
             break
-    return spans, sites, " / ".join(used)
+    return spans, sites, " / ".join(used), ""
 
 
 def _zero_scope_verdict(candidate: _ZeroCandidate, requested: "_DateSpan | None",
@@ -3091,16 +3247,16 @@ def _zero_scope_verdict(candidate: _ZeroCandidate, requested: "_DateSpan | None"
     spans = statement_spans or column_spans
     sites = statement_sites or column_sites
     origin = "statement" if statement_spans or statement_sites else "column" if spans or sites else ""
-    heading = ""
+    heading = boundary_heading = ""
     if not spans or not sites:
-        heading_spans, heading_sites, heading = _zero_heading(candidate, list(hint_tokens))
+        heading_spans, heading_sites, heading, boundary_heading = _zero_heading(candidate, list(hint_tokens))
         if (not spans and heading_spans) or (not sites and heading_sites):
             origin = f"{origin}+heading" if origin else "heading"
         else:
             heading = ""
         spans = spans or heading_spans
         sites = sites or heading_sites
-    base = {**base, "scope_from": origin, "scope_heading": heading}
+    base = {**base, "scope_from": origin, "scope_heading": heading, "scope_boundary": boundary_heading}
     site_text = ", ".join(sorted(sites))
     if not _site_matches(boundary, sites):
         return _ZeroVerdict("REJECTED", "site_mismatch", evidence_site=site_text, **base)
@@ -3133,7 +3289,10 @@ def _zero_trace(verdict: _ZeroVerdict) -> dict[str, Any]:
     return {"evidence_offset": verdict.evidence_offset,
             "evidence_column": verdict.evidence_column, "column_state": verdict.column_state,
             "source_unit": verdict.source_unit, "unit_location": verdict.unit_location,
-            "scope_from": verdict.scope_from, "scope_heading": verdict.scope_heading[:_QUOTE_MAX_CHARS]}
+            "scope_from": verdict.scope_from, "scope_heading": verdict.scope_heading[:_QUOTE_MAX_CHARS],
+            "evidence_start": verdict.evidence_start, "evidence_end": verdict.evidence_end,
+            "row_label": verdict.row_label[:_QUOTE_MAX_CHARS],
+            "scope_boundary": verdict.scope_boundary[:_QUOTE_MAX_CHARS]}
 
 
 def _zero_scope_boundary(boundary: dict[str, Any], verdict: _ZeroVerdict, period: str) -> dict[str, Any]:
