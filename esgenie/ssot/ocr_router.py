@@ -3085,25 +3085,45 @@ def _is_table_header_row(cells: list[str]) -> bool:
 
 # 사업장 축 머리글의 첫 칸(행 제목 자리): 열이 사업장별임을 밝히는 축 낱말.
 _ROW_AXIS_RE = re.compile(r"구분|항목|지표|분류|내용|사업장")
+# 축 이름 칸 = 행 제목 열의 축 낱말(뒤에 `명`·`별`)만 이어진 칸. 낱말 사이 공백·`/`·`·`과 단위 괄호는
+# 뗀다. 열 역할(`목표`·`실적`)과 합계(`소계`·`합계`)는 첫 칸에 오면 데이터 행의 라벨이라 넣지 않는다.
+_AXIS_NAME_RE = re.compile(
+    rf"(?:(?:{_ROW_AXIS_RE.pattern}|공장|부문|연도|년도|기간|단위|비고|FY\s*\d{{2,4}})(?:명|별)?)+")
+
+
+def _is_axis_name(text: str) -> bool:
+    """칸 **전체**가 축 이름인가(`구분`·`사업장`·`사업장명`·`구분/연도`·`항목(단위: 건)`).
+
+    PR 69 7차 검토: 축 낱말을 **포함**하기만 하면(`.search`) 축 이름으로 봐서 `교육 대상 사업장 |
+    김해 제1공장 | 부산 제1공장`(목표·실적 열마다 사업장을 적은 데이터 행)이 새 머리글이 됐고,
+    아래 `산업재해 | 0 | 1`의 목표 0이 실적이 됐다. 무엇을 기록했는지 밝히는 낱말(`교육 대상`·
+    `집계`·`소속`)이 붙은 칸은 축 이름이 아니라 데이터 행의 라벨이다.
+    """
+    body = re.sub(r"[(（][^()（）]*[)）]", "", text)
+    return bool(_AXIS_NAME_RE.fullmatch(re.sub(r"[\s/·,\\]+", "", body)))
 
 
 def _names_columns(cells: list[str]) -> bool:
-    """값 칸이 열 이름인가.
+    """표 **중간**의 행이 새 머리글인가: 첫 칸(행 제목 자리)이 비었거나 축 이름이고(`_is_axis_name`),
+    값 칸이
 
     - 모두 열 역할·연도·축 낱말(`목표 | 실적`·`2025 | 2026`·`합계 | 국내`), 또는
-    - 사업장 축: 첫 칸이 비었거나 축 낱말(`구분`·`항목`…)이고 값 칸이 모두 **서로 다른** 사업장
-      식별자(`구분 | 1공장 | 2공장`·`구분 | 김해 제1공장 | 부산 제1공장`). PR 69 6차 검토: `1공장`을
-      수량으로 읽어 표 중간의 새 머리글을 놓쳤고, 이전 `목표 | 실적` 역할이 남아 정상 0이 지워졌다.
-      같은 낱말이 되풀이되는 문자형 데이터 행(`소속 | 김해공장 | 김해공장`)은 머리글이 아니다.
+    - 모두 **서로 다른** 사업장 식별자(`구분 | 1공장 | 2공장`·`구분 | 김해 제1공장 | 부산 제1공장`)다.
+      PR 69 6차 검토: `1공장`을 수량으로 읽어 표 중간의 새 머리글을 놓쳤고, 이전 `목표 | 실적` 역할이
+      남아 정상 0이 지워졌다.
+
+    첫 칸이 데이터 라벨인 행(`교육 대상 사업장 | 김해 제1공장 | 부산 제1공장`·`점검 상태 | 완료 |
+    완료`·`소속 | 김해공장 | 김해공장`)은 값이 사업장·축 낱말이어도 열마다 무엇을 기록했는지 적은
+    데이터 행이다 — 확인된 머리글의 열 역할은 그 행을 지나도 유지된다(PR 69 7차 검토). 표의 첫 행과
+    구분선 바로 위 행은 `_column_header`가 구조로 따로 확인한다.
     """
     rest = [c.strip() for c in cells[1:] if c.strip()]
-    if not rest:
+    first = cells[0].strip()
+    if not rest or (first and not _is_axis_name(first)):
         return False
     if all(_YEAR_HEADER_RE.fullmatch(c) or _TABLE_AXIS_RE.search(c) for c in rest):
         return True
-    first = cells[0].strip()
-    return ((not first or bool(_ROW_AXIS_RE.search(first)) or bool(_TABLE_AXIS_RE.search(first)))
-            and len(set(rest)) == len(rest) and all(_is_identifier_cell(c) for c in rest))
+    return len(set(rest)) == len(rest) and all(_is_identifier_cell(c) for c in rest)
 
 
 def _column_header(quote: str, offset: int, length: int = 1) -> tuple[str, str, int]:
@@ -3426,20 +3446,76 @@ def _heading_number(piece: str) -> int:
     return m.end()
 
 
+# 각주 참조(1~3자리, 긴 보고서의 `[123]`까지): 괄호 안의 번호만(`[1]`·`(2)`·`[주3]`), 각주 표지 +
+# 번호(`주1)`·`※2`·`*3`), 낱말 뒤 닫는 괄호 번호(`현황1)`·`현황 1)`), 위첨자(`¹`). 괄호 안에 단위가
+# 붙으면(`(1건)`) 수량이다.
+_HEADING_FOOTNOTE_RE = re.compile(
+    r"[(（\[［]\s*(?:주\s*)?\d{1,3}\s*[)）\]］]"
+    r"|(?:주|註)\s*\d{1,3}\s*[)）\]］]|(?:※|(?<!\*)\*(?!\*))\s*\d{1,3}(?!\d|[.,]\d)\s*[)）]?"
+    r"|(?<=[가-힣A-Za-z\s])\d{1,3}[)）](?=\s*$)"
+    r"|[¹²³⁰⁴-⁹]+")
+# 규격·문서 식별자: 로마자 이름 + 번호(`ISO 45001`·`OHSAS 18001:2007`·`ISO/IEC 27001(2022)`·
+# `GRI 403-9`·`Scope 1·2`). 이름에 붙은 번호는 센 수가 아니다. 개정 연도도 번호의 일부다.
+_HEADING_CODE_RE = re.compile(
+    r"(?<![A-Za-z\d])[A-Z][A-Za-z]*(?:[/\-&][A-Z][A-Za-z]*)*[\s\-]?(?P<number>\d+(?:[.:\-·/]\d+)*)"
+    r"(?:\s*[(（]\s*(?:19|20)\d{2}\s*[)）])?")
+# 차례 번호(`제2차`·`제3회`). `제1공장`은 사업장 표기(`_SITE_MENTION_RE`)가 따로 읽는다.
+_HEADING_ORDINAL_RE = re.compile(r"제\s*\d{1,3}\s*(?:차|회|기|호)")
+
+
+def _heading_mask(piece: str) -> str:
+    """판정용 제목 문구: 줄 머리 번호·각주 참조·규격 식별자·차례 번호를 **같은 길이의 공백**으로
+    가린 문구. 날짜·사업장 위치는 원문과 같다(감사 기록은 원문 `piece`를 쓴다).
+
+    PR 69 7차 검토: 줄 머리 번호를 뗀 뒤 `[1]`·`(1)`·`ISO 45001`의 숫자가 남아 새 절 제목
+    `2. 2026년 5월 부산 제1공장 교육 현황 [1]`이 사실 서술로 분류됐고, 앞 절의 4월·김해 범위가
+    0의 근거가 됐다. 숫자가 있다는 것과 센 수가 있다는 것은 다르다. 뒤에 단위가 붙은 숫자
+    (`ISO 3건`·`(1건)`·`2.5 톤`)는 가리지 않는다 — 실제 수량·단위·날짜·목표 문구는 그대로 판정한다.
+    """
+    from ..rag_gates.units import normalize_unit
+
+    def unit_after(end: int) -> bool:
+        after = re.match(r"[\s*]*([^\s()（）|,\[\]*]+)", piece[end:])
+        return bool(after) and normalize_unit(after.group(1)) is not None
+
+    marks: list[tuple[int, int]] = []
+    number = _heading_number(piece)
+    if number:
+        marks.append((0, number))
+    for m in _HEADING_FOOTNOTE_RE.finditer(piece, number):
+        if not unit_after(m.end()):
+            marks.append(m.span())
+    for m in _HEADING_CODE_RE.finditer(piece, number):
+        # `FY2026`처럼 번호가 연도 하나면 식별자가 아니라 기간이다(`_date_spans`가 읽는다).
+        # 이름(`ISO`)은 남긴다 — 이 지표에 범위를 줄 수 있는 제목인지는 그 낱말로 판정한다.
+        if not re.fullmatch(r"(?:19|20)\d{2}", m.group("number")) and not unit_after(m.end()):
+            marks.append((m.start("number"), m.end()))
+    marks += [m.span() for m in _HEADING_ORDINAL_RE.finditer(piece, number)]
+    chars = list(piece)
+    for start, end in marks:
+        chars[start:end] = " " * (end - start)
+    return "".join(chars)
+
+
 def _heading_kind(piece: str, allowed: set[str]) -> str:
     """앞 문맥 한 토막의 성격: blank | table(표 행) | fact(수량·부정·문장 서술) |
-    heading(이 지표에 범위를 줄 수 있는 머리말) | other_heading(다른 대상의 제목 — 새 절)."""
+    heading(이 지표에 범위를 줄 수 있는 머리말) | other_heading(다른 대상의 제목 — 새 절).
+
+    숫자는 `_heading_mask`가 가린 뒤에도 남을 때만 수량이다. 구조화 제목 표지(`#`)가 붙은 줄은
+    숫자가 남아도 제목이다 — 그 범위를 이 지표에 줄 수 있는지는 낱말로 따로 판정한다.
+    """
     if not piece.strip():
         return "blank"
     if _is_table_line(piece):
         return "table"
     if _LIST_MARKER_RE.fullmatch(piece):
         return "blank"                     # `Ⅱ.`·`가.`에서 마침표로 갈린 번호 토막 — 내용이 없다
-    rest = piece[_heading_number(piece):]
+    rest = _heading_mask(piece)
     for span in _date_spans(rest):
         rest = rest.replace(span.text, " ")
     rest = _SITE_MENTION_RE.sub(" ", rest)
-    if re.search(r"\d", rest) or _ZERO_NEGATION_RE.search(rest) or _SENTENCE_END_RE.search(rest.strip()):
+    counted = re.search(r"\d", rest) and not re.match(r"\s*#", piece)
+    if counted or _ZERO_NEGATION_RE.search(rest) or _SENTENCE_END_RE.search(rest.strip()):
         return "fact"
     return "heading" if all(w in allowed for w in _label_tokens(rest)) else "other_heading"
 
@@ -3477,7 +3553,8 @@ def _zero_heading(candidate: _ZeroCandidate, hint_tokens: list[str]) -> tuple[li
             found = True
         elif kind != "heading":
             break                          # 머리말 묶음이 끝났다 — 그 위는 앞 절이다
-        piece_spans, piece_sites = _date_spans(piece), _site_keys(piece)
+        scope_text = _heading_mask(piece)    # 규격 개정 연도(`ISO 45001:2018`)는 기간이 아니다
+        piece_spans, piece_sites = _date_spans(scope_text), _site_keys(scope_text)
         if not spans and piece_spans:
             spans = piece_spans
             used.append(piece.strip())
