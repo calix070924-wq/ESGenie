@@ -10,14 +10,15 @@ L0가 hint를 서술적으로 잘 뽑아준다(`용수 사용량(취수량) 합�
 
 **오염이 아니라 선택 실패다.** 그래서 이 모듈은 값이 아니라 hint 위에 규칙을 세운다.
 
-## period를 믿지 않는다 — 단, 값 최빈보다는 믿는다
+## 범위를 먼저 확인하고, 확정 연도를 계열·단위 표기보다 우선한다
 
-원문 표의 연도 열이 한 period로 뭉개져 있다(동일 hint · 값만 다른 노드가 E-6-1에서
-51건 초과). 그래서 연도는 **후순위 tie-breaker**로만 쓴다. 표 파싱 교정은 L0 소관이므로
-여기서는 "연도에 hint 축을 양보하지 않는다"만 보장한다.
-
-다만 **최빈 축(8)보다는 앞이다**(2026-07-29). period 폴백이 v3에서 48%→9%로 줄었고,
-아래 시계열 정체 효과 때문에 최빈은 연도보다 덜 믿을 만하다는 게 실측 결론이다.
+이전에는 표의 연도 오독 때문에 연도를 후순위로 두었다. 그러나 명시된 최신 실적이
+있어도 연도 미상의 지역 기반 값이나 오래된 동일 단위 값이 이기는 문제가 있었다.
+2026-09-18부터 호환 단위·총량/부분 범위를 먼저 구분한 뒤, 같은 자격 안에서는
+**분해 범위 → 확정 연도 → 보고연도 근접 → 계열·집계·단위 표기** 순으로 좁힌다.
+추정 연도는 실제 연도와 구분하며, 최신 부분값이 총량을 대체하지는 않는다.
+단, 폐기물 발생량/처리량과 전체 폐기물/자재 재활용률은 다른 지표이므로
+E-6-1·E-6-2의 기존 계열 우선순위는 연도보다 먼저 적용한다.
 
 ## 값 최빈 — 반복 언급을 세되, 연도를 먼저 좁힌다 (2026-07-29)
 
@@ -41,7 +42,7 @@ L0가 hint를 서술적으로 잘 뽑아준다(`용수 사용량(취수량) 합�
 
 연도 구분 없이 세면 97.0이 4회로 이긴다 — 값이 반복 언급돼서가 아니라 **값이 안
 변해서**다. 최빈이 '반복 언급'이 아니라 '정체'를 집는다. 연도를 먼저 좁히면 사라진다.
-그래서 축 순서는 반드시 **연도(7) → 최빈(8)**이다. 뒤집지 마라.
+그래서 축 순서는 반드시 **연도 → 최빈**이다. 뒤집지 마라.
 
 또한 최빈은 **최빈값이 유일할 때만** 개입한다. 빈도가 동률인데 답을 바꾸면 근거 없는
 변경이므로, 그때는 아무것도 하지 않고 9단계(최신 → 고신뢰 → id)에 맡긴다.
@@ -50,11 +51,13 @@ L0가 hint를 서술적으로 잘 뽑아준다(`용수 사용량(취수량) 합�
 
   1) 배제(hard)  — 파생·비실적 어휘(감축·효과·예상·증감·원단위·목표·제로화·전환량 …)
   2) 지표 정합   — 코드별 negative keyword 충돌(E-3-1 ← 'Scope 3'·'1+2+3' 등)
-  3) 지표 계열   — 코드가 요구하는 계열 우선(E-6-1은 '발생량' > '처리량')
-  4) 세부 분해   — 조달방식·처리경로별 분해값 후순위(E-4-1의 PPA/vPPA/녹색요금제)
-  5) 집계        — '합계·총계·전사·Total' > 구분어 없음 > '국내(별도)·자회사·국가명·공장'
-  6) 단위 정합   — kesg_items.unit과 동일 > 환산 가능 > 그 외 (E-4-1은 TJ 우선)
-  7) 연도        — 여기까지 동률일 때만 report_year 근접
+  3) 단위 호환   — 동일·환산 가능한 물리량 > 단위 불명·호환 불가
+  4) 범위 자격   — 총량 > 확정 연도의 범위 미상 > 부분값 > 추정 연도의 범위 미상,
+                   같은 자격이면 조달/물질별 세부 분해값 후순위
+  5) 연도        — 폐기물 코드의 지표 계열을 먼저 구분한 뒤,
+                   확정 > 추정, 그 안에서 report_year 근접(없으면 최신)
+  6) 지표 계열   — 같은 범위·연도에서 요구 계열 우선(예: 발생량 > 처리량)
+  7) 집계 → 단위 표기(동일 > 환산 가능 > 그 외)
   8) 값 최빈     — 같은 연도 안에서 여러 번 추출된 값 우선(최빈값이 유일할 때만)
   9) 최신 → 고신뢰 → str(id)  — 완전 결정성 보장
   후보 0 / 1·2단계 전멸 → None (원장은 미공시 + confidence_flag)
@@ -67,7 +70,7 @@ L0가 hint를 서술적으로 잘 뽑아준다(`용수 사용량(취수량) 합�
 
 ## 총량 후보가 없는 풀 — 값은 싣고 부분값임을 표기한다 (2026-07-28)
 
-5단계는 **후순위 축이지 배제가 아니다.** 후보가 전부 부분값이면 그중 하나가 이긴다
+범위 판정은 **후순위 축이지 배제가 아니다.** 후보가 전부 부분값이면 그중 하나가 이긴다
 (LG화학 E-4-1은 36노드에 '합계/총계'가 0개, NAVER E-3-2는 노드 1개가 Scope 3 카테고리 1).
 미공시로 버리지 않는다 — 커버리지가 이미 5~7항목/17이고, 값 자체는 실제 공시값이다.
 대신 `is_partial_aggregate`로 조회해 `partial_value` 플래그 → 원장 표 '·부분값'까지
@@ -168,10 +171,10 @@ _NEGATIVE_KEYWORDS: dict[str, tuple[str, ...]] = {
 #   E-6-1: 항목 정의가 '연간 폐기물 배출량(총량)'이므로 발생량 > 처리량.
 #          처리량은 매립·소각 등 처분 경로별 부분값이다(실측: 발생량 72,463 ≈
 #          처리량 17,694 + 미폐기처리량 52,806). 2026-07-26 사용자 확정.
-#   E-4-1: 총 에너지/전력 사용량 > 구매 전력량(조달 내역)
+#   E-4-1: 전체 에너지 > 전력 > 구매 전력량. 전력은 전체 에너지의 구성요소다.
 #   E-3-1: Scope 2 이중보고에서 **지역 기반(location-based)이 GHG Protocol 필수 기준**이고
 #          시장 기반은 선택적 병기다. 실측에서 두 합계(396,152 지역 / 389,933 시장)가
-#          다른 축 전부 동률이라 이 계열 구분 없이는 id 문자열로 갈렸다.
+#          같은 확정 연도·범위 안에서만 이 계열을 우선한다.
 #   E-6-2: 항목 정의가 '총 폐기물 대비 재활용 비율'이므로 폐기물 재활용률 > 자재별 재활용률
 #          (실측: '플라스틱 재활용률' 56.9%가 구분어가 없어 '국내 사업장 …' 92.9%를 이겼다).
 _METRIC_FAMILY: dict[str, tuple[str, ...]] = {
@@ -371,6 +374,14 @@ def classify_value_role(
     normalized = _norm(hint)
     role = classify_common_value_role(normalized, report_year=report_year)
     base_code = code.split("__", 1)[0]
+    if base_code == "E-4-1":
+        # 전력 내부의 합계도 전체 에너지(전력 + 연료 등)의 총량은 아니다.
+        # 표의 합계 열이 빠진 일반 '에너지 사용량'은 unknown으로 남겨 범위 확인을 요구한다.
+        electricity = re.search(r"(?:전력|전기)\s*(?:사용량|소비량)", normalized)
+        energy = re.search(r"에너지\s*(?:사용량|소비량)", normalized)
+        if role != "target" and electricity and not energy:
+            return "component"
+        return role
     if base_code != "E-3-1":
         if role != "unknown":
             return role
@@ -378,10 +389,6 @@ def classify_value_role(
         if (base_code == "E-3-2" and not isinstance(node_or_hint, str)
                 and getattr(node_or_hint, "period_inferred", False)):
             return "unknown"
-        # 확장 풀의 '에너지 사용량'은 조직 범위가 소실된 값이 다수라 판정보류다.
-        # 반면 기존 모비스 기준값인 정확한 전력 사용량은 검증된 총량 표현이다.
-        if base_code == "E-4-1":
-            return "total" if normalized == "전력 사용량" else "unknown"
         # K-ESG 단일 출처의 항목명/충분히 긴 alias가 그대로 등장하면 총량 지표로 본다.
         # NOx·SS 같은 짧은 물질 alias는 제외해 오염물질 하나가 총량으로 승격되지 않는다.
         from ..knowledge.kesg_items import by_code
@@ -407,7 +414,8 @@ def classify_value_role(
     has_scope2 = bool(re.search(r"s2", compact) or re.search(r"s1[,/·+&]2", compact))
     combined = has_scope1 and has_scope2 and "외" not in normalized
     if combined:
-        return "total"
+        # Scope 1+2의 결합은 배출 범위만 입증한다. 국내/법인 등 조직 제한은 보존한다.
+        return "component" if role == "component" else "total"
     if re.search(r"s[123]", compact) or re.search(r"(?:category|카테고리)\s*\d+", normalized):
         return "component"
     # Scope 표지가 없는 '온실가스 배출량 총계'는 자회사/국가 부분합일 수 있어 총량을
@@ -606,7 +614,7 @@ def select_representative_node(
     ----------
     code        : K-ESG 코드("E-3-1"). '{code}__projection'도 받아 기본 코드로 해석한다.
     nodes       : 같은 코드의 EvidenceNode들(원장·D1 양쪽에서 같은 풀을 넘긴다).
-    report_year : 7단계(연도 근접) 기준 연도. None이면 이 축을 건너뛴다(최신 우선 폴백).
+    report_year : 같은 범위 자격 후보의 연도 근접 기준. None이면 최신 연도를 쓴다.
 
     Returns
     -------
@@ -614,8 +622,9 @@ def select_representative_node(
 
     Notes
     -----
-    축 순서는 모듈 docstring §우선순위 그대로다 — 계열(3) → 분해(4) → 집계(5) →
-    단위(6) → **연도(7) → 값 최빈(8)** → 최신·고신뢰·id(9).
+    축 순서는 모듈 docstring §우선순위 그대로다. 단위 호환·범위를 먼저 보고,
+    **분해 범위 → 확정 연도 → 연도 근접 → 계열·집계·단위 표기 → 값 최빈**으로 좁힌다.
+    E-6-1·E-6-2는 의미가 다른 지표를 구분하는 기존 계열 순서를 연도보다 먼저 쓴다.
 
     모든 후보가 1·2단계에서 배제되면 None을 돌린다(잘못된 값보다 미공시).
     **후보가 1개여도 hard 배제는 적용된다**(2026-07-28 변경). 종전에는 과차단 방지를
@@ -667,8 +676,12 @@ def select_representative_node(
         """period가 폴백값이면 1(후순위). 필드 없는 노드는 0 — 기존 동작 보존."""
         return 1 if getattr(node, "period_inferred", False) else 0
 
-    # 3~7단계 — 순위 축을 단계별로 좁힌다. 사전식 비교와 동치이지만(_keep_min 주석),
-    # 8단계가 '그 시점의 생존 집합'을 봐야 해서 정렬 키 한 방으로는 안 된다.
+    # 같은 물리량 후보가 있으면 잘못 매핑된 비율 등으로 대체하지 않는다. 동일 단위와
+    # 환산 가능 단위는 여기서는 동등하다. 환산 불가 후보만 있으면 기존 경고 경로를 유지한다.
+    survivors = _keep_min(
+        survivors, lambda n: int(_unit_rank(getattr(n, "unit", None), expected, base_code) == 2))
+
+    # 범위는 연도보다 먼저 확인한다. 최신 부분값이 총량을 대신하면 안 된다.
     def _role_rank(node: Any) -> int:
         role = classify_value_role(base_code, node, report_year=report_year)
         if role == "total":
@@ -682,27 +695,24 @@ def select_representative_node(
         return 4
 
     survivors = _keep_min(survivors, _role_rank)
-    survivors = _keep_min(survivors, lambda n: _family_rank(base_code, _node_hint(n)))
+    # 부분값끼리도 전체 전력과 PPA 등 조달 내역은 범위가 다르다.
     survivors = _keep_min(survivors, lambda n: _breakdown_rank(_node_hint(n)))
+    # 폐기물 발생/처리량 및 전체 폐기물/자재 재활용률은 산정방식 차이가 아니라
+    # 다른 지표다. 최신 처리량·자재 비율이 항목 정의에 맞는 과거 실적을 대체하지 않는다.
+    if base_code in ("E-6-1", "E-6-2"):
+        survivors = _keep_min(survivors, lambda n: _family_rank(base_code, _node_hint(n)))
+    # 연도를 읽은 후보가 있으면 보고연도로 채운 추정값보다 먼저 사용한다.
+    # 같은 범위 자격 안에서만 적용하므로 총량/부분값의 우선순위는 보존된다.
+    survivors = _keep_min(survivors, _inferred)
+    if report_year is not None:
+        survivors = _keep_min(survivors, lambda n: abs(_period(n) - report_year))
+    else:
+        survivors = _keep_min(survivors, lambda n: -_period(n))
+
+    survivors = _keep_min(survivors, lambda n: _family_rank(base_code, _node_hint(n)))
     survivors = _keep_min(survivors, lambda n: _aggregation_rank(_node_hint(n)))
     survivors = _keep_min(
         survivors, lambda n: _unit_rank(getattr(n, "unit", None), expected, base_code))
-    # 7) 연도 — **최빈보다 앞이어야 한다**: 연도를 먼저 좁히지 않으면 최빈이
-    #    '반복 언급'이 아니라 '시계열 정체'를 집는다(모듈 docstring §값 최빈의
-    #    삼성전기 E-6-2 두 계열). 되돌리면 회귀가 난다.
-    #    report_year가 없으면 최신 연도로 좁혀 같은 불변식을 지킨다 — 종전 정렬 키의
-    #    `-period` 항과 동치이고(그 항이 연도 다음이었다), 그 자리를 8단계보다 앞으로
-    #    끌어올리지 않으면 report_year=None 경로만 정체 효과에 노출된다.
-    #    period_inferred(2026-07-29)는 **같은 순위 안에서만** 후순위다(튜플 2번째 항).
-    #    원문에서 연도를 못 읽어 report_year로 채운 노드는 근접도가 0으로 나와 확정 노드와
-    #    동률이 되는데, 그 동률을 근거 없이 이기면 안 된다. 축 순서는 그대로다 — 연도는
-    #    여전히 8단계(값 최빈)보다 앞이다.
-    if report_year is not None:
-        survivors = _keep_min(
-            survivors, lambda n: (abs(_period(n) - report_year), _inferred(n)))
-    else:
-        survivors = _keep_min(survivors, lambda n: (-_period(n), _inferred(n)))
-
     # 8) 값 최빈 — 최빈값이 유일할 때만 좁힌다. 동률이면 무개입.
     survivors = _keep_value_mode(survivors)
 

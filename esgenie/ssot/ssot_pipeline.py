@@ -89,10 +89,12 @@ def _merge_ssot_evidence(result: Any, graph: EvidenceGraph) -> None:
     # 코드별 대표 OCR 노드 — DART 미공시 코드를 승격할 때 표시값 출처.
     #
     # 선택 규칙(2026-07-26): hint 기반 공용 규칙(node_select.select_representative_node).
-    # 연도는 이 규칙의 **최후 tie-breaker(7순위)로 강등**됐다. 2026-07-25에 넣은
+    # 과거에는 연도를 최후 tie-breaker로 썼다. 2026-07-25에 넣은
     # '보고 연도 최근접'만으로는 같은 연도 안에서 사실상 임의 선택이라, 정답 노드가 같은
     # 풀에 있어도 파생값('온실가스 감축 효과')·부분값('국내(별도)')을 골랐다.
     # 원문 표의 연도 열이 한 period로 뭉개져 period 신뢰도 자체가 낮은 것도 이유다.
+    # 현재는 총량/부분값 자격을 먼저 지키면서, 동일 범위의 확정 연도·기간을
+    # 산정 계열·단위 표기보다 먼저 비교한다. 추정 연도가 확정 실적을 밀지 않는다.
     #
     # D1의 G5(layer3_detect._score_d1_numeric)가 **같은 함수를 호출한다**. 이 대칭이
     # 깨지면 데이터가 옳아도 claim ≠ node가 되어 구조적 D1 오탐이 난다.
@@ -274,13 +276,35 @@ def _merge_ssot_evidence(result: Any, graph: EvidenceGraph) -> None:
             repr_node = ocr_repr.get(code)
             # 정성 항목은 정량 승격 대상이 아니다(2026-07-28 결함 (c)). TextNode가 있으면
             # 아래 '문서 조항 확인' 경로로 정상 승격되고, 없으면 미공시로 남는다.
-            if repr_node is not None and item.data_type == "정성":
+            quantitative_on_qualitative = (
+                repr_node is not None and item.data_type == "정성")
+            if quantitative_on_qualitative:
                 repr_node = None
             # 대표 노드가 배제됐고 정성 근거도 없으면 승격 자체를 하지 않는다(2026-07-26).
             # repr_node=None은 종전엔 'TextNode만 있는 존재형 문항'만 뜻했지만, 이제
             # '전 후보가 파생·비실적으로 배제됨'도 뜻한다. 정량 항목에 '문서 조항 확인'을
             # 채우면 미공시가 공시로 위장된다 — 잘못된 값보다 미공시가 낫다(라벨링 §3-1).
             if repr_node is None and not text_ids:
+                # 값을 채우지 않는 판단은 그대로 두되 **왜 비었는지는 남긴다**(2026-09-20).
+                # 종전에는 여기서 아무 플래그·note 없이 continue 했다. 그래서 근거 노드가
+                # 실제로 있는 항목이 화면·보고서에서 근거가 전혀 없는 항목과 똑같이
+                # 보였다(실측: 현대모비스 2025 전량 실행에서 G-5-1·S-2-6·S-4-1·S-6-1·
+                # S-6-2·S-7-1 6개 항목이 코드가 붙은 정량 노드 60개를 갖고도 사유 없이
+                # 미확정). 보류 사유가 없으면 사용자는 확인할 방법이 없다.
+                if ocr_ids:
+                    if quantitative_on_qualitative:
+                        _add_flag(code, "qualitative_item_needs_clause")
+                        result.notes.append(
+                            f"[보류] {code}({item.name}): 존재형(정성) 항목이라 정량 수치를 "
+                            f"싣지 않는다. 수치 근거 {len(ocr_ids)}건은 보존되어 있으나 "
+                            f"규정·회의록 등 조항 근거가 없어 미확정으로 남긴다"
+                        )
+                    else:
+                        _add_flag(code, "no_representative_node")
+                        result.notes.append(
+                            f"[보류] {code}({item.name}): 수치 근거 {len(ocr_ids)}건이 "
+                            f"전부 파생·목표·지표 불일치로 배제되어 미확정으로 남긴다"
+                        )
                 continue
             value: Any
             if repr_node is not None:
@@ -401,7 +425,8 @@ def build_rag_with_ssot(
         code_tag = f"[{tnode.kesg_code}] " if tnode.kesg_code else ""
         text = (
             f"{code_tag}{tnode.section}: {tnode.text}"
-            f" (출처: {tnode.source_file}, p.{tnode.page})"
+            f" (출처: {tnode.source_file}, "
+            f"{str(tnode.page + 1) + '쪽' if tnode.page is not None else '페이지 미확인'})"
         )
         text_docs.append(IndexedDoc(
             text=text,
@@ -410,6 +435,9 @@ def build_rag_with_ssot(
                 "kesg_code": tnode.kesg_code,
                 "source_file": tnode.source_file,
                 "node_id": tnode.id,
+                "page": tnode.page,
+                "quote": getattr(tnode, "quote", ""),
+                "page_source": getattr(tnode, "page_source", ""),
             },
         ))
 
@@ -442,6 +470,9 @@ def build_rag_with_ssot(
                     "source_file": node.source_file,
                     "origin": node.origin,
                     "node_id": node.id,
+                    "page": node.page,
+                    "quote": getattr(node, "quote", ""),
+                    "page_source": getattr(node, "page_source", ""),
                 },
             ))
 
@@ -451,7 +482,41 @@ def build_rag_with_ssot(
     if extra:
         corp = _extend_corp_index(corp, extra)
 
-    return corp
+    return _split_for_embedding_limit(corp)
+
+
+def _split_for_embedding_limit(corp: CorpIndex) -> CorpIndex:
+    """영역 검색 인덱스의 벡터만 조각 단위로 임베딩해 뒷부분 잘림을 없앤다.
+
+    `paraphrase-multilingual-MiniLM-L12-v2`의 max_seq_length는 128이고, encode()는
+    그보다 긴 문서의 뒷부분을 **조용히 버린 채** 임베딩한다. 그래서 긴 조항의 뒷부분은
+    벡터 검색에 아예 보이지 않았다(2026-09-25 실측, 현대모비스 9/20 전량 추출물:
+    인덱스 1,206건 중 315건이 한도 초과, 전체 228,788자 중 61,052자가 임베딩에서
+    잘려 나갔다. 초과 문서는 전부 `ssot_text` 조항문이고 `ssot_ocr` 수치 청크는 0건).
+
+    **인덱스에 담기는 문서와 회수되는 청크는 바꾸지 않는다.** 조각은 임베딩 입력일
+    뿐이고 검색 결과로는 부모 문서가 그대로 나온다. 처음에는 조각 자체를 인덱스
+    문서로 넣었는데, 그러면 두 가지가 망가진다(2026-09-25 실측):
+
+    - tier 0은 BM25 단독이고 BM25에는 토큰 한도가 없다. 조각을 넣으면 잘림 문제와
+      무관한 tier 0의 순위까지 흔들린다.
+    - 검색 게이트의 수치 근거 확인(`R3_numeric_evidence_missing`)은 상위 1건의 본문을
+      본다. 조각은 조항의 앞 128토큰뿐이어서 뒤에 있던 수치가 사라지고, E 영역이
+      ACCEPT → HUMAN으로 뒤집혔다. 근거가 없어진 것이 아니라 게이트가 보는 단위가
+      줄어든 것이었다.
+
+    그래서 벡터 한 줄 = 조각, 검색 결과 = 부모 문서로 둔다. BM25·chunk id·게이트가
+    보는 본문·감사 기록·원장 대조는 종전과 같다. 달라지는 것은 벡터 검색이 조항
+    뒷부분도 찾을 수 있다는 점뿐이며, 판정 기준·임계값·점수식은 건드리지 않았다.
+    """
+    from esgenie.embeddings import VectorIndex
+
+    docs = list(getattr(corp.vector, "_docs", []) or [])
+    if not docs:
+        return corp
+    vector = VectorIndex(model_name=corp.vector.model_name)
+    vector.build(docs, embedding_split=True)
+    return CorpIndex(vector=vector, bm25=corp.bm25)
 
 
 def _extend_corp_index(corp: CorpIndex, extra_docs: list[Any]) -> CorpIndex:

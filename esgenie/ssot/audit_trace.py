@@ -160,7 +160,8 @@ def build_data_points(
             verification = "unverified"
         elif (scope_incomplete or not valid
                 or comparison in ("not_comparable", "scope_unconfirmed")
-                or flags.intersection({"period_inferred", "partial_aggregate", "partial_value", "derived", "no_representative_node"})):
+                or flags.intersection({"period_inferred", "partial_aggregate", "partial_value", "derived", "no_representative_node",
+                                    "scope_source_only"})):
             verification = "estimated"
         else:
             verification = "verified" if d1 < 0.2 else "estimated"

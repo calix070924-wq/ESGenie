@@ -180,6 +180,14 @@ def output_generated_at(output: Any) -> str:
     return getattr(output, "_generated_at", datetime.date.today().isoformat())
 
 
+def _block_source_review(output: Any) -> ReportBlock | None:
+    findings = getattr(output, "review_findings", None)
+    if not findings:
+        return None
+    from .source_review import review_markdown
+    return ReportBlock("source_review", "확인 필요 사항", review_markdown(findings), "deterministic")
+
+
 def _block_esg(output: Any, area: str) -> ReportBlock | None:
     verify = output.sections.get(area)
     if verify is None:
@@ -424,7 +432,8 @@ def assemble_report(output: Any) -> ReportDoc:
     name, industry, year = _corp_meta(output)
     setattr(output, "_generated_at", datetime.date.today().isoformat())
 
-    candidates: list[ReportBlock | None] = [_block_cover(output), _block_exec_summary(output)]
+    candidates: list[ReportBlock | None] = [_block_cover(output), _block_exec_summary(output),
+                                          _block_source_review(output)]
     for area in output.requested_areas or list(output.sections.keys()):
         candidates.append(_block_esg(output, area))
     candidates += [
@@ -446,6 +455,7 @@ def assemble_report(output: Any) -> ReportDoc:
         "d6_score": output.disclosure.score if output.disclosure else None,
         "issb_missing": output.issb_gap.in_profile_missing if output.issb_gap else None,
         "llm_blocks": [b.id for b in blocks if b.kind == "llm"],
+        "review_findings": [finding.to_dict() for finding in getattr(output, "review_findings", [])],
     }
     return ReportDoc(
         corp_name=name,

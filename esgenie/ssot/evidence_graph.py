@@ -58,6 +58,8 @@ class EvidenceNode:
     period_inferred: bool = False
     # 코드 배정(근거 보존)과 대표값 자격을 분리한다. unknown은 구버전 노드 호환 기본값.
     value_role: ValueRole = "unknown"
+    quote: str = ""                   # 추출기가 원문에서 확인한 인용(요약과 분리)
+    page_source: str = ""             # chunk / quote 등 페이지 확인 경로
     # 측정 경계 — 기간/집계·사업장 범위·측정 대상·실적여부·총량여부·분모.
     # period(연도 정수)만으로는 월간값과 연간값을 가를 수 없어 별도 축으로 둔다.
     # 기본값은 빈 Boundary이고, 빈 Boundary는 '모른다'로 취급된다(같다고 보지 않는다).
@@ -79,6 +81,8 @@ class TextNode:
     page: int | None = None
     origin: Origin = "ocr_unstructured"
     rba_code: str | None = None    # RBA 자가진단 substrate 매칭(고유 조항용)
+    quote: str = ""
+    page_source: str = ""
 
     def to_dict(self) -> dict[str, Any]:
         return asdict(self)
@@ -398,6 +402,8 @@ def merge_ocr_extraction(
             page=m.page,
             confidence=confidence,
             period_inferred=period_inferred,
+            quote=getattr(m, "quote", ""),
+            page_source=getattr(m, "page_source", ""),
             boundary=boundary,
             document_id=document_id,
         )
@@ -427,6 +433,8 @@ def merge_ocr_extraction(
             page=c.page,
             origin=origin,
             rba_code=getattr(c, "rba_code_guess", None),
+            quote=getattr(c, "quote", ""),
+            page_source=getattr(c, "page_source", ""),
         )
         graph.add_text_node(tnode)
 

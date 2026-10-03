@@ -66,7 +66,8 @@ def test_e3_scope_exception_prefers_scope1_plus_2_total() -> None:
      _node("E-3-1", 401_502, "tCO2eq", "온실가스 배출(Scope 1+2) 2024년 배출량", node_id="z"),
      _node("E-3-1", 371_059, "tCO2eq", "Scope 2 배출량(지역 기반) 합계", node_id="a")),
     ("E-4-1",
-     _node("E-4-1", 7_929, "TJ", "전력 사용량", node_id="z"),
+     # 원본 53쪽 전체 에너지 9,075. 기존 7,929는 55쪽 전력이라 총량 정답이 아니었다.
+     _node("E-4-1", 9_075, "TJ", "에너지 사용량 합계", node_id="z"),
      _node("E-4-1", 8_070, "TJ", "비재생에너지 사용량 합계", node_id="a")),
     ("E-5-1",
      _node("E-5-1", 1_992_921, "ton", "용수 사용량(취수량) 합계 2024", node_id="z"),

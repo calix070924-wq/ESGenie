@@ -27,6 +27,7 @@ from esgenie.ui.components import (
     render_section_header,
 )
 from esgenie.ui.tabs import (
+    ocr_upload_messages,
     render_diagnosis_workspace,
     render_evidence_workspace,
     render_greenwash_workspace,
@@ -413,19 +414,16 @@ def _render_onboarding_guide() -> None:
 
 
 def _render_ocr_health(result) -> None:
-    """OCR 무음 실패(Upstage 폴백·mock·파싱 누락)를 화면 경고로 노출."""
+    """문서별 읽기 실패·일부 처리·시연 결과와 사유를 화면에 노출."""
     roles = st.session_state.get("upload_roles", {})
     evidence_names = [
         name for name in st.session_state.get("upload_paths", {})
         if roles.get(name) != "supplier_claim"
     ]
-    msgs = ocr_router.ocr_health_report(
-        getattr(result, "ocr_extractions", None) or [],
-        evidence_names,
-        upstage_key_present=bool(os.getenv("UPSTAGE_API_KEY")),
-    )
+    msgs = ocr_upload_messages(result, evidence_names,
+                               upstage_key_present=bool(os.getenv("UPSTAGE_API_KEY")))
     for lvl, msg in msgs:
-        (st.error if lvl == "error" else st.warning)(f"🔍 OCR · {msg}")
+        (st.error if lvl == "error" else st.warning)(f"🔍 문서 읽기 · {msg}")
 
 
 _ensure_state_defaults()

@@ -6,7 +6,7 @@
 소스:
 1. K-ESG 가이드라인 (기준·best practice)
 2. 업종 벤치마크 (산업 평균·핵심 이슈)
-3. 자사 DART 원문 스니펫
+3. 자사 공시·증빙 원문 스니펫
 
 가중치: (0.40, 0.30, 0.30) — K-ESG 기준을 최우선으로 반영.
 """
@@ -14,15 +14,17 @@ from __future__ import annotations
 
 import json
 import re
-from dataclasses import dataclass
+from dataclasses import dataclass, field
+from collections.abc import Iterable
 from typing import Any
 
 from .config import BEST_REPORTS_DIR, INDUSTRY_DIR, KESG_DIR, RAG_GATE_FALLBACK_BYPASS
 from .dart_client import CompanyReport
 from .embeddings import BM25Index, IndexedDoc, VectorIndex, embedding_backend
 from .llm import CLIENT
-from .rag_gates import hybrid_search, run_retrieval_cascade
+from .rag_gates import evaluate_retrieval, hybrid_search, run_retrieval_cascade
 from .schemas import RetrievalDecision
+from .knowledge.kesg_items import KESGItem
 
 WEIGHTS = {"kesg": 0.40, "industry": 0.30, "corp": 0.30}
 
@@ -107,7 +109,8 @@ class RAGContext:
     retrieval_tier: int | None = None
     retrieval_decision: RetrievalDecision | None = None
 
-    def as_context_text(self, top_k: int = 2) -> str:
+    def as_context_text(self, top_k: int | None = None) -> str:
+        """선정 근거 전체를 전달한다. 검증기가 보는 all_hits()와 기본 범위를 맞춘다."""
         blocks: list[str] = []
         if self.kesg_hits:
             blocks.append("[K-ESG 기준]")
@@ -118,7 +121,7 @@ class RAGContext:
             for doc, _ in self.industry_hits[:top_k]:
                 blocks.append(f"- [{doc.chunk_id}] {doc.text}")
         if self.corp_hits:
-            blocks.append("[자사 DART 원문]")
+            blocks.append("[자사 공시·증빙 원문]")
             for doc, _ in self.corp_hits[:top_k]:
                 blocks.append(f"- [{doc.chunk_id}] {doc.text}")
         return "\n".join(blocks)
@@ -149,6 +152,65 @@ class CorpIndex:
     bm25: BM25Index
 
 
+# R1은 "검색이 뭔가 찾았는가"를 보는 **묶음 1위 전용** 점수 검사다. 점수는 tier마다 다른
+# 방식으로 정규화되므로(tier0 min-max, tier1 가중합, tier2 RRF/최댓값) 2위 이하 후보는
+# 내용이 정확해도 구조적으로 RAG_R1_MIN을 넘지 못한다. 실측: 2024년 환경 규제 위반 1건
+# 기록이 tier1 3위 점수 0.4707로 R1_low_top1_score 탈락. 묶음 단위 점수 요건은
+# `decision`(cascade 판정)이 이미 강제하므로, 2위 이하 후보는 내용 기준으로만 판단한다.
+# RAG_R1_MIN·RAG_R2_MIN 등 임계값과 영역 검색 판정은 바꾸지 않는다.
+_SCALE_ONLY_HARD_FAILS = frozenset({"R1_low_top1_score"})
+
+
+@dataclass
+class ItemRetrievalResult:
+    """별도 확인 목록의 항목별 검색. 기존 보고서 원장·점수를 갱신하지 않는다."""
+
+    item_code: str
+    area: str
+    query: str
+    hits: list[tuple[IndexedDoc, float]]
+    decision: RetrievalDecision
+    hit_decisions: dict[str, RetrievalDecision] = field(default_factory=dict)
+    #: 개별 게이트를 통과한 근거를 몇 개까지 붙일지. 기존 검색 k와 같은 값을 쓴다.
+    accept_limit: int | None = None
+
+    @property
+    def accepted_hits(self) -> list[tuple[IndexedDoc, float]]:
+        if self.decision.decision != "ACCEPT":
+            return []
+        accepted: list[tuple[IndexedDoc, float]] = []
+        for rank, (doc, score) in enumerate(self.hits):
+            decision = self.hit_decisions.get(doc.chunk_id)
+            if decision is None:
+                continue
+            if rank == 0:
+                if decision.decision != "ACCEPT":
+                    continue
+            elif set(decision.hard_fails) - _SCALE_ONLY_HARD_FAILS:
+                continue
+            accepted.append((doc, score))
+        return accepted if self.accept_limit is None else accepted[: self.accept_limit]
+
+    def as_chunk_dicts(self) -> list[dict[str, Any]]:
+        return [
+            {"id": doc.chunk_id, "text": doc.text, "meta": dict(doc.meta), "score": score}
+            for doc, score in self.accepted_hits
+        ]
+
+    def to_dict(self) -> dict[str, Any]:
+        return {
+            "item_code": self.item_code, "area": self.area, "query": self.query,
+            "decision": self.decision.to_dict(),
+            "hits": [
+                {"id": doc.chunk_id, "text": doc.text, "meta": dict(doc.meta), "score": score,
+                 "decision": self.hit_decisions[doc.chunk_id].to_dict()
+                 if doc.chunk_id in self.hit_decisions else None}
+                for doc, score in self.hits
+            ],
+            "accepted_chunk_ids": [doc.chunk_id for doc, _ in self.accepted_hits],
+        }
+
+
 class HybridRAG:
     """3개의 독립 인덱스를 병렬로 검색하는 Multi-Retriever 구조."""
 
@@ -160,6 +222,13 @@ class HybridRAG:
         self.kesg_bm25_index = BM25Index()
         self.industry_index = VectorIndex()
         self.industry_bm25_index = BM25Index()
+        # 영역 질의는 동의어를 붙여 128토큰을 넘고 뒤쪽 용어가 임베딩 질의에서 통째로
+        # 빠진다(2026-09-26 실측: E 37개 중 10개, S 45개 중 16개, G 36개 중 12개).
+        # 그래서 `VectorIndex.split_query`를 만들어 켜 봤지만 **실측이 이득을 지지하지
+        # 않아 켜지 않았다** — 잘리던 용어를 담은 문서의 최고 순위가 상승 2건·하락 8건이고,
+        # 잘린 용어 절반 이상은 이 코퍼스에 해당 문서가 아예 없었다. 질의를 조각내 문서별
+        # 최고값을 쓰면 짧은 조각이 순위 분포를 흔든다. 근거:
+        # outputs/diagnostics/20260925_area_search_split/query_split_term_ranks.json
         self._load_kesg()
         self._load_industry()
 
@@ -290,6 +359,67 @@ class HybridRAG:
         query = _expand_query_with_search_terms(_area_query(area), area)
         return self.retrieve(query, k=k, area=area, corp=corp)
 
+    def retrieve_for_items(
+        self, items: Iterable[KESGItem], *, corp: CorpIndex, k: int = 3,
+    ) -> list[ItemRetrievalResult]:
+        """항목 정의에서 질의를 자동 만들고 별도 인덱스의 근거를 추가 검색한다.
+
+        정답 문구·특정 회사명 없이 항목명·설명과 기존 동의어 사전을 사용한다. 기존
+        영역 검색과 원장을 덮어쓰지 않으며, 모든 후보에 원래 검색 게이트를 적용한다.
+        """
+        if k < 1:
+            raise ValueError("k must be positive")
+        vector = VectorIndex(model_name=corp.vector.model_name)
+        docs = vector.split_documents(corp.vector._docs)
+        # SSOT 메타데이터의 항목 코드 별칭을 게이트가 읽는 이름으로 연결한다.
+        # 코드가 없는 근거에 질의의 코드를 붙여 정성 예외를 만드는 일은 하지 않는다.
+        for doc in docs:
+            if not doc.meta.get("code") and doc.meta.get("kesg_code"):
+                doc.meta["code"] = doc.meta["kesg_code"]
+        vector.build(docs)
+        bm25 = BM25Index()
+        bm25.build(docs)
+        results: list[ItemRetrievalResult] = []
+        seen: set[str] = set()
+        for item in items:
+            if item.code in seen:
+                continue
+            seen.add(item.code)
+            query = ", ".join(dict.fromkeys(
+                part for part in (item.name, item.description, *item.search_terms[:2]) if part.strip()
+            ))
+            if item.area not in ("E", "S", "G"):
+                decision = RetrievalDecision(
+                    decision="HUMAN", tier=0, top1_score=0.0,
+                    field_coverage={}, hard_fails=["R0_unsupported_area"], soft_flags=[],
+                    chunk_ids=[], scores=[], queries_tried=[query],
+                )
+                results.append(ItemRetrievalResult(item.code, item.area, query, [], decision))
+                continue
+            cascade = run_retrieval_cascade(
+                area=item.area, query=query, vector_index=vector, bm25_index=bm25,
+                k=k, gate_enabled=True,
+            )
+            # cascade가 실제로 통과한 각 tier의 답안을 모두 후보로 본다. tier 판정은 top 1
+            # 문서만 보므로, 무관한 top 1(예: '안건: 산업안전보건법 …') 때문에 escalate된
+            # tier에서 정작 유효한 근거(예: 2024년 환경 규제 위반 1건 기록)가 함께 버려지고,
+            # 다음 tier의 다중 질의 RRF는 여러 변형에 두루 걸리는 일반 정책 문구를 앞세운다.
+            # k를 키우거나 게이트를 완화하지 않는다. 후보마다 기존 개별 게이트를 다시 적용해
+            # ACCEPT인 근거만 남기며, 채택 수는 기존 k로 묶어 둔다.
+            candidates = cascade.tier_hits or cascade.hits
+            hit_decisions = {
+                doc.chunk_id: evaluate_retrieval(
+                    item.area, [(doc, score)], query=query,
+                    tier=cascade.tier, queries_tried=cascade.queries_tried,
+                )
+                for doc, score in candidates
+            }
+            results.append(ItemRetrievalResult(
+                item.code, item.area, query, candidates, cascade.decision, hit_decisions,
+                accept_limit=k,
+            ))
+        return results
+
     # ---- generation ---------------------------------------------------
     def generate_section(
         self,
@@ -408,7 +538,8 @@ class HybridRAG:
             "(지표와 연결된 구체적 이니셔티브를 2~4문장으로 서술, 근거 [chunk_id])\n\n"
             "### 향후 계획 및 공시 보완 과제\n"
             "(단기 개선 목표 1~2문장 + 미공시 항목 중 보완 우선순위 1~2개 언급)\n\n"
-            "주의: 원장과 인용 청크에 없는 숫자는 절대 쓰지 마시오. "
+            "주의: 공시 지표 수치는 위 원장에 있는 값만 쓰고 해당 원장을 인용하시오. "
+            "검색 청크는 활동·정책 설명에 사용하되 원장 밖 지표 수치를 추가하지 마시오. "
             "근거 없는 과장 표현(혁신적, 압도적, 최고 수준 등)을 사용하지 마시오. "
             f"다음 모호 표현을 쓰지 마시오: {_vague_ban_terms()}. "
             "목표·전망 수치는 반드시 '목표', '계획' 등의 단어와 연도를 함께 명시하시오. "
@@ -470,13 +601,26 @@ def _area_item_rows(
             "status": status,
         })
     missing: list[dict[str, Any]] = []
+    # 보류 사유 표기(2026-09-20). 근거 노드가 실제로 있는데 승격되지 않은 항목이
+    # 근거가 전혀 없는 항목과 똑같이 '미공시'로만 보였다. '미공시'라는 판단은 그대로
+    # 두고(값을 채우지 않는다) 왜 비었는지만 덧붙인다 — 확인할 사항을 사용자에게
+    # 넘기기 위한 표기이며, 점수·가중치·D6 상태(_disclosure_state)는 건드리지 않는다.
+    _HOLD_REASONS = {
+        "qualitative_item_needs_clause": "조항근거없음",
+        "no_representative_node": "후보전부배제",
+    }
     for code in getattr(extraction, "missing", []) or []:
         item = by_code(code)
         if item is None or item.area != area:
             continue
+        status = "미공시"
+        reasons = [label for flag, label in _HOLD_REASONS.items()
+                   if flag in conf_flags.get(code, [])]
+        if reasons:
+            status += "·보류(" + "/".join(reasons) + ")"
         missing.append({
             "code": code, "name": item.name,
-            "value": None, "unit": item.unit or "", "status": "미공시",
+            "value": None, "unit": item.unit or "", "status": status,
         })
     covered.sort(key=lambda r: r["code"])
     missing.sort(key=lambda r: r["code"])

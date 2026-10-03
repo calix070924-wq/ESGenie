@@ -240,3 +240,120 @@ def test_verify_and_refine_short_circuits_when_retrieval_gate_blocks() -> None:
     assert result.final_band == "평가불가"
     assert result.final.detection.risk_vector.aggregate["evaluation_status"] == "unavailable"
     assert result.metadata["retrieval_decision"]["decision"] == "HUMAN"
+
+
+# ---- 한국어 자릿수 복합 표기 (2026-09-20 실측) ---------------------------------
+
+def test_korean_scale_composite_is_one_number_not_two() -> None:
+    """'211억 1,600만 원'은 금액 하나다. 211과 1600으로 쪼개면 근거 대조가 깨진다."""
+    from esgenie.rag_gates.signals import extract_numbers
+
+    assert extract_numbers("교육훈련비는 211억 1,600만 원이다") == ["211억 1600만"]
+
+
+def test_korean_scale_composite_matches_the_plain_ledger_value() -> None:
+    from esgenie.rag_gates.signals import number_in_text
+
+    assert number_in_text("211억 1,600만", "교육훈련비=21,116,000,000원") is True
+
+
+def test_korean_scale_composite_still_fails_on_a_wrong_value() -> None:
+    """합치는 계산은 정확한 곱셈·덧셈이므로 틀린 금액은 그대로 걸린다."""
+    from esgenie.rag_gates.signals import number_in_text
+
+    assert number_in_text("211억 1,600만", "교육훈련비=2,111,600,000원") is False
+
+
+def test_plain_number_sequence_is_not_merged() -> None:
+    """자릿수 글자가 없는 숫자 나열은 종전처럼 각각 유지된다."""
+    from esgenie.rag_gates.signals import extract_numbers
+
+    assert extract_numbers("신규 채용 2,774명, 이사회 7회, 이직률 22.9%") == ["2774", "7", "22.9"]
+
+
+def test_grounding_gate_accepts_korean_scale_amount_backed_by_evidence() -> None:
+    answer = "교육훈련비는 211억 1,600만 원이다. [c1]"
+    chunks = [{"id": "c1", "text": "교육훈련비 21,116,000,000원 (2024)"}]
+
+    result = evaluate_grounding(answer, chunks)
+
+    assert result.g2_orphan_numbers == []
+
+
+# ---- 원장의 축약 금액 표기 대조 (2026-09-26 실측) -------------------------------
+
+def test_ledger_abbreviated_amount_matches_the_korean_scale_notation() -> None:
+    """원장이 '21116.0백만 원'으로 축약한 금액을 본문이 '211억 1,600만 원'으로 적는다.
+
+    자릿수 수정을 촉발한 사례다(현대모비스 S-2-4 교육훈련비). 종전에는 근거 쪽 숫자만
+    읽고 배율 단위를 무시해 21116과 21,116,000,000을 다른 값으로 봤고, 같은 금액인데
+    G2 미확인 숫자로 보고됐다. 청크 문구는 `ssot_pipeline`이 실제로 만드는 형태다.
+    """
+    answer = "2024년 임직원 교육훈련비는 211억 1,600만 원입니다. [c1]"
+    chunks = [{"id": "c1", "text": "[S-2-4] 21116.0백만 원 (2024년, 출처: mobis.pdf, 신뢰도: 0.75)"}]
+
+    result = evaluate_grounding(answer, chunks)
+
+    assert result.g2_orphan_numbers == []
+    assert result.decision == "ACCEPT"
+
+
+def test_ledger_abbreviated_amount_still_accepts_the_same_notation() -> None:
+    """본문이 근거와 같은 축약 표기를 쓰는 기존 동작을 잃지 않는다."""
+    answer = "2024년 임직원 교육훈련비는 21,116백만 원입니다. [c1]"
+    chunks = [{"id": "c1", "text": "[S-2-4] 21116.0백만 원 (2024년)"}]
+
+    assert evaluate_grounding(answer, chunks).g2_orphan_numbers == []
+
+
+def test_ledger_abbreviated_amount_still_fails_on_a_wrong_amount() -> None:
+    """배율을 반영해도 틀린 금액은 걸린다 — 느슨해지기만 한 것이 아니다."""
+    from esgenie.rag_gates.signals import number_in_text
+
+    assert number_in_text("211억 1,600만", "[S-2-4] 2111.6백만 원") is False
+
+
+def test_scale_word_without_a_currency_is_not_read_as_a_multiplier() -> None:
+    """통화 단위가 없으면 배율로 읽지 않는다 — '2,100 만 명'은 21,000,000이 아니다."""
+    from esgenie.rag_gates.signals import number_in_text
+
+    assert number_in_text("21000000", "누적 회원 2,100 만 명을 확보했다") is False
+
+
+# ---- '조'는 자릿수이기도 하고 조항 번호이기도 하다 (2026-09-23 실측) -------------
+
+def test_article_number_is_not_read_as_trillions() -> None:
+    """'제26조'는 조항 번호다. 26조 원으로 읽으면 근거에서 찾을 수 없는 숫자가 된다.
+
+    9/20 전량 추출물 실측: 조항문 647건 중 9건, 최종 보고서 문장 484건 중 12건이
+    법·정관 조항 번호를 담고 있었다. 공급망 드래프터는 G2를 hard_fail로 다루므로
+    (drafter.py) 이 오탐 하나가 정상 초안 폐기로 이어진다.
+    """
+    from esgenie.rag_gates.signals import extract_numbers
+
+    assert extract_numbers("산업안전보건법 제26조에 따라 위원회를 설치한다") == ["26"]
+    assert extract_numbers("상법 제388조 및 정관에 의거하여") == ["388"]
+    assert extract_numbers("제6조(협력사 ESG 경영 및 공정거래 준수)") == ["6"]
+
+
+def test_article_number_without_je_prefix_is_not_read_as_trillions() -> None:
+    """'제'가 없어도 통화 단위가 뒤에 없으면 조항 번호로 본다(놓치는 쪽이 덜 나쁘다)."""
+    from esgenie.rag_gates.signals import extract_numbers
+
+    assert extract_numbers("환경경영 정책 2조 '기본원칙'의 사항") == ["2"]
+
+
+def test_korean_trillion_amount_is_still_one_number() -> None:
+    """통화 단위가 붙거나 더 작은 자릿수가 이어지면 금액으로 읽는다."""
+    from esgenie.rag_gates.signals import extract_numbers, number_in_text
+
+    assert extract_numbers("총 2.6조 원 규모의 주주환원을 시행하였습니다") == ["2.6조"]
+    assert extract_numbers("매출 1조5000억 원을 기록했다") == ["1조5000억"]
+    assert number_in_text("2.6조", "주주환원 2,600,000,000,000원") is True
+
+
+def test_scale_letter_split_by_whitespace_is_not_merged() -> None:
+    """표·줄바꿈이 끼어든 '114\\n조'는 한 금액이 아니다."""
+    from esgenie.rag_gates.signals import extract_numbers
+
+    assert extract_numbers("표 값 114\n조 원") == ["114"]
