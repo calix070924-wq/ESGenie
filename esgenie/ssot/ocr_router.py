@@ -2821,9 +2821,11 @@ def _zero_verdict(quote: str, hint: str = "", period: str = "",
                 "UNRESOLVED" if cause in _ZERO_UNRESOLVED_CAUSES else "REJECTED", cause, **base))
             continue
         verdicts.append(_zero_scope_verdict(candidate, requested, boundary, base, hint_tokens))
-    # 지표 대상이 맞은 후보의 판정이 대상이 다른 후보의 판정보다 앞선다(같은 순위 안에서는 앞 후보).
-    return min(verdicts, key=lambda v: (_ZERO_STATUS_RANK[v.status],
-                                        v.cause in ("other_subject", "no_zero_statement")))
+    # 지표 대상이 맞은 후보의 판정이 대상이 다른 후보의 판정보다 앞선다. 그 안에서는 상태 순위, 같으면 앞 후보.
+    # PR 69 6차 검토: 상태 순위를 먼저 봐서, 열을 정하지 못한 이 지표의 0(UNRESOLVED/column_unresolved)
+    # 대신 다른 행의 0(REJECTED/other_subject)이 판정 사유로 남았다.
+    return min(verdicts, key=lambda v: (v.cause in ("other_subject", "no_zero_statement"),
+                                        _ZERO_STATUS_RANK[v.status]))
 
 
 # 숫자 0 후보. 숫자 경계를 지킨다 — 날짜·항목 번호·`1,000`·`0.5` 속 0은 후보가 아니다.
@@ -2939,7 +2941,7 @@ def _zero_candidates(quote: str) -> list[_ZeroCandidate]:
 
     for line_start, line in _pieces(quote, re.compile(r"\n")):
         cells = _table_cells(line)
-        if len(cells) > 1:
+        if _is_table_line(line):
             # 행 라벨: 첫 칸과, 그 뒤로 값(숫자·부정 서술·`-`·빈 칸)이 나오기 전까지의 칸(단위 칸 등).
             lead = 1
             while lead < len(cells) and not _is_value_cell(line[cells[lead][0]:cells[lead][1]]):
@@ -2965,8 +2967,8 @@ def _zero_candidates(quote: str) -> list[_ZeroCandidate]:
     return candidates
 
 
-def _table_cells(line: str) -> list[tuple[int, int]]:
-    """표 행의 칸(줄 안 시작·끝). 짝이 맞는 괄호 안의 `|`는 칸 구분자가 아니다.
+def _split_cells(line: str) -> list[tuple[int, int]]:
+    """`|`로 나눈 칸(줄 안 시작·끝). 짝이 맞는 괄호 안의 `|`는 칸 구분자가 아니다.
 
     `_attach_column_headers`는 값 뒤에 `(합계|2026)`·`(국내(별도)|2022)`처럼 `|`가 든 셀 머리를
     붙인다. 단순 `split('|')`은 이 좌표를 칸으로 쪼갠다(PR 69 5차 검토). 짝 없는 괄호(`4)` 각주)는
@@ -2986,6 +2988,27 @@ def _table_cells(line: str) -> list[tuple[int, int]]:
             cells.append((start, i))
             start = i + 1
     cells.append((start, len(line)))
+    return cells
+
+
+def _is_table_line(line: str) -> bool:
+    """표 행인가: 괄호 밖 `|`가 있다(바깥 테두리만 있는 한 칸 행 `| 비고 |`도 표 행이다)."""
+    return len(_split_cells(line)) > 1
+
+
+def _table_cells(line: str) -> list[tuple[int, int]]:
+    """표 행의 **내용 칸**(줄 안 시작·끝). 바깥 테두리(`| 항목 | 2026 |`의 양끝 `|`)는 칸이 아니다.
+
+    PR 69 6차 검토: 테두리 앞의 빈 칸을 첫 칸으로 읽어 행 라벨을 잃었다(`| Scope 3 배출량(tCO2eq) |
+    0 |`의 0이 `other_subject`로 삭제). 줄이 `|`로 시작하고 `|`로 끝날 때만 양끝 한 칸씩을 테두리로
+    본다. 그 안의 빈 칸(`| | 2025 | 2026 |`의 모서리, 값이 빈 칸)은 실제 칸이라 그대로 둔다 — 빈 칸을
+    모두 지우면 뒤 칸의 열 번호가 밀린다. 열 연결(`_column_header`)과 후보 생성(`_zero_candidates`)이
+    이 같은 칸 좌표를 쓴다.
+    """
+    cells = _split_cells(line)
+    stripped = line.strip()
+    if len(cells) > 2 and stripped.startswith("|") and stripped.endswith("|"):
+        cells = cells[1:-1]
     return cells
 
 
@@ -3014,10 +3037,37 @@ _TABLE_AXIS_RE = re.compile(
     r"|분기|연도|년도|FY\s*\d{2,4}|" + "|".join(_COL_HEADER_KEYWORDS))
 
 
+# 칸 안의 수: 낱말에 붙은 숫자(`CO2`·`PM2.5`·`제1공장`)는 수량이 아니라 이름의 일부다.
+_CELL_NUMBER_RE = re.compile(r"(?<![A-Za-z가-힣\d.,])[-+]?\d[\d.,]*")
+
+
+def _is_identifier_cell(text: str) -> bool:
+    """사업장 식별자 칸인가(`1공장`·`제2공장`·`김해 제1공장`·`서아산공장`·`본사`). 앞의 숫자는 번호다."""
+    return bool(re.fullmatch(rf"\s*(?:{_SITE_MENTION_RE.pattern}|{_SITE_KINDS})\s*", text))
+
+
+def _is_quantity_cell(text: str) -> bool:
+    """수량으로 시작하는 칸인가(`50`·`46명`·`0(합계|2026)`·`-`). 사업장 번호(`1공장`)는 아니다."""
+    return bool(_TABLE_VALUE_CELL_RE.match(text)) and not _is_identifier_cell(text)
+
+
 def _is_value_cell(text: str) -> bool:
-    """값이 든 칸인가: 수량·`-`·빈 칸·숫자·미발생/미보유 서술. 행 라벨은 이런 칸 앞까지다."""
-    return (not text.strip() or bool(_TABLE_VALUE_CELL_RE.match(text)) or bool(re.search(r"\d", text))
-            or bool(_ZERO_NEGATION_RE.search(text)))
+    """값이 든 칸인가: 빈 칸·수량·`-`·미발생/미보유 서술, 또는 칸 안에 단독 0이나 단위가 붙은 수
+    (`누계 0`·`약 3건`). 행 라벨은 이런 칸 앞까지다.
+
+    PR 69 6차 검토: 숫자가 있기만 하면 값 칸으로 봐서 `Scope 3 배출량(tCO2eq)`이 값 칸이 되고 행
+    라벨이 사라졌다. 지표명·식별자 안의 숫자(`Scope 3`·`CO2`·`1공장`)는 값이 아니다.
+    """
+    from ..rag_gates.units import normalize_unit
+    if not text.strip() or _is_quantity_cell(text) or _ZERO_NEGATION_RE.search(text):
+        return True
+    for m in _CELL_NUMBER_RE.finditer(text):
+        if _ZERO_NUMERIC_RE.fullmatch(m.group().lstrip("+-")):
+            return True
+        unit = re.match(r"\s*([^\s()（）|,]+)", text[m.end():])
+        if unit and normalize_unit(unit.group(1)):
+            return True
+    return False
 
 
 def _is_table_header_row(cells: list[str]) -> bool:
@@ -3030,13 +3080,30 @@ def _is_table_header_row(cells: list[str]) -> bool:
     rest = [c.strip() for c in cells[1:]]
     if not any(rest) or _ZERO_NEGATION_RE.search("|".join(cells)):
         return False
-    return all(not c or _YEAR_HEADER_RE.fullmatch(c) or not _TABLE_VALUE_CELL_RE.match(c) for c in rest)
+    return all(not c or _YEAR_HEADER_RE.fullmatch(c) or not _is_quantity_cell(c) for c in rest)
+
+
+# 사업장 축 머리글의 첫 칸(행 제목 자리): 열이 사업장별임을 밝히는 축 낱말.
+_ROW_AXIS_RE = re.compile(r"구분|항목|지표|분류|내용|사업장")
 
 
 def _names_columns(cells: list[str]) -> bool:
-    """값 칸이 모두 열 역할·연도·축 낱말인가(`목표 | 실적`·`2025 | 2026`·`합계 | 국내`)."""
+    """값 칸이 열 이름인가.
+
+    - 모두 열 역할·연도·축 낱말(`목표 | 실적`·`2025 | 2026`·`합계 | 국내`), 또는
+    - 사업장 축: 첫 칸이 비었거나 축 낱말(`구분`·`항목`…)이고 값 칸이 모두 **서로 다른** 사업장
+      식별자(`구분 | 1공장 | 2공장`·`구분 | 김해 제1공장 | 부산 제1공장`). PR 69 6차 검토: `1공장`을
+      수량으로 읽어 표 중간의 새 머리글을 놓쳤고, 이전 `목표 | 실적` 역할이 남아 정상 0이 지워졌다.
+      같은 낱말이 되풀이되는 문자형 데이터 행(`소속 | 김해공장 | 김해공장`)은 머리글이 아니다.
+    """
     rest = [c.strip() for c in cells[1:] if c.strip()]
-    return bool(rest) and all(_YEAR_HEADER_RE.fullmatch(c) or _TABLE_AXIS_RE.search(c) for c in rest)
+    if not rest:
+        return False
+    if all(_YEAR_HEADER_RE.fullmatch(c) or _TABLE_AXIS_RE.search(c) for c in rest):
+        return True
+    first = cells[0].strip()
+    return ((not first or bool(_ROW_AXIS_RE.search(first)) or bool(_TABLE_AXIS_RE.search(first)))
+            and len(set(rest)) == len(rest) and all(_is_identifier_cell(c) for c in rest))
 
 
 def _column_header(quote: str, offset: int, length: int = 1) -> tuple[str, str, int]:
@@ -3065,20 +3132,23 @@ def _column_header(quote: str, offset: int, length: int = 1) -> tuple[str, str, 
     line_start = quote.rfind("\n", 0, offset) + 1
     line_end = quote.find("\n", offset)
     line = quote[line_start:line_end if line_end >= 0 else len(quote)]
-    line_cells = _table_cells(line)
-    if len(line_cells) < 2:
+    if not _is_table_line(line):
         return "", "none", -1
-    index = next(k for k, (s, e) in enumerate(line_cells) if offset - line_start <= e)
+    line_cells = _table_cells(line)
+    index = next((k for k, (s, e) in enumerate(line_cells) if offset - line_start <= e), None)
+    if index is None:
+        return "", "none", -1
     width = len(line_cells)
-    rows: list[tuple[int, list[str]]] = []   # 같은 표의 앞 행(가까운 것부터): (시작, 칸 문구)
+    # 같은 표의 앞 행(가까운 것부터): (시작, 칸 문구, 칸 위치). 칸은 바깥 테두리를 뺀 내용 칸이다.
+    rows: list[tuple[int, list[str], list[tuple[int, int]]]] = []
     cursor = line_start
     while cursor > 0:
         start = quote.rfind("\n", 0, cursor - 1) + 1
         row = quote[start:cursor - 1]
-        bounds = _table_cells(row)
-        if len(bounds) < 2:
+        if not _is_table_line(row):
             break                          # 표가 끝났다 — 다른 표·본문의 행은 보지 않는다
-        rows.append((start, [row[s:e] for s, e in bounds]))
+        bounds = _table_cells(row)
+        rows.append((start, [row[s:e] for s, e in bounds], bounds))
         cursor = start
 
     def rule(k: int) -> bool:
@@ -3096,8 +3166,10 @@ def _column_header(quote: str, offset: int, length: int = 1) -> tuple[str, str, 
     headers = [k for k in range(len(rows)) if header(k)]
     if not headers:
         return "", "none", -1
-    nearest = next((k for k in headers if len(rows[k][1]) == width), None)
-    if nearest is None:
+    # 가장 가까운 확인된 머리글이 이 행의 머리글이다 — 확인된 새 머리글은 이전 머리글의 적용 구간을
+    # 끝낸다(PR 69 6차 검토). 칸 수가 맞지 않으면 더 앞의 머리글(이전 표의 목표·실적)을 고르지 않는다.
+    nearest = headers[0]
+    if len(rows[nearest][1]) != width:
         return "", "unresolved", -1
     # 여러 줄 머리글: 가장 가까운 머리글 행 바로 위로 이어진 같은 칸 수의 머리글 행.
     stack = [nearest]
@@ -3109,8 +3181,9 @@ def _column_header(quote: str, offset: int, length: int = 1) -> tuple[str, str, 
         stack.append(k)
     parts = [rows[k][1][index].strip() for k in reversed(stack)]
     text = " ".join(p for p in parts if p)
-    head_start, head_cells = rows[nearest]
-    return text, "header", head_start + sum(len(c) + 1 for c in head_cells[:index])
+    head_start, head_cells, head_bounds = rows[nearest]
+    cell = head_cells[index]
+    return text, "header", head_start + head_bounds[index][0] + len(cell) - len(cell.lstrip())
 
 
 def _zero_subject(candidate: _ZeroCandidate, specific: list[str], hint_tokens: list[str],
@@ -3149,6 +3222,7 @@ def _names_zero_subject(head: str, specific: list[str], hint_tokens: list[str],
     if last < 0:
         return False   # 공백을 사이에 두고 나뉜 지표 낱말 — 위치를 특정할 수 없어 인정하지 않는다
     gap = re.sub(r"^\S*", "", head[last:])   # 지표 낱말이 든 어절의 나머지(조사)는 건너뛴다
+    gap = _drop_unit_cells(gap)               # 표의 단위 칸(`Scope 3 배출량 | tCO2eq | 0`)은 대상이 아니다
     # 날짜·한 글자 말(`4월`·`한`)은 `_label_tokens`가 이미 뺀다.
     return not any(word not in allowed and not any(token in word for token in hint_tokens)
                    for word in _label_tokens(gap))
@@ -3261,15 +3335,28 @@ def _zero_unit(statement: str, end: int, reported_unit: str = "") -> _ZeroUnit:
     return _ZeroUnit("unknown", word, word_end)
 
 
+def _unit_cell(text: str) -> bool:
+    """표 칸 전체가 단위 하나인가(`tCO2eq`·`건`·`백만원`)."""
+    from ..rag_gates.units import normalize_unit
+    return bool(text.strip()) and normalize_unit(text.strip()) is not None
+
+
+def _drop_unit_cells(text: str) -> str:
+    """`|`로 나뉜 칸 중 단위만 든 칸을 지운다(칸 구분은 남긴다)."""
+    return "|".join("" if _unit_cell(part) else part for part in text.split("|"))
+
+
 def _zero_label_unit(statement: str, start: int, column: str) -> str:
-    """값 앞(행 라벨 `산업재해율(‰)`)이나 열 머리(`배출량(tCO2eq)`)에 적힌 단위. 없으면 ""."""
+    """값 앞(행 라벨 `산업재해율(‰)`·단위 칸 `| tCO2eq |`)이나 열 머리(`배출량(tCO2eq)`)에 적힌 단위.
+    없으면 ""."""
     from ..rag_gates.units import normalize_unit
 
     for text in (statement[:start], column):
         for m in reversed(list(re.finditer(r"[(（]\s*([^()（）]+?)\s*[)）]", text))):
             if normalize_unit(m.group(1)) is not None:
                 return m.group(1)
-    return ""
+    cells = statement[:start].split("|")[:-1]          # 값 칸 앞의 행 라벨 칸들
+    return next((c.strip() for c in reversed(cells) if _unit_cell(c)), "")
 
 
 def _numeric_zero_mood(statement: str, end: int, reported_unit: str = "") -> str | None:
@@ -3313,15 +3400,43 @@ _ZERO_HEADING_WORDS = frozenset({
 _SENTENCE_END_RE = re.compile(r"(?:다|음|함|됨|임|요)[\s.。!)\]]*$")
 
 
+# 제목·목록 번호(줄 머리): `2.`·`2)`·`(2)`·`[2]`·`2-1.`·`2.1`·`제2절`·`제3장`, 앞의 `#`·`*` 장식 포함.
+_HEADING_NUMBER_RE = re.compile(
+    r"\s*[#*>]*\s*(?:제\s*\d{1,3}\s*(?:편|부|장|절|관)"
+    r"|[(（\[［]\s*(?:\d{1,3}|[가-하]|[ivxIVX]{1,4})\s*[)）\]］]"
+    r"|\d{1,3}(?:[.\-]\d{1,3})*\s*[.)）]|\d{1,3}(?:[.\-]\d{1,3})+)\**(?=\s)")
+# 마침표 앞에서 갈려 번호만 남은 토막(`Ⅱ`·`II`·`가`·`①`).
+_LIST_MARKER_RE = re.compile(r"\s*[#*>]*\s*(?:[Ⅰ-Ⅻ]+|[IVX]{1,4}|[가-하]|[①-⑳])\s*")
+
+
+def _heading_number(piece: str) -> int:
+    """토막 앞 제목·목록 번호의 길이(없으면 0). 번호 뒤가 단위면 수량이다(`2.5 톤`·`1-2 명`).
+
+    PR 69 6차 검토: `2. 2026년 5월 부산 제1공장 교육 현황`의 `2`를 수량으로 읽어 새 절 제목을 사실로
+    건너뛰었고, 앞 절의 4월·김해 범위로 0이 CONFIRMED가 됐다. 번호는 제목의 일부일 뿐 따로 센 수가
+    아니다. 줄 머리의 번호 형식만 떼며, 그 뒤 내용은 그대로 판정한다(`1. 산업재해 0건`은 사실이다).
+    """
+    from ..rag_gates.units import normalize_unit
+    m = _HEADING_NUMBER_RE.match(piece)
+    if not m:
+        return 0
+    after = re.match(r"\s*([^\s()（）|,]+)", piece[m.end():])
+    if after and normalize_unit(after.group(1)) and re.fullmatch(r"\s*\d[\d.\-]*\**", m.group()):
+        return 0
+    return m.end()
+
+
 def _heading_kind(piece: str, allowed: set[str]) -> str:
     """앞 문맥 한 토막의 성격: blank | table(표 행) | fact(수량·부정·문장 서술) |
     heading(이 지표에 범위를 줄 수 있는 머리말) | other_heading(다른 대상의 제목 — 새 절)."""
     if not piece.strip():
         return "blank"
-    if len(_table_cells(piece)) > 1:
+    if _is_table_line(piece):
         return "table"
-    rest = piece
-    for span in _date_spans(piece):
+    if _LIST_MARKER_RE.fullmatch(piece):
+        return "blank"                     # `Ⅱ.`·`가.`에서 마침표로 갈린 번호 토막 — 내용이 없다
+    rest = piece[_heading_number(piece):]
+    for span in _date_spans(rest):
         rest = rest.replace(span.text, " ")
     rest = _SITE_MENTION_RE.sub(" ", rest)
     if re.search(r"\d", rest) or _ZERO_NEGATION_RE.search(rest) or _SENTENCE_END_RE.search(rest.strip()):

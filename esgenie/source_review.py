@@ -13,6 +13,7 @@ from typing import Any
 
 from .knowledge.kesg_items import PROFILES, by_code, items_for_profile
 from .ssot.node_select import is_derived_hint
+from .ssot.selection import SOURCE_CONFLICT_NOTE
 
 
 @dataclass
@@ -304,6 +305,8 @@ def build_source_review(output: Any) -> list[ReviewFinding]:
         "no_representative_node": ("대표값 결정 불가", "후보 근거는 있으나 대표값 자격을 충족하지 못했습니다.", "연도·단위·항목·범위가 명확한 근거를 보완하세요."),
         "unit_mismatch": ("단위 확인", "항목 단위와 근거 단위를 일치시킬 수 없습니다.", "물리량과 단위를 확인하고 호환되는 근거를 제공하세요."),
         "scope_source_only": ("범위 미확정", "원문 사실은 확인했지만 요청 기간·사업장의 실적임은 확인하지 못했습니다(원문 범위로만 보존).", "원문 범위(월·기준일·사업장)를 확인하고 요청 범위의 근거를 보완하세요."),
+        # 범위 미확정과 별개의 사유다 — 둘 다 붙은 대표값은 두 항목으로 따로 알린다.
+        "source_conflict": ("원측정값 상충", "대표값의 원측정값이 같은 문서의 다른 수치나 검산과 맞지 않습니다.", "상충한 두 원문 값과 계산 근거를 확인하고 채택할 값을 정하세요."),
     }
     flag_messages["unit_suspect"] = flag_messages["unit_mismatch"]
     flag_messages["partial_aggregate"] = flag_messages["partial_value"]
@@ -329,6 +332,9 @@ def build_source_review(output: Any) -> list[ReviewFinding]:
             if flag not in flag_messages:
                 continue
             title, reason, action = flag_messages[flag]
+            if flag == "source_conflict" and fact is not None:
+                notes = [n for n in fact.scope_notes if SOURCE_CONFLICT_NOTE in n]
+                reason = " ".join([reason, *notes])
             findings.append(_finding("data_quality", title, item.name,
                                      reason, action, code=code, check_reason=flag, evidence=refs))
 
