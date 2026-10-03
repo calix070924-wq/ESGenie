@@ -3089,6 +3089,24 @@ _ROW_AXIS_RE = re.compile(r"구분|항목|지표|분류|내용|사업장")
 # 뗀다. 열 역할(`목표`·`실적`)과 합계(`소계`·`합계`)는 첫 칸에 오면 데이터 행의 라벨이라 넣지 않는다.
 _AXIS_NAME_RE = re.compile(
     rf"(?:(?:{_ROW_AXIS_RE.pattern}|공장|부문|연도|년도|기간|단위|비고|FY\s*\d{{2,4}})(?:명|별)?)+")
+# 짝이 맞는 가장 안쪽 괄호 하나(반각·전각).
+_INNER_PAREN_RE = re.compile(r"[(（]([^()（）]*)[)）]")
+
+
+def _is_axis_annotation(inner: str) -> bool:
+    """괄호 안 **전체**가 축 칸의 표기 주석인가: 기존 판독기가 읽는 단위(`단위: 건`·`%`·`단위：명, %`),
+    기간(`2026년`·`2026년 4월`), 열 머리 낱말(`국내`·`연결`·`합계`)로만 됐다. 설명이 한 낱말이라도
+    섞이면(`교육 대상`·`단위: 건, 교육 대상`) 무엇을 기록했는지 밝히는 데이터 라벨이다."""
+    from ..rag_gates.units import normalize_unit
+
+    def known(tok: str) -> bool:
+        return (normalize_unit(tok) is not None or tok in _COL_HEADER_KEYWORDS
+                or any(span.text == tok for span in _date_spans(tok)))
+
+    body = re.sub(r"^\s*단위\s*[:：]?\s*", "", inner).strip()
+    if not body:
+        return False
+    return known(body) or all(tok and known(tok) for tok in re.split(r"\s*[,/·|]\s*|\s+", body))
 
 
 def _is_axis_name(text: str) -> bool:
@@ -3098,8 +3116,18 @@ def _is_axis_name(text: str) -> bool:
     김해 제1공장 | 부산 제1공장`(목표·실적 열마다 사업장을 적은 데이터 행)이 새 머리글이 됐고,
     아래 `산업재해 | 0 | 1`의 목표 0이 실적이 됐다. 무엇을 기록했는지 밝히는 낱말(`교육 대상`·
     `집계`·`소속`)이 붙은 칸은 축 이름이 아니라 데이터 행의 라벨이다.
+    8차 검토: 괄호를 모두 지워 `사업장(교육 대상)`이 축 이름 `사업장`이 됐다. 괄호는 안쪽부터,
+    내용 전체가 단위·기간·열 머리 표기일 때만 뗀다(`_is_axis_annotation`). 설명 괄호·짝이 맞지 않는
+    괄호는 그대로 남아 축 이름이 아니다.
     """
-    body = re.sub(r"[(（][^()（）]*[)）]", "", text)
+    body = text
+    while True:
+        groups = list(_INNER_PAREN_RE.finditer(body))
+        if not groups:
+            break
+        if not all(_is_axis_annotation(m.group(1)) for m in groups):
+            return False                   # 무엇을 기록했는지 밝히는 설명 — 데이터 행의 라벨
+        body = _INNER_PAREN_RE.sub("", body)
     return bool(_AXIS_NAME_RE.fullmatch(re.sub(r"[\s/·,\\]+", "", body)))
 
 
@@ -3478,6 +3506,9 @@ def _heading_mask(piece: str) -> str:
         after = re.match(r"[\s*]*([^\s()（）|,\[\]*]+)", piece[end:])
         return bool(after) and normalize_unit(after.group(1)) is not None
 
+    # 원문에서 읽히는 사업장 구간(`A2공장`·`B2사업장`·`김해 제1공장`)은 가리지 않는다 — 식별자
+    # 모양(`A2`)이 겹쳐도 사업장 번호다. 가린 뒤 사업장이 사라지면 위 머리말의 사업장을 물려받는다.
+    sites = [m.span() for m in _SITE_MENTION_RE.finditer(piece)]
     marks: list[tuple[int, int]] = []
     number = _heading_number(piece)
     if number:
@@ -3486,13 +3517,19 @@ def _heading_mask(piece: str) -> str:
         if not unit_after(m.end()):
             marks.append(m.span())
     for m in _HEADING_CODE_RE.finditer(piece, number):
-        # `FY2026`처럼 번호가 연도 하나면 식별자가 아니라 기간이다(`_date_spans`가 읽는다).
-        # 이름(`ISO`)은 남긴다 — 이 지표에 범위를 줄 수 있는 제목인지는 그 낱말로 판정한다.
-        if not re.fullmatch(r"(?:19|20)\d{2}", m.group("number")) and not unit_after(m.end()):
+        # 번호가 날짜로 시작하면(`FY2026`·`FY 2026.04`) 식별자가 아니라 기간이다(`_date_spans`가 읽는다).
+        # 뒤에 붙은 개정 연도(`45001:2018`)는 번호의 일부라 가린다. 이름(`ISO`)은 남긴다 — 이 지표에
+        # 범위를 줄 수 있는 제목인지는 그 낱말로 판정한다.
+        code = m.group("number")
+        if any(code.startswith(span.text) for span in _date_spans(code)):
+            continue
+        if not unit_after(m.end()):
             marks.append((m.start("number"), m.end()))
     marks += [m.span() for m in _HEADING_ORDINAL_RE.finditer(piece, number)]
     chars = list(piece)
     for start, end in marks:
+        if any(start < s_end and s_start < end for s_start, s_end in sites):
+            continue
         chars[start:end] = " " * (end - start)
     return "".join(chars)
 
@@ -3553,8 +3590,9 @@ def _zero_heading(candidate: _ZeroCandidate, hint_tokens: list[str]) -> tuple[li
             found = True
         elif kind != "heading":
             break                          # 머리말 묶음이 끝났다 — 그 위는 앞 절이다
-        scope_text = _heading_mask(piece)    # 규격 개정 연도(`ISO 45001:2018`)는 기간이 아니다
-        piece_spans, piece_sites = _date_spans(scope_text), _site_keys(scope_text)
+        # 기간은 가린 문구에서 읽는다 — 규격 개정 연도(`ISO 45001:2018`)는 기간이 아니다. 사업장은
+        # 원문에서 읽는다 — 판정용 가공 때문에 자기 사업장이 '없음'이 되어 상속되지 않게 한다.
+        piece_spans, piece_sites = _date_spans(_heading_mask(piece)), _site_keys(piece)
         if not spans and piece_spans:
             spans = piece_spans
             used.append(piece.strip())
