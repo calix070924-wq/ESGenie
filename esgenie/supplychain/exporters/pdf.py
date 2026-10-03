@@ -126,6 +126,8 @@ def export_response_sheet_pdf(
     *,
     evidence_base_dir: str | Path | None = None,
     embed_evidence: bool = True,
+    status_labels: dict[str, str] | None = None,
+    summary_text: str | None = None,
 ) -> str:
     """응답서를 PDF로 저장하고 경로를 반환한다.
 
@@ -199,7 +201,7 @@ def export_response_sheet_pdf(
     # ── 표지 요약 ──
     elements.append(Paragraph(sheet.framework_label, title))
     # 헤더 문장은 엑셀 A2·화면 캡션과 같은 단일 출처를 쓴다(§5-1).
-    elements.append(Paragraph(summary_line(sheet).replace("  |  ", " &nbsp;|&nbsp; "), subtitle))
+    elements.append(Paragraph((summary_text if summary_text is not None else summary_line(sheet)).replace("  |  ", " &nbsp;|&nbsp; "), subtitle))
     if not font.embedded:
         elements.append(Paragraph(
             "⚠ 한글 폰트 미발견 — 텍스트가 깨질 수 있습니다(ESGENIE_PDF_FONT 설정 권장).",
@@ -248,6 +250,7 @@ def export_response_sheet_pdf(
             style_cmds.append(("BACKGROUND", (0, ri), (-1, ri), colors.HexColor("#D9E1F2")))
         ri += 1
         label, bg = _STATUS_STYLE.get(a.status, (a.status, "#FFFFFF"))
+        label = (status_labels or {}).get(a.qid, label)
         draft = draft_lines(a) if a.status == "draft_ready" else []
         if draft:
             # 엑셀과 같은 render.draft_lines — 줄 구분자만 다르다(§5-3).
