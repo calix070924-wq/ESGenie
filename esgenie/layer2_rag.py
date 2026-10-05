@@ -573,6 +573,8 @@ class HybridRAG:
         variant = "greenwash" if demo_greenwash else "clean"
         resp = CLIENT.complete(system, user, mock_hint="generate", mock_variant=variant)
         table_md = _render_kesg_table(covered, missing)
+        if facts_chunk is not None:
+            table_md += _render_source_facts_table(facts_chunk.meta["facts"])
         body = _assemble_section_v2(resp.content.strip(), table_md, area_name)
         return GenerationResult(area=area, text=body, context=ctx, used_mock_llm=resp.used_mock)
 
@@ -727,6 +729,26 @@ def _source_facts_chunk(evidence_graph: Any | None, ctx: RAGContext, area: str) 
         meta={"source": "source_facts", "area": area, "facts": rows},
         chunk_id=f"source_facts_{area}",
     )
+
+
+def _render_source_facts_table(rows: list[dict[str, Any]]) -> str:
+    """코드 없는 원문 집계 중 역할·기간이 붙은 값의 결정적 표(PR71 후속). LLM 서술과 상관없이 날짜·역할·출처를 싣는다.
+
+    실측: 실제 생성 본문이 4월 22일 참석 46명과 추가 교육을 쓰면서도 추가 교육 뒤 중복 제외 합계를 쓰지 않았다.
+    값은 원문 확인 수치 그대로다(모델을 거치지 않는다).
+    """
+    from .report_claims import table_rows
+    picked = table_rows(rows)
+    if not picked:
+        return ""
+    lines = ["", "", "### 원문 확인 수치(K-ESG 코드 없음)", "",
+             "| 항목 | 값 | 기간 | 출처 |", "|---|---|---|---|"]
+    for r in picked:
+        value = f"{r['value']:g}" if isinstance(r["value"], float) else str(r["value"])
+        page = r.get("page")
+        source = (r.get("source_file") or "미상") + (f" {page + 1}쪽" if isinstance(page, int) else "")
+        lines.append(f"| {r['label']} | {value}{r.get('unit') or ''} | {r.get('period_text') or '원문 기간 미기록'} | {source} |")
+    return "\n".join(lines)
 
 
 def _fact_line(row: dict[str, Any]) -> str:

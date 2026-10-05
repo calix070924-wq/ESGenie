@@ -413,6 +413,56 @@ def test_wrong_attendance_sentences_are_held_with_the_confirmed_values(sentence,
         assert "교육 참석 인원 27명(2026-06-03)" in body
 
 
+@pytest.mark.parametrize("sentence", [
+    # PR71 후속 실측(실제 생성 문장)과 같은 구조, 다른 값: 뒤 수량의 명사(`총 대상 인원은`)를 앞 수량의 역할로 읽지 않는다.
+    "2026년 6월 3일 기준 교육 참석 인원은 27명이며, 미참석 인원은 3명으로 총 대상 인원은 30명이다 [source_facts_S].",
+    "6월 9일에는 미참석자 3명이 추가 교육에 참여하여 전체 대상자의 교육 참석을 마쳤다 [source_facts_S].",
+    "대상 30명 중 참석 27명, 미참석 3명이다 [source_facts_S].",
+    "27명 출석 / 3명 미참석 [source_facts_S].",
+])
+def test_role_words_belong_to_their_own_quantity(sentence):
+    body, marks = review(sentence, {}, FACTS, output=NS(extraction=NS(mapped={})))
+    assert marks == [], marks
+
+
+@pytest.mark.parametrize("sentence,roles", [
+    ("대상 50명 중 46명이 참석하고 4명이 미참석했다", ["대상", "참석", "미참석"]),
+    ("대상 50명 중 참석 46명, 미참석 4명", ["대상", "참석", "미참석"]),
+    ("미참석 인원은 4명으로 총 대상 인원은 50명이다", ["미참석", "대상"]),
+    ("미참석자 4명이 추가 교육에 참여하여", ["참석"]),                 # 그날의 서술어가 역할이다
+    ("27명은 참석하지 않았다", ["미참석"]),
+    ("정규직 15명과 기간제 6명이 출석하였고", ["", "참석"]),          # 역할을 끌어오지 않는다
+])
+def test_count_role_reads_the_predicate_after_or_the_noun_before(sentence, roles):
+    from esgenie import report_claims as rc
+    found = rc.quantities(sentence)
+    assert [rc.count_role(w, a, b) for _q, w, a, b, _s, _e in rc.contexts(sentence, found)] == roles
+
+
+def test_the_section_shows_a_deterministic_table_of_dated_role_facts():
+    from esgenie.layer2_rag import _render_source_facts_table
+    from esgenie.report_claims import label_role
+    # 합계 행은 그래프에서 value_role=total로 온다(`중복 제외 합계`). 참여 역할 행은 라벨로 역할을 읽는다.
+    rows = [dict(r, role=label_role(r["label"]), page=0,
+                 value_role="total" if "합계" in r["label"] else "unknown") for r in FACTS]
+    rows.append({"label": "내부 재투입", "value": 2760.0, "unit": "kg", "role": "", "period_text": "04-01 ~ 04-07",
+                 "value_role": "unknown", "source_file": "c.pdf", "page": 0})      # 주간 행 — 표에 싣지 않는다
+    rows.append({"label": "사업장별 인원 - 제1공장", "value": 30.0, "unit": "명", "role": "", "period_text": "2026-06-30",
+                 "value_role": "component", "source_file": "d.pdf", "page": 0})    # 구성값 — 표에 싣지 않는다
+    rows.append({**rows[1], "label": "출석 인원", "source_file": "a.pdf"})          # 같은 값·역할·기간 — 한 줄
+    table = _render_source_facts_table(rows)
+    assert "### 원문 확인 수치(K-ESG 코드 없음)" in table
+    assert "| 교육 참석 인원 | 27명 | 2026-06-03 | a.pdf 1쪽 |" in table
+    assert "| 6월 9일 추가 참석 · 고유 인원 | 3명 | 2026-06-09 | b.pdf 1쪽 |" in table
+    assert "| 중복 제외 합계 · 고유 인원 | 30명 | 2026-06 | b.pdf 1쪽 |" in table
+    assert "내부 재투입" not in table and "사업장별 인원" not in table and "| 출석 인원 |" not in table
+    assert _render_source_facts_table([]) == ""
+    labels = [line.split(" | ")[0][2:] for line in table.splitlines() if line.startswith("| ") and "---" not in line][1:]
+    # 기간 끝 순(6/3 대상·참석·미참석 → 6/9 추가 → 6월 중복 제외 합계)
+    assert labels == ["이번 교육 출석 집계 · 대상", "교육 참석 인원", "교육 미참석 인원", "6월 9일 추가 참석 · 고유 인원",
+                      "중복 제외 합계 · 고유 인원"]
+
+
 def test_a_month_level_hold_lists_the_follow_up_and_the_deduplicated_total():
     body, _ = review("2026년 6월 교육에 총 15명이 참석하였다 [source_facts_S].", {}, FACTS,
                      output=NS(extraction=NS(mapped={})))

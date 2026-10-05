@@ -203,10 +203,16 @@ def training_count_errors(unit: str) -> list[str]:
     for m in re.finditer(r"(?<![\d.,A-Za-z가-힣\-])(\d{1,3})\s*명", unit):
         if skip and skip[0] <= m.start() < skip[1]:
             continue
+        # 교육 문맥은 그 수량 가까이(앞 30자·뒤 20자)에서만 본다 — PDF에서 다른 표(`이사 출석률`)와 붙은 다른 지표의
+        # 인원(`직접 고용 48명`)을 교육 인원으로 읽지 않는다.
+        if not re.search(TRAINING_CONTEXT, unit[max(0, m.start() - 30):m.end() + 20]):
+            continue
         n = int(m.group(1))
         # 날짜는 그 수량 앞쪽 같은 서술(40자 안)에서만 읽는다 — 긴 표·부록 단위의 다른 날짜를 끌어오지 않는다.
         dates = _dates(unit[max(0, m.start() - 40):m.start()])
-        before, after = unit[max(0, m.start() - 14):m.start()], unit[m.end():m.end() + 14]
+        # 역할 낱말은 같은 절에서만 본다 — 쉼표·다음 수량 너머(`46명이며, 미참석 인원은 4명`)의 말은 다른 수량의 것이다.
+        before = re.split(r"[,;]|\d+\s*명", unit[max(0, m.start() - 14):m.start()])[-1]
+        after = re.split(r"[,;]|\d+\s*명", unit[m.end():m.end() + 14])[0]
         context = before + "|" + after
         if n not in set(TRAINING.values()) | TRAINING_PARTS:
             errors.append(f"정답에 없는 인원 {n}명: {unit[:120]}")
@@ -406,12 +412,16 @@ def check(stage: Path | Bundle, *, variant: bool = False) -> dict:
     errors = [e for u in units for e in training_count_errors(u) + fact_listing_errors(u)]
     add("본문 교육 인원 수량이 모두 정답의 역할·날짜와 일치(경고가 붙은 오답도 실패)", not errors, errors[:6],
         "대상 50·참석 46·미참석 4(4/22), 추가 4(4/27), 중복 제외 50(4월)", "report_md")
-    has46 = any(re.search(r"(?<!\d)46\s*명", u) and re.search(r"참석|출석", u) for u in units)
-    add("본문에 4/22 참석 46명 보존", has46, [u[:100] for u in units if "46명" in u][:3], "46명 서술", "report_md")
+    # 보존 여부는 사회 영역 본문(서술·표)에서만 본다 — 부록(확인 필요 사항)의 원문 인용으로 통과시키지 않는다.
+    at = b.body.find("## 사회 성과")
+    end = b.body.find("\n## ", at + 1) if at >= 0 else -1
+    s_units = narrative_units(b.body[at:end if end > 0 else None]) if at >= 0 else []
+    has46 = any(re.search(r"(?<!\d)46\s*명", u) and re.search(r"참석|출석", u) for u in s_units)
+    add("사회 본문에 4/22 참석 46명 보존", has46, [u[:100] for u in s_units if "46명" in u][:3], "46명 서술", "report_md")
     if followup:
-        has50 = any(re.search(r"(?<!\d)50\s*명", u) and re.search(r"중복|고유|추가", u) for u in units)
-        add("본문에 추가 교육 후 중복 제외 50명 보존", has50, [u[:100] for u in units if "50명" in u][:3], "중복 제외 50명",
-            "report_md")
+        has50 = any(re.search(r"(?<!\d)50\s*명", u) and re.search(r"중복|고유", u) for u in s_units)
+        add("사회 본문에 추가 교육 후 중복 제외 50명 보존", has50, [u[:100] for u in s_units if "50명" in u][:3],
+            "중복 제외 50명", "report_md")
     wide = widened_scope(units, r"0\.513216|0\.51\s*TJ|680(?:\.0)?\s*(?:톤|m³)|142,?560")
     add("본문 환경 수치(4월 제1공장 부분값)를 전체·연간·합산으로 넓힌 문장 없음", not wide, wide[:3], "없음", "report_md")
     claims_isms = [a["qid"] for a in sheet["answers"]
@@ -497,7 +507,10 @@ def _sub_body(b: Bundle, pattern: str, repl: str, *, pdf: bool = True) -> int:
     """본문 **판정 단위(서술·제목·생성 표)** 안의 첫 일치만 바꾼다(부록 인용 상자·원장 표가 아니라). PDF도 같은 서술
     구간(`지표 해설` 뒤)의 첫 일치를 바꾼다."""
     n = 0
-    for unit in narrative_units(b.body):
+    # 교육 서술이 있는 사회 영역 본문을 먼저 본다(부록 `확인된 내용` 줄이 아니라).
+    at = b.body.find("## 사회 성과")
+    scope = b.body[at:] if at >= 0 else b.body
+    for unit in narrative_units(scope):
         if re.search(pattern, unit):
             new = re.sub(pattern, repl, unit, count=1)
             if unit in b.body:

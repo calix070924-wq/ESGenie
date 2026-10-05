@@ -84,22 +84,34 @@ def _role_matches(text: str) -> list[tuple[int, int, str]]:
     return sorted(taken)
 
 
+NEXT_QUANTITY = "\x00"
+# 역할 낱말이 서술어로 쓰였는가(`참석했다`·`참여하여`·`미참석`으로 끝남) — 뒤 수량의 명사구(`대상 인원은 50명`)와 가른다.
+_ROLE_PREDICATE_RE = re.compile(r"(?:하|했|한|함|해|되|됐|하였|으로|으며|였|이었|이다|않|못)|\s*$|\s*[.,;/|)）]")
+# 역할 명사가 바로 뒤 수량을 꾸미는가(`미참석 인원은 4명`·`참석자: 정규직 40명`·`참석률 92%`). 동사 어미가 끼면 아니다.
+_ROLE_NOUN_GAP_RE = re.compile(r"(?:인원수|인원|자수|자|수|률|율)?\s*(?:은|는|이|가|의|:|：)?\s*"
+                               r"(?:(?!하|했|한|함|해|되|됐|였|이었)[가-힣A-Za-z]{1,6}\s*)?")
+
+
 def count_role(text: str, anchor: int | None = None, end: int | None = None) -> str:
     """수량(`text[anchor:end]`)의 참여 역할(대상·참석·미참석). 없으면 "".
 
-    수량 바로 앞의 역할 명사(`대상 50명`·`미참석 4명`)가 먼저다. 없으면 뒤에 오는 서술어(`46명이 참석`) —
-    한국어 서술어는 수량 뒤에 온다. 둘 다 없으면 앞쪽의 가장 가까운 역할 낱말(`참석자: 정규직 40명`).
+    한국어 서술어는 수량 뒤에 온다 — 뒤의 역할 낱말이 서술어로 쓰였으면(`4명이 추가 교육에 참여하여`) 그것이
+    역할이다. 아니면 수량 바로 앞에서 그 수량을 꾸미는 역할 명사(`미참석 인원은 4명`·`대상 50명`). 둘 다 없으면
+    역할을 정하지 않는다 — 앞 수량의 서술어(`46명이 참석하고 4명이`)나 뒤 수량의 명사(`… 4명으로 총 대상 인원은
+    50명`)를 끌어오지 않는다(PR71 후속 실측: 맞는 문장 `미참석 인원은 4명으로 총 대상 인원은 50명`을 보류했다).
     """
     anchor = len(text) if anchor is None else anchor
     end = anchor if end is None else end
     found = _role_matches(text)
+    for start, stop, role in found:
+        if start < end:
+            continue
+        if text[start:stop].endswith(("않", "못")) or _ROLE_PREDICATE_RE.match(text, stop):
+            return role
     before = [m for m in found if m[1] <= anchor]
-    after = [m for m in found if m[0] >= end]
-    if before and not text[before[-1][1]:anchor].strip(" :："):
+    if before and _ROLE_NOUN_GAP_RE.fullmatch(text[before[-1][1]:anchor]):
         return before[-1][2]
-    if after:
-        return after[0][2]
-    return before[-1][2] if before else ""
+    return ""
 
 
 def label_role(label: str) -> str:
@@ -173,13 +185,19 @@ def _clause(text: str, start: int, end: int) -> tuple[int, int]:
 
 
 def contexts(text: str, found: list[Quantity]) -> list[tuple[Quantity, str, int, int, int, int]]:
-    """수량마다 (수량, 앞뒤 문맥, 문맥 안 시작·끝, 절 시작, 절 끝). 문맥은 같은 절의 앞뒤 수량 사이다."""
+    """수량마다 (수량, 앞뒤 문맥, 문맥 안 시작·끝, 절 시작, 절 끝). 문맥은 같은 절의 앞뒤 수량 사이다.
+
+    문맥이 다음 수량 앞에서 끊기면 끝에 `NEXT_QUANTITY` 표지를 붙인다 — 끝의 역할 낱말(`중 참석 ` + 46명)은 다음
+    수량의 명사이지 이 수량의 서술어가 아니다(`count_role`).
+    """
     out = []
     for i, q in enumerate(found):
         c_start, c_end = _clause(text, q.start, q.end)
         start = max(c_start, found[i - 1].end if i else 0)
-        end = min(c_end, found[i + 1].start if i + 1 < len(found) else len(text))
-        out.append((q, text[start:end], q.start - start, q.end - start, c_start, c_end))
+        cut = i + 1 < len(found) and found[i + 1].start < c_end
+        end = found[i + 1].start if cut else c_end
+        window = text[start:end] + (NEXT_QUANTITY if cut else "")
+        out.append((q, window, q.start - start, q.end - start, c_start, c_end))
     return out
 
 
@@ -403,6 +421,30 @@ def source_facts(graph: Any, source_files: set[str] | None = None, limit: int = 
                      "quote": str(getattr(node, "quote", "") or "").splitlines()[0][:120] if getattr(node, "quote", "") else ""})
     rows.sort(key=lambda r: (r["source_file"], r["period_text"], r["label"]))
     return rows[:limit]
+
+
+def table_rows(rows: list[dict[str, Any]], limit: int = 12) -> list[dict[str, Any]]:
+    """본문 표(`원문 확인 수치`)에 실을 사실 — 참여 역할(대상·참석·미참석)이 붙었거나 합계인 집계만.
+
+    주간·개인 행(`발생량`·`합계` 시간)과 구성값(사업장별 인원)은 생성 입력에만 두고 표에는 싣지 않는다. 같은 값·역할·
+    기간은 한 줄로 둔다(같은 집계를 두 문서가 다시 적은 경우). 기간 순으로 적는다.
+    """
+    picked, seen = [], set()
+    for r in rows:
+        if not (r.get("role") or r.get("value_role") == "total"):
+            continue
+        key = (r.get("value"), r.get("unit"), r.get("role"), r.get("period_text"))
+        if key in seen:
+            continue
+        seen.add(key)
+        picked.append(r)
+
+    def order(r):
+        from datetime import date
+        span = period_of(r.get("period_text", ""), r.get("period_start", ""), r.get("period_end", ""), r.get("label", ""))
+        when = (span.end, span.start) if span is not None else (date.max, date.max)
+        return when, {"대상": 0, "참석": 1, "미참석": 2}.get(r.get("role") or "", 3), r.get("label", "")
+    return sorted(picked, key=order)[:limit]
 
 
 def fact_line(row: dict[str, Any]) -> str:
