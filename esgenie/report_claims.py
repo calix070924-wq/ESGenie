@@ -676,7 +676,7 @@ def related_facts(sentence: str, when, units: set[str], facts: list[Fact], limit
         relation = date_relation(when, f.period)
         if relation == "disjoint" or (relation == "coarser" and when is not None and when.grain == "day"):
             continue                  # 하루의 문장에 월 합계를 붙이지 않는다
-        key = (f.value, f.role, f.period_text, f.unit)
+        key = (f.value, f.role, f.period_text, f.unit, f.group, f.sites)   # 다른 집단·사업장의 같은 값은 따로 적는다
         if key in seen:
             continue
         seen.add(key)
@@ -743,13 +743,15 @@ def table_rows(rows: list[dict[str, Any]], limit: int = 12) -> list[dict[str, An
     """본문 표(`원문 확인 수치`)에 실을 사실 — 참여 역할(대상·참석·미참석)이 붙었거나 합계인 집계만.
 
     주간·개인 행(`발생량`·`합계` 시간)과 구성값(사업장별 인원)은 생성 입력에만 두고 표에는 싣지 않는다. 같은 값·역할·
-    기간은 한 줄로 둔다(같은 집계를 두 문서가 다시 적은 경우). 기간 순으로 적는다.
+    기간·고용형태·사업장은 한 줄로 둔다(같은 집계를 두 문서가 다시 적은 경우). 기간 순으로 적는다.
     """
     picked, seen = [], set()
     for r in rows:
         if not (r.get("role") or r.get("value_role") == "total"):
             continue
-        key = (r.get("value"), r.get("unit"), r.get("role"), r.get("period_text"))
+        # 다른 고용형태·사업장의 같은 값·역할·기간은 한 줄로 합치지 않는다(PR71 재검토 §10 — `참석 · 정규직 6명`·`참석 · 기간제 6명`).
+        key = (r.get("value"), r.get("unit"), r.get("role"), r.get("period_text"), label_group(r.get("label", "")),
+               _sites(r.get("label", "")) or _sites(r.get("site", "")))
         if key in seen:
             continue
         seen.add(key)

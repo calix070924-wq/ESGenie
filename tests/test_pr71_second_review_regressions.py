@@ -459,3 +459,14 @@ def test_a_person_id_range_is_not_a_head_count():
     from esgenie import report_claims as rc
     assert rc.quantities("HN-G01~40: 정규직 / HN-G41~48: 기간제") == []
     assert [q.raw for q in rc.quantities("HN-G01~HN-G46 출석 46명")] == ["46명"]
+
+
+def test_merging_keeps_counts_of_different_groups_apart():
+    from esgenie.report_claims import facts_from_rows, related_facts, table_rows
+    rows = [{"label": "교육 참석 인원 · 정규직", "value": 6.0, "unit": "명", "role": "참석", "period_text": "2026-05-12"},
+            {"label": "교육 참석 인원 · 기간제", "value": 6.0, "unit": "명", "role": "참석", "period_text": "2026-05-12"},
+            {"label": "교육 참석 인원", "value": 6.0, "unit": "명", "role": "참석", "period_text": "2026-05-12"},
+            {"label": "참석 인원", "value": 6.0, "unit": "명", "role": "참석", "period_text": "2026-05-12"}]   # 같은 합계의 반복
+    assert sorted(r["label"] for r in table_rows(rows)) == ["교육 참석 인원", "교육 참석 인원 · 기간제", "교육 참석 인원 · 정규직"]
+    listed = related_facts("2026년 5월 12일 교육 참석", None, {"명"}, facts_from_rows(rows))
+    assert {f.label for f in listed} >= {"교육 참석 인원 · 정규직", "교육 참석 인원 · 기간제"}
