@@ -346,27 +346,70 @@ def _stated_claim_scope(ans, claim, cval, cunit, evid_num, evid_unit, code):
     evidence_text = f"요청 지표{f'({request})' if request else ''}의 증빙 값은 {evid_num}{evid_unit}입니다" \
                     + (f"(원문: {basis})" if basis else "")
     trace = context.get("value_trace") or []
+    missing_ids = (context.get("note_link") or {}).get("missing") or []
     if trace:
         t = trace[0]
-        note = (context.get("source_note") or "").rstrip(". ") if t.get("linked_by_note") else ""
-        reason = (f"회사 답변 {cval}{cunit}: {matched}. 이 값은 {t.get('source_file')}의 '{t.get('metric')}' "
-                  f"{t.get('value')}{t.get('unit')}와 같습니다" + (f"(원문: {t.get('quote')})" if t.get("quote") else "")
-                  + (f" — 작성 메모: {note}" if note else "") + f". {evidence_text}. "
-                  "분모가 다른 지표의 값을 옮긴 것으로 보여 같은 범위의 수치 충돌로 확정하지 않았습니다 — 회사 답변 수정·확인 필요.")
+        note = (context.get("source_note") or "").rstrip(". ")
+        same_value = (f"회사 답변 {cval}{cunit}: {matched}. 작성 메모가 가리킨 {t.get('source_file')}의 "
+                      f"'{t.get('metric')}' {t.get('value')}{t.get('unit')}와 같습니다"
+                      + (f"(원문: {t.get('quote')})" if t.get("quote") else "")
+                      + (f" — 작성 메모: {note}" if note else ""))
+        gaps = _trace_scope_gaps(t.get("scope_check") or {}, scope)
+        if gaps:
+            # 메모가 직접 가리킨 근거이지만 범위가 다르다 — 그 연결과 불일치를 밝히고, 요청 범위의 실적 근거로 쓰지 않는다.
+            reason = (f"{same_value}. 그러나 그 근거는 {', '.join(gaps)}로 회사 답변의 범위와 다릅니다. "
+                      f"{evidence_text}. 요청 범위의 실적 근거로 쓰지 않았고 수치 충돌로 확정하지 않았습니다 — 회사 답변 수정·확인 필요.")
+            flag = (f"자가주장 검토필요: 회사 답변 {cval}{cunit}는 작성 메모가 가리킨 {t.get('source_file')} "
+                    f"'{t.get('metric')}'의 값과 같으나 범위 상이({', '.join(gaps)})")
+        elif "÷" in str(t.get("quote") or "") and "÷" in basis:
+            reason = (f"{same_value}. {evidence_text}. 두 원문 계산식의 분모가 달라 다른 지표의 값을 옮긴 것으로 보여 "
+                      "같은 범위의 수치 충돌로 확정하지 않았습니다 — 회사 답변 수정·확인 필요.")
+            flag = (f"자가주장 검토필요: 회사 답변 {cval}{cunit}는 다른 지표({t.get('source_file')} "
+                    f"'{t.get('metric')}')의 값과 같음 — 요청 지표 증빙 {evid_num}{evid_unit}, 분모 상이")
+        else:
+            # 연결은 있으나 두 근거의 분모(계산식)가 원문에 다 적혀 있지 않다 — 옮긴 경위를 확정하지 않는다.
+            missing = [what for what, text in (("작성 메모가 가리킨 근거", t.get("quote")), ("요청 지표 증빙", basis))
+                       if "÷" not in str(text or "")]
+            reason = (f"{same_value}. {evidence_text}. {'·'.join(missing)}의 계산식(분모)이 원문에 적혀 있지 않아 "
+                      "같은 지표의 값인지 확인하지 못했습니다. 숫자 차이만으로 수치 충돌로 확정하지 않았습니다.")
+            _merge_comparison(ans, "scope_unconfirmed", reason, source=source, claim_value=cval,
+                              evidence_value=evid_num, traced_node_id=t.get("node_id"))
+            ans.flags.append(f"범위 확인 필요: 회사 답변 {cval}{cunit} ↔ 증빙 {evid_num}{evid_unit} — 분모 미확인")
+            if ans.status == "verified":
+                ans.status = "self_reported"
+            return ans
         _merge_comparison(ans, "not_comparable", reason, source=source, claim_value=cval, evidence_value=evid_num,
                           traced_node_id=t.get("node_id"))
         ans.status = "flagged"
         # 상세 근거는 비교 사유(review_note)에 한 번만 싣는다 — 같은 장문을 플래그에 되풀이하지 않는다.
-        ans.flags.append(f"자가주장 검토필요: 회사 답변 {cval}{cunit}는 다른 지표({t.get('source_file')} "
-                         f"'{t.get('metric')}')의 값과 같음 — 요청 지표 증빙 {evid_num}{evid_unit}, 분모 상이")
+        ans.flags.append(flag)
         return ans
-    reason = (f"회사 답변 {cval}{cunit}: {matched}. 회사 답변에 분모가 적혀 있지 않아 같은 지표의 값인지 확인하지 "
-              f"못했습니다. {evidence_text}. 숫자 차이만으로 수치 충돌로 확정하지 않았습니다.")
+    # 직접 출처 연결이 없다 — 값이 같은 다른 문서가 있어도(`value_leads`) 옮긴 출처로 설명하지 않는다.
+    lacking = ["회사 답변에 분모가 적혀 있지 않아 같은 지표의 값인지 확인하지 못했습니다"]
+    if missing_ids:
+        lacking.append(f"작성 메모가 가리킨 문서({', '.join(missing_ids)})를 제출 자료에서 찾지 못해 답변 값의 출처를 "
+                       "확인하지 못했습니다")
+    reason = (f"회사 답변 {cval}{cunit}: {matched}. {'. '.join(lacking)}. {evidence_text}. "
+              "숫자 차이만으로 수치 충돌로 확정하지 않았습니다.")
     _merge_comparison(ans, "scope_unconfirmed", reason, source=source, claim_value=cval, evidence_value=evid_num)
-    ans.flags.append(f"범위 확인 필요: 회사 답변 {cval}{cunit} ↔ 증빙 {evid_num}{evid_unit} — 회사 답변 분모 미기재")
+    ans.flags.append(f"범위 확인 필요: 회사 답변 {cval}{cunit} ↔ 증빙 {evid_num}{evid_unit} — 회사 답변 분모 미기재"
+                     + (f", 메모 문서 {', '.join(missing_ids)} 미제출" if missing_ids else ""))
     if ans.status == "verified":
         ans.status = "self_reported"
     return ans
+
+
+def _trace_scope_gaps(check, stated):
+    """메모가 가리킨 근거가 회사 답변 범위와 **다르다고 확인된** 항목(`claims._trace_scope`). 미기재는 넣지 않는다."""
+    gaps = []
+    if check.get("period") == "different":
+        gaps.append(f"기간 {check.get('period_text') or '미상'}"
+                    f"(답변 {stated.get('period_start')}~{stated.get('period_end')})")
+    if check.get("site") == "different":
+        gaps.append(f"사업장 {check.get('site_text')}(답변 {stated.get('site')})")
+    if check.get("role") == "target":
+        gaps.append("실적이 아닌 목표·계획값")
+    return gaps
 
 
 def _entry_presence(entry):

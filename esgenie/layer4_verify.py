@@ -186,7 +186,8 @@ def verify_and_refine(
     ctx = rag.retrieve_for_area(area, k=5, corp=corp)
     retrieval_decision = ctx.retrieval_decision
     if retrieval_decision is not None and retrieval_decision.decision != "ACCEPT":
-        gen = rag.generate_section(report, area, demo_greenwash=demo_greenwash, context=ctx, corp=corp, extraction=extraction)
+        gen = rag.generate_section(report, area, demo_greenwash=demo_greenwash, context=ctx, corp=corp, extraction=extraction,
+                                   evidence_graph=evidence_graph)
         det = _retrieval_blocked_detection(gen)
         step = VerificationStep(
             iteration=0,
@@ -213,7 +214,8 @@ def verify_and_refine(
         )
 
     # --- 초안 생성 (iteration 0) ---
-    gen = rag.generate_section(report, area, demo_greenwash=demo_greenwash, context=ctx, corp=corp, extraction=extraction)
+    gen = rag.generate_section(report, area, demo_greenwash=demo_greenwash, context=ctx, corp=corp, extraction=extraction,
+                                   evidence_graph=evidence_graph)
     clean_text = strip_citation_markers(gen.text)
     det = detect(clean_text, report)
     grounding = grounding_evaluator(gen.text, gen.context.as_chunk_dicts())
@@ -249,7 +251,8 @@ def verify_and_refine(
         applied_constraints = applied_axes + grounding.hard_fails
 
         # 재생성
-        gen = rag.generate_section(report, area, extra_instruction=instruction, context=ctx, corp=corp, extraction=extraction)
+        gen = rag.generate_section(report, area, extra_instruction=instruction, context=ctx, corp=corp, extraction=extraction,
+                                   evidence_graph=evidence_graph)
         clean_text = strip_citation_markers(gen.text)
         det = detect(clean_text, report)
         grounding = grounding_evaluator(gen.text, gen.context.as_chunk_dicts())

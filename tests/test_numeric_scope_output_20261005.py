@@ -404,10 +404,16 @@ def test_without_a_source_trace_a_missing_denominator_is_named_not_a_conflict():
     assert ans.status != "flagged" and not any("D1 불일치" in f for f in ans.flags)
 
 
-def test_without_a_note_only_related_metrics_are_traced():
+def test_without_a_note_a_related_equal_value_is_only_a_lead():
+    # 계약 변경(PR71 검토 R5): 이전에는 메모 없이 같은 92%인 재활용 관련 지표를 `value_trace`(옮긴 출처)로
+    # 실었다. 값이 같다는 것은 탐색 단서일 뿐이다 — `value_leads`에만 남기고 답변에서 옮긴 출처로 설명하지 않는다.
     graph, result, texts = waste_graph()
-    _, traced = answer_for(graph, result, texts, claim_set(context={"scope_from": "answer_text", "question_id": "A-02"}))
-    assert [t["metric"] for t in traced["E-6-2"].context["value_trace"]] == ["생산 스크랩 내부 재투입률"]
+    ans, traced = answer_for(graph, result, texts, claim_set(context={"scope_from": "answer_text", "question_id": "A-02"}))
+    context = traced["E-6-2"].context
+    assert context["value_trace"] == []
+    assert [t["metric"] for t in context["value_leads"]] == ["생산 스크랩 내부 재투입률"]   # 교육 참석률은 단서도 아니다
+    assert ans.comparison == "scope_unconfirmed" and ans.status != "flagged"
+    assert "옮긴" not in ans.comparison_reason and "08_scrap.pdf" not in ans.comparison_reason
 
 
 def test_a_caller_asserted_same_scope_claim_keeps_the_existing_conflict_rule():
@@ -510,13 +516,18 @@ def generated(text, chunks):
                            final_text=text)
 
 
-def test_generated_prose_that_asserts_a_source_only_zero_is_marked_in_the_body():
+def test_generated_prose_that_asserts_a_source_only_zero_is_replaced_in_the_body():
+    # 계약 변경(PR71 검토 R2): 이전에는 단정 문장 뒤에 `[검토: 범위 미확정 …]`만 붙였다. 단정은 같은 자리에서
+    # 미확정 문구로 바꾸고, 모델 원문은 감사 기록(`model_text`)에 남긴다.
     from esgenie.layer6_report import annotate_generated_text
     _, result = zero_graph()
     output = SimpleNamespace(extraction=result)
     text = "### 지표 해설\n요청 기간 산업재해율은 0‰로 확인되었다 [kesg_items_S]."
     body, marks = annotate_generated_text(output, "S", generated(text, {"kesg_items_S": "S-4-2 산업재해율 0 ‰"}))
-    assert "[검토: 범위 미확정" in body and [m["reason"] for m in marks] == ["source_only_stated"]
+    assert [m["reason"] for m in marks] == ["source_only_stated"] and marks[0]["action"] == "replaced"
+    assert "0‰로 확인되었다" not in body and "[범위 미확정] 산업재해율 0‰는 원문 범위" in body
+    assert "요청 기간의 실적인지 확인하지 못했습니다" in body                       # 원장의 범위 사유
+    assert marks[0]["model_text"].startswith("요청 기간 산업재해율은 0‰로 확인되었다")
     plan = "### 향후 계획\n산업재해율 공시 체계를 구축할 계획이다 [kesg_items_S]."
     assert annotate_generated_text(output, "S", generated(plan, {"kesg_items_S": "S-4-2 산업재해율 0 ‰"}))[1] == []
     codes = "### 향후 계획\nS-3-1 여성 구성원 비율과 S-4-1 지표를 보완한다. [hanwool_txt_0005, hanwool_txt_0009]"
@@ -551,8 +562,11 @@ def test_the_llm_summary_marks_widened_scope_but_not_a_sentence_that_denies_it()
     text = ("에너지 사용량 0.513216 TJ는 전사 연간 사용량이다. "
             "에너지 사용량 0.513216 TJ는 제1공장 월간 부분값으로, 전체 기간과 사업장 범위가 불명확하다.")
     body, marks = annotate_summary_text(SimpleNamespace(extraction=energy_ledger()), text)
-    assert [m["reason"] for m in marks] == ["scope_widened"] and body.count("[검토:") == 1
+    # 계약 변경(PR71 검토 R1·R2): 값까지 넓혀 단정한 문장은 표시만 붙이지 않고 원장 범위 문구로 바꾼다.
+    assert [m["reason"] for m in marks] == ["scope_widened"] and marks[0]["action"] == "replaced"
     assert marks[0]["sentence"].startswith("에너지 사용량 0.513216 TJ는 전사 연간")
+    assert "전사 연간 사용량이다" not in body and "[범위 주의] 에너지 사용량" in body
+    assert "제1공장 월간 부분값으로, 전체 기간과 사업장 범위가 불명확하다." in body   # 범위를 부정한 문장은 그대로
 
 
 def test_generated_prose_with_unfound_numbers_or_widened_scope_is_marked():
@@ -574,8 +588,13 @@ def test_generated_prose_with_unfound_numbers_or_widened_scope_is_marked():
     reasons = [m["reason"] for m in marks]
     assert reasons.count("scope_widened") == 1 and "orphan_number" in reasons
     orphan = next(m for m in marks if m["reason"] == "orphan_number")
-    assert orphan["numbers"] == ["39"]                          # 날짜(4월 22일)의 숫자는 표시하지 않는다
-    assert body.count("[검토:") == 2 and "정규직 39명이 출석하였다." in body   # 원래 문장은 고치지 않는다
+    assert orphan["numbers"] == ["39"]                          # 날짜(4월 22일)의 숫자는 수량이 아니다
+    # 계약 변경(PR71 검토 R1): 이전에는 원래 문장을 두고 표시만 붙였다. 근거 없는 수량·범위 확대 문장은 바꾸고
+    # 모델 원문은 감사 기록에 남긴다.
+    assert "정규직 39명" not in body and "사업장 전체의 전기·가스" not in body
+    assert "[확인 보류] 생성 문장의 수치(39명)" in body and "[범위 주의] 에너지 사용량" in body
+    assert orphan["model_text"] == "2026년 4월 22일 교육에는 정규직 39명이 출석하였다."
+    assert "교육은 4월 22일 실시되었다." in body                  # 수량 없는 문장은 그대로
 
 
 def test_the_datasheet_shows_scope_and_the_unconfirmed_state(tmp_path):

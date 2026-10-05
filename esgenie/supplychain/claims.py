@@ -217,9 +217,16 @@ def trace_claim_values(claims: "ClaimSet | dict[str, SupplierClaim] | None", pip
     """회사 답변 값과 **같은 값**을 가진 다른 지표 근거를 찾아 답변 문맥에 붙인다(새 판정 없음).
 
     같은 요청 지표에 다른 분모의 값을 옮긴 경우(한울정밀 05: 외부 위탁 폐기물 재활용률 칸에 공정 스크랩
-    내부 재투입률 92%)를 원문 근거로 설명하기 위한 재료다. 작성 메모가 문서 ID를 가리키면 그 문서의 근거만
-    쓴다. 메모가 없으면 재활용 관련 낱말이 붙은 지표만 본다 — 같은 92%인 교육 참석률은 고르지 않는다.
-    요청 지표의 대표 근거에 적힌 계산식·분모 설명도 함께 담는다.
+    내부 재투입률 92%)를 원문 근거로 설명하기 위한 재료다. 요청 지표의 대표 근거에 적힌 계산식·분모 설명도
+    함께 담는다.
+
+    PR71 검토 R5: 값·단위·재활용 낱말만 보고 다른 기간·사업장·목표값이나, 작성 메모가 가리킨 문서를 찾지
+    못했을 때 무관한 문서의 같은 92%를 '옮긴 출처'로 지목했다. 값이 같다는 것은 탐색 단서일 뿐이다.
+      - `value_trace`(옮긴 출처): 작성 메모의 문서 ID가 **그 근거 문서 원문에** 있는 후보만. 후보의
+        기간·사업장·실적/목표 대조(`scope_check`)를 함께 싣는다 — 다른 범위면 호출부가 그 불일치를 설명한다.
+      - `value_leads`(탐색 단서): 직접 연결 없이 값만 같은 재활용 관련 후보. 출처로 설명하지 않는다.
+      - `note_link`: 메모의 문서 ID와 찾은 문서·찾지 못한 ID. 찾지 못했으면 다른 문서로 대신하지 않는다.
+    같은 92%인 교육 참석률은 단서로도 고르지 않는다.
     """
     from dataclasses import replace
     if not claims:
@@ -237,6 +244,10 @@ def trace_claim_values(claims: "ClaimSet | dict[str, SupplierClaim] | None", pip
             out[code] = claim
             continue
         ids = context.get("source_ids") or []
+        linked_files = sorted(f for f, text in texts.items() if any(i in text for i in ids))
+        if ids:
+            context["note_link"] = {"source_ids": list(ids), "found_in": linked_files,
+                                    "missing": [i for i in ids if not any(i in t for t in texts.values())]}
         matches = []
         for node in graph.nodes.values():
             if node.metric == code or str(node.unit).strip() not in ("%", "％"):
@@ -246,12 +257,14 @@ def trace_claim_values(claims: "ClaimSet | dict[str, SupplierClaim] | None", pip
                     continue
             except (TypeError, ValueError):
                 continue
-            linked = bool(ids) and any(i in texts.get(node.source_file or "", "") for i in ids)
             matches.append({"node_id": node.id, "source_file": node.source_file, "metric": node.metric,
                             "value": node.value, "unit": node.unit, "page": node.page,
-                            "quote": _basis_line(node), "linked_by_note": linked})
-        linked = [m for m in matches if m["linked_by_note"]]
-        context["value_trace"] = linked or [m for m in matches if _RECYCLE_VOCAB.search(m["metric"])]
+                            "quote": _basis_line(node), "linked_by_note": node.source_file in linked_files,
+                            "scope_check": _trace_scope(node, getattr(claim, "boundary", None) or {})})
+        context["value_trace"] = [m for m in matches if m["linked_by_note"]]
+        leads = [m for m in matches if not m["linked_by_note"] and _RECYCLE_VOCAB.search(m["metric"])]
+        if leads:
+            context["value_leads"] = leads
         fact = (getattr(graph, "resolved_facts", {}) or {}).get(code)
         rep = [graph.nodes[n] for n in (fact.representative_node_ids if fact else []) if n in graph.nodes]
         if rep:
@@ -259,6 +272,39 @@ def trace_claim_values(claims: "ClaimSet | dict[str, SupplierClaim] | None", pip
                                          "unit": rep[0].unit, "basis": _basis_line(rep[0])}
         out[code] = replace(claim, context=context)
     return out
+
+
+def _trace_scope(node: Any, stated: dict[str, Any]) -> dict[str, str]:
+    """같은 값 후보의 기간·사업장·실적/목표를 회사 답변에 적힌 범위와 대조한다.
+
+    period·site: same(같음) | different(다름) | not_stated(어느 한쪽에 없음). 기간은 원문 구간이 같을 때만
+    same이다 — 겹치기만 하면(연간 ↔ 4월) different. role: actual | target(목표·계획) | unknown.
+    """
+    b = getattr(node, "boundary", None)
+    get = (lambda k: getattr(b, k, None)) if b is not None else (lambda k: None)
+    start, end = str(get("period_start") or ""), str(get("period_end") or "")
+    s_start, s_end = str(stated.get("period_start") or ""), str(stated.get("period_end") or "")
+    year = get("period_year") or getattr(node, "period", None)
+    if start and end and s_start and s_end:
+        period = "same" if (start, end) == (s_start, s_end) else "different"
+    elif year and s_start and str(year) != s_start[:4]:
+        period = "different"
+    else:
+        period = "not_stated"
+    site, s_site = re.sub(r"\s+", "", str(get("site") or "")), re.sub(r"\s+", "", str(stated.get("site") or ""))
+    if site and s_site:
+        # 지역을 뺀 표기(`제1공장`)는 지역이 붙은 같은 사업장(`김해제1공장`)과 같다고 본다 — 번호·종류는 같아야 한다.
+        same = site == s_site or (site.endswith(s_site) or s_site.endswith(site)) and \
+            re.search(r"제?\d+(?:공장|사업장)$", min(site, s_site, key=len))
+        site_state = "same" if same else "different"
+    else:
+        site_state = "not_stated"
+    basis = str(get("basis") or "unknown")
+    role = "target" if getattr(node, "value_role", "") == "target" or basis in ("target", "plan") \
+        else "actual" if basis == "actual" else "unknown"
+    return {"period": period, "site": site_state, "role": role,
+            "period_text": f"{start}~{end}" if start and end else (str(year) if year else ""),
+            "site_text": str(get("site") or "")}
 
 
 def _basis_line(node: Any) -> str:

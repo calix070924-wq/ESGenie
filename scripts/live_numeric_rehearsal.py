@@ -313,7 +313,10 @@ def cmd_core(args) -> None:
     # 결정적 단계(추출·원장·답변·내보내기)까지 진행한다 — 미스 본문은 재생 결과로 쓰지 않는다.
     llm_misses: list[dict] = []
     replay = bool(args.replay_upstage)
-    if replay:
+    # `--live-llm`: Upstage는 기록 재생(새 OCR 호출 없음), LLM은 캐시 적중 + 미스만 실호출 — 생성 프롬프트를
+    # 바꾼 경로만 새로 부른다. 네트워크는 막지 않지만 Upstage 요청은 기록 테이프만 쓴다(미스면 예외).
+    live_llm = replay and bool(args.live_llm)
+    if replay and not live_llm:
         block_network(llm_misses)
     tape = (UpstageTape(args.replay_upstage.resolve(), "replay") if replay
             else UpstageTape(target / "raw_upstage", "record") if args.record_upstage else None)
@@ -325,7 +328,8 @@ def cmd_core(args) -> None:
 
     exports = target / "exports"
     dump(target / "environment.json", environment_record(code_path, loaded, settings, cache_dir, {
-        "mode": "core_replay" if replay else "core_direct", "stage": args.stage, "inputs": files, **manifest,
+        "mode": ("core_upstage_replay_live_llm" if live_llm else "core_replay" if replay else "core_direct"),
+        "stage": args.stage, "inputs": files, **manifest,
         "call": "esgenie.pipeline.run(areas=E,S,G, use_dart=False, profile=sme"
                 + (", export_outputs=True, export_report=True" if args.export else "") + ") + "
                 "respond_from_pipeline(framework, supplier_claims=parse_saq_claims(company_answer))"
@@ -337,7 +341,7 @@ def cmd_core(args) -> None:
     upstage = UpstageCounter()
     llm_cache.reset_stats()
     started, output = time.monotonic(), None
-    settings.strict_llm = not replay
+    settings.strict_llm = not replay or live_llm
     try:
         claims = parse_saq_claims(company)
         output = run(f"hanwool-core-{args.stage}", areas=["E", "S", "G"], corp_name=args.company,
@@ -377,7 +381,7 @@ def cmd_core(args) -> None:
             "stage": args.stage, "document_count": len(files), "evidence_count": len(evidence),
             "company_answer_count": len(company), "cache_files_at_end": count_cache(cache_dir),
             "upstage_tape": tape.events if tape else None,
-            "replay_llm_misses": llm_misses if replay else None}))
+            "replay_llm_misses": llm_misses if replay and not live_llm else None}))
     print(json.dumps({"stage": args.stage, "run_dir": str(target),
                       "elapsed": round(time.monotonic() - started, 1)}, ensure_ascii=False))
 
@@ -540,6 +544,8 @@ def main() -> None:
     core.add_argument("--record-upstage", action="store_true")
     core.add_argument("--replay-upstage", type=Path, default=None,
                       help="기록한 Upstage 응답 폴더. 주면 네트워크를 막고 LLM은 캐시 적중만 쓴다")
+    core.add_argument("--live-llm", action="store_true",
+                      help="--replay-upstage와 함께: Upstage는 기록 재생, LLM 캐시 미스는 실호출(strict)")
     core.add_argument("--run-id", default="")
     core.add_argument("--extra-evidence", type=Path, action="append",
                       help="검증용 가상 변형본(파일명에 '변형본') — 원본 세트 뒤에 증빙으로 더한다")

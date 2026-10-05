@@ -2758,6 +2758,8 @@ _ZERO_KEPT_CAUSES = {
     "fiscal_year_abbreviated": "원문의 회계연도 약칭(FY26 등)이 가리키는 연도·구간이 원문에 연결되어 있지 않아 요청 기간의 실적인지 확인하지 못했습니다.",
     "quarter_undefined": "원문의 분기 표기(Q1 등)에 연도·회계연도 시작월이 없어 실제 기간을 확정하지 못했습니다.",
     "quarter_months_not_stated": "원문 분기의 해당 월이 적혀 있지 않아(회계연도 시작월 미상) 실제 기간을 확정하지 못했습니다.",
+    # PR71 검토 R4: 같은 FY 표기에 서로 다른 원문 정의가 있고 어느 정의가 적용되는지 원문에 구분이 없다.
+    "fiscal_definition_conflict": "원문에 같은 회계연도(FY)의 정의가 서로 다른 구간으로 여럿 있고 어느 정의가 적용되는지 원문에 구분되지 않아 요청 기간의 실적인지 확인하지 못했습니다.",
 }
 # 판정 상태의 우선순위. 후보마다 **자기 문맥으로** 판정한 뒤 가장 강한 것을 고른다.
 _ZERO_STATUS_RANK = {"CONFIRMED": 0, "SOURCE_ONLY": 1, "REJECTED": 2, "UNRESOLVED": 3}
@@ -2800,7 +2802,9 @@ def _zero_verdict(quote: str, hint: str = "", period: str = "",
     `definitions`는 인용 밖 원문(쪽 텍스트)이다 — 회계연도 정의(`FY2026 = …`)를 찾을 때만 쓴다.
     """
     boundary = boundary or {}
-    fiscal = _fiscal_definitions(f"{quote}\n{definitions}")
+    # 사업장이 적힌 회계연도 정의는 대조할 사업장에만 적용한다. CONFIRMED에는 원문 사업장이 이 사업장과
+    # 같아야 하므로(`_site_matches`) 다른 사업장의 정의로 확정되지 않는다.
+    fiscal = _fiscal_definitions(f"{quote}\n{definitions}", _site_keys(str(boundary.get("site") or "")))
     hint_tokens = _label_tokens(hint)
     specific = [t for t in hint_tokens if t not in _ZERO_GENERIC_TOKENS]
     candidates = _zero_candidates(quote)
@@ -3531,10 +3535,14 @@ _HEADING_FOOTNOTE_RE = re.compile(
 # 규격·문서 식별자: 로마자 이름 + 번호(`ISO 45001`·`OHSAS 18001:2007`·`ISO/IEC 27001(2022)`·
 # `GRI 403-9`·`Scope 1·2`). 이름에 붙은 번호는 센 수가 아니다. 개정 연도도 번호의 일부다.
 _HEADING_CODE_RE = re.compile(
-    r"(?<![A-Za-z\d])[A-Z][A-Za-z]*(?:[/\-&][A-Z][A-Za-z]*)*[\s\-]?(?P<number>\d+(?:[.:\-·/]\d+)*)"
-    # 콜론 앞뒤 공백·전각 콜론을 둔 개정 연도(`GRI 403: 2018`·`GRI 403：2018`)도 번호의 일부다(§5 C1).
-    # 뒤에 `년`·날짜가 이어지면 실제 기간이다(`GRI 403: 2026년 4월`) — 번호로 붙이지 않는다.
-    r"(?P<revision>\s*[:：]\s*(?:19|20)\d{2}(?![\d.\-/]|\s*년))?"
+    # 번호 안의 콜론은 연도가 아닌 갈래 번호만 잇는다(`2:1`). 콜론 뒤 연도는 공백 유무와 상관없이
+    # 아래 `revision` 하나로만 읽는다 — PR71 검토 R3: 번호가 `403:2026`을 먼저 삼켜 `GRI 403:2026년
+    # 4월`의 실제 연도를 가렸다.
+    r"(?<![A-Za-z\d])[A-Z][A-Za-z]*(?:[/\-&][A-Z][A-Za-z]*)*[\s\-]?"
+    r"(?P<number>\d+(?:(?:[.\-·/]|:(?!(?:19|20)\d{2}(?!\d)))\d+)*)"
+    # 콜론 앞뒤 공백·전각 콜론을 둔 개정 연도(`GRI 403:2018`·`GRI 403: 2018`·`GRI 403：2018`, §5 C1).
+    # 개정 연도인지 실제 기간인지(`GRI 403:2026년 4월`)는 `_standard_refs`가 뒤 문구로 판정한다.
+    r"(?P<revision>\s*[:：]\s*(?P<revision_year>(?:19|20)\d{2})(?!\d))?"
     r"(?:\s*[(（]\s*(?:19|20)\d{2}\s*[)）])?")
 # 공백·전각 콜론 뒤 연도를 개정판으로 붙이는 규격 이름. `Scope 1: 2025 배출량`의 2025는 보고 연도다.
 _REVISION_STANDARDS = frozenset({"ISO", "IEC", "GRI", "OHSAS", "KS", "IATF", "EN", "BS", "SA", "AA", "SASB"})
@@ -3548,6 +3556,16 @@ def _unit_after(piece: str, end: int) -> bool:
     from ..rag_gates.units import normalize_unit
     after = re.match(r"[\s*]*([^\s()（）|,\[\]*]+)", piece[end:])
     return bool(after) and normalize_unit(after.group(1)) is not None
+
+
+def _revision_is_period(piece: str, year_start: int) -> bool:
+    """콜론 뒤 연도가 실제 보고 기간의 시작인가 — `년`이 붙거나(`2026년`) 월·일·구간으로 이어지면
+    (`2026.04`·`2026-04-01`·`2025~2026`) 기간이다. 홀로 선 연도(`45001:2018 기준`)는 개정판이다."""
+    tail = piece[year_start:]
+    if re.match(r"\d{4}\s*년", tail) or _DATE_ISO_RE.match(tail):
+        return True
+    join = _RANGE_JOIN_RE.match(tail, 4)
+    return bool(join) and bool(re.match(r"(?:19|20)\d{2}(?!\d)", tail[join.end():]))
 
 
 def _standard_refs(piece: str, start: int = 0) -> list[tuple[int, int, int]]:
@@ -3565,14 +3583,15 @@ def _standard_refs(piece: str, start: int = 0) -> list[tuple[int, int, int]]:
         if any(span.kind in ("FISCAL", "QUARTER") and m.group(0).startswith(span.text)
                for span in _date_spans(m.group(0))):
             continue
-        if _unit_after(piece, m.end()):
-            continue
-        if any(m.start() < s_end and s_start < m.end() for s_start, s_end in sites):
-            continue
         end = m.end()
         name = piece[m.start():m.start("number")].strip(" -")
-        if m.group("revision") and not set(re.split(r"[/\-&]", name)) & _REVISION_STANDARDS:
-            end = m.start("revision")        # 개정판을 쓰지 않는 이름이면 콜론 뒤 연도는 그대로 둔다
+        if m.group("revision") and (not set(re.split(r"[/\-&]", name)) & _REVISION_STANDARDS
+                                    or _revision_is_period(piece, m.start("revision_year"))):
+            end = m.start("revision")        # 개정판이 아닌 콜론 뒤 연도는 실제 기간이다 — 가리지 않는다
+        if _unit_after(piece, end):
+            continue
+        if any(m.start() < s_end and s_start < end for s_start, s_end in sites):
+            continue
         refs.append((m.start(), m.start("number"), end))
     return refs
 
@@ -3725,6 +3744,9 @@ def _scope_roles(where: str, text: str, fiscal: dict[str, tuple[Any, Any]] | Non
             at = masked.find(span.text)
         role = f"period:{span.undefined}" if span.undefined else "period"
         roles.append((where, role, span.text, at, at + len(span.text) if at >= 0 else -1))
+        # 상충한 회계연도 정의의 원문과 위치(정의를 읽은 원문 기준) — 어느 정의끼리 충돌했는지 추적한다.
+        roles += [("fiscal_definition", "fiscal_definition", definition, d_start, d_end)
+                  for definition, d_start, d_end in span.definitions]
         cursor = max(cursor, at + 1)
     roles += [(where, "site", m.group(0), m.start(), m.end()) for m in _SITE_MENTION_RE.finditer(text)]
     return sorted(roles, key=lambda role: role[3])
@@ -3877,6 +3899,8 @@ class _DateSpan:
     # 기간 표기는 있으나 실제 시작·종료일을 원문으로 확정할 수 없는 사유(`_ZERO_KEPT_CAUSES`의 키).
     # 비어 있지 않으면 start·end는 비교에 쓰지 않는 자리값이다 — 회계연도 시작월·연도를 보충하지 않는다.
     undefined: str = ""
+    # `undefined`가 `fiscal_definition_conflict`일 때 서로 다른 원문 정의(정의 원문, 시작, 끝).
+    definitions: tuple = ()
 
 
 _YEARLESS = 2000    # 연도 미상 범위를 담는 윤년. 비교 때 요청 연도로 옮긴다.
@@ -3914,26 +3938,61 @@ def _fiscal_key(token: str) -> str:
     return re.sub(r"[\s']", "", token).upper()
 
 
-def _fiscal_definitions(text: str) -> dict[str, tuple[Any, Any]]:
+@dataclass(frozen=True)
+class _FiscalConflict:
+    """같은 회계연도 표기에 서로 다른 구간을 준 원문 정의들 — 적용 관계를 원문으로 가를 수 없다.
+
+    `definitions`는 (정의 원문, 그 텍스트 안의 시작, 끝)이다. 감사 기록에 그대로 싣는다.
+    """
+    definitions: tuple = ()
+
+
+def _fiscal_definitions(text: str, sites: set[str] | None = None) -> dict[str, Any]:
     """원문이 직접 적은 회계연도 구간 {`FY2026`: (시작일, 종료일)}. 구간을 한 개로 읽을 때만 싣는다.
 
     `FY26(2026년)`처럼 연도만 잇고 구간을 적지 않은 표기는 정의가 아니다 — 회계연도 시작월을 모른다.
     `FY26 = FY2026`은 정의된 `FY2026`의 구간을 그대로 잇는다.
+
+    PR71 검토 R4: 첫 정의만 보관해 정의 줄 순서에 따라 같은 0이 CONFIRMED·REJECTED로 갈렸다. 정의를
+    모두 모은다. 같은 구간의 반복은 정의 하나다. 구간이 서로 다르면 `_FiscalConflict`로 남긴다 — 첫 값·
+    마지막 값·요청과 맞는 값을 고르지 않는다. 별칭(`FY26 = FY2026`)은 가리킨 표기의 충돌도 함께 잇는다.
+    `sites`(대조할 사업장)가 있으면 정의 줄에 **사업장이 적힌** 정의만 그 사업장에 적용한다 — 사업장 없는
+    정의가 하나라도 다르면 적용 관계를 원문으로 가를 수 없으므로 충돌로 둔다.
     """
-    defs: dict[str, tuple[Any, Any]] = {}
-    links: dict[str, str] = {}
-    for m in _FISCAL_DEF_RE.finditer(str(text or "")):
+    text = str(text or "")
+    entries: dict[str, list[tuple[tuple[Any, Any], set[str], tuple[str, int, int]]]] = {}
+    links: dict[str, list[tuple[str, tuple[str, int, int]]]] = {}
+    for m in _FISCAL_DEF_RE.finditer(text):
         key, body = _fiscal_key(m.group("token")), m.group("body")
+        source = (m.group(0).strip(), m.start(), m.end())
         alias = _FISCAL_RE.match(body.strip())
         if alias:
-            links[key] = _fiscal_key(alias.group(0))
+            links.setdefault(key, []).append((_fiscal_key(alias.group(0)), source))
             continue
         spans = [s for s in _date_spans(body) if s.year_known and not s.undefined]
-        if len(spans) == 1 and spans[0].kind in ("RANGE", "ANNUAL") and key not in defs:
-            defs[key] = (spans[0].start, spans[0].end)
-    for key, target in links.items():
-        if target in defs and key not in defs:
-            defs[key] = defs[target]
+        if len(spans) == 1 and spans[0].kind in ("RANGE", "ANNUAL"):
+            line_start = text.rfind("\n", 0, m.start()) + 1
+            line_end = text.find("\n", m.end())
+            line_sites = _site_keys(text[line_start:line_end if line_end >= 0 else len(text)])
+            entries.setdefault(key, []).append(((spans[0].start, spans[0].end), line_sites, source))
+    alias_sources: dict[str, list[tuple[str, int, int]]] = {}
+    direct = {key: list(found) for key, found in entries.items()}
+    for key, targets in links.items():
+        for target, source in targets:
+            if direct.get(target):
+                alias_sources.setdefault(key, []).append(source)
+                entries.setdefault(key, []).extend(direct[target])
+    defs: dict[str, Any] = {}
+    for key, found in entries.items():
+        applicable = found
+        if sites and all(line_sites for _bounds, line_sites, _source in found):
+            applicable = [entry for entry in found if entry[1] & sites] or found
+        distinct = {bounds for bounds, _sites, _source in applicable}
+        if len(distinct) == 1:
+            defs[key] = next(iter(distinct))
+        else:
+            sources = [*alias_sources.get(key, []), *(source for _b, _s, source in found)]
+            defs[key] = _FiscalConflict(tuple(dict.fromkeys(sources)))
     return defs
 
 
@@ -3948,7 +4007,12 @@ def _fiscal_quarter_spans(text: str, fiscal: dict[str, tuple[Any, Any]] | None,
         key = _fiscal_key(m.group(0))
         bounds = (fiscal or {}).get(key)
         short = len(m.group("year")) == 2
-        if bounds:
+        if isinstance(bounds, _FiscalConflict):
+            year = _YEARLESS if short else int(m.group("year"))
+            found.append((m.start(), _DateSpan(
+                date(year, 1, 1), date(year, 12, 31), "year", m.group(0), "FISCAL", not short,
+                "fiscal_definition_conflict", bounds.definitions)))
+        elif bounds:
             whole = (bounds[0].month, bounds[0].day, bounds[1].month, bounds[1].day) == (1, 1, 12, 31) \
                 and bounds[0].year == bounds[1].year
             found.append((m.start(), _DateSpan(bounds[0], bounds[1], "range", m.group(0),
@@ -4363,6 +4427,29 @@ def _compact(text: str) -> str:
     return re.sub(r"\s+", "", str(text or ""))
 
 
+# 낱말 앞에 붙어 뜻을 뒤집는 접두(`미참석`·`비정규직`·`불참`·`무재해`).
+_NEGATING_PREFIXES = frozenset("미비불무未非不無")
+
+
+def _label_names_header(label: str, header: str, siblings: list[str]) -> bool:
+    """라벨(공백 없앤 문구)이 열 머리 `header`를 **그 뜻으로** 담는가.
+
+    PR71 검토 R6: `참석`이 `미참석` 안에 들어 있다는 이유로 46명(참석 칸)의 `교육 미참석 인원` 라벨을
+    맞다고 보았다. 부분 문자열 일치로 보지 않는다 —
+      - 같은 표의 다른 열 머리가 이 머리를 품으면(`참석` ⊂ `미참석`) 라벨의 그 부분은 다른 열의 말이다.
+      - 머리 바로 앞이 뜻을 뒤집는 접두(`미`·`비`·`불`·`무`)면 반대말이다(표에 그 열이 없어도).
+    """
+    target = _compact(header)
+    if len(target) < 2:
+        return target == label
+    masked = label
+    for other in sorted({_compact(o) for o in siblings}, key=len, reverse=True):
+        if other != target and target in other and other in masked:
+            masked = masked.replace(other, " " * len(other))
+    return any(m.start() == 0 or masked[m.start() - 1] not in _NEGATING_PREFIXES
+               for m in re.finditer(re.escape(target), masked))
+
+
 def _cell_number(cell: str) -> float | None:
     numbers = _CELL_NUMBER_RE.findall(cell)
     if len(numbers) != 1:
@@ -4416,8 +4503,21 @@ def _table_cell_label(hint: str, value: float, quote: str, source_text: str | No
     row_label = " ".join(c.strip() for c in cells[:k] if c.strip() and _cell_number(c) is None).strip()
     label = _compact(hint)
     head = core.split()[-1]
-    if _compact(core) in label or (len(head) >= 2 and head in label):
-        return None                        # 열 머리(또는 그 중심어 `미참석`·`비율`)를 이미 담았다
+    # 같은 머리글 행의 다른 열 머리 — 라벨이 어느 열의 말을 담았는지 가른다(`참석` ↔ `미참석`).
+    siblings = [re.sub(r"[(（][^)）]*[)）]", " ", _column_header(context, line_start + a, max(1, b - a))[0]).strip()
+                for j, (a, b) in enumerate(bounds) if j != k]
+    sibling_heads = [o.split()[-1] for o in siblings if o.split()]
+    if _label_names_header(label, core, siblings + sibling_heads) \
+            or (len(head) >= 2 and _label_names_header(label, head, siblings + sibling_heads)):
+        return None                        # 열 머리(또는 그 중심어 `미참석`·`비율`)를 그 뜻으로 이미 담았다
+    # 정정 사유: 라벨이 같은 표의 다른 열을 말함 / 열 머리의 반대말 / 열 머리를 담지 않음.
+    named = [o for o in dict.fromkeys(siblings) if o and _label_names_header(label, o, [core, *siblings])]
+    if named:
+        reason = "label_names_other_column"
+    elif _compact(head) in label or _compact(core) in label:
+        reason = "label_negates_column"
+    else:
+        reason = "label_lacks_column"
     if row_label and label == _compact(row_label):
         new = f"{row_label} · {core}"
         rule = "row_label_plus_column_header"
@@ -4435,7 +4535,8 @@ def _table_cell_label(hint: str, value: float, quote: str, source_text: str | No
             new = " · ".join(part for part in (row_label or caption, core) if part)
             rule = "source_row_and_column"
     return {"label": new, "model_label": hint, "row_label": row_label, "column_header": header.strip(),
-            "rule": rule}
+            "rule": rule, "label_reason": reason, "label_named_columns": named,
+            "source_row": line.strip()[:_QUOTE_MAX_CHARS], "source_cell": cells[k].strip()}
 
 
 def _negation_zero_from_null(m: dict[str, Any], source_text: str | None, source_quote) -> tuple[dict, Any] | None:
@@ -4583,7 +4684,8 @@ def _map_vlm_json(
                                    "reason": "label_from_table_header", "fatal": False,
                                    "metric_hint": relabel["label"], "page": page_no, "value": value,
                                    "unit": unit, "period": period, "quote": quote[:_QUOTE_MAX_CHARS],
-                                   **{k: relabel[k] for k in ("model_label", "row_label", "column_header", "rule")}})
+                                   **{k: relabel[k] for k in ("model_label", "row_label", "column_header", "rule",
+                                                              "label_reason", "source_cell")}})
                 hint = relabel["label"]
             metrics.append(ExtractedMetric(
                 metric_hint=hint,
