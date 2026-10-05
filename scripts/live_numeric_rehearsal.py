@@ -187,6 +187,80 @@ class UpstageCounter:
                 "failures": sum(e["status"] == "failure" for e in outer), "events": self.events}
 
 
+class UpstageTape:
+    """Upstage 원시 응답(HTTP JSON 본문)을 기록하거나, 기록한 본문으로 재생한다.
+
+    키는 (보낸 문서 바이트 sha256, model, ocr) — 같은 PDF의 1쪽 미리보기와 전체 문서를 가른다.
+    재생에서 기록이 없으면 예외로 멈춘다(실호출로 대체하지 않는다). 응답 본문에 키 값은 없다.
+    """
+
+    def __init__(self, directory: Path, mode: str):
+        import requests
+        self.directory, self.mode, self.requests = directory, mode, requests
+        self.original = requests.post
+        self.events: list[dict] = []
+        directory.mkdir(parents=True, exist_ok=True)
+        requests.post = self.post
+
+    def _key(self, data, files) -> tuple[str, str]:
+        name, payload = files["document"]
+        digest = hashlib.sha256(payload).hexdigest()
+        key = hashlib.sha256(f"{digest}|{data.get('model')}|{data.get('ocr')}".encode()).hexdigest()[:24]
+        return key, name
+
+    def post(self, url, *a, data=None, files=None, **kw):
+        if not files or "document" not in files:
+            return self.original(url, *a, data=data, files=files, **kw)
+        key, name = self._key(data or {}, files)
+        path = self.directory / f"{key}.json"
+        if self.mode == "replay":
+            if not path.exists():
+                self.events.append({"file": name, "key": key, "status": "replay_miss"})
+                raise RuntimeError(f"replay: Upstage 기록 없음 — 실호출 금지 ({name})")
+            record = json.loads(path.read_text(encoding="utf-8"))
+            self.events.append({"file": name, "key": key, "status": "replayed"})
+            return _TapeResponse(record)
+        resp = self.original(url, *a, data=data, files=files, **kw)
+        if resp.ok:
+            dump(path, {"file": name, "model": (data or {}).get("model"), "ocr": (data or {}).get("ocr"),
+                        "status_code": resp.status_code, "recorded_at": now(),
+                        "request_id": resp.headers.get("x-request-id") or resp.headers.get("request-id"),
+                        "body": resp.json()})
+        self.events.append({"file": name, "key": key, "status": "recorded" if resp.ok else f"http_{resp.status_code}"})
+        return resp
+
+
+class _TapeResponse:
+    def __init__(self, record: dict):
+        self.status_code, self.ok, self._body = record.get("status_code", 200), True, record["body"]
+        self.headers = {"x-request-id": record.get("request_id") or ""}
+
+    def json(self):
+        return self._body
+
+    def raise_for_status(self):
+        return None
+
+
+def block_network(llm_misses: list[dict]) -> None:
+    """재생 전용: 소켓을 막고 LLM 실호출을 캐시 미스 기록으로 바꾼다(캐시 적중만 응답)."""
+    import socket
+
+    def blocked(*a, **k):
+        raise RuntimeError("replay: network forbidden")
+
+    socket.socket.connect = blocked
+    socket.create_connection = blocked
+    from openai.resources.chat import completions
+
+    def miss(self, *a, **kw):
+        user = next((m["content"] for m in kw.get("messages", []) if m.get("role") == "user"), "")
+        llm_misses.append({"user_sha256": hashlib.sha256(user.encode()).hexdigest(), "user_head": user[:160]})
+        raise RuntimeError("replay: LLM cache miss — live call forbidden")
+
+    completions.Completions.create = miss
+
+
 def run_stats(started, llm_cache, ocr_cache, upstage, output, extra) -> dict:
     stats = {"elapsed_seconds": round(time.monotonic() - started, 3), "llm": llm_cache.stats(),
              "llm_response_events": llm_cache.response_events(), "upstage": upstage.summary(), **extra}
@@ -201,7 +275,11 @@ def pipeline_record(output) -> dict:
             "extraction": output.extraction, "evidence_graph": output.evidence_graph,
             "sections": output.sections, "policy_results": output.policy_results,
             "risk_rows": output.risk_rows, "disclosure": output.disclosure,
-            "industry_module_key": output.industry_module_key}
+            "industry_module_key": output.industry_module_key,
+            # 확인 목록과 원장 소비값(DataPoint) — 답변·내보내기와 같은 실행에서 대조한다.
+            "review_findings": [f.to_dict() for f in getattr(output, "review_findings", [])],
+            "data_points": getattr(output.v15_trace, "data_points", None) if output.v15_trace else None,
+            "report_export": getattr(output, "report_export", None)}
 
 
 # ---- core ------------------------------------------------------------------------
@@ -220,39 +298,67 @@ def cmd_core(args) -> None:
                         handlers=[logging.FileHandler(run_dir / f"{args.stage}.log", encoding="utf-8")])
     for name in ["httpx", "httpcore", "openai", "urllib3"]:
         logging.getLogger(name).setLevel(logging.WARNING)
+    # 재생: 기록한 Upstage 응답 + LLM 캐시 사본만 쓴다. LLM 미스는 기록하고 strict를 풀어
+    # 결정적 단계(추출·원장·답변·내보내기)까지 진행한다 — 미스 본문은 재생 결과로 쓰지 않는다.
+    llm_misses: list[dict] = []
+    replay = bool(args.replay_upstage)
+    if replay:
+        block_network(llm_misses)
+    tape = (UpstageTape(args.replay_upstage.resolve(), "replay") if replay
+            else UpstageTape(target / "raw_upstage", "record") if args.record_upstage else None)
     from esgenie import llm_cache
     from esgenie.pipeline import run
     from esgenie.ssot import ocr_cache
-    from esgenie.supplychain import parse_saq_claims, respond_from_pipeline
+    from esgenie.supplychain import (copy_evidence_pack, export_response_sheet, export_response_sheet_pdf,
+                                     parse_saq_claims, respond_from_pipeline)
 
+    exports = target / "exports"
     dump(target / "environment.json", environment_record(code_path, loaded, settings, cache_dir, {
-        "mode": "core_direct", "stage": args.stage, "inputs": files, **manifest,
-        "call": "esgenie.pipeline.run(areas=E,S,G, use_dart=False, profile=sme) + "
-                "respond_from_pipeline(framework, supplier_claims=parse_saq_claims(company_answer))",
-        "framework": args.framework}))
+        "mode": "core_replay" if replay else "core_direct", "stage": args.stage, "inputs": files, **manifest,
+        "call": "esgenie.pipeline.run(areas=E,S,G, use_dart=False, profile=sme"
+                + (", export_outputs=True, export_report=True" if args.export else "") + ") + "
+                "respond_from_pipeline(framework, supplier_claims=parse_saq_claims(company_answer))"
+                + (" + export_response_sheet(.xlsx/.pdf)" if args.export else ""),
+        "framework": args.framework, "run_id": args.run_id or target.parent.name,
+        "upstage_tape": {"mode": tape.mode, "directory": str(tape.directory)} if tape else None}))
     evidence = {f["name"]: f["path"] for f in files if f["role"] != "company_answer"}
     company = [f["path"] for f in files if f["role"] == "company_answer"]
     upstage = UpstageCounter()
     llm_cache.reset_stats()
     started, output = time.monotonic(), None
-    settings.strict_llm = True
+    settings.strict_llm = not replay
     try:
         claims = parse_saq_claims(company)
         output = run(f"hanwool-core-{args.stage}", areas=["E", "S", "G"], corp_name=args.company,
                      industry=args.industry, report_year=args.year, use_dart=False,
                      evidence_files=evidence, demo_greenwash=False, save_traces=False,
-                     export_outputs=False, export_report=False, profile="sme")
+                     export_outputs=args.export, export_report=args.export, export_root=str(exports),
+                     profile="sme")
         dump(target / "pipeline.json", pipeline_record(output))
         sheet = respond_from_pipeline(output, args.framework, supplier_claims=claims, enable_drafts=False)
         sheet.corp_name = args.company
         dump(target / "result.json", {"sheet": sheet.to_dict(), "generated_at": now()})
+        if args.export:
+            sheet_dir = exports / "response_sheet"
+            copy_evidence_pack(sheet, sheet_dir, evidence)
+            paths = {"xlsx": export_response_sheet(sheet, sheet_dir),
+                     "pdf": export_response_sheet_pdf(sheet, sheet_dir, evidence_base_dir=sheet_dir)}
+            sections = {area: {"final_text": v.final_text, "used_mock_llm": getattr(v, "used_mock_llm", None),
+                               "final_score": v.final_score, "converged": v.converged,
+                               "hitl_required": v.hitl_required}
+                        for area, v in output.sections.items()}
+            dump(target / "report_sections.json", sections)
+            dump(target / "export_paths.json", {"pipeline": output.export_paths, "response_sheet": paths,
+                                                "report_export": output.report_export})
     except Exception:
         (target / "failure.txt").write_text(traceback.format_exc(), encoding="utf-8")
         raise
     finally:
         dump(target / "run_stats.json", run_stats(started, llm_cache, ocr_cache, upstage, output, {
             "stage": args.stage, "document_count": len(files), "evidence_count": len(evidence),
-            "company_answer_count": len(company), "cache_files_at_end": count_cache(cache_dir)}))
+            "company_answer_count": len(company), "cache_files_at_end": count_cache(cache_dir),
+            "upstage_tape": tape.events if tape else None,
+            "replay_llm_misses": llm_misses if replay else None}))
     print(json.dumps({"stage": args.stage, "run_dir": str(target),
                       "elapsed": round(time.monotonic() - started, 1)}, ensure_ascii=False))
 
@@ -410,6 +516,12 @@ def main() -> None:
     core = sub.add_parser("core")
     common(core)
     core.add_argument("--stage", choices=["initial", "followup"], required=True)
+    # 보고서(.md/.pdf)·데이터시트(.xlsx)·응답서(.xlsx/.pdf)를 <run>/<stage>/exports에 남긴다.
+    core.add_argument("--export", action="store_true")
+    core.add_argument("--record-upstage", action="store_true")
+    core.add_argument("--replay-upstage", type=Path, default=None,
+                      help="기록한 Upstage 응답 폴더. 주면 네트워크를 막고 LLM은 캐시 적중만 쓴다")
+    core.add_argument("--run-id", default="")
     serve = sub.add_parser("serve")
     common(serve)
     serve.add_argument("--host", default="127.0.0.1")
