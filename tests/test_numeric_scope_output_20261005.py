@@ -329,7 +329,7 @@ def test_the_company_answer_keeps_its_stated_scope_question_and_note(company_pdf
     assert claim.boundary["site"] and "denominator_kind" not in claim.boundary
     assert claim.context["question_id"] == "A-02"
     assert "외부 위탁 전체 폐기물" in claim.context["request"]
-    assert claim.context["source_ids"] == ["HW-SCR-202604"]
+    assert claim.context["source_ids"] == ["HW-SCR-202604"] and claim.context["scope_from"] == "answer_text"
 
 
 def waste_graph(with_scrap=True, with_training=True):
@@ -378,7 +378,7 @@ def claim_set(context=None, boundary=None):
     return ClaimSet({"E-6-2": SupplierClaim("E-6-2", 92.0, "%", raw=raw, source="saq:05.pdf",
                                             boundary=_stated_scope(raw) if boundary is None else boundary,
                                             context=context if context is not None else {
-                                                "question_id": "A-02",
+                                                "scope_from": "answer_text", "question_id": "A-02",
                                                 "request": "4월 김해 제1공장 외부 위탁 전체 폐기물의 재활용률",
                                                 "source_note": "A-02의 입력 근거 메모: 공정 스크랩 대장 HW-SCR-202604의 재활용 관련 수치에서 옮겨 적음.",
                                                 "source_ids": ["HW-SCR-202604"]})})
@@ -399,15 +399,24 @@ def test_a_transcribed_internal_rate_is_explained_with_both_source_lines():
 
 def test_without_a_source_trace_a_missing_denominator_is_named_not_a_conflict():
     graph, result, texts = waste_graph(with_scrap=False, with_training=False)
-    ans, _ = answer_for(graph, result, texts, claim_set(context={}))
+    ans, _ = answer_for(graph, result, texts, claim_set(context={"scope_from": "answer_text"}))
     assert ans.comparison == "scope_unconfirmed" and "분모가 적혀 있지 않아" in ans.comparison_reason
     assert ans.status != "flagged" and not any("D1 불일치" in f for f in ans.flags)
 
 
 def test_without_a_note_only_related_metrics_are_traced():
     graph, result, texts = waste_graph()
-    _, traced = answer_for(graph, result, texts, claim_set(context={"question_id": "A-02"}))
+    _, traced = answer_for(graph, result, texts, claim_set(context={"scope_from": "answer_text", "question_id": "A-02"}))
     assert [t["metric"] for t in traced["E-6-2"].context["value_trace"]] == ["생산 스크랩 내부 재투입률"]
+
+
+def test_a_caller_asserted_same_scope_claim_keeps_the_existing_conflict_rule():
+    # HMC 통제 실험(scripts/hmc_integrity_validation.py)처럼 호출부가 증빙 경계를 그대로 준 주장은
+    # 기존 동일 범위 비교로 수치 충돌을 판정한다 — 회사 답변 원문에서 읽은 경계에만 새 규칙을 쓴다.
+    graph, result, texts = waste_graph()
+    fact = graph.resolved_facts["E-6-2"]
+    ans, _ = answer_for(graph, result, texts, claim_set(context={}, boundary=dict(fact.boundary)))
+    assert ans.comparison == "mismatch" and any("D1 불일치" in f for f in ans.flags)
 
 
 def test_a_claim_without_stated_scope_keeps_the_existing_partial_rule():
@@ -610,7 +619,11 @@ def test_a_very_long_answer_row_splits_across_pdf_pages_instead_of_failing(tmp_p
     long = " / ".join(f"HN-G{i:02d} | 정규직 | 14:00~16:00 | 출석" for i in range(1, 60))
     answers = [Answer(qid="RBA-E-6", section="경영시스템", question_text="[E-6] 교육", value=True, status="verified",
                       rationale=f"응답: 예 · 독립 증빙: {long}")]
+    answers.append(Answer(qid="RBA-E-7", section="경영시스템", question_text="[E-7] 의사소통", value=True,
+                          status="verified", rationale="짧은 근거"))
     path = export_response_sheet_pdf(ResponseSheet("rba42", "RBA", "검토", answers=answers, gaps=[]), tmp_path,
                                      embed_evidence=False)
-    text = "".join(page.get_text() for page in fitz.open(path)).replace("\n", "")
-    assert "HN-G59" in text.replace(" ", "")                    # 마지막 칸까지 잘리지 않는다
+    doc = fitz.open(path)
+    text = "".join(page.get_text() for page in doc).replace("\n", "").replace(" ", "")
+    assert all(f"HN-G{i:02d}" in text for i in range(1, 60))     # 이어지는 행으로 나눠도 잘리지 않는다
+    assert "(이어서)" in text and text.count("RBA-E-7") == 1      # 짧은 행은 나누지 않는다

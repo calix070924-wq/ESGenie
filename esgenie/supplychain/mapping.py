@@ -323,6 +323,11 @@ def _stated_claim_scope(ans, claim, cval, cunit, evid_num, evid_unit, code):
     """
     from ..ssot.boundary import Boundary, comparable, derive_boundary
     scope = dict(getattr(claim, "boundary", None) or {})
+    context = getattr(claim, "context", {}) or {}
+    # 회사 답변 원문에서 읽은 경계에만 적용한다. 호출부가 동일 범위를 명시한 주장(HMC 통제 실험의 증빙 경계
+    # 그대로인 합성 주장)은 기존 동일 범위 비교로 수치 충돌을 판정한다.
+    if context.get("scope_from") != "answer_text":
+        return None
     if code not in _RATE_KESG_CODES or ans.completeness != "partial":
         return None
     if not (scope.get("period_start") and scope.get("site")):
@@ -333,7 +338,6 @@ def _stated_claim_scope(ans, claim, cval, cunit, evid_num, evid_unit, code):
     evidence, stated = Boundary.from_dict(ans.boundary), derive_boundary(raw, raw, base=scope)
     if comparable(evidence, stated)[0] != "compared":
         return None                         # 기간·사업장이 다르면 기존 범위 상이 판정이 맞다
-    context = getattr(claim, "context", {}) or {}
     source = getattr(claim, "source", "")
     request = context.get("request") or ""
     stated_text = f"{scope['period_start']}~{scope['period_end']} · {scope['site']}"

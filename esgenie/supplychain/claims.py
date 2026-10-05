@@ -205,10 +205,10 @@ def _answer_context(text: str, position: int) -> dict[str, Any]:
         if line:
             request.insert(0, line)
     if not qid:
-        return {}
+        return {"scope_from": "answer_text"}
     notes = [line.strip() for line in text.splitlines()
              if qid in line and _NOTE_WORDS.search(line) and not _QUESTION_ID.match(line)]
-    return {"question_id": qid, "request": " ".join(request) if len(request) <= 2 else "",
+    return {"scope_from": "answer_text", "question_id": qid, "request": " ".join(request) if len(request) <= 2 else "",
             "source_note": notes[0] if notes else "",
             "source_ids": sorted({i for note in notes for i in _DOCUMENT_ID.findall(note)})}
 
