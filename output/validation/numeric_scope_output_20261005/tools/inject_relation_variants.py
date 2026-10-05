@@ -1,8 +1,11 @@
 """PR71 재검토 §9.2 — 실제 LLM 응답(캐시 적중)에 A~D 관계 오답·정상 대조를 넣어 **실제 제품 처리 경로**로 최종 파일을 만든다.
 
 사용:
-  python inject_relation_variants.py [--variant-set ad|site] core --run-dir ... --code-path ... --replay-upstage ...
+  python inject_relation_variants.py [--variant-set ad|site] [--saved-summary <LLM 캐시 항목.json>] core --run-dir ... \
+      --code-path ... --replay-upstage ...
   (`ad`: A~D 오답·정상 대조, 기본값. `site`: 다른 사업장 표기 관찰 — 제품이 막지 못하는 경우를 따로 기록한다)
+  본문에 문장을 더하면 영역 위험도가 바뀌어 요약 프롬프트가 캐시와 달라진다(미스 → 결정적 대체 문구). 그때는
+  `--saved-summary`로 준 같은 단계의 실제 요약 응답(직전 실호출 캐시 항목)에 요약 변형을 붙여 넣는다(저장 응답 주입).
 
 - 실행기(`scripts/live_numeric_rehearsal.py core --replay-upstage`)를 그대로 쓴다 — 네트워크 차단, Upstage 테이프·캐시 사본만.
 - 사회(S) 영역 서술부 응답의 `### 주요 활동` 아래와 요약 응답 끝에 아래 문장·표·제목을 더한다(원래 응답은 그대로 두고 뒤에
@@ -23,6 +26,11 @@ variant_set = "ad"
 if "--variant-set" in argv:
     i = argv.index("--variant-set")
     variant_set = argv[i + 1]
+    del argv[i:i + 2]
+saved_summary = None
+if "--saved-summary" in argv:
+    i = argv.index("--saved-summary")
+    saved_summary = Path(argv[i + 1])
     del argv[i:i + 2]
 code_path = Path(argv[argv.index("--code-path") + 1]).resolve()
 run_dir = Path(argv[argv.index("--run-dir") + 1]).resolve()
@@ -77,6 +85,14 @@ def import_from(path, env_file):
 
     def complete(self, system, user, **kw):
         resp = original(self, system, user, **kw)
+        source = "cache_hit"
+        if (resp.used_mock or not str(resp.content or "").strip()) and "Executive Summary" in str(system) \
+                and saved_summary is not None and SUMMARY_VARIANTS:
+            # 본문 주입으로 바뀐 요약 프롬프트의 미스 — 같은 단계 실제 요약 응답을 저장 응답으로 넣는다(실호출 아님).
+            saved = json.loads(saved_summary.read_text(encoding="utf-8"))
+            resp = llm.LLMResponse(content=str(saved["content"]), used_mock=False,
+                                   meta={"provider": "saved_response_injection", "saved_key": saved_summary.stem})
+            source = "saved_summary"
         if resp.used_mock or not str(resp.content or "").strip():
             return resp                     # 캐시 미스(모의 응답)는 바꾸지 않는다 — 실행기가 미스로 기록한다
         content = str(resp.content)
@@ -91,7 +107,7 @@ def import_from(path, env_file):
             mutated = content.rstrip() + " " + " ".join(text for _n, text, _e in SUMMARY_VARIANTS)
         else:
             return resp
-        events.append({"kind": "summary" if "Executive Summary" in str(system) else "section_S",
+        events.append({"kind": "summary" if "Executive Summary" in str(system) else "section_S", "response_source": source,
                        "original_content": content, "mutated_content": mutated,
                        "variants": [{"name": n, "text": t.format(chunk=_attendance_chunk(user)), "expect": e}
                                     for n, t, e in (SUMMARY_VARIANTS if "Executive Summary" in str(system)

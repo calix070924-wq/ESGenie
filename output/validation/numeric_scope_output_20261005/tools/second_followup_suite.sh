@@ -91,7 +91,10 @@ INJECT_WINDOWS="$R2I $R3I" inject "INJV_$SHA" initial R3_variant_live R3_variant
 variant() {  # id set stage
   local id=$1 set=$2 st=$3
   [ -d "$OUT/caches/$id" ] || cp -R "$PREV/caches/LIVE_61b6167" "$OUT/caches/$id"
-  python3 "$TOOLS/inject_relation_variants.py" --variant-set "$set" core --stage "$st" --export \
+  # 실제 보완 단계 요약 응답(직전 실호출 캐시 항목, RP 재생에서 같은 프롬프트로 적중) — 요약 프롬프트가 바뀌면 이것에 주입한다.
+  python3 "$TOOLS/inject_relation_variants.py" --variant-set "$set" \
+    --saved-summary "$PREV/caches/LIVE_61b6167/llm/8e1d99f1805ef421d1ad9ab8f1f93519623d0f2a4237497a4c250dd96381dddc.json" \
+    core --stage "$st" --export \
     --replay-upstage "$V/runs/R2_fix_4faabb0_live/$st/raw_upstage" --run-id "$id" --code-path "$W" --env-file "$ROOT/.env" \
     --cache-dir "$OUT/caches/$id" --run-dir "$OUT/runs/$id" --pack-dir "$PACK" > "$OUT/runs/${id}_${st}_console.txt" 2>&1
   echo "$id $st exit=$? $(python3 -c "import json;s=json.load(open('$OUT/runs/$id/$st/run_stats.json'));e=json.load(open('$OUT/runs/$id/$st/injection_events.json'));print('llm',s['llm'],'misses',len(s['replay_llm_misses']),'events',[x['kind'] for x in e['events']])")"
