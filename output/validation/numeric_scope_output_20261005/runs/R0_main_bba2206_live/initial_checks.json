@@ -1,0 +1,308 @@
+{
+  "stage": "/private/tmp/ESGenie-numeric-scope-output-20261005/output/validation/numeric_scope_output_20261005/runs/R0_main_bba2206_live/initial",
+  "passed": 17,
+  "total": 28,
+  "rows": [
+    {
+      "item": "02 전기 142,560 kWh(E-4-1)",
+      "pass": true,
+      "observed": [
+        [
+          142560.0,
+          "kWh"
+        ]
+      ],
+      "expected": "142560 kWh",
+      "where": "graph"
+    },
+    {
+      "item": "03 가스 8,420 m³, 열량·배출량 미생성",
+      "pass": true,
+      "observed": [
+        [
+          "도시가스 사용량",
+          8420.0,
+          "m³"
+        ]
+      ],
+      "expected": "8420 m³ only",
+      "where": "graph"
+    },
+    {
+      "item": "07 수도 680 m³",
+      "pass": true,
+      "observed": [
+        [
+          "E-5-1",
+          680.0,
+          "m³"
+        ]
+      ],
+      "expected": "680 m³",
+      "where": "graph"
+    },
+    {
+      "item": "04 총 위탁량 18,400 kg·재활용량 5,400 kg·재활용률 29.3%",
+      "pass": true,
+      "observed": [
+        [
+          "E-6-1",
+          18400.0,
+          "kg"
+        ],
+        [
+          "E-6-2",
+          29.3,
+          "%"
+        ],
+        [
+          "재활용량",
+          5400.0,
+          "kg"
+        ]
+      ],
+      "expected": "3값",
+      "where": "graph"
+    },
+    {
+      "item": "04 29.3% 반올림 정합(5,400÷18,400=29.3478…%)",
+      "pass": true,
+      "observed": "29.3478 → 29.3",
+      "expected": "29.3",
+      "where": "key"
+    },
+    {
+      "item": "06 규정에서 수량 미생성(3톤 없음)",
+      "pass": true,
+      "observed": [],
+      "expected": "노드 0",
+      "where": "graph"
+    },
+    {
+      "item": "08 내부 재투입률 92%는 E-2-2·E-6-2가 아님",
+      "pass": false,
+      "observed": [
+        [
+          "E-2-2",
+          92.0
+        ]
+      ],
+      "expected": "코드 없음(원문 라벨)",
+      "where": "graph"
+    },
+    {
+      "item": "08 발생 12,500·재투입 11,500·반출 1,000 라벨 구분",
+      "pass": false,
+      "observed": {
+        "12500.0": "합계",
+        "11500.0": "합계",
+        "1000.0": "합계"
+      },
+      "expected": "발생/재투입/반출 라벨",
+      "where": "graph"
+    },
+    {
+      "item": "09 50명은 대상(참석·출석 라벨 아님)",
+      "pass": true,
+      "observed": [
+        "교육 대상 인원"
+      ],
+      "expected": "대상 50",
+      "where": "graph"
+    },
+    {
+      "item": "09 참석 46·미참석 4·92%",
+      "pass": true,
+      "observed": [
+        [
+          "교육 대상 인원",
+          50.0
+        ],
+        [
+          "교육 미참석 인원",
+          4.0
+        ],
+        [
+          "교육 참석 비율",
+          92.0
+        ],
+        [
+          "교육 참석 인원",
+          46.0
+        ],
+        [
+          "미참석 인원",
+          4.0
+        ],
+        [
+          "출석 인원",
+          46.0
+        ]
+      ],
+      "expected": "46/4/92%",
+      "where": "graph"
+    },
+    {
+      "item": "11 ISMS 인증 미보유·기준일 2026-04-30 보존(수치 0 또는 원문 조항)",
+      "pass": false,
+      "observed": {
+        "zero_nodes": [],
+        "clauses": [],
+        "unread_findings": 1
+      },
+      "expected": "0 또는 미보유 조항, 미확인 표시 없음",
+      "where": "graph"
+    },
+    {
+      "item": "이전 세트 360,772 MJ 미유입",
+      "pass": true,
+      "observed": "",
+      "expected": "없음",
+      "where": "graph"
+    },
+    {
+      "item": "응답서 E-6-2 29.3% · 4월 제1공장 범위",
+      "pass": true,
+      "observed": [
+        29.3,
+        "2026-04-01~2026-04-30 · 월간 · 제1공장 · 폐기물 · 부분"
+      ],
+      "expected": "29.3 · 부분",
+      "where": "answer"
+    },
+    {
+      "item": "응답서 05 회사 답변 92%를 일치·동일 범위 충돌로 확정하지 않음",
+      "pass": true,
+      "observed": [
+        "self_reported",
+        "scope_unconfirmed"
+      ],
+      "expected": "not_comparable 또는 scope_unconfirmed",
+      "where": "answer"
+    },
+    {
+      "item": "응답서 05 설명: 92%의 원문 출처(08 내부 재투입률)와 29.3% 근거",
+      "pass": false,
+      "observed": "전체 주장에 필요한 기간·사업장·분모 미확인 — 부분값 증빙 2026-04-01~2026-04-30 · 월간 · 제1공장 · 폐기물 · 부분 범위 확인 필요: 전체 주장에 필요한 기간·사업장·분모 미확인 — 부분값 증빙 2026-04-01~2026-04-30 · 월간 · 제1공장 · 폐기물 · 부분",
+      "expected": "08 재투입률 + 29.3% 계산식",
+      "where": "answer"
+    },
+    {
+      "item": "응답서 05 설명이 기간·사업장을 '미확인'으로 잘못 적지 않음",
+      "pass": false,
+      "observed": "전체 주장에 필요한 기간·사업장·분모 미확인 — 부분값 증빙 2026-04-01~2026-04-30 · 월간 · 제1공장 · 폐기물 · 부분 범위 확인 필요: 전체 주장에 필요한 기간·사업장·분모 미확인 — 부분값 ",
+      "expected": "기간·사업장 같음 명시",
+      "where": "answer"
+    },
+    {
+      "item": "응답서 E-4-1 0.513216 TJ 부분값(전력만)",
+      "pass": true,
+      "observed": [
+        0.513216,
+        "2026-04-01~2026-04-30 · 월간 · 제1공장 · 사용전력량 · 부분"
+      ],
+      "expected": "0.513216 TJ · 부분",
+      "where": "answer"
+    },
+    {
+      "item": "응답서 C-2가 재생 원부자재 92%를 근거로 쓰지 않음",
+      "pass": true,
+      "observed": [
+        "verified",
+        "응답: 예 · 독립 증빙: 08_공정스크랩관리대장_2026-04.pdf: 내부 재투입 11,500 kg는 공정 안에서 다시 사용한 양입니다. 외"
+      ],
+      "expected": "E-2-2 92% 미사용",
+      "where": "answer"
+    },
+    {
+      "item": "본문·요약에 '재생 원부자재 비율 92%' 없음",
+      "pass": false,
+      "observed": [
+        " 환경 분야는 재생 원부자재 비율 92",
+        "한울정밀공업(주)는 2026년까지 재생 원부자재 사용 비율을 높이고 온실가스 배출량과 에너지 사용량을 관리하는 것을 주요 환경 전략으로 설정하고 있다"
+      ],
+      "expected": "없음",
+      "where": "report_md"
+    },
+    {
+      "item": "본문 E-4-1을 전체·합산으로 넓힌 문장은 표시됨",
+      "pass": false,
+      "observed": [
+        "에너지 사용량은 0.513216 TJ로 집계되었으며, 이는 사업장 전체의 월별 전기·가스 사용량을 합산한 결과다."
+      ],
+      "expected": "표시 또는 없음",
+      "where": "report_md"
+    },
+    {
+      "item": "본문 교육 인원 오계산(39명 등) 단정 문장 없음",
+      "pass": false,
+      "observed": [
+        "4월 22일 실시된 안전보건 교육에는 정규직 39명과 기간제 6명이 출석하였으며, 파견직 2명은 미참석하였다."
+      ],
+      "expected": "없음 또는 표시",
+      "where": "report_md"
+    },
+    {
+      "item": "본문·응답서에 ISMS 인증 보유·취득 주장 없음",
+      "pass": true,
+      "observed": {
+        "answers": [],
+        "body": []
+      },
+      "expected": "없음",
+      "where": "answer+report_md"
+    },
+    {
+      "item": "Excel E-6-2 행: 29.3%·범위·회사 답변 92%·출처",
+      "pass": false,
+      "observed": "RBA-C-4-E-6-2 | 환경 | [C-4·수치] 폐기물 재활용(순환이용)률 | 29.3 % (2026년) | 측정 범위: 2026-04-01~2026-04-30 · 월간 · 제1공장 · 폐기물 · 부분 · 범위 확인 필요 | ⚠️ 자가신고 | 폐기물 재활용 비율 = 29.3% (보고 연도 2026, D1 위험 평가불가, 검증=estimated) · 평가불가 · 비교 0건 · 미검증 1건 · 범위 확인 필요 1건\n범위 확인 필요: 전체 주장에 필요한 기간·사업장·분모 미확인 — 부분값 증빙 2026-04-01~2026-04-30 · 월간 · 제1공장 · 폐기물 · 부분\n범위 확인 필요: 전체 주장에 필요한 기간·사업장·분모 미확인 — 부분값 증빙 2026-04-01~2026-04-30 · 월간 · 제1공",
+      "expected": "값·범위·회사 답변·출처",
+      "where": "excel"
+    },
+    {
+      "item": "Excel E-4-1 행: 부분값 범위",
+      "pass": true,
+      "observed": "RBA-C-8-E-4-1 | 환경 | [C-8·수치] 에너지 사용량 | 0.513216 TJ (2026년) | 측정 범위: 2026-04-01~2026-04-30 · 월간 · 제1공장 · 사용전력량 · 부분 · 범위 확인 필요 | ⚠️ 자가신고 | 에너지 사용량 = 0.513216TJ (보고 연도 2026, D1 위험 평가불가, 검증=estimated) ·",
+      "expected": "부분",
+      "where": "excel"
+    },
+    {
+      "item": "데이터시트 E-5-1·E-6-1 측정 범위 표시",
+      "pass": false,
+      "observed": {
+        "E-5-1": null,
+        "E-6-1": null
+      },
+      "expected": "4월·제1공장",
+      "where": "datasheet"
+    },
+    {
+      "item": "응답서 PDF 생성·E-6-2 값과 회사 답변 출처",
+      "pass": true,
+      "observed": {
+        "pages": 17
+      },
+      "expected": "29.3·08 출처",
+      "where": "sheet_pdf"
+    },
+    {
+      "item": "보고서 PDF에 '재생원부자재비율92' 없음",
+      "pass": false,
+      "observed": {
+        "pages": 11
+      },
+      "expected": "없음",
+      "where": "report_pdf"
+    },
+    {
+      "item": "보고서 PDF 본문 표시가 Markdown과 같음",
+      "pass": true,
+      "observed": {
+        "md_marks": 0,
+        "pdf_marks": 0
+      },
+      "expected": "같음",
+      "where": "report_pdf"
+    }
+  ]
+}

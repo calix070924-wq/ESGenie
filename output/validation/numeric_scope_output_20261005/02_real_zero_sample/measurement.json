@@ -1,0 +1,229 @@
+{
+ "main_bba2206_live": {
+  "N": 90,
+  "a": 65,
+  "M": 71,
+  "b": 0,
+  "wrong_zero_confirmed": 0,
+  "items": [
+   {
+    "id": "SEM14-1",
+    "cells": 1,
+    "preserved": 1,
+    "M": 1,
+    "confirmed_on_annual_request": 0,
+    "note": "모델 인용에 성과·목표 0건 두 칸, 열 머리 없음 → SOURCE_ONLY"
+   },
+   {
+    "id": "SEM138-1",
+    "cells": 5,
+    "preserved": 5,
+    "M": 5,
+    "confirmed_on_annual_request": 0,
+    "note": "연도 머리글이 행 뒤에 추출돼 열 미연결 → SOURCE_ONLY"
+   },
+   {
+    "id": "MOB39-V/F",
+    "cells": 14,
+    "preserved": 2,
+    "M": 2,
+    "confirmed_on_annual_request": 0,
+    "note": "모델이 2023년 행 2건만 보고(열 국내(별도)|2023), 나머지 12칸 미보고. M(2023 합계)은 직접 보고되지 않음"
+   },
+   {
+    "id": "MOB129-1",
+    "cells": 1,
+    "preserved": 0,
+    "M": 1,
+    "confirmed_on_annual_request": 0,
+    "note": "모델 미보고(부정 서술)"
+   },
+   {
+    "id": "MOB141-1",
+    "cells": 3,
+    "preserved": 3,
+    "M": 0,
+    "confirmed_on_annual_request": 0,
+    "note": "SOURCE_ONLY/report_year_only"
+   },
+   {
+    "id": "NAV67-1",
+    "cells": 12,
+    "preserved": 9,
+    "M": 12,
+    "confirmed_on_annual_request": 0,
+    "note": "보존 9, 그룹 라벨만 쓴 행 3건 REJECTED/other_subject"
+   },
+   {
+    "id": "LG56-T",
+    "cells": 24,
+    "preserved": 22,
+    "M": 24,
+    "confirmed_on_annual_request": 0,
+    "note": "보존 22, 공정안전사고율 2건 REJECTED/other_subject(행 라벨의 단위 칸 Rate)"
+   },
+   {
+    "id": "LG56-HCI",
+    "cells": 1,
+    "preserved": 0,
+    "M": 1,
+    "confirmed_on_annual_request": 0,
+    "note": "모델 미보고(각주 부정 서술)"
+   },
+   {
+    "id": "LG103-T",
+    "cells": 24,
+    "preserved": 22,
+    "M": 24,
+    "confirmed_on_annual_request": 0,
+    "note": "보존 22, 공정안전사고율 2건 REJECTED/other_subject(행 라벨의 단위 칸 Rate)"
+   },
+   {
+    "id": "LG103-HCI",
+    "cells": 1,
+    "preserved": 0,
+    "M": 1,
+    "confirmed_on_annual_request": 0,
+    "note": "모델 미보고(각주 부정 서술)"
+   },
+   {
+    "id": "LG116-1",
+    "cells": 1,
+    "preserved": 1,
+    "M": 0,
+    "confirmed_on_annual_request": 0,
+    "note": "SOURCE_ONLY/period_not_stated"
+   },
+   {
+    "id": "SHN86-1",
+    "cells": 2,
+    "preserved": 0,
+    "M": 0,
+    "confirmed_on_annual_request": 0,
+    "note": "모델이 목표·실적 칸을 한 인용으로 보고 → 1건 REJECTED/other_subject"
+   },
+   {
+    "id": "SHN156-1",
+    "cells": 1,
+    "preserved": 0,
+    "M": 0,
+    "confirmed_on_annual_request": 0,
+    "note": "모델 미보고(위반사항 없음)"
+   }
+  ]
+ },
+ "fix_c256521_offline": {
+  "N": 90,
+  "a": 65,
+  "M": 71,
+  "b": 0,
+  "wrong_zero_confirmed": 0,
+  "items": [
+   {
+    "id": "SEM14-1",
+    "cells": 1,
+    "preserved": 1,
+    "M": 1,
+    "confirmed_on_annual_request": 0,
+    "note": "모델 인용에 성과·목표 0건 두 칸, 열 머리 없음 → SOURCE_ONLY"
+   },
+   {
+    "id": "SEM138-1",
+    "cells": 5,
+    "preserved": 5,
+    "M": 5,
+    "confirmed_on_annual_request": 0,
+    "note": "연도 머리글이 행 뒤에 추출돼 열 미연결 → SOURCE_ONLY"
+   },
+   {
+    "id": "MOB39-V/F",
+    "cells": 14,
+    "preserved": 2,
+    "M": 2,
+    "confirmed_on_annual_request": 0,
+    "note": "모델이 2023년 행 2건만 보고(열 국내(별도)|2023), 나머지 12칸 미보고. M(2023 합계)은 직접 보고되지 않음"
+   },
+   {
+    "id": "MOB129-1",
+    "cells": 1,
+    "preserved": 0,
+    "M": 1,
+    "confirmed_on_annual_request": 0,
+    "note": "모델 미보고(부정 서술)"
+   },
+   {
+    "id": "MOB141-1",
+    "cells": 3,
+    "preserved": 3,
+    "M": 0,
+    "confirmed_on_annual_request": 0,
+    "note": "SOURCE_ONLY/report_year_only"
+   },
+   {
+    "id": "NAV67-1",
+    "cells": 12,
+    "preserved": 9,
+    "M": 12,
+    "confirmed_on_annual_request": 0,
+    "note": "보존 9, 그룹 라벨만 쓴 행 3건 REJECTED/other_subject"
+   },
+   {
+    "id": "LG56-T",
+    "cells": 24,
+    "preserved": 22,
+    "M": 24,
+    "confirmed_on_annual_request": 0,
+    "note": "보존 22, 공정안전사고율 2건 REJECTED/other_subject(행 라벨의 단위 칸 Rate)"
+   },
+   {
+    "id": "LG56-HCI",
+    "cells": 1,
+    "preserved": 0,
+    "M": 1,
+    "confirmed_on_annual_request": 0,
+    "note": "모델 미보고(각주 부정 서술)"
+   },
+   {
+    "id": "LG103-T",
+    "cells": 24,
+    "preserved": 22,
+    "M": 24,
+    "confirmed_on_annual_request": 0,
+    "note": "보존 22, 공정안전사고율 2건 REJECTED/other_subject(행 라벨의 단위 칸 Rate)"
+   },
+   {
+    "id": "LG103-HCI",
+    "cells": 1,
+    "preserved": 0,
+    "M": 1,
+    "confirmed_on_annual_request": 0,
+    "note": "모델 미보고(각주 부정 서술)"
+   },
+   {
+    "id": "LG116-1",
+    "cells": 1,
+    "preserved": 1,
+    "M": 0,
+    "confirmed_on_annual_request": 0,
+    "note": "SOURCE_ONLY/period_not_stated"
+   },
+   {
+    "id": "SHN86-1",
+    "cells": 2,
+    "preserved": 0,
+    "M": 0,
+    "confirmed_on_annual_request": 0,
+    "note": "모델이 목표·실적 칸을 한 인용으로 보고 → 1건 REJECTED/other_subject"
+   },
+   {
+    "id": "SHN156-1",
+    "cells": 1,
+    "preserved": 0,
+    "M": 0,
+    "confirmed_on_annual_request": 0,
+    "note": "모델 미보고(위반사항 없음)"
+   }
+  ]
+ },
+ "note": "수정 전후 75개 0 기록의 라벨·보존 여부·판정·명시적 연간 요청 판정이 모두 같다(identical=True)."
+}

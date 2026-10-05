@@ -1,0 +1,83 @@
+{
+  "elapsed_seconds": 9.396,
+  "llm": {
+    "mode": "on",
+    "hits": 9,
+    "misses": 0,
+    "live_calls": 0,
+    "successes": 0,
+    "failures": 0
+  },
+  "llm_response_events": [],
+  "upstage": {
+    "requests": 4,
+    "successes": 4,
+    "failures": 0,
+    "events": [
+      {
+        "function": "_call_upstage_dp_payload",
+        "file": "02_전기요금청구서_2026-04.pdf",
+        "pages": null,
+        "status": "success",
+        "seconds": 0.001
+      },
+      {
+        "function": "_call_upstage_dp_payload",
+        "file": "03_도시가스요금고지서_2026-04.pdf",
+        "pages": null,
+        "status": "success",
+        "seconds": 0.001
+      },
+      {
+        "function": "_call_upstage_dp_payload",
+        "file": "04_사업장폐기물위탁처리명세_2026-04.pdf",
+        "pages": null,
+        "status": "success",
+        "seconds": 0.001
+      },
+      {
+        "function": "_call_upstage_dp_payload",
+        "file": "07_상수도청구서_2026-04.pdf",
+        "pages": null,
+        "status": "success",
+        "seconds": 0.001
+      }
+    ]
+  },
+  "stage": "initial",
+  "document_count": 13,
+  "evidence_count": 12,
+  "company_answer_count": 1,
+  "cache_files_at_end": {
+    "ocr": 12,
+    "llm": 27
+  },
+  "upstage_tape": [
+    {
+      "file": "02_전기요금청구서_2026-04.pdf",
+      "key": "83046501dfa002e036872796",
+      "status": "replayed"
+    },
+    {
+      "file": "03_도시가스요금고지서_2026-04.pdf",
+      "key": "6a81bd9709ce5d4cf5c8992b",
+      "status": "replayed"
+    },
+    {
+      "file": "04_사업장폐기물위탁처리명세_2026-04.pdf",
+      "key": "e48e53be0215fcbca7ac8f49",
+      "status": "replayed"
+    },
+    {
+      "file": "07_상수도청구서_2026-04.pdf",
+      "key": "d5d12d585559bc42c86303e6",
+      "status": "replayed"
+    }
+  ],
+  "replay_llm_misses": [],
+  "ocr_vlm_cache": {
+    "hits": 11,
+    "misses": 0,
+    "mode": "hit"
+  }
+}

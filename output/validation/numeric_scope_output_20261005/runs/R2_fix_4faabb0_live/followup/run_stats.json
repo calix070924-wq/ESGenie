@@ -1,0 +1,254 @@
+{
+  "elapsed_seconds": 51.727,
+  "llm": {
+    "mode": "on",
+    "hits": 3,
+    "misses": 5,
+    "live_calls": 5,
+    "successes": 5,
+    "failures": 0
+  },
+  "llm_response_events": [
+    {
+      "provider": "openai",
+      "requested_model": "gpt-4.1-mini",
+      "model": "gpt-4.1-mini-2025-04-14",
+      "returned_model": "gpt-4.1-mini-2025-04-14",
+      "request_id": "6fde6985-a057-417f-91ec-e71c80d62c34",
+      "response_id": "chatcmpl-EVUlTJ4Yu6IUn9YxXFkJfdSA07MFt",
+      "usage": {
+        "completion_tokens": 753,
+        "prompt_tokens": 1049,
+        "total_tokens": 1802,
+        "completion_tokens_details": {
+          "accepted_prediction_tokens": 0,
+          "audio_tokens": 0,
+          "reasoning_tokens": 0,
+          "rejected_prediction_tokens": 0
+        },
+        "prompt_tokens_details": {
+          "audio_tokens": 0,
+          "cached_tokens": 0
+        },
+        "latency_checkpoint": {
+          "engine_tbt_ms": 8,
+          "engine_ttft_ms": 27,
+          "engine_ttlt_ms": 5935,
+          "pre_inference_ms": 172,
+          "service_tbt_ms": 8,
+          "service_ttft_ms": 395,
+          "service_ttlt_ms": 6300,
+          "user_visible_ttft_ms": 224
+        }
+      },
+      "used_mock": false
+    },
+    {
+      "provider": "openai",
+      "requested_model": "gpt-4.1-mini",
+      "model": "gpt-4.1-mini-2025-04-14",
+      "returned_model": "gpt-4.1-mini-2025-04-14",
+      "request_id": "e56a6a08-d920-4b44-a2b3-2cfdbd91ffb2",
+      "response_id": "chatcmpl-EVUlr9hJ615pRUUp07C6K4hfQqgvd",
+      "usage": {
+        "completion_tokens": 565,
+        "prompt_tokens": 3115,
+        "total_tokens": 3680,
+        "completion_tokens_details": {
+          "accepted_prediction_tokens": 0,
+          "audio_tokens": 0,
+          "reasoning_tokens": 0,
+          "rejected_prediction_tokens": 0
+        },
+        "prompt_tokens_details": {
+          "audio_tokens": 0,
+          "cached_tokens": 1536
+        },
+        "latency_checkpoint": {
+          "engine_tbt_ms": 7,
+          "engine_ttft_ms": 50,
+          "engine_ttlt_ms": 4089,
+          "pre_inference_ms": 88,
+          "service_tbt_ms": 7,
+          "service_ttft_ms": 169,
+          "service_ttlt_ms": 4204,
+          "user_visible_ttft_ms": 81
+        }
+      },
+      "used_mock": false
+    },
+    {
+      "provider": "openai",
+      "requested_model": "gpt-4.1-mini",
+      "model": "gpt-4.1-mini-2025-04-14",
+      "returned_model": "gpt-4.1-mini-2025-04-14",
+      "request_id": "76f8a132-c9f0-49f1-88a8-b230ba5cb40b",
+      "response_id": "chatcmpl-EVUlwLsw3udahfq3vQlVwYgCxFShI",
+      "usage": {
+        "completion_tokens": 502,
+        "prompt_tokens": 2842,
+        "total_tokens": 3344,
+        "completion_tokens_details": {
+          "accepted_prediction_tokens": 0,
+          "audio_tokens": 0,
+          "reasoning_tokens": 0,
+          "rejected_prediction_tokens": 0
+        },
+        "prompt_tokens_details": {
+          "audio_tokens": 0,
+          "cached_tokens": 1152
+        },
+        "latency_checkpoint": {
+          "engine_tbt_ms": 7,
+          "engine_ttft_ms": 109,
+          "engine_ttlt_ms": 3568,
+          "pre_inference_ms": 88,
+          "service_tbt_ms": 7,
+          "service_ttft_ms": 390,
+          "service_ttlt_ms": 3844,
+          "user_visible_ttft_ms": 302
+        }
+      },
+      "used_mock": false
+    },
+    {
+      "provider": "openai",
+      "requested_model": "gpt-4.1-mini",
+      "model": "gpt-4.1-mini-2025-04-14",
+      "returned_model": "gpt-4.1-mini-2025-04-14",
+      "request_id": "d32baa51-4740-42a5-a0e8-4b3136eb3be4",
+      "response_id": "chatcmpl-EVUm19JS8mHBVHDXZ3ViaznKiCEdn",
+      "usage": {
+        "completion_tokens": 522,
+        "prompt_tokens": 2256,
+        "total_tokens": 2778,
+        "completion_tokens_details": {
+          "accepted_prediction_tokens": 0,
+          "audio_tokens": 0,
+          "reasoning_tokens": 0,
+          "rejected_prediction_tokens": 0
+        },
+        "prompt_tokens_details": {
+          "audio_tokens": 0,
+          "cached_tokens": 1024
+        },
+        "latency_checkpoint": {
+          "engine_tbt_ms": 6,
+          "engine_ttft_ms": 30,
+          "engine_ttlt_ms": 3147,
+          "pre_inference_ms": 236,
+          "service_tbt_ms": 6,
+          "service_ttft_ms": 587,
+          "service_ttlt_ms": 3698,
+          "user_visible_ttft_ms": 351
+        }
+      },
+      "used_mock": false
+    },
+    {
+      "provider": "openai",
+      "requested_model": "gpt-4.1-mini",
+      "model": "gpt-4.1-mini-2025-04-14",
+      "returned_model": "gpt-4.1-mini-2025-04-14",
+      "request_id": "99620288-c21b-4858-8393-bdff82c8203b",
+      "response_id": "chatcmpl-EVUm6sJTlJxH0XGhRFCl3uo7SiBIy",
+      "usage": {
+        "completion_tokens": 306,
+        "prompt_tokens": 12044,
+        "total_tokens": 12350,
+        "completion_tokens_details": {
+          "accepted_prediction_tokens": 0,
+          "audio_tokens": 0,
+          "reasoning_tokens": 0,
+          "rejected_prediction_tokens": 0
+        },
+        "prompt_tokens_details": {
+          "audio_tokens": 0,
+          "cached_tokens": 0
+        },
+        "latency_checkpoint": {
+          "engine_tbt_ms": 6,
+          "engine_ttft_ms": 207,
+          "engine_ttlt_ms": 2075,
+          "pre_inference_ms": 153,
+          "service_tbt_ms": 6,
+          "service_ttft_ms": 550,
+          "service_ttlt_ms": 2433,
+          "user_visible_ttft_ms": 397
+        }
+      },
+      "used_mock": false
+    }
+  ],
+  "upstage": {
+    "requests": 4,
+    "successes": 4,
+    "failures": 0,
+    "events": [
+      {
+        "function": "_call_upstage_dp_payload",
+        "file": "02_전기요금청구서_2026-04.pdf",
+        "pages": null,
+        "status": "success",
+        "seconds": 1.806
+      },
+      {
+        "function": "_call_upstage_dp_payload",
+        "file": "03_도시가스요금고지서_2026-04.pdf",
+        "pages": null,
+        "status": "success",
+        "seconds": 1.815
+      },
+      {
+        "function": "_call_upstage_dp_payload",
+        "file": "04_사업장폐기물위탁처리명세_2026-04.pdf",
+        "pages": null,
+        "status": "success",
+        "seconds": 1.813
+      },
+      {
+        "function": "_call_upstage_dp_payload",
+        "file": "07_상수도청구서_2026-04.pdf",
+        "pages": null,
+        "status": "success",
+        "seconds": 2.073
+      }
+    ]
+  },
+  "stage": "followup",
+  "document_count": 13,
+  "evidence_count": 12,
+  "company_answer_count": 1,
+  "cache_files_at_end": {
+    "ocr": 11,
+    "llm": 23
+  },
+  "upstage_tape": [
+    {
+      "file": "02_전기요금청구서_2026-04.pdf",
+      "key": "83046501dfa002e036872796",
+      "status": "recorded"
+    },
+    {
+      "file": "03_도시가스요금고지서_2026-04.pdf",
+      "key": "6a81bd9709ce5d4cf5c8992b",
+      "status": "recorded"
+    },
+    {
+      "file": "04_사업장폐기물위탁처리명세_2026-04.pdf",
+      "key": "e48e53be0215fcbca7ac8f49",
+      "status": "recorded"
+    },
+    {
+      "file": "07_상수도청구서_2026-04.pdf",
+      "key": "d5d12d585559bc42c86303e6",
+      "status": "recorded"
+    }
+  ],
+  "replay_llm_misses": null,
+  "ocr_vlm_cache": {
+    "hits": 10,
+    "misses": 1,
+    "mode": "hit,miss"
+  }
+}
