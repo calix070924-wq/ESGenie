@@ -587,6 +587,12 @@ class Support:
         return self.occurrence.describe() if self.occurrence is not None else ""
 
 
+# 문제 코드 → 관계(역할·집단·날짜·사업장). 같은 관계에서 어긋난 후보가 있으면 그 관계가 '확인 안 됨'인 근거는 쓰지 않는다.
+_RELATION_OF = {"role": "role", "role_unstated": "role", "group": "group", "group_unstated": "group",
+                "group_missing": "group", "date": "date", "date_unstated": "date", "site": "site",
+                "site_unstated": "site"}
+
+
 def _relation_problems(claim: Claim, *, role: str, group: str, when, sites: frozenset, named: bool,
                        soft_role: bool) -> tuple[list[str], list[str]]:
     """(어긋남, 확인 안 됨). 어긋남이 하나라도 있으면 근거가 아니다. '확인 안 됨'만 있는 근거는 같은 값의 어긋난
@@ -626,8 +632,8 @@ def check_quantity(claim: Claim, facts: list[Fact], scope: list[Occurrence],
       어긋남을 덮지 않는다(PR71 재검토 A: 원문 인용 `[c1]`·인용 없음 경로가 날짜 불일치를 덮었다).
     - 어긋난 후보와 별도로 **모든 관계가 맞는** 근거가 있으면 그것으로 확인한다(다른 날짜의 동률 후보가 정상 근거를 막지
       않는다). 채택한 근거와 어긋난 후보를 함께 돌려준다.
-    - 날짜·역할·사업장이 원문에 적히지 않아 '확인 안 됨'뿐인 근거는, 같은 값의 어긋난 후보가 없을 때만 근거다. 인용 밖
-      청크는 모든 관계가 맞을 때만 근거다(다른 출처의 같은 숫자가 인용을 대신하지 않는다).
+    - 날짜·역할·사업장이 원문에 적히지 않아 '확인 안 됨'뿐인 근거는, 같은 값의 후보가 그 관계에서 어긋나지 않을 때만
+      근거다. 인용 밖 청크는 모든 관계가 맞을 때만 근거다(다른 출처의 같은 숫자가 인용을 대신하지 않는다).
     """
     q = claim.q
     candidates: list[tuple[list[str], list[str], Fact | None, Occurrence | None, bool]] = []
@@ -649,8 +655,13 @@ def check_quantity(claim: Claim, facts: list[Fact], scope: list[Occurrence],
     # 고르는 순서: 인용 청크 → 원문 확인 수치 → 인용 밖 청크. 인용한 근거가 확인해 주면 그것을 채택 근거로 남긴다.
     strong = sorted((c for c in candidates if not c[0] and not c[1]), key=lambda c: (c[4], c[3] is None))
     pick = next(iter(strong), None)
-    if pick is None and not conflicts:
-        pick = next(iter(sorted((c for c in candidates if not c[0] and not c[4]), key=lambda c: c[3] is None)), None)
+    if pick is None:
+        # '확인 안 됨'뿐인 근거는, 같은 값의 후보가 **그 관계에서** 어긋날 때 쓰지 않는다(날짜 없는 청크로 날짜 불일치를
+        # 덮지 않는다). 다른 관계에서만 어긋난 후보(날짜가 다른 같은 값)는 막지 않는다 — 날짜·역할이 맞고 사업장만 적히지
+        # 않은 근거를 다른 날짜의 같은 숫자 때문에 버리지 않는다(BM 실측: `4월 22일 김해 제1공장 … 대상 50명`).
+        contested = {_RELATION_OF[p] for hard, *_r in candidates for p in hard}
+        weak = [c for c in candidates if not c[0] and not c[4] and not ({_RELATION_OF[p] for p in c[1]} & contested)]
+        pick = next(iter(sorted(weak, key=lambda c: c[3] is None)), None)
     if pick is not None:
         return Support(True, conflicting=conflicts, fact=pick[2], occurrence=pick[3], outside_citation=pick[4])
     # 보류 사유는 어긋난 관계다. 어긋남 없이 '확인 안 됨'만 있었으면(인용 밖 청크) 그것을 적는다.

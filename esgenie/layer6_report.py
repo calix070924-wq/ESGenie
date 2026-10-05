@@ -195,27 +195,47 @@ def _block_source_review(output: Any) -> ReportBlock | None:
 
 
 def review_generated_findings(output: Any, findings: list) -> list:
-    """확인 목록의 작성 문장(`generated_claim`)을 본문과 같은 기준으로 대조한다(PR71 재검토 §10).
+    """확인 목록의 작성 문장(`generated_claim`)이 본문에서 보류된 문장이면 같은 보류 문구로 보인다(PR71 재검토 §10).
 
     실측(재검토 A~D 주입): 본문은 `4월 27일 교육에는 46명이 참석` 문장을 확인 보류로 바꿨는데, 확인 필요 사항이
-    같은 모델 문장을 `확인된 내용:`으로 다시 실어 Markdown·PDF에 오답이 되살아났다. 본문 대조가 바꿀 문장이면 그 보류
-    문구를 `check_result.display_fact`로 두고, 화면·보고서의 목록(`source_review.review_markdown`)은 그것을 싣는다.
-    `fact`(모델 원문)와 처리 기록(`body_review`)은 확인 목록 자료·감사 기록에 그대로 남는다.
+    같은 모델 문장을 `확인된 내용:`으로 다시 실어 Markdown·PDF에 오답이 되살아났다. 영역 본문 대조(`annotate_generated_text`)가
+    바꾼 문장(`replaced`의 `model_text`)을 발견 항목의 문구에서 찾아, 그 자리를 본문과 같은 보류 문구로 둔
+    `check_result.display_fact`와 처리 기록 `body_review`를 붙인다. 화면·보고서의 목록(`source_review.review_markdown`)은
+    `display_fact`를 싣는다. 본문이 바꾸지 않은 문장·문장이 아닌 값(`48명`)은 다시 판정하지 않는다 — 본문과 다른 판정을
+    만들지 않는다. `fact`(모델 원문)는 확인 목록 자료·감사 기록에 그대로 남는다.
     """
     from dataclasses import replace
-    from types import SimpleNamespace
+
+    def flat(text: str) -> str:
+        return re.sub(r"\s+|[.。]+$", "", strip_citation_markers(str(text or "")))
+
+    from .rag_gates.signals import strip_citation_markers
+    held: dict[str, list[dict[str, Any]]] = {}
+    for area, verify in (getattr(output, "sections", None) or {}).items():
+        try:
+            _text, marks = annotate_generated_text(output, area, verify)
+        except Exception:      # 결과 형식이 달라 대조할 수 없으면 목록을 그대로 둔다(본문 조립도 같은 함수를 쓴다)
+            continue
+        held[area] = [m for m in marks if m.get("action") == "replaced" and m.get("model_text")]
     out = []
     for finding in findings:
-        verify = (getattr(output, "sections", None) or {}).get(getattr(finding, "area", ""))
-        generation = getattr(getattr(verify, "final", None), "generation", None)
-        if getattr(finding, "category", "") == "generated_claim" and re.search(r"\d", str(finding.fact or "")) \
-                and hasattr(getattr(generation, "context", None), "all_hits"):
-            probe = SimpleNamespace(final=SimpleNamespace(generation=SimpleNamespace(
-                text=str(finding.fact), context=generation.context)), final_text=str(finding.fact))
-            text, marks = annotate_generated_text(output, finding.area, probe)
-            if any(m.get("action") == "replaced" for m in marks):
-                finding = replace(finding, check_result={
-                    **(finding.check_result or {}), "display_fact": text, "body_review": marks})
+        records = held.get(getattr(finding, "area", ""), []) if getattr(finding, "category", "") == "generated_claim" else []
+        fact, used = str(finding.fact or ""), []
+        shown = fact
+        for record in records:
+            sentence = str(record["model_text"]).strip()
+            if not flat(sentence) or flat(sentence) not in flat(shown):
+                continue
+            if sentence in shown:
+                shown = shown.replace(sentence, str(record["output"]), 1)
+            elif sentence.rstrip(" .") in shown:
+                shown = shown.replace(sentence.rstrip(" ."), str(record["output"]).rstrip("."), 1)
+            else:
+                shown = str(record["output"])          # 띄어쓰기만 다른 같은 문장 — 원문을 다시 싣지 않는다
+            used.append(record)
+        if used:
+            finding = replace(finding, check_result={**(finding.check_result or {}), "display_fact": shown,
+                                                     "body_review": used})
         out.append(finding)
     return out
 

@@ -441,7 +441,10 @@ def test_the_review_list_does_not_republish_a_sentence_the_body_held():
     right = "2026년 6월 3일 교육에는 27명이 참석하였다."
     findings = [_finding("generated_claim", "작성 문장의 출처 누락", sentence, "근거 인용이 없습니다.", "근거를 연결하세요.",
                          area="S") for sentence in (wrong, right)]
-    output = NS(extraction=NS(mapped={}), sections={"S": verify_of("", docs_for({"c1": CHUNK}, FACTS))})
+    # 문장이 아닌 값 항목(`작성 수치 대조 확인`의 `27명`)은 본문 판정과 따로 다시 판정하지 않는다.
+    findings.append(_finding("generated_claim", "작성 수치 대조 확인", "27명", "지표에 연결할 수 없습니다.", "확인하세요.",
+                             area="S"))
+    output = NS(extraction=NS(mapped={}), sections={"S": verify_of(f"{wrong} {right}", docs_for({"c1": CHUNK}, FACTS))})
     output.review_findings = l6.review_generated_findings(output, findings)
     block = l6._block_source_review(output)
     from esgenie.source_review import review_markdown
@@ -453,6 +456,7 @@ def test_the_review_list_does_not_republish_a_sentence_the_body_held():
     assert record["model_text"] == wrong and record["finding_id"] == findings[0].id
     assert output.review_findings[0].fact == wrong                       # 확인 목록 자료에는 모델 원문을 그대로 둔다
     assert output.review_findings[0].check_result["display_fact"].startswith("[확인 보류]")
+    assert "display_fact" not in output.review_findings[2].check_result   # 값 항목은 그대로
 
 
 def test_a_person_id_range_is_not_a_head_count():
@@ -470,3 +474,16 @@ def test_merging_keeps_counts_of_different_groups_apart():
     assert sorted(r["label"] for r in table_rows(rows)) == ["교육 참석 인원", "교육 참석 인원 · 기간제", "교육 참석 인원 · 정규직"]
     listed = related_facts("2026년 5월 12일 교육 참석", None, {"명"}, facts_from_rows(rows))
     assert {f.label for f in listed} >= {"교육 참석 인원 · 정규직", "교육 참석 인원 · 기간제"}
+
+
+def test_an_unstated_site_is_not_blocked_by_a_same_value_conflict_on_another_relation():
+    # BM 실측과 같은 구조, 다른 값: 맞는 날짜·역할의 사실에 사업장이 없고, 같은 값의 다른 날짜 사실이 함께 있다.
+    facts = [{"label": "교육 대상 인원", "value": 30.0, "unit": "명", "period_text": "2026-06-03", "source_file": "a.pdf"},
+             {"label": "사업장별 인원 - 김해 제1공장", "value": 30.0, "unit": "명", "period_text": "2026-06-30",
+              "site": "제1공장", "source_file": "c.pdf"}]
+    body, marks = review("2026년 6월 3일 김해 제1공장 교육 대상 30명이 정해졌다 [source_facts_S].", chunks={}, facts=facts)
+    assert not replaced(marks), (body, marks)
+    # 같은 관계(날짜)가 걸리면 여전히 막는다 — 날짜 없는 원문으로 날짜 불일치를 덮지 않는다.
+    body, marks = review("2026년 6월 9일 교육에 27명이 참석했다.", chunks={"c1": "교육 참석 27명"},
+                         facts=[FACTS[1]])
+    assert replaced(marks) and "date" in replaced(marks)[0]["problems"]
