@@ -472,6 +472,7 @@ def test_a_non_basic_code_answer_keeps_the_source_only_state():
     assert ans.value == 0 and ans.status == "self_reported"
     assert "scope_source_only" in ans.confidence_flags and ans.comparison == "scope_unconfirmed"
     assert ans.scope_notes and "범위 확인 필요" in ans.review_note
+    assert ans.review_note.count(ans.scope_notes[0]) == 1          # 같은 사유를 두 번 쓰지 않는다
 
 
 def test_the_llm_ledger_and_chunks_carry_the_unconfirmed_state():
@@ -512,6 +513,11 @@ def test_generated_prose_that_asserts_a_source_only_zero_is_marked_in_the_body()
     codes = "### 향후 계획\nS-3-1 여성 구성원 비율과 S-4-1 지표를 보완한다. [hanwool_txt_0005, hanwool_txt_0009]"
     body, marks = annotate_generated_text(output, "S", generated(codes, {"hanwool_txt_0005": "인권", "hanwool_txt_0009": "안전"}))
     assert marks == [] and "txt_0005" not in body                 # 묶음 인용 번호·항목 코드는 숫자 주장이 아니다
+    zero_word = "### 전략\n산업재해율 제로를 달성했다 [kesg_items_S]."         # 숫자 없이 0을 단정한 문장
+    assert [m["reason"] for m in annotate_generated_text(output, "S", generated(zero_word, {"kesg_items_S": "S-4-2"}))[1]] \
+        == ["source_only_stated"]
+    unclear = "### 지표 해설\n산업재해율은 0‰로 보고되었으나 요청 기간 실적인지 명확하지 않다 [kesg_items_S]."
+    assert annotate_generated_text(output, "S", generated(unclear, {"kesg_items_S": "S-4-2 산업재해율 0 ‰"}))[1] == []
     hedged = "### 지표 해설\n산업재해율 0‰는 원문 범위로만 확인된 참고값이다 [kesg_items_S]."
     body, marks = annotate_generated_text(output, "S", generated(hedged, {"kesg_items_S": "S-4-2 산업재해율 0 ‰"}))
     assert not marks and "[검토" not in body

@@ -159,7 +159,9 @@ class Answer:
         """검토 사유 한 줄 — 배지만으로는 알 수 없는 범위·불일치 이유."""
         parts = [p for p in (self.comparison_label, self.comparison_reason) if p]
         head = ": ".join(parts) if len(parts) > 1 else "".join(parts)
-        return " · ".join([p for p in (head, *self.scope_notes) if p])
+        # 비교 사유가 이미 담은 범위 노트는 되풀이하지 않는다(같은 사유가 `A · A`로 두 번 보였다).
+        notes = [n for n in dict.fromkeys(self.scope_notes) if n and n not in (self.comparison_reason or "")]
+        return " · ".join([p for p in (head, *notes) if p])
 
     @property
     def display_value(self) -> str:

@@ -221,8 +221,9 @@ def _block_esg(output: Any, area: str) -> ReportBlock | None:
 # 생성 본문 대조(2026-10-05 §4·§6.2). 경고가 부록(확인 필요 사항)에만 있고 본문은 단정하던 경로를 막는다.
 _SENTENCE_SPLIT_RE = re.compile(r"(?<=[.!?。])\s+")
 _SCOPE_WIDEN_RE = re.compile(r"전체|전사|연간|합산|모든\s*사업장|총합|누적")
-_UNCONFIRMED_WORDS_RE = re.compile(r"미확정|확인되지|확인하지|원문\s*범위|참고|확정하지|추가\s*확인|확인\s*필요")
-_NEGATION_WORDS_RE = re.compile(r"발생하지\s*않|없었|없음|없다|미발생|미보유|0\s*건|0\s*명")
+_UNCONFIRMED_WORDS_RE = re.compile(r"미확정|확인되지|확인하지|원문\s*범위|참고|확정하지|추가\s*확인|확인\s*필요"
+                                   r"|명확하지\s*않|불명확|확정\s*여부")
+_NEGATION_WORDS_RE = re.compile(r"발생하지\s*않|없었|없음|없다|미발생|미보유|0\s*건|0\s*명|제로|무재해")
 # 쉼표로 묶은 인용(`[a_txt_0005, a_txt_0009]`)도 인용이다 — 그 번호를 본문 숫자로 세지 않는다.
 _GROUP_CITATION_RE = re.compile(r"\[([0-9A-Za-z가-힣._:-]+(?:\s*,\s*[0-9A-Za-z가-힣._:-]+)+)\]")
 # K-ESG 항목 코드(`S-3-1`)의 숫자는 주장한 수치가 아니다.
