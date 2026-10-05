@@ -1,0 +1,184 @@
+{
+ "validation_head": "a681d59",
+ "product_code": "0d6a130",
+ "runs": {
+  "INJV_a681d59/initial": {
+   "commit": "a681d596ff6aeb2aa8c7654bb264779337f6f94b",
+   "dirty": false,
+   "llm": {
+    "mode": "on",
+    "hits": 4,
+    "misses": 5,
+    "live_calls": 5,
+    "successes": 0,
+    "failures": 5
+   },
+   "replay_llm_misses": 5,
+   "upstage_requests": 4,
+   "upstage_tape": [
+    "replayed"
+   ],
+   "injection": "저장 응답 주입 — 실호출 아님, 실제 실행 성공으로 집계하지 않음"
+  },
+  "INJ_a681d59/followup": {
+   "commit": "a681d596ff6aeb2aa8c7654bb264779337f6f94b",
+   "dirty": false,
+   "llm": {
+    "mode": "on",
+    "hits": 3,
+    "misses": 4,
+    "live_calls": 4,
+    "successes": 0,
+    "failures": 4
+   },
+   "replay_llm_misses": 4,
+   "upstage_requests": 4,
+   "upstage_tape": [
+    "replayed"
+   ],
+   "injection": "저장 응답 주입 — 실호출 아님, 실제 실행 성공으로 집계하지 않음"
+  },
+  "INJ_a681d59/initial": {
+   "commit": "a681d596ff6aeb2aa8c7654bb264779337f6f94b",
+   "dirty": false,
+   "llm": {
+    "mode": "on",
+    "hits": 3,
+    "misses": 5,
+    "live_calls": 5,
+    "successes": 0,
+    "failures": 5
+   },
+   "replay_llm_misses": 5,
+   "upstage_requests": 4,
+   "upstage_tape": [
+    "replayed"
+   ],
+   "injection": "저장 응답 주입 — 실호출 아님, 실제 실행 성공으로 집계하지 않음"
+  },
+  "RPV_a681d59/initial": {
+   "commit": "a681d596ff6aeb2aa8c7654bb264779337f6f94b",
+   "dirty": false,
+   "llm": {
+    "mode": "on",
+    "hits": 8,
+    "misses": 0,
+    "live_calls": 0,
+    "successes": 0,
+    "failures": 0
+   },
+   "replay_llm_misses": 0,
+   "upstage_requests": 4,
+   "upstage_tape": [
+    "replayed"
+   ],
+   "injection": null
+  },
+  "RP_a681d59/followup": {
+   "commit": "a681d596ff6aeb2aa8c7654bb264779337f6f94b",
+   "dirty": false,
+   "llm": {
+    "mode": "on",
+    "hits": 7,
+    "misses": 0,
+    "live_calls": 0,
+    "successes": 0,
+    "failures": 0
+   },
+   "replay_llm_misses": 0,
+   "upstage_requests": 4,
+   "upstage_tape": [
+    "replayed"
+   ],
+   "injection": null
+  },
+  "RP_a681d59/initial": {
+   "commit": "a681d596ff6aeb2aa8c7654bb264779337f6f94b",
+   "dirty": false,
+   "llm": {
+    "mode": "on",
+    "hits": 7,
+    "misses": 0,
+    "live_calls": 0,
+    "successes": 0,
+    "failures": 0
+   },
+   "replay_llm_misses": 0,
+   "upstage_requests": 4,
+   "upstage_tape": [
+    "replayed"
+   ],
+   "injection": null
+  },
+  "RVS_a681d59/followup": {
+   "commit": "a681d596ff6aeb2aa8c7654bb264779337f6f94b",
+   "dirty": false,
+   "llm": {
+    "mode": "on",
+    "hits": 6,
+    "misses": 1,
+    "live_calls": 1,
+    "successes": 0,
+    "failures": 1
+   },
+   "replay_llm_misses": 1,
+   "upstage_requests": 4,
+   "upstage_tape": [
+    "replayed"
+   ],
+   "injection": "A~D 관계 오답·정상 대조 주입 검증 실행 — 실호출 아님, 실제 실행 성공으로 집계하지 않음"
+  },
+  "RV_a681d59/followup": {
+   "commit": "a681d596ff6aeb2aa8c7654bb264779337f6f94b",
+   "dirty": false,
+   "llm": {
+    "mode": "on",
+    "hits": 6,
+    "misses": 1,
+    "live_calls": 1,
+    "successes": 0,
+    "failures": 1
+   },
+   "replay_llm_misses": 1,
+   "upstage_requests": 4,
+   "upstage_tape": [
+    "replayed"
+   ],
+   "injection": "A~D 관계 오답·정상 대조 주입 검증 실행 — 실호출 아님, 실제 실행 성공으로 집계하지 않음"
+  }
+ },
+ "compare_with_previous_final": [
+  "compare RP_a681d59/initial vs LIVE_61b6167/initial: 0 differing lines (order-insensitive)",
+  "compare RP_a681d59/followup vs LIVE_61b6167/followup: 0 differing lines (order-insensitive)",
+  "compare RPV_a681d59/initial vs LIVEV_61b6167/initial: 0 differing lines (order-insensitive)",
+  "compare INJ_a681d59/initial vs INJ_61b6167/initial: 0 differing lines (order-insensitive)",
+  "compare INJ_a681d59/followup vs INJ_61b6167/followup: 0 differing lines (order-insensitive)",
+  "compare INJV_a681d59/initial vs INJV_61b6167/initial: 0 differing lines (order-insensitive)"
+ ],
+ "real_zero": [
+  "real zero records 80 80 differing fields 0"
+ ],
+ "root_user_state": [
+  "root user files + PR65: unchanged"
+ ],
+ "tests": [
+  "independent20 20 passed in 0.32s",
+  "second_review17 17 passed in 0.20s",
+  "baseline period 4 passed in 0.17s",
+  "pr69 1981 passed in 1.91s",
+  "pr68/70/units 1218 passed in 8.56s",
+  "scope/ledger/answer/report/export/hmc 541 passed, 8 warnings in 24.87s",
+  "full 5347 passed, 12 skipped, 8 warnings in 121.79s (0:02:01)"
+ ],
+ "hmc": [
+  "hmc failed ['renewable:source_identity_page', 'renewable:source_identity_page'] actual 75 controlled 76"
+ ],
+ "hashes": [
+  "hashes unchanged"
+ ],
+ "second_review_checker_probe": [
+  "wrong_count_control {'stage': '/Users/heojeongmin/Documents/Claude/Projects/ESGenie/output/reviews/pr71_20261005/followup_fix_validation/02_final_0b770df/runs/LIVE_61b6167/followup', 'passed': 43, 'total': 45}",
+  "swapped_employment_groups {'stage': '/Users/heojeongmin/Documents/Claude/Projects/ESGenie/output/reviews/pr71_20261005/followup_fix_validation/02_final_0b770df/runs/LIVE_61b6167/followup', 'passed': 43, 'total': 45}",
+  "correct_employment_groups_control {'stage': '/Users/heojeongmin/Documents/Claude/Projects/ESGenie/output/reviews/pr71_20261005/followup_fix_validation/02_final_0b770df/runs/LIVE_61b6167/followup', 'passed': 45, 'total': 45}"
+ ]
+}

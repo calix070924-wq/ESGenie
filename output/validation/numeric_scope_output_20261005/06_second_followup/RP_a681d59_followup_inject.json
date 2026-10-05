@@ -1,0 +1,438 @@
+{
+  "stage": "/Users/heojeongmin/Documents/Claude/Projects/ESGenie/output/reviews/pr71_20261005/second_followup_fix_validation/05_final_a681d59/runs/RP_a681d59/followup",
+  "normal": {
+    "passed": 45,
+    "total": 45,
+    "failed": []
+  },
+  "injections": [
+    {
+      "injection": "본문 참석 46명 → 47명(틀린 수치)",
+      "applied": true,
+      "target": [
+        "본문 교육 인원"
+      ],
+      "detected": true,
+      "failed_items": [
+        "본문 교육 인원 수량이 모두 정답의 역할·날짜와 일치(경고가 붙은 오답도 실패)",
+        "보고서 PDF 교육 인원 수량이 정답과 일치"
+      ],
+      "exit_code": 1
+    },
+    {
+      "injection": "본문에 경고 붙은 오답 문장 추가(정규직 15명 출석 [검토: …])",
+      "applied": true,
+      "target": [
+        "본문 교육 인원"
+      ],
+      "detected": true,
+      "failed_items": [
+        "본문 교육 인원 고용형태별 내역이 정답표(값·집단·역할·날짜)와 일치",
+        "보고서 PDF 교육 인원 고용형태별 내역이 정답표와 일치",
+        "보고서 PDF에 본문의 보류·미확정 문구가 같은 내용으로 실림(문장별)"
+      ],
+      "exit_code": 1
+    },
+    {
+      "injection": "본문 참석·미참석 역할 뒤바꿈(46명이 미참석)",
+      "applied": true,
+      "target": [
+        "본문 교육 인원"
+      ],
+      "detected": true,
+      "failed_items": [
+        "본문 교육 인원 수량이 모두 정답의 역할·날짜와 일치(경고가 붙은 오답도 실패)",
+        "보고서 PDF 교육 인원 수량이 정답과 일치"
+      ],
+      "exit_code": 1
+    },
+    {
+      "injection": "본문 날짜 오기(4/22 참석 46명 → 4/27)",
+      "applied": true,
+      "target": [
+        "본문 교육 인원"
+      ],
+      "detected": true,
+      "failed_items": [
+        "본문 교육 인원 수량이 모두 정답의 역할·날짜와 일치(경고가 붙은 오답도 실패)"
+      ],
+      "exit_code": 1
+    },
+    {
+      "injection": "본문 환경 부분값을 연간 전사 값으로 확대",
+      "applied": true,
+      "target": [
+        "본문 환경 수치"
+      ],
+      "detected": true,
+      "failed_items": [
+        "본문 환경 수치(4월 제1공장 부분값)를 전체·연간·합산으로 넓힌 문장 없음"
+      ],
+      "exit_code": 1
+    },
+    {
+      "injection": "응답서 E-6-2 값 29.3 → 92.0",
+      "applied": true,
+      "target": [
+        "응답서 E-6-2 29.3%"
+      ],
+      "detected": true,
+      "failed_items": [
+        "응답서 E-6-2 29.3% · 4월 제1공장 범위"
+      ],
+      "exit_code": 1
+    },
+    {
+      "injection": "응답서 05 비교를 동일 범위 충돌(mismatch)로 바꿈",
+      "applied": true,
+      "target": [
+        "응답서 05 회사 답변"
+      ],
+      "detected": true,
+      "failed_items": [
+        "응답서 05 회사 답변 92%를 일치·동일 범위 충돌로 확정하지 않음"
+      ],
+      "exit_code": 1
+    },
+    {
+      "injection": "Excel E-4-1 행에서 '부분' 범위 제거",
+      "applied": true,
+      "target": [
+        "Excel E-4-1"
+      ],
+      "detected": true,
+      "failed_items": [
+        "Excel E-4-1 행: 0.513216·부분값 범위"
+      ],
+      "exit_code": 1
+    },
+    {
+      "injection": "응답서 PDF 05 사유 잘림(29.3% 계산식 누락)",
+      "applied": true,
+      "target": [
+        "응답서 PDF"
+      ],
+      "detected": true,
+      "failed_items": [
+        "응답서 PDF 생성·E-6-2 29.3과 05 사유 전문(두 계산식·메모 ID·확정하지 않음)"
+      ],
+      "exit_code": 1
+    },
+    {
+      "injection": "보고서 PDF 참석 46명 → 45명",
+      "applied": true,
+      "target": [
+        "보고서 PDF 교육 인원"
+      ],
+      "detected": true,
+      "failed_items": [
+        "보고서 PDF 교육 인원 수량이 정답과 일치"
+      ],
+      "exit_code": 1
+    },
+    {
+      "injection": "보고서 PDF에서 보류 문구 제거",
+      "applied": true,
+      "target": [
+        "보고서 PDF에 본문의 보류"
+      ],
+      "detected": true,
+      "failed_items": [
+        "보고서 PDF에 본문의 보류·미확정 문구가 같은 내용으로 실림(문장별)"
+      ],
+      "exit_code": 1
+    },
+    {
+      "injection": "원문에 없는 수량(정규직 15명) — Markdown·PDF 양쪽(서로 일치)",
+      "applied": true,
+      "target": [
+        "본문 교육 인원",
+        "보고서 PDF 교육 인원"
+      ],
+      "detected": true,
+      "failed_items": [
+        "본문 교육 인원 고용형태별 내역이 정답표(값·집단·역할·날짜)와 일치",
+        "보고서 PDF 교육 인원 고용형태별 내역이 정답표와 일치"
+      ],
+      "exit_code": 1
+    },
+    {
+      "injection": "원문에 없는 수량(정규직 15명) — Markdown만",
+      "applied": true,
+      "target": [
+        "본문 교육 인원"
+      ],
+      "detected": true,
+      "failed_items": [
+        "본문 교육 인원 고용형태별 내역이 정답표(값·집단·역할·날짜)와 일치"
+      ],
+      "exit_code": 1
+    },
+    {
+      "injection": "원문에 없는 수량(정규직 15명) — 보고서 PDF만",
+      "applied": true,
+      "target": [
+        "보고서 PDF 교육 인원"
+      ],
+      "detected": true,
+      "failed_items": [
+        "보고서 PDF 교육 인원 고용형태별 내역이 정답표와 일치"
+      ],
+      "exit_code": 1
+    },
+    {
+      "injection": "원문에 없는 수량 표 행(999명) — Markdown·PDF 양쪽(서로 일치)",
+      "applied": true,
+      "target": [
+        "본문 교육 인원",
+        "보고서 PDF 교육 인원"
+      ],
+      "detected": true,
+      "failed_items": [
+        "본문 교육 인원 수량이 모두 정답의 역할·날짜와 일치(경고가 붙은 오답도 실패)",
+        "보고서 PDF 교육 인원 수량이 정답과 일치"
+      ],
+      "exit_code": 1
+    },
+    {
+      "injection": "원문에 없는 수량 표 행(999명) — Markdown만",
+      "applied": true,
+      "target": [
+        "본문 교육 인원"
+      ],
+      "detected": true,
+      "failed_items": [
+        "본문 교육 인원 수량이 모두 정답의 역할·날짜와 일치(경고가 붙은 오답도 실패)"
+      ],
+      "exit_code": 1
+    },
+    {
+      "injection": "원문에 없는 수량 표 행(999명) — 보고서 PDF만",
+      "applied": true,
+      "target": [
+        "보고서 PDF 교육 인원"
+      ],
+      "detected": true,
+      "failed_items": [
+        "보고서 PDF 교육 인원 수량이 정답과 일치"
+      ],
+      "exit_code": 1
+    },
+    {
+      "injection": "40명·6명 고용형태 연결 뒤바꿈 — Markdown·PDF 양쪽(서로 일치)",
+      "applied": true,
+      "target": [
+        "본문 교육 인원 고용형태별",
+        "보고서 PDF 교육 인원 고용형태별"
+      ],
+      "detected": true,
+      "failed_items": [
+        "본문 교육 인원 고용형태별 내역이 정답표(값·집단·역할·날짜)와 일치",
+        "보고서 PDF 교육 인원 고용형태별 내역이 정답표와 일치"
+      ],
+      "exit_code": 1
+    },
+    {
+      "injection": "40명·6명 고용형태 연결 뒤바꿈 — Markdown만",
+      "applied": true,
+      "target": [
+        "본문 교육 인원 고용형태별"
+      ],
+      "detected": true,
+      "failed_items": [
+        "본문 교육 인원 고용형태별 내역이 정답표(값·집단·역할·날짜)와 일치"
+      ],
+      "exit_code": 1
+    },
+    {
+      "injection": "40명·6명 고용형태 연결 뒤바꿈 — 보고서 PDF만",
+      "applied": true,
+      "target": [
+        "보고서 PDF 교육 인원 고용형태별"
+      ],
+      "detected": true,
+      "failed_items": [
+        "보고서 PDF 교육 인원 고용형태별 내역이 정답표와 일치"
+      ],
+      "exit_code": 1
+    },
+    {
+      "injection": "4/22 참석 46명을 4/27 참석으로 — Markdown·PDF 양쪽(서로 일치)",
+      "applied": true,
+      "target": [
+        "본문 교육 인원",
+        "보고서 PDF 교육 인원"
+      ],
+      "detected": true,
+      "failed_items": [
+        "본문 교육 인원 수량이 모두 정답의 역할·날짜와 일치(경고가 붙은 오답도 실패)",
+        "보고서 PDF 교육 인원 수량이 정답과 일치"
+      ],
+      "exit_code": 1
+    },
+    {
+      "injection": "4/22 참석 46명을 4/27 참석으로 — Markdown만",
+      "applied": true,
+      "target": [
+        "본문 교육 인원"
+      ],
+      "detected": true,
+      "failed_items": [
+        "본문 교육 인원 수량이 모두 정답의 역할·날짜와 일치(경고가 붙은 오답도 실패)"
+      ],
+      "exit_code": 1
+    },
+    {
+      "injection": "4/22 참석 46명을 4/27 참석으로 — 보고서 PDF만",
+      "applied": true,
+      "target": [
+        "보고서 PDF 교육 인원"
+      ],
+      "detected": true,
+      "failed_items": [
+        "보고서 PDF 교육 인원 수량이 정답과 일치"
+      ],
+      "exit_code": 1
+    },
+    {
+      "injection": "다른 사업장 값을 해당 사업장 실적으로 — Markdown·PDF 양쪽(서로 일치)",
+      "applied": true,
+      "target": [
+        "본문 정답 수치를 다른 사업장",
+        "보고서 PDF 정답 수치를 다른 사업장"
+      ],
+      "detected": true,
+      "failed_items": [
+        "본문 정답 수치를 다른 사업장 실적으로 쓴 문장 없음",
+        "보고서 PDF 정답 수치를 다른 사업장 실적으로 쓴 문장 없음"
+      ],
+      "exit_code": 1
+    },
+    {
+      "injection": "다른 사업장 값을 해당 사업장 실적으로 — Markdown만",
+      "applied": true,
+      "target": [
+        "본문 정답 수치를 다른 사업장"
+      ],
+      "detected": true,
+      "failed_items": [
+        "본문 정답 수치를 다른 사업장 실적으로 쓴 문장 없음"
+      ],
+      "exit_code": 1
+    },
+    {
+      "injection": "다른 사업장 값을 해당 사업장 실적으로 — 보고서 PDF만",
+      "applied": true,
+      "target": [
+        "보고서 PDF 정답 수치를 다른 사업장"
+      ],
+      "detected": true,
+      "failed_items": [
+        "보고서 PDF 정답 수치를 다른 사업장 실적으로 쓴 문장 없음"
+      ],
+      "exit_code": 1
+    },
+    {
+      "injection": "40명·6명 고용형태 연결 뒤바꿈 — 응답서",
+      "applied": true,
+      "target": [
+        "응답서의 교육 인원"
+      ],
+      "detected": true,
+      "failed_items": [
+        "응답서의 교육 인원(원문 인용 포함)이 정답의 값·집단·역할·날짜와 일치"
+      ],
+      "exit_code": 1
+    },
+    {
+      "injection": "40명·6명 고용형태 연결 뒤바꿈 — Excel",
+      "applied": true,
+      "target": [
+        "Excel의 교육 인원"
+      ],
+      "detected": true,
+      "failed_items": [
+        "Excel의 교육 인원(원문 인용 포함)이 정답의 값·집단·역할·날짜와 일치"
+      ],
+      "exit_code": 1
+    },
+    {
+      "injection": "40명·6명 고용형태 연결 뒤바꿈 — 응답서 PDF",
+      "applied": true,
+      "target": [
+        "응답서 PDF의 교육 인원"
+      ],
+      "detected": true,
+      "failed_items": [
+        "응답서 PDF의 교육 인원(원문 인용 포함)이 정답의 값·집단·역할·날짜와 일치"
+      ],
+      "exit_code": 1
+    },
+    {
+      "injection": "교육 인원 오답 — 데이터시트",
+      "applied": false,
+      "detected": null,
+      "failed_items": [],
+      "na_reason": "데이터시트는 K-ESG 프로필 항목만 싣고 교육 인원 행이 없다(원장 밖 원문 집계)"
+    }
+  ],
+  "controls": [
+    {
+      "control": "정상 정규직 40명·기간제 6명 — Markdown·PDF 양쪽",
+      "applied": true,
+      "passed": true,
+      "failed_items": []
+    },
+    {
+      "control": "정상 순서만 바꿈(기간제 6명·정규직 40명) — Markdown·PDF 양쪽",
+      "applied": true,
+      "passed": true,
+      "failed_items": []
+    },
+    {
+      "control": "정상 같은 수의 두 집단(미참석 기간제 2명·파견 2명) — Markdown·PDF 양쪽",
+      "applied": true,
+      "passed": true,
+      "failed_items": []
+    },
+    {
+      "control": "정상 4/27 추가 참석 내역 — Markdown·PDF 양쪽",
+      "applied": true,
+      "passed": true,
+      "failed_items": []
+    },
+    {
+      "control": "정상 올바른 날짜의 46명 — Markdown·PDF 양쪽",
+      "applied": true,
+      "passed": true,
+      "failed_items": []
+    },
+    {
+      "control": "정상 정규직 40명·기간제 6명 — 응답서",
+      "applied": true,
+      "passed": true,
+      "failed_items": []
+    },
+    {
+      "control": "정상 정규직 40명·기간제 6명 — Excel",
+      "applied": true,
+      "passed": true,
+      "failed_items": []
+    },
+    {
+      "control": "정상 정규직 40명·기간제 6명 — 응답서 PDF",
+      "applied": true,
+      "passed": true,
+      "failed_items": []
+    }
+  ],
+  "all_detected": true,
+  "controls_pass": true,
+  "applied": 29,
+  "not_applicable": [
+    {
+      "injection": "교육 인원 오답 — 데이터시트",
+      "reason": "데이터시트는 K-ESG 프로필 항목만 싣고 교육 인원 행이 없다(원장 밖 원문 집계)"
+    }
+  ]
+}
