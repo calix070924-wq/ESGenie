@@ -504,9 +504,37 @@ def test_generated_prose_that_asserts_a_source_only_zero_is_marked_in_the_body()
     text = "### 지표 해설\n요청 기간 산업재해율은 0‰로 확인되었다 [kesg_items_S]."
     body, marks = annotate_generated_text(output, "S", generated(text, {"kesg_items_S": "S-4-2 산업재해율 0 ‰"}))
     assert "[검토: 범위 미확정" in body and [m["reason"] for m in marks] == ["source_only_stated"]
+    plan = "### 향후 계획\n산업재해율 공시 체계를 구축할 계획이다 [kesg_items_S]."
+    assert annotate_generated_text(output, "S", generated(plan, {"kesg_items_S": "S-4-2 산업재해율 0 ‰"}))[1] == []
+    codes = "### 향후 계획\nS-3-1 여성 구성원 비율과 S-4-1 지표를 보완한다. [hanwool_txt_0005, hanwool_txt_0009]"
+    body, marks = annotate_generated_text(output, "S", generated(codes, {"hanwool_txt_0005": "인권", "hanwool_txt_0009": "안전"}))
+    assert marks == [] and "txt_0005" not in body                 # 묶음 인용 번호·항목 코드는 숫자 주장이 아니다
     hedged = "### 지표 해설\n산업재해율 0‰는 원문 범위로만 확인된 참고값이다 [kesg_items_S]."
     body, marks = annotate_generated_text(output, "S", generated(hedged, {"kesg_items_S": "S-4-2 산업재해율 0 ‰"}))
     assert not marks and "[검토" not in body
+
+
+def energy_ledger():
+    graph = EvidenceGraph("LOCAL", "검토")
+    graph.report_year = 2026
+    boundary = Boundary.from_dict(dict(period_start="2026-04-01", period_end="2026-04-30", period_year=2026,
+                                       aggregation="monthly", site="제1공장", site_scope="site", measure_kind="electricity_grid",
+                                       measure="사용전력량", completeness="partial"))
+    graph.add_node(EvidenceNode("LOCAL_E-4-1", "E-4-1", 142560.0, "kWh", 2026, "ocr/bill", origin="ocr",
+                                source_file="02_bill.pdf", value_role="actual", boundary=boundary))
+    result = SimpleNamespace(mapped={"E-4-1": {"value": 0.513216, "unit": "TJ", "source_tier": "ocr_node_gated",
+                                               "name": "에너지 사용량", "area": "E"}}, confidence_flags={}, missing=[])
+    selection.finalize_ledger(result, graph)
+    return result
+
+
+def test_the_llm_summary_marks_widened_scope_but_not_a_sentence_that_denies_it():
+    from esgenie.layer6_report import annotate_summary_text
+    text = ("에너지 사용량 0.513216 TJ는 전사 연간 사용량이다. "
+            "에너지 사용량 0.513216 TJ는 제1공장 월간 부분값으로, 전체 기간과 사업장 범위가 불명확하다.")
+    body, marks = annotate_summary_text(SimpleNamespace(extraction=energy_ledger()), text)
+    assert [m["reason"] for m in marks] == ["scope_widened"] and body.count("[검토:") == 1
+    assert marks[0]["sentence"].startswith("에너지 사용량 0.513216 TJ는 전사 연간")
 
 
 def test_generated_prose_with_unfound_numbers_or_widened_scope_is_marked():

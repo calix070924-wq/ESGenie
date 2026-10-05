@@ -293,6 +293,12 @@ def cmd_core(args) -> None:
     cache_dir = args.cache_dir.resolve()
     live_env(cache_dir)
     files, manifest = input_files(args.pack_dir, args.stage)
+    for extra in args.extra_evidence or []:
+        # 검증용 가상 변형본만 받는다 — 원본 세트에 섞여 원본으로 오인되지 않게 이름에 표시를 요구한다.
+        if "변형본" not in extra.name:
+            raise SystemExit(f"추가 증빙은 '변형본' 표시가 있는 검증용 파일만 받는다: {extra}")
+        files.append({"file": str(extra), "path": str(extra.resolve()), "name": extra.name,
+                      "role": "variant_evidence", "sha256": sha256(extra), "manifest_sha256_match": None})
     loaded, settings = import_from(code_path, args.env_file)
     logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(name)s %(message)s",
                         handlers=[logging.FileHandler(run_dir / f"{args.stage}.log", encoding="utf-8")])
@@ -343,6 +349,14 @@ def cmd_core(args) -> None:
             copy_evidence_pack(sheet, sheet_dir, evidence)
             paths = {"xlsx": export_response_sheet(sheet, sheet_dir),
                      "pdf": export_response_sheet_pdf(sheet, sheet_dir, evidence_base_dir=sheet_dir)}
+            for framework in args.also_framework or []:
+                other = respond_from_pipeline(output, framework, supplier_claims=claims, enable_drafts=False)
+                other.corp_name = args.company
+                other_dir = exports / f"response_sheet_{framework}"
+                copy_evidence_pack(other, other_dir, evidence)
+                dump(target / f"result_{framework}.json", {"sheet": other.to_dict(), "generated_at": now()})
+                paths[framework] = {"xlsx": export_response_sheet(other, other_dir),
+                                    "pdf": export_response_sheet_pdf(other, other_dir, evidence_base_dir=other_dir)}
             sections = {area: {"final_text": v.final_text, "used_mock_llm": getattr(v, "used_mock_llm", None),
                                "final_score": v.final_score, "converged": v.converged,
                                "hitl_required": v.hitl_required}
@@ -522,6 +536,9 @@ def main() -> None:
     core.add_argument("--replay-upstage", type=Path, default=None,
                       help="기록한 Upstage 응답 폴더. 주면 네트워크를 막고 LLM은 캐시 적중만 쓴다")
     core.add_argument("--run-id", default="")
+    core.add_argument("--extra-evidence", type=Path, action="append",
+                      help="검증용 가상 변형본(파일명에 '변형본') — 원본 세트 뒤에 증빙으로 더한다")
+    core.add_argument("--also-framework", action="append", help="같은 분석으로 추가 양식 응답서도 만든다")
     serve = sub.add_parser("serve")
     common(serve)
     serve.add_argument("--host", default="127.0.0.1")
