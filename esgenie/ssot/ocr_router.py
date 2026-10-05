@@ -2760,6 +2760,8 @@ _ZERO_KEPT_CAUSES = {
     "quarter_months_not_stated": "원문 분기의 해당 월이 적혀 있지 않아(회계연도 시작월 미상) 실제 기간을 확정하지 못했습니다.",
     # PR71 검토 R4: 같은 FY 표기에 서로 다른 원문 정의가 있고 어느 정의가 적용되는지 원문에 구분이 없다.
     "fiscal_definition_conflict": "원문에 같은 회계연도(FY)의 정의가 서로 다른 구간으로 여럿 있고 어느 정의가 적용되는지 원문에 구분되지 않아 요청 기간의 실적인지 확인하지 못했습니다.",
+    # PR71 재검토 C: 원문의 FY 정의가 다른 사업장에만 적용된다 — 그 정의를 이 사업장에 빌려 쓰지 않는다.
+    "fiscal_definition_not_applicable": "원문의 회계연도(FY) 정의는 다른 사업장에만 적용되어 {site}에 적용되는 FY 구간을 원문에서 확인할 수 없어 요청 기간의 실적인지 확인하지 못했습니다.",
 }
 # 판정 상태의 우선순위. 후보마다 **자기 문맥으로** 판정한 뒤 가장 강한 것을 고른다.
 _ZERO_STATUS_RANK = {"CONFIRMED": 0, "SOURCE_ONLY": 1, "REJECTED": 2, "UNRESOLVED": 3}
@@ -2802,9 +2804,17 @@ def _zero_verdict(quote: str, hint: str = "", period: str = "",
     `definitions`는 인용 밖 원문(쪽 텍스트)이다 — 회계연도 정의(`FY2026 = …`)를 찾을 때만 쓴다.
     """
     boundary = boundary or {}
-    # 사업장이 적힌 회계연도 정의는 대조할 사업장에만 적용한다. CONFIRMED에는 원문 사업장이 이 사업장과
-    # 같아야 하므로(`_site_matches`) 다른 사업장의 정의로 확정되지 않는다.
-    fiscal = _fiscal_definitions(f"{quote}\n{definitions}", _site_keys(str(boundary.get("site") or "")))
+    # 사업장이 적힌 회계연도 정의는 그 사업장에만 적용한다(PR71 재검토 C). 대조할 사업장은 요청 사업장이고, 요청에
+    # 사업장이 없으면 그 후보 원문(서술·열 머리·머리말)의 사업장이다 — 후보마다 `_zero_scope_verdict`가 고른다.
+    # CONFIRMED에는 원문 사업장이 요청 사업장과 같아야 한다(`_site_matches`)는 대조는 이와 따로 한다.
+    request_sites = _site_keys(str(boundary.get("site") or ""))
+    fiscal_cache: dict[frozenset, dict[str, Any]] = {}
+
+    def fiscal(evidence_sites: set[str]) -> dict[str, Any]:
+        key = frozenset(request_sites or evidence_sites or ())
+        if key not in fiscal_cache:
+            fiscal_cache[key] = _fiscal_definitions(f"{quote}\n{definitions}", set(key))
+        return fiscal_cache[key]
     hint_tokens = _label_tokens(hint)
     specific = [t for t in hint_tokens if t not in _ZERO_GENERIC_TOKENS]
     candidates = _zero_candidates(quote)
@@ -3770,7 +3780,12 @@ def _zero_scope_verdict(candidate: _ZeroCandidate, requested: "_DateSpan | None"
 
     기간은 서술·열 머리에서도 규격 번호·개정 연도를 가린 문구로 읽는다(§5 C1: `ISO 45001:2018 기준`의
     2018은 보고 기간이 아니다). 사업장은 원문에서 읽는다.
+
+    `fiscal`이 함수면 사업장(서술 → 열 머리 → 머리말)을 먼저 읽고 그 사업장에 적용되는 회계연도 정의를 받는다.
     """
+    if callable(fiscal):
+        fiscal = fiscal(_site_keys(candidate.statement) or _site_keys(candidate.column)
+                        or _zero_heading(candidate, list(hint_tokens))[1])
     statement_spans = _date_spans(_standard_mask(candidate.statement), fiscal)
     column_spans = _date_spans(_standard_mask(candidate.column), fiscal)
     statement_sites, column_sites = _site_keys(candidate.statement), _site_keys(candidate.column)
@@ -3875,6 +3890,7 @@ def _zero_scope_boundary(boundary: dict[str, Any], verdict: _ZeroVerdict, period
     merged["provenance"] = [*(boundary.get("provenance") or []), record]
     if verdict.status == "SOURCE_ONLY":
         note = _ZERO_KEPT_CAUSES.get(verdict.cause) or "원문 사실만 확인했고 요청 범위는 확인하지 못했습니다."
+        note = note.replace("{site}", str(boundary.get("site") or "").strip() or verdict.evidence_site or "이 사업장")
         merged["review_notes"] = [*(boundary.get("review_notes") or []), note]
     return merged
 
@@ -3899,7 +3915,7 @@ class _DateSpan:
     # 기간 표기는 있으나 실제 시작·종료일을 원문으로 확정할 수 없는 사유(`_ZERO_KEPT_CAUSES`의 키).
     # 비어 있지 않으면 start·end는 비교에 쓰지 않는 자리값이다 — 회계연도 시작월·연도를 보충하지 않는다.
     undefined: str = ""
-    # `undefined`가 `fiscal_definition_conflict`일 때 서로 다른 원문 정의(정의 원문, 시작, 끝).
+    # `undefined`가 `fiscal_definition_conflict`·`fiscal_definition_not_applicable`일 때 원문 정의(정의 원문, 시작, 끝).
     definitions: tuple = ()
 
 
@@ -3940,11 +3956,13 @@ def _fiscal_key(token: str) -> str:
 
 @dataclass(frozen=True)
 class _FiscalConflict:
-    """같은 회계연도 표기에 서로 다른 구간을 준 원문 정의들 — 적용 관계를 원문으로 가를 수 없다.
+    """회계연도 표기의 구간을 원문 정의로 정할 수 없는 경우 — 서로 다른 구간의 정의가 함께 적용되거나
+    (`fiscal_definition_conflict`), 적용되는 정의가 없다(`fiscal_definition_not_applicable`, 다른 사업장의 정의만 있음).
 
     `definitions`는 (정의 원문, 그 텍스트 안의 시작, 끝)이다. 감사 기록에 그대로 싣는다.
     """
     definitions: tuple = ()
+    cause: str = "fiscal_definition_conflict"
 
 
 def _fiscal_definitions(text: str, sites: set[str] | None = None) -> dict[str, Any]:
@@ -3955,9 +3973,13 @@ def _fiscal_definitions(text: str, sites: set[str] | None = None) -> dict[str, A
 
     PR71 검토 R4: 첫 정의만 보관해 정의 줄 순서에 따라 같은 0이 CONFIRMED·REJECTED로 갈렸다. 정의를
     모두 모은다. 같은 구간의 반복은 정의 하나다. 구간이 서로 다르면 `_FiscalConflict`로 남긴다 — 첫 값·
-    마지막 값·요청과 맞는 값을 고르지 않는다. 별칭(`FY26 = FY2026`)은 가리킨 표기의 충돌도 함께 잇는다.
-    `sites`(대조할 사업장)가 있으면 정의 줄에 **사업장이 적힌** 정의만 그 사업장에 적용한다 — 사업장 없는
-    정의가 하나라도 다르면 적용 관계를 원문으로 가를 수 없으므로 충돌로 둔다.
+    마지막 값·요청과 맞는 값을 고르지 않는다. 별칭(`FY26 = FY2026`)은 가리킨 표기의 충돌·적용 사업장도 함께 잇는다.
+
+    PR71 재검토 C: 적용되는 정의가 하나도 없을 때 `[적용 정의] or found`로 전체 정의에 되돌아가, 부산 제2공장의
+    정의가 김해 제1공장의 0을 CONFIRMED·REJECTED로 정했다. 정의는 사업장이 적히지 않은 공통 정의이거나 대조할
+    사업장을 적은 정의일 때만 적용한다. 적용되는 정의가 없으면 `fiscal_definition_not_applicable`(구간 미확정)이다 —
+    다른 사업장의 정의·요청 기간으로 보충하지 않는다. 공통 정의와 그 사업장 정의가 다르면 우선순위가 원문에 없으므로
+    충돌이다. `sites`가 비면(사업장 없는 대조) 공통 정의만 적용한다.
     """
     text = str(text or "")
     entries: dict[str, list[tuple[tuple[Any, Any], set[str], tuple[str, int, int]]]] = {}
@@ -3984,15 +4006,15 @@ def _fiscal_definitions(text: str, sites: set[str] | None = None) -> dict[str, A
                 entries.setdefault(key, []).extend(direct[target])
     defs: dict[str, Any] = {}
     for key, found in entries.items():
-        applicable = found
-        if sites and all(line_sites for _bounds, line_sites, _source in found):
-            applicable = [entry for entry in found if entry[1] & sites] or found
+        applicable = [entry for entry in found if not entry[1] or entry[1] & set(sites or ())]
         distinct = {bounds for bounds, _sites, _source in applicable}
+        sources = tuple(dict.fromkeys([*alias_sources.get(key, []), *(source for _b, _s, source in found)]))
         if len(distinct) == 1:
             defs[key] = next(iter(distinct))
+        elif not distinct:
+            defs[key] = _FiscalConflict(sources, "fiscal_definition_not_applicable")
         else:
-            sources = [*alias_sources.get(key, []), *(source for _b, _s, source in found)]
-            defs[key] = _FiscalConflict(tuple(dict.fromkeys(sources)))
+            defs[key] = _FiscalConflict(sources)
     return defs
 
 
@@ -4011,7 +4033,7 @@ def _fiscal_quarter_spans(text: str, fiscal: dict[str, tuple[Any, Any]] | None,
             year = _YEARLESS if short else int(m.group("year"))
             found.append((m.start(), _DateSpan(
                 date(year, 1, 1), date(year, 12, 31), "year", m.group(0), "FISCAL", not short,
-                "fiscal_definition_conflict", bounds.definitions)))
+                bounds.cause, bounds.definitions)))
         elif bounds:
             whole = (bounds[0].month, bounds[0].day, bounds[1].month, bounds[1].day) == (1, 1, 12, 31) \
                 and bounds[0].year == bounds[1].year

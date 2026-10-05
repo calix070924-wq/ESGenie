@@ -460,6 +460,9 @@ def build_source_review(output: Any) -> list[ReviewFinding]:
                 if node is not None and node.source_file not in mock_sources:
                     finding.evidence.append(_reference(node, role=_evidence_role(finding, node)))
                     seen.add(node_id)
+    # 작성 문장은 보고서 본문과 같은 수량 대조를 거친다 — 본문이 보류한 문장을 확인 목록이 `확인된 내용`으로 되살리지 않는다.
+    from .layer6_report import review_generated_findings
+    findings = review_generated_findings(output, findings)
     # 같은 근거·사유를 여러 소비 경로가 보고해도 목록에서는 한 번만 표시한다.
     return list({finding.id: finding for finding in findings}.values())
 
@@ -579,7 +582,10 @@ def review_markdown(findings: list[ReviewFinding]) -> str:
         return "현재 확보한 근거와 수행한 검사에서 추가 확인 사항이 기록되지 않았습니다."
     parts = ["원문 사실·자료 품질·작성 문장에서 확인할 사항입니다. 기존 그린워싱 점수와 구분하여 검토하세요."]
     for finding in findings:
-        parts.extend([f"### {plain(finding.title)}", f"**확인된 내용:** {plain(finding.fact)}",
+        # 작성 문장을 본문 대조가 보류했으면 그 보류 문구를 싣는다(`layer6_report.review_generated_findings`) — 모델 원문은
+        # `fact`·감사 기록에만 둔다.
+        shown = (finding.check_result or {}).get("display_fact") or finding.fact
+        parts.extend([f"### {plain(finding.title)}", f"**확인된 내용:** {plain(shown)}",
                       f"**판단 이유:** {plain(finding.reason)}", f"**확인·보완:** {plain(finding.action)}"])
         for ref in finding.evidence:
             location = f"{ref.page + 1}쪽" if isinstance(ref.page, int) and ref.page >= 0 else "페이지 미확인"

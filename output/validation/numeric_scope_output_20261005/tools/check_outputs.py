@@ -12,6 +12,12 @@ PR71 후속(2026-10-05) 보강. 이전 판(4972df2)은 특정 오답 문자열�
   - 오답 주입 사본(틀린 수치·날짜·범위, 상태 표시 제거, 잘린 사유)마다 해당 항목이 실패하는지 확인한다.
 원본 산출물은 읽기만 한다. 주입은 메모리 사본(읽어 들인 텍스트·표·JSON)에만 한다.
 검사 항목의 분모는 '고정한 정답 항목 수'이다 — 본문 전체 문장의 정확도가 아니다(본문은 교육 인원·범위·상태 항목만 본다).
+
+PR71 재검토(29defa0) D 보강: 이전 판은 내역 수치를 숫자 집합 `{40, 8, 2, 6}`으로만 허용해 `정규직 6명과 기간제 40명이
+출석`을 통과시켰다(검토 `probe_output_checker.py` 38/38). 이제 원본 출석대장을 직접 센 **값·고용형태·역할·날짜** 정답표
+(`TRAINING_GROUPS`, `derive_training_groups.py`)와 대조하고, 집단을 특정할 수 없는 내역 수치는 실패로 본다. 다른 사업장
+표기에 붙은 정답 수치, SOURCE_ONLY 항목의 사유 누락, 응답서·Excel·응답서 PDF의 교육 인원도 대조한다. 오답은 Markdown·PDF
+양쪽(서로 일치)·한쪽에만 넣어 각각 해당 산출물 항목이 실패하는지 확인한다(파일끼리 비교하지 않는다).
 """
 from __future__ import annotations
 
@@ -37,9 +43,21 @@ TRAINING = {
     ("대상", "2026-04-22"): 50, ("참석", "2026-04-22"): 46, ("미참석", "2026-04-22"): 4,
     ("추가 참석", "2026-04-27"): 4, ("중복 제외 합계", "2026-04"): 50,
 }
-# 같은 기록의 내역(원문에 적힌 값). 대상 = 정규직 40 + 기간제 8 + 파견 2, 4/22 참석 = 정규직 40(HN-G01~40) +
-# 기간제 6(HN-G41~46), 미참석 = 기간제 2 + 파견 2.
-TRAINING_PARTS = {40, 8, 2, 6}
+# 같은 기록의 고용형태별 내역 — 09 1쪽 `대상 50명: 정규직 40 + 기간제 8 + 파견 2`와 09·13 출석대장(인원번호별 구분·출석
+# 상태)을 직접 센 값(`derive_training_groups.py` → `06_second_followup/training_groups_from_pdf.json`과 같다).
+# 4/22 참석 = 정규직 40(HN-G01~40) + 기간제 6(HN-G41~46), 미참석 = 기간제 2 + 파견 2, 4/27 추가 = 기간제 2 + 파견 2.
+TRAINING_GROUPS = {
+    ("대상", "정규직", "2026-04-22"): 40, ("대상", "기간제", "2026-04-22"): 8, ("대상", "파견", "2026-04-22"): 2,
+    ("참석", "정규직", "2026-04-22"): 40, ("참석", "기간제", "2026-04-22"): 6,
+    ("미참석", "기간제", "2026-04-22"): 2, ("미참석", "파견", "2026-04-22"): 2,
+    ("추가 참석", "기간제", "2026-04-27"): 2, ("추가 참석", "파견", "2026-04-27"): 2,
+}
+GROUP_WORD = r"(비정규직|정규직|기간제|계약직|파견)"
+GROUP_NORMAL = {"계약직": "기간제"}
+# 원문 사업장(정답 수치는 모두 김해 제1공장). 다른 사업장 표기에 붙은 정답 수치는 그 사업장 실적이라는 오답이다.
+SITE_RE = re.compile(r"(?:(?P<region>[가-힣]{2,4})\s*)?제\s*(?P<number>\d+)\s*공장|(?P<name>양산|부산|김해)\s*공장")
+# SOURCE_ONLY 사유(무엇을 확인하지 못했는지) 문구 — 상태 낱말(`범위 확인 필요`)만 남고 사유가 빠지면 실패다.
+REASON_RE = re.compile(r"원문(?:에|의)[^|]{4,90}?(?:확인하지\s*못했습니다|확정하지\s*못했습니다|확인할\s*수\s*없)")
 STATUS_WORDS = (r"범위\s*미확정|미확정|참고값|원문\s*범위로?만|확인하지\s*못|확인되지\s*않|확정하지\s*않|아닙니다|아님|아니다"
                 r"|명확하지\s*않|불명확|확정\s*여부")
 TRAINING_CONTEXT = r"교육|참석|출석|미참석|불참|이수|수료"
@@ -138,7 +156,8 @@ def narrative_units(text: str) -> list[str]:
     """보고서 본문을 판정 단위(문장·제목·표 행)로 나눈다. 시스템 원장 표(`| K-ESG |` 머리)와 인용 상자(`>`)는 뺀다."""
     units, system_table = [], False
     for line in text.splitlines():
-        s = line.strip()
+        # 확인 필요 사항은 Markdown 특수 문자를 `\(`처럼 가린다 — 글자 그대로 읽는다(PDF에는 가림 표시가 없다).
+        s = re.sub(r"\\([\\`*_{}\[\]()#+.!|<>-])", r"\1", line.strip())
         if not s:
             system_table = False
             continue
@@ -193,13 +212,40 @@ def _held_numbers_span(unit: str) -> tuple[int, int] | None:
     return m.span() if m else None
 
 
+def _group_of(unit: str, start: int, end: int) -> tuple[str, bool]:
+    """(집단, 바로 꾸밈 여부). 바로 앞 집단 낱말(`정규직 40명`·`기간제 근로자는 6명`) 또는 뒤 서술어(`40명은 정규직이다`).
+    없으면 같은 절 앞에 집단 낱말이 하나뿐일 때 그것(바로 꾸미지 않음), 여럿·없음이면 ""."""
+    before = unit[max(0, start - 16):start]
+    m = re.search(GROUP_WORD + r"\s*(?:직|근로자|직원|인원|근무자)?\s*(?:수)?\s*(?:은|는|이|가|의|:|：)?\s*$", before)
+    if m:
+        return GROUP_NORMAL.get(m.group(1), m.group(1)), True
+    m = re.match(r"\s*(?:은|는|이|가)\s*" + GROUP_WORD + r"(?:직|근로자|직원)?\s*(?:이다|이며|이고|이었|였|입니다|임)",
+                 unit[end:end + 20])
+    if m:
+        return GROUP_NORMAL.get(m.group(1), m.group(1)), True
+    clause = re.split(r"[,;.]|\d+\s*명", unit[max(0, start - 40):start])[-1]
+    found = {GROUP_NORMAL.get(g, g) for g in re.findall(GROUP_WORD, clause)}
+    return (found.pop(), False) if len(found) == 1 else ("", False)
+
+
+def _role_of(context: str, unit: str, dates: set[str]) -> str:
+    if re.search(r"미\s*참석|불참|결석|참석하지|출석하지", context):
+        return "미참석"
+    if re.search(r"추가", context) or "04-27" in dates:
+        return "추가 참석" if re.search(r"참석|출석|참여|이수", context + unit) else ""
+    if re.search(r"대상", context):
+        return "대상"
+    return "참석" if re.search(r"(?<!미)(?<!미 )(참석|출석|참여)", context) else ""
+
+
 def training_count_errors(unit: str) -> list[str]:
-    """한 판정 단위 안의 교육 인원 수량을 정답(역할·날짜)과 대조한 오류 목록."""
+    """한 판정 단위 안의 교육 인원 수량을 정답(역할·날짜, 고용형태별 내역은 값·집단·역할·날짜)과 대조한 오류 목록."""
     unit = FILE_NAME_RE.sub(lambda m: " " * len(m.group()), unit)
     if not re.search(TRAINING_CONTEXT, unit):
         return []
     skip = _held_numbers_span(unit)
     errors = []
+    totals = set(TRAINING.values())
     for m in re.finditer(r"(?<![\d.,A-Za-z가-힣\-])(\d{1,3})\s*명", unit):
         if skip and skip[0] <= m.start() < skip[1]:
             continue
@@ -214,8 +260,23 @@ def training_count_errors(unit: str) -> list[str]:
         before = re.split(r"[,;]|\d+\s*명", unit[max(0, m.start() - 14):m.start()])[-1]
         after = re.split(r"[,;]|\d+\s*명", unit[m.end():m.end() + 14])[0]
         context = before + "|" + after
-        if n not in set(TRAINING.values()) | TRAINING_PARTS:
-            errors.append(f"정답에 없는 인원 {n}명: {unit[:120]}")
+        group, direct = _group_of(unit, m.start(), m.end())
+        if group and (direct or n not in totals):
+            # 고용형태별 내역: 값·집단이 정답표에 있고, 읽힌 역할·날짜와도 맞아야 한다(숫자 집합으로 허용하지 않는다).
+            # 날짜는 그 수량에 가장 가까운 앞 날짜 하나다(앞 서술의 다른 날짜를 섞지 않는다).
+            near = [d for d in re.finditer(r"(?:(20\d{2})\s*[-.년]\s*)?(\d{1,2})\s*[-.월]\s*(\d{1,2})\s*일?",
+                                           unit[max(0, m.start() - 40):m.start()])]
+            dates = _dates(near[-1].group(0)) if near else set()
+            role = _role_of(context, unit, dates)
+            fits = [key for key, count in TRAINING_GROUPS.items() if count == n and key[1] == group
+                    and (not role or key[0] == role) and (not dates or key[2][5:] in dates)]
+            if not fits:
+                errors.append(f"고용형태별 인원 오기 {group} {n}명(역할 {role or '미상'}·날짜 {sorted(dates) or '미상'}): "
+                              f"{unit[:120]}")
+            continue
+        if n not in totals:
+            parts = {count for count in TRAINING_GROUPS.values()}
+            errors.append(("집단을 특정할 수 없는 내역 수치" if n in parts else "정답에 없는 인원") + f" {n}명: {unit[:120]}")
             continue
         absent = re.search(r"미\s*참석|불참|결석", context)
         attended = re.search(r"(?<!미)(?<!미 )(참석|출석)", context) and not absent
@@ -233,9 +294,49 @@ def training_count_errors(unit: str) -> list[str]:
             errors.append(f"4/22 참석 46명을 4/27 값으로 서술: {unit[:120]}")
     if re.search(r"ID\s*50\s*개|50\s*개[^.]{0,6}ID", unit) and re.search(r"검증|확인", unit):
         errors.append(f"명단 ID 50개 검증 서술: {unit[:120]}")
-    if re.search(r"법정[^.]{0,12}(?:교육|이수)[^.]{0,12}(?:완료|충족|이수했)", unit) and not re.search(r"아니|않|아님", unit):
+    # 부정(`판정하는 문서는 아닙니다`·`충족했다는 판정은 아닙니다`)은 확대가 아니다.
+    if re.search(r"법정[^.]{0,12}(?:교육|이수)[^.]{0,12}(?:완료|충족|이수했)", unit) and not re.search(r"아니|아닙|않|아님", unit):
         errors.append(f"법정 교육 전체 이수로 확대: {unit[:120]}")
     return errors
+
+
+KEY_VALUE_RE = re.compile(r"(?<![\d.,])(?:142,?560|0\.513216|68\.158|680(?:\.0)?\s*(?:톤|m³|ton)|18,?400|18\.4\s*톤|29\.3\s*%"
+                          r"|(?:50|46|4)\s*명)")
+
+
+def site_errors(units: list[str]) -> list[str]:
+    """정답 수치(교육 인원·4월 제1공장 환경값)를 다른 사업장 표기에 붙여 쓴 단위. 수량 앞 25자 안의 가장 가까운 사업장 표기를 본다."""
+    bad = []
+    for unit in units:
+        if is_source_quote(unit):
+            continue
+        for m in KEY_VALUE_RE.finditer(unit):
+            if m.group(0).endswith("명") and not re.search(TRAINING_CONTEXT, unit[max(0, m.start() - 30):m.end() + 20]):
+                continue
+            sites = list(SITE_RE.finditer(unit[max(0, m.start() - 25):m.start()]))
+            if not sites:
+                continue
+            site = sites[-1]
+            # 원문의 다른 사업장은 양산 제2공장이다. 앞 낱말(`같은 기간 제1공장`)을 지역명으로 읽지 않는다 — 번호·알려진 지역만 본다.
+            if (site.group("number") and site.group("number") != "1") or site.group("name") in ("양산", "부산") \
+                    or site.group("region") in ("양산", "부산"):
+                bad.append(f"다른 사업장 표기({site.group(0)})에 정답 수치 {m.group(0)}: {unit[:120]}")
+    return bad
+
+
+GROUP_ERRORS = ("고용형태별 인원 오기", "집단을 특정할 수 없는 내역 수치")
+
+
+def sheet_text_units(sheet: dict, excel_rows: dict, sheet_pdf_text: str) -> dict[str, list[str]]:
+    """응답서 JSON(근거·사유·표시)·Excel 행·응답서 PDF를 문장 단위로 나눈다 — 교육 인원 대조용."""
+    def split(text: str) -> list[str]:
+        return pdf_units(text)
+    answer = []
+    for a in sheet.get("answers", []):
+        answer += split(" ".join(str(a.get(k) or "") for k in ("rationale", "comparison_reason", "review_note"))
+                        + " " + " ".join(a.get("flags") or []))
+    return {"answer": answer, "excel": [u for row in excel_rows.values() for u in split(" | ".join(row))],
+            "sheet_pdf": split(sheet_pdf_text)}
 
 
 def fact_listing_errors(unit: str) -> list[str]:
@@ -403,6 +504,16 @@ def check(stage: Path | Bundle, *, variant: bool = False) -> dict:
             e81a.get("status") != "verified" and e81a.get("comparison") == "scope_unconfirmed"
             and re.search(r"원문 범위로만|범위 확인 필요", " ".join(e81a.get("flags") or []) + (e81a.get("review_note") or "")),
             (e81a.get("qid"), e81a.get("status"), e81a.get("comparison")), "scope_unconfirmed", "answer")
+        reason81 = " ".join(str(e81a.get(k) or "") for k in ("comparison_reason", "review_note"))
+        add("응답서 변형본 E-8-1: 미확정 사유(무엇을 확인하지 못했는지) 보존", bool(REASON_RE.search(reason81)),
+            reason81[:200], "원문 …을 확인하지 못했습니다", "answer")
+    texts = sheet_text_units(sheet, b.excel_rows, b.sheet_pdf_text)
+    for where, label in (("answer", "응답서"), ("excel", "Excel"), ("sheet_pdf", "응답서 PDF")):
+        if where == "sheet_pdf" and b.sheet_pdf_pages == 0:
+            continue
+        wrong = [e for u in texts[where] for e in training_count_errors(u)]
+        add(f"{label}의 교육 인원(원문 인용 포함)이 정답의 값·집단·역할·날짜와 일치", not wrong, wrong[:3],
+            "정답 인원만", where)
 
     # ── LLM 본문(보고서 Markdown) ───────────────────────────────
     units = narrative_units(b.body)
@@ -410,8 +521,14 @@ def check(stage: Path | Bundle, *, variant: bool = False) -> dict:
     add("본문·요약에 '재생 원부자재 비율 92%' 없음", not re.search(r"재생\s*원부자재[^.\n]{0,20}92", narrative),
         re.findall(r"[^.\n]*재생\s*원부자재[^.\n]*", narrative)[:2], "없음", "report_md")
     errors = [e for u in units for e in training_count_errors(u) + fact_listing_errors(u)]
-    add("본문 교육 인원 수량이 모두 정답의 역할·날짜와 일치(경고가 붙은 오답도 실패)", not errors, errors[:6],
+    group_errors = [e for e in errors if e.startswith(GROUP_ERRORS)]
+    add("본문 교육 인원 수량이 모두 정답의 역할·날짜와 일치(경고가 붙은 오답도 실패)",
+        not [e for e in errors if e not in group_errors], [e for e in errors if e not in group_errors][:6],
         "대상 50·참석 46·미참석 4(4/22), 추가 4(4/27), 중복 제외 50(4월)", "report_md")
+    add("본문 교육 인원 고용형태별 내역이 정답표(값·집단·역할·날짜)와 일치", not group_errors, group_errors[:6],
+        "정규직 40·기간제 6 참석, 기간제 2·파견 2 미참석(4/22) 등", "report_md")
+    sites = site_errors(units)
+    add("본문 정답 수치를 다른 사업장 실적으로 쓴 문장 없음", not sites, sites[:3], "김해 제1공장 수치만", "report_md")
     # 보존 여부는 사회 영역 본문(서술·표)에서만 본다 — 부록(확인 필요 사항)의 원문 인용으로 통과시키지 않는다.
     at = b.body.find("## 사회 성과")
     end = b.body.find("\n## ", at + 1) if at >= 0 else -1
@@ -452,6 +569,7 @@ def check(stage: Path | Bundle, *, variant: bool = False) -> dict:
         x81 = " | ".join(next((v for k, v in {**b.excel_rows, **b.excel_rows_kesg61}.items() if k.endswith("E-8-1")), []))
         add("Excel 변형본 E-8-1 행: 같은 행에 원문 범위·확인 필요 상태", re.search(r"원문 범위로만|범위 확인 필요|미확정", x81)
             and "자가신고 일치" not in x81, x81[:300], "같은 행 상태", "excel")
+        add("Excel 변형본 E-8-1 행: 같은 행에 미확정 사유", bool(REASON_RE.search(x81)), x81[:300], "같은 행 사유", "excel")
     ds = b.datasheet
     add("데이터시트 E-5-1·E-6-1 측정 범위 표시", all("제1공장" in str((ds.get(c) or {}).get("측정 범위") or "") for c in ("E-5-1", "E-6-1")),
         {c: (ds.get(c) or {}).get("측정 범위") for c in ("E-5-1", "E-6-1")}, "4월·제1공장", "datasheet")
@@ -478,7 +596,14 @@ def check(stage: Path | Bundle, *, variant: bool = False) -> dict:
     add("보고서 PDF에 '재생원부자재비율92' 없음", b.report_pdf_pages > 0 and not re.search(r"재생원부자재비율[^。]{0,8}92", rflat),
         {"pages": b.report_pdf_pages}, "없음", "report_pdf")
     perrors = [e for u in punits for e in training_count_errors(u) + fact_listing_errors(u)]
-    add("보고서 PDF 교육 인원 수량이 정답과 일치", b.report_pdf_pages > 0 and not perrors, perrors[:4], "정답 인원만", "report_pdf")
+    pgroup = [e for e in perrors if e.startswith(GROUP_ERRORS)]
+    add("보고서 PDF 교육 인원 수량이 정답과 일치", b.report_pdf_pages > 0 and not [e for e in perrors if e not in pgroup],
+        [e for e in perrors if e not in pgroup][:4], "정답 인원만", "report_pdf")
+    add("보고서 PDF 교육 인원 고용형태별 내역이 정답표와 일치", b.report_pdf_pages > 0 and not pgroup, pgroup[:4],
+        "값·집단·역할·날짜", "report_pdf")
+    psites = site_errors(punits)
+    add("보고서 PDF 정답 수치를 다른 사업장 실적으로 쓴 문장 없음", b.report_pdf_pages > 0 and not psites, psites[:3],
+        "김해 제1공장 수치만", "report_pdf")
     md_status = [u for u in units if re.match(r"\[(확인 보류|범위 미확정|범위 주의)\]", u) or "[검토:" in u]
     absent = []
     for u in md_status:
@@ -637,27 +762,137 @@ def _datasheet_strip(b: Bundle, code: str, column: str) -> int:
     return 1
 
 
+# ── PR71 재검토 §8.3: 관계 오답(값·집단·날짜·사업장·사유)을 Markdown·PDF 양쪽(서로 일치)·한쪽에 넣는다 ─────────
+
+def _md_add(b: Bundle, text: str) -> int:
+    anchor = "### 주요 활동\n"
+    if anchor not in b.body:
+        return 0
+    b.body = b.body.replace(anchor, anchor + text + "\n", 1)
+    return 1
+
+
+def _sheet_add(b: Bundle, text: str, where: str) -> int:
+    """응답서 E-6(교육) 근거·Excel 행·응답서 PDF 중 한 곳에 문장을 더한다."""
+    if where == "answer":
+        a = next((a for a in b.sheet["answers"] if a["qid"].endswith("E-6")), None)
+        if a is None:
+            return 0
+        a["rationale"] = (a.get("rationale") or "") + " " + text
+        return 1
+    if where == "excel":
+        key = next((k for k in b.excel_rows if k.endswith("E-6")), None)
+        if key is None:
+            return 0
+        b.excel_rows[key] = b.excel_rows[key] + [text]
+        return 1
+    if b.sheet_pdf_pages == 0:
+        return 0
+    b.sheet_pdf_text += "\n" + text + "\n"
+    return 1
+
+
+RELATION_ERRORS = [
+    # (이름, 넣을 문장, Markdown 실패 항목 접두, 보고서 PDF 실패 항목 접두)
+    ("원문에 없는 수량(정규직 15명)", "2026년 4월 22일 교육에는 정규직 15명과 기간제 6명이 출석했다.",
+     "본문 교육 인원", "보고서 PDF 교육 인원"),
+    ("원문에 없는 수량 표 행(999명)", "| 교육 참석 인원 | 999명 | 2026-04-22 |", "본문 교육 인원", "보고서 PDF 교육 인원"),
+    ("40명·6명 고용형태 연결 뒤바꿈", "2026년 4월 22일 교육에 정규직 6명과 기간제 40명이 출석했다.",
+     "본문 교육 인원 고용형태별", "보고서 PDF 교육 인원 고용형태별"),
+    ("4/22 참석 46명을 4/27 참석으로", "2026년 4월 27일 교육에는 46명이 참석하였다.", "본문 교육 인원", "보고서 PDF 교육 인원"),
+    ("다른 사업장 값을 해당 사업장 실적으로", "2026년 4월 22일 양산 제2공장 교육에는 46명이 참석하였다.",
+     "본문 정답 수치를 다른 사업장", "보고서 PDF 정답 수치를 다른 사업장"),
+]
+RELATION_CONTROLS = [
+    ("정상 정규직 40명·기간제 6명", "2026년 4월 22일 교육에 정규직 40명과 기간제 6명이 출석했다."),
+    ("정상 순서만 바꿈(기간제 6명·정규직 40명)", "2026년 4월 22일 교육에 기간제 6명과 정규직 40명이 출석했다."),
+    ("정상 같은 수의 두 집단(미참석 기간제 2명·파견 2명)", "2026년 4월 22일 교육 미참석 4명은 기간제 2명과 파견 2명이다."),
+    ("정상 4/27 추가 참석 내역", "2026년 4월 27일 추가 교육에는 기간제 2명과 파견 2명이 참석했다."),
+    ("정상 올바른 날짜의 46명", "2026년 4월 22일 교육 참석 인원은 46명이다."),
+]
+
+
+def relation_injections(*, variant: bool) -> tuple[list, list]:
+    """(오답 [(이름, 실패해야 하는 항목 접두들, 변경 함수)], 정상 대조 [(이름, 변경 함수)])."""
+    cases, controls = [], []
+    for name, text, md_target, pdf_target in RELATION_ERRORS:
+        md_text = text if text.startswith("|") else text
+        pdf_text = text.strip("| ").replace(" | ", " ")
+        cases += [
+            (f"{name} — Markdown·PDF 양쪽(서로 일치)", [md_target, pdf_target],
+             lambda b, m=md_text, t=pdf_text: _md_add(b, m) + _pdf_append(b, " " + t + " ")),
+            (f"{name} — Markdown만", [md_target], lambda b, m=md_text: _md_add(b, m)),
+            (f"{name} — 보고서 PDF만", [pdf_target], lambda b, t=pdf_text: _pdf_append(b, " " + t + " ")),
+        ]
+    swap = "2026년 4월 22일 교육에 정규직 6명과 기간제 40명이 출석했다."
+    for where, label in (("answer", "응답서"), ("excel", "Excel"), ("sheet_pdf", "응답서 PDF")):
+        cases.append((f"40명·6명 고용형태 연결 뒤바꿈 — {label}", [f"{label}의 교육 인원"],
+                      lambda b, w=where: _sheet_add(b, swap, w)))
+    cases.append(("교육 인원 오답 — 데이터시트", ["데이터시트 교육 인원"], lambda b: 0))   # N/A: 교육 인원 행이 없다
+    if variant:
+        cases += [
+            ("변형본 Excel E-8-1 행에서 사유만 제거(상태 낱말은 남김)", ["Excel 변형본 E-8-1 행: 같은 행에 미확정 사유"],
+             lambda b: _excel_strip(b, next((k for k in b.excel_rows_kesg61 if k.endswith("E-8-1")), ""),
+                                    r"원문(?:에|의)[^|]*?확인하지\s*못했습니다\.?", rows=b.excel_rows_kesg61)),
+            ("변형본 응답서 E-8-1에서 사유만 제거(상태 낱말은 남김)", ["응답서 변형본 E-8-1: 미확정 사유"],
+             lambda b: _strip_answer_reason(b.sheet_kesg61, "E-8-1")),
+        ]
+    for name, text in RELATION_CONTROLS:
+        controls += [(f"{name} — Markdown·PDF 양쪽", lambda b, t=text: _md_add(b, t) + _pdf_append(b, " " + t + " "))]
+    for where, label in (("answer", "응답서"), ("excel", "Excel"), ("sheet_pdf", "응답서 PDF")):
+        controls.append((f"정상 정규직 40명·기간제 6명 — {label}",
+                         lambda b, w=where: _sheet_add(b, RELATION_CONTROLS[0][1], w)))
+    return cases, controls
+
+
+NOT_APPLICABLE = {"교육 인원 오답 — 데이터시트": "데이터시트는 K-ESG 프로필 항목만 싣고 교육 인원 행이 없다(원장 밖 원문 집계)"}
+
+
+def _strip_answer_reason(sheet: dict | None, suffix: str) -> int:
+    for a in (sheet or {}).get("answers", []):
+        if a["qid"].endswith(suffix):
+            n = 0
+            for key in ("comparison_reason", "review_note"):
+                text, k = re.subn(r"원문(?:에|의)[^|]*?확인하지\s*못했습니다\.?", "", str(a.get(key) or ""))
+                a[key], n = text, n + k
+            return n
+    return 0
+
+
 def run_injections(stage: Path, *, variant: bool) -> dict:
     base = load(stage)
     normal = check(copy.deepcopy(base), variant=variant)
     results = []
-    for name, target, mutate in injections(base, variant=variant):
+    cases = [(name, [target], mutate) for name, target, mutate in injections(base, variant=variant)]
+    relation_cases, controls = relation_injections(variant=variant)
+    for name, targets, mutate in cases + relation_cases:
         b = copy.deepcopy(base)
         changed = mutate(b)
         if not changed:
-            results.append({"injection": name, "applied": False, "detected": None, "failed_items": []})
+            results.append({"injection": name, "applied": False, "detected": None, "failed_items": [],
+                            "na_reason": NOT_APPLICABLE.get(name, "주입할 자리가 없다")})
             continue
         r = check(b, variant=variant)
         failed = [row["item"] for row in r["rows"] if not row["pass"]]
-        results.append({"injection": name, "applied": True, "target": target,
-                        "detected": any(item.startswith(target) for item in failed), "failed_items": failed,
-                        "exit_code": 0 if r["passed"] == r["total"] else 1})
+        results.append({"injection": name, "applied": True, "target": targets,
+                        "detected": all(any(item.startswith(t) for item in failed) for t in targets),
+                        "failed_items": failed, "exit_code": 0 if r["passed"] == r["total"] else 1})
+    control_results = []
+    for name, mutate in controls:
+        b = copy.deepcopy(base)
+        changed = mutate(b)
+        r = check(b, variant=variant) if changed else None
+        control_results.append({"control": name, "applied": bool(changed),
+                                "passed": None if r is None else r["passed"] == r["total"],
+                                "failed_items": [] if r is None else [row["item"] for row in r["rows"] if not row["pass"]]})
     return {"stage": str(stage), "normal": {"passed": normal["passed"], "total": normal["total"],
                                             "failed": [r["item"] for r in normal["rows"] if not r["pass"]]},
-            "injections": results,
+            "injections": results, "controls": control_results,
             "all_detected": all(r["detected"] for r in results if r["applied"]),
-            "applied": sum(r["applied"] for r in results), "not_applicable": [r["injection"] for r in results
-                                                                              if not r["applied"]]}
+            "controls_pass": all(c["passed"] for c in control_results if c["applied"]),
+            "applied": sum(r["applied"] for r in results),
+            "not_applicable": [{"injection": r["injection"], "reason": r["na_reason"]} for r in results
+                               if not r["applied"]]}
 
 
 def main() -> None:
@@ -671,10 +906,13 @@ def main() -> None:
         result = run_injections(args.stage, variant=args.variant)
         for r in result["injections"]:
             state = "N/A" if not r["applied"] else ("DETECTED" if r["detected"] else "MISSED")
-            print(f"{state} {r['injection']} :: {r.get('failed_items', [])[:3]}")
+            print(f"{state} {r['injection']} :: exit={r.get('exit_code')} {r.get('failed_items', [])[:3]}"
+                  + (f" ({r['na_reason']})" if not r["applied"] else ""))
+        for c in result["controls"]:
+            print(f"{'CONTROL-PASS' if c['passed'] else 'CONTROL-FAIL'} {c['control']} :: {c['failed_items'][:3]}")
         print(f"normal {result['normal']['passed']}/{result['normal']['total']} · injections applied {result['applied']}"
-              f" · all detected {result['all_detected']}")
-        ok = result["all_detected"] and result["normal"]["passed"] == result["normal"]["total"]
+              f" · all detected {result['all_detected']} · controls pass {result['controls_pass']}")
+        ok = result["all_detected"] and result["controls_pass"] and result["normal"]["passed"] == result["normal"]["total"]
     else:
         result = check(args.stage, variant=args.variant)
         for r in result["rows"]:

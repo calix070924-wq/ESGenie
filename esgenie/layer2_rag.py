@@ -142,6 +142,9 @@ class GenerationResult:
     text: str
     context: RAGContext
     used_mock_llm: bool
+    # 생성 경로가 결정적으로 넣은 표(원장 표·원문 확인 수치 표) 원문. 보고서 조립의 본문 대조가 LLM 표와 출처로
+    # 구분한다(PR71 재검토 B — 표 제목·열 이름으로 가리지 않는다).
+    system_tables: tuple[str, ...] = ()
 
 
 @dataclass
@@ -576,7 +579,8 @@ class HybridRAG:
         if facts_chunk is not None:
             table_md += _render_source_facts_table(facts_chunk.meta["facts"])
         body = _assemble_section_v2(resp.content.strip(), table_md, area_name)
-        return GenerationResult(area=area, text=body, context=ctx, used_mock_llm=resp.used_mock)
+        return GenerationResult(area=area, text=body, context=ctx, used_mock_llm=resp.used_mock,
+                                system_tables=(table_md,))
 
 
 # ====================================================================

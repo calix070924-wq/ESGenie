@@ -397,17 +397,20 @@ def test_correct_attendance_sentences_survive(sentence):
     assert marks == [] and body.startswith(sentence.split(" [")[0][:20])
 
 
-@pytest.mark.parametrize("sentence,reason", [
-    ("2026년 6월 3일 교육에는 정규직 11명과 기간제 4명이 출석하였다 [source_facts_S].", "orphan_number"),
-    ("2026년 6월 교육에 총 15명이 참석하였다 [source_facts_S].", "orphan_number"),
-    ("2026년 6월 3일 교육에는 30명이 참석했다 [source_facts_S].", "role_or_date_mismatch"),   # 대상·월 합계를 그날 참석으로
-    ("2026년 6월 3일 교육에서 27명이 미참석했다 [source_facts_S].", "role_or_date_mismatch"),
-    ("명단 ID 30개를 검증했다 [source_facts_S].", "orphan_number"),
+# PR71 재검토(2026-10-05): 값은 있으나 관계가 어긋난 사유 코드 `role_or_date_mismatch`를 `relation_mismatch`로 넓혔다
+# (역할·날짜에 고용형태·사업장을 더함). 어긋난 관계는 `problems`에 남는다 — 같은 입력의 기대 의미(그 관계로 보류)는 같다.
+@pytest.mark.parametrize("sentence,reason,problems", [
+    ("2026년 6월 3일 교육에는 정규직 11명과 기간제 4명이 출석하였다 [source_facts_S].", "orphan_number", set()),
+    ("2026년 6월 교육에 총 15명이 참석하였다 [source_facts_S].", "orphan_number", set()),
+    ("2026년 6월 3일 교육에는 30명이 참석했다 [source_facts_S].", "relation_mismatch", {"role", "date"}),   # 대상·월 합계를 그날 참석으로
+    ("2026년 6월 3일 교육에서 27명이 미참석했다 [source_facts_S].", "relation_mismatch", {"role"}),
+    ("명단 ID 30개를 검증했다 [source_facts_S].", "orphan_number", set()),
 ])
-def test_wrong_attendance_sentences_are_held_with_the_confirmed_values(sentence, reason):
+def test_wrong_attendance_sentences_are_held_with_the_confirmed_values(sentence, reason, problems):
     body, marks = review(sentence, {}, FACTS, output=NS(extraction=NS(mapped={})))
     (mark,) = [m for m in marks if m["action"] == "replaced"]
     assert mark["reason"] == reason and mark["model_text"].rstrip(" .") == sentence.split(" [")[0]
+    assert problems <= set(mark.get("problems") or ()), mark
     assert body.startswith("[확인 보류]") and sentence.split(" [")[0] not in body
     if "6월 3일" in sentence or "6월 교육" in sentence:
         assert "교육 참석 인원 27명(2026-06-03)" in body

@@ -10,6 +10,12 @@
 에 값·단위·참여 역할(대상·참석·미참석)·날짜로 맞춘다. 역할 낱말은 참여 집계의 일반 어휘다 — 회사·문서·
 정답 수치를 넣지 않는다. 생성 단계(layer2_rag)는 같은 사실을 생성 입력으로 넘기고, 보고서 조립(layer6_report)은
 이 대조로 근거 없는 수량 문장을 확인 보류로 바꾼다.
+
+PR71 재검토(2026-10-05) A·D: 원문 청크의 수량은 값·역할만 보아, 구조화 사실에서 찾은 날짜 불일치(`6월 9일 27명
+참석` ↔ 6월 3일 참석 27명)를 같은 숫자로 덮었고, 고용형태별 인원을 뒤바꾼 문장(`정규직 6명과 기간제 40명`)을 숫자
+집합이 같다는 이유로 통과시켰다. 이제 사실·청크 모두 **값·단위·역할·대상 집단(고용형태)·날짜·사업장이 연결된 사실**로
+대조한다(`check_quantity`). 같은 값의 다른 날짜 후보가 있어도 실제로 맞는 근거가 있으면 그것을 채택하고, 채택·기각한
+근거를 감사 기록에 남긴다.
 """
 from __future__ import annotations
 
@@ -41,6 +47,30 @@ _CLAUSE_SEP_RE = re.compile(r"(?<!\d),|,(?!\d)|;|\n|\|")
 _GENERIC_TOKENS = frozenset({"인원", "수", "값", "수치", "명", "건", "현황", "기록", "이번", "해당", "전체", "총",
                              "합계", "계", "소계", "총계", "비율", "기준"})
 _PSEUDO_CHUNK_PREFIXES = ("kesg_items_", "source_facts_")
+# 대상 집단(고용형태). 동의어는 같은 집단으로 읽는다(`계약직` = 기간제). 긴 말을 먼저 찾는다 — `비정규직` 안의 `정규직`을
+# 정규직으로 읽지 않는다. 성별·직급 등 다른 집단 축은 이 사전에 없다(그 축의 내역은 집단으로 대조하지 않는다).
+_GROUP_PATTERNS = (
+    ("비정규직", re.compile(r"비\s*정규직")),
+    ("무기계약직", re.compile(r"무기\s*계약직?")),
+    ("직접고용", re.compile(r"직접\s*고용")),
+    ("간접고용", re.compile(r"간접\s*고용")),
+    ("정규직", re.compile(r"정규직")),
+    ("기간제", re.compile(r"기간제|계약직")),
+    ("파견", re.compile(r"파견")),
+    ("단시간", re.compile(r"단시간|시간제")),
+    ("일용직", re.compile(r"일용직")),
+)
+# 집단 낱말과 바로 뒤 수량 사이에 와도 되는 말(`기간제 근로자는 6명`·`정규직: 40명`). 다른 낱말(`포함`·`각각`)이 끼면
+# 그 수량의 집단이 아니다 — `정규직·기간제·파견 포함 50명`은 합계다.
+_GROUP_NOUN_GAP_RE = re.compile(r"\s*(?:직|근로자|직원|인원|근무자|사원|인력)?\s*(?:수)?\s*(?:은|는|이|가|의|:|：)?\s*")
+# 수량 뒤 서술어로 집단을 밝힌 경우(`40명은 정규직이다`). 괄호 내역(`50명(정규직 40명 …)`)은 이 수량의 집단이 아니다.
+_GROUP_AFTER_RE = re.compile(r"\s*(?:은|는|이|가)\s*")
+_GROUP_COPULA_RE = re.compile(r"\s*(?:직|근로자|직원)?\s*(?:이다|이며|이고|이었|였|입니다|임)")
+# 날짜·수량으로 읽지 않을 파일명(`09_…_2026-04-22.pdf`)과 근거 꼬리표(`(출처: …, 1쪽)`).
+_FILE_NAME_RE = re.compile(r"[^\s/|()\[\]]+\.(?:pdf|xlsx|xls|csv|docx?|hwp|png|jpe?g)\b(?:\s*,?\s*\d+\s*쪽)?", re.I)
+_SOURCE_TAG_RE = re.compile(r"[(（]\s*출처\s*[:：][^()（）]*[)）]")
+# 문장 경계(소수점·자릿수 마침표는 경계가 아니다).
+_SENTENCE_END_RE = re.compile(r"(?<!\d)[.!?。](?!\d)|\n")
 
 
 @dataclass(frozen=True)
@@ -64,15 +94,47 @@ class Fact:
     period: Any = None          # ssot.ocr_router._DateSpan | None
     period_text: str = ""
     source_file: str = ""
-    kind: str = "source"        # ledger | source
+    kind: str = "source"        # ledger | source | summary_input(요약 생성 입력의 분석 결과값)
     code: str = ""
     tokens: tuple = field(default_factory=tuple)
+    group: str = ""             # 대상 집단(고용형태, `label_group`). 없으면 집단을 가리지 않은 값(합계 등)
+    sites: frozenset = frozenset()   # 사업장 식별값(`ocr_router._site_keys`). 없으면 원문 미기록
 
     def describe(self) -> str:
         value = f"{self.value:g}" if isinstance(self.value, float) else str(self.value)
         when = f"({self.period_text})" if self.period_text else ""
         where = f" — {self.source_file}" if self.source_file else ""
         return f"{self.label} {value}{self.unit or ''}{when}{where}"
+
+
+@dataclass
+class Claim:
+    """생성 문장·표 칸의 수량 하나와 그 수량에 연결된 대상(역할·집단)·날짜·사업장."""
+    q: Quantity
+    window: str                       # 이웃 수량 사이의 같은 절 문맥(표는 행 라벨·열 머리) — 라벨 낱말 대조용
+    role: str = ""
+    group: str = ""
+    groups_mentioned: frozenset = frozenset()   # 문맥에 나온 집단 낱말(바로 꾸미지 않아도)
+    when: Any = None
+    sites: frozenset = frozenset()
+
+
+@dataclass(frozen=True)
+class Occurrence:
+    """근거 청크 안의 수량 하나와 원문이 그 수량에 붙인 역할·집단·날짜·사업장(PR71 재검토 A·D)."""
+    q: Quantity
+    role: str = ""
+    group: str = ""
+    when: Any = None
+    sites: frozenset = frozenset()
+    context: str = ""                 # 그 수량의 원문 문맥(행·서술)
+    chunk_id: str = ""
+    source_file: str = ""
+
+    def describe(self) -> str:
+        when = f"({self.when.text.strip()})" if self.when is not None else ""
+        where = f" — {self.source_file or self.chunk_id}"
+        return f"원문 '{self.context.strip()[:60]}'의 {self.q.raw}{when}{where}"
 
 
 def _role_matches(text: str) -> list[tuple[int, int, str]]:
@@ -128,6 +190,129 @@ def label_tokens(label: str) -> tuple:
     return tuple(t for t in tokens if t not in _GENERIC_TOKENS and not re.search(r"\d", t))
 
 
+def _group_matches(text: str) -> list[tuple[int, int, str]]:
+    taken: list[tuple[int, int, str]] = []
+    for group, pattern in _GROUP_PATTERNS:
+        for m in pattern.finditer(str(text or "")):
+            if not any(s < m.end() and m.start() < e for s, e, _g in taken):
+                taken.append((m.start(), m.end(), group))
+    return sorted(taken)
+
+
+def groups_in(text: str) -> frozenset:
+    return frozenset(g for _s, _e, g in _group_matches(text))
+
+
+def count_group(text: str, anchor: int | None = None, end: int | None = None) -> str:
+    """수량(`text[anchor:end]`)의 대상 집단(고용형태). 없으면 "".
+
+    수량을 바로 꾸미는 집단 낱말(`정규직 40명`·`기간제 근로자는 6명`) 또는 수량 뒤 서술어(`40명은 정규직이다`)만
+    읽는다. 집단 낱말이 여럿 나열되고 다른 말이 끼면(`정규직·기간제·파견 포함 50명`) 합계로 보고 정하지 않는다.
+    """
+    anchor = len(text) if anchor is None else anchor
+    end = anchor if end is None else end
+    found = _group_matches(text)
+    before = [m for m in found if m[1] <= anchor]
+    if before and _GROUP_NOUN_GAP_RE.fullmatch(text[before[-1][1]:anchor]):
+        return before[-1][2]
+    after = next((m for m in found if m[0] >= end), None)
+    if after and _GROUP_AFTER_RE.fullmatch(text[end:after[0]]) and _GROUP_COPULA_RE.match(text, after[1]):
+        return after[2]
+    return ""
+
+
+def label_group(label: str) -> str:
+    """사실 라벨의 집단 — 표 칸 라벨(`행 · 열 머리`)은 뒤 토막(열 머리)이 앞선다. 한 토막에 집단이 여럿이면 정하지 않는다."""
+    for part in reversed(re.split(r"\s*·\s*|\s+-\s+", str(label or ""))):
+        found = groups_in(part)
+        if len(found) == 1:
+            return next(iter(found))
+        if found:
+            return ""
+    return ""
+
+
+def _sites(text: str) -> frozenset:
+    from .ssot.ocr_router import _site_keys
+    return frozenset(_site_keys(str(text or "")))
+
+
+def sites_compatible(a: frozenset, b: frozenset) -> bool | None:
+    """두 사업장 표기가 같은 곳을 가리킬 수 있는가. 한쪽이 비면 None(판정하지 않음).
+
+    지역이 빠진 표기(`제1공장`)는 같은 번호·종류의 지역 표기(`김해 제1공장`)와 맞을 수 있다. 지역이 다르면(`부산 제1공장`
+    ↔ `김해 제1공장`) 다른 곳이다.
+    """
+    if not a or not b:
+        return None
+
+    def fits(x: str, y: str) -> bool:
+        if x == y:
+            return True
+        short, long_ = sorted((x, y), key=len)
+        return short[:1].isdigit() and long_.endswith(short)
+    return any(fits(x, y) for x in a for y in b)
+
+
+def date_positions(text: str) -> list[tuple[int, int, Any]]:
+    """`ocr_router._date_spans`의 날짜 표기와 그 원문 위치 [(시작, 끝, 범위)] — 위치 순.
+
+    구간(`4월 13일부터 19일까지`)의 `text`는 정규화된 문구(`4월 13일 ~ 19일`)라 원문에서 그대로 찾을 수 없다. 이전
+    판은 `find(span.text)`가 실패해 그 문장의 날짜를 '없음'으로 두었다(날짜 대조 누락). 앞 날짜를 찾은 뒤 이음말 뒤의
+    뒷 날짜까지를 구간 위치로 본다.
+    """
+    from .ssot.ocr_router import _RANGE_JOIN_RE, _date_spans
+    text = str(text or "")
+    found: list[tuple[int, int, Any]] = []
+
+    def free(at: int, stop: int) -> bool:
+        return not any(s < stop and at < e for s, e, _sp in found)
+
+    for span in _date_spans(text):
+        first, _sep, second = span.text.partition(" ~ ")
+        at = text.find(first)
+        while at >= 0:
+            stop = at + len(first)
+            if second:
+                join = _RANGE_JOIN_RE.match(text, stop)
+                stop = join.end() + len(second) if join and text.startswith(second, join.end()) else -1
+            if stop > at and free(at, stop):
+                found.append((at, stop, span))
+                break
+            at = text.find(first, at + 1)
+    return sorted(found, key=lambda item: item[0])
+
+
+def _bounds(text: str, pattern: re.Pattern[str], start: int, end: int) -> tuple[int, int]:
+    before = [m.end() for m in pattern.finditer(text, 0, start)]
+    after = pattern.search(text, end)
+    return (before[-1] if before else 0), (after.start() if after else len(text))
+
+
+def nearest(items: list[tuple[int, int, Any]], text: str, start: int, end: int):
+    """수량(`text[start:end]`)에 붙는 표기 하나: 같은 문장의 가장 가까운 앞 표기, 없으면 같은 절의 뒤 표기. 없으면 None.
+
+    쉼표 뒤 절(`2026년 6월 9일 교육에는, 27명이 참석`)도 같은 문장의 앞 날짜를 잇는다 — 쉼표 하나로 날짜 대조가 꺼지지 않게 한다.
+    """
+    s_start, _s_end = _bounds(text, _SENTENCE_END_RE, start, end)
+    _c_start, c_end = _clause(text, start, end)
+    before = [item for item in items if s_start <= item[0] and item[1] <= start]
+    if before:
+        return before[-1][2]
+    after = [item for item in items if end <= item[0] < c_end]
+    return after[0][2] if after else None
+
+
+def site_positions(text: str) -> list[tuple[int, int, frozenset]]:
+    from .ssot.ocr_router import _SITE_MENTION_RE
+    out = []
+    for m in _SITE_MENTION_RE.finditer(str(text or "")):
+        keys = _sites(m.group(0))
+        if keys:
+            out.append((m.start(), m.end(), keys))
+    return out
+
+
 def _unit_of(tok: str) -> tuple[str | None, int]:
     from .rag_gates.units import normalize_unit
     for k in range(len(tok), 0, -1):
@@ -140,25 +325,24 @@ def _unit_of(tok: str) -> tuple[str | None, int]:
 def mask_non_quantities(text: str) -> str:
     """날짜·규격 번호·K-ESG 항목 코드를 같은 길이 공백으로 가린 문구(위치 보존).
 
-    규격 식별자 모양이어도 뒤에 세는 단위가 붙으면(`ID 50개`) 수량이다 — 가리지 않는다.
+    규격 식별자 모양이어도 뒤에 세는 단위가 붙으면(`ID 50개`) 수량이다 — 가리지 않는다. 파일명·근거 꼬리표
+    (`09_…_2026-04-22.pdf`·`(출처: …, 1쪽)`) 안의 숫자도 수량·날짜가 아니다.
     """
-    from .ssot.ocr_router import _date_spans, _standard_refs
-    masked = str(text or "")
+    from .ssot.ocr_router import _standard_refs
+
+    def blank(m: re.Match) -> str:
+        return " " * len(m.group())
+    masked = _FILE_NAME_RE.sub(blank, _SOURCE_TAG_RE.sub(blank, str(text or "")))
+    # 인원번호 구간(`HN-G01~40: 정규직`)의 뒤 번호는 인원 수가 아니다 — 앞 식별자와 함께 가린다.
+    masked = re.sub(r"(?<![A-Za-z0-9])[A-Z]{1,5}-[A-Z]{0,3}\d+\s*[~∼〜]\s*\d+(?!\s*(?:명|건|개|%|\d))", blank, masked)
     for _name, number, end in _standard_refs(masked):
         tail = re.match(r"\s?([^\s\d,.()\[\]{}|·:;~/]*)", masked[end:])
         if tail and _unit_of(tail.group(1))[0]:
             continue
         masked = masked[:number] + " " * (end - number) + masked[end:]
-    masked = re.sub(r"(?<![A-Za-z0-9])[ESGP]-\d{1,2}-\d{1,2}(?![0-9])", lambda m: " " * len(m.group()), masked)
-    cursor = 0
-    for span in _date_spans(masked):
-        at = masked.find(span.text, cursor)
-        if at < 0:
-            at = masked.find(span.text)
-        if at < 0:
-            continue
-        masked = masked[:at] + " " * len(span.text) + masked[at + len(span.text):]
-        cursor = at + len(span.text)
+    masked = re.sub(r"(?<![A-Za-z0-9])[ESGP]-\d{1,2}-\d{1,2}(?![0-9])", blank, masked)
+    for at, stop, _span in date_positions(masked):
+        masked = masked[:at] + " " * (stop - at) + masked[stop:]
     return masked
 
 
@@ -201,21 +385,26 @@ def contexts(text: str, found: list[Quantity]) -> list[tuple[Quantity, str, int,
     return out
 
 
-def date_near(text: str, position: int, c_start: int, c_end: int):
-    """수량과 같은 절의 날짜(앞쪽 우선). 없으면 None."""
-    from .ssot.ocr_router import _date_spans
-    clause = text[c_start:c_end]
-    spans, cursor = [], 0
-    for span in _date_spans(clause):
-        at = clause.find(span.text, cursor)
-        if at < 0:
-            continue
-        spans.append((c_start + at, span))
-        cursor = at + len(span.text)
-    before = [s for at, s in spans if at < position]
-    if before:
-        return before[-1]
-    return spans[0][1] if spans else None
+def _scope_text(text: str) -> str:
+    """날짜·사업장을 읽을 문구 — 파일명·근거 꼬리표를 같은 길이 공백으로 가린다(위치 보존)."""
+    def blank(m: re.Match) -> str:
+        return " " * len(m.group())
+    return _FILE_NAME_RE.sub(blank, _SOURCE_TAG_RE.sub(blank, str(text or "")))
+
+
+def date_near(text: str, start: int, end: int | None = None):
+    """수량(`text[start:end]`)의 날짜: 같은 문장의 가장 가까운 앞 날짜, 없으면 같은 절의 뒤 날짜. 없으면 None.
+
+    이전 판은 같은 절만 보고 구간 날짜(`4월 13일부터 19일까지`)를 찾지 못했다(`date_positions`).
+    """
+    scoped = _scope_text(text)
+    return nearest(date_positions(scoped), scoped, start, start if end is None else end)
+
+
+def sites_near(text: str, start: int, end: int | None = None) -> frozenset:
+    scoped = _scope_text(text)
+    found = nearest(site_positions(scoped), scoped, start, start if end is None else end)
+    return found or frozenset()
 
 
 def period_of(period_text: str = "", start: str = "", end: str = "", label: str = ""):
@@ -267,80 +456,207 @@ def value_matches(q: Quantity, value: Any, unit: str | None, *, allow_bare: bool
     return abs(q.value - target) <= tolerance
 
 
-def chunk_occurrences(text: str) -> list[tuple[Quantity, str]]:
-    """근거 청크의 (수량, 역할). 표 행은 같은 표 머리글 행의 열 머리로 역할을 정한다."""
+def sentence_claims(text: str, found: list[Quantity] | None = None) -> list[Claim]:
+    """문장(제목·요약 문장 포함)의 단위 있는 수량마다 역할·집단·날짜·사업장을 읽은 `Claim`."""
+    found = quantities(text) if found is None else found
     out = []
-    lines = str(text or "").split("\n")
+    for q, window, anchor, anchor_end, _c_start, _c_end in contexts(text, found):
+        if not q.unit:
+            continue
+        out.append(Claim(q, window, role=count_role(window, anchor, anchor_end),
+                         group=count_group(window, anchor, anchor_end), groups_mentioned=groups_in(window),
+                         when=date_near(text, q.start, q.end), sites=sites_near(text, q.start, q.end)))
+    return out
+
+
+def _cell_group(text: str) -> str:
+    found = groups_in(text)
+    return next(iter(found)) if len(found) == 1 else ""
+
+
+def _header_unit(head: str) -> str | None:
+    """열 머리에 적힌 단위(`실적(명)`·`인원 [명]`·`단위: 명`). 없으면 None."""
+    for m in re.finditer(r"[(\[（]\s*([^()\[\]（）]{1,12}?)\s*[)\]）]|단위\s*[:：]?\s*([^\s|,]+)", str(head or "")):
+        token = (m.group(1) or m.group(2) or "").strip()
+        unit, length = _unit_of(token)
+        if unit and length == len(token):
+            return unit
+    return None
+
+
+def _row_items(cells: list[str], header: list[str] | None, heading_when=None,
+               heading_sites: frozenset = frozenset()) -> list[tuple[int, Quantity, str, str, Any, frozenset, str]]:
+    """표 한 행의 수량마다 (칸 번호, 수량, 역할, 집단, 날짜, 사업장, 행 라벨·열 머리 문맥).
+
+    역할·집단은 그 칸의 열 머리 → 행 라벨(값이 아닌 칸) 순, 날짜·사업장은 같은 행 → 열 머리 → 위 머리 줄 순으로 읽는다.
+    칸에 단위가 없으면 열 머리의 단위(`실적(명)`)를 쓴다. 머리글의 칸 수가 행과 다르면 열 머리를 쓰지 않는다.
+    """
+    line = " | ".join(cells)
+    offsets, at = [], 0
+    for cell in cells:
+        offsets.append((at, at + len(cell)))
+        at += len(cell) + 3
+    scoped = _scope_text(line)
+    dates, sites = date_positions(scoped), site_positions(scoped)
+    found = quantities(line)
+    value_cells = {k for k, (s, e) in enumerate(offsets) if any(s <= q.start < e for q in found)}
+    labels = [c for k, c in enumerate(cells) if k not in value_cells]
+    aligned = bool(header) and len(header) == len(cells)
+    items = []
+    for q in found:
+        k = next((i for i, (s, e) in enumerate(offsets) if s <= q.start < e), None)
+        head = header[k] if aligned and k is not None else ""
+        if q.unit is None and _header_unit(head):
+            q = Quantity(q.start, q.end, q.value, _header_unit(head), q.raw, q.decimals)
+        head_dates = date_positions(_scope_text(head))
+        when = nearest(dates, scoped, q.start, q.end) or (head_dates[0][2] if head_dates else None) or heading_when
+        where = nearest(sites, scoped, q.start, q.end) or _sites(head) or heading_sites
+        role = count_role(head) or next((r for r in map(count_role, labels) if r), "")
+        group = _cell_group(head) or next((g for g in map(_cell_group, labels) if g), "")
+        items.append((k, q, role, group, when, frozenset(where), " ".join([*labels, head]).strip()))
+    return items
+
+
+def row_claims(cells: list[str], header: list[str] | None) -> list[tuple[int, Claim]]:
+    """생성 표 한 행의 (칸 번호, `Claim`) — 행 라벨·열 머리·칸을 함께 읽는다(PR71 재검토 B·D)."""
+    return [(k, Claim(q, window, role=role, group=group, groups_mentioned=groups_in(window), when=when, sites=sites))
+            for k, q, role, group, when, sites, window in _row_items(cells, header) if q.unit]
+
+
+def _heading_line(line: str) -> bool:
+    """아래 줄에 날짜·사업장을 물려줄 수 있는 머리 줄 — 표가 아니고, 단위 있는 수량이 없고, 문장으로 끝나지 않는 줄
+    (`개인별 주간 근로시간 기록: … / 김해 제1공장 / 2026-04-13`). 서술 문장의 날짜(`4월 27일 추가 교육을 예정했습니다.`)는
+    그 문장의 것이다 — 다른 문장의 수량에 물려주지 않는다."""
+    stripped = _SOURCE_TAG_RE.sub("", line).strip()
+    return bool(stripped) and "|" not in stripped and not any(q.unit for q in quantities(stripped)) \
+        and not re.search(r"[.!?。]\s*$", stripped)
+
+
+def chunk_occurrences(text: str, chunk_id: str = "", source_file: str = "") -> list[Occurrence]:
+    """근거 청크의 수량과 원문이 그 수량에 붙인 역할·집단·날짜·사업장.
+
+    - 표 행: 같은 표 머리글 행의 열 머리로 역할·집단을 정하고, 없으면 행 라벨(값이 아닌 칸)에서 읽는다. 날짜·사업장은
+      그 행 → 열 머리 → 위 머리 줄 순으로 읽는다.
+    - 서술: 같은 문장의 앞 날짜(없으면 같은 절의 뒤 날짜)·사업장. 줄 전체에 날짜가 없을 때만 위 머리 줄(`_heading_line`)의
+      날짜를 잇는다. 한 청크에 여러 날짜·집단의 수량이 있어도 수량마다 자기 관계를 갖는다(PR71 재검토 A).
+    """
+    out: list[Occurrence] = []
     header: list[str] = []
-    for line in lines:
+    heading_when, heading_sites = None, frozenset()
+    for line in str(text or "").split("\n"):
+        scoped = _scope_text(line)
         found = quantities(line)
+        dates, sites = date_positions(scoped), site_positions(scoped)
         cells = [c.strip() for c in line.split("|")] if "|" in line else []
         if cells and not found:
             header = cells            # 숫자 없는 표 행 — 머리글
             continue
-        if cells and header and len(header) == len(cells):
-            offsets, at = [], 0
-            for cell in line.split("|"):
-                offsets.append((at, at + len(cell)))
-                at += len(cell) + 1
-            for q in found:
-                k = next((i for i, (s, e) in enumerate(offsets) if s <= q.start < e), None)
-                out.append((q, count_role(header[k]) if k is not None else ""))
+        if cells:
+            for _k, q, role, group, when, where, _window in _row_items(cells, header, heading_when, heading_sites):
+                out.append(Occurrence(q, role=role, group=group, when=when, sites=where, context=line,
+                                      chunk_id=chunk_id, source_file=source_file))
             continue
-        if not cells:
-            header = []
+        header = []
         for q, window, anchor, anchor_end, _s, _e in contexts(line, found):
-            out.append((q, count_role(window, anchor, anchor_end)))
+            when = nearest(dates, scoped, q.start, q.end) or (None if dates else heading_when)
+            where = nearest(sites, scoped, q.start, q.end) or (frozenset() if sites else heading_sites)
+            out.append(Occurrence(q, role=count_role(window, anchor, anchor_end),
+                                  group=count_group(window, anchor, anchor_end), when=when, sites=frozenset(where),
+                                  context=window.replace(NEXT_QUANTITY, ""), chunk_id=chunk_id,
+                                  source_file=source_file))
+        if _heading_line(line):
+            heading_when = dates[-1][2] if dates else heading_when
+            heading_sites = sites[-1][2] if sites else heading_sites
     return out
 
 
 @dataclass
 class Support:
     supported: bool
-    reason: str = ""                  # orphan_number | role_or_date_mismatch
+    reason: str = ""                  # orphan_number | relation_mismatch
+    # 값이 같지만 관계가 맞지 않은 후보 [(설명, 문제 목록)]. 확인된 경우에도 남긴다(채택 근거와 함께 감사 기록).
     conflicting: list = field(default_factory=list)
-    fact: Fact | None = None          # 근거가 된 원문 확인 수치(인용 청크로 확인됐으면 None)
+    fact: Fact | None = None          # 근거가 된 원문 확인 수치
+    occurrence: Occurrence | None = None   # 근거가 된 청크 수량
+    outside_citation: bool = False    # 인용한 청크가 아닌 다른 생성 문맥 청크로 확인했다(채택 출처를 감사 기록에 남긴다)
+    problems: list = field(default_factory=list)   # 확인하지 못한 경우 어긋난 관계(role·group·date·site …)
+
+    def adopted(self) -> str:
+        if self.fact is not None:
+            return self.fact.describe()
+        return self.occurrence.describe() if self.occurrence is not None else ""
 
 
-def check_quantity(q: Quantity, window: str, anchor: int, anchor_end: int, when, facts: list[Fact],
-                   cited: list[str] | None) -> Support:
-    """문장 수량 `q`가 원문 확인 수치·인용 근거로 같은 값·역할·날짜로 확인되는가.
+def _relation_problems(claim: Claim, *, role: str, group: str, when, sites: frozenset, named: bool,
+                       soft_role: bool) -> tuple[list[str], list[str]]:
+    """(어긋남, 확인 안 됨). 어긋남이 하나라도 있으면 근거가 아니다. '확인 안 됨'만 있는 근거는 같은 값의 어긋난
+    후보가 없을 때만 근거로 본다(`check_quantity`)."""
+    hard, weak = [], []
+    if claim.role and role and role != claim.role:
+        hard.append("role")
+    elif claim.role and not role and not named:
+        (weak if soft_role else hard).append("role_unstated")
+    # 집단: 문장이 집단을 밝혔으면 근거도 같은 집단이어야 한다(합계를 집단 내역으로 쓰지 않는다). 문장이 집단 없이 쓴 값이
+    # 근거에서는 한 집단의 값이면, 그 집단을 문맥에서 말하지 않은 한 근거가 아니다(집단 내역을 합계처럼 쓰지 않는다).
+    if claim.group and group != claim.group:
+        hard.append("group" if group else "group_unstated")
+    elif not claim.group and group and group not in claim.groups_mentioned:
+        hard.append("group_missing")
+    relation = date_relation(claim.when, when)
+    if relation == "disjoint" or (relation in ("coarser", "overlap") and not named):
+        hard.append("date")
+    elif relation == "unknown" and claim.when is not None and when is None:
+        weak.append("date_unstated")
+    fit = sites_compatible(claim.sites, sites)
+    if fit is False:
+        hard.append("site")
+    elif fit is None and claim.sites and not sites:
+        weak.append("site_unstated")
+    return hard, weak
 
-    - 문맥의 참여 역할(대상·참석·미참석)이 있으면 사실의 역할이 같아야 한다. 역할이 적히지 않은 사실은
-      문장이 그 사실의 라벨 낱말로 직접 가리킬 때만(`중복 제외 50명`) 근거가 된다.
-    - 문장 날짜와 사실 기간이 겹치지 않으면 근거가 아니다. 사실이 더 넓은 기간(월 합계)이면 라벨로 직접
-      가리킬 때만 근거다 — `4월 22일 50명 참석`을 4월 중복 제외 합계 50명으로 통과시키지 않는다.
-    - 인용 청크의 수량은 날짜·식별자 밖의 같은 값만 본다. 같은 값의 원문 확인 수치가 모두 역할·날짜가 달라
-      어긋났으면, 청크 쪽도 같은 역할이 적혀 있어야 근거로 본다(역할 미상 칸으로 어긋남을 덮지 않는다).
+
+def check_quantity(claim: Claim, facts: list[Fact], scope: list[Occurrence],
+                   others: list[Occurrence] = ()) -> Support:
+    """생성 수량 `claim`이 같은 값·단위·역할·집단·날짜·사업장의 근거로 확인되는가.
+
+    근거는 원문 확인 수치(`facts`), 인용 청크의 수량(`scope` — 인용이 없는 문장은 생성 문맥 전체), 그 밖의 생성 문맥
+    청크(`others` — 인용이 있는데 인용 청크로 확인되지 않을 때만)이다. 세 경로가 같은 대조 기준(`_relation_problems`)을 쓴다.
+
+    - 문맥의 역할·집단·날짜·사업장이 근거와 어긋나면 그 근거는 쓰지 않는다. 같은 숫자가 원문에 있다는 것만으로
+      어긋남을 덮지 않는다(PR71 재검토 A: 원문 인용 `[c1]`·인용 없음 경로가 날짜 불일치를 덮었다).
+    - 어긋난 후보와 별도로 **모든 관계가 맞는** 근거가 있으면 그것으로 확인한다(다른 날짜의 동률 후보가 정상 근거를 막지
+      않는다). 채택한 근거와 어긋난 후보를 함께 돌려준다.
+    - 날짜·역할·사업장이 원문에 적히지 않아 '확인 안 됨'뿐인 근거는, 같은 값의 어긋난 후보가 없을 때만 근거다. 인용 밖
+      청크는 모든 관계가 맞을 때만 근거다(다른 출처의 같은 숫자가 인용을 대신하지 않는다).
     """
-    role = count_role(window, anchor, anchor_end)
-    conflicting = []
+    q = claim.q
+    candidates: list[tuple[list[str], list[str], Fact | None, Occurrence | None, bool]] = []
     for f in facts:
         if not value_matches(q, f.value, f.unit):
             continue
-        named = any(t in window for t in f.tokens)
-        problems = []
-        if role and f.role and f.role != role:
-            problems.append("role")
-        elif role and not f.role and not named:
-            problems.append("role_unstated")
-        relation = date_relation(when, f.period)
-        if relation == "disjoint" or (relation in ("coarser", "overlap") and not named):
-            problems.append("date")
-        if not problems:
-            return Support(True, fact=f)
-        conflicting.append((f, problems))
-    for text in cited or []:
-        for occ, occ_role in chunk_occurrences(text):
-            if not value_matches(q, occ.value, occ.unit, allow_bare=True):
+        named = any(t in claim.window for t in f.tokens)
+        hard, weak = _relation_problems(claim, role=f.role, group=f.group, when=f.period, sites=f.sites,
+                                        named=named, soft_role=False)
+        candidates.append((hard, weak, f, None, False))
+    for outside, pool in ((False, scope), (True, others)):
+        for occ in pool:
+            if not value_matches(q, occ.q.value, occ.q.unit, allow_bare=True):
                 continue
-            if role and occ_role and occ_role != role:
-                continue
-            if conflicting and role and occ_role != role:
-                continue
-            return Support(True)
-    reason = "role_or_date_mismatch" if conflicting else "orphan_number"
-    return Support(False, reason, conflicting)
+            hard, weak = _relation_problems(claim, role=occ.role, group=occ.group, when=occ.when, sites=occ.sites,
+                                            named=False, soft_role=True)
+            candidates.append((hard, weak, None, occ, outside))
+    conflicts = [(f.describe() if f is not None else o.describe(), hard) for hard, _w, f, o, _x in candidates if hard]
+    # 고르는 순서: 인용 청크 → 원문 확인 수치 → 인용 밖 청크. 인용한 근거가 확인해 주면 그것을 채택 근거로 남긴다.
+    strong = sorted((c for c in candidates if not c[0] and not c[1]), key=lambda c: (c[4], c[3] is None))
+    pick = next(iter(strong), None)
+    if pick is None and not conflicts:
+        pick = next(iter(sorted((c for c in candidates if not c[0] and not c[4]), key=lambda c: c[3] is None)), None)
+    if pick is not None:
+        return Support(True, conflicting=conflicts, fact=pick[2], occurrence=pick[3], outside_citation=pick[4])
+    # 보류 사유는 어긋난 관계다. 어긋남 없이 '확인 안 됨'만 있었으면(인용 밖 청크) 그것을 적는다.
+    problems = sorted({p for hard, _w, *_r in candidates for p in hard}) \
+        or sorted({p for _h, weak, *_r in candidates for p in weak})
+    return Support(False, "relation_mismatch" if candidates else "orphan_number", conflicts, problems=problems)
 
 
 def related_facts(sentence: str, when, units: set[str], facts: list[Fact], limit: int = 6) -> list[Fact]:
@@ -469,13 +785,36 @@ def facts_from_rows(rows: list[dict[str, Any]]) -> list[Fact]:
             value = float(row["value"])
         except (KeyError, TypeError, ValueError):
             continue
-        out.append(Fact(label=row.get("label", ""), value=value,
+        label = row.get("label", "")
+        out.append(Fact(label=label, value=value,
                         unit=normalize_unit(str(row.get("unit") or "")) if row.get("unit") else None,
-                        role=row.get("role") or label_role(row.get("label", "")),
+                        role=row.get("role") or label_role(label),
                         period=period_of(row.get("period_text", ""), row.get("period_start", ""),
-                                         row.get("period_end", ""), row.get("label", "")),
+                                         row.get("period_end", ""), label),
                         period_text=row.get("period_text", ""), source_file=row.get("source_file", ""),
-                        kind="source", tokens=label_tokens(row.get("label", ""))))
+                        kind="source", tokens=label_tokens(label), group=label_group(label),
+                        sites=_sites(label) or _sites(row.get("site", ""))))
+    return out
+
+
+def summary_input_facts(rows: list[tuple[str, Any, tuple[str, ...]]]) -> list[Fact]:
+    """요약(Executive Summary) 생성 입력의 수치 [(이름, 값, 단위들)] — 요약이 그대로 옮긴 커버리지·누락 수의 근거.
+
+    원문 사실이 아니라 분석 결과다(`kind="summary_input"`). 역할·집단·기간이 없으므로 역할·집단을 밝힌 수량(교육 인원 등)의
+    근거는 되지 않는다(`_relation_problems`).
+    """
+    from .rag_gates.units import normalize_unit
+    out: list[Fact] = []
+    for label, value, units in rows:
+        if value is None or isinstance(value, bool):
+            continue
+        try:
+            number = float(value)
+        except (TypeError, ValueError):
+            continue
+        for unit in units:
+            out.append(Fact(label=label, value=number, unit=normalize_unit(unit), kind="summary_input",
+                            source_file="요약 생성 입력"))
     return out
 
 
