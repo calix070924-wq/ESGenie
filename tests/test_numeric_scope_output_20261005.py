@@ -260,6 +260,9 @@ def test_followup_counts_keep_their_source_row_meaning(hint, value, expected):
     ("구분 | 목표 | 실적\n재활용률 | 30 | 29.3", "구분 | 목표 | 실적\n재활용률 | 30 | 29.3", "재활용률", 29.3),
     ("구분 | 국내 | 해외\n임직원 수 | 100 | 50", "구분 | 국내 | 해외\n임직원 수 | 100 | 50", "해외 임직원 수", 50),
     ("HN-G01 | 8 | 8 | 8 | 40", "인원 | 13일 | 14일 | 15일 | 합계\nHN-G01 | 8 | 8 | 8 | 40", "주간 근로시간", 8),
+    # 뜻 없는 일반 열 머리(`값`)·글꼴이 갈려 쪼개진 칸(R3 변형본 실측)은 라벨에 보탤 것이 없다
+    ("산업재해율( | ‰ | ) | 0", "구분 | 값\n산업재해율( | ‰ | ) | 0", "산업재해율", 0),
+    ("환경 법규 위반 건수 | 0건", "구분 | 값\n환경 법규 위반 건수 | 0건", "환경 법규 위반 건수", 0),
 ])
 def test_period_role_axis_headers_and_repeated_values_never_relabel(quote, source, hint, value):
     (m,), issues = map_one(hint, value, "", quote, source)

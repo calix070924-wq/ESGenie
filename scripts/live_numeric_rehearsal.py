@@ -292,6 +292,11 @@ def cmd_core(args) -> None:
         raise SystemExit(f"이미 실행한 단계(덮어쓰기 금지): {target}")
     cache_dir = args.cache_dir.resolve()
     live_env(cache_dir)
+    if args.replay_upstage:
+        # 소켓을 막으면 임베딩 모델 확인이 실패해 hash-fallback으로 바뀌고 검색 문맥(=LLM 프롬프트)이 달라진다.
+        # 로컬에 받아 둔 모델을 그대로 쓰도록 허브 조회를 끈다(import 전에 정해야 한다).
+        os.environ["HF_HUB_OFFLINE"] = "1"
+        os.environ["TRANSFORMERS_OFFLINE"] = "1"
     files, manifest = input_files(args.pack_dir, args.stage)
     for extra in args.extra_evidence or []:
         # 검증용 가상 변형본만 받는다 — 원본 세트에 섞여 원본으로 오인되지 않게 이름에 표시를 요구한다.
