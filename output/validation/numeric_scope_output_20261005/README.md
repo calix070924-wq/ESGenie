@@ -18,3 +18,4 @@ LLM/OCR 캐시(`caches/`)·내보낸 Excel/PDF·증빙 사본·실보고서 쪽 
 | `runs/R2_fix_4faabb0_live` · `runs/R2r_replay_<sha>` | 수정 코드 실제 실행 · 같은 응답으로 최종 코드 재조립 |
 | `runs/R3_variant_live` · `runs/R3r_replay_<sha>` | 변형본 실제 실행 · 재조립 |
 | `superseded/`, `runs/superseded/` | 대체된 실행(삭제하지 않고 보관) |
+| `05_followup/` | PR71 검토 보완(R1~R6) 후속 검증 요약 — 실행 통계·출력 검사·오답 주입·검사기 비교(전체 산출물은 사용자 프로젝트 `output/reviews/pr71_20261005/followup_fix_validation/`) |

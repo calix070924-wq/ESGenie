@@ -1,0 +1,19 @@
+{
+  "removed_marks_in_memory": 2,
+  "check_outputs_4972df2": {
+    "original": "30/30",
+    "marks_removed": "30/30",
+    "failed_after_removal": []
+  },
+  "check_outputs_0b770df": {
+    "original": "33/37",
+    "marks_removed": "33/37",
+    "failed_after_removal": [
+      "본문 교육 인원 수량이 모두 정답의 역할·날짜와 일치(경고가 붙은 오답도 실패)",
+      "사회 본문에 4/22 참석 46명 보존",
+      "사회 본문에 추가 교육 후 중복 제외 50명 보존",
+      "보고서 PDF 교육 인원 수량이 정답과 일치"
+    ]
+  },
+  "original_files_unchanged": true
+}

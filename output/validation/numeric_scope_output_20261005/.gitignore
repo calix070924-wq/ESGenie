@@ -18,3 +18,4 @@
 !02_real_zero_sample/measurement.json
 !02_real_zero_sample/fixed_before_results.sha256
 !03_tests/*.txt
+!05_followup/*.json
