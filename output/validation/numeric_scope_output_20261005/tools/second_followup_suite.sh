@@ -125,6 +125,24 @@ for spec in "LIVE_61b6167/initial:" "LIVE_61b6167/followup:" "LIVEV_61b6167/init
   echo "re-read $stage exit=$? $(tail -1 "$OUT/checks/${tag}_reread.txt")"
 done
 
+# 6b) 재생성한 보고서 Markdown을 직전 최종 산출물과 비교(줄 집합 — 부록 정책 초안 블록 순서는 재생마다 바뀐다)·실보고서 표본 기록 비교
+mkdir -p "$OUT/compare"
+for spec in "LIVE_61b6167/initial:RP_$SHA/initial" "LIVE_61b6167/followup:RP_$SHA/followup" "LIVEV_61b6167/initial:RPV_$SHA/initial" \
+            "INJ_61b6167/initial:INJ_$SHA/initial" "INJ_61b6167/followup:INJ_$SHA/followup" "INJV_61b6167/initial:INJV_$SHA/initial"; do
+  a=${spec%%:*}; b=${spec#*:}; tag=$(echo "$b" | tr / _)
+  diff <(sed 's/_생성일: .*_//' "$PREV"/runs/$a/exports/*/ESG보고서_*.md | sort) \
+       <(sed 's/_생성일: .*_//' "$OUT"/runs/$b/exports/*/ESG보고서_*.md | sort) > "$OUT/compare/${tag}_vs_prev.diff"
+  echo "compare $b vs $a: $(grep -c '^[<>]' "$OUT/compare/${tag}_vs_prev.diff") differing lines (order-insensitive)"
+done
+python3 -c "
+import json
+a=json.load(open('$PREV/real_zero/fix_61b6167_offline.json'))['records']; b=json.load(open('$OUT/real_zero/fix_${SHA}_offline.json'))['records']
+print('real zero records', len(a), len(b), 'differing fields', sum(1 for x,y in zip(a,b) for k in set(x)|set(y) if x.get(k)!=y.get(k)))"
+{ git -C "$ROOT" status --porcelain=v1 | shasum -a 256; (cd "$ROOT" && shasum -a 256 app.py esgenie/ui/tabs.py "docs/본선_시연영상_컷시나리오_v2.md")
+  git -C "$ROOT/outputs/ui_redesign_workspace" rev-parse HEAD; git -C "$ROOT/outputs/ui_redesign_workspace" status --porcelain | shasum -a 256; } \
+  > "$OUT/hashes/root_user_state_after.txt"
+echo "root user files + PR65: $(diff -q <(sed -n 2,6p "$REVIEW/second_followup_fix_validation/00_before_29defa0/hashes/root_user_state_before.txt") <(sed -n 2,6p "$OUT/hashes/root_user_state_after.txt") > /dev/null && echo unchanged || echo CHANGED)"
+
 # 7) HMC 감사 검증(기존 renewable:source_identity_page 2건과 비교)
 mkdir -p "$OUT/hmc/$SHA"
 (cd "$W" && ESGENIE_FORCE_MOCK=1 HF_HUB_OFFLINE=1 TRANSFORMERS_OFFLINE=1 python3 scripts/hmc_integrity_validation.py \
