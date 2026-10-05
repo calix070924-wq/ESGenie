@@ -395,12 +395,19 @@ def _backfill_kesg_codes(ext: OcrExtraction) -> None:
             body = _metric_body(m.metric_hint)
             if body:
                 taken_by_body.setdefault(m.kesg_code_guess, set()).add(body)
+    from .evidence_graph import _ASSIGNMENT_NEGATIVE_KEYWORDS
+
     resolved: list[dict[str, Any]] = []
     for m in ext.metrics:
         if m.kesg_code_guess:
             continue
         code, score, method = resolve_kesg_code(m.metric_hint)
         if not code or method != "exact":
+            continue
+        # 병합 단계(`evidence_graph._resolve_kesg_code`)가 거부할 충돌 어휘면 여기서도 붙이지 않는다 —
+        # 추출 기록(`alias_backfill`)과 그래프의 코드가 갈리지 않게 한다.
+        compact = m.metric_hint.lower().replace(" ", "")
+        if any(term in compact for term in _ASSIGNMENT_NEGATIVE_KEYWORDS.get(code, ())):
             continue
         # 단위가 항목 정의와 다르면(도시가스 m³ → E-4-1 TJ) 라벨만으로 코드를 붙이지 않는다.
         # 병합 단계(_resolve_kesg_code G3)와 같은 판정이며 용수 m³↔ton 동치만 허용한다.
@@ -2323,7 +2330,9 @@ _KR_SCALES = {"조": 1e12, "억": 1e8, "천만": 1e7, "백만": 1e6, "만": 1e4,
 # 값이 **실린 채** 원문과 대조된 사유. 값이 실리지 않은 사유(`unvalued_records`)와 섞으면
 # "수치를 보고하지 못한 행" 수가 부풀려지므로 라우터 메타에서 버킷을 나누는 기준이다.
 _VALUE_RECONCILED_REASONS = frozenset({
-    "scale_chain_recomposed", "scale_chain_unresolved", "value_not_written_in_evidence"})
+    "scale_chain_recomposed", "scale_chain_unresolved", "value_not_written_in_evidence",
+    # 2026-10-05: 원문 칸의 라벨로 정정한 행, 원문 부정 서술로 0을 복원한 행 — 둘 다 값이 실린다.
+    "label_from_table_header", "zero_recovered_from_negation"})
 # 배율이 붙은 한 토막: '46조', '1,182억', 그리고 배율 없는 꼬리 '5,000'.
 _KR_SCALE_TERM_RE = re.compile(
     r"(?<![0-9A-Za-z가-힣])(\d[\d,]*(?:\.\d+)?)\s*(조|억|천만|백만|만|천)?")
@@ -2697,6 +2706,10 @@ class _ZeroVerdict:
     evidence_end: int = -1
     row_label: str = ""           # 표 후보의 행 라벨(값이 없는 앞 칸들). 표가 아니면 ""
     scope_boundary: str = ""      # 범위 상속을 끝낸 새 절 머리말 원문. 없으면 ""
+    # 범위 판정에 읽은 구간의 역할(§5 C1). (어디서 읽었나, 역할, 원문, 그 문구 안 시작·끝).
+    # 역할: period · site · standard_ref(규격 번호·개정 연도 — 기간 아님). 연도처럼 보이는 숫자를
+    # 일괄로 가리지 않고 무엇을 무엇으로 읽었는지 남긴다.
+    scope_spans: tuple = ()
 
     @property
     def accepted(self) -> bool:
@@ -2740,6 +2753,11 @@ _ZERO_KEPT_CAUSES = {
     "source_year_unknown": "원문 기간의 연도가 적혀 있지 않아 요청 기간의 실적인지 확인하지 못했습니다.",
     "site_not_stated": "원문에 사업장 표기가 없어 요청 사업장의 실적인지 확인하지 못했습니다.",
     "source_site_only": "원문 사실이 특정 사업장의 것이라 전체 범위의 실적으로 확정하지 않았습니다.",
+    # §5 C2: 기간 표기는 있으나 실제 구간을 확정할 수 없다 — '원문에 기간 표기 없음'과 다르다.
+    "fiscal_period_undefined": "원문의 회계연도(FY) 표기는 있으나 시작·종료일이 원문에 정의되지 않아 요청 기간의 실적인지 확인하지 못했습니다.",
+    "fiscal_year_abbreviated": "원문의 회계연도 약칭(FY26 등)이 가리키는 연도·구간이 원문에 연결되어 있지 않아 요청 기간의 실적인지 확인하지 못했습니다.",
+    "quarter_undefined": "원문의 분기 표기(Q1 등)에 연도·회계연도 시작월이 없어 실제 기간을 확정하지 못했습니다.",
+    "quarter_months_not_stated": "원문 분기의 해당 월이 적혀 있지 않아(회계연도 시작월 미상) 실제 기간을 확정하지 못했습니다.",
 }
 # 판정 상태의 우선순위. 후보마다 **자기 문맥으로** 판정한 뒤 가장 강한 것을 고른다.
 _ZERO_STATUS_RANK = {"CONFIRMED": 0, "SOURCE_ONLY": 1, "REJECTED": 2, "UNRESOLVED": 3}
@@ -2770,7 +2788,8 @@ class _ZeroCandidate:
 
 
 def _zero_verdict(quote: str, hint: str = "", period: str = "",
-                  boundary: dict[str, Any] | None = None, unit: str = "") -> _ZeroVerdict:
+                  boundary: dict[str, Any] | None = None, unit: str = "",
+                  definitions: str = "") -> _ZeroVerdict:
     """숫자 0과 부정 서술 후보를 모두 찾고, **같은 검사**(대상 → 사실성 → 사업장·기간)로 판정한다.
 
     `if 인용에 0이 있음: 채택` 구조를 없앴다(PR 69 3차 검토: `목표 0건`·`4월 1일 기준 0건`이
@@ -2778,8 +2797,10 @@ def _zero_verdict(quote: str, hint: str = "", period: str = "",
     표 행·열 머리에서 범위를 읽고, 그 서술에 없을 때만 **범위만 적힌 앞 머리말**을 본다(4차 검토:
     `산업재해 0건, 2026년 4월 김해 제1공장 교육 50명`의 교육 날짜·사업장을 빌려 CONFIRMED가 됐다).
     `unit`은 모델이 보고한 단위다 — 사전 밖 원문 단위를 대조할 때만 쓴다(`_zero_unit`).
+    `definitions`는 인용 밖 원문(쪽 텍스트)이다 — 회계연도 정의(`FY2026 = …`)를 찾을 때만 쓴다.
     """
     boundary = boundary or {}
+    fiscal = _fiscal_definitions(f"{quote}\n{definitions}")
     hint_tokens = _label_tokens(hint)
     specific = [t for t in hint_tokens if t not in _ZERO_GENERIC_TOKENS]
     candidates = _zero_candidates(quote)
@@ -2820,7 +2841,7 @@ def _zero_verdict(quote: str, hint: str = "", period: str = "",
             verdicts.append(_ZeroVerdict(
                 "UNRESOLVED" if cause in _ZERO_UNRESOLVED_CAUSES else "REJECTED", cause, **base))
             continue
-        verdicts.append(_zero_scope_verdict(candidate, requested, boundary, base, hint_tokens))
+        verdicts.append(_zero_scope_verdict(candidate, requested, boundary, base, hint_tokens, fiscal))
     # 지표 대상이 맞은 후보의 판정이 대상이 다른 후보의 판정보다 앞선다. 그 안에서는 상태 순위, 같으면 앞 후보.
     # PR 69 6차 검토: 상태 순위를 먼저 봐서, 열을 정하지 못한 이 지표의 0(UNRESOLVED/column_unresolved)
     # 대신 다른 행의 0(REJECTED/other_subject)이 판정 사유로 남았다.
@@ -3432,9 +3453,34 @@ def _numeric_zero_mood(statement: str, end: int, reported_unit: str = "") -> str
         return "future_or_intent"
     if unit.status in ("incomplete", "unknown"):
         return f"unit_{unit.status}"
-    if _ZERO_NUMERIC_FACT_TAIL_RE.fullmatch(tail):
+    if _ZERO_NUMERIC_FACT_TAIL_RE.fullmatch(_strip_standard_note(tail)):
         return None
     return "interpretation_unknown"
+
+
+_PAREN_NOTE_RE = re.compile(r"\s*[(（]([^()（）]{1,48})[)）]")
+_STANDARD_NOTE_WORDS_RE = re.compile(r"기준|준거|참조|참고|따름|[\s,·]")
+
+
+def _strip_standard_note(tail: str) -> str:
+    """0 바로 뒤의 규격 인용 괄호(`(GRI 403-9 기준)`·`(ISO 45001:2018 기준)`)를 뗀 뒤 서술.
+
+    §5 C1: 규격 인용은 이 0의 기간·조건이 아니다. 괄호 안이 규격 식별자와 `기준`류 낱말뿐일 때만 뗀다
+    — `(목표)`·`(추정)`·`(미확인)`처럼 다른 말이 섞인 괄호는 그대로 두어 사실성 판정을 받게 한다.
+    """
+    m = _PAREN_NOTE_RE.match(tail)
+    if not m:
+        return tail
+    inner = m.group(1)
+    refs = _standard_refs(inner)
+    if not refs:
+        return tail
+    leftover = list(inner)
+    for name, _number, end in refs:
+        leftover[name:end] = " " * (end - name)
+    if _STANDARD_NOTE_WORDS_RE.sub("", "".join(leftover)):
+        return tail
+    return tail[m.end():]
 
 
 # 공통 머리말에 와도 되는 말: 범위·보고 단위를 가리킬 뿐 따로 센 수량이 없는 낱말.
@@ -3486,9 +3532,61 @@ _HEADING_FOOTNOTE_RE = re.compile(
 # `GRI 403-9`·`Scope 1·2`). 이름에 붙은 번호는 센 수가 아니다. 개정 연도도 번호의 일부다.
 _HEADING_CODE_RE = re.compile(
     r"(?<![A-Za-z\d])[A-Z][A-Za-z]*(?:[/\-&][A-Z][A-Za-z]*)*[\s\-]?(?P<number>\d+(?:[.:\-·/]\d+)*)"
+    # 콜론 앞뒤 공백·전각 콜론을 둔 개정 연도(`GRI 403: 2018`·`GRI 403：2018`)도 번호의 일부다(§5 C1).
+    # 뒤에 `년`·날짜가 이어지면 실제 기간이다(`GRI 403: 2026년 4월`) — 번호로 붙이지 않는다.
+    r"(?P<revision>\s*[:：]\s*(?:19|20)\d{2}(?![\d.\-/]|\s*년))?"
     r"(?:\s*[(（]\s*(?:19|20)\d{2}\s*[)）])?")
+# 공백·전각 콜론 뒤 연도를 개정판으로 붙이는 규격 이름. `Scope 1: 2025 배출량`의 2025는 보고 연도다.
+_REVISION_STANDARDS = frozenset({"ISO", "IEC", "GRI", "OHSAS", "KS", "IATF", "EN", "BS", "SA", "AA", "SASB"})
 # 차례 번호(`제2차`·`제3회`). `제1공장`은 사업장 표기(`_SITE_MENTION_RE`)가 따로 읽는다.
 _HEADING_ORDINAL_RE = re.compile(r"제\s*\d{1,3}\s*(?:차|회|기|호)")
+# 규격 목차·색인 줄의 끝: 점선 뒤 쪽 번호(`GRI 403-9 산업재해 ··· 45`).
+_TOC_TAIL_RE = re.compile(r"(?:…|‥|(?:[.·・ㆍ]\s?){3,})\s*\d{1,4}\s*$")
+
+
+def _unit_after(piece: str, end: int) -> bool:
+    from ..rag_gates.units import normalize_unit
+    after = re.match(r"[\s*]*([^\s()（）|,\[\]*]+)", piece[end:])
+    return bool(after) and normalize_unit(after.group(1)) is not None
+
+
+def _standard_refs(piece: str, start: int = 0) -> list[tuple[int, int, int]]:
+    """규격·문서 식별자 `(이름 시작, 번호 시작, 끝)`. 번호는 센 수도 기간도 아니다.
+
+    빼는 것: 번호가 날짜·회계연도·분기로 시작하는 표기(`FY2026`·`FY 2026.04`·`Q1`), 뒤에 단위가
+    붙은 수량(`ISO 3건`), 원문 사업장 구간과 겹치는 식별자 모양(`A2공장`의 `A2`).
+    """
+    sites = [m.span() for m in _SITE_MENTION_RE.finditer(piece)]
+    refs = []
+    for m in _HEADING_CODE_RE.finditer(piece, start):
+        code = m.group("number")
+        if any(code.startswith(span.text) for span in _date_spans(code)):
+            continue
+        if any(span.kind in ("FISCAL", "QUARTER") and m.group(0).startswith(span.text)
+               for span in _date_spans(m.group(0))):
+            continue
+        if _unit_after(piece, m.end()):
+            continue
+        if any(m.start() < s_end and s_start < m.end() for s_start, s_end in sites):
+            continue
+        end = m.end()
+        name = piece[m.start():m.start("number")].strip(" -")
+        if m.group("revision") and not set(re.split(r"[/\-&]", name)) & _REVISION_STANDARDS:
+            end = m.start("revision")        # 개정판을 쓰지 않는 이름이면 콜론 뒤 연도는 그대로 둔다
+        refs.append((m.start(), m.start("number"), end))
+    return refs
+
+
+def _standard_mask(text: str) -> str:
+    """기간 판독용: 규격 식별자의 번호·개정 연도만 같은 길이의 공백으로 가린 문구(§5 C1).
+
+    서술·열 머리에도 쓴다 — `ISO 45001:2018 기준 산업재해 0건`의 2018은 보고 기간이 아니다.
+    사업장·수량·실제 날짜는 그대로 둔다.
+    """
+    chars = list(str(text or ""))
+    for _name, number, end in _standard_refs(str(text or "")):
+        chars[number:end] = " " * (end - number)
+    return "".join(chars)
 
 
 def _heading_mask(piece: str) -> str:
@@ -3500,12 +3598,6 @@ def _heading_mask(piece: str) -> str:
     0의 근거가 됐다. 숫자가 있다는 것과 센 수가 있다는 것은 다르다. 뒤에 단위가 붙은 숫자
     (`ISO 3건`·`(1건)`·`2.5 톤`)는 가리지 않는다 — 실제 수량·단위·날짜·목표 문구는 그대로 판정한다.
     """
-    from ..rag_gates.units import normalize_unit
-
-    def unit_after(end: int) -> bool:
-        after = re.match(r"[\s*]*([^\s()（）|,\[\]*]+)", piece[end:])
-        return bool(after) and normalize_unit(after.group(1)) is not None
-
     # 원문에서 읽히는 사업장 구간(`A2공장`·`B2사업장`·`김해 제1공장`)은 가리지 않는다 — 식별자
     # 모양(`A2`)이 겹쳐도 사업장 번호다. 가린 뒤 사업장이 사라지면 위 머리말의 사업장을 물려받는다.
     sites = [m.span() for m in _SITE_MENTION_RE.finditer(piece)]
@@ -3514,17 +3606,12 @@ def _heading_mask(piece: str) -> str:
     if number:
         marks.append((0, number))
     for m in _HEADING_FOOTNOTE_RE.finditer(piece, number):
-        if not unit_after(m.end()):
+        if not _unit_after(piece, m.end()):
             marks.append(m.span())
-    for m in _HEADING_CODE_RE.finditer(piece, number):
-        # 번호가 날짜로 시작하면(`FY2026`·`FY 2026.04`) 식별자가 아니라 기간이다(`_date_spans`가 읽는다).
-        # 뒤에 붙은 개정 연도(`45001:2018`)는 번호의 일부라 가린다. 이름(`ISO`)은 남긴다 — 이 지표에
-        # 범위를 줄 수 있는 제목인지는 그 낱말로 판정한다.
-        code = m.group("number")
-        if any(code.startswith(span.text) for span in _date_spans(code)):
-            continue
-        if not unit_after(m.end()):
-            marks.append((m.start("number"), m.end()))
+    # 번호가 날짜·회계연도·분기로 시작하면(`FY2026`·`FY 2026.04`·`Q1`) 식별자가 아니라 기간이다
+    # (`_date_spans`가 읽는다). 뒤에 붙은 개정 연도(`45001:2018`·`403: 2018`)는 번호의 일부라 가린다.
+    # 이름(`ISO`)은 남긴다 — 이 지표에 범위를 줄 수 있는 제목인지는 `_heading_kind`가 판정한다.
+    marks += [(number_start, end) for _name, number_start, end in _standard_refs(piece, number)]
     marks += [m.span() for m in _HEADING_ORDINAL_RE.finditer(piece, number)]
     chars = list(piece)
     for start, end in marks:
@@ -3536,10 +3623,18 @@ def _heading_mask(piece: str) -> str:
 
 def _heading_kind(piece: str, allowed: set[str]) -> str:
     """앞 문맥 한 토막의 성격: blank | table(표 행) | fact(수량·부정·문장 서술) |
-    heading(이 지표에 범위를 줄 수 있는 머리말) | other_heading(다른 대상의 제목 — 새 절).
+    heading(이 지표에 범위를 줄 수 있는 머리말) | standard_heading(규격 식별자가 붙은 이 지표의 실적
+    제목 — 자기 범위만 주는 새 절) | other_heading(다른 대상의 제목·규격 목차 — 새 절).
 
     숫자는 `_heading_mask`가 가린 뒤에도 남을 때만 수량이다. 구조화 제목 표지(`#`)가 붙은 줄은
     숫자가 남아도 제목이다 — 그 범위를 이 지표에 줄 수 있는지는 낱말로 따로 판정한다.
+
+    §5 C3(2026-10-05): PR 69 7차 규칙은 `ISO`·`GRI`가 붙은 제목을 모두 다른 대상의 제목으로 봐
+    `GRI 403-9 A2공장 안전 현황`의 A2공장·`GRI 403-9 2026년 4월 김해 제1공장 안전 현황`의 기간을 버렸다.
+    규격 식별자(이름+번호)를 뗀 나머지가 이 지표의 범위 낱말뿐이면 그 제목의 사업장·기간은 아래 값에
+    적용된다. 규격 제목은 여전히 절 경계라 위 머리말의 범위는 물려받지 않는다(`_zero_heading`).
+    규격 목차·색인 줄(`GRI 403-9 산업재해 ··· 45`)과 다른 대상의 규격 제목(`ISO 45001 교육 현황`)은
+    적용 관계가 불명확하므로 범위를 주지 않는 경계다.
     """
     if not piece.strip():
         return "blank"
@@ -3547,17 +3642,27 @@ def _heading_kind(piece: str, allowed: set[str]) -> str:
         return "table"
     if _LIST_MARKER_RE.fullmatch(piece):
         return "blank"                     # `Ⅱ.`·`가.`에서 마침표로 갈린 번호 토막 — 내용이 없다
-    rest = _heading_mask(piece)
+    number = _heading_number(piece)
+    refs = _standard_refs(piece, number)
+    if refs and _TOC_TAIL_RE.search(piece):
+        return "other_heading"
+    rest = list(_heading_mask(piece))
+    for name, _number, end in refs:
+        rest[name:end] = " " * (end - name)  # 규격 이름도 뗀다 — 남은 낱말로 적용 관계를 본다
+    rest = "".join(rest)
     for span in _date_spans(rest):
         rest = rest.replace(span.text, " ")
     rest = _SITE_MENTION_RE.sub(" ", rest)
     counted = re.search(r"\d", rest) and not re.match(r"\s*#", piece)
     if counted or _ZERO_NEGATION_RE.search(rest) or _SENTENCE_END_RE.search(rest.strip()):
         return "fact"
-    return "heading" if all(w in allowed for w in _label_tokens(rest)) else "other_heading"
+    if not all(w in allowed for w in _label_tokens(rest)):
+        return "other_heading"
+    return "standard_heading" if refs else "heading"
 
 
-def _zero_heading(candidate: _ZeroCandidate, hint_tokens: list[str]) -> tuple[list, set[str], str, str]:
+def _zero_heading(candidate: _ZeroCandidate, hint_tokens: list[str],
+                  fiscal: dict[str, tuple[Any, Any]] | None = None) -> tuple[list, set[str], str, str]:
     """후보에 범위를 물려줄 수 있는 **공통 머리말**의 기간·사업장, 그 원문, 상속을 끝낸 경계.
 
     PR 69 4차 검토(2026-10-02): 다른 절 전체를 폴백 문맥으로 써서 `산업재해 0건, 2026년 4월 김해
@@ -3592,7 +3697,7 @@ def _zero_heading(candidate: _ZeroCandidate, hint_tokens: list[str]) -> tuple[li
             break                          # 머리말 묶음이 끝났다 — 그 위는 앞 절이다
         # 기간은 가린 문구에서 읽는다 — 규격 개정 연도(`ISO 45001:2018`)는 기간이 아니다. 사업장은
         # 원문에서 읽는다 — 판정용 가공 때문에 자기 사업장이 '없음'이 되어 상속되지 않게 한다.
-        piece_spans, piece_sites = _date_spans(_heading_mask(piece)), _site_keys(piece)
+        piece_spans, piece_sites = _date_spans(_heading_mask(piece), fiscal), _site_keys(piece)
         if not spans and piece_spans:
             spans = piece_spans
             used.append(piece.strip())
@@ -3600,14 +3705,35 @@ def _zero_heading(candidate: _ZeroCandidate, hint_tokens: list[str]) -> tuple[li
             sites = piece_sites
             if piece.strip() not in used:
                 used.append(piece.strip())
+        if kind == "standard_heading":
+            # 규격 실적 제목은 새 절이다 — 자기 사업장·기간만 쓰고 위 머리말에서 빠진 범위를 채우지 않는다.
+            return spans, sites, " / ".join(used), piece.strip()
         if spans and sites:
             break
     return spans, sites, " / ".join(used), ""
 
 
+def _scope_roles(where: str, text: str, fiscal: dict[str, tuple[Any, Any]] | None = None) -> list[tuple]:
+    """범위 판정에 읽은 문구의 구간 역할 — (where, 역할, 원문, 시작, 끝). 위치는 그 문구 기준이다."""
+    text = str(text or "")
+    roles = [(where, "standard_ref", text[name:end], name, end) for name, _number, end in _standard_refs(text)]
+    masked = _standard_mask(text)
+    cursor = 0
+    for span in _date_spans(masked, fiscal):
+        at = masked.find(span.text, cursor)
+        if at < 0:
+            at = masked.find(span.text)
+        role = f"period:{span.undefined}" if span.undefined else "period"
+        roles.append((where, role, span.text, at, at + len(span.text) if at >= 0 else -1))
+        cursor = max(cursor, at + 1)
+    roles += [(where, "site", m.group(0), m.start(), m.end()) for m in _SITE_MENTION_RE.finditer(text)]
+    return sorted(roles, key=lambda role: role[3])
+
+
 def _zero_scope_verdict(candidate: _ZeroCandidate, requested: "_DateSpan | None",
                         boundary: dict[str, Any], base: dict[str, Any],
-                        hint_tokens: list[str] = ()) -> _ZeroVerdict:
+                        hint_tokens: list[str] = (),
+                        fiscal: dict[str, tuple[Any, Any]] | None = None) -> _ZeroVerdict:
     """사실로 확인된 후보의 **사업장 → 기간** 대조. 숫자 0과 부정 서술이 같은 결정표를 쓴다.
 
     | 요청 ↔ 원문                                      | 판정                         |
@@ -3617,23 +3743,36 @@ def _zero_scope_verdict(candidate: _ZeroCandidate, requested: "_DateSpan | None"
     | 보고 연도 메타데이터 ↔ 그해 월·기준일·연도만 표기   | SOURCE_ONLY(report_year_only) |
     | 보고 연도 메타데이터 ↔ 그해 명시적 연간(`연간`)     | CONFIRMED                    |
     | 원문에 범위 없음 · 요청 기간 미상 · 원문 연도 미상  | SOURCE_ONLY                  |
+    | 원문 기간 표기의 구간 미정의(`FY2026`·`Q1`)         | SOURCE_ONLY(fiscal·quarter_*) |
     | 원문 범위가 여럿이라 연결을 특정하지 못함           | UNRESOLVED(period_ambiguous) |
+
+    기간은 서술·열 머리에서도 규격 번호·개정 연도를 가린 문구로 읽는다(§5 C1: `ISO 45001:2018 기준`의
+    2018은 보고 기간이 아니다). 사업장은 원문에서 읽는다.
     """
-    statement_spans, column_spans = _date_spans(candidate.statement), _date_spans(candidate.column)
+    statement_spans = _date_spans(_standard_mask(candidate.statement), fiscal)
+    column_spans = _date_spans(_standard_mask(candidate.column), fiscal)
     statement_sites, column_sites = _site_keys(candidate.statement), _site_keys(candidate.column)
     spans = statement_spans or column_spans
     sites = statement_sites or column_sites
     origin = "statement" if statement_spans or statement_sites else "column" if spans or sites else ""
     heading = boundary_heading = ""
     if not spans or not sites:
-        heading_spans, heading_sites, heading, boundary_heading = _zero_heading(candidate, list(hint_tokens))
+        heading_spans, heading_sites, heading, boundary_heading = _zero_heading(
+            candidate, list(hint_tokens), fiscal)
         if (not spans and heading_spans) or (not sites and heading_sites):
             origin = f"{origin}+heading" if origin else "heading"
         else:
             heading = ""
         spans = spans or heading_spans
         sites = sites or heading_sites
-    base = {**base, "scope_from": origin, "scope_heading": heading, "scope_boundary": boundary_heading}
+    roles = _scope_roles("statement", candidate.statement, fiscal)
+    if candidate.column:
+        roles += _scope_roles("column", candidate.column, fiscal)
+    for where, text in (("heading", heading), ("boundary", boundary_heading)):
+        if text and not (where == "boundary" and text == heading):
+            roles += _scope_roles(where, text, fiscal)
+    base = {**base, "scope_from": origin, "scope_heading": heading, "scope_boundary": boundary_heading,
+            "scope_spans": tuple(roles)}
     site_text = ", ".join(sorted(sites))
     if not _site_matches(boundary, sites):
         return _ZeroVerdict("REJECTED", "site_mismatch", evidence_site=site_text, **base)
@@ -3646,6 +3785,8 @@ def _zero_scope_verdict(candidate: _ZeroCandidate, requested: "_DateSpan | None"
         return _ZeroVerdict("REJECTED", "period_unproven", **scope)
     if relation == "ambiguous":
         return _ZeroVerdict("UNRESOLVED", "period_ambiguous", **scope)
+    if relation == "undefined":
+        return _ZeroVerdict("SOURCE_ONLY", span.undefined, **scope)
     if relation != "match":
         cause = {"report_year": "report_year_only", "unscoped": "period_not_stated",
                  "year_unknown": "source_year_unknown"}.get(relation, "requested_period_unknown")
@@ -3669,7 +3810,9 @@ def _zero_trace(verdict: _ZeroVerdict) -> dict[str, Any]:
             "scope_from": verdict.scope_from, "scope_heading": verdict.scope_heading[:_QUOTE_MAX_CHARS],
             "evidence_start": verdict.evidence_start, "evidence_end": verdict.evidence_end,
             "row_label": verdict.row_label[:_QUOTE_MAX_CHARS],
-            "scope_boundary": verdict.scope_boundary[:_QUOTE_MAX_CHARS]}
+            "scope_boundary": verdict.scope_boundary[:_QUOTE_MAX_CHARS],
+            "scope_spans": [{"where": where, "role": role, "text": text, "start": start, "end": end}
+                            for where, role, text, start, end in verdict.scope_spans]}
 
 
 def _zero_scope_boundary(boundary: dict[str, Any], verdict: _ZeroVerdict, period: str) -> dict[str, Any]:
@@ -3682,7 +3825,9 @@ def _zero_scope_boundary(boundary: dict[str, Any], verdict: _ZeroVerdict, period
     """
     span = verdict.source_scope
     scope: dict[str, Any] = {"basis": "actual"}
-    if span is not None:
+    if span is not None and span.undefined:
+        scope["period_text"] = span.text.strip()     # 표기만 남긴다 — 회계연도 구간을 날짜로 만들지 않는다
+    elif span is not None:
         scope["period_text"] = span.text.strip()
         if span.kind == "MONTH":
             scope.update(aggregation="monthly", coverage_months=1)
@@ -3726,9 +3871,12 @@ class _DateSpan:
     grain: str       # day | month | year | range
     text: str
     # REPORT_YEAR(요청의 보고 연도) · ANNUAL(명시적 연간) · YEAR(원문의 연도 표기) · MONTH ·
-    # AS_OF(`기준`이 붙은 날) · DAY · RANGE
+    # AS_OF(`기준`이 붙은 날) · DAY · RANGE · FISCAL(`FY2026`) · QUARTER(`Q1`)
     kind: str = ""
     year_known: bool = True   # False면 월·일만 확인됐다(`3월`·`04-01~04-07`)
+    # 기간 표기는 있으나 실제 시작·종료일을 원문으로 확정할 수 없는 사유(`_ZERO_KEPT_CAUSES`의 키).
+    # 비어 있지 않으면 start·end는 비교에 쓰지 않는 자리값이다 — 회계연도 시작월·연도를 보충하지 않는다.
+    undefined: str = ""
 
 
 _YEARLESS = 2000    # 연도 미상 범위를 담는 윤년. 비교 때 요청 연도로 옮긴다.
@@ -3748,17 +3896,110 @@ _RANGE_PARTIAL_RE = re.compile(r"(?:(\d{1,2})[-./](\d{1,2})|(?:(\d{1,2})\s*월\s
 # 명시적 연간 표기(`2026년 연간`·`2026년 연합계`·`2026년 전체`)와 기준일 표기(`2026-04-01 기준`).
 _ANNUAL_WORD_RE = re.compile(r"연간|연\s*합계|연중|년간|한\s*해\s*(?:동안|전체)?|전체|1년\s*간?")
 _AS_OF_WORD_RE = re.compile(r"\s*(?:기준|현재|시점)")
+# 회계연도·분기 표기(§5 C2). 표기만으로는 실제 구간을 알 수 없다 — 회계연도 시작월과 `FY26`의
+# 세기는 원문 정의(`FY2026 = 2026-01-01~2026-12-31`)가 있을 때만 확정한다. 현재 날짜·요청 기간으로
+# 보충하지 않는다.
+# `FY 2026.04`·`FY2026-04`처럼 월이 붙으면 날짜 표기다(PR 69 8차: 실제 기간으로 읽는다) — 회계연도로 잡지 않는다.
+_FISCAL_RE = re.compile(r"(?<![A-Za-z])FY\s?'?(?P<year>(?:19|20)\d{2}|\d{2})(?![\d]|[.\-/]\d)")
+_QUARTER_RE = re.compile(
+    r"(?:(?<![A-Za-z\d])Q(?P<q1>[1-4])|(?<![\d.])(?P<q2>[1-4])\s*분기)(?![\d])"
+    r"(?:\s*[(（]\s*(?P<m1>\d{1,2})\s*월?\s*[~∼〜\-–]\s*(?P<m2>\d{1,2})\s*월\s*[)）])?")
+_QUARTER_YEAR_RE = re.compile(r"(?<![\d.,])((?:19|20)\d{2})\s*년?\s*$")
+# 회계연도 정의: `FY2026 = 2026-01-01~2026-12-31`·`FY2026(2026.1.1~2026.12.31)`·`FY26: 2026년 1월~12월`.
+_FISCAL_DEF_RE = re.compile(
+    r"(?<![A-Za-z])(?P<token>FY\s?'?(?:(?:19|20)\d{2}|\d{2}))(?![\d])\s*(?:=|:|：|[(（])\s*(?P<body>[^)）\n]{4,48})")
 
 
-def _date_spans(text: str) -> list[_DateSpan]:
-    """문구의 날짜 표기를 실제 범위와 의미로 읽는다. 구간(`A ~ B`)은 하나로 합친다."""
+def _fiscal_key(token: str) -> str:
+    return re.sub(r"[\s']", "", token).upper()
+
+
+def _fiscal_definitions(text: str) -> dict[str, tuple[Any, Any]]:
+    """원문이 직접 적은 회계연도 구간 {`FY2026`: (시작일, 종료일)}. 구간을 한 개로 읽을 때만 싣는다.
+
+    `FY26(2026년)`처럼 연도만 잇고 구간을 적지 않은 표기는 정의가 아니다 — 회계연도 시작월을 모른다.
+    `FY26 = FY2026`은 정의된 `FY2026`의 구간을 그대로 잇는다.
+    """
+    defs: dict[str, tuple[Any, Any]] = {}
+    links: dict[str, str] = {}
+    for m in _FISCAL_DEF_RE.finditer(str(text or "")):
+        key, body = _fiscal_key(m.group("token")), m.group("body")
+        alias = _FISCAL_RE.match(body.strip())
+        if alias:
+            links[key] = _fiscal_key(alias.group(0))
+            continue
+        spans = [s for s in _date_spans(body) if s.year_known and not s.undefined]
+        if len(spans) == 1 and spans[0].kind in ("RANGE", "ANNUAL") and key not in defs:
+            defs[key] = (spans[0].start, spans[0].end)
+    for key, target in links.items():
+        if target in defs and key not in defs:
+            defs[key] = defs[target]
+    return defs
+
+
+def _fiscal_quarter_spans(text: str, fiscal: dict[str, tuple[Any, Any]] | None,
+                          taken: list[tuple[int, int]]) -> list[tuple[int, _DateSpan]]:
+    """`FY2026`·`FY26`·`Q1`·`2026년 1분기(1~3월)`의 범위. 확정할 수 없으면 `undefined` 사유를 단다."""
+    import calendar
+    from datetime import date
+
+    found: list[tuple[int, _DateSpan]] = []
+    for m in _FISCAL_RE.finditer(text):
+        key = _fiscal_key(m.group(0))
+        bounds = (fiscal or {}).get(key)
+        short = len(m.group("year")) == 2
+        if bounds:
+            whole = (bounds[0].month, bounds[0].day, bounds[1].month, bounds[1].day) == (1, 1, 12, 31) \
+                and bounds[0].year == bounds[1].year
+            found.append((m.start(), _DateSpan(bounds[0], bounds[1], "range", m.group(0),
+                                               "ANNUAL" if whole else "RANGE", True)))
+        else:
+            year = _YEARLESS if short else int(m.group("year"))
+            found.append((m.start(), _DateSpan(
+                date(year, 1, 1), date(year, 12, 31), "year", m.group(0), "FISCAL", not short,
+                "fiscal_year_abbreviated" if short else "fiscal_period_undefined")))
+        taken.append((m.start(), m.end()))
+    for m in _QUARTER_RE.finditer(text):
+        if any(s < m.end() and m.start() < e for s, e in taken):
+            continue
+        before = _QUARTER_YEAR_RE.search(text[:m.start()])
+        start = m.start()
+        year = None
+        if before and not any(s < m.start() and before.start(1) < e for s, e in taken):
+            year, start = int(before.group(1)), before.start(1)
+        label = text[start:m.end()]
+        m1, m2 = m.group("m1"), m.group("m2")
+        if year and m1 and m2 and 1 <= int(m1) <= int(m2) <= 12:
+            first, last = int(m1), int(m2)
+            found.append((start, _DateSpan(date(year, first, 1),
+                                           date(year, last, calendar.monthrange(year, last)[1]),
+                                           "range", label, "RANGE", True)))
+        else:
+            known = year or _YEARLESS
+            found.append((start, _DateSpan(date(known, 1, 1), date(known, 12, 31), "range", label,
+                                           "QUARTER", bool(year),
+                                           "quarter_months_not_stated" if year else "quarter_undefined")))
+        taken.append((start, m.end()))
+    return found
+
+
+def _date_spans(text: str, fiscal: dict[str, tuple[Any, Any]] | None = None) -> list[_DateSpan]:
+    """문구의 날짜 표기를 실제 범위와 의미로 읽는다. 구간(`A ~ B`)은 하나로 합친다.
+
+    `fiscal`은 원문의 회계연도 정의(`_fiscal_definitions`)다. 없으면 `FY` 표기는 구간 미상으로 남는다.
+    """
     import calendar
     from datetime import date
 
     text = str(text or "")
     tokens: list[tuple[int, int, int | None, int | None, int | None]] = []
     taken: list[tuple[int, int]] = []
+    marked = _fiscal_quarter_spans(text, fiscal, taken)
+    partials = []
     for m in _DATE_PARTIAL_RANGE_RE.finditer(text):
+        if any(s < m.end() and m.start() < e for s, e in taken):
+            continue
+        partials.append(m)
         taken.append((m.start(), m.end()))
     for pattern in (_DATE_ISO_RE, _DATE_KR_RE, _DATE_YEAR_RE, _DATE_MONTH_ONLY_RE):
         for m in pattern.finditer(text):
@@ -3790,8 +4031,8 @@ def _date_spans(text: str) -> list[_DateSpan]:
         except ValueError:
             return None
 
-    spans: list[_DateSpan] = []
-    for m in _DATE_PARTIAL_RANGE_RE.finditer(text):
+    spans: list[_DateSpan] = [found for _start, found in sorted(marked, key=lambda pair: pair[0])]
+    for m in partials:
         first = span(None, int(m.group(1)), int(m.group(2)), m.start(), m.start())
         second = span(None, int(m.group(3)), int(m.group(4)), m.end(), m.end())
         if first and second and second.end >= first.start:
@@ -3840,7 +4081,7 @@ def _requested_period(period: str, hint: str = "") -> _DateSpan | None:
     from dataclasses import replace
 
     spans = _date_spans(period)
-    if len(spans) != 1 or not spans[0].year_known:
+    if len(spans) != 1 or not spans[0].year_known or spans[0].undefined:
         return None
     span = spans[0]
     if span.kind == "YEAR":
@@ -3854,10 +4095,15 @@ def _period_relation(requested: _DateSpan | None, spans: list[_DateSpan]) -> tup
 
     match(같은 범위) / mismatch(모두 겹치지 않음) / unproven(겹치지만 다른 범위) /
     report_year(요청이 보고 연도뿐) / year_unknown(원문 연도 미상, 월·일은 요청과 같음) /
-    unscoped(원문에 범위 없음) / requested_unknown(요청 기간 미상) / ambiguous(원문 범위가 여럿).
+    unscoped(원문에 범위 없음) / requested_unknown(요청 기간 미상) / ambiguous(원문 범위가 여럿) /
+    undefined(원문에 기간 표기는 있으나 실제 구간을 확정할 수 없음 — `FY2026`·`Q1`).
     """
     from dataclasses import replace
 
+    # 회계연도·분기 표기는 요청 기간으로 보충해 맞추지 않는다. 하나라도 있으면 그 사유로 보류한다.
+    undefined = next((s for s in spans if s.undefined), None)
+    if undefined is not None:
+        return "undefined", undefined
     distinct = list({(s.start, s.end, s.year_known): s for s in spans}.values())
     if not distinct:
         return "unscoped", None
@@ -4105,6 +4351,117 @@ def _quote_window(line: str, forms: list[str]) -> str:
     return ("…" if start > 0 else "") + line[start:end] + ("…" if end < len(line) else "")
 
 
+# 표 칸 라벨 근거화(2026-10-05 §3). 모델 라벨이 칸의 열 머리와 다른 뜻을 말하면(대상 50명 → `교육 출석
+# 인원`, 행 라벨만 남은 `합계` 세 칸) 원문 행 라벨·열 머리로 라벨을 다시 쓴다. 모델 라벨은 감사 기록으로 남긴다.
+_CELL_NUMBER_RE = re.compile(r"(?<![\d.,])[+\-−]?\d{1,3}(?:,\d{3})+(?:\.\d+)?|(?<![\d.,])[+\-−]?\d+(?:\.\d+)?")
+# 열 머리가 기간·열 역할·집계 축이면 라벨 문제가 아니다 — 기간·역할·범위 판정이 따로 읽는다.
+_ROLE_HEADER_RE = re.compile(r"실적|목표|계획|전망|예상|구분|단위|항목|비고|근거|기간|일자|날짜")
+
+
+def _compact(text: str) -> str:
+    return re.sub(r"\s+", "", str(text or ""))
+
+
+def _cell_number(cell: str) -> float | None:
+    numbers = _CELL_NUMBER_RE.findall(cell)
+    if len(numbers) != 1:
+        return None
+    try:
+        return float(numbers[0].replace(",", "").replace("−", "-"))
+    except ValueError:
+        return None
+
+
+def _table_cell_label(hint: str, value: float, quote: str, source_text: str | None) -> dict[str, str] | None:
+    """값이 놓인 표 칸의 (행 라벨, 열 머리)로 모델 라벨을 검사한다. 고칠 필요가 없으면 None.
+
+    - 인용의 표 행을 원문 쪽 텍스트에서 찾아(같은 행이 하나일 때만) 그 위 같은 표의 머리글로 열을 정한다
+      (`_column_header` — 0 판정과 같은 머리글 확인 규칙).
+    - 값이 그 행의 한 칸에만 있어야 한다. 열 머리가 기간·열 역할·집계 축(`2026`·`목표`·`국내`)이면 보지 않는다.
+    - 라벨이 열 머리(또는 그 마지막 낱말)를 이미 담으면 그대로 둔다. 라벨이 행 라벨뿐이면 열 머리를 붙이고(`합계 · 발생량`),
+      라벨이 행 라벨도 열 머리도 담지 않으면 원문 행 라벨·열 머리로 바꾼다(행 라벨이 없으면 표 제목 줄).
+    """
+    if not source_text or "|" not in quote:
+        return None
+    rows = [line for line in quote.splitlines() if _is_table_line(line)]
+    target = None
+    for line in rows:
+        cells = [line[a:b] for a, b in _table_cells(line)]
+        if sum(_cell_number(c) == value for c in cells) == 1:
+            if target is not None:
+                return None                # 인용 안에 같은 값의 칸이 여럿 — 칸을 특정하지 못한다
+            target = line
+    if target is None:
+        return None
+    lines = source_text.splitlines()
+    matches = [i for i, line in enumerate(lines) if _compact(line) == _compact(target)]
+    if len(matches) != 1:
+        return None
+    row_index = matches[0]
+    context = "\n".join(lines[:row_index + 1])
+    line = lines[row_index]
+    line_start = len(context) - len(line)
+    bounds = _table_cells(line)
+    cells = [line[a:b] for a, b in bounds]
+    hits = [k for k, cell in enumerate(cells) if _cell_number(cell) == value]
+    if len(hits) != 1:
+        return None
+    k = hits[0]
+    header, state, _ = _column_header(context, line_start + bounds[k][0], max(1, bounds[k][1] - bounds[k][0]))
+    core = re.sub(r"[(（][^)）]*[)）]", " ", header).strip()
+    if state not in ("header", "cell") or not core or _date_spans(core) or _ROLE_HEADER_RE.search(core) \
+            or any(word == core for word in _COL_HEADER_KEYWORDS) or re.search(r"\d", core):
+        return None
+    row_label = " ".join(c.strip() for c in cells[:k] if c.strip() and _cell_number(c) is None).strip()
+    label = _compact(hint)
+    head = core.split()[-1]
+    if _compact(core) in label or (len(head) >= 2 and head in label):
+        return None                        # 열 머리(또는 그 중심어 `미참석`·`비율`)를 이미 담았다
+    if row_label and label == _compact(row_label):
+        new = f"{row_label} · {core}"
+        rule = "row_label_plus_column_header"
+    else:
+        if row_label and _compact(row_label) in label:
+            new = f"{hint} · {core}"
+            rule = "label_plus_column_header"
+        else:
+            caption = ""
+            if not row_label:
+                above = next((lines[j] for j in range(row_index - 1, -1, -1)
+                              if lines[j].strip() and not _is_table_line(lines[j])), "")
+                if above and len(above.strip()) <= 30 and not re.search(r"\d", above):
+                    caption = above.strip()
+            new = " · ".join(part for part in (row_label or caption, core) if part)
+            rule = "source_row_and_column"
+    return {"label": new, "model_label": hint, "row_label": row_label, "column_header": header.strip(),
+            "rule": rule}
+
+
+def _negation_zero_from_null(m: dict[str, Any], source_text: str | None, source_quote) -> tuple[dict, Any] | None:
+    """값을 비운 모델 행을 원문의 명시적 부정 서술로 0 복원할 수 있으면 (행, 판정)을 돌려준다.
+
+    조건: 원문과 대조된 인용이 있고, 0 판정이 **부정 서술 후보**(`미보유`·`발생하지 않았다`)로 원문 사실을
+    보존(CONFIRMED·SOURCE_ONLY)한다. 숫자 0 칸만 있거나(빈 칸·`-`와 섞일 수 있다) 미확인·해당 없음·목표면 복원하지 않는다.
+    복원한 행의 경계에는 원문 범위와 `value_recovery` 출처(모델 값 없음)를 싣는다.
+    """
+    if source_text is None:
+        return None
+    quote = source_quote(m.get("quote"))
+    if not quote:
+        return None
+    hint = str(m.get("metric_hint") or "")
+    hint, period = _split_hint_year(hint, str(m.get("period") or ""))
+    boundary = m.get("boundary") if isinstance(m.get("boundary"), dict) else {}
+    verdict = _zero_verdict(quote, hint, period, boundary, str(m.get("unit") or ""), definitions=source_text)
+    if not verdict.accepted or verdict.candidate != "negation":
+        return None
+    b = dict(boundary)
+    b["provenance"] = [*(b.get("provenance") or []),
+                       {"source": "value_recovery", "method": "rule", "model_value": None,
+                        "rule": "explicit_negation_in_quote", "evidence": verdict.evidence_text[:_QUOTE_MAX_CHARS]}]
+    return {**m, "value": 0, "boundary": b}, verdict
+
+
 def _map_vlm_json(
     data: dict[str, Any], *, page_no: int | None = None, source_text: str | None = None,
     issues: list[dict[str, Any]] | None = None,
@@ -4131,11 +4488,25 @@ def _map_vlm_json(
             # (실측: 현대모비스 2025 p.16 '젠더 다양성(여성 비율)' 등 3건)
             # 모델이 숫자를 만들어내지 않고 없다고 답한 정직한 응답이므로 깨진 응답과 같이
             # 취급하지 않는다. 0으로 채우지도 않고 미확인으로 버리며 사유만 남긴다.
+            # 단, 원문 인용이 같은 지표의 **명시적 미보유·미발생 서술**이면(2026-10-05 한울정밀 11:
+            # `2026-04-30 기준 ISMS 인증 미보유`) 그 서술이 0의 근거다 — 0 판정이 보존할 때만 0으로 싣고
+            # 모델의 빈 값은 감사 기록으로 남긴다. 숫자 0 칸·빈 칸·미확인 서술에서는 0을 만들지 않는다.
+            recovered = _negation_zero_from_null(m, source_text, source_quote)
+            if recovered is None:
+                if issues is not None:
+                    issues.append({"record_type": "metric", "record_index": index,
+                                   "reason": "value_not_reported", "fatal": False,
+                                   "metric_hint": str(m.get("metric_hint") or "")})
+                continue
+            m, verdict = recovered
             if issues is not None:
                 issues.append({"record_type": "metric", "record_index": index,
-                               "reason": "value_not_reported", "fatal": False,
-                               "metric_hint": str(m.get("metric_hint") or "")})
-            continue
+                               "reason": "zero_recovered_from_negation", "fatal": False,
+                               "metric_hint": str(m.get("metric_hint") or ""), "model_value": None,
+                               "value": 0, "unit": str(m.get("unit") or ""), "period": str(m.get("period") or ""),
+                               "status": verdict.status, "cause": verdict.cause, "page": page_no,
+                               "quote": str(m.get("quote") or "")[:_QUOTE_MAX_CHARS],
+                               "evidence_text": verdict.evidence_text[:_QUOTE_MAX_CHARS]})
         try:
             hint = str(m.get("metric_hint") or "")
             value = float(m["value"])
@@ -4154,7 +4525,8 @@ def _map_vlm_json(
             # 아무것도 단정하지 않고 그대로 둔다(추측으로 값을 바꾸지 않는다).
             if quote:
                 boundary = m.get("boundary") if isinstance(m.get("boundary"), dict) else {}
-                zero = _zero_verdict(quote, hint, period, boundary, unit) if value == 0 else None
+                zero = (_zero_verdict(quote, hint, period, boundary, unit, definitions=source_text or "")
+                        if value == 0 else None)
                 if zero is not None and not zero.accepted:
                     # 실측 결함: 원문 칸이 `-`(미공시)인데 0으로 실렸다(삼성전기 4건 —
                     # 유동성장기차입금·장기차입금·지역전문가·Category 9). 자기 근거 문구에
@@ -4198,6 +4570,20 @@ def _map_vlm_json(
                                    "period": period, "page": page_no,
                                    "quote": quote[:_QUOTE_MAX_CHARS]})
 
+            relabel = _table_cell_label(hint, value, quote, source_text) if quote else None
+            if relabel is not None:
+                # 원문 칸의 행 라벨·열 머리가 모델 라벨과 다르다 — 원문 라벨로 싣고 모델 라벨은 감사 기록으로 둔다.
+                b = dict(m.get("boundary") or {})
+                b["provenance"] = [*(b.get("provenance") or []),
+                                   {"source": "label_check", "method": "rule", **relabel}]
+                m = {**m, "boundary": b}
+                if issues is not None:
+                    issues.append({"record_type": "metric", "record_index": index,
+                                   "reason": "label_from_table_header", "fatal": False,
+                                   "metric_hint": relabel["label"], "page": page_no, "value": value,
+                                   "unit": unit, "period": period, "quote": quote[:_QUOTE_MAX_CHARS],
+                                   **{k: relabel[k] for k in ("model_label", "row_label", "column_header", "rule")}})
+                hint = relabel["label"]
             metrics.append(ExtractedMetric(
                 metric_hint=hint,
                 value=value,

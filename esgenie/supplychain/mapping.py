@@ -101,6 +101,19 @@ def _derive_numeric(q, mapped, missing, dp_by_code, claims=None, evidence_index=
                 rationale=f"{entry.get('name', code)} = {entry.get('value')}"
                           f"{entry.get('unit', '')} (증빙 미연결, 자가신고)",
             )
+            # 원장 DataPoint가 없는 코드(기본 28개 밖)도 원장 판정을 잃지 않는다(2026-10-05 §4). 범위 미확정
+            # 0이 '자가신고 0건'으로만 보이면 요청 기간의 확정 실적처럼 읽힌다.
+            fact = entry.get("resolved_fact") or {}
+            if fact:
+                from ..ssot.boundary import Boundary
+                ans.confidence_flags = list(fact.get("flags") or [])
+                ans.scope_notes = list(fact.get("scope_notes") or [])
+                ans.boundary = dict(fact.get("boundary") or {})
+                ans.boundary_label = Boundary.from_dict(ans.boundary).label()
+                ans.completeness = fact.get("completeness") or ""
+                if "scope_source_only" in ans.confidence_flags:
+                    _merge_comparison(ans, "scope_unconfirmed",
+                                      "; ".join(ans.scope_notes) or "원문 범위로만 보존한 값")
         else:
             status, request, ev_needed = _unresolved(
                 q, f"{code} 증빙 없음 — 해당 수치를 입증할 고지서/명세서 업로드 필요")
@@ -236,6 +249,9 @@ def _reconcile_claim(ans: Answer, claim: Any, evid_value: Any, evid_unit: str, *
         ans.flags.append(f"증빙값 검토필요: {reason}")
         return ans
     evid_num = _as_number(evid_value)
+    stated = _stated_claim_scope(ans, claim, cval, cunit, evid_num, evid_unit, code)
+    if stated is not None:
+        return stated
     from ..ssot.boundary import claim_scope_status
     scope_status, scope_reason = claim_scope_status(code, ans.boundary, ans.completeness,
                                                    craw, getattr(claim, "boundary", None))
@@ -268,10 +284,22 @@ def _reconcile_claim(ans: Answer, claim: Any, evid_value: Any, evid_unit: str, *
         mismatch = relative >= D1_THRESHOLD
         description = (f"상대오차 {relative:.2%}, 기준 ≥{D1_THRESHOLD:.0%} (분모=|증빙값|; "
                        "증빙 0이면 주장 0만 일치)")
+    if mismatch and "scope_source_only" in ans.confidence_flags:
+        # 범위가 확인되지 않은 증빙 0과의 차이는 같은 범위의 수치 충돌이 아니다(2026-10-05 §4).
+        reason = (f"자가신고 {cval}{cunit} ↔ 증빙 {evid_num}{evid_unit} ({description}) — 증빙값이 요청 범위의 "
+                  "실적으로 확인되지 않아(원문 범위로만 보존) 수치 충돌로 확정하지 않음")
+        ans.flags.append(f"범위 확인 필요: {reason}")
+        _merge_comparison(ans, "scope_unconfirmed", reason, source=csrc, claim_value=cval, evidence_value=evid_num)
+        return ans
     if mismatch:
         ans.status = "flagged"
         ans.flags.append(f"D1 불일치: 자가신고 {cval}{cunit} ↔ 증빙 {evid_num}{evid_unit} ({description}, {csrc})")
         ans.rationale += f" · 자가주장과 증빙 불일치 ({description}) — 소명 필요"
+    elif "scope_source_only" in ans.confidence_flags:
+        # 증빙 0은 원문 범위의 사실로만 보존됐다 — 같은 숫자라도 요청 범위의 일치로 확정하지 않는다.
+        ans.flags.append(
+            f"범위 확인 필요: 자가신고 {cval}{cunit} ≈ 증빙 {evid_num}{evid_unit} ({description}) "
+            f"— 증빙값이 요청 범위의 실적으로 확인되지 않아(원문 범위로만 보존) 일치로 확정하지 않음")
     elif ans.completeness == "partial":
         # 숫자는 맞지만 증빙이 부분값 — 전체 값과 대조된 것이 아니다.
         ans.flags.append(
@@ -280,6 +308,60 @@ def _reconcile_claim(ans: Answer, claim: Any, evid_value: Any, evid_unit: str, *
     else:
         ans.flags.append(f"자가신고 일치: {cval}{cunit} ≈ 증빙 {evid_num}{evid_unit} ({description})")
     _comparison_from_claim(ans, mismatch, description)
+    return ans
+
+
+def _stated_claim_scope(ans, claim, cval, cunit, evid_num, evid_unit, code):
+    """부분값 증빙과 **같은 기간·사업장을 적은** 비율 주장의 대조(2026-10-05 §3 05). 해당하지 않으면 None.
+
+    숫자만 다르다고 같은 범위의 수치 충돌로 확정하지 않는다. 회사 답변의 기간·사업장·요청 지표·분모 중
+    무엇이 증빙과 같고 무엇이 비었는지 적는다.
+      - 회사 답변 값이 다른 지표 근거(작성 메모가 가리킨 문서 우선)의 같은 값이면 그 원문 계산식과 요청 지표의
+        증빙 계산식을 함께 들어 '분모가 다른 지표의 값을 옮긴 것'으로 설명한다 → not_comparable·검토필요.
+      - 그 근거가 없고 분모도 적혀 있지 않으면 → scope_unconfirmed(분모 미기재). 값은 비교하지 않는다.
+      - 분모까지 적혀 있으면 None — 기존 동일 범위 비교로 넘긴다.
+    """
+    from ..ssot.boundary import Boundary, comparable, derive_boundary
+    scope = dict(getattr(claim, "boundary", None) or {})
+    if code not in _RATE_KESG_CODES or ans.completeness != "partial":
+        return None
+    if not (scope.get("period_start") and scope.get("site")):
+        return None
+    if scope.get("denominator_kind") not in (None, "", "unknown"):
+        return None
+    raw = getattr(claim, "raw", "") or ""
+    evidence, stated = Boundary.from_dict(ans.boundary), derive_boundary(raw, raw, base=scope)
+    if comparable(evidence, stated)[0] != "compared":
+        return None                         # 기간·사업장이 다르면 기존 범위 상이 판정이 맞다
+    context = getattr(claim, "context", {}) or {}
+    source = getattr(claim, "source", "")
+    request = context.get("request") or ""
+    stated_text = f"{scope['period_start']}~{scope['period_end']} · {scope['site']}"
+    matched = f"기간·사업장({stated_text})은 증빙({ans.boundary_label or '경계 미기록'})과 같습니다"
+    basis = (context.get("evidence_basis") or {}).get("basis") or ""
+    evidence_text = f"요청 지표{f'({request})' if request else ''}의 증빙 값은 {evid_num}{evid_unit}입니다" \
+                    + (f"(원문: {basis})" if basis else "")
+    trace = context.get("value_trace") or []
+    if trace:
+        t = trace[0]
+        note = (context.get("source_note") or "").rstrip(". ") if t.get("linked_by_note") else ""
+        reason = (f"회사 답변 {cval}{cunit}: {matched}. 이 값은 {t.get('source_file')}의 '{t.get('metric')}' "
+                  f"{t.get('value')}{t.get('unit')}와 같습니다" + (f"(원문: {t.get('quote')})" if t.get("quote") else "")
+                  + (f" — 작성 메모: {note}" if note else "") + f". {evidence_text}. "
+                  "분모가 다른 지표의 값을 옮긴 것으로 보여 같은 범위의 수치 충돌로 확정하지 않았습니다 — 회사 답변 수정·확인 필요.")
+        _merge_comparison(ans, "not_comparable", reason, source=source, claim_value=cval, evidence_value=evid_num,
+                          traced_node_id=t.get("node_id"))
+        ans.status = "flagged"
+        # 상세 근거는 비교 사유(review_note)에 한 번만 싣는다 — 같은 장문을 플래그에 되풀이하지 않는다.
+        ans.flags.append(f"자가주장 검토필요: 회사 답변 {cval}{cunit}는 다른 지표({t.get('source_file')} "
+                         f"'{t.get('metric')}')의 값과 같음 — 요청 지표 증빙 {evid_num}{evid_unit}, 분모 상이")
+        return ans
+    reason = (f"회사 답변 {cval}{cunit}: {matched}. 회사 답변에 분모가 적혀 있지 않아 같은 지표의 값인지 확인하지 "
+              f"못했습니다. {evidence_text}. 숫자 차이만으로 수치 충돌로 확정하지 않았습니다.")
+    _merge_comparison(ans, "scope_unconfirmed", reason, source=source, claim_value=cval, evidence_value=evid_num)
+    ans.flags.append(f"범위 확인 필요: 회사 답변 {cval}{cunit} ↔ 증빙 {evid_num}{evid_unit} — 회사 답변 분모 미기재")
+    if ans.status == "verified":
+        ans.status = "self_reported"
     return ans
 
 

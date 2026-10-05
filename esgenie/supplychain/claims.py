@@ -33,6 +33,9 @@ class SupplierClaim:
     diagnostics: list[str] = field(default_factory=list)
     candidates: list[dict[str, Any]] = field(default_factory=list)
     boundary: dict[str, Any] = field(default_factory=dict)
+    # 답변 행의 문맥(2026-10-05 §3 05): 문항 ID·요청 내용·작성 메모·메모가 가리킨 문서 ID, 그리고
+    # 응답서 생성 직전에 붙이는 값 추적(`trace_claim_values`). 대조 단계가 원문 근거를 들어 설명한다.
+    context: dict[str, Any] = field(default_factory=dict)
 
 
 class ClaimSet(dict):
@@ -54,6 +57,11 @@ _TARGET = re.compile(r"목표|계획|전망|예정|지향|추진|target|plan|for
 _BOUNDARY = re.compile(r"[\n\f;/|]+|\.(?=\s|$)|(?=20\d{2}\s*년)")
 _QUESTION = re.compile(r"[?？]|(?:인가|하는가|되는가|있는가|있습니까|합니까)\s*$")
 _YEAR = re.compile(r"(20\d{2})\s*년")
+_QUESTION_ID = re.compile(r"^\s*([A-Z]{1,3}-\d{1,3})\s*$")
+_DOCUMENT_ID = re.compile(r"(?<![A-Za-z0-9])[A-Z]{2,}-[A-Z]{2,}-\d{4,}(?!\d)")
+_NOTE_WORDS = re.compile(r"메모|근거|출처|옮겨")
+# 회사 답변 값을 다른 지표 근거와 잇는 낱말(재활용률 문항). 메모가 문서를 가리키지 않을 때만 쓴다.
+_RECYCLE_VOCAB = re.compile(r"재활용|재투입|재사용|스크랩|폐기물|순환")
 
 _SAQ_FILENAME_HINTS = (
     "saq",
@@ -135,7 +143,9 @@ def parse_saq_claims(pdf_paths: list[str]) -> ClaimSet:
                 record = {"code": "E-6-2", "raw": context, "source": f"saq:{Path(path).name}",
                           "period": int(year.group(1)) if year else None,
                           "page": text[:offset + match.start()].count("\f"),
-                          "position": offset + match.start(), "input_value": raw_value}
+                          "position": offset + match.start(), "input_value": raw_value,
+                          "boundary": _stated_scope(context),
+                          "context": _answer_context(text, offset + match.start())}
                 if _QUESTION.search(context):
                     claims.diagnostics.append(dict(record, reason="question_not_answer"))
                 elif _TARGET.search(context):
@@ -157,8 +167,112 @@ def parse_saq_claims(pdf_paths: list[str]) -> ClaimSet:
             period=None if ambiguous else first["period"], page=first["page"], position=first["position"],
             status="ambiguous" if ambiguous else "reported",
             diagnostics=["여러 실적 주장값/연도가 상충하여 확정 불가"] if ambiguous else [],
-            candidates=candidates)
+            candidates=candidates,
+            boundary={} if ambiguous else first["boundary"],
+            context={} if ambiguous else first["context"])
     return claims
+
+
+def _stated_scope(raw: str) -> dict[str, Any]:
+    """답변 문장에 **직접 적힌** 기간·사업장·분모만 담은 경계. 추정한 값은 넣지 않는다."""
+    from ..ssot.boundary import derive_boundary
+    b = derive_boundary(raw, raw).to_dict()
+    inferred = set(b.get("inferred") or ())
+    keep = {}
+    if b.get("period_start") and b.get("period_end"):
+        keep.update({k: b[k] for k in ("period_year", "period_start", "period_end", "aggregation",
+                                        "coverage_months") if b.get(k)})
+    if b.get("site") and b.get("site_scope") not in (None, "", "unknown"):
+        keep.update({k: b[k] for k in ("site", "site_scope", "site_path") if b.get(k)})
+    if b.get("denominator_kind") not in (None, "", "unknown") and "denominator_kind" not in inferred:
+        keep.update(denominator=b.get("denominator"), denominator_kind=b["denominator_kind"])
+    return keep
+
+
+def _answer_context(text: str, position: int) -> dict[str, Any]:
+    """답변이 놓인 표 행의 문항 ID·요청 내용과, 같은 문항을 가리키는 작성 메모(문서 ID 포함)."""
+    before = [line.strip() for line in text[:position].splitlines()]
+    while before and not before[-1]:
+        before.pop()
+    if before:
+        before.pop()                        # 답변 자신이 시작된 줄(같은 칸의 앞부분)
+    qid, request = "", []
+    for line in reversed(before[-4:]):
+        m = _QUESTION_ID.match(line)
+        if m:
+            qid = m.group(1)
+            break
+        if line:
+            request.insert(0, line)
+    if not qid:
+        return {}
+    notes = [line.strip() for line in text.splitlines()
+             if qid in line and _NOTE_WORDS.search(line) and not _QUESTION_ID.match(line)]
+    return {"question_id": qid, "request": " ".join(request) if len(request) <= 2 else "",
+            "source_note": notes[0] if notes else "",
+            "source_ids": sorted({i for note in notes for i in _DOCUMENT_ID.findall(note)})}
+
+
+def trace_claim_values(claims: "ClaimSet | dict[str, SupplierClaim] | None", pipeline_output: Any):
+    """회사 답변 값과 **같은 값**을 가진 다른 지표 근거를 찾아 답변 문맥에 붙인다(새 판정 없음).
+
+    같은 요청 지표에 다른 분모의 값을 옮긴 경우(한울정밀 05: 외부 위탁 폐기물 재활용률 칸에 공정 스크랩
+    내부 재투입률 92%)를 원문 근거로 설명하기 위한 재료다. 작성 메모가 문서 ID를 가리키면 그 문서의 근거만
+    쓴다. 메모가 없으면 재활용 관련 낱말이 붙은 지표만 본다 — 같은 92%인 교육 참석률은 고르지 않는다.
+    요청 지표의 대표 근거에 적힌 계산식·분모 설명도 함께 담는다.
+    """
+    from dataclasses import replace
+    if not claims:
+        return claims
+    graph = getattr(pipeline_output, "evidence_graph", None)
+    if graph is None:
+        return claims
+    texts = {ext.source_file: str(getattr(ext, "raw_text", "") or "")
+             for ext in getattr(pipeline_output, "ocr_extractions", []) or []}
+    out = ClaimSet(diagnostics=getattr(claims, "diagnostics", []))
+    for code, claim in claims.items():
+        value = getattr(claim, "value", None)
+        context = dict(getattr(claim, "context", {}) or {})
+        if value is None:
+            out[code] = claim
+            continue
+        ids = context.get("source_ids") or []
+        matches = []
+        for node in graph.nodes.values():
+            if node.metric == code or str(node.unit).strip() not in ("%", "％"):
+                continue
+            try:
+                if abs(float(node.value) - float(value)) >= 0.05:
+                    continue
+            except (TypeError, ValueError):
+                continue
+            linked = bool(ids) and any(i in texts.get(node.source_file or "", "") for i in ids)
+            matches.append({"node_id": node.id, "source_file": node.source_file, "metric": node.metric,
+                            "value": node.value, "unit": node.unit, "page": node.page,
+                            "quote": _basis_line(node), "linked_by_note": linked})
+        linked = [m for m in matches if m["linked_by_note"]]
+        context["value_trace"] = linked or [m for m in matches if _RECYCLE_VOCAB.search(m["metric"])]
+        fact = (getattr(graph, "resolved_facts", {}) or {}).get(code)
+        rep = [graph.nodes[n] for n in (fact.representative_node_ids if fact else []) if n in graph.nodes]
+        if rep:
+            context["evidence_basis"] = {"source_file": rep[0].source_file, "value": rep[0].value,
+                                         "unit": rep[0].unit, "basis": _basis_line(rep[0])}
+        out[code] = replace(claim, context=context)
+    return out
+
+
+def _basis_line(node: Any) -> str:
+    """근거의 계산식·분모 설명 줄(`계산: … ÷ …`). 없으면 인용 첫 줄."""
+    quotes = [str(getattr(node, "quote", "") or "")]
+    quotes += [str(p.get("quote") or "") for p in (getattr(node.boundary, "provenance", ()) or ())
+               if isinstance(p, dict)]
+    lines = [line.strip() for q in quotes for line in q.splitlines() if line.strip()]
+    calc = [line for line in lines if "÷" in line or line.startswith("계산")]
+    # 분자·분모 정의 줄은 완결된 문장까지만 싣는다 — 줄바꿈에서 끊긴 꼬리를 인용처럼 보이지 않게 한다.
+    denominators = [line[:line.rfind(".") + 1] for line in lines
+                    if line.startswith(("분자", "분모")) and "." in line]
+    picked = list(dict.fromkeys(calc[:1] + denominators[:1]))
+    return " / ".join(picked) or (lines[0] if lines else "")
 
 
 def merge_claims(*sources: dict[str, SupplierClaim] | None) -> ClaimSet:

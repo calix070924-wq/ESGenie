@@ -265,7 +265,9 @@ def export_response_sheet_pdf(
             Paragraph(_fmt_evidence(a, fig_map) or "—", cell),
         ])
         style_cmds.append(("BACKGROUND", (0, ri), (-1, ri), colors.HexColor(bg)))
-    table = Table(data, colWidths=col_w, repeatRows=1)
+    # 한 답변의 근거·비고가 쪽 높이를 넘으면 행을 쪽에 걸쳐 나눈다(2026-10-05: 인용이 긴 교육 문항 한 행이
+    # 515pt 틀을 넘어 PDF 전체가 실패했다). 내용을 자르지 않는다.
+    table = Table(data, colWidths=col_w, repeatRows=1, splitInRow=1)
     table.setStyle(TableStyle(style_cmds))
     elements.append(table)
 
@@ -293,7 +295,7 @@ def export_response_sheet_pdf(
             bg = _CHECK_ACTION_BG.get(row["할 일"])
             if bg:
                 ch_style.append(("BACKGROUND", (0, ri), (-1, ri), colors.HexColor(bg)))
-        ch_table = Table(ch_data, colWidths=ch_w, repeatRows=1)
+        ch_table = Table(ch_data, colWidths=ch_w, repeatRows=1, splitInRow=1)
         ch_table.setStyle(TableStyle(ch_style))
         elements.append(ch_table)
 

@@ -163,5 +163,8 @@ def test_reconciled_reasons_are_not_counted_as_unreported_values():
     """값이 실린 사유를 `unvalued_records`에 섞으면 '수치 미보고' 수가 부풀려진다."""
     assert "value_not_reported" not in o._VALUE_RECONCILED_REASONS
     assert "zero_not_in_evidence" not in o._VALUE_RECONCILED_REASONS
-    assert {"scale_chain_recomposed", "scale_chain_unresolved",
-            "value_not_written_in_evidence"} == set(o._VALUE_RECONCILED_REASONS)
+    # 기대값 변경(2026-10-05): 원문 표 칸 라벨로 정정한 행(`label_from_table_header`)과 원문 부정 서술로
+    # 0을 보존한 행(`zero_recovered_from_negation`)도 값이 실린 채 원문과 대조된 기록이다. 두 사유가 실제로
+    # 값을 싣는지는 `tests/test_numeric_scope_output_20261005.py`가 따로 확인한다.
+    assert {"scale_chain_recomposed", "scale_chain_unresolved", "value_not_written_in_evidence",
+            "label_from_table_header", "zero_recovered_from_negation"} == set(o._VALUE_RECONCILED_REASONS)

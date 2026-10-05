@@ -194,6 +194,24 @@ def _reconciliation_reviews(ext: Any) -> list[ReviewFinding]:
                     f"{cause} 추출값을 바꾸지 않고 그대로 두었습니다.",
                     "원본의 해당 문장에서 이 지표의 값과 단위를 확인하고, 다르면 올바른 값으로 수정하세요.",
                     check_reason="scale_chain_unresolved", check_result=dict(record), evidence=[ref]))
+            elif reason == "label_from_table_header":
+                findings.append(_finding(
+                    "data_quality", "원문 표 칸 라벨로 정정",
+                    f"{record.get('model_label') or '모델 라벨'} → {hint}: "
+                    f"{_with_unit(record.get('value'), record.get('unit'))}{period}",
+                    f"모델이 붙인 라벨이 값이 놓인 원문 칸의 행·열 머리"
+                    f"({record.get('row_label') or '행 라벨 없음'} / {record.get('column_header') or '열 머리 없음'})와 달라 "
+                    "원문 라벨로 바꿨습니다. 모델의 원래 라벨은 감사 기록에 남겼습니다.",
+                    "원본 표에서 이 값의 행과 열을 확인하세요.",
+                    check_reason="label_from_table_header", check_result=dict(record), evidence=[ref]))
+            elif reason == "zero_recovered_from_negation":
+                findings.append(_finding(
+                    "data_quality", "원문 부정 서술로 0 보존",
+                    f"{hint}: 모델 값 없음 → 0{period}",
+                    "모델이 값을 비웠지만 인용 원문이 같은 지표의 명시적 미보유·미발생 서술이라 0으로 보존했습니다"
+                    f"(판정 {record.get('status') or '미기록'}/{record.get('cause') or '미기록'}). 미확인·누락과 다릅니다.",
+                    "원문 서술과 기준일을 확인하세요.",
+                    check_reason="zero_recovered_from_negation", check_result=dict(record), evidence=[ref]))
             elif reason == "value_not_written_in_evidence":
                 findings.append(_finding(
                     "data_quality", "인용에 직접 적히지 않은 값 확인",

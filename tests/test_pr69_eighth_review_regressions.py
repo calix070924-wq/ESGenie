@@ -291,22 +291,32 @@ def test_a_child_without_its_own_site_still_inherits(parent, child, fact):
         ("CONFIRMED", "김해1공장", "2026년 4월"), result
 
 
-@pytest.mark.parametrize("heading", ["2026년 4월 A1공장 ISO 45001:2018 안전 현황",
-                                     "A1공장 ISO 45001:2018 안전 현황",
-                                     "GRI 403-9 A2공장 안전 현황"])
+@pytest.mark.parametrize("heading,expected", [
+    ("2026년 4월 A1공장 ISO 45001:2018 안전 현황", ("CONFIRMED", "stated_zero", "2026년 4월", "A1공장")),
+    ("A1공장 ISO 45001:2018 안전 현황", ("SOURCE_ONLY", "period_not_stated", "", "A1공장")),
+    ("GRI 403-9 A2공장 안전 현황", ("REJECTED", "site_mismatch", "", "A2공장")),
+])
 @pytest.mark.parametrize("fact", FACTS)
-def test_site_period_and_code_in_one_heading_keep_their_roles(heading, fact):
-    """규격 이름이 붙은 제목은 기존 계약대로 다른 대상의 새 절이다 — 개정 연도가 기간이 되지 않고,
-    위 머리말 범위도 물려받지 않는다."""
+def test_site_period_and_code_in_one_heading_keep_their_roles(heading, expected, fact):
+    """규격 식별자가 붙은 실적 제목은 새 절이다 — 개정 연도가 기간이 되지 않고, 위 머리말 범위도 물려받지 않는다.
+
+    기능 변경(2026-10-05 §5 C3, `docs/수치범위_최종출력_검증기록_2026-10-05.md`): 종전 기대값은 세 제목 모두
+    `SOURCE_ONLY`·사업장 없음이었다. 그 계약은 앞 절(4월·김해) 차용을 막으려고 규격 제목 전체를 다른 대상의
+    제목으로 버려 제목에 직접 적힌 A1공장·A2공장·2026년 4월까지 잃었다. 규격 이름·번호를 뗀 나머지가 이 지표의
+    범위 낱말(`안전 현황`)뿐이면 그 제목의 사업장·기간은 아래 값에 적용된다. 차용 금지(경계 = 그 제목)는 유지한다.
+    반례 대조는 `tests/test_numeric_scope_output_20261005.py`(다른 대상 규격 제목·목차·단순 인용·상위 문맥)에 있다.
+    """
     quote = "2026년 4월 김해 제1공장 안전 현황\n산업재해 발생 건수 1건\n\n" + heading + "\n" + fact
     result = verdict(quote, site="A1공장")
-    assert (result.status, result.evidence_period, result.evidence_site, result.scope_heading) == \
-        ("SOURCE_ONLY", "", "", ""), result
+    assert (result.status, result.cause, result.evidence_period, result.evidence_site) == expected, result
     assert result.scope_boundary == heading and "2018" not in result.evidence_period
+    assert "김해" not in result.evidence_site
 
 
+# 기능 변경(2026-10-05 §5 C2): `FY2026`은 달력 연도 2026이 아니라 구간 미정의 회계연도 표기다(종전 기대값 "2026").
+# 월이 붙은 `FY 2026.04`는 종전대로 실제 월이다.
 @pytest.mark.parametrize("piece,period", [
-    ("FY 2026.04 김해 제1공장 안전 현황", "2026.04"), ("FY2026 김해 제1공장 안전 현황", "2026"),
+    ("FY 2026.04 김해 제1공장 안전 현황", "2026.04"), ("FY2026 김해 제1공장 안전 현황", "FY2026"),
     ("2026년 4월 A1공장 ISO 45001:2018 안전 현황", "2026년 4월"), ("ISO 45001:2018 안전 현황", None),
     ("ISO/IEC 27001(2022) B2사업장 현황", None),
 ])

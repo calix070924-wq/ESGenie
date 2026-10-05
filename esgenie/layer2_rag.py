@@ -513,7 +513,7 @@ class HybridRAG:
             ctx.corp_hits.append((pseudo, 1.0))  # 재생성 루프에서 중복 부착 방지
 
         ledger_lines = "\n".join(
-            f"- {r['code']} {r['name']}: {_row_value(r)}" for r in covered
+            f"- {r['code']} {r['name']}: {_row_value(r)}" + _row_scope_note(r) for r in covered
         )
         missing_names = ", ".join(f"{r['code']} {r['name']}" for r in missing) or "없음"
 
@@ -539,6 +539,9 @@ class HybridRAG:
             "### 향후 계획 및 공시 보완 과제\n"
             "(단기 개선 목표 1~2문장 + 미공시 항목 중 보완 우선순위 1~2개 언급)\n\n"
             "주의: 공시 지표 수치는 위 원장에 있는 값만 쓰고 해당 원장을 인용하시오. "
+            "원장 값의 [범위]·[상태]를 넘어서는 기간·사업장·집계 표현(전체·전사·연간·합산·모든 사업장 등)을 "
+            "쓰지 마시오. [상태]가 '요청 범위 실적 미확정'이거나 '부분값'인 값은 그 상태와 범위를 같은 문장에 "
+            "밝히고 확정 실적이나 전체 범위 값으로 단정하지 마시오. "
             "검색 청크는 활동·정책 설명에 사용하되 원장 밖 지표 수치를 추가하지 마시오. "
             "근거 없는 과장 표현(혁신적, 압도적, 최고 수준 등)을 사용하지 마시오. "
             f"다음 모호 표현을 쓰지 마시오: {_vague_ban_terms()}. "
@@ -593,12 +596,18 @@ def _area_item_rows(
         # D1은 이 오류를 못 잡으므로(원장·노드가 같은 값이라 Δ=0) 이 표기가 유일한 방어선이다.
         if "partial_value" in flags:
             status += "·부분값"
+        # 원문 사실로만 보존한 값(SOURCE_ONLY)은 요청 범위의 확정 실적이 아니다(2026-10-05 §4).
+        if "scope_source_only" in flags:
+            status += "·범위미확정"
+        scope, state = _ledger_scope_state(entry, flags)
         covered.append({
             "code": code,
             "name": entry.get("name") or code,
             "value": entry.get("value"),
             "unit": entry.get("unit") or "",
             "status": status,
+            "scope": scope,
+            "state": state,
         })
     missing: list[dict[str, Any]] = []
     # 보류 사유 표기(2026-09-20). 근거 노드가 실제로 있는데 승격되지 않은 항목이
@@ -625,6 +634,37 @@ def _area_item_rows(
     covered.sort(key=lambda r: r["code"])
     missing.sort(key=lambda r: r["code"])
     return covered, missing
+
+
+def _ledger_scope_state(entry: dict[str, Any], flags: list[str]) -> tuple[str, str]:
+    """원장 값의 측정 범위 표기와 확정 상태 문구(LLM 입력·원장 의사 청크용, 2026-10-05 §4).
+
+    값만 넘기면 모델이 범위를 지어낸다(실측: 4월 김해 제1공장 전력만의 0.513216 TJ를 '사업장 전체의
+    월별 전기·가스 합산'으로 서술). 원장이 이미 판정한 경계·완결성·범위 미확정 사유를 그대로 싣는다.
+    """
+    from .ssot.boundary import Boundary
+    fact = entry.get("resolved_fact") or {}
+    if not fact:
+        return "", ""
+    scope = Boundary.from_dict(fact.get("boundary") or {}).label()
+    states = []
+    if "scope_source_only" in flags:
+        note = next(iter(fact.get("scope_notes") or ()), "")
+        states.append("요청 범위 실적 미확정 — 원문 범위로만 보존" + (f"({note})" if note else ""))
+    if "partial_value" in flags or fact.get("completeness") == "partial" or "incomplete_scope" in flags:
+        states.append("부분값 — 전체·연간 값 아님")
+    if "source_conflict" in flags:
+        states.append("원측정값 상충")
+    return scope, "; ".join(states)
+
+
+def _row_scope_note(r: dict[str, Any]) -> str:
+    parts = []
+    if r.get("scope"):
+        parts.append(f"[범위: {r['scope']}]")
+    if r.get("state"):
+        parts.append(f"[상태: {r['state']}]")
+    return (" " + " ".join(parts)) if parts else ""
 
 
 def _row_value(r: dict[str, Any]) -> str:
@@ -655,7 +695,7 @@ def _render_kesg_table(
 def _kesg_pseudo_chunk(covered: list[dict[str, Any]], area: str) -> IndexedDoc:
     """공시값 원장을 인용 가능한 청크로 승격 — 지표 해설 문장이 [kesg_items_{area}]를
     인용하면 grounding 게이트의 숫자 대조(G2)가 원장 텍스트에서 값을 찾는다."""
-    text = " ; ".join(f"{r['code']} {r['name']} {_row_value(r)}" for r in covered)
+    text = " ; ".join(f"{r['code']} {r['name']} {_row_value(r)}{_row_scope_note(r)}" for r in covered)
     return IndexedDoc(
         text=f"K-ESG 공시값 원장({area}): {text}",
         meta={"source": "kesg_extraction", "area": area},

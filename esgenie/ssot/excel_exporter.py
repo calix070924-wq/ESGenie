@@ -27,6 +27,17 @@ VERIFICATION_COLOR = {
 }
 
 
+def _scope_state(dp) -> str:
+    """원장 판정을 사람이 읽는 한 칸으로: 비교 상태 · 원문 범위로만 보존 · 검토 사유."""
+    from .boundary import COMPARISON_LABEL
+    flags = set(getattr(dp, "confidence_flags", []) or [])
+    parts = [COMPARISON_LABEL.get(getattr(dp, "comparison", ""), "")]
+    if "scope_source_only" in flags:
+        parts.append("요청 범위 실적 미확정(원문 범위로만 보존)")
+    parts += list(dict.fromkeys(getattr(dp, "scope_notes", []) or []))
+    return " · ".join(p for p in parts if p) or "—"
+
+
 def export_datasheet(
     trace: AuditTraceV15,
     out_dir: str | Path,
@@ -61,7 +72,10 @@ def export_datasheet(
     wb = Workbook()
     ws = wb.active
     ws.title = "DataSheet"
-    headers = ["K-ESG 코드", "항목명", "값", "단위", "연도", "검증상태", "D1 위험도", "증빙 파일", "D1 평가", "비교 주장", "미검증 주장", "미검증 사유"]
+    # 측정 범위·확정 상태(2026-10-05 §4): 4월 한 공장 값이 '연도 2026' 칸만으로 연간·전사 값처럼 읽히지 않게,
+    # 원장 경계와 범위 확인 사유(원문 범위로만 보존한 값 포함)를 같은 행에 싣는다. 기존 열 순서는 그대로 둔다.
+    headers = ["K-ESG 코드", "항목명", "값", "단위", "연도", "검증상태", "D1 위험도", "증빙 파일", "D1 평가", "비교 주장", "미검증 주장", "미검증 사유",
+               "측정 범위", "범위·확정 상태"]
     ws.append(headers)
     for c in range(1, len(headers) + 1):
         cell = ws.cell(1, c)
@@ -79,6 +93,7 @@ def export_datasheet(
             AxisScore(0, evaluation=evaluation).evaluation_label if evaluation else "이전 자료: 평가 범위 미기록",
             evaluation.get("compared_claims"), evaluation.get("unverified_claims"),
             ", ".join(evaluation.get("reasons", {})),
+            getattr(dp, "boundary_label", "") or "—", _scope_state(dp),
         ])
         row = ws.max_row
         # 검증상태 색상

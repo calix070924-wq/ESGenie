@@ -23,6 +23,7 @@ from .schemas import format_score
 
 import datetime
 import json
+import re
 from dataclasses import dataclass, field
 from typing import Any
 
@@ -209,8 +210,105 @@ def _block_esg(output: Any, area: str) -> ReportBlock | None:
         + (" · ⚠ 사람 검토 필요(HITL)" if verify.hitl_required else "")
         + axis_note
     )
-    body = f"{lead}\n\n{verify.final_text.strip()}"
+    text, marks = annotate_generated_text(output, area, verify)
+    body = f"{lead}\n\n{text.strip()}"
+    if marks:
+        body += ("\n\n> [검토] 표시는 생성 후 원장·인용 근거와 대조한 결과입니다. 모델이 쓴 원래 문장은 "
+                 "감사 기록(영역 검증 결과)에 그대로 남겼습니다.")
     return ReportBlock(id=f"esg_{area}", title="", body_md=body, kind="reused")
+
+
+# 생성 본문 대조(2026-10-05 §4·§6.2). 경고가 부록(확인 필요 사항)에만 있고 본문은 단정하던 경로를 막는다.
+_SENTENCE_SPLIT_RE = re.compile(r"(?<=[.!?。])\s+")
+_SCOPE_WIDEN_RE = re.compile(r"전체|전사|연간|합산|모든\s*사업장|총합|누적")
+_UNCONFIRMED_WORDS_RE = re.compile(r"미확정|확인되지|확인하지|원문\s*범위|참고|확정하지|추가\s*확인|확인\s*필요")
+_NEGATION_WORDS_RE = re.compile(r"발생하지\s*않|없었|없음|없다|미발생|미보유|0\s*건|0\s*명")
+
+
+def annotate_generated_text(output: Any, area: str, verify: Any) -> tuple[str, list[dict[str, Any]]]:
+    """LLM 영역 본문의 각 문장을 원장·인용 근거와 대조해 같은 문장 뒤에 표시를 붙인다(문장 자체는 고치지 않는다).
+
+    1. 인용한 근거 청크에서 찾지 못한 숫자(날짜 표기 안의 숫자는 제외) — 확정 사실로 쓰지 않는다.
+    2. 원장이 '요청 범위 실적 미확정'(SOURCE_ONLY)으로 둔 값을 그 상태 없이 단정한 문장.
+    3. 원장 범위가 부분값인데 전체·전사·연간·합산으로 넓힌 문장.
+    돌려주는 목록은 (문장, 사유, 숫자·코드)로 감사·내보내기 검사에 쓴다.
+    """
+    from .rag_gates.grounding_gate import _check_numbers_and_units
+    from .rag_gates.signals import _CITATION_RE, _is_structural_line, strip_citation_markers
+    from .ssot.boundary import Boundary
+    from .ssot.ocr_router import _date_spans
+
+    generation = getattr(getattr(verify, "final", None), "generation", None)
+    raw = str(getattr(generation, "text", "") or "")
+    context = getattr(generation, "context", None)
+    if not raw or not hasattr(context, "all_hits"):
+        return verify.final_text, []        # 생성 기록이 없는 결과(차단·이전 형식)는 원문 그대로 둔다
+    chunks = {doc.chunk_id: doc.text for doc, _ in context.all_hits()}
+    entries = []
+    for code, entry in (getattr(getattr(output, "extraction", None), "mapped", {}) or {}).items():
+        fact = entry.get("resolved_fact") or {}
+        if entry.get("area") != area or not fact or entry.get("value") is None:
+            continue
+        flags = set(fact.get("flags") or ())
+        label = Boundary.from_dict(fact.get("boundary") or {}).label()
+        entries.append({"code": code, "name": str(entry.get("name") or code), "value": entry.get("value"),
+                        "unit": entry.get("unit") or "", "flags": flags, "label": label,
+                        "partial": "partial_value" in flags or "incomplete_scope" in flags
+                                   or fact.get("completeness") == "partial",
+                        "note": next(iter(fact.get("scope_notes") or ()), "")})
+
+    def mentions(sentence: str, e: dict[str, Any]) -> bool:
+        value = e["value"]
+        shown = f"{value:g}" if isinstance(value, float) else str(value)
+        name = e["name"].split("(")[0].strip()
+        return (name and name in sentence) or (shown not in ("0", "") and shown in sentence)
+
+    marks: list[dict[str, Any]] = []
+    out_lines = []
+    for raw_line in raw.splitlines():
+        line = raw_line.strip()
+        if not line or _is_structural_line(line):
+            out_lines.append(strip_citation_markers(raw_line) if line else raw_line)
+            continue
+        line_cites = _CITATION_RE.findall(line)
+        pieces = []
+        sentences: list[str] = []
+        for part in _SENTENCE_SPLIT_RE.split(line):
+            # `문장. [chunk_id] 다음 문장` — 마침표 뒤 인용은 앞 문장의 근거다.
+            lead = re.match(r"(?:\s*\[[^\[\]\n]+\])+", part)
+            if lead and sentences:
+                sentences[-1] += " " + lead.group(0).strip()
+                part = part[lead.end():]
+            if part.strip():
+                sentences.append(part)
+        for raw_sentence in sentences:
+            cites = _CITATION_RE.findall(raw_sentence) or line_cites
+            sentence = strip_citation_markers(raw_sentence).strip()
+            if not sentence:
+                continue
+            notes = []
+            orphans: list[str] = []
+            _check_numbers_and_units(sentence, [chunks[c] for c in cites if c in chunks], orphans, [])
+            dated = " ".join(span.text for span in _date_spans(sentence))
+            orphans = [n for n in dict.fromkeys(orphans) if n not in dated]
+            if orphans:
+                notes.append(f"근거 확인 필요: 인용 근거에서 찾지 못한 숫자 {', '.join(orphans)} — 확정 사실로 보지 마세요")
+                marks.append({"area": area, "sentence": sentence, "reason": "orphan_number", "numbers": orphans})
+            for e in entries:
+                if not mentions(sentence, e):
+                    continue
+                if "scope_source_only" in e["flags"] and not _UNCONFIRMED_WORDS_RE.search(sentence):
+                    notes.append(f"범위 미확정: {e['name']} {e['value']}{e['unit']}은 원문 범위"
+                                 f"({e['label'] or '원문 범위 미기록'})로만 확인된 값이며 요청 기간·사업장의 확정 실적이 아닙니다")
+                    marks.append({"area": area, "sentence": sentence, "reason": "source_only_stated", "code": e["code"]})
+                if e["partial"] and _SCOPE_WIDEN_RE.search(sentence) and not _SCOPE_WIDEN_RE.search(e["label"]):
+                    notes.append(f"범위 주의: {e['name']} 값의 원장 범위는 {e['label'] or '경계 미기록'}이며 "
+                                 "전체·연간·합산 값이 아닙니다")
+                    marks.append({"area": area, "sentence": sentence, "reason": "scope_widened", "code": e["code"]})
+            # 보고서 PDF 글꼴이 그리는 ASCII 괄호로 표시한다(〔〕·【】는 PDF에서 빠진다).
+            pieces.append(sentence + "".join(f" [검토: {n}]" for n in dict.fromkeys(notes)))
+        out_lines.append(" ".join(pieces))
+    return "\n".join(out_lines), marks
 
 
 def _block_issb(output: Any) -> ReportBlock | None:

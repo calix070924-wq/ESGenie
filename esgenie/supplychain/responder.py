@@ -110,6 +110,10 @@ def respond_from_pipeline(
     """
     v15 = getattr(pipeline_output, "v15_trace", None)
     data_points = list(getattr(v15, "data_points", []) or []) if v15 else []
+    if supplier_claims:
+        # 회사 답변 값과 같은 값의 다른 지표 근거·요청 지표의 계산식을 답변 문맥에 붙인다(판정은 mapping).
+        from .claims import trace_claim_values
+        supplier_claims = trace_claim_values(supplier_claims, pipeline_output)
     return build_response_sheet(
         framework,
         corp_name=getattr(getattr(pipeline_output, "report", None), "corp_name", "")
