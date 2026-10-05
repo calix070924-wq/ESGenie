@@ -82,6 +82,8 @@ class Quantity:
     unit: str | None
     raw: str
     decimals: int
+    # 단위가 아닌 말이 숫자 뒤에 붙었다(`15일`·`3층`). 그런 숫자는 단위 없는 셈값(`| 40 |`)으로 다른 단위의 수량을 확인하지 않는다.
+    tail: str = ""
 
 
 @dataclass
@@ -356,9 +358,11 @@ def quantities(text: str) -> list[Quantity]:
             continue
         num = m.group("num")
         decimals = len(num.split(".")[1]) if "." in num else 0
-        unit, length = _unit_of(m.group("tok") or "")
+        tok = m.group("tok") or ""
+        unit, length = _unit_of(tok)
         end = m.end("num") if unit is None else m.start("tok") + length
-        found.append(Quantity(m.start("num"), end, value, unit, text[m.start("num"):end].strip(), decimals))
+        tail = tok if unit is None and re.match(r"[가-힣A-Za-z]", tok) else ""
+        found.append(Quantity(m.start("num"), end, value, unit, text[m.start("num"):end].strip(), decimals, tail))
     return found
 
 
@@ -506,7 +510,7 @@ def _row_items(cells: list[str], header: list[str] | None, heading_when=None,
     for q in found:
         k = next((i for i, (s, e) in enumerate(offsets) if s <= q.start < e), None)
         head = header[k] if aligned and k is not None else ""
-        if q.unit is None and _header_unit(head):
+        if q.unit is None and not q.tail and _header_unit(head):
             q = Quantity(q.start, q.end, q.value, _header_unit(head), q.raw, q.decimals)
         head_dates = date_positions(_scope_text(head))
         when = nearest(dates, scoped, q.start, q.end) or (head_dates[0][2] if head_dates else None) or heading_when
@@ -548,8 +552,8 @@ def chunk_occurrences(text: str, chunk_id: str = "", source_file: str = "") -> l
         found = quantities(line)
         dates, sites = date_positions(scoped), site_positions(scoped)
         cells = [c.strip() for c in line.split("|")] if "|" in line else []
-        if cells and not found:
-            header = cells            # 숫자 없는 표 행 — 머리글
+        if cells and all(q.tail for q in found):
+            header = cells            # 숫자 없는(또는 `13일 | 14일`처럼 이름으로 쓰인 숫자만 있는) 표 행 — 머리글
             continue
         if cells:
             for _k, q, role, group, when, where, _window in _row_items(cells, header, heading_when, heading_sites):
@@ -646,7 +650,7 @@ def check_quantity(claim: Claim, facts: list[Fact], scope: list[Occurrence],
         candidates.append((hard, weak, f, None, False))
     for outside, pool in ((False, scope), (True, others)):
         for occ in pool:
-            if not value_matches(q, occ.q.value, occ.q.unit, allow_bare=True):
+            if not value_matches(q, occ.q.value, occ.q.unit, allow_bare=not occ.q.tail):
                 continue
             hard, weak = _relation_problems(claim, role=occ.role, group=occ.group, when=occ.when, sites=occ.sites,
                                             named=False, soft_role=True)

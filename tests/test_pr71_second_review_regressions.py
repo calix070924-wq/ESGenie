@@ -487,3 +487,13 @@ def test_an_unstated_site_is_not_blocked_by_a_same_value_conflict_on_another_rel
     body, marks = review("2026년 6월 9일 교육에 27명이 참석했다.", chunks={"c1": "교육 참석 27명"},
                          facts=[FACTS[1]])
     assert replaced(marks) and "date" in replaced(marks)[0]["problems"]
+
+
+def test_a_day_column_header_is_not_a_head_count():
+    from esgenie import report_claims as rc
+    chunk = "근로시간 기록: 김해 제1공장 / 2026-04-13 ~ 2026-04-19\n인원번호 | 13일 | 14일 | 15일 | 합계\nHN-G26 | 9 | 9 | 9 | 27"
+    occurrences = rc.chunk_occurrences(chunk)
+    assert all(o.q.value != 15 for o in occurrences)                         # 머리글의 `15일`은 수량이 아니다
+    assert [o.q.value for o in occurrences] == [9, 9, 9, 27]
+    body, marks = review("2026년 6월 3일 교육에는 정규직 15명이 출석했다.", chunks={"c1": chunk}, facts=None)
+    assert replaced(marks)[0]["reason"] == "orphan_number"                    # 근거에 없는 15 — 다른 날짜의 값이 아니다
