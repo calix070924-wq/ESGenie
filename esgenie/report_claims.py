@@ -307,7 +307,7 @@ def fact_site_display(row: dict[str, Any]) -> str:
     if conflicts:
         return "확인 보류: 사업장 충돌 — " + "; ".join(conflicts)
     if not keys:
-        return row.get("site") or "원문 미기록"
+        return row.get("site") or ("전체 사업장" if row.get("site_scope") == "entity" else "원문 미기록")
     from .ssot.ocr_router import _SITE_MENTION_RE
     texts = [row.get("site", ""), row.get("label", ""), row.get("quote", "")]
     labels = []
@@ -319,17 +319,115 @@ def fact_site_display(row: dict[str, Any]) -> str:
 
 
 def site_scope_transition(line: str) -> str:
-    """사업장 상속을 끊는 명시적 전사·범위 미기록 표기. 일반 소제목은 전환이 아니다."""
+    """다음 행까지 적용되는 범위 정의. 수량이 붙은 제목·범위 표도 정의로 읽는다.
+
+    서술 안의 범위는 `quantity_site_scopes`가 해당 수량에만 적용한다. 그 서술 때문에 다음 행의
+    정상 사업장 상속까지 지우지 않는다.
+    """
     text = _SOURCE_TAG_RE.sub("", str(line or "")).strip()
-    # 수량 서술 중의 `전사`는 그 수량의 문맥이다. 머리말·범위 정의에서만 상속 상태를 변경한다.
-    if not text or any(q.unit for q in quantities(text)):
+    text = re.sub(r"^[#>*\s]+", "", text).strip()
+    marks = _site_scope_positions(text)
+    if not marks or re.search(r"[.!?。]\s*$", text):
         return ""
-    if re.search(r"(?:사업장|적용\s*범위|사업장\s*범위)\s*[:：]?\s*(?:미기록|미확인|미상|불명확|없음|미지정)", text):
-        return "unknown"
-    from .ssot.boundary import _ENTITY_RE
-    if _ENTITY_RE.search(text) and _heading_line(text) and not re.search(r"전사.*(?:아님|아닌|아니다)", text):
-        return "entity"
+    start, end, kind = marks[0]
+    # `적용 범위 | 전체 사업장`, `사업장 미기록 / 참석 27명`은 범위의 값 자체를 정의한다.
+    prefix = text[:start].strip(" :：|")
+    if re.fullmatch(r"(?:적용\s*범위|사업장\s*범위)", prefix) or (
+            kind == "unknown" and (not prefix or re.fullmatch(r".*(?:기록|현황|집계)\s*[:：]?", prefix))):
+        suffix = text[end:].lstrip()
+        if not suffix or suffix[:1] in "/|(:：（" or date_positions(suffix):
+            return kind
+    # 제목의 수량·날짜 필드는 제목 여부를 바꾸지 않는다. 서술형 `전사 교육에 … 참석했다`는 제외한다.
+    title = re.split(r"[/|(:：（]", text)[0].strip()
+    spans = date_positions(title) + [(q.start, q.end, None) for q in quantities(title) if q.unit]
+    for at, stop, _ in reversed(sorted(spans)):
+        title = title[:at] + " " * (stop - at) + title[stop:]
+    title = title.strip(" -–—")
+    if start == 0 and (re.search(r"(?:집계|현황|기록|내역|범위|결과|개요|합계|통계|명세|요약|교육)$", title)
+                       or title == text[:end]):
+        return kind
     return ""
+
+
+def _site_scope_positions(text: str) -> list[tuple[int, int, str]]:
+    """수량에 붙을 수 있는 명시적 범위와 위치. 부정된 전사 표기는 범위 근거가 아니다."""
+    from .ssot.boundary import _ENTITY_RE
+    unknown = re.compile(r"(?:사업장|적용\s*범위|사업장\s*범위)\s*[:：|]?\s*"
+                         r"(?:미기록|미확인|미상|불명확|없음|미지정)")
+    marks = [(m.start(), m.end(), "unknown") for m in unknown.finditer(text)]
+    for m in _ENTITY_RE.finditer(text):
+        _start, end = _bounds(text, _SENTENCE_END_RE, m.start(), m.end())
+        if not re.search(r"(?:아님|아닌|아니다)", text[m.end():end]):
+            marks.append((m.start(), m.end(), "entity"))
+    return sorted(marks)
+
+
+@dataclass(frozen=True)
+class QuantitySiteScope:
+    q: Quantity                      # 원문 전체에서의 수량 위치(인용 시작점과 무관)
+    sites: frozenset = frozenset()
+    kind: str = ""
+    evidence: str = ""
+    scope_from: str = ""
+
+
+def quantity_site_scopes(text: str) -> dict[tuple[int, int], QuantitySiteScope]:
+    """OCR와 원문 청크가 공유하는 수량별 사업장 범위. 키는 (행 번호, 수량 순번).
+
+    범위 정의는 상속 상태를 변경하고, 서술의 범위는 현재 문장의 수량에만 적용한다. 명시한 로컬
+    사업장은 위치에 따라 선택하며 짧은 별칭만 유효한 상위 사업장으로 구체화한다.
+    """
+    out = {}
+    heading_sites, heading_kind, heading_evidence = frozenset(), "", ""
+    header = []
+    offset = 0
+    for line_no, line in enumerate(str(text or "").split("\n")):
+        transition = site_scope_transition(line)
+        if transition:
+            heading_sites, heading_kind, heading_evidence = frozenset(), transition, line.strip()
+            header = []
+        cells = [c.strip() for c in line.split("|")] if "|" in line else []
+        raw_found = quantities(line)
+        if cells and all(q.tail for q in raw_found):
+            header = cells
+            offset += len(line) + 1
+            continue
+        scoped = _scope_text(" | ".join(cells) if cells else line)
+        found = quantities(scoped)
+        site_marks = [(s, e, (keys, "site")) for s, e, keys in site_positions(scoped)]
+        marks = sorted([*site_marks, *((s, e, (frozenset(), kind)) for s, e, kind in _site_scope_positions(scoped))])
+        table_items = _row_items(cells, header) if cells else []
+        for i, q in enumerate(found):
+            local = nearest(marks, scoped, q.start, q.end)
+            evidence, scope_from = line.strip(), "quote"
+            if local:
+                keys, kind = local
+                keys = refine_local_sites(keys, heading_sites) if kind == "site" else keys
+                if kind != "site":
+                    scope_from = "scope_transition"
+                elif keys != local[0]:
+                    evidence, scope_from = heading_evidence, "heading"
+            elif table_items and table_items[i][5]:
+                keys, kind = refine_local_sites(table_items[i][5], heading_sites), "site"
+                evidence = " ".join([line, *header, heading_evidence])
+            elif not site_marks:
+                keys, kind = heading_sites, heading_kind
+                evidence = heading_evidence
+                scope_from = "heading" if keys else "scope_transition" if kind else ""
+            else:
+                keys, kind = frozenset(), ""       # 다른 문장에만 있는 사업장은 상속 근거가 아니다.
+            raw = raw_found[i]
+            source_q = Quantity(offset + raw.start, offset + raw.end, q.value, q.unit, raw.raw, q.decimals, q.tail)
+            out[line_no, i] = QuantitySiteScope(source_q, frozenset(keys), kind, evidence, scope_from)
+        if not cells:
+            header = []
+        if _heading_line(line) and site_marks and not transition:
+            heading_sites, heading_kind, heading_evidence = site_marks[-1][2][0], "site", line.strip()
+        elif not transition and heading_sites and any(
+                not sites_compatible(keys, heading_sites) for _s, _e, (keys, _kind) in site_marks):
+            heading_sites, heading_kind, heading_evidence = frozenset(), "unknown", line.strip()
+        offset += len(line) + 1
+    return out
 
 
 def date_positions(text: str) -> list[tuple[int, int, Any]]:
@@ -621,26 +719,28 @@ def chunk_occurrences(text: str, chunk_id: str = "", source_file: str = "") -> l
       날짜를 잇는다. 한 청크에 여러 날짜·집단의 수량이 있어도 수량마다 자기 관계를 갖는다(PR71 재검토 A).
     """
     out: list[Occurrence] = []
+    quantity_scopes = quantity_site_scopes(text)
     header: list[str] = []
-    heading_when, heading_sites = None, frozenset()
-    for line in str(text or "").split("\n"):
+    heading_when = None
+    for line_no, line in enumerate(str(text or "").split("\n")):
         scoped = _scope_text(line)
         found = quantities(line)
         dates, sites = date_positions(scoped), site_positions(scoped)
         if site_scope_transition(line):
-            heading_when, heading_sites = None, frozenset()
+            heading_when = None
             header = []
         cells = [c.strip() for c in line.split("|")] if "|" in line else []
         if cells and all(q.tail for q in found):
             header = cells            # 숫자 없는(또는 `13일 | 14일`처럼 이름으로 쓰인 숫자만 있는) 표 행 — 머리글
             continue
         if cells:
-            for _k, q, role, group, when, where, _window in _row_items(cells, header, heading_when, heading_sites):
+            for i, (_k, q, role, group, when, where, _window) in enumerate(_row_items(cells, header, heading_when)):
+                where = quantity_scopes[line_no, i].sites
                 out.append(Occurrence(q, role=role, group=group, when=when, sites=where, context=line,
                                       chunk_id=chunk_id, source_file=source_file))
             continue
         header = []
-        for q, window, anchor, anchor_end, _s, _e in contexts(line, found):
+        for i, (q, window, anchor, anchor_end, _s, _e) in enumerate(contexts(line, found)):
             when = nearest(dates, scoped, q.start, q.end) or (None if dates else heading_when)
             if when is None and dates:
                 # `교육일 6월 3일. 참석자: …`는 앞 문장이 날짜 머리말이다. 같은 줄의 `… 출석했다. 총 참석
@@ -658,15 +758,15 @@ def chunk_occurrences(text: str, chunk_id: str = "", source_file: str = "") -> l
                     and not re.search(r"예정|계획", previous)
                 if dated_heading or linked_total:
                     when = previous_dates[-1][2]
-            local_sites = nearest(sites, scoped, q.start, q.end) or frozenset()
-            where = refine_local_sites(local_sites, heading_sites) if local_sites or not sites else frozenset()
+            where = quantity_scopes[line_no, i].sites
             out.append(Occurrence(q, role=count_role(window, anchor, anchor_end),
                                   group=count_group(window, anchor, anchor_end), when=when, sites=frozenset(where),
                                   context=window.replace(NEXT_QUANTITY, ""), chunk_id=chunk_id,
                                   source_file=source_file))
         if _heading_line(line):
             heading_when = dates[-1][2] if dates else heading_when
-            heading_sites = (frozenset() if site_scope_transition(line) else sites[-1][2]) if sites else heading_sites
+        elif site_scope_transition(line) and dates:
+            heading_when = dates[-1][2]
     return out
 
 
@@ -839,18 +939,23 @@ def source_facts(graph: Any, source_files: set[str] | None = None, limit: int = 
             period_text = start if start == end else f"{start}~{end}"
         site = str(getattr(b, "site", "") or "")
         quote = str(getattr(node, "quote", "") or "")
-        sites, site_conflicts = fact_site_identity(label, site, quote)
+        verified_scope = next((p for p in reversed(getattr(b, "provenance", ()) or ())
+                               if p.get("source") == "quantity_scope"), {})
+        site_scope = str(verified_scope.get("site_scope") or getattr(b, "site_scope", "") or "")
+        # 긴 인용의 앞 절 사업장은 수량별 원문 판정으로 비운 경계를 다시 채울 수 없다.
+        sites, site_conflicts = fact_site_identity(
+            label, site, "" if verified_scope.get("site_scope") in {"entity", "unknown"} else quote)
         if not sites and not site_conflicts and site:
             sites = frozenset({re.sub(r"\s+", "", site)})
         key = (node.source_file, label, float(node.value), str(node.unit), period_text, start, end,
-               label_group(label), sites, site_conflicts)
+               label_group(label), sites, site_conflicts, site_scope)
         if key in seen:
             continue
         seen.add(key)
         rows.append({"label": label, "value": node.value, "unit": str(node.unit or ""),
                      "role": label_role(label), "value_role": getattr(node, "value_role", ""),
                      "period_text": period_text, "period_start": start, "period_end": end,
-                     "site": site, "site_identity": sorted(sites), "site_conflicts": list(site_conflicts),
+                     "site": site, "site_scope": site_scope, "site_identity": sorted(sites), "site_conflicts": list(site_conflicts),
                      "source_file": node.source_file or "",
                      "page": node.page, "node_id": node.id,
                      "quote": quote.splitlines()[0][:120] if quote else ""})

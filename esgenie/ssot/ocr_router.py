@@ -4587,58 +4587,45 @@ def _negation_zero_from_null(m: dict[str, Any], source_text: str | None, source_
 
 
 def _source_quantity_site_boundary(boundary: dict[str, Any], quote: str, source_text: str | None,
-                                   page: int | None) -> dict[str, Any]:
-    """원문 수량 인용의 사업장을 같은 청크의 앞 머리말에서만 보완한다.
+                                   page: int | None, *, value: float | None = None,
+                                   unit: str = "") -> dict[str, Any]:
+    """유일한 원문 인용 안의 해당 수량을 전체 청크의 공유 범위 판정에 연결한다.
 
-    인용이 원문에서 유일하게 위치해야 한다. 인용 자체의 사업장을 우선하고, 앞 머리말을 쓰려면 중간에
-    다른 사업장 표기가 없어야 한다. 뒤 문장·다른 페이지·요청 사업장에서 범위를 가져오지 않는다.
+    인용 앞과 인용 내부를 같은 원문 위치로 읽는다. 여러 같은 값의 범위가 다르면 경계를 추측하지 않는다.
     """
-    from ..report_claims import _heading_line, refine_local_sites, site_scope_transition, sites_compatible
+    from ..report_claims import quantity_site_scopes
+    from ..rag_gates.units import normalize_unit
     if not quote or not source_text:
         return boundary
     compact_quote = re.sub(r"\s+", "", quote)
     positions = [i for i, ch in enumerate(source_text) if not ch.isspace()]
     compact_source = "".join(source_text[i] for i in positions)
     at = compact_source.find(compact_quote)
-    if at < 0 or compact_source.find(compact_quote, at + 1) >= 0:
+    if not compact_quote or at < 0 or compact_source.find(compact_quote, at + 1) >= 0:
         return boundary
-    site_keys = _site_keys(quote)
-    evidence, scope_from = quote, "quote"
-    if not site_keys or all(key[:1].isdigit() for key in site_keys):
-        encountered = []
-        # 같은 실제 청크에서 인용보다 앞에 있는 가장 가까운 사업장 머리말만 사용한다.
-        for line in reversed(source_text[:positions[at]].splitlines()):
-            transition = site_scope_transition(line)
-            if transition:
-                if site_keys:
-                    break                 # 인용 자체의 짧은 사업장은 유지하되 이전 절 지역을 붙이지 않는다.
-                record = {"source": "quantity_scope", "method": "rule", "scope_from": "scope_transition",
-                          "source_site": "", "site_scope": transition, "scope_heading": line.strip(),
-                          "quote": quote, "page": page, "model_site": str(boundary.get("site") or "")}
-                return {**boundary, "site": "", "site_scope": transition,
-                        "provenance": [*(boundary.get("provenance") or []), record]}
-            keys = _site_keys(line)
-            if not keys:
-                continue
-            if _heading_line(line):
-                if any(sites_compatible(frozenset(keys), frozenset(other)) is False for other in encountered):
-                    return boundary
-                refined = refine_local_sites(frozenset(site_keys), frozenset(keys))
-                if refined != frozenset(site_keys):
-                    site_keys, evidence, scope_from = set(refined), line.strip(), "heading"
-                break
-            encountered.append(keys)
-    if len(site_keys) != 1:
+    start, end = positions[at], positions[at + len(compact_quote) - 1] + 1
+    target_unit = normalize_unit(unit) if unit else None
+    candidates = [s for s in quantity_site_scopes(source_text).values()
+                  if start <= s.q.start and s.q.end <= end and not s.q.tail
+                  and (value is None or math.isclose(s.q.value, value, rel_tol=0, abs_tol=1e-9))
+                  and (not target_unit or not s.q.unit or s.q.unit == target_unit)]
+    if not candidates or len({(s.sites, s.kind) for s in candidates}) != 1:
         return boundary
-    mentions = [m.group(0).strip() for m in _SITE_MENTION_RE.finditer(evidence)
-                if _site_keys(m.group(0)) == site_keys]
-    if not mentions:
+    scope = candidates[0]
+    if scope.kind in {"entity", "unknown"}:
+        site = ""
+    elif len(scope.sites) == 1:
+        mentions = [m.group(0).strip() for m in _SITE_MENTION_RE.finditer(scope.evidence)
+                    if frozenset(_site_keys(m.group(0))) == scope.sites]
+        if not mentions:
+            return boundary
+        site = mentions[0]
+    else:
         return boundary
-    site = mentions[0]
-    record = {"source": "quantity_scope", "method": "rule", "scope_from": scope_from,
-              "source_site": site, "scope_heading": evidence if scope_from == "heading" else "",
+    record = {"source": "quantity_scope", "method": "rule", "scope_from": scope.scope_from,
+              "source_site": site, "site_scope": scope.kind, "scope_heading": scope.evidence,
               "quote": quote, "page": page, "model_site": str(boundary.get("site") or "")}
-    return {**boundary, "site": site, "site_scope": "site",
+    return {**boundary, "site": site, "site_scope": scope.kind,
             "provenance": [*(boundary.get("provenance") or []), record]}
 
 
@@ -4753,7 +4740,7 @@ def _map_vlm_json(
             # 원문 값의 적용 사업장을 모델의 생략과 무관하게 전달한다. 캐시 적중에서도 재실행한다.
             if value != 0 and quote:
                 m = {**m, "boundary": _source_quantity_site_boundary(
-                    dict(m.get("boundary") or {}), quote, source_text, page_no)}
+                    dict(m.get("boundary") or {}), quote, source_text, page_no, value=value, unit=unit)}
             relabel = _table_cell_label(hint, value, quote, source_text) if quote else None
             if relabel is not None:
                 # 원문 칸의 행 라벨·열 머리가 모델 라벨과 다르다 — 원문 라벨로 싣고 모델 라벨은 감사 기록으로 둔다.
