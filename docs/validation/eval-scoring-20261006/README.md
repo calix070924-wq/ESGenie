@@ -45,7 +45,7 @@ PR #71 병합 확인 근거(2026-10-06, `git fetch origin --prune` 직후):
 - **정답은 라벨 파일에서만 읽는다.** 회사명·파일명·문항 ID·정답 수치로 분기하지 않는다.
   단계별 48행 구성도 `get_framework(<키>).questions`에서 읽어 넘긴다(`_framework_qids`).
 - **확정 규칙만 구현했다.** 확정된 것은 작업지시서 A §6.1(시스템 판정 매핑)과
-  §6.2(미검증 전달 행의 집계)뿐이다. 그 밖의 조합은 `unresolved`로 남긴다.
+  작업지시서 A §6.2(미검증 전달 행의 집계)뿐이다. 그 밖의 조합은 `unresolved`로 남긴다.
 - **비율·정확도·종합 점수를 내지 않는다.** 지표의 분자·분모가 미정이므로
   `ScoreReport`에는 건수만 있고 `metrics_blocked_reason`에 그 이유가 들어 있다.
   `unresolved`가 0건이어도 비율을 내지 않는다.
@@ -64,7 +64,7 @@ PR #71 병합 확인 근거(2026-10-06, `git fetch origin --prune` 직후):
 | `self_reported` | `status==self_reported` · 차단 비교 없음 |
 | `hold` | 그 밖(`insufficient`·`hitl_required`·`draft_ready`·`flagged`, 차단 비교, verified이나 값 없음) |
 | `not_applicable` | `status==not_applicable` · 차단 비교 없음 |
-| `unresolved` | `not_applicable` + 차단 비교 — 계약에 우선순위가 없다(§6.2 6번) |
+| `unresolved` | `not_applicable` + 차단 비교 — 계약에 우선순위가 없다(이 문서 §6.2.1 6번) |
 
 값 `0`과 `False`는 채워진 값으로 센다(`_is_filled`). `self_reported`는 어떤 경우에도
 확정으로 세지 않는다.
@@ -87,14 +87,14 @@ UI 출력계약 §2 "0-기준, 화면은 +1"). 라벨 `expected_sources`는 **1-
 
 - 수치: 천 단위 구분기호만 지우고 `abs(시스템 − 라벨) <= tolerance`(경계 포함). 기본 0.
 - 단위: NFKC·공백·대소문자만 고르고 **환산·별칭을 하지 않는다**. `톤` vs `t`, `톤` vs `kg`는
-  불일치로 남긴다. 기간·사업장은 비교 대상에 넣지 않았다(§6.2 11번).
+  불일치로 남긴다. 기간·사업장은 비교 대상에 넣지 않았다(이 문서 §6.2.1 7번).
 - 예/아니오: 시스템 값의 자료형(`bool`)으로 형태를 가른다. `"0"`·`"1"`은 예/아니오
   토큰으로 읽지 않는다 — 수치 0을 예/아니오로 뒤바꾸면 안 된다.
 - 목록 값(`list`)은 비교 규칙이 없어 `None`(미정)으로 남긴다.
 - 근거: 정답 근거 여러 건 중 **하나라도** `(파일명, 1-기준 페이지)`가 맞으면 일치.
 - 값 일치와 근거 일치는 각각 `value_match`·`source_match`로 따로 기록·집계한다.
 
-### 2.4 집계 위치(§6.2) — 확정 규칙
+### 2.4 집계 위치(작업지시서 A §6.2) — 확정 규칙
 
 `self_reported`에만 확정 규칙이 있다.
 
@@ -162,7 +162,7 @@ skip·xfail로 실패를 가린 테스트는 추가하지 않았다(새 테스�
 |---|---|
 | verified + 값 있음/없음, 값 0 | `test_verified_with_value_is_confirmed`, `test_verified_without_value_is_hold_not_confirmed`, `test_zero_and_false_are_filled_values_not_empty`, `test_zero_value_is_compared_as_number_not_empty` |
 | 세 가지 차단 comparison | `test_blocking_comparison_forces_hold` (verified·self_reported × 3) |
-| §6.2 미검증 전달 집계 | `test_self_reported_hold_no_evidence_is_correct_hold`, `test_self_reported_hold_mismatch_family_is_wrong_confirmation`, `test_self_reported_answer_value_mismatch_is_wrong_confirmation`, `test_self_reported_answer_value_match_is_unnecessary_hold` |
+| 작업지시서 A §6.2 미검증 전달 집계 | `test_self_reported_hold_no_evidence_is_correct_hold`, `test_self_reported_hold_mismatch_family_is_wrong_confirmation`, `test_self_reported_answer_value_mismatch_is_wrong_confirmation`, `test_self_reported_answer_value_match_is_unnecessary_hold` |
 | 허용 오차 경계·단위 불일치 | `test_tolerance_boundary_is_inclusive`, `test_default_tolerance_is_zero`, `test_unit_mismatch_is_not_normalized_away`, `test_notation_only_differences_are_normalized` |
 | 다중 정답 근거 OR·1-기준 페이지 | `test_any_expected_source_matching_counts_as_hit`, `test_page_conversion_*`, `test_source_page_off_by_one_is_mismatch`, `test_source_without_page_is_mismatch_not_first_page` |
 | 중복·누락 행, 잘못된 라벨 값 | `test_structure_detects_duplicates_missing_and_unexpected`, `test_unmatched_rows_are_reported_not_silently_dropped`, `test_bad_label_values_are_rejected`(14건), `test_missing_label_column_is_rejected` |
@@ -242,21 +242,45 @@ python -m esgenie.eval.response_scoring \
 채점기가 `unresolved`로 남기는 것들이다. 임의로 정답·오답에 배정하지도, 집계에서
 빼지도 않았다.
 
-1. `self_reported` × `hold(needs_human_text)` — §6.2 표에 없다.
-2. `self_reported` × `na` — §6.2 표에 없다.
+#### 6.2.1 채점 규칙 — 행 하나를 어디에 넣는가
+
+1. `self_reported` × `hold(needs_human_text)` — 작업지시서 A §6.2 표에 없다.
+2. `self_reported` × `na` — 작업지시서 A §6.2 표에 없다.
 3. `confirmed` × 모든 라벨 — 집계 규칙 없음.
-4. `hold` × 모든 라벨 — 집계 규칙 없음.
+4. `hold` × 모든 라벨 — 집계 규칙 없음. 라벨과 시스템의 **보류 사유가 다를 때**
+   올바른 보류로 세는지도 정해지지 않았다.
 5. `not_applicable` × 모든 라벨 — 집계 규칙 없음.
 6. `status==not_applicable`인데 차단 comparison이 함께 온 경우의 우선순위
-   (§6.1 표에서 "해당 없음"과 "보류" 조건이 겹친다).
-7. 목록(`list`) 값의 일치 판정 규칙.
+   (작업지시서 A §6.1 표에서 "해당 없음"과 "보류" 조건이 겹친다). 실제 `result.json`에서
+   이 조합이 0건이면 결정 자체가 필요 없다.
+7. 단위 별칭 계약(`톤` vs `t`, `%` vs `퍼센트` 등)을 표기 차이로 볼지, 그리고
+   `boundary_note`(기간·사업장·대상·분모) 대조를 값 일치 판정에 넣을지.
+   현재는 환산·별칭을 하지 않고 단위 문자열 불일치로 남기며, 범위는 값 판정에 넣지 않는다.
+   **"단위·기간·대상 차이를 정규화로 숨기지 않는다"는 금지 규칙은 작업지시서 A §7에
+   이미 명시돼 있고 현재 구현이 이를 지킨다.** 열린 것은 별칭 허용 범위뿐이다.
+
+#### 6.2.2 지표 산식 — 건수를 수치로 바꾸는 방법
+
 8. 정확성·잘못된 확정·불필요한 보류 지표의 **분자·분모**.
 9. `해당 없음`과 `미정` 행을 분모에 넣는지.
 10. 값 일치와 근거 일치를 종합 점수에 반영하는 방식.
-11. 단위 별칭 계약(`톤` vs `t` 등)과, 기간·사업장·대상 차이를 값 일치 판정에 넣을지.
-    현재는 환산·별칭을 하지 않고 단위 문자열 불일치로 남긴다.
 
 **8~10이 정해지기 전에는 정확도·종합 점수를 산출할 수 없다.** 채점기도 내지 않는다.
+아래 세 가지는 특히 **확정하지 않은 상태로 둔다**(2026-10-06 정민 지시).
+
+- 해당 없음(`na`) 행의 처리 — 분모 제외 여부를 포함해 미확정.
+- `unresolved` 행이 있는 상태에서 지표를 산출할지 — 미확정. 현재는 산출하지 않는다.
+- 값 일치만으로 최종 답변 정확성을 판단할지 — 미확정.
+
+#### 6.2.3 기존 명세 준수 점검 항목 (새 정책 결정이 아님)
+
+- 라벨 `expected_value`는 작업지시서 A §5.1에서 "answer일 때 **수치 또는 예/아니오**"로
+  이미 한정돼 있다. 현재 로더는 그 밖의 자유 문자열도 받아들이므로 **명세대로 거부하도록
+  점검·보완할 항목**이다. 새로 정할 정책이 아니다.
+- 목록(`list`) 값의 일치 판정은 **이번 rba42 평가 범위의 결정 목록에서 제외한다.**
+  rba42 문항 구성은 `yes_no_evidence` 42 + `numeric` 6이고 `option_map`을 쓰는 문항이
+  0건이어서 목록 값이 발생하지 않는다(`get_framework("rba42")`로 확인). 다른 양식으로
+  범위가 넓어질 때 다시 본다.
 
 ### 6.3 원본 증빙과 실행 결과
 
@@ -303,7 +327,39 @@ python -m esgenie.eval.response_scoring \
 3. `AGENTS.md`가 비어 있어 저장소 규약을 문서에서 확인할 수 없었다. 기존 코드·테스트 관행
    (`esgenie/eval/rag_eval.py`의 dataclass + argparse CLI, `tests/test_*.py`)을 따랐다.
 
-## 7. 실제 완료 범위
+## 7. 자료 확보 후 진행 순서
+
+**명세 확보와 원본 확보는 서로 선행 조건이 아니다.** 아래 두 줄기는 독립이며,
+확보된 쪽부터 진행한다. 묶어서 기다리지 않는다.
+
+**줄기 ①: 원본 증빙(§6.3) 확보 시 — 명세를 기다리지 않고 진행 가능**
+
+| 순서 | 작업 | 통과 조건 |
+|---|---|---|
+| 1 | 증빙 구성·해시 기록 | `01_처음업로드_12건`과 `02_보완할때추가_1건` 폴더 분리 유지 |
+| 2 | 원본 기반 라벨 초안 96행 작성 | **ESGenie 출력을 보지 않고** 원본 PDF + 문항 정의로만. initial 라벨에 followup 증빙을 섞지 않는다. 문구만으로 갈리는 행은 `note`에 이유를 남긴다 |
+| 3 | **출력계약 §3 교차 확인** — C-4 E-6-2의 29.3% 비교 불가, 08 내부 재투입률 92% | **라벨 검토 중, 라벨 확정·선행 커밋 전에** 수행한다. 원본을 다시 확인하고 이유를 `note`에 남긴다. 계약 문서 값을 원본 확인 없이 라벨로 복사하지 않는다 |
+| 4 | 정민 확인 — 2·3단계의 `note` 행 판정 | 확인 전 라벨 확정 안 함 |
+| 5 | B 독립 검토 — 표본 추출(시드 기록) → B 라벨링 → 일치율·불일치 이유 → 협의 | B에게 A 정답·ESGenie 답변을 주지 않는다. **협의 전 A·B 라벨을 각각 보존한다.** B의 실제 검토 없이 완료로 적지 않는다 |
+| 6 | **라벨 확정 및 선행 커밋** | `data/eval/labels/hanwool_bm_rba42_v1.csv` 커밋 후 **전체 SHA·파일 해시를 이 문서에 기록**한다. 그 기록 전에는 7단계로 넘어가지 않는다 |
+| 7 | 실제 실행 결과(§6.3)로 채점 | 라벨 커밋 이후에만. **실제 결과를 보고 정답 라벨을 맞추지 않는다.** 고칠 근거가 생기면 라벨 변경을 별도 커밋으로 남기고 변경 이유·전후를 기록한다 |
+
+**줄기 ②: 명세(§6.1) 확보 시 — 원본을 기다리지 않고 진행 가능**
+
+| 순서 | 작업 | 통과 조건 |
+|---|---|---|
+| 1 | A §3 계측 상세 확보 → **A-2 착수** | 그때의 최신 `origin/main`에서 `codex/eval-timing-20261006` 브랜치·worktree 분기. 제품 코드 변경은 계측 명세에 필요한 최소 범위 |
+| 2 | A §4 공통 답안 형식 확보 → B와 형식 합의 | B의 동의 없이 "합의 완료"로 적지 않는다 |
+| 3 | 전략 문서 확보 → §6.2.2 지표 산식(8~10) 확정 | **정민 승인 후에만** 코드에 반영. 승인 전에는 비율·점수를 내지 않는다 |
+| 4 | §6.2.1 채점 규칙(1~7) 확정 | 같음 — 승인 전 추정 구현 금지 |
+
+줄기 ①의 2~6단계는 줄기 ②와 무관하게 진행할 수 있다. 다만 **줄기 ①의 7단계(채점)로
+나온 분류 결과를 지표·점수로 바꾸는 것은 줄기 ②의 3·4단계가 끝난 뒤**다.
+
+이번 측정은 도구 검증용이다. 보고용 최종 수치는 **2026-10-15 동결 후보 커밋**에서
+다시 측정하며, 그때도 6→7 순서를 지킨다.
+
+## 8. 실제 완료 범위
 
 | 산출물 | 상태 |
 |---|---|
