@@ -476,13 +476,17 @@ def test_merging_keeps_counts_of_different_groups_apart():
     assert {f.label for f in listed} >= {"교육 참석 인원 · 정규직", "교육 참석 인원 · 기간제"}
 
 
-def test_an_unstated_site_is_not_blocked_by_a_same_value_conflict_on_another_relation():
-    # BM 실측과 같은 구조, 다른 값: 맞는 날짜·역할의 사실에 사업장이 없고, 같은 값의 다른 날짜 사실이 함께 있다.
-    facts = [{"label": "교육 대상 인원", "value": 30.0, "unit": "명", "period_text": "2026-06-03", "source_file": "a.pdf"},
+def test_a_supported_site_is_not_blocked_by_a_same_value_conflict_on_another_relation():
+    # 원문에서 날짜·사업장·역할이 확인된 사실은 같은 값의 다른 날짜 후보가 있어도 채택한다.
+    facts = [{"label": "교육 대상 인원", "value": 30.0, "unit": "명", "period_text": "2026-06-03",
+              "site": "김해 제1공장", "source_file": "a.pdf"},
              {"label": "사업장별 인원 - 김해 제1공장", "value": 30.0, "unit": "명", "period_text": "2026-06-30",
               "site": "제1공장", "source_file": "c.pdf"}]
     body, marks = review("2026년 6월 3일 김해 제1공장 교육 대상 30명이 정해졌다 [source_facts_S].", chunks={}, facts=facts)
     assert not replaced(marks), (body, marks)
+    facts[0].pop("site")
+    body, marks = review("2026년 6월 3일 김해 제1공장 교육 대상 30명이 정해졌다 [source_facts_S].", chunks={}, facts=facts)
+    assert replaced(marks) and "site_unstated" in replaced(marks)[0]["problems"]
     # 같은 관계(날짜)가 걸리면 여전히 막는다 — 날짜 없는 원문으로 날짜 불일치를 덮지 않는다.
     body, marks = review("2026년 6월 9일 교육에 27명이 참석했다.", chunks={"c1": "교육 참석 27명"},
                          facts=[FACTS[1]])

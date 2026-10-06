@@ -386,7 +386,7 @@ def _hold_text(issue: dict[str, Any]) -> str:
         numbers = ", ".join(issue["quantities"])
         words = "·".join(dict.fromkeys(_PROBLEM_WORDS.get(p, p) for p in issue.get("problems") or ())) or "역할·날짜"
         why = ("인용 근거·원문 확인 수치에서 찾지 못해" if issue["reason"] == "orphan_number"
-               else f"원문에서 다른 {words}의 값으로만 확인돼")
+               else f"원문에서 이 문장의 {words} 관계를 확인하지 못해")
         text = f"[확인 보류] 생성 문장의 수치({numbers})는 {why} 이 문장을 본문에 싣지 않았습니다."
         if issue.get("confirmed"):
             text += " 같은 문장에서 확인된 값: " + "; ".join(issue["confirmed"]) + "."

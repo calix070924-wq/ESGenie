@@ -3,7 +3,7 @@
 # - RP_*  : 직전 실제 LLM 실행(LIVE_61b6167·LIVEV_61b6167)의 응답 캐시 사본을 네트워크 차단·캐시 적중만으로 재생한다.
 #           생성 프롬프트가 바뀌지 않았음을 미스 0건으로 확인한다(미스가 있으면 실패로 기록 — 모의 성공으로 바꾸지 않는다).
 # - INJ_* : 검토 당시 저장된 오답 응답(15명·21명)을 생성 순서대로 넣은 재생(`inject_saved_section_responses.py`).
-# - RV_*  : 실제 응답에 A~D 관계 오답·정상 대조를 넣은 검증 실행(`inject_relation_variants.py`). RVS_*는 다른 사업장 관찰.
+# - RV_*  : 실제 응답에 A~D 관계 오답·정상 대조를 넣은 검증 실행(`inject_relation_variants.py`). RVS_*는 다른 사업장 필수 대조.
 # 원본(BM 세트 PDF, numeric_scope_output_20261005의 캐시·원시 응답·로그, 검토 폴더)은 읽기만 하고 실행 전후 해시를 남긴다.
 set -u
 W=$1; OUT=$2; SHA=$(git -C "$W" rev-parse --short HEAD)
@@ -87,7 +87,7 @@ INJECT_WINDOWS="$R2I" inject "INJ_$SHA" initial R2_fix_4faabb0_live R2_fix_4faab
 INJECT_WINDOWS="$R2I $R2F" inject "INJ_$SHA" followup R2_fix_4faabb0_live R2_fix_4faabb0_live
 INJECT_WINDOWS="$R2I $R3I" inject "INJV_$SHA" initial R3_variant_live R3_variant_live --extra-evidence "$VAR" --also-framework kesg61
 
-# 5) A~D 관계 변형 주입(RV)·다른 사업장 관찰(RVS) — 실제 응답 캐시 사본에 문장을 더해 제품 경로로 처리
+# 5) A~D 관계 변형 주입(RV)·다른 사업장 필수 대조(RVS) — 실제 응답 캐시 사본에 문장을 더해 제품 경로로 처리
 variant() {  # id set stage
   local id=$1 set=$2 st=$3
   [ -d "$OUT/caches/$id" ] || cp -R "$PREV/caches/LIVE_61b6167" "$OUT/caches/$id"

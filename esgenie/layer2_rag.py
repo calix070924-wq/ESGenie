@@ -746,12 +746,13 @@ def _render_source_facts_table(rows: list[dict[str, Any]]) -> str:
     if not picked:
         return ""
     lines = ["", "", "### 원문 확인 수치(K-ESG 코드 없음)", "",
-             "| 항목 | 값 | 기간 | 출처 |", "|---|---|---|---|"]
+             "| 항목 | 값 | 기간 | 사업장 | 출처 |", "|---|---|---|---|---|"]
     for r in picked:
         value = f"{r['value']:g}" if isinstance(r["value"], float) else str(r["value"])
         page = r.get("page")
         source = (r.get("source_file") or "미상") + (f" {page + 1}쪽" if isinstance(page, int) else "")
-        lines.append(f"| {r['label']} | {value}{r.get('unit') or ''} | {r.get('period_text') or '원문 기간 미기록'} | {source} |")
+        lines.append(f"| {r['label']} | {value}{r.get('unit') or ''} | {r.get('period_text') or '원문 기간 미기록'} | "
+                     f"{r.get('site') or '원문 미기록'} | {source} |")
     return "\n".join(lines)
 
 

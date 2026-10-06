@@ -105,8 +105,9 @@ class Fact:
     def describe(self) -> str:
         value = f"{self.value:g}" if isinstance(self.value, float) else str(self.value)
         when = f"({self.period_text})" if self.period_text else ""
+        site = f" [사업장: {', '.join(sorted(self.sites))}]" if self.sites else ""
         where = f" — {self.source_file}" if self.source_file else ""
-        return f"{self.label} {value}{self.unit or ''}{when}{where}"
+        return f"{self.label} {value}{self.unit or ''}{when}{site}{where}"
 
 
 @dataclass
@@ -563,6 +564,22 @@ def chunk_occurrences(text: str, chunk_id: str = "", source_file: str = "") -> l
         header = []
         for q, window, anchor, anchor_end, _s, _e in contexts(line, found):
             when = nearest(dates, scoped, q.start, q.end) or (None if dates else heading_when)
+            if when is None and dates:
+                # `교육일 6월 3일. 참석자: …`는 앞 문장이 날짜 머리말이다. 같은 줄의 `… 출석했다. 총 참석
+                # 12명`도 바로 앞 출석 문장의 합계다. 다른 서술(예정·새 활동)의 날짜를 상속하지 않는다.
+                sentence_start, _ = _bounds(line, _SENTENCE_END_RE, q.start, q.end)
+                prefix = line[:sentence_start].rstrip(" .!?。")
+                previous = re.split(r"(?<!\d)[.!?。](?!\d)", prefix)[-1].strip()
+                previous_dates = date_positions(_scope_text(previous))
+                dated_heading = previous_dates and re.match(r"(?:교육일|실시일|일시|일자)\s*[:：]?", previous) \
+                    and not any(n.unit for n in quantities(previous))
+                role = count_role(window, anchor, anchor_end)
+                previous_roles = _role_matches(previous)
+                linked_total = previous_dates and re.search(r"총|합계", window[:anchor]) \
+                    and role and previous_roles and role == previous_roles[-1][2] \
+                    and not re.search(r"예정|계획", previous)
+                if dated_heading or linked_total:
+                    when = previous_dates[-1][2]
             where = nearest(sites, scoped, q.start, q.end) or (frozenset() if sites else heading_sites)
             out.append(Occurrence(q, role=count_role(window, anchor, anchor_end),
                                   group=count_group(window, anchor, anchor_end), when=when, sites=frozenset(where),
@@ -599,8 +616,9 @@ _RELATION_OF = {"role": "role", "role_unstated": "role", "group": "group", "grou
 
 def _relation_problems(claim: Claim, *, role: str, group: str, when, sites: frozenset, named: bool,
                        soft_role: bool) -> tuple[list[str], list[str]]:
-    """(어긋남, 확인 안 됨). 어긋남이 하나라도 있으면 근거가 아니다. '확인 안 됨'만 있는 근거는 같은 값의 어긋난
-    후보가 없을 때만 근거로 본다(`check_quantity`)."""
+    """(어긋남, 확인 안 됨). 명시한 날짜·사업장·집단은 원문 관계가 확인돼야 한다.
+
+    청크의 역할 미기록만 같은 역할의 상충 후보가 없을 때 허용한다(`check_quantity`)."""
     hard, weak = [], []
     if claim.role and role and role != claim.role:
         hard.append("role")
@@ -616,12 +634,12 @@ def _relation_problems(claim: Claim, *, role: str, group: str, when, sites: froz
     if relation == "disjoint" or (relation in ("coarser", "overlap") and not named):
         hard.append("date")
     elif relation == "unknown" and claim.when is not None and when is None:
-        weak.append("date_unstated")
+        hard.append("date_unstated")
     fit = sites_compatible(claim.sites, sites)
     if fit is False:
         hard.append("site")
     elif fit is None and claim.sites and not sites:
-        weak.append("site_unstated")
+        hard.append("site_unstated")
     return hard, weak
 
 
@@ -636,8 +654,8 @@ def check_quantity(claim: Claim, facts: list[Fact], scope: list[Occurrence],
       어긋남을 덮지 않는다(PR71 재검토 A: 원문 인용 `[c1]`·인용 없음 경로가 날짜 불일치를 덮었다).
     - 어긋난 후보와 별도로 **모든 관계가 맞는** 근거가 있으면 그것으로 확인한다(다른 날짜의 동률 후보가 정상 근거를 막지
       않는다). 채택한 근거와 어긋난 후보를 함께 돌려준다.
-    - 날짜·역할·사업장이 원문에 적히지 않아 '확인 안 됨'뿐인 근거는, 같은 값의 후보가 그 관계에서 어긋나지 않을 때만
-      근거다. 인용 밖 청크는 모든 관계가 맞을 때만 근거다(다른 출처의 같은 숫자가 인용을 대신하지 않는다).
+    - 명시한 날짜·사업장이 원문에 없으면 근거로 채택하지 않는다. 청크에 역할만 미기록인 경우에는 같은 역할의
+      상충 후보가 없을 때 허용한다. 인용 밖 청크는 모든 관계가 맞을 때만 근거다.
     """
     q = claim.q
     candidates: list[tuple[list[str], list[str], Fact | None, Occurrence | None, bool]] = []
@@ -660,9 +678,7 @@ def check_quantity(claim: Claim, facts: list[Fact], scope: list[Occurrence],
     strong = sorted((c for c in candidates if not c[0] and not c[1]), key=lambda c: (c[4], c[3] is None))
     pick = next(iter(strong), None)
     if pick is None:
-        # '확인 안 됨'뿐인 근거는, 같은 값의 후보가 **그 관계에서** 어긋날 때 쓰지 않는다(날짜 없는 청크로 날짜 불일치를
-        # 덮지 않는다). 다른 관계에서만 어긋난 후보(날짜가 다른 같은 값)는 막지 않는다 — 날짜·역할이 맞고 사업장만 적히지
-        # 않은 근거를 다른 날짜의 같은 숫자 때문에 버리지 않는다(BM 실측: `4월 22일 김해 제1공장 … 대상 50명`).
+        # 역할 미기록인 청크만 상충 후보를 확인한 뒤 허용한다. 날짜·사업장 미기록은 위에서 hard로 분류한다.
         contested = {_RELATION_OF[p] for hard, *_r in candidates for p in hard}
         weak = [c for c in candidates if not c[0] and not c[4] and not ({_RELATION_OF[p] for p in c[1]} & contested)]
         pick = next(iter(sorted(weak, key=lambda c: c[3] is None)), None)
@@ -719,7 +735,7 @@ def source_facts(graph: Any, source_files: set[str] | None = None, limit: int = 
 
     회사 답변·설문·모델이 원문 밖에서 셈한 값은 넣지 않는다(값이 인용에 없으면 뺀다). 라벨이 `합계`·`인원`처럼
     대상이 없는 말뿐인 행(개인별 시간표의 `합계`)은 뺀다. `source_files`를 주면 그 문서의 사실만 싣는다
-    (생성 문맥이 이미 근거로 삼은 문서). 같은 문서·라벨·값·기간은 하나로 둔다.
+    (생성 문맥이 이미 근거로 삼은 문서). 같은 문서·라벨·값·기간·집단·사업장은 하나로 둔다.
     """
     from .knowledge.kesg_items import by_code
     if graph is None:
@@ -740,14 +756,17 @@ def source_facts(graph: Any, source_files: set[str] | None = None, limit: int = 
         start, end = str(getattr(b, "period_start", "") or ""), str(getattr(b, "period_end", "") or "")
         if not period_text and start and end:
             period_text = start if start == end else f"{start}~{end}"
-        key = (node.source_file, label, float(node.value), str(node.unit), period_text)
+        site = str(getattr(b, "site", "") or "")
+        sites = _sites(label) or _sites(site) or frozenset({re.sub(r"\s+", "", site)} if site else ())
+        key = (node.source_file, label, float(node.value), str(node.unit), period_text, start, end,
+               label_group(label), sites)
         if key in seen:
             continue
         seen.add(key)
         rows.append({"label": label, "value": node.value, "unit": str(node.unit or ""),
                      "role": label_role(label), "value_role": getattr(node, "value_role", ""),
                      "period_text": period_text, "period_start": start, "period_end": end,
-                     "site": str(getattr(b, "site", "") or ""), "source_file": node.source_file or "",
+                     "site": site, "source_file": node.source_file or "",
                      "page": node.page, "node_id": node.id,
                      "quote": str(getattr(node, "quote", "") or "").splitlines()[0][:120] if getattr(node, "quote", "") else ""})
     rows.sort(key=lambda r: (r["source_file"], r["period_text"], r["label"]))

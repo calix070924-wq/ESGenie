@@ -455,9 +455,9 @@ def test_the_section_shows_a_deterministic_table_of_dated_role_facts():
     rows.append({**rows[1], "label": "출석 인원", "source_file": "a.pdf"})          # 같은 값·역할·기간 — 한 줄
     table = _render_source_facts_table(rows)
     assert "### 원문 확인 수치(K-ESG 코드 없음)" in table
-    assert "| 교육 참석 인원 | 27명 | 2026-06-03 | a.pdf 1쪽 |" in table
-    assert "| 6월 9일 추가 참석 · 고유 인원 | 3명 | 2026-06-09 | b.pdf 1쪽 |" in table
-    assert "| 중복 제외 합계 · 고유 인원 | 30명 | 2026-06 | b.pdf 1쪽 |" in table
+    assert "| 교육 참석 인원 | 27명 | 2026-06-03 | 원문 미기록 | a.pdf 1쪽 |" in table
+    assert "| 6월 9일 추가 참석 · 고유 인원 | 3명 | 2026-06-09 | 원문 미기록 | b.pdf 1쪽 |" in table
+    assert "| 중복 제외 합계 · 고유 인원 | 30명 | 2026-06 | 원문 미기록 | b.pdf 1쪽 |" in table
     assert "내부 재투입" not in table and "사업장별 인원" not in table and "| 출석 인원 |" not in table
     assert _render_source_facts_table([]) == ""
     labels = [line.split(" | ")[0][2:] for line in table.splitlines() if line.startswith("| ") and "---" not in line][1:]

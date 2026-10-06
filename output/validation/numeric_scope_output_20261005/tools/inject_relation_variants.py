@@ -1,15 +1,16 @@
 """PR71 재검토 §9.2 — 실제 LLM 응답(캐시 적중)에 A~D 관계 오답·정상 대조를 넣어 **실제 제품 처리 경로**로 최종 파일을 만든다.
 
 사용:
-  python inject_relation_variants.py [--variant-set ad|site] [--saved-summary <LLM 캐시 항목.json>] core --run-dir ... \
+  python inject_relation_variants.py [--variant-set ad|site] [--saved-summary <LLM 캐시 항목.json>] [--saved-sections <LLM 캐시 폴더>] core --run-dir ... \
       --code-path ... --replay-upstage ...
-  (`ad`: A~D 오답·정상 대조, 기본값. `site`: 다른 사업장 표기 관찰 — 제품이 막지 못하는 경우를 따로 기록한다)
+  (`ad`: A~D 오답·정상 대조, 기본값. `site`: 다른 사업장 오답 보류·원본 사업장 정상 보존 필수 대조)
   본문에 문장을 더하면 영역 위험도가 바뀌어 요약 프롬프트가 캐시와 달라진다(미스 → 결정적 대체 문구). 그때는
   `--saved-summary`로 준 같은 단계의 실제 요약 응답(직전 실호출 캐시 항목)에 요약 변형을 붙여 넣는다(저장 응답 주입).
 
 - 실행기(`scripts/live_numeric_rehearsal.py core --replay-upstage`)를 그대로 쓴다 — 네트워크 차단, Upstage 테이프·캐시 사본만.
 - 사회(S) 영역 서술부 응답의 `### 주요 활동` 아래와 요약 응답 끝에 아래 문장·표·제목을 더한다(원래 응답은 그대로 두고 뒤에
   붙인다). 원문 청크 인용은 그 생성 입력(프롬프트)의 실제 청크 번호 가운데 출석 기록 청크를 쓴다.
+- `--saved-sections`는 생성 입력 변경으로 캐시 미스가 난 영역에 같은 단계의 저장 본문을 주입한다. 원본 키·시각을 기록하고 실호출로 집계하지 않는다.
 - 이 실행은 **의도적인 오답 주입 검증 실행**이다. 실호출·실제 실행 성공으로 집계하지 않는다. 주입 전후 응답과 넣은 문장을
   `injection_events.json`에 남긴다. 보류 문구는 테스트가 붙이지 않는다 — 제품 경로가 만든 최종 파일을 그대로 검사한다.
 """
@@ -32,6 +33,18 @@ if "--saved-summary" in argv:
     i = argv.index("--saved-summary")
     saved_summary = Path(argv[i + 1])
     del argv[i:i + 2]
+saved_sections = {}
+if "--saved-sections" in argv:
+    i = argv.index("--saved-sections")
+    saved_dir = Path(argv[i + 1])
+    del argv[i:i + 2]
+    for path in sorted(saved_dir.glob("*.json")):
+        record = json.loads(path.read_text(encoding="utf-8"))
+        for area, title in (("E", "## 환경 성과"), ("S", "## 사회 성과"), ("G", "## 지배구조 성과")):
+            if str(record.get("content") or "").startswith(title):
+                created = str((record.get("meta") or {}).get("created_at") or "")
+                if area not in saved_sections or created > saved_sections[area][0]:
+                    saved_sections[area] = (created, path, record)
 code_path = Path(argv[argv.index("--code-path") + 1]).resolve()
 run_dir = Path(argv[argv.index("--run-dir") + 1]).resolve()
 stage = argv[argv.index("--stage") + 1]
@@ -52,14 +65,17 @@ BODY_VARIANTS = [
     ("정상 4/22 참석 46명", "2026년 4월 22일 교육 참석 인원은 46명이다 [source_facts_S].", "keep"),
     ("정상 4/27 추가 참석 4명", "2026년 4월 27일 추가 교육에는 4명이 참석했다.", "keep"),
 ]
-# 원문 교육 집계에 사업장이 기록되지 않아(OCR 경계 사업장 미기록) 제품은 다른 사업장 표기를 반박할 근거가 없다 — 검사기가 잡는지 본다.
-SITE_VARIANTS = [("관찰: 다른 사업장 표기", "2026년 4월 22일 양산 제2공장 교육에는 46명이 참석하였다.", "observe")]
-if variant_set == "site":
-    BODY_VARIANTS, SUMMARY_VARIANTS = SITE_VARIANTS, []
+SITE_VARIANTS = [
+    ("F1 다른 사업장 오답", "2026년 4월 22일 양산 제2공장 교육에는 46명이 참석하였다.", "hold"),
+    ("F1 원본 사업장 정상", "2026년 4월 22일 김해 제1공장 교육에는 46명이 참석하였다.", "keep"),
+]
 SUMMARY_VARIANTS = [
     ("요약 고용형태 뒤바꿈", "2026년 4월 22일 교육에는 정규직 6명과 기간제 40명이 출석했다.", "hold"),
     ("요약 날짜 오기", "2026년 4월 27일 교육에는 46명이 참석하였다.", "hold"),
 ]
+if variant_set == "site":
+    BODY_VARIANTS = SITE_VARIANTS
+    SUMMARY_VARIANTS = [("요약 F1 다른 사업장 오답", SITE_VARIANTS[0][1], "hold")]
 
 events: list[dict] = []
 spec = importlib.util.spec_from_file_location("live_numeric_rehearsal", code_path / "scripts/live_numeric_rehearsal.py")
@@ -86,6 +102,14 @@ def import_from(path, env_file):
     def complete(self, system, user, **kw):
         resp = original(self, system, user, **kw)
         source = "cache_hit"
+        area = re.search(r"^영역: ([ESG]) ", str(user), re.M)
+        if resp.used_mock and area and "영역 보고서의 서술부만" in str(user) and area.group(1) in saved_sections:
+            created, path, saved = saved_sections[area.group(1)]
+            resp = llm.LLMResponse(content=str(saved["content"]), used_mock=False,
+                                   meta={"provider": "saved_response_injection", "saved_key": path.stem})
+            source = "saved_section"
+            events.append({"kind": "saved_section", "area": area.group(1), "saved_key": path.stem,
+                           "saved_created_at": created, "variants": []})
         if (resp.used_mock or not str(resp.content or "").strip()) and "Executive Summary" in str(system) \
                 and saved_summary is not None and SUMMARY_VARIANTS:
             # 본문 주입으로 바뀐 요약 프롬프트의 미스 — 같은 단계 실제 요약 응답을 저장 응답으로 넣는다(실호출 아님).

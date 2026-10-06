@@ -4586,6 +4586,51 @@ def _negation_zero_from_null(m: dict[str, Any], source_text: str | None, source_
     return {**m, "value": 0, "boundary": b}, verdict
 
 
+def _source_quantity_site_boundary(boundary: dict[str, Any], quote: str, source_text: str | None,
+                                   page: int | None) -> dict[str, Any]:
+    """원문 수량 인용의 사업장을 같은 청크의 앞 머리말에서만 보완한다.
+
+    인용이 원문에서 유일하게 위치해야 한다. 인용 자체의 사업장을 우선하고, 앞 머리말을 쓰려면 중간에
+    다른 사업장 표기가 없어야 한다. 뒤 문장·다른 페이지·요청 사업장에서 범위를 가져오지 않는다.
+    """
+    from ..report_claims import _heading_line, sites_compatible
+    if not quote or not source_text:
+        return boundary
+    compact_quote = re.sub(r"\s+", "", quote)
+    positions = [i for i, ch in enumerate(source_text) if not ch.isspace()]
+    compact_source = "".join(source_text[i] for i in positions)
+    at = compact_source.find(compact_quote)
+    if at < 0 or compact_source.find(compact_quote, at + 1) >= 0:
+        return boundary
+    site_keys = _site_keys(quote)
+    evidence, scope_from = quote, "quote"
+    if not site_keys:
+        encountered = []
+        # 같은 실제 청크에서 인용보다 앞에 있는 가장 가까운 사업장 머리말만 사용한다.
+        for line in reversed(source_text[:positions[at]].splitlines()):
+            keys = _site_keys(line)
+            if not keys:
+                continue
+            if _heading_line(line):
+                if any(sites_compatible(frozenset(keys), frozenset(other)) is False for other in encountered):
+                    return boundary
+                site_keys, evidence, scope_from = keys, line.strip(), "heading"
+                break
+            encountered.append(keys)
+    if len(site_keys) != 1:
+        return boundary
+    mentions = [m.group(0).strip() for m in _SITE_MENTION_RE.finditer(evidence)
+                if _site_keys(m.group(0)) == site_keys]
+    if not mentions:
+        return boundary
+    site = mentions[0]
+    record = {"source": "quantity_scope", "method": "rule", "scope_from": scope_from,
+              "source_site": site, "scope_heading": evidence if scope_from == "heading" else "",
+              "quote": quote, "page": page, "model_site": str(boundary.get("site") or "")}
+    return {**boundary, "site": site, "site_scope": "site",
+            "provenance": [*(boundary.get("provenance") or []), record]}
+
+
 def _map_vlm_json(
     data: dict[str, Any], *, page_no: int | None = None, source_text: str | None = None,
     issues: list[dict[str, Any]] | None = None,
@@ -4694,6 +4739,10 @@ def _map_vlm_json(
                                    "period": period, "page": page_no,
                                    "quote": quote[:_QUOTE_MAX_CHARS]})
 
+            # 원문 값의 적용 사업장을 모델의 생략과 무관하게 전달한다. 캐시 적중에서도 재실행한다.
+            if value != 0 and quote:
+                m = {**m, "boundary": _source_quantity_site_boundary(
+                    dict(m.get("boundary") or {}), quote, source_text, page_no)}
             relabel = _table_cell_label(hint, value, quote, source_text) if quote else None
             if relabel is not None:
                 # 원문 칸의 행 라벨·열 머리가 모델 라벨과 다르다 — 원문 라벨로 싣고 모델 라벨은 감사 기록으로 둔다.
