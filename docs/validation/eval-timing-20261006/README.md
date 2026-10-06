@@ -36,7 +36,7 @@
 |---|---|---|
 | ① 계측 전후 결과 동일 | `scripts/verify_timing_noop.py` — 계측 전 커밋 worktree 덤프와 HEAD 덤프의 sha256이 **동일**(`1e871436…8f67ee`) | **통과.** 아래 §3.1 참조 |
 | ② 단계 합 ≤ 전체 경과 | `scripts/verify_timing_cache_modes.py`(공개 DART 샘플 + 합성 프로브), 이 디렉터리의 실제 키 실행 | **통과** |
-| ③ 캐시 재생 / 신규 처리 구분 | `ocr_live_summary.json`(실제 API), `timings.cache_{new,replay}.json`(합성 프로브) | **통과 — 실제 API로 확인** |
+| ③ 캐시 재생 / 신규 처리 구분 | `ocr_live_summary.json`(실제 API), `timings.cache_{new,replay}.json`(합성 프로브) | **통과 — 실제 API로 확인.** 확인한 경로는 **비정형(L0) LLM 추출 응답 캐시** 한 가지다. **Upstage 등 다른 OCR 제공자 경로는 이 실행의 검증 범위가 아니다** |
 | ④ 사람 리허설 1회 | — | **미실시.** 참가자가 필요하다 |
 
 ### 3.1 동일성 증명의 유효 범위 — 재수행하지 않은 이유
