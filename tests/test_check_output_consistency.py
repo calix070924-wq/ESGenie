@@ -51,7 +51,7 @@ def _sheet() -> ResponseSheet:
                 boundary_label="2026-04-01~2026-04-30 · 월간 · 제1공장 · 사용전력량 · 부분",
                 completeness="partial", comparison="scope_unconfirmed",
                 comparison_reason="전사·연간 총량임이 입증되지 않았습니다",
-                rationale="전력 고지서 1건으로 산정",
+                rationale="전력 고지서 1건으로 산정 — 사용전력량 0.513216 TJ",
                 evidence_links=[EvidenceLink(
                     file_name="02_전기요금청구서_2026-04.pdf",
                     relative_path="evidence_pack/02_전기요금청구서_2026-04.pdf",
@@ -94,6 +94,7 @@ def bundle(tmp_path: Path) -> object:
         excel_rows=checker.load_excel_rows(xlsx),
         pdf_pages=checker.extract_pdf_text(pdf),
         paths={"result_json": "memory", "sheet_xlsx": str(xlsx), "sheet_pdf": str(pdf)},
+        evidence_base_dir=str(pdf.parent if isinstance(pdf, Path) else Path(pdf).parent),
     )
 
 
@@ -114,7 +115,7 @@ def test_clean_outputs_pass(bundle):
 # ── Excel 주입: 값 / 상태 / 범위 문구 ────────────────────────────────────────
 def test_excel_value_change_fails(bundle):
     b = copy.deepcopy(bundle)
-    b.excel_rows["T-NUM-1"]["display_value"] = ("0.6 TJ (2026년)", "응답서!D6")
+    b.excel_rows["T-NUM-1"]["answer"] = ("0.6 TJ (2026년)", "응답서!D6")
     outcome = checker.compare(b)
     assert "display_value" in _mismatch_fields(outcome)
 
@@ -235,10 +236,13 @@ def test_whitespace_and_newline_removed():
     assert checker.normalize("0.513216 TJ\n(2026년)") == "0.513216TJ(2026년)"
 
 
-def test_glyph_substitution():
-    """PDF 글꼴에 없는 ÷·×·→를 /·x·->로 맞춘다 (check_outputs.py glyph_flat)."""
-    assert checker.normalize("11,500 ÷ 39,200 × 100") == "11500/39200x100"
-    assert checker.normalize("대상 → 참석") == "대상->참석"
+def test_normalize_keeps_original_glyphs():
+    """Excel·JSON은 원래 글자를 쓴다 — normalize는 기호를 바꾸지 않는다.
+
+    PDF 쪽 표기 보정은 normalize_pdf가 pdf_safe_text로 한다.
+    """
+    assert checker.normalize("11,500 ÷ 39,200 × 100") == "11500÷39200×100"
+    assert checker.normalize("대상 → 참석") == "대상→참석"
 
 
 def test_ordinary_comma_is_kept():
@@ -255,7 +259,7 @@ def test_numbers_parsed_as_decimal():
 def test_digit_truncation_flagged_on_excel(bundle):
     """0.513216을 0.5로 줄여 표시하면 불일치로 두고 비고만 붙인다."""
     b = copy.deepcopy(bundle)
-    b.excel_rows["T-NUM-1"]["display_value"] = ("0.5 TJ (2026년)", "응답서!D6")
+    b.excel_rows["T-NUM-1"]["answer"] = ("0.5 TJ (2026년)", "응답서!D6")
     outcome = checker.compare(b)
     note = next(m["note"] for m in outcome["mismatches"]
                 if m["field"] == "display_value" and m["excel_cell"])
@@ -263,22 +267,179 @@ def test_digit_truncation_flagged_on_excel(bundle):
 
 
 def test_digit_truncation_flagged_on_pdf(bundle):
+    """PDF 쪽 자릿수 축약은 칸 전체 일치 검사가 판정한다(필드 검사는 유무만 본다)."""
     b = copy.deepcopy(bundle)
     assert _sub_pdf(b, "0.513216", "0.5") > 0
     outcome = checker.compare(b)
     note = next(m["note"] for m in outcome["mismatches"]
-                if m["field"] == "display_value" and m["pdf_page"])
+                if m["field"] == "cell:answer" and m["pdf_page"])
     assert "digit_truncation" in note
 
 
 def test_unrelated_value_change_not_flagged_as_truncation(bundle):
     """값이 아예 다른 경우는 축약으로 표시하지 않는다."""
     b = copy.deepcopy(bundle)
-    b.excel_rows["T-NUM-1"]["display_value"] = ("9.999 TJ (2026년)", "응답서!D6")
+    b.excel_rows["T-NUM-1"]["answer"] = ("9.999 TJ (2026년)", "응답서!D6")
     outcome = checker.compare(b)
     note = next(m["note"] for m in outcome["mismatches"]
                 if m["field"] == "display_value" and m["excel_cell"])
     assert "digit_truncation" not in note
+
+
+# ── 칸 전체 일치 회귀 (검사자가 실제 LIVE 출력에서 재현한 누락 T1~T3) ──────
+def test_T1_pdf_answer_cell_dash_replaced_fails(bundle):
+    """T1: PDF 답변 칸의 '—'를 '7'로 바꿔도 통과했다 — 다음 범위 칸의 '—'를 소비했기 때문.
+
+    이제 칸은 커서 위치에서 '바로 시작'해야 한다.
+    """
+    b = copy.deepcopy(bundle)
+    # 답변·범위가 모두 '—'인 행을 만든다(값·범위 없음).
+    b.json_rows[2].answer.value = None
+    b.json_rows[2].display_value = "—"
+    b.json_rows[2].answer.comparison = ""
+    b.json_rows[2].answer.comparison_reason = ""
+    b.json_rows[2].comparison_label = ""
+    b.json_rows[2].review_note = ""
+    sheet = ResponseSheet(framework_key="rba42", framework_label="테스트 양식",
+                          corp_name="테스트사", answers=[r.answer for r in b.json_rows])
+    import tempfile
+    with tempfile.TemporaryDirectory() as td:
+        out = Path(td) / "response_sheet"
+        xlsx = export_response_sheet(sheet, out)
+        pdf = export_response_sheet_pdf(sheet, out, embed_evidence=False)
+        b.excel_rows = checker.load_excel_rows(xlsx)
+        b.pdf_pages = checker.extract_pdf_text(pdf)
+        b.evidence_base_dir = str(Path(pdf).parent)
+        assert checker.compare(b)["mismatches"] == []        # 먼저 정상임을 확인
+        # 답변 칸의 '—' 하나만 '7'로 바꾼다(그 행의 첫 '—').
+        target = "T-BOOL-1"
+        hit = False
+        for i, page in enumerate(b.pdf_pages):
+            pos = page.find(target)
+            if pos == -1:
+                continue
+            dash = page.find("—", pos)
+            assert dash != -1
+            b.pdf_pages[i] = page[:dash] + "7" + page[dash + 1:]
+            hit = True
+            break
+        assert hit
+    outcome = checker.compare(b)
+    assert outcome["mismatches"], "T1 변조를 놓쳤다"
+    assert any(m["cell_exact"] and m["field"] == "cell:answer" for m in outcome["mismatches"])
+
+
+def test_T2_excel_note_number_change_fails(bundle):
+    """T2: Excel 근거/비고(G열)의 '29.3'을 '29.35'로 바꿔도 부분 문자열 검사라 통과했다."""
+    b = copy.deepcopy(bundle)
+    row = b.excel_rows["T-NUM-1"]
+    assert "0.513216" in str(row["note"][0])
+    row["note"] = (str(row["note"][0]).replace("0.513216", "0.5132160"), row["note"][1])
+    outcome = checker.compare(b)
+    assert outcome["mismatches"], "T2 변조를 놓쳤다"
+    assert any(m["cell_exact"] and m["field"] == "cell:note" and m["excel_cell"]
+               for m in outcome["mismatches"])
+
+
+def test_T3_excel_scope_cell_appended_fails(bundle):
+    """T3: Excel 범위(E열) 끝에 ' · 전사 · 연간'을 덧붙여도 통과했다."""
+    b = copy.deepcopy(bundle)
+    row = b.excel_rows["T-NUM-1"]
+    row["scope"] = (str(row["scope"][0]) + " · 전사 · 연간", row["scope"][1])
+    outcome = checker.compare(b)
+    assert outcome["mismatches"], "T3 변조를 놓쳤다"
+    hit = next(m for m in outcome["mismatches"]
+               if m["cell_exact"] and m["field"] == "cell:scope" and m["excel_cell"])
+    assert "내용이 더해졌다" in hit["note"]
+
+
+def test_empty_comparison_label_cell_addition_fails(bundle):
+    """JSON comparison_label이 빈 행의 Excel 범위 칸에 '범위 확인 필요'를 찍으면 잡는다."""
+    b = copy.deepcopy(bundle)
+    qid = "T-NUM-2"                                    # comparison=compared → label '대조 완료'
+    b.json_rows[1].answer.comparison = ""
+    b.json_rows[1].comparison_label = ""
+    b.json_rows[1].review_note = ""
+    import tempfile
+    sheet = ResponseSheet(framework_key="rba42", framework_label="테스트 양식",
+                          corp_name="테스트사", answers=[r.answer for r in b.json_rows])
+    with tempfile.TemporaryDirectory() as td:
+        out = Path(td) / "response_sheet"
+        xlsx = export_response_sheet(sheet, out)
+        pdf = export_response_sheet_pdf(sheet, out, embed_evidence=False)
+        b.excel_rows = checker.load_excel_rows(xlsx)
+        b.pdf_pages = checker.extract_pdf_text(pdf)
+        b.evidence_base_dir = str(Path(pdf).parent)
+        assert checker.compare(b)["mismatches"] == []
+    row = b.excel_rows[qid]
+    row["scope"] = (str(row["scope"][0]) + " · 범위 확인 필요", row["scope"][1])
+    outcome = checker.compare(b)
+    assert outcome["mismatches"], "빈 필드 칸에 더해진 문구를 놓쳤다"
+    assert any(m["field"] == "cell:scope" and m["excel_cell"] for m in outcome["mismatches"])
+
+
+def test_pdf_block_tail_addition_fails(bundle):
+    """PDF 블록 끝(마지막 문항 뒤, 응답표 영역 안)에 문구를 더하면 잡는다."""
+    b = copy.deepcopy(bundle)
+    hit = False
+    for i, page in enumerate(b.pdf_pages):
+        end = page.find(checker.PDF_BODY_END)
+        if end == -1 or "T-BOOL-1" not in page:
+            continue
+        b.pdf_pages[i] = page[:end] + "\n전사 연간 총량으로 확정\n" + page[end:]
+        hit = True
+        break
+    assert hit, "응답표 영역의 끝을 찾지 못했다"
+    outcome = checker.compare(b)
+    assert outcome["mismatches"], "블록 끝에 더해진 문구를 놓쳤다"
+    assert any(m["field"] == "cell:note" and m["pdf_page"] for m in outcome["mismatches"])
+
+
+def test_cell_exact_records_related_field(bundle):
+    """칸 불일치에 6필드 중 어느 것 때문인지 적는다."""
+    b = copy.deepcopy(bundle)
+    row = b.excel_rows["T-NUM-1"]
+    row["scope"] = ("측정 범위: 전혀 다른 범위", row["scope"][1])
+    outcome = checker.compare(b)
+    hit = next(m for m in outcome["mismatches"]
+               if m["field"] == "cell:scope" and m["excel_cell"])
+    assert "boundary_label" in hit["related_fields"]
+
+
+# ── 기대 칸 문자열 생성 ──────────────────────────────────────────────────────
+def test_expected_cells_uses_exporter_functions():
+    """기대 칸은 render.scope_line·note_lines와 pdf._STATUS_STYLE로 만든다."""
+    from esgenie.supplychain.exporters.pdf import _STATUS_STYLE
+    from esgenie.supplychain.render import note_lines, scope_line
+
+    answer = _sheet().answers[0]
+    cells = checker.expected_cells(answer)
+    assert cells["scope"]["excel"] == scope_line(answer)
+    assert cells["scope"]["pdf"] == scope_line(answer)
+    assert cells["badge"]["excel"] == answer.badge
+    assert cells["badge"]["pdf"] == _STATUS_STYLE[answer.status][0]
+    assert cells["note"]["excel"] == "\n".join(note_lines(answer)).strip()
+    assert cells["note"]["pdf"] == "<br/>".join(note_lines(answer))
+    assert cells["answer"]["excel"] == answer.display_value
+
+
+def test_restore_sheet_drops_derived_keys():
+    """to_dict가 덧붙인 파생 키(badge·display_value 등)로 Answer를 만들지 않는다."""
+    sheet = _sheet()
+    restored = checker.restore_sheet({"sheet": sheet.to_dict()})
+    assert [a.qid for a in restored.answers] == [a.qid for a in sheet.answers]
+    assert restored.answers[0].display_value == sheet.answers[0].display_value
+    assert restored.answers[0].badge == sheet.answers[0].badge
+    assert restored.answers[0].evidence_links[0].file_name == \
+        sheet.answers[0].evidence_links[0].file_name
+
+
+def test_normalize_pdf_uses_pdf_safe_text():
+    """PDF 표기는 exporters/_fonts.pdf_safe_text를 그대로 쓴다(직접 치환표를 두지 않는다)."""
+    assert checker.normalize_pdf("대상 → 참석") == "대상->참석"
+    assert checker.normalize_pdf("11,500 ÷ 39,200 × 100") == "11500/39200x100"
+    assert checker.normalize_pdf("자가신고 ⚠️") == "자가신고"       # 이모지 제거
+    assert checker.normalize_pdf("가<br/>나") == "가나"             # 줄 구분자
 
 
 # ── PDF 파싱 층 ──────────────────────────────────────────────────────────────
@@ -331,7 +492,7 @@ def test_load_excel_rows_records_cell_address(tmp_path):
     sheet = _sheet()
     xlsx = export_response_sheet(sheet, tmp_path)
     rows = checker.load_excel_rows(xlsx)
-    cell = rows["T-NUM-1"]["display_value"][1]
+    cell = rows["T-NUM-1"]["answer"][1]
     assert cell.startswith("응답서!D")
 
 
@@ -365,7 +526,7 @@ def test_report_and_markdown(tmp_path, bundle):
 
 def test_markdown_lists_mismatch(bundle):
     b = copy.deepcopy(bundle)
-    b.excel_rows["T-NUM-1"]["display_value"] = ("0.6 TJ (2026년)", "응답서!D6")
+    b.excel_rows["T-NUM-1"]["answer"] = ("0.6 TJ (2026년)", "응답서!D6")
     payload = checker.report(Path("."), b, checker.compare(b))
     md = checker.to_markdown(payload)
     assert "display_value" in md
