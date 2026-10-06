@@ -38,6 +38,7 @@ from .ssot import (
     ocr_router,
 )
 from .ssot.ssot_pipeline import build_rag_with_ssot, extract_with_ssot
+from .run_timing import RunTiming
 from .source_review import ReviewFinding, build_source_review
 
 logger = logging.getLogger(__name__)
@@ -73,6 +74,10 @@ class PipelineOutput:
     item_retrievals: list[dict[str, Any]] = field(default_factory=list)
     review_findings: list[ReviewFinding] = field(default_factory=list)
     report_export: dict[str, Any] = field(default_factory=dict)
+    # 단계별 소요 시간·캐시 적중 기록(작업지시서 A §3.1). 계측은 동작을 바꾸지 않으며
+    # 이 필드를 빼면 result.json은 계측 전과 동일하다. 응답서 생성·내보내기 시간은
+    # 호출 스크립트가 같은 모양으로 덧붙인다.
+    timings: list[dict[str, Any]] = field(default_factory=list)
 
 
 def _load_industry_stats(industry: str) -> dict[str, Any] | None:
@@ -305,25 +310,33 @@ def run(
     """
     areas = areas or ["E", "S", "G"]
 
+    # 계측은 재는 일만 한다. 어떤 단계도 건너뛰지 않고 어떤 값도 고치지 않는다.
+    timing = RunTiming()
+
     logger.info("[L0] SSOT Evidence Graph 구축 중...")
 
     report: CompanyReport | None = None
     if use_dart and corp_code:
-        report = load_report(corp_code, report_year=report_year)
+        with timing.stage("L0_dart_load", corp_code=corp_code):
+            report = load_report(corp_code, report_year=report_year)
 
     extractions = list(ocr_extractions or [])
-    if not extractions:
-        extractions = _collect_ocr_extractions(
-            evidence_files,
-            survey_answers=survey_answers,
-        )
+    with timing.stage("L0_ocr_extract", injected=bool(ocr_extractions)) as rec:
+        if not extractions:
+            extractions = _collect_ocr_extractions(
+                evidence_files,
+                survey_answers=survey_answers,
+            )
 
-    # OCR LLM 캐시 적중 현황 — 캐시가 실제로 일했는지 실행 로그에서 바로 보이게 한다
-    # (같은 PDF 재실행이 캐시를 안 타면 추출이 흔들려 검증이 무의미해진다).
-    from esgenie.ssot import ocr_cache as _ocr_cache
-    _hits, _misses, _mode = _ocr_cache.summarize(extractions)
-    if _hits or _misses:
-        logger.info("[OCR] 캐시 hit %d / miss %d (mode=%s)", _hits, _misses, _mode)
+        # OCR LLM 캐시 적중 현황 — 캐시가 실제로 일했는지 실행 로그에서 바로 보이게 한다
+        # (같은 PDF 재실행이 캐시를 안 타면 추출이 흔들려 검증이 무의미해진다).
+        from esgenie.ssot import ocr_cache as _ocr_cache
+        _hits, _misses, _mode = _ocr_cache.summarize(extractions)
+        if _hits or _misses:
+            logger.info("[OCR] 캐시 hit %d / miss %d (mode=%s)", _hits, _misses, _mode)
+        # 캐시 재생 실행과 신규 실행을 timings만 보고 구분할 수 있게 그대로 남긴다.
+        rec["ocr_cache"] = {"hits": _hits, "misses": _misses, "mode": _mode}
+        rec["extractions"] = len(extractions)
 
     corp_code_final = corp_code or (report.corp_code if report is not None else "LOCAL")
     corp_name_final = corp_name or (report.corp_name if report is not None else corp_code_final)
@@ -345,14 +358,15 @@ def run(
     if industry_module_key:
         logger.info("[업종] 모듈 적용: %s", industry_module_key)
 
-    evidence_graph = ssot_evidence_graph.build_unified_graph(
-        report,
-        extractions,
-        corp_code=corp_code_final,
-        corp_name=corp_name_final,
-        report_year=report_year_final,
-        industry_module=industry_module,
-    )
+    with timing.stage("L0_graph_build"):
+        evidence_graph = ssot_evidence_graph.build_unified_graph(
+            report,
+            extractions,
+            corp_code=corp_code_final,
+            corp_name=corp_name_final,
+            report_year=report_year_final,
+            industry_module=industry_module,
+        )
     logger.info(
         "[L0] 완료: %d 노드, %d 텍스트노드, %d 엣지",
         len(evidence_graph.nodes),
@@ -390,17 +404,19 @@ def run(
 
     if report is not None:
         logger.info("[L1] K-ESG 항목 추출 중...")
-        extraction = extract_with_ssot(report, evidence_graph, profile=profile)
-        _apply_survey_answers(extraction, survey_answers)
+        with timing.stage("L1_extract"):
+            extraction = extract_with_ssot(report, evidence_graph, profile=profile)
+            _apply_survey_answers(extraction, survey_answers)
         logger.info(
             "[L1] 완료: %.1f%% 커버리지 (%s)",
             extraction.coverage_pct,
             extraction.profile_label,
         )
 
-        disclosure = detect_selective_disclosure(extraction, industry_module)
-        logger.info("[D6] 선택적 공시 의심도=%.2f (%s)", disclosure.score, disclosure.level)
-        issb_gap = build_issb_gap_report(extraction)
+        with timing.stage("D6_ISSB"):
+            disclosure = detect_selective_disclosure(extraction, industry_module)
+            logger.info("[D6] 선택적 공시 의심도=%.2f (%s)", disclosure.score, disclosure.level)
+            issb_gap = build_issb_gap_report(extraction)
         logger.info(
             "[ISSB] 프로파일 내 %d/%d 공시, 누락 %d",
             issb_gap.in_profile_disclosed,
@@ -416,30 +432,33 @@ def run(
                 backend,
             )
         logger.info("[L2] Hybrid RAG 인덱스 로드 중... (backend=%s)", backend)
-        rag = get_hybrid_rag()
-        corp = build_rag_with_ssot(rag, report, evidence_graph)
-        from .knowledge.kesg_items import items_for_profile
-        review_items = [item for item in items_for_profile(extraction.profile)
-                        if item.area in areas]
-        item_retrievals = [item.to_dict() for item in rag.retrieve_for_items(review_items, corp=corp)]
+        with timing.stage("L2_rag_index", backend=backend) as rec:
+            rag = get_hybrid_rag()
+            corp = build_rag_with_ssot(rag, report, evidence_graph)
+            from .knowledge.kesg_items import items_for_profile
+            review_items = [item for item in items_for_profile(extraction.profile)
+                            if item.area in areas]
+            item_retrievals = [item.to_dict() for item in rag.retrieve_for_items(review_items, corp=corp)]
+            rec["items"] = len(review_items)
 
         industry_stats = _load_industry_stats(report.industry)
         for area in areas:
             logger.info("[L3-L4] 영역 %s 탐지·검증 중...", area)
-            verify = verify_and_refine(
-                report,
-                area,
-                rag,
-                corp=corp,
-                threshold=threshold,
-                max_iter=max_iter,
-                demo_greenwash=demo_greenwash,
-                evidence_graph=evidence_graph,
-                industry_stats=industry_stats,
-                industry_module=industry_module,
-                llm_judge=llm_judge,
-                extraction=extraction,  # 본문 형식 v2 — 커버 항목 결정적 표
-            )
+            with timing.stage("L3-L4_verify", area=area):
+                verify = verify_and_refine(
+                    report,
+                    area,
+                    rag,
+                    corp=corp,
+                    threshold=threshold,
+                    max_iter=max_iter,
+                    demo_greenwash=demo_greenwash,
+                    evidence_graph=evidence_graph,
+                    industry_stats=industry_stats,
+                    industry_module=industry_module,
+                    llm_judge=llm_judge,
+                    extraction=extraction,  # 본문 형식 v2 — 커버 항목 결정적 표
+                )
             sections[area] = verify
             logger.info(
                 "[L4] 영역 %s 완료: 위험도=%s, 수렴=%s, HITL=%s",
@@ -450,29 +469,31 @@ def run(
             )
 
             logger.info("[L5] Audit Trace 생성 중 (영역 %s)...", area)
-            trace = build_audit_trace(
-                report=report,
-                area=area,
-                verification=verify,
-                extraction=extraction,
-                evidence_graph=evidence_graph,
-                industry_stats=industry_stats,
-                llm_judge=llm_judge,
-            )
+            with timing.stage("L5_trace_build", area=area):
+                trace = build_audit_trace(
+                    report=report,
+                    area=area,
+                    verification=verify,
+                    extraction=extraction,
+                    evidence_graph=evidence_graph,
+                    industry_stats=industry_stats,
+                    llm_judge=llm_judge,
+                )
             audit_traces[area] = trace
 
     effective_industry = ((report.industry if report is not None else "") or industry or "")
-    v15_trace, export_paths, risk_rows, policy_results, policy_drafts = _export_v15_artifacts(
-        evidence_graph,
-        corp_code=corp_code_final,
-        corp_name=corp_name_final,
-        industry=effective_industry,
-        report_year=report_year_final,
-        evidence_files=evidence_files,
-        export_outputs=export_outputs,
-        export_root=export_root,
-        industry_module=industry_module,
-    )
+    with timing.stage("v15_artifacts", export_outputs=bool(export_outputs)):
+        v15_trace, export_paths, risk_rows, policy_results, policy_drafts = _export_v15_artifacts(
+            evidence_graph,
+            corp_code=corp_code_final,
+            corp_name=corp_name_final,
+            industry=effective_industry,
+            report_year=report_year_final,
+            evidence_files=evidence_files,
+            export_outputs=export_outputs,
+            export_root=export_root,
+            industry_module=industry_module,
+        )
 
     result = PipelineOutput(
         report=report,
@@ -492,8 +513,10 @@ def run(
         requested_areas=list(areas),
         industry_module_key=industry_module_key,
         item_retrievals=item_retrievals,
+        timings=timing.records,  # 같은 리스트를 공유한다 — 이후 단계도 그대로 쌓인다
     )
-    result.review_findings = build_source_review(result)
+    with timing.stage("source_review"):
+        result.review_findings = build_source_review(result)
     result.report_export = {"status": "not_requested"}
     export_error = None
     if export_report and not sections:
@@ -503,6 +526,7 @@ def run(
         }
     elif export_report:
         stage = "assemble"
+        _l6_token = timing.start()
         try:
             from .layer6_report import assemble_report
             doc = assemble_report(result)
@@ -529,7 +553,11 @@ def run(
                 "stage": stage, "reason": type(exc).__name__, "detail": str(exc),
             }
             logger.warning("[L6] 통합 보고서 생성 실패 (%s): %s", stage, exc)
+        # 실패해도 걸린 시간은 남긴다. 실패 구간을 빼면 합이 틀어진다.
+        timing.stop(_l6_token, "L6_report_export",
+                    status=result.report_export.get("status"), last_stage=stage)
 
+    _save_token = timing.start()
     if save_traces or export_outputs or export_report:
         try:
             out_dir = Path(export_root) / f"{corp_code_final or corp_name_final}_{report_year_final}"
@@ -561,6 +589,11 @@ def run(
             path = save_audit_trace(trace)
             trace_paths[area] = str(path)
             logger.info("[L5] 저장 완료: %s", path)
+    timing.stop(_save_token, "L5_trace_save", traces=len(trace_paths))
+
+    # 전체 경과 시간 행(`_total`)을 마지막에 붙인다. 단계 합 ≤ 전체여야 한다(§3.3 ②).
+    timing.finish()
+
     if export_error is not None and SETTINGS.strict_llm:
         raise export_error
 
