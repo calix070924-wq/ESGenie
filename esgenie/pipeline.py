@@ -512,6 +512,11 @@ def run(
             md_path = out_dir / f"ESG보고서_{(corp_name_final or 'corp').replace('/', '_')}_{report_year_final}.md"
             md_path.write_text(doc.to_markdown(), encoding="utf-8")
             result.export_paths["report_md"] = str(md_path)
+            # 생성 본문에서 바꾸거나 표시한 문장의 모델 원문·사유(PR71 검토 R1) — 본문 옆 감사 기록.
+            review_md = out_dir / "report_body_review.json"
+            review_md.write_text(json.dumps(doc.meta.get("body_reviews") or [], ensure_ascii=False, indent=2,
+                                            default=str), encoding="utf-8")
+            result.export_paths["report_body_review_json"] = str(review_md)
             stage = "pdf"
             from .exporters.report_pdf import export_report_pdf
             result.export_paths["report_pdf"] = export_report_pdf(doc, out_dir)

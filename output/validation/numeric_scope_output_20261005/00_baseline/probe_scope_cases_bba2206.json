@@ -1,0 +1,1306 @@
+{
+  "code_path": "/private/tmp/ESGenie-numeric-scope-baseline-bba2206",
+  "rows": [
+    {
+      "id": "C1-a",
+      "quote": "GRI 403:2018 안전 현황\n산업재해 발생 건수 0건",
+      "request_period": "2026-04",
+      "request_site": "김해 제1공장",
+      "expected_status": [
+        "SOURCE_ONLY"
+      ],
+      "expected_extra": {
+        "period_not": "2018"
+      },
+      "verdict": {
+        "status": "SOURCE_ONLY",
+        "cause": "period_not_stated",
+        "evidence_period": "",
+        "evidence_site": "",
+        "evidence_text": "산업재해 발생 건수 0건",
+        "evidence_offset": 30,
+        "candidate": "numeric",
+        "requested_scope": "MONTH",
+        "source_scope": "None",
+        "evidence_column": "",
+        "column_state": "none",
+        "source_unit": "건",
+        "unit_location": "after_value",
+        "scope_from": "",
+        "scope_heading": "",
+        "evidence_start": 19,
+        "evidence_end": 32,
+        "row_label": "",
+        "scope_boundary": "GRI 403:2018 안전 현황"
+      },
+      "pass": true,
+      "problems": []
+    },
+    {
+      "id": "C1-b",
+      "quote": "GRI 403: 2018 안전 현황\n산업재해 발생 건수 0건",
+      "request_period": "2026-04",
+      "request_site": "김해 제1공장",
+      "expected_status": [
+        "SOURCE_ONLY"
+      ],
+      "expected_extra": {
+        "period_not": "2018"
+      },
+      "verdict": {
+        "status": "SOURCE_ONLY",
+        "cause": "period_not_stated",
+        "evidence_period": "",
+        "evidence_site": "",
+        "evidence_text": "산업재해 발생 건수 0건",
+        "evidence_offset": 31,
+        "candidate": "numeric",
+        "requested_scope": "MONTH",
+        "source_scope": "None",
+        "evidence_column": "",
+        "column_state": "none",
+        "source_unit": "건",
+        "unit_location": "after_value",
+        "scope_from": "",
+        "scope_heading": "",
+        "evidence_start": 20,
+        "evidence_end": 33,
+        "row_label": "",
+        "scope_boundary": "GRI 403: 2018 안전 현황"
+      },
+      "pass": true,
+      "problems": []
+    },
+    {
+      "id": "C1-c",
+      "quote": "GRI 403 :   2018 안전 현황\n산업재해 발생 건수 0건",
+      "request_period": "2026-04",
+      "request_site": "김해 제1공장",
+      "expected_status": [
+        "SOURCE_ONLY"
+      ],
+      "expected_extra": {
+        "period_not": "2018"
+      },
+      "verdict": {
+        "status": "SOURCE_ONLY",
+        "cause": "period_not_stated",
+        "evidence_period": "",
+        "evidence_site": "",
+        "evidence_text": "산업재해 발생 건수 0건",
+        "evidence_offset": 34,
+        "candidate": "numeric",
+        "requested_scope": "MONTH",
+        "source_scope": "None",
+        "evidence_column": "",
+        "column_state": "none",
+        "source_unit": "건",
+        "unit_location": "after_value",
+        "scope_from": "",
+        "scope_heading": "",
+        "evidence_start": 23,
+        "evidence_end": 36,
+        "row_label": "",
+        "scope_boundary": "GRI 403 :   2018 안전 현황"
+      },
+      "pass": true,
+      "problems": []
+    },
+    {
+      "id": "C1-d",
+      "quote": "GRI 403：2018 안전 현황\n산업재해 발생 건수 0건",
+      "request_period": "2026-04",
+      "request_site": "김해 제1공장",
+      "expected_status": [
+        "SOURCE_ONLY"
+      ],
+      "expected_extra": {
+        "period_not": "2018"
+      },
+      "verdict": {
+        "status": "SOURCE_ONLY",
+        "cause": "period_not_stated",
+        "evidence_period": "",
+        "evidence_site": "",
+        "evidence_text": "산업재해 발생 건수 0건",
+        "evidence_offset": 30,
+        "candidate": "numeric",
+        "requested_scope": "MONTH",
+        "source_scope": "None",
+        "evidence_column": "",
+        "column_state": "none",
+        "source_unit": "건",
+        "unit_location": "after_value",
+        "scope_from": "",
+        "scope_heading": "",
+        "evidence_start": 19,
+        "evidence_end": 32,
+        "row_label": "",
+        "scope_boundary": "GRI 403：2018 안전 현황"
+      },
+      "pass": true,
+      "problems": []
+    },
+    {
+      "id": "C1-e",
+      "quote": "GRI 403 ： 2018 안전 현황\n산업재해 발생 건수 0건",
+      "request_period": "2026-04",
+      "request_site": "김해 제1공장",
+      "expected_status": [
+        "SOURCE_ONLY"
+      ],
+      "expected_extra": {
+        "period_not": "2018"
+      },
+      "verdict": {
+        "status": "SOURCE_ONLY",
+        "cause": "period_not_stated",
+        "evidence_period": "",
+        "evidence_site": "",
+        "evidence_text": "산업재해 발생 건수 0건",
+        "evidence_offset": 32,
+        "candidate": "numeric",
+        "requested_scope": "MONTH",
+        "source_scope": "None",
+        "evidence_column": "",
+        "column_state": "none",
+        "source_unit": "건",
+        "unit_location": "after_value",
+        "scope_from": "",
+        "scope_heading": "",
+        "evidence_start": 21,
+        "evidence_end": 34,
+        "row_label": "",
+        "scope_boundary": "GRI 403 ： 2018 안전 현황"
+      },
+      "pass": true,
+      "problems": []
+    },
+    {
+      "id": "C1-f",
+      "quote": "ISO 45001:2018 안전 현황\n산업재해 발생 건수 0건",
+      "request_period": "2026-04",
+      "request_site": "김해 제1공장",
+      "expected_status": [
+        "SOURCE_ONLY"
+      ],
+      "expected_extra": {
+        "period_not": "2018"
+      },
+      "verdict": {
+        "status": "SOURCE_ONLY",
+        "cause": "period_not_stated",
+        "evidence_period": "",
+        "evidence_site": "",
+        "evidence_text": "산업재해 발생 건수 0건",
+        "evidence_offset": 32,
+        "candidate": "numeric",
+        "requested_scope": "MONTH",
+        "source_scope": "None",
+        "evidence_column": "",
+        "column_state": "none",
+        "source_unit": "건",
+        "unit_location": "after_value",
+        "scope_from": "",
+        "scope_heading": "",
+        "evidence_start": 21,
+        "evidence_end": 34,
+        "row_label": "",
+        "scope_boundary": "ISO 45001:2018 안전 현황"
+      },
+      "pass": true,
+      "problems": []
+    },
+    {
+      "id": "C1-g",
+      "quote": "ISO 45001: 2018 안전 현황\n산업재해 발생 건수 0건",
+      "request_period": "2026-04",
+      "request_site": "김해 제1공장",
+      "expected_status": [
+        "SOURCE_ONLY"
+      ],
+      "expected_extra": {
+        "period_not": "2018"
+      },
+      "verdict": {
+        "status": "SOURCE_ONLY",
+        "cause": "period_not_stated",
+        "evidence_period": "",
+        "evidence_site": "",
+        "evidence_text": "산업재해 발생 건수 0건",
+        "evidence_offset": 33,
+        "candidate": "numeric",
+        "requested_scope": "MONTH",
+        "source_scope": "None",
+        "evidence_column": "",
+        "column_state": "none",
+        "source_unit": "건",
+        "unit_location": "after_value",
+        "scope_from": "",
+        "scope_heading": "",
+        "evidence_start": 22,
+        "evidence_end": 35,
+        "row_label": "",
+        "scope_boundary": "ISO 45001: 2018 안전 현황"
+      },
+      "pass": true,
+      "problems": []
+    },
+    {
+      "id": "C1-h",
+      "quote": "GRI 403: 2018 2026년 4월 김해 제1공장 안전 현황\n산업재해 발생 건수 0건",
+      "request_period": "2026-04",
+      "request_site": "김해 제1공장",
+      "expected_status": [
+        "CONFIRMED",
+        "SOURCE_ONLY"
+      ],
+      "expected_extra": {
+        "period_has": "2026",
+        "period_not": "2018"
+      },
+      "verdict": {
+        "status": "SOURCE_ONLY",
+        "cause": "period_not_stated",
+        "evidence_period": "",
+        "evidence_site": "",
+        "evidence_text": "산업재해 발생 건수 0건",
+        "evidence_offset": 48,
+        "candidate": "numeric",
+        "requested_scope": "MONTH",
+        "source_scope": "None",
+        "evidence_column": "",
+        "column_state": "none",
+        "source_unit": "건",
+        "unit_location": "after_value",
+        "scope_from": "",
+        "scope_heading": "",
+        "evidence_start": 37,
+        "evidence_end": 50,
+        "row_label": "",
+        "scope_boundary": "GRI 403: 2018 2026년 4월 김해 제1공장 안전 현황"
+      },
+      "pass": false,
+      "problems": [
+        "period '' lacks 2026"
+      ]
+    },
+    {
+      "id": "C1-i",
+      "quote": "2026년 4월 김해 제1공장 산업재해 발생 건수 0건(GRI 403: 2018 기준)",
+      "request_period": "2026-04",
+      "request_site": "김해 제1공장",
+      "expected_status": [
+        "CONFIRMED"
+      ],
+      "expected_extra": {
+        "period_not": "2018"
+      },
+      "verdict": {
+        "status": "UNRESOLVED",
+        "cause": "interpretation_unknown",
+        "evidence_period": "",
+        "evidence_site": "",
+        "evidence_text": "2026년 4월 김해 제1공장 산업재해 발생 건수 0건(GRI 403: 2018 기준)",
+        "evidence_offset": 28,
+        "candidate": "numeric",
+        "requested_scope": "MONTH",
+        "source_scope": "None",
+        "evidence_column": "",
+        "column_state": "none",
+        "source_unit": "건",
+        "unit_location": "after_value",
+        "scope_from": "",
+        "scope_heading": "",
+        "evidence_start": 0,
+        "evidence_end": 48,
+        "row_label": "",
+        "scope_boundary": ""
+      },
+      "pass": false,
+      "problems": [
+        "status UNRESOLVED ∉ ['CONFIRMED']"
+      ]
+    },
+    {
+      "id": "C1-j",
+      "quote": "2026년 4월 김해 제1공장 산업재해 발생 건수 0건(GRI 403:2018 기준)",
+      "request_period": "2026-04",
+      "request_site": "김해 제1공장",
+      "expected_status": [
+        "CONFIRMED"
+      ],
+      "expected_extra": {
+        "period_not": "2018"
+      },
+      "verdict": {
+        "status": "UNRESOLVED",
+        "cause": "interpretation_unknown",
+        "evidence_period": "",
+        "evidence_site": "",
+        "evidence_text": "2026년 4월 김해 제1공장 산업재해 발생 건수 0건(GRI 403:2018 기준)",
+        "evidence_offset": 28,
+        "candidate": "numeric",
+        "requested_scope": "MONTH",
+        "source_scope": "None",
+        "evidence_column": "",
+        "column_state": "none",
+        "source_unit": "건",
+        "unit_location": "after_value",
+        "scope_from": "",
+        "scope_heading": "",
+        "evidence_start": 0,
+        "evidence_end": 47,
+        "row_label": "",
+        "scope_boundary": ""
+      },
+      "pass": false,
+      "problems": [
+        "status UNRESOLVED ∉ ['CONFIRMED']"
+      ]
+    },
+    {
+      "id": "C1-k",
+      "quote": "2026년 4월 김해 제1공장 산업재해 발생 건수 0건(ISO 45001:2018 기준)",
+      "request_period": "2026-04",
+      "request_site": "김해 제1공장",
+      "expected_status": [
+        "CONFIRMED"
+      ],
+      "expected_extra": {
+        "period_not": "2018"
+      },
+      "verdict": {
+        "status": "UNRESOLVED",
+        "cause": "interpretation_unknown",
+        "evidence_period": "",
+        "evidence_site": "",
+        "evidence_text": "2026년 4월 김해 제1공장 산업재해 발생 건수 0건(ISO 45001:2018 기준)",
+        "evidence_offset": 28,
+        "candidate": "numeric",
+        "requested_scope": "MONTH",
+        "source_scope": "None",
+        "evidence_column": "",
+        "column_state": "none",
+        "source_unit": "건",
+        "unit_location": "after_value",
+        "scope_from": "",
+        "scope_heading": "",
+        "evidence_start": 0,
+        "evidence_end": 49,
+        "row_label": "",
+        "scope_boundary": ""
+      },
+      "pass": false,
+      "problems": [
+        "status UNRESOLVED ∉ ['CONFIRMED']"
+      ]
+    },
+    {
+      "id": "C1-ctl-year",
+      "quote": "2018년 김해 제1공장 산업재해 발생 건수 0건",
+      "request_period": "2026-04",
+      "request_site": "김해 제1공장",
+      "expected_status": [
+        "REJECTED"
+      ],
+      "expected_extra": {
+        "cause": "period_mismatch"
+      },
+      "verdict": {
+        "status": "REJECTED",
+        "cause": "period_mismatch",
+        "evidence_period": "2018년",
+        "evidence_site": "김해1공장",
+        "evidence_text": "2018년 김해 제1공장 산업재해 발생 건수 0건",
+        "evidence_offset": 25,
+        "candidate": "numeric",
+        "requested_scope": "MONTH",
+        "source_scope": "{'start': datetime.date(2018, 1, 1), 'end': datetime.date(2018, 12, 31), 'grain': 'year', 'text': '2018년', 'kind': 'YEAR', 'year_known': True}",
+        "evidence_column": "",
+        "column_state": "none",
+        "source_unit": "건",
+        "unit_location": "after_value",
+        "scope_from": "statement",
+        "scope_heading": "",
+        "evidence_start": 0,
+        "evidence_end": 27,
+        "row_label": "",
+        "scope_boundary": ""
+      },
+      "pass": true,
+      "problems": []
+    },
+    {
+      "id": "C1-ctl-qty",
+      "quote": "2026년 4월 김해 제1공장 안전 현황\nISO 45001 부적합 3건\n산업재해 발생 건수 0건",
+      "request_period": "2026-04",
+      "request_site": "김해 제1공장",
+      "expected_status": [
+        "CONFIRMED"
+      ],
+      "expected_extra": {},
+      "verdict": {
+        "status": "CONFIRMED",
+        "cause": "stated_zero",
+        "evidence_period": "2026년 4월",
+        "evidence_site": "김해1공장",
+        "evidence_text": "산업재해 발생 건수 0건",
+        "evidence_offset": 51,
+        "candidate": "numeric",
+        "requested_scope": "MONTH",
+        "source_scope": "{'start': datetime.date(2026, 4, 1), 'end': datetime.date(2026, 4, 30), 'grain': 'month', 'text': '2026년 4월', 'kind': 'MONTH', 'year_known': True}",
+        "evidence_column": "",
+        "column_state": "none",
+        "source_unit": "건",
+        "unit_location": "after_value",
+        "scope_from": "heading",
+        "scope_heading": "2026년 4월 김해 제1공장 안전 현황",
+        "evidence_start": 40,
+        "evidence_end": 53,
+        "row_label": "",
+        "scope_boundary": ""
+      },
+      "pass": true,
+      "problems": []
+    },
+    {
+      "id": "C2-a",
+      "quote": "FY2026 김해 제1공장 안전 현황\n산업재해 발생 건수 0건",
+      "request_period": "2026-04",
+      "request_site": "김해 제1공장",
+      "expected_status": [
+        "SOURCE_ONLY"
+      ],
+      "expected_extra": {
+        "site_has": "김해",
+        "cause_not": "period_not_stated"
+      },
+      "verdict": {
+        "status": "SOURCE_ONLY",
+        "cause": "period_not_stated",
+        "evidence_period": "",
+        "evidence_site": "",
+        "evidence_text": "산업재해 발생 건수 0건",
+        "evidence_offset": 32,
+        "candidate": "numeric",
+        "requested_scope": "MONTH",
+        "source_scope": "None",
+        "evidence_column": "",
+        "column_state": "none",
+        "source_unit": "건",
+        "unit_location": "after_value",
+        "scope_from": "",
+        "scope_heading": "",
+        "evidence_start": 21,
+        "evidence_end": 34,
+        "row_label": "",
+        "scope_boundary": "FY2026 김해 제1공장 안전 현황"
+      },
+      "pass": false,
+      "problems": [
+        "cause == period_not_stated",
+        "site '' lacks 김해"
+      ]
+    },
+    {
+      "id": "C2-b",
+      "quote": "FY 2026 김해 제1공장 안전 현황\n산업재해 발생 건수 0건",
+      "request_period": "2026-04",
+      "request_site": "김해 제1공장",
+      "expected_status": [
+        "SOURCE_ONLY"
+      ],
+      "expected_extra": {
+        "site_has": "김해",
+        "cause_not": "period_not_stated"
+      },
+      "verdict": {
+        "status": "SOURCE_ONLY",
+        "cause": "period_not_stated",
+        "evidence_period": "",
+        "evidence_site": "",
+        "evidence_text": "산업재해 발생 건수 0건",
+        "evidence_offset": 33,
+        "candidate": "numeric",
+        "requested_scope": "MONTH",
+        "source_scope": "None",
+        "evidence_column": "",
+        "column_state": "none",
+        "source_unit": "건",
+        "unit_location": "after_value",
+        "scope_from": "",
+        "scope_heading": "",
+        "evidence_start": 22,
+        "evidence_end": 35,
+        "row_label": "",
+        "scope_boundary": "FY 2026 김해 제1공장 안전 현황"
+      },
+      "pass": false,
+      "problems": [
+        "cause == period_not_stated",
+        "site '' lacks 김해"
+      ]
+    },
+    {
+      "id": "C2-c",
+      "quote": "FY2026 = 2026-01-01~2026-12-31\nFY2026 김해 제1공장 안전 현황\n산업재해 발생 건수 0건",
+      "request_period": "2026-04",
+      "request_site": "김해 제1공장",
+      "expected_status": [
+        "REJECTED"
+      ],
+      "expected_extra": {
+        "site_has": "김해",
+        "period_has": "2026"
+      },
+      "verdict": {
+        "status": "SOURCE_ONLY",
+        "cause": "period_not_stated",
+        "evidence_period": "",
+        "evidence_site": "",
+        "evidence_text": "산업재해 발생 건수 0건",
+        "evidence_offset": 63,
+        "candidate": "numeric",
+        "requested_scope": "MONTH",
+        "source_scope": "None",
+        "evidence_column": "",
+        "column_state": "none",
+        "source_unit": "건",
+        "unit_location": "after_value",
+        "scope_from": "",
+        "scope_heading": "",
+        "evidence_start": 52,
+        "evidence_end": 65,
+        "row_label": "",
+        "scope_boundary": "FY2026 김해 제1공장 안전 현황"
+      },
+      "pass": false,
+      "problems": [
+        "status SOURCE_ONLY ∉ ['REJECTED']",
+        "period '' lacks 2026",
+        "site '' lacks 김해"
+      ]
+    },
+    {
+      "id": "C2-c2",
+      "quote": "FY2026 = 2026-01-01~2026-12-31\nFY2026 김해 제1공장 안전 현황\n산업재해 발생 건수 0건",
+      "request_period": "2026-01~2026-12",
+      "request_site": "김해 제1공장",
+      "expected_status": [
+        "CONFIRMED"
+      ],
+      "expected_extra": {
+        "site_has": "김해",
+        "period_has": "2026"
+      },
+      "verdict": {
+        "status": "SOURCE_ONLY",
+        "cause": "period_not_stated",
+        "evidence_period": "",
+        "evidence_site": "",
+        "evidence_text": "산업재해 발생 건수 0건",
+        "evidence_offset": 63,
+        "candidate": "numeric",
+        "requested_scope": "ANNUAL",
+        "source_scope": "None",
+        "evidence_column": "",
+        "column_state": "none",
+        "source_unit": "건",
+        "unit_location": "after_value",
+        "scope_from": "",
+        "scope_heading": "",
+        "evidence_start": 52,
+        "evidence_end": 65,
+        "row_label": "",
+        "scope_boundary": "FY2026 김해 제1공장 안전 현황"
+      },
+      "pass": false,
+      "problems": [
+        "status SOURCE_ONLY ∉ ['CONFIRMED']",
+        "period '' lacks 2026",
+        "site '' lacks 김해"
+      ]
+    },
+    {
+      "id": "C2-d",
+      "quote": "2026년 1분기(1~3월) 김해 제1공장 안전 현황\n산업재해 발생 건수 0건",
+      "request_period": "2026-04",
+      "request_site": "김해 제1공장",
+      "expected_status": [
+        "REJECTED"
+      ],
+      "expected_extra": {
+        "cause": "period_mismatch"
+      },
+      "verdict": {
+        "status": "SOURCE_ONLY",
+        "cause": "period_not_stated",
+        "evidence_period": "",
+        "evidence_site": "",
+        "evidence_text": "산업재해 발생 건수 0건",
+        "evidence_offset": 41,
+        "candidate": "numeric",
+        "requested_scope": "MONTH",
+        "source_scope": "None",
+        "evidence_column": "",
+        "column_state": "none",
+        "source_unit": "건",
+        "unit_location": "after_value",
+        "scope_from": "",
+        "scope_heading": "",
+        "evidence_start": 30,
+        "evidence_end": 43,
+        "row_label": "",
+        "scope_boundary": ""
+      },
+      "pass": false,
+      "problems": [
+        "status SOURCE_ONLY ∉ ['REJECTED']",
+        "cause period_not_stated ≠ period_mismatch"
+      ]
+    },
+    {
+      "id": "C2-d2",
+      "quote": "2026년 1분기(1~3월) 김해 제1공장 안전 현황\n산업재해 발생 건수 0건",
+      "request_period": "2026-01~2026-03",
+      "request_site": "김해 제1공장",
+      "expected_status": [
+        "CONFIRMED"
+      ],
+      "expected_extra": {},
+      "verdict": {
+        "status": "SOURCE_ONLY",
+        "cause": "period_not_stated",
+        "evidence_period": "",
+        "evidence_site": "",
+        "evidence_text": "산업재해 발생 건수 0건",
+        "evidence_offset": 41,
+        "candidate": "numeric",
+        "requested_scope": "RANGE",
+        "source_scope": "None",
+        "evidence_column": "",
+        "column_state": "none",
+        "source_unit": "건",
+        "unit_location": "after_value",
+        "scope_from": "",
+        "scope_heading": "",
+        "evidence_start": 30,
+        "evidence_end": 43,
+        "row_label": "",
+        "scope_boundary": ""
+      },
+      "pass": false,
+      "problems": [
+        "status SOURCE_ONLY ∉ ['CONFIRMED']"
+      ]
+    },
+    {
+      "id": "C2-e",
+      "quote": "Q1 김해 제1공장 안전 현황\n산업재해 발생 건수 0건",
+      "request_period": "2026-04",
+      "request_site": "김해 제1공장",
+      "expected_status": [
+        "SOURCE_ONLY"
+      ],
+      "expected_extra": {
+        "site_has": "김해",
+        "cause_not": "period_not_stated"
+      },
+      "verdict": {
+        "status": "SOURCE_ONLY",
+        "cause": "period_not_stated",
+        "evidence_period": "",
+        "evidence_site": "김해1공장",
+        "evidence_text": "산업재해 발생 건수 0건",
+        "evidence_offset": 28,
+        "candidate": "numeric",
+        "requested_scope": "MONTH",
+        "source_scope": "None",
+        "evidence_column": "",
+        "column_state": "none",
+        "source_unit": "건",
+        "unit_location": "after_value",
+        "scope_from": "heading",
+        "scope_heading": "Q1 김해 제1공장 안전 현황",
+        "evidence_start": 17,
+        "evidence_end": 30,
+        "row_label": "",
+        "scope_boundary": ""
+      },
+      "pass": false,
+      "problems": [
+        "cause == period_not_stated"
+      ]
+    },
+    {
+      "id": "C2-e2",
+      "quote": "Q1 김해 제1공장 안전 현황\n산업재해 발생 건수 0건",
+      "request_period": "2026-01~2026-03",
+      "request_site": "김해 제1공장",
+      "expected_status": [
+        "SOURCE_ONLY"
+      ],
+      "expected_extra": {
+        "site_has": "김해",
+        "cause_not": "period_not_stated"
+      },
+      "verdict": {
+        "status": "SOURCE_ONLY",
+        "cause": "period_not_stated",
+        "evidence_period": "",
+        "evidence_site": "김해1공장",
+        "evidence_text": "산업재해 발생 건수 0건",
+        "evidence_offset": 28,
+        "candidate": "numeric",
+        "requested_scope": "RANGE",
+        "source_scope": "None",
+        "evidence_column": "",
+        "column_state": "none",
+        "source_unit": "건",
+        "unit_location": "after_value",
+        "scope_from": "heading",
+        "scope_heading": "Q1 김해 제1공장 안전 현황",
+        "evidence_start": 17,
+        "evidence_end": 30,
+        "row_label": "",
+        "scope_boundary": ""
+      },
+      "pass": false,
+      "problems": [
+        "cause == period_not_stated"
+      ]
+    },
+    {
+      "id": "C2-f",
+      "quote": "FY26 김해 제1공장 안전 현황\n산업재해 발생 건수 0건",
+      "request_period": "2026-04",
+      "request_site": "김해 제1공장",
+      "expected_status": [
+        "SOURCE_ONLY"
+      ],
+      "expected_extra": {
+        "site_has": "김해",
+        "cause_not": "period_not_stated"
+      },
+      "verdict": {
+        "status": "SOURCE_ONLY",
+        "cause": "period_not_stated",
+        "evidence_period": "",
+        "evidence_site": "",
+        "evidence_text": "산업재해 발생 건수 0건",
+        "evidence_offset": 30,
+        "candidate": "numeric",
+        "requested_scope": "MONTH",
+        "source_scope": "None",
+        "evidence_column": "",
+        "column_state": "none",
+        "source_unit": "건",
+        "unit_location": "after_value",
+        "scope_from": "",
+        "scope_heading": "",
+        "evidence_start": 19,
+        "evidence_end": 32,
+        "row_label": "",
+        "scope_boundary": "FY26 김해 제1공장 안전 현황"
+      },
+      "pass": false,
+      "problems": [
+        "cause == period_not_stated",
+        "site '' lacks 김해"
+      ]
+    },
+    {
+      "id": "C2-f2",
+      "quote": "FY26 김해 제1공장 안전 현황\n산업재해 발생 건수 0건",
+      "request_period": "2026",
+      "request_site": "김해 제1공장",
+      "expected_status": [
+        "SOURCE_ONLY"
+      ],
+      "expected_extra": {
+        "site_has": "김해",
+        "cause_not": "period_not_stated"
+      },
+      "verdict": {
+        "status": "SOURCE_ONLY",
+        "cause": "period_not_stated",
+        "evidence_period": "",
+        "evidence_site": "",
+        "evidence_text": "산업재해 발생 건수 0건",
+        "evidence_offset": 30,
+        "candidate": "numeric",
+        "requested_scope": "REPORT_YEAR",
+        "source_scope": "None",
+        "evidence_column": "",
+        "column_state": "none",
+        "source_unit": "건",
+        "unit_location": "after_value",
+        "scope_from": "",
+        "scope_heading": "",
+        "evidence_start": 19,
+        "evidence_end": 32,
+        "row_label": "",
+        "scope_boundary": "FY26 김해 제1공장 안전 현황"
+      },
+      "pass": false,
+      "problems": [
+        "cause == period_not_stated",
+        "site '' lacks 김해"
+      ]
+    },
+    {
+      "id": "C2-g",
+      "quote": "2026년 4월 김해 제1공장 안전 현황\nFY2026 김해 제1공장 안전 현황\n산업재해 발생 건수 0건",
+      "request_period": "2026-04",
+      "request_site": "김해 제1공장",
+      "expected_status": [
+        "SOURCE_ONLY"
+      ],
+      "expected_extra": {
+        "site_has": "김해",
+        "cause_not": "period_not_stated"
+      },
+      "verdict": {
+        "status": "SOURCE_ONLY",
+        "cause": "period_not_stated",
+        "evidence_period": "",
+        "evidence_site": "",
+        "evidence_text": "산업재해 발생 건수 0건",
+        "evidence_offset": 55,
+        "candidate": "numeric",
+        "requested_scope": "MONTH",
+        "source_scope": "None",
+        "evidence_column": "",
+        "column_state": "none",
+        "source_unit": "건",
+        "unit_location": "after_value",
+        "scope_from": "",
+        "scope_heading": "",
+        "evidence_start": 44,
+        "evidence_end": 57,
+        "row_label": "",
+        "scope_boundary": "FY2026 김해 제1공장 안전 현황"
+      },
+      "pass": false,
+      "problems": [
+        "cause == period_not_stated",
+        "site '' lacks 김해"
+      ]
+    },
+    {
+      "id": "C3-a",
+      "quote": "2026년 4월 김해 제1공장 안전 현황\nGRI 403-9 A2공장 안전 현황\n산업재해 발생 건수 0건",
+      "request_period": "2026-04",
+      "request_site": "김해 제1공장",
+      "expected_status": [
+        "REJECTED"
+      ],
+      "expected_extra": {
+        "cause": "site_mismatch",
+        "site_has": "A2"
+      },
+      "verdict": {
+        "status": "SOURCE_ONLY",
+        "cause": "period_not_stated",
+        "evidence_period": "",
+        "evidence_site": "",
+        "evidence_text": "산업재해 발생 건수 0건",
+        "evidence_offset": 55,
+        "candidate": "numeric",
+        "requested_scope": "MONTH",
+        "source_scope": "None",
+        "evidence_column": "",
+        "column_state": "none",
+        "source_unit": "건",
+        "unit_location": "after_value",
+        "scope_from": "",
+        "scope_heading": "",
+        "evidence_start": 44,
+        "evidence_end": 57,
+        "row_label": "",
+        "scope_boundary": "GRI 403-9 A2공장 안전 현황"
+      },
+      "pass": false,
+      "problems": [
+        "status SOURCE_ONLY ∉ ['REJECTED']",
+        "cause period_not_stated ≠ site_mismatch",
+        "site '' lacks A2"
+      ]
+    },
+    {
+      "id": "C3-a-neg",
+      "quote": "2026년 4월 김해 제1공장 안전 현황\nGRI 403-9 A2공장 안전 현황\n산업재해가 발생하지 않았다.",
+      "request_period": "2026-04",
+      "request_site": "김해 제1공장",
+      "expected_status": [
+        "REJECTED"
+      ],
+      "expected_extra": {
+        "cause": "site_mismatch",
+        "site_has": "A2"
+      },
+      "verdict": {
+        "status": "SOURCE_ONLY",
+        "cause": "period_not_stated",
+        "evidence_period": "",
+        "evidence_site": "",
+        "evidence_text": "산업재해가 발생하지 않았다",
+        "evidence_offset": 50,
+        "candidate": "negation",
+        "requested_scope": "MONTH",
+        "source_scope": "None",
+        "evidence_column": "",
+        "column_state": "none",
+        "source_unit": "",
+        "unit_location": "",
+        "scope_from": "",
+        "scope_heading": "",
+        "evidence_start": 44,
+        "evidence_end": 58,
+        "row_label": "",
+        "scope_boundary": "GRI 403-9 A2공장 안전 현황"
+      },
+      "pass": false,
+      "problems": [
+        "status SOURCE_ONLY ∉ ['REJECTED']",
+        "cause period_not_stated ≠ site_mismatch",
+        "site '' lacks A2"
+      ]
+    },
+    {
+      "id": "C3-b",
+      "quote": "GRI 403-9 2026년 4월 김해 제1공장 안전 현황\n산업재해 발생 건수 0건",
+      "request_period": "2026-04",
+      "request_site": "김해 제1공장",
+      "expected_status": [
+        "CONFIRMED"
+      ],
+      "expected_extra": {
+        "site_has": "김해",
+        "period_has": "2026"
+      },
+      "verdict": {
+        "status": "SOURCE_ONLY",
+        "cause": "period_not_stated",
+        "evidence_period": "",
+        "evidence_site": "",
+        "evidence_text": "산업재해 발생 건수 0건",
+        "evidence_offset": 44,
+        "candidate": "numeric",
+        "requested_scope": "MONTH",
+        "source_scope": "None",
+        "evidence_column": "",
+        "column_state": "none",
+        "source_unit": "건",
+        "unit_location": "after_value",
+        "scope_from": "",
+        "scope_heading": "",
+        "evidence_start": 33,
+        "evidence_end": 46,
+        "row_label": "",
+        "scope_boundary": "GRI 403-9 2026년 4월 김해 제1공장 안전 현황"
+      },
+      "pass": false,
+      "problems": [
+        "status SOURCE_ONLY ∉ ['CONFIRMED']",
+        "period '' lacks 2026",
+        "site '' lacks 김해"
+      ]
+    },
+    {
+      "id": "C3-c",
+      "quote": "GRI 403-9 2026년 4월 부산 제2공장 안전 현황\n산업재해 발생 건수 0건",
+      "request_period": "2026-04",
+      "request_site": "김해 제1공장",
+      "expected_status": [
+        "REJECTED"
+      ],
+      "expected_extra": {
+        "cause": "site_mismatch",
+        "site_has": "부산"
+      },
+      "verdict": {
+        "status": "SOURCE_ONLY",
+        "cause": "period_not_stated",
+        "evidence_period": "",
+        "evidence_site": "",
+        "evidence_text": "산업재해 발생 건수 0건",
+        "evidence_offset": 44,
+        "candidate": "numeric",
+        "requested_scope": "MONTH",
+        "source_scope": "None",
+        "evidence_column": "",
+        "column_state": "none",
+        "source_unit": "건",
+        "unit_location": "after_value",
+        "scope_from": "",
+        "scope_heading": "",
+        "evidence_start": 33,
+        "evidence_end": 46,
+        "row_label": "",
+        "scope_boundary": "GRI 403-9 2026년 4월 부산 제2공장 안전 현황"
+      },
+      "pass": false,
+      "problems": [
+        "status SOURCE_ONLY ∉ ['REJECTED']",
+        "cause period_not_stated ≠ site_mismatch",
+        "site '' lacks 부산"
+      ]
+    },
+    {
+      "id": "C3-d",
+      "quote": "2026년 4월 김해 제1공장 안전 현황\nGRI 403-9 산업재해\n산업재해 발생 건수 0건",
+      "request_period": "2026-04",
+      "request_site": "김해 제1공장",
+      "expected_status": [
+        "SOURCE_ONLY"
+      ],
+      "expected_extra": {
+        "site_not": "김해"
+      },
+      "verdict": {
+        "status": "SOURCE_ONLY",
+        "cause": "period_not_stated",
+        "evidence_period": "",
+        "evidence_site": "",
+        "evidence_text": "산업재해 발생 건수 0건",
+        "evidence_offset": 49,
+        "candidate": "numeric",
+        "requested_scope": "MONTH",
+        "source_scope": "None",
+        "evidence_column": "",
+        "column_state": "none",
+        "source_unit": "건",
+        "unit_location": "after_value",
+        "scope_from": "",
+        "scope_heading": "",
+        "evidence_start": 38,
+        "evidence_end": 51,
+        "row_label": "",
+        "scope_boundary": "GRI 403-9 산업재해"
+      },
+      "pass": true,
+      "problems": []
+    },
+    {
+      "id": "C3-e",
+      "quote": "2026년 4월 김해 제1공장 안전 현황\nISO 45001:2018 안전 현황\n산업재해 발생 건수 0건",
+      "request_period": "2026-04",
+      "request_site": "김해 제1공장",
+      "expected_status": [
+        "SOURCE_ONLY"
+      ],
+      "expected_extra": {
+        "period_not": "2018"
+      },
+      "verdict": {
+        "status": "SOURCE_ONLY",
+        "cause": "period_not_stated",
+        "evidence_period": "",
+        "evidence_site": "",
+        "evidence_text": "산업재해 발생 건수 0건",
+        "evidence_offset": 55,
+        "candidate": "numeric",
+        "requested_scope": "MONTH",
+        "source_scope": "None",
+        "evidence_column": "",
+        "column_state": "none",
+        "source_unit": "건",
+        "unit_location": "after_value",
+        "scope_from": "",
+        "scope_heading": "",
+        "evidence_start": 44,
+        "evidence_end": 57,
+        "row_label": "",
+        "scope_boundary": "ISO 45001:2018 안전 현황"
+      },
+      "pass": true,
+      "problems": []
+    },
+    {
+      "id": "C3-f",
+      "quote": "2026년 4월 김해 제1공장 안전 현황\nGRI 403-9 산업재해 ··· 45\n산업재해 발생 건수 0건",
+      "request_period": "2026-04",
+      "request_site": "김해 제1공장",
+      "expected_status": [
+        "SOURCE_ONLY",
+        "UNRESOLVED"
+      ],
+      "expected_extra": {
+        "site_not": "김해"
+      },
+      "verdict": {
+        "status": "CONFIRMED",
+        "cause": "stated_zero",
+        "evidence_period": "2026년 4월",
+        "evidence_site": "김해1공장",
+        "evidence_text": "산업재해 발생 건수 0건",
+        "evidence_offset": 56,
+        "candidate": "numeric",
+        "requested_scope": "MONTH",
+        "source_scope": "{'start': datetime.date(2026, 4, 1), 'end': datetime.date(2026, 4, 30), 'grain': 'month', 'text': '2026년 4월', 'kind': 'MONTH', 'year_known': True}",
+        "evidence_column": "",
+        "column_state": "none",
+        "source_unit": "건",
+        "unit_location": "after_value",
+        "scope_from": "heading",
+        "scope_heading": "2026년 4월 김해 제1공장 안전 현황",
+        "evidence_start": 45,
+        "evidence_end": 58,
+        "row_label": "",
+        "scope_boundary": ""
+      },
+      "pass": false,
+      "problems": [
+        "status CONFIRMED ∉ ['SOURCE_ONLY', 'UNRESOLVED']",
+        "site '김해1공장' borrowed 김해"
+      ]
+    },
+    {
+      "id": "C3-g",
+      "quote": "2026년 4월 김해 제1공장 안전 현황\nGRI 403 산업안전보건\n산업재해 발생 건수 0건",
+      "request_period": "2026-04",
+      "request_site": "김해 제1공장",
+      "expected_status": [
+        "SOURCE_ONLY"
+      ],
+      "expected_extra": {
+        "site_not": "김해"
+      },
+      "verdict": {
+        "status": "SOURCE_ONLY",
+        "cause": "period_not_stated",
+        "evidence_period": "",
+        "evidence_site": "",
+        "evidence_text": "산업재해 발생 건수 0건",
+        "evidence_offset": 49,
+        "candidate": "numeric",
+        "requested_scope": "MONTH",
+        "source_scope": "None",
+        "evidence_column": "",
+        "column_state": "none",
+        "source_unit": "건",
+        "unit_location": "after_value",
+        "scope_from": "",
+        "scope_heading": "",
+        "evidence_start": 38,
+        "evidence_end": 51,
+        "row_label": "",
+        "scope_boundary": "GRI 403 산업안전보건"
+      },
+      "pass": true,
+      "problems": []
+    },
+    {
+      "id": "C3-h",
+      "quote": "2026년 4월 김해 제1공장 안전 현황\nGRI 403-9 김해 제1공장 안전 현황\n산업재해 발생 건수 0건",
+      "request_period": "2026-04",
+      "request_site": "김해 제1공장",
+      "expected_status": [
+        "SOURCE_ONLY"
+      ],
+      "expected_extra": {
+        "site_has": "김해"
+      },
+      "verdict": {
+        "status": "SOURCE_ONLY",
+        "cause": "period_not_stated",
+        "evidence_period": "",
+        "evidence_site": "",
+        "evidence_text": "산업재해 발생 건수 0건",
+        "evidence_offset": 58,
+        "candidate": "numeric",
+        "requested_scope": "MONTH",
+        "source_scope": "None",
+        "evidence_column": "",
+        "column_state": "none",
+        "source_unit": "건",
+        "unit_location": "after_value",
+        "scope_from": "",
+        "scope_heading": "",
+        "evidence_start": 47,
+        "evidence_end": 60,
+        "row_label": "",
+        "scope_boundary": "GRI 403-9 김해 제1공장 안전 현황"
+      },
+      "pass": false,
+      "problems": [
+        "site '' lacks 김해"
+      ]
+    },
+    {
+      "id": "C3-ctl-child",
+      "quote": "2026년 4월 김해 제1공장\nA2공장 안전 현황\n산업재해 발생 건수 0건",
+      "request_period": "2026-04",
+      "request_site": "김해 제1공장",
+      "expected_status": [
+        "REJECTED"
+      ],
+      "expected_extra": {
+        "cause": "site_mismatch",
+        "site_has": "A2"
+      },
+      "verdict": {
+        "status": "REJECTED",
+        "cause": "site_mismatch",
+        "evidence_period": "",
+        "evidence_site": "A2공장",
+        "evidence_text": "산업재해 발생 건수 0건",
+        "evidence_offset": 39,
+        "candidate": "numeric",
+        "requested_scope": "MONTH",
+        "source_scope": "None",
+        "evidence_column": "",
+        "column_state": "none",
+        "source_unit": "건",
+        "unit_location": "after_value",
+        "scope_from": "heading",
+        "scope_heading": "A2공장 안전 현황 / 2026년 4월 김해 제1공장",
+        "evidence_start": 28,
+        "evidence_end": 41,
+        "row_label": "",
+        "scope_boundary": ""
+      },
+      "pass": true,
+      "problems": []
+    },
+    {
+      "id": "C3-ctl-own",
+      "quote": "2026년 4월 김해 제1공장 안전 현황\n산업재해 발생 건수 0건",
+      "request_period": "2026-04",
+      "request_site": "김해 제1공장",
+      "expected_status": [
+        "CONFIRMED"
+      ],
+      "expected_extra": {
+        "site_has": "김해"
+      },
+      "verdict": {
+        "status": "CONFIRMED",
+        "cause": "stated_zero",
+        "evidence_period": "2026년 4월",
+        "evidence_site": "김해1공장",
+        "evidence_text": "산업재해 발생 건수 0건",
+        "evidence_offset": 34,
+        "candidate": "numeric",
+        "requested_scope": "MONTH",
+        "source_scope": "{'start': datetime.date(2026, 4, 1), 'end': datetime.date(2026, 4, 30), 'grain': 'month', 'text': '2026년 4월', 'kind': 'MONTH', 'year_known': True}",
+        "evidence_column": "",
+        "column_state": "none",
+        "source_unit": "건",
+        "unit_location": "after_value",
+        "scope_from": "heading",
+        "scope_heading": "2026년 4월 김해 제1공장 안전 현황",
+        "evidence_start": 23,
+        "evidence_end": 36,
+        "row_label": "",
+        "scope_boundary": ""
+      },
+      "pass": true,
+      "problems": []
+    }
+  ],
+  "passed": 14,
+  "total": 35
+}

@@ -33,6 +33,9 @@ class SupplierClaim:
     diagnostics: list[str] = field(default_factory=list)
     candidates: list[dict[str, Any]] = field(default_factory=list)
     boundary: dict[str, Any] = field(default_factory=dict)
+    # 답변 행의 문맥(2026-10-05 §3 05): 문항 ID·요청 내용·작성 메모·메모가 가리킨 문서 ID, 그리고
+    # 응답서 생성 직전에 붙이는 값 추적(`trace_claim_values`). 대조 단계가 원문 근거를 들어 설명한다.
+    context: dict[str, Any] = field(default_factory=dict)
 
 
 class ClaimSet(dict):
@@ -54,6 +57,11 @@ _TARGET = re.compile(r"목표|계획|전망|예정|지향|추진|target|plan|for
 _BOUNDARY = re.compile(r"[\n\f;/|]+|\.(?=\s|$)|(?=20\d{2}\s*년)")
 _QUESTION = re.compile(r"[?？]|(?:인가|하는가|되는가|있는가|있습니까|합니까)\s*$")
 _YEAR = re.compile(r"(20\d{2})\s*년")
+_QUESTION_ID = re.compile(r"^\s*([A-Z]{1,3}-\d{1,3})\s*$")
+_DOCUMENT_ID = re.compile(r"(?<![A-Za-z0-9])[A-Z]{2,}-[A-Z]{2,}-\d{4,}(?!\d)")
+_NOTE_WORDS = re.compile(r"메모|근거|출처|옮겨")
+# 회사 답변 값을 다른 지표 근거와 잇는 낱말(재활용률 문항). 메모가 문서를 가리키지 않을 때만 쓴다.
+_RECYCLE_VOCAB = re.compile(r"재활용|재투입|재사용|스크랩|폐기물|순환")
 
 _SAQ_FILENAME_HINTS = (
     "saq",
@@ -135,7 +143,9 @@ def parse_saq_claims(pdf_paths: list[str]) -> ClaimSet:
                 record = {"code": "E-6-2", "raw": context, "source": f"saq:{Path(path).name}",
                           "period": int(year.group(1)) if year else None,
                           "page": text[:offset + match.start()].count("\f"),
-                          "position": offset + match.start(), "input_value": raw_value}
+                          "position": offset + match.start(), "input_value": raw_value,
+                          "boundary": _stated_scope(context),
+                          "context": _answer_context(text, offset + match.start())}
                 if _QUESTION.search(context):
                     claims.diagnostics.append(dict(record, reason="question_not_answer"))
                 elif _TARGET.search(context):
@@ -157,8 +167,158 @@ def parse_saq_claims(pdf_paths: list[str]) -> ClaimSet:
             period=None if ambiguous else first["period"], page=first["page"], position=first["position"],
             status="ambiguous" if ambiguous else "reported",
             diagnostics=["여러 실적 주장값/연도가 상충하여 확정 불가"] if ambiguous else [],
-            candidates=candidates)
+            candidates=candidates,
+            boundary={} if ambiguous else first["boundary"],
+            context={} if ambiguous else first["context"])
     return claims
+
+
+def _stated_scope(raw: str) -> dict[str, Any]:
+    """답변 문장에 **직접 적힌** 기간·사업장·분모만 담은 경계. 추정한 값은 넣지 않는다."""
+    from ..ssot.boundary import derive_boundary
+    b = derive_boundary(raw, raw).to_dict()
+    inferred = set(b.get("inferred") or ())
+    keep = {}
+    if b.get("period_start") and b.get("period_end"):
+        keep.update({k: b[k] for k in ("period_year", "period_start", "period_end", "aggregation",
+                                        "coverage_months") if b.get(k)})
+    if b.get("site") and b.get("site_scope") not in (None, "", "unknown"):
+        keep.update({k: b[k] for k in ("site", "site_scope", "site_path") if b.get(k)})
+    if b.get("denominator_kind") not in (None, "", "unknown") and "denominator_kind" not in inferred:
+        keep.update(denominator=b.get("denominator"), denominator_kind=b["denominator_kind"])
+    return keep
+
+
+def _answer_context(text: str, position: int) -> dict[str, Any]:
+    """답변이 놓인 표 행의 문항 ID·요청 내용과, 같은 문항을 가리키는 작성 메모(문서 ID 포함)."""
+    before = [line.strip() for line in text[:position].splitlines()]
+    while before and not before[-1]:
+        before.pop()
+    if before:
+        before.pop()                        # 답변 자신이 시작된 줄(같은 칸의 앞부분)
+    qid, request = "", []
+    for line in reversed(before[-4:]):
+        m = _QUESTION_ID.match(line)
+        if m:
+            qid = m.group(1)
+            break
+        if line:
+            request.insert(0, line)
+    if not qid:
+        return {"scope_from": "answer_text"}
+    notes = [line.strip() for line in text.splitlines()
+             if qid in line and _NOTE_WORDS.search(line) and not _QUESTION_ID.match(line)]
+    return {"scope_from": "answer_text", "question_id": qid, "request": " ".join(request) if len(request) <= 2 else "",
+            "source_note": notes[0] if notes else "",
+            "source_ids": sorted({i for note in notes for i in _DOCUMENT_ID.findall(note)})}
+
+
+def trace_claim_values(claims: "ClaimSet | dict[str, SupplierClaim] | None", pipeline_output: Any):
+    """회사 답변 값과 **같은 값**을 가진 다른 지표 근거를 찾아 답변 문맥에 붙인다(새 판정 없음).
+
+    같은 요청 지표에 다른 분모의 값을 옮긴 경우(한울정밀 05: 외부 위탁 폐기물 재활용률 칸에 공정 스크랩
+    내부 재투입률 92%)를 원문 근거로 설명하기 위한 재료다. 요청 지표의 대표 근거에 적힌 계산식·분모 설명도
+    함께 담는다.
+
+    PR71 검토 R5: 값·단위·재활용 낱말만 보고 다른 기간·사업장·목표값이나, 작성 메모가 가리킨 문서를 찾지
+    못했을 때 무관한 문서의 같은 92%를 '옮긴 출처'로 지목했다. 값이 같다는 것은 탐색 단서일 뿐이다.
+      - `value_trace`(옮긴 출처): 작성 메모의 문서 ID가 **그 근거 문서 원문에** 있는 후보만. 후보의
+        기간·사업장·실적/목표 대조(`scope_check`)를 함께 싣는다 — 다른 범위면 호출부가 그 불일치를 설명한다.
+      - `value_leads`(탐색 단서): 직접 연결 없이 값만 같은 재활용 관련 후보. 출처로 설명하지 않는다.
+      - `note_link`: 메모의 문서 ID와 찾은 문서·찾지 못한 ID. 찾지 못했으면 다른 문서로 대신하지 않는다.
+    같은 92%인 교육 참석률은 단서로도 고르지 않는다.
+    """
+    from dataclasses import replace
+    if not claims:
+        return claims
+    graph = getattr(pipeline_output, "evidence_graph", None)
+    if graph is None:
+        return claims
+    texts = {ext.source_file: str(getattr(ext, "raw_text", "") or "")
+             for ext in getattr(pipeline_output, "ocr_extractions", []) or []}
+    out = ClaimSet(diagnostics=getattr(claims, "diagnostics", []))
+    for code, claim in claims.items():
+        value = getattr(claim, "value", None)
+        context = dict(getattr(claim, "context", {}) or {})
+        if value is None:
+            out[code] = claim
+            continue
+        ids = context.get("source_ids") or []
+        linked_files = sorted(f for f, text in texts.items() if any(i in text for i in ids))
+        if ids:
+            context["note_link"] = {"source_ids": list(ids), "found_in": linked_files,
+                                    "missing": [i for i in ids if not any(i in t for t in texts.values())]}
+        matches = []
+        for node in graph.nodes.values():
+            if node.metric == code or str(node.unit).strip() not in ("%", "％"):
+                continue
+            try:
+                if abs(float(node.value) - float(value)) >= 0.05:
+                    continue
+            except (TypeError, ValueError):
+                continue
+            matches.append({"node_id": node.id, "source_file": node.source_file, "metric": node.metric,
+                            "value": node.value, "unit": node.unit, "page": node.page,
+                            "quote": _basis_line(node), "linked_by_note": node.source_file in linked_files,
+                            "scope_check": _trace_scope(node, getattr(claim, "boundary", None) or {})})
+        context["value_trace"] = [m for m in matches if m["linked_by_note"]]
+        leads = [m for m in matches if not m["linked_by_note"] and _RECYCLE_VOCAB.search(m["metric"])]
+        if leads:
+            context["value_leads"] = leads
+        fact = (getattr(graph, "resolved_facts", {}) or {}).get(code)
+        rep = [graph.nodes[n] for n in (fact.representative_node_ids if fact else []) if n in graph.nodes]
+        if rep:
+            context["evidence_basis"] = {"source_file": rep[0].source_file, "value": rep[0].value,
+                                         "unit": rep[0].unit, "basis": _basis_line(rep[0])}
+        out[code] = replace(claim, context=context)
+    return out
+
+
+def _trace_scope(node: Any, stated: dict[str, Any]) -> dict[str, str]:
+    """같은 값 후보의 기간·사업장·실적/목표를 회사 답변에 적힌 범위와 대조한다.
+
+    period·site: same(같음) | different(다름) | not_stated(어느 한쪽에 없음). 기간은 원문 구간이 같을 때만
+    same이다 — 겹치기만 하면(연간 ↔ 4월) different. role: actual | target(목표·계획) | unknown.
+    """
+    b = getattr(node, "boundary", None)
+    get = (lambda k: getattr(b, k, None)) if b is not None else (lambda k: None)
+    start, end = str(get("period_start") or ""), str(get("period_end") or "")
+    s_start, s_end = str(stated.get("period_start") or ""), str(stated.get("period_end") or "")
+    year = get("period_year") or getattr(node, "period", None)
+    if start and end and s_start and s_end:
+        period = "same" if (start, end) == (s_start, s_end) else "different"
+    elif year and s_start and str(year) != s_start[:4]:
+        period = "different"
+    else:
+        period = "not_stated"
+    site, s_site = re.sub(r"\s+", "", str(get("site") or "")), re.sub(r"\s+", "", str(stated.get("site") or ""))
+    if site and s_site:
+        # 지역을 뺀 표기(`제1공장`)는 지역이 붙은 같은 사업장(`김해제1공장`)과 같다고 본다 — 번호·종류는 같아야 한다.
+        same = site == s_site or (site.endswith(s_site) or s_site.endswith(site)) and \
+            re.search(r"제?\d+(?:공장|사업장)$", min(site, s_site, key=len))
+        site_state = "same" if same else "different"
+    else:
+        site_state = "not_stated"
+    basis = str(get("basis") or "unknown")
+    role = "target" if getattr(node, "value_role", "") == "target" or basis in ("target", "plan") \
+        else "actual" if basis == "actual" else "unknown"
+    return {"period": period, "site": site_state, "role": role,
+            "period_text": f"{start}~{end}" if start and end else (str(year) if year else ""),
+            "site_text": str(get("site") or "")}
+
+
+def _basis_line(node: Any) -> str:
+    """근거의 계산식·분모 설명 줄(`계산: … ÷ …`). 없으면 인용 첫 줄."""
+    quotes = [str(getattr(node, "quote", "") or "")]
+    quotes += [str(p.get("quote") or "") for p in (getattr(node.boundary, "provenance", ()) or ())
+               if isinstance(p, dict)]
+    lines = [line.strip() for q in quotes for line in q.splitlines() if line.strip()]
+    calc = [line for line in lines if "÷" in line or line.startswith("계산")]
+    # 분자·분모 정의 줄은 완결된 문장까지만 싣는다 — 줄바꿈에서 끊긴 꼬리를 인용처럼 보이지 않게 한다.
+    denominators = [line[:line.rfind(".") + 1] for line in lines
+                    if line.startswith(("분자", "분모")) and "." in line]
+    picked = list(dict.fromkeys(calc[:1] + denominators[:1]))
+    return " / ".join(picked) or (lines[0] if lines else "")
 
 
 def merge_claims(*sources: dict[str, SupplierClaim] | None) -> ClaimSet:

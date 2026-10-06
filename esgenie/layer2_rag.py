@@ -142,6 +142,9 @@ class GenerationResult:
     text: str
     context: RAGContext
     used_mock_llm: bool
+    # 생성 경로가 결정적으로 넣은 표(원장 표·원문 확인 수치 표) 원문. 보고서 조립의 본문 대조가 LLM 표와 출처로
+    # 구분한다(PR71 재검토 B — 표 제목·열 이름으로 가리지 않는다).
+    system_tables: tuple[str, ...] = ()
 
 
 @dataclass
@@ -431,6 +434,7 @@ class HybridRAG:
         context: RAGContext | None = None,
         corp: CorpIndex,
         extraction: Any | None = None,  # ExtractionResult | None — 있으면 본문 형식 v2
+        evidence_graph: Any | None = None,  # EvidenceGraph | None — 코드 없는 원문 집계(v2 생성 입력)
     ) -> GenerationResult:
         assert area in ("E", "S", "G"), "area must be one of E/S/G"
         ctx = context or self.retrieve_for_area(area, k=5, corp=corp)
@@ -457,6 +461,7 @@ class HybridRAG:
                     covered=covered, missing=missing,
                     extra_instruction=extra_instruction,
                     demo_greenwash=demo_greenwash, system=system,
+                    evidence_graph=evidence_graph,
                 )
             # 영역 내 항목이 전무하면 v1 형식으로 폴백
 
@@ -499,6 +504,7 @@ class HybridRAG:
         extra_instruction: str | None,
         demo_greenwash: bool,
         system: str,
+        evidence_graph: Any | None = None,
     ) -> GenerationResult:
         """본문 형식 v2 — 핵심 지표 표는 코드가 결정적으로 생성, LLM은 서술만.
 
@@ -513,9 +519,21 @@ class HybridRAG:
             ctx.corp_hits.append((pseudo, 1.0))  # 재생성 루프에서 중복 부착 방지
 
         ledger_lines = "\n".join(
-            f"- {r['code']} {r['name']}: {_row_value(r)}" for r in covered
+            f"- {r['code']} {r['name']}: {_row_value(r)}" + _row_scope_note(r) for r in covered
         )
         missing_names = ", ".join(f"{r['code']} {r['name']}" for r in missing) or "없음"
+        facts_chunk = _source_facts_chunk(evidence_graph, ctx, area)
+        facts_block = ""
+        if facts_chunk is not None:
+            if not any(doc.chunk_id == facts_chunk.chunk_id for doc, _ in ctx.corp_hits):
+                ctx.corp_hits.append((facts_chunk, 1.0))
+            # PR71 검토 R1: 코드 없는 교육 집계가 생성 입력에 없어 모델이 명단 일부를 세어 '정규직 15명'을 썼다.
+            facts_block = (
+                f"[원문 확인 수치(K-ESG 코드 없음)] — 인원·물량 등 원장 밖 수치는 아래 값만 쓸 수 있으며, 그 문장 끝에 "
+                f"[{facts_chunk.chunk_id}]를 인용하시오. 값의 역할(대상·참석·미참석 등)·날짜·사업장을 바꾸거나, 서로 "
+                "더하거나, 명단·표를 직접 세어 새 수치를 만들지 마시오. 기간·날짜가 다른 값은 각각의 날짜와 함께 구분해 "
+                "쓰고 하나로 합치거나 바꾸지 마시오:\n"
+                + "\n".join(_fact_line(r) for r in facts_chunk.meta["facts"]) + "\n\n")
 
         user = (
             f"회사: {report.corp_name} ({report.industry}, {report.report_year}년)\n"
@@ -524,6 +542,7 @@ class HybridRAG:
             f"수치가 든 문장 끝에는 [{pseudo.chunk_id}]를 인용하시오:\n{ledger_lines}\n\n"
             f"[미공시 항목] — 값을 지어내지 말 것. '향후 계획 및 공시 보완 과제'에서 "
             f"보완 대상으로만 언급 가능: {missing_names}\n\n"
+            f"{facts_block}"
             f"검색된 참조 자료:\n{ctx.as_context_text()}\n\n"
             f"참조용 원문 데이터(JSON):\n{json.dumps(report.to_context_dict(), ensure_ascii=False)}\n\n"
             f"요청: {area_name} 영역 보고서의 서술부만 아래 형식 그대로 작성하시오. "
@@ -539,8 +558,12 @@ class HybridRAG:
             "### 향후 계획 및 공시 보완 과제\n"
             "(단기 개선 목표 1~2문장 + 미공시 항목 중 보완 우선순위 1~2개 언급)\n\n"
             "주의: 공시 지표 수치는 위 원장에 있는 값만 쓰고 해당 원장을 인용하시오. "
+            "원장 값의 [범위]·[상태]를 넘어서는 기간·사업장·집계 표현(전체·전사·연간·합산·모든 사업장 등)을 "
+            "쓰지 마시오. [상태]가 '요청 범위 실적 미확정'이거나 '부분값'인 값은 그 상태와 범위를 같은 문장에 "
+            "밝히고 확정 실적이나 전체 범위 값으로 단정하지 마시오. "
             "검색 청크는 활동·정책 설명에 사용하되 원장 밖 지표 수치를 추가하지 마시오. "
-            "근거 없는 과장 표현(혁신적, 압도적, 최고 수준 등)을 사용하지 마시오. "
+            + ("원장 밖 인원·물량은 [원문 확인 수치]에 있는 값만 쓰시오. " if facts_block else "")
+            + "근거 없는 과장 표현(혁신적, 압도적, 최고 수준 등)을 사용하지 마시오. "
             f"다음 모호 표현을 쓰지 마시오: {_vague_ban_terms()}. "
             "목표·전망 수치는 반드시 '목표', '계획' 등의 단어와 연도를 함께 명시하시오. "
             f"모든 주장 문장 끝에 [chunk_id] 또는 [{pseudo.chunk_id}]를 표기하시오."
@@ -553,8 +576,11 @@ class HybridRAG:
         variant = "greenwash" if demo_greenwash else "clean"
         resp = CLIENT.complete(system, user, mock_hint="generate", mock_variant=variant)
         table_md = _render_kesg_table(covered, missing)
+        if facts_chunk is not None:
+            table_md += _render_source_facts_table(facts_chunk.meta["facts"])
         body = _assemble_section_v2(resp.content.strip(), table_md, area_name)
-        return GenerationResult(area=area, text=body, context=ctx, used_mock_llm=resp.used_mock)
+        return GenerationResult(area=area, text=body, context=ctx, used_mock_llm=resp.used_mock,
+                                system_tables=(table_md,))
 
 
 # ====================================================================
@@ -593,12 +619,18 @@ def _area_item_rows(
         # D1은 이 오류를 못 잡으므로(원장·노드가 같은 값이라 Δ=0) 이 표기가 유일한 방어선이다.
         if "partial_value" in flags:
             status += "·부분값"
+        # 원문 사실로만 보존한 값(SOURCE_ONLY)은 요청 범위의 확정 실적이 아니다(2026-10-05 §4).
+        if "scope_source_only" in flags:
+            status += "·범위미확정"
+        scope, state = _ledger_scope_state(entry, flags)
         covered.append({
             "code": code,
             "name": entry.get("name") or code,
             "value": entry.get("value"),
             "unit": entry.get("unit") or "",
             "status": status,
+            "scope": scope,
+            "state": state,
         })
     missing: list[dict[str, Any]] = []
     # 보류 사유 표기(2026-09-20). 근거 노드가 실제로 있는데 승격되지 않은 항목이
@@ -627,6 +659,37 @@ def _area_item_rows(
     return covered, missing
 
 
+def _ledger_scope_state(entry: dict[str, Any], flags: list[str]) -> tuple[str, str]:
+    """원장 값의 측정 범위 표기와 확정 상태 문구(LLM 입력·원장 의사 청크용, 2026-10-05 §4).
+
+    값만 넘기면 모델이 범위를 지어낸다(실측: 4월 김해 제1공장 전력만의 0.513216 TJ를 '사업장 전체의
+    월별 전기·가스 합산'으로 서술). 원장이 이미 판정한 경계·완결성·범위 미확정 사유를 그대로 싣는다.
+    """
+    from .ssot.boundary import Boundary
+    fact = entry.get("resolved_fact") or {}
+    if not fact:
+        return "", ""
+    scope = Boundary.from_dict(fact.get("boundary") or {}).label()
+    states = []
+    if "scope_source_only" in flags:
+        note = next(iter(fact.get("scope_notes") or ()), "")
+        states.append("요청 범위 실적 미확정 — 원문 범위로만 보존" + (f"({note})" if note else ""))
+    if "partial_value" in flags or fact.get("completeness") == "partial" or "incomplete_scope" in flags:
+        states.append("부분값 — 전체·연간 값 아님")
+    if "source_conflict" in flags:
+        states.append("원측정값 상충")
+    return scope, "; ".join(states)
+
+
+def _row_scope_note(r: dict[str, Any]) -> str:
+    parts = []
+    if r.get("scope"):
+        parts.append(f"[범위: {r['scope']}]")
+    if r.get("state"):
+        parts.append(f"[상태: {r['state']}]")
+    return (" " + " ".join(parts)) if parts else ""
+
+
 def _row_value(r: dict[str, Any]) -> str:
     v = r.get("value")
     if v is None or v == "":
@@ -652,10 +715,56 @@ def _render_kesg_table(
     return "\n".join(lines)
 
 
+def _source_facts_chunk(evidence_graph: Any | None, ctx: RAGContext, area: str) -> IndexedDoc | None:
+    """생성 문맥이 근거로 삼은 문서의 코드 없는 원문 집계를 인용 가능한 청크로 만든다(PR71 검토 R1).
+
+    값·역할·기간·사업장·출처가 붙은 사실만 싣는다(`report_claims.source_facts`). 메타의 `facts`는 보고서
+    조립 단계의 수량 대조가 같은 사실을 쓰게 한다. 근거 문서가 없거나 사실이 없으면 None(프롬프트 불변).
+    """
+    from .report_claims import source_facts
+    if evidence_graph is None:
+        return None
+    files = {str(doc.meta.get("source_file")) for doc, _ in ctx.all_hits() if doc.meta.get("source_file")}
+    rows = source_facts(evidence_graph, files) if files else []
+    if not rows:
+        return None
+    return IndexedDoc(
+        text=f"원문 확인 수치({area}, K-ESG 코드 없음): " + " ; ".join(_fact_line(r)[2:] for r in rows),
+        meta={"source": "source_facts", "area": area, "facts": rows},
+        chunk_id=f"source_facts_{area}",
+    )
+
+
+def _render_source_facts_table(rows: list[dict[str, Any]]) -> str:
+    """코드 없는 원문 집계 중 역할·기간이 붙은 값의 결정적 표(PR71 후속). LLM 서술과 상관없이 날짜·역할·출처를 싣는다.
+
+    실측: 실제 생성 본문이 4월 22일 참석 46명과 추가 교육을 쓰면서도 추가 교육 뒤 중복 제외 합계를 쓰지 않았다.
+    값은 원문 확인 수치 그대로다(모델을 거치지 않는다).
+    """
+    from .report_claims import fact_site_display, table_rows
+    picked = table_rows(rows)
+    if not picked:
+        return ""
+    lines = ["", "", "### 원문 확인 수치(K-ESG 코드 없음)", "",
+             "| 항목 | 값 | 기간 | 사업장 | 출처 |", "|---|---|---|---|---|"]
+    for r in picked:
+        value = f"{r['value']:g}" if isinstance(r["value"], float) else str(r["value"])
+        page = r.get("page")
+        source = (r.get("source_file") or "미상") + (f" {page + 1}쪽" if isinstance(page, int) else "")
+        lines.append(f"| {r['label']} | {value}{r.get('unit') or ''} | {r.get('period_text') or '원문 기간 미기록'} | "
+                     f"{fact_site_display(r)} | {source} |")
+    return "\n".join(lines)
+
+
+def _fact_line(row: dict[str, Any]) -> str:
+    from .report_claims import fact_line
+    return fact_line(row)
+
+
 def _kesg_pseudo_chunk(covered: list[dict[str, Any]], area: str) -> IndexedDoc:
     """공시값 원장을 인용 가능한 청크로 승격 — 지표 해설 문장이 [kesg_items_{area}]를
     인용하면 grounding 게이트의 숫자 대조(G2)가 원장 텍스트에서 값을 찾는다."""
-    text = " ; ".join(f"{r['code']} {r['name']} {_row_value(r)}" for r in covered)
+    text = " ; ".join(f"{r['code']} {r['name']} {_row_value(r)}{_row_scope_note(r)}" for r in covered)
     return IndexedDoc(
         text=f"K-ESG 공시값 원장({area}): {text}",
         meta={"source": "kesg_extraction", "area": area},

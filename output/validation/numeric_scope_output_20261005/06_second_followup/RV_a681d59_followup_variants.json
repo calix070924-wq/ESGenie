@@ -1,0 +1,185 @@
+{
+  "stage": "/Users/heojeongmin/Documents/Claude/Projects/ESGenie/output/reviews/pr71_20261005/second_followup_fix_validation/05_final_a681d59/runs/RV_a681d59/followup",
+  "rows": [
+    {
+      "event": "section_S",
+      "variant": "A 날짜 오기·원문 청크 인용",
+      "expect": "hold",
+      "kind": "sentence",
+      "in_markdown": false,
+      "in_pdf": false,
+      "replaced_records": 5,
+      "hold_output": "[확인 보류] 생성 문장의 수치(46명)는 원문에서 다른 날짜의 값으로만 확인돼 이 문장을 본문에 싣지 않았습니다. 원문 확인 값: 4월 27일 추가 참석 · 고유 인원 4명(2026-04-27) — 13_안전보건추가교육실시기록_2026-04-27.pdf.",
+      "reason": "relation_mismatch",
+      "problems": [
+        "date"
+      ],
+      "pass": true
+    },
+    {
+      "event": "section_S",
+      "variant": "A 날짜 오기·인용 없음",
+      "expect": "hold",
+      "kind": "sentence",
+      "in_markdown": false,
+      "in_pdf": false,
+      "replaced_records": 5,
+      "hold_output": "[확인 보류] 생성 문장의 수치(46명)는 원문에서 다른 날짜의 값으로만 확인돼 이 문장을 본문에 싣지 않았습니다. 원문 확인 값: 4월 27일 추가 참석 · 고유 인원 4명(2026-04-27) — 13_안전보건추가교육실시기록_2026-04-27.pdf.",
+      "reason": "relation_mismatch",
+      "problems": [
+        "date"
+      ],
+      "pass": true
+    },
+    {
+      "event": "section_S",
+      "variant": "A 날짜 오기·구조화 사실 인용",
+      "expect": "hold",
+      "kind": "sentence",
+      "in_markdown": false,
+      "in_pdf": false,
+      "replaced_records": 5,
+      "hold_output": "[확인 보류] 생성 문장의 수치(46명)는 원문에서 다른 날짜의 값으로만 확인돼 이 문장을 본문에 싣지 않았습니다. 원문 확인 값: 4월 27일 추가 참석 · 고유 인원 4명(2026-04-27) — 13_안전보건추가교육실시기록_2026-04-27.pdf.",
+      "reason": "relation_mismatch",
+      "problems": [
+        "date"
+      ],
+      "pass": true
+    },
+    {
+      "event": "section_S",
+      "variant": "B 인용 없는 표의 근거 없는 수량",
+      "expect": "hold",
+      "kind": "table",
+      "in_markdown": false,
+      "in_pdf": false,
+      "replaced_records": 1,
+      "hold_output": "| 교육 참석 인원 | [확인 보류] |",
+      "reason": "orphan_number",
+      "problems": null,
+      "pass": true
+    },
+    {
+      "event": "section_S",
+      "variant": "B 제목의 날짜 오기",
+      "expect": "hold",
+      "kind": "heading",
+      "in_markdown": false,
+      "in_pdf": false,
+      "replaced_records": 1,
+      "hold_output": "2026년 4월 27일 교육 참석 [확인 보류]",
+      "reason": "relation_mismatch",
+      "problems": [
+        "date"
+      ],
+      "pass": true
+    },
+    {
+      "event": "section_S",
+      "variant": "D 고용형태 뒤바꿈·구조화 사실 인용",
+      "expect": "hold",
+      "kind": "sentence",
+      "in_markdown": false,
+      "in_pdf": false,
+      "replaced_records": 3,
+      "hold_output": "[확인 보류] 생성 문장의 수치(6명, 40명)는 인용 근거·원문 확인 수치에서 찾지 못해 이 문장을 본문에 싣지 않았습니다. 원문 확인 값: 이번 교육 출석 집계 · 대상 50명(2026-04-22) — 09_안전보건교육실시기록_2026-04-22.pdf; 교육 참석 인원 46명(2026-04-22) — 09_안전보건교육실시기록_2026-04-22.pdf; 교육 미참석 인원 4명(2026-04-22) — 09_안전보건교육실시",
+      "reason": "orphan_number",
+      "problems": null,
+      "pass": true
+    },
+    {
+      "event": "section_S",
+      "variant": "D 고용형태 뒤바꿈·인용 없음",
+      "expect": "hold",
+      "kind": "sentence",
+      "in_markdown": false,
+      "in_pdf": false,
+      "replaced_records": 3,
+      "hold_output": "[확인 보류] 생성 문장의 수치(6명, 40명)는 인용 근거·원문 확인 수치에서 찾지 못해 이 문장을 본문에 싣지 않았습니다. 원문 확인 값: 이번 교육 출석 집계 · 대상 50명(2026-04-22) — 09_안전보건교육실시기록_2026-04-22.pdf; 교육 참석 인원 46명(2026-04-22) — 09_안전보건교육실시기록_2026-04-22.pdf; 교육 미참석 인원 4명(2026-04-22) — 09_안전보건교육실시",
+      "reason": "orphan_number",
+      "problems": null,
+      "pass": true
+    },
+    {
+      "event": "section_S",
+      "variant": "D 고용형태 표(열 머리)",
+      "expect": "hold",
+      "kind": "table",
+      "in_markdown": false,
+      "in_pdf": false,
+      "replaced_records": 7,
+      "hold_output": "[확인 보류] 생성 문장의 수치(6명, 40명)는 인용 근거·원문 확인 수치에서 찾지 못해 이 문장을 본문에 싣지 않았습니다. 원문 확인 값: 이번 교육 출석 집계 · 대상 50명(2026-04-22) — 09_안전보건교육실시기록_2026-04-22.pdf; 교육 참석 인원 46명(2026-04-22) — 09_안전보건교육실시기록_2026-04-22.pdf; 교육 미참석 인원 4명(2026-04-22) — 09_안전보건교육실시",
+      "reason": "orphan_number",
+      "problems": null,
+      "pass": true
+    },
+    {
+      "event": "section_S",
+      "variant": "D 정답 내역이나 원문 미기재",
+      "expect": "hold",
+      "kind": "sentence",
+      "in_markdown": false,
+      "in_pdf": false,
+      "replaced_records": 2,
+      "hold_output": "[확인 보류] 생성 문장의 수치(40명, 6명)는 인용 근거·원문 확인 수치에서 찾지 못해 이 문장을 본문에 싣지 않았습니다. 원문 확인 값: 이번 교육 출석 집계 · 대상 50명(2026-04-22) — 09_안전보건교육실시기록_2026-04-22.pdf; 교육 참석 인원 46명(2026-04-22) — 09_안전보건교육실시기록_2026-04-22.pdf; 교육 미참석 인원 4명(2026-04-22) — 09_안전보건교육실시",
+      "reason": "orphan_number",
+      "problems": null,
+      "pass": true
+    },
+    {
+      "event": "section_S",
+      "variant": "정상 4/22 참석 46명",
+      "expect": "keep",
+      "kind": "sentence",
+      "in_markdown": true,
+      "in_pdf": true,
+      "replaced_records": 0,
+      "hold_output": "",
+      "reason": "",
+      "problems": null,
+      "pass": true
+    },
+    {
+      "event": "section_S",
+      "variant": "정상 4/27 추가 참석 4명",
+      "expect": "keep",
+      "kind": "sentence",
+      "in_markdown": true,
+      "in_pdf": true,
+      "replaced_records": 0,
+      "hold_output": "",
+      "reason": "",
+      "problems": null,
+      "pass": true
+    },
+    {
+      "event": "summary",
+      "variant": "요약 고용형태 뒤바꿈",
+      "expect": "hold",
+      "kind": "sentence",
+      "in_markdown": false,
+      "in_pdf": false,
+      "replaced_records": 1,
+      "hold_output": "[확인 보류] 생성 문장의 수치(6명, 40명)는 인용 근거·원문 확인 수치에서 찾지 못해 이 문장을 본문에 싣지 않았습니다. 원문 확인 값: 이번 교육 출석 집계 · 대상 50명(2026-04-22) — 09_안전보건교육실시기록_2026-04-22.pdf; 교육 참석 인원 46명(2026-04-22) — 09_안전보건교육실시기록_2026-04-22.pdf; 교육 미참석 인원 4명(2026-04-22) — 09_안전보건교육실시",
+      "reason": "orphan_number",
+      "problems": null,
+      "pass": true
+    },
+    {
+      "event": "summary",
+      "variant": "요약 날짜 오기",
+      "expect": "hold",
+      "kind": "sentence",
+      "in_markdown": false,
+      "in_pdf": false,
+      "replaced_records": 5,
+      "hold_output": "[확인 보류] 생성 문장의 수치(46명)는 원문에서 다른 날짜의 값으로만 확인돼 이 문장을 본문에 싣지 않았습니다. 원문 확인 값: 4월 27일 추가 참석 · 고유 인원 4명(2026-04-27) — 13_안전보건추가교육실시기록_2026-04-27.pdf.",
+      "reason": "relation_mismatch",
+      "problems": [
+        "date"
+      ],
+      "pass": true
+    }
+  ],
+  "all_pass": true
+}

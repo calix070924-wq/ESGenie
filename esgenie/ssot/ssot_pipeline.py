@@ -457,9 +457,16 @@ def build_rag_with_ssot(
             # ssot_local 보고서에서만 K-ESG 코드가 아닌 수치 청크를 생성 컨텍스트에서 뺀다.
             if local_report and _by_code(node.metric) is None:
                 continue
+            # 원문 사실로만 보존한 0(SOURCE_ONLY)은 요청 범위 실적이 아니다 — 생성 문맥에서도 그 상태와
+            # 원문 범위를 함께 싣는다(2026-10-05 §4). 그 밖의 노드 문구는 바꾸지 않는다(검색 결과 보존).
+            from .selection import _scope_source_only
+            source_only = ""
+            if _scope_source_only(node.boundary):
+                source_only = (f", 요청 범위 실적 미확정 — 원문 범위로만 보존"
+                               f"({node.boundary.label() or '원문 범위 미기록'})")
             text = (
                 f"[{node.metric}] {node.value}{node.unit} "
-                f"({node.period}년, 출처: {node.source_file or node.source}, "
+                f"({node.period}년{source_only}, 출처: {node.source_file or node.source}, "
                 f"신뢰도: {node.confidence:.2f})"
             )
             ocr_docs.append(IndexedDoc(

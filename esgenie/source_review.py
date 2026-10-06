@@ -194,6 +194,24 @@ def _reconciliation_reviews(ext: Any) -> list[ReviewFinding]:
                     f"{cause} 추출값을 바꾸지 않고 그대로 두었습니다.",
                     "원본의 해당 문장에서 이 지표의 값과 단위를 확인하고, 다르면 올바른 값으로 수정하세요.",
                     check_reason="scale_chain_unresolved", check_result=dict(record), evidence=[ref]))
+            elif reason == "label_from_table_header":
+                findings.append(_finding(
+                    "data_quality", "원문 표 칸 라벨로 정정",
+                    f"{record.get('model_label') or '모델 라벨'} → {hint}: "
+                    f"{_with_unit(record.get('value'), record.get('unit'))}{period}",
+                    f"모델이 붙인 라벨이 값이 놓인 원문 칸의 행·열 머리"
+                    f"({record.get('row_label') or '행 라벨 없음'} / {record.get('column_header') or '열 머리 없음'})와 달라 "
+                    "원문 라벨로 바꿨습니다. 모델의 원래 라벨은 감사 기록에 남겼습니다.",
+                    "원본 표에서 이 값의 행과 열을 확인하세요.",
+                    check_reason="label_from_table_header", check_result=dict(record), evidence=[ref]))
+            elif reason == "zero_recovered_from_negation":
+                findings.append(_finding(
+                    "data_quality", "원문 부정 서술로 0 보존",
+                    f"{hint}: 모델 값 없음 → 0{period}",
+                    "모델이 값을 비웠지만 인용 원문이 같은 지표의 명시적 미보유·미발생 서술이라 0으로 보존했습니다"
+                    f"(판정 {record.get('status') or '미기록'}/{record.get('cause') or '미기록'}). 미확인·누락과 다릅니다.",
+                    "원문 서술과 기준일을 확인하세요.",
+                    check_reason="zero_recovered_from_negation", check_result=dict(record), evidence=[ref]))
             elif reason == "value_not_written_in_evidence":
                 findings.append(_finding(
                     "data_quality", "인용에 직접 적히지 않은 값 확인",
@@ -442,6 +460,9 @@ def build_source_review(output: Any) -> list[ReviewFinding]:
                 if node is not None and node.source_file not in mock_sources:
                     finding.evidence.append(_reference(node, role=_evidence_role(finding, node)))
                     seen.add(node_id)
+    # 작성 문장은 보고서 본문과 같은 수량 대조를 거친다 — 본문이 보류한 문장을 확인 목록이 `확인된 내용`으로 되살리지 않는다.
+    from .layer6_report import review_generated_findings
+    findings = review_generated_findings(output, findings)
     # 같은 근거·사유를 여러 소비 경로가 보고해도 목록에서는 한 번만 표시한다.
     return list({finding.id: finding for finding in findings}.values())
 
@@ -561,7 +582,10 @@ def review_markdown(findings: list[ReviewFinding]) -> str:
         return "현재 확보한 근거와 수행한 검사에서 추가 확인 사항이 기록되지 않았습니다."
     parts = ["원문 사실·자료 품질·작성 문장에서 확인할 사항입니다. 기존 그린워싱 점수와 구분하여 검토하세요."]
     for finding in findings:
-        parts.extend([f"### {plain(finding.title)}", f"**확인된 내용:** {plain(finding.fact)}",
+        # 작성 문장을 본문 대조가 보류했으면 그 보류 문구를 싣는다(`layer6_report.review_generated_findings`) — 모델 원문은
+        # `fact`·감사 기록에만 둔다.
+        shown = (finding.check_result or {}).get("display_fact") or finding.fact
+        parts.extend([f"### {plain(finding.title)}", f"**확인된 내용:** {plain(shown)}",
                       f"**판단 이유:** {plain(finding.reason)}", f"**확인·보완:** {plain(finding.action)}"])
         for ref in finding.evidence:
             location = f"{ref.page + 1}쪽" if isinstance(ref.page, int) and ref.page >= 0 else "페이지 미확인"
