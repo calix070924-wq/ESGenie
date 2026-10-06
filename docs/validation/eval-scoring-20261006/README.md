@@ -554,3 +554,109 @@ ZIP에는 들어가지 않았다**(전달 전에 고쳤고, 최종 ZIP의 sha256
 
 이번 작업에는 측정 수치가 없다. 도구가 생겼을 뿐이다. 보고서에 쓸 수치는 **2026-10-15
 동결 후보 커밋에서 다시 측정**하며, 그때도 라벨을 먼저 커밋한 뒤 채점한다.
+
+## 9. 2026-10-07 — §4 원문 확인 후 정리 (지민 승인)
+
+작업지시서 원문을 확보해(`/Users/jangjimin/Downloads/작업지시서_A_응답품질채점_작업시간계측_2026-10-05.md`)
+§2·§4와 이 저장소의 구현을 대조한 결과를 반영했다. **이 절은 §1~§8을 고쳐 쓰지 않고
+덧붙인 것이다** — 2026-10-06 시점의 정의·결과를 그대로 보존한다.
+
+### 9.1 공통 형식 — 외부 3값 / 내부 상세 상태
+
+| 항목 | 2026-10-06 (보존) | 2026-10-07 (현재) |
+|---|---|---|
+| `format_version` | `1.0-draft` | `1.1-draft` |
+| `decision` | 6값 (`confirmed`·`unverified_submitted`·`hold`·`not_applicable`·`unparsed`·`undetermined`) | **§4 원문의 3값** `answer`/`hold`/`na`, 정상 3값을 부여할 수 없는 행은 **`null`(명시)** |
+| 상세 상태 | `decision`이 겸했다 | `decision_detail`에 **6값 그대로 보존**. 대응은 `DETAIL_TO_DECISION` 표 하나 |
+| 자료 구분 | `meta.data_source` 필수 자유 문자열 | `meta.dataset_tag` 필수 enum(`virtual`/`public_report`/`real_pilot`) + `meta.material_kind` 선택 + `data_source`는 설명으로 내림 |
+
+**내부 채점 로직은 다시 쓰지 않았다.** 채점기는 이전과 같이 6값(상세 상태)으로 판정하고,
+읽는 지점만 `decision` → `decision_detail`로 바뀌었다(`af.detail_of()`). `decision_detail`이
+없으면 **자유 문구에서 복원하지 않고** 누락으로 드러내 `unresolved`로 남긴다.
+
+정보 유실 여부를 고정한 테스트:
+
+- `tests/test_eval_answer_format.py::test_external_three_values_do_not_lose_the_internal_state`
+  — 정상·미검증 전달·보류·해당 없음·판정 미정 다섯 경우를 어댑터에 통과시켜 외부 3값과
+  상세 상태·원본 `status`/`comparison`이 **모두** 남는지 본다.
+- `::test_unparsed_row_keeps_its_own_state_separate_from_hold` — 파싱 실패와 보류가
+  외부 값부터 다르다.
+- `::test_example_documents_cover_the_five_states_without_losing_information` — 커밋된
+  예시 두 개가 같은 다섯 상태를 담는다.
+- `::test_missing_decision_detail_is_not_restored_from_free_text`
+- `::test_scoring_reads_the_five_states_as_five_distinct_verdicts`
+
+### 9.2 출처 정정 — `boundary`·`completeness`는 원문 요구사항이 아니다
+
+**§4 원문에는 `boundary` 6필드와 `completeness` 규정이 없다.** A 확장 초안에서 온 것이다.
+2026-10-06 문서가 이를 원문 명세처럼 적은 것을 정정했다(`docs/공통답안형식_v1.1초안_2026-10-07.md` §3,
+`esgenie/eval/answer_format.py` 머리말·`BOUNDARY_FIELDS` 주석).
+
+기존 확장은 **없애지 않았다.** 다만 원문 요구사항으로 기록하지 않는다. 유지/제거는 B와
+합의할 사항이다(I-4).
+
+### 9.3 자동응답률 — 제품 지표와 공통 비교 지표의 분리 (지민 승인)
+
+§2.3 원문("기존 `ResponseSheet.auto_pct`를 그대로 쓴다. 재정의하지 않는다")과
+2026-10-06에 확정한 M4(`confirmed / 예상 문항 전체`)가 **다른 수를 낸다.** 한쪽을 고르지
+않고 셋으로 나눴다.
+
+| 지표 | 정의 | 상태 |
+|---|---|---|
+| 제품 자동응답률 `auto_pct` | 분자 = `status ∈ {verified, self_reported, flagged}` **이고 값이 채워진** 문항 / 분모 = `status != not_applicable` 전체, 백분율 1자리 | **제품 코드 그대로.** `esgenie/supplychain/schema.py`는 **읽기만** 했다. `meta.product_metrics`에 조건·분모·주의와 함께 복사해 둔다 |
+| `M4_확정_제출률` | `confirmed` / 예상 문항 전체(실행·단계별) | **정의·결과 불변.** 이름만 `M4_자동응답률`에서 갈랐다. 이전 이름은 지표 `note`에 `M4_PREVIOUS_NAME`으로 남아 있다 |
+| `M6_값_제출률` | **실제 값이 있는** `confirmed`·`unverified_submitted` / 예상 문항 전체 | 보조 A3에서 공통 지표로 승격. **이전 정의(값 없는 행 포함)의 수치는 보조 `A3_값_제출률_이전정의`로 함께 남긴다** |
+
+- **대조군에는 제품 고유 `auto_pct`가 없다.** 보고서의 `documents[].product_metrics`는
+  `null`이고, 없는 지표를 0으로 적지 않는다(`product_metrics_note`에 명시).
+- 양쪽 비교는 **같은 정의의** M4·M6으로만 한다.
+- 기존 `auto_pct`가 미검증 답변을 분자에 넣는다는 사실은 정의표에 그대로 적었다. 그것을
+  확정 집계나 정답 판정의 정의로 가져오지 않았다.
+- **Q7(보고 단위에 `unresolved` 행이 있으면 공식 비율 전체 보류)은 바꾸지 않았다.**
+  구현(`_ratio(undetermined=...)`)도 그대로다.
+- **2026-10-06에 후속 승인된 행별 판정표도 되돌리지 않았다.** 원문을 확인했다는 이유로
+  이후 승인 사항을 뒤집지 않는다.
+
+관련 테스트: `tests/test_eval_response_scoring.py::test_m6_value_submission_share_counts_only_rows_with_a_value`,
+`::test_m4_and_m6_are_separate_metrics_with_the_same_denominator`,
+`::test_product_auto_pct_is_carried_through_untouched_and_absent_for_the_control`.
+
+### 9.4 §2.4 단위 동치 — 적용 가능 여부 확인 결과: **적용했다**
+
+원문 §2.4: "단위 동치는 기존 `esgenie` 유틸을 재사용한다(`tCO2e`≡`tCO2eq` 등). 새
+환산표를 만들지 않는다."
+
+| 범위 | 판단 | 근거 |
+|---|---|---|
+| **같은 단위의 별칭** (`tCO2e`≡`tCO2eq`, `톤`≡`t`≡`ton`, `kg`≡`㎏`) | **적용 가능 — 적용했다** | `esgenie/rag_gates/units.py::normalize_unit`을 **읽어 쓴다**(제품 유틸 수정 없음). 별칭 95개를 표준형으로 모으는데, 배율이 다른 단위가 같은 표준형으로 모이는 충돌은 없다(`만t`과 `t`는 별도 표준형) |
+| **배율 환산** (`kg`↔`t`, `MWh`↔`kWh`) | **적용하지 않았다** | 환산하면 라벨의 `tolerance`도 함께 환산해야 하는데 그 규정이 계약에 없다. 미정 산식을 임의 구현하지 않는다. `kg` vs `t`는 여전히 불일치다 |
+| **사전에 없는 단위** | 표기 정규화로만 비교 | 모르는 단위 두 개를 같다고 보지 않는다 |
+
+**판정이 바뀐 지점:** 이전에는 `톤` vs `t`가 값 불일치였고 이제 일치다. 그 줄을 숨기지
+않고 테스트에 적어 두었다(`test_unit_scale_difference_is_not_normalized_away`의 주석과
+`test_unit_aliases_are_treated_as_the_same_unit`). **이전 보고 수치는 이 변경 전에 산출된
+것이 없다**(실제 채점을 아직 실행하지 않았다) — 소급 수정 대상이 없다.
+
+### 9.5 CLI 입력 변경
+
+| CLI | 변경 |
+|---|---|
+| `python -m esgenie.eval.esgenie_adapter` | `--data-source`(필수) → **`--dataset-tag`(필수, enum)** + `--material-kind`(선택) + `--data-source`(선택, 설명) |
+| `scripts/eval_response_quality.py` | `--esgenie-result`를 쓸 때 `--run-id`와 **`--dataset-tag`**가 필수(이전에는 `--data-source`) |
+
+### 9.6 이번 절의 테스트 실행 결과
+
+| 명령 | 결과 |
+|---|---|
+| `PYTHONPATH=. python -m pytest tests/test_eval_answer_format.py tests/test_eval_response_scoring.py -q` | **165 passed** |
+| `PYTHONPATH=. python -m pytest -q` (전체) | **5689 passed, 27 skipped** |
+
+skip·xfail을 새로 넣지 않았다. 변경 전 전체는 5680 passed / 27 skipped였고 늘어난 9건이
+이번에 추가한 테스트다.
+
+### 9.7 아직 아닌 것
+
+- **형식은 확정이 아니다.** `1.1-draft`이고 B가 C-1~C-6을 확인해야 한다
+  (`docs/공통답안형식_v1.1초안_2026-10-07.md` §6).
+- **기존 B 전달 ZIP은 덮어쓰지 않았다.** 새 버전은 새 패키지로 만든다.
+- 실제 채점·라벨 확정·실제 응답 열람은 여전히 미착수다(§8 그대로).

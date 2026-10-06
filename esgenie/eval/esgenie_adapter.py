@@ -48,7 +48,7 @@ def to_common_page(system_page: Any) -> int | None:
 
 
 def classify_decision(status: Any, comparison: Any, value: Any) -> tuple[str, str]:
-    """ESGenie `status`×`comparison` → 공통 응답 판정. (판정, 근거)를 낸다.
+    """ESGenie `status`×`comparison` → 공통 **상세 상태**(`decision_detail`). (상세, 근거).
 
     작업지시서 A §6.1 매핑을 공통 판정 이름으로 옮긴 것이다. 의미를 바꾸지 않았다.
     `self_reported`는 어떤 경우에도 확정(`confirmed`)으로 올라가지 않는다.
@@ -120,14 +120,14 @@ def _boundary(answer: dict[str, Any]) -> dict[str, Any]:
 def convert_answer(answer: Any) -> dict[str, Any]:
     """`sheet.answers[]` 한 행 → 공통 형식 응답 한 행."""
     if not isinstance(answer, dict):
-        return af.new_answer(qid="", decision=af.D_UNPARSED,
+        return af.new_answer(qid="", decision_detail=af.D_UNPARSED,
                             decision_basis="응답 행이 객체가 아니다")
     qid = str(answer.get("qid") or "")
     if not qid:
-        return af.new_answer(qid="", decision=af.D_UNPARSED,
+        return af.new_answer(qid="", decision_detail=af.D_UNPARSED,
                             decision_basis="응답 행에 qid가 없다")
 
-    decision, basis = classify_decision(
+    detail, basis = classify_decision(
         answer.get("status"), answer.get("comparison"), answer.get("value"))
     source = {
         "status": str(answer.get("status") or ""),
@@ -142,7 +142,7 @@ def convert_answer(answer: Any) -> dict[str, Any]:
         source["flags"] = [str(f) for f in flags]
 
     return af.new_answer(
-        qid=qid, decision=decision, decision_basis=basis,
+        qid=qid, decision_detail=detail, decision_basis=basis,
         value=answer.get("value") if isinstance(
             answer.get("value"), (int, float, bool, str, type(None))) else None,
         unit=str(answer.get("unit") or ""),
@@ -155,9 +155,40 @@ def convert_answer(answer: Any) -> dict[str, Any]:
     )
 
 
+def product_metrics(sheet: dict[str, Any]) -> dict[str, Any]:
+    """제품 고유 지표를 **그대로 복사해** 구획한다(2026-10-07 지민 지시).
+
+    `auto_pct`는 ESGenie 제품이 화면에 쓰는 자동응답률이다. 재정의하지 않고, 공통 비교
+    지표(확정 제출률·값 제출률)로 쓰지도 않는다. 조건·분모를 함께 적어 둔다.
+
+    **대조군에는 이 지표가 없다.** 없는 쪽에 같은 이름의 값을 만들어 넣지 않는다.
+    """
+    if "auto_pct" not in sheet:
+        return {}
+    return {
+        "auto_pct": sheet.get("auto_pct"),
+        "auto_pct_definition": {
+            "분자": "status ∈ {verified, self_reported, flagged} 이고 값이 채워진 문항"
+                    "(ResponseSheet.answered)",
+            "분모": "status != not_applicable 인 문항 전체",
+            "단위": "백분율(소수 1자리)",
+            "주의": "미검증(self_reported)·검토필요(flagged) 행이 분자에 들어간다. "
+                    "비교 불가(comparison) 여부는 조건에 들어가지 않는다. "
+                    "**확정 응답 집계나 정답 판정의 정의로 쓰지 않는다.** "
+                    "분모가 0일 때 제품은 0.0을 표시하지만, 평가에서는 0%로 읽지 않는다.",
+            "출처": "esgenie/supplychain/schema.py ResponseSheet.auto_pct (제품 코드 — 변경하지 않았다)",
+        },
+        # 참고용 제품 표시 수치. 공통 지표와 같은 줄에 놓지 않는다.
+        "other": {k: sheet.get(k) for k in
+                  ("coverage_pct", "draft_pct", "hitl_pct", "pending_pct", "flagged_count")
+                  if k in sheet},
+    }
+
+
 def convert_result(
     result: dict[str, Any], *, stage: str, run_id: str, framework: str,
-    data_source: str, system: str = "esgenie", model: str | None = None,
+    dataset_tag: str, material_kind: str | None = None, data_source: str | None = None,
+    system: str = "esgenie", model: str | None = None,
     source_ref: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
     """`result.json` → 공통 형식 문서 한 개(한 시스템·한 실행·한 단계)."""
@@ -181,15 +212,18 @@ def convert_result(
 
     return af.new_document(
         system=system, run_id=run_id, stage=stage, framework=framework,
+        dataset_tag=dataset_tag, material_kind=material_kind,
         data_source=data_source, model=model,
         produced_at=datetime.now(timezone.utc).isoformat(),
         adapter={"name": ADAPTER_NAME, "version": ADAPTER_VERSION},
-        source_ref=source_ref, answers=rows,
+        source_ref=source_ref, product_metrics=product_metrics(sheet) or None,
+        answers=rows,
     )
 
 
 def convert_result_file(
-    path: str | Path, *, stage: str, run_id: str, framework: str, data_source: str,
+    path: str | Path, *, stage: str, run_id: str, framework: str,
+    dataset_tag: str, material_kind: str | None = None, data_source: str | None = None,
     system: str = "esgenie", model: str | None = None,
 ) -> dict[str, Any]:
     """`result.json` 파일을 읽어 변환한다. `source_ref`에 원본 경로·해시를 남긴다."""
@@ -201,6 +235,7 @@ def convert_result_file(
         raise af.FormatError(f"{path}: JSON 파싱 실패 — {exc}") from exc
     return convert_result(
         result, stage=stage, run_id=run_id, framework=framework,
+        dataset_tag=dataset_tag, material_kind=material_kind,
         data_source=data_source, system=system, model=model,
         source_ref={"path": str(path), "sha256": hashlib.sha256(raw).hexdigest()},
     )
@@ -213,14 +248,19 @@ def main(argv: list[str] | None = None) -> int:
     ap.add_argument("--stage", required=True, choices=list(af.STAGES))
     ap.add_argument("--run-id", required=True, help="실행 식별자 (실행별로 달라야 한다)")
     ap.add_argument("--framework", default="rba42")
-    ap.add_argument("--data-source", required=True,
-                    help="응답이 무엇을 보고 나왔는가 (예: 촬영증빙_12건)")
+    ap.add_argument("--dataset-tag", required=True, choices=list(af.DATASET_TAGS),
+                    help="§4 원문 자료 집합 구분")
+    ap.add_argument("--material-kind", default=None, choices=list(af.MATERIAL_KINDS),
+                    help="입력 자료 구성 — dataset_tag와 다른 축이다")
+    ap.add_argument("--data-source", default=None,
+                    help="사람이 읽는 자유 설명 (예: 촬영증빙_12건). 집계에 쓰지 않는다")
     ap.add_argument("--model", default=None)
     ap.add_argument("--out", required=True, help="공통 형식 JSON 출력 경로")
     args = ap.parse_args(argv)
 
     doc = convert_result_file(
         args.result, stage=args.stage, run_id=args.run_id, framework=args.framework,
+        dataset_tag=args.dataset_tag, material_kind=args.material_kind,
         data_source=args.data_source, model=args.model)
     af.dump_document(doc, args.out)
     print(f"wrote {args.out} ({len(doc['answers'])} answers)")

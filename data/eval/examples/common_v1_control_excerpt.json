@@ -1,10 +1,12 @@
 {
-  "format_version": "1.0-draft",
+  "format_version": "1.1-draft",
   "meta": {
     "system": "synthetic_example_control",
     "run_id": "EXAMPLE-RUN-1",
     "stage": "initial",
     "framework": "rba42",
+    "dataset_tag": "virtual",
+    "material_kind": "mixed",
     "data_source": "synthetic_example",
     "model": "example-general-ai",
     "produced_at": "2026-10-06T00:00:00+00:00",
@@ -12,12 +14,13 @@
       "path": "<대조군 원출력 파일 경로>",
       "sha256": "<원출력 파일 sha256>"
     },
-    "notice": "합성 예시 발췌다. 값·근거·페이지는 임의 자리값이며 어떤 시스템의 실제 출력도 정답 라벨도 아니다. 정상 실행 한 건은 48행이다."
+    "notice": "합성 예시 발췌다. 값·근거·페이지는 임의 자리값이며 어떤 시스템의 실제 출력도 정답 라벨도 아니다. 정상 실행 한 건은 48행이다. 대조군에는 제품 고유 지표(auto_pct)가 없으므로 meta.product_metrics를 **아예 넣지 않는다** — 없는 지표를 0으로 적지 않는다."
   },
   "answers": [
     {
       "qid": "RBA-A-1",
-      "decision": "confirmed",
+      "decision": "answer",
+      "decision_detail": "confirmed",
       "decision_basis": "모델이 근거 문구를 인용하며 확정 서술했다",
       "value": true,
       "unit": "",
@@ -45,6 +48,7 @@
     {
       "qid": "RBA-A-2",
       "decision": "hold",
+      "decision_detail": "hold",
       "decision_basis": "모델이 자료가 없어 답할 수 없다고 했다",
       "value": null,
       "unit": "",
@@ -56,7 +60,35 @@
     },
     {
       "qid": "RBA-C-5-E-7-1",
-      "decision": "unparsed",
+      "decision": "answer",
+      "decision_detail": "unverified_submitted",
+      "decision_basis": "모델이 값을 냈으나 근거를 인용하지 않았다",
+      "value": 123.4,
+      "unit": "kg",
+      "value_text": "약 123.4 kg",
+      "evidence": [],
+      "source": {
+        "raw": "(예시) 약 123.4 kg 정도로 추정됩니다"
+      },
+      "notes": "값은 제출되었으나 확정이 아니다. decision=answer이지만 확정 제출률의 분자에는 들어가지 않고 값 제출률의 분자에만 들어간다."
+    },
+    {
+      "qid": "RBA-B-1",
+      "decision": "na",
+      "decision_detail": "not_applicable",
+      "decision_basis": "모델이 해당 사업장에 적용되지 않는다고 서술했다",
+      "value": null,
+      "unit": "",
+      "evidence": [],
+      "source": {
+        "raw": "(예시) 해당 사항 없습니다"
+      },
+      "notes": null
+    },
+    {
+      "qid": "RBA-C-8-E-3-1",
+      "decision": null,
+      "decision_detail": "unparsed",
       "decision_basis": "원출력에서 이 문항의 응답을 찾지 못했다",
       "value": null,
       "unit": "",

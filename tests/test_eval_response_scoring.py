@@ -15,6 +15,7 @@ import json
 import pytest
 
 from esgenie.eval import answer_format as af
+from esgenie.eval import esgenie_adapter as ad
 from esgenie.eval import response_scoring as rs
 
 cli = importlib.import_module("scripts.eval_response_quality")
@@ -50,15 +51,23 @@ def _label(**over) -> rs.Label:
 
 
 def _answer(**over) -> rs.SystemAnswer:
-    base = {"stage": "initial", "qid": "SYN-1", "decision": rs.V_SELF_REPORTED,
+    """채점 대상 응답 1건.
+
+    `decision=`은 **상세 상태**(`decision_detail`)를 가리킨다 — 채점은 상세 상태만
+    본다. 외부 3값은 대응 표로 기계 계산한다(따로 적어 어긋나게 두지 않는다).
+    """
+    base = {"stage": "initial", "qid": "SYN-1", "decision_detail": rs.V_SELF_REPORTED,
             "value": 1.0, "unit": "", "evidence": ()}
+    if "decision" in over:
+        over["decision_detail"] = over.pop("decision")
     base.update(over)
+    base["decision"] = af.decision_for_detail(base["decision_detail"])
     return rs.SystemAnswer(**base)
 
 
 def _doc(answers: list[dict], **meta) -> dict:
     base = {"system": "synthetic", "run_id": "SYN-RUN-1", "stage": "initial",
-            "framework": "rba42", "data_source": "synthetic"}
+            "framework": "rba42", "dataset_tag": "virtual", "data_source": "synthetic"}
     base.update(meta)
     return af.new_document(answers=answers, **base)
 
@@ -66,7 +75,7 @@ def _doc(answers: list[dict], **meta) -> dict:
 # ── 공통 형식 → 채점 대상 읽기 ───────────────────────────────────────────
 def test_answers_come_from_the_common_format_without_page_conversion():
     """공통 형식 page는 이미 1-기준이다 — 채점기는 다시 변환하지 않는다."""
-    doc = _doc([af.new_answer(qid="SYN-1", decision=af.D_CONFIRMED, value=7.5, unit="톤",
+    doc = _doc([af.new_answer(qid="SYN-1", decision_detail=af.D_CONFIRMED, value=7.5, unit="톤",
                               evidence=[{"file_name": "08.pdf", "page": 3, "quote": None},
                                         {"file_name": "09.pdf", "page": None}])])
     (answer,) = rs.answers_from_document(doc)
@@ -75,7 +84,7 @@ def test_answers_come_from_the_common_format_without_page_conversion():
 
 
 def test_source_fields_are_preserved_for_inspection():
-    doc = _doc([af.new_answer(qid="SYN-1", decision=af.D_UNVERIFIED, value=63.0,
+    doc = _doc([af.new_answer(qid="SYN-1", decision_detail=af.D_UNVERIFIED, value=63.0,
                               source={"status": "self_reported", "comparison": ""})])
     (answer,) = rs.answers_from_document(doc)
     assert (answer.source_status, answer.source_comparison) == ("self_reported", "")
@@ -83,10 +92,12 @@ def test_source_fields_are_preserved_for_inspection():
 
 def test_control_document_without_status_is_still_scored():
     """대조군에는 ESGenie 전용 status가 없다 — 그것만으로 전부 미검증으로 바꾸지 않는다."""
-    doc = _doc([af.new_answer(qid="SYN-1", decision=af.D_CONFIRMED, value=1.0)],
+    doc = _doc([af.new_answer(qid="SYN-1", decision_detail=af.D_CONFIRMED, value=1.0)],
                system="general_ai")
     (answer,) = rs.answers_from_document(doc)
-    assert answer.decision == af.D_CONFIRMED
+    # 상세 상태는 그대로 보존되고, 외부 3값은 대응 표대로 `answer`가 된다.
+    assert answer.decision_detail == af.D_CONFIRMED
+    assert answer.decision == af.X_ANSWER
     assert answer.source_status == ""
 
 
@@ -295,15 +306,19 @@ def test_default_tolerance_is_zero():
     assert rs.compare_value(label, _answer(value=7.6, unit="톤"))[0] is False
 
 
-def test_unit_mismatch_is_not_normalized_away():
-    """단위 차이는 의미 차이다 — 환산·별칭으로 숨기지 않는다."""
+def test_unit_scale_difference_is_not_normalized_away():
+    """배율이 다른 단위는 의미가 다르다 — 환산으로 숨기지 않는다.
+
+    2026-10-07: 지시서 §2.4("단위 동치는 기존 유틸을 재사용한다")에 따라 **같은 단위의
+    별칭**(톤≡t)은 동치로 본다. 그 전까지는 별칭도 불일치였다 — 이 줄이 바뀐 지점이다.
+    배율 환산(kg↔t)은 여전히 하지 않는다.
+    """
     label = _label(expected_decision="answer", expected_value="7.5", expected_unit="톤",
                    hold_reason="")
     match, reason = rs.compare_value(label, _answer(value=7.5, unit="kg"))
     assert match is False
     assert "단위 불일치" in reason
-    # t↔톤도 환산하지 않는다(별칭 계약이 없다).
-    assert rs.compare_value(label, _answer(value=7.5, unit="t"))[0] is False
+    assert rs.compare_value(label, _answer(value=7.5, unit="t"))[0] is True
 
 
 def test_notation_only_differences_are_normalized():
@@ -504,18 +519,18 @@ def test_unmatched_rows_are_reported_not_silently_dropped():
 # ── 여러 실행을 합치지 않는다 ────────────────────────────────────────────
 def test_two_documents_for_one_stage_are_refused():
     """실행이 다른 응답을 한 단계로 합치면 어느 실행의 결과인지 알 수 없다."""
-    docs = [_doc([af.new_answer(qid="SYN-1", decision=af.D_UNVERIFIED, value=1)],
+    docs = [_doc([af.new_answer(qid="SYN-1", decision_detail=af.D_UNVERIFIED, value=1)],
                  run_id="RUN-A"),
-            _doc([af.new_answer(qid="SYN-1", decision=af.D_UNVERIFIED, value=2)],
+            _doc([af.new_answer(qid="SYN-1", decision_detail=af.D_UNVERIFIED, value=2)],
                  run_id="RUN-B")]
     with pytest.raises(af.FormatError, match="실행별로 따로 채점"):
         rs.score_documents([_label()], docs, SYNTHETIC_QIDS)
 
 
 def test_score_documents_records_each_input_document():
-    doc = _doc([af.new_answer(qid="SYN-1", decision=af.D_UNVERIFIED, value=1)],
+    doc = _doc([af.new_answer(qid="SYN-1", decision_detail=af.D_UNVERIFIED, value=1)],
                system="general_ai", model="some-model", run_id="RUN-A",
-               data_source="촬영증빙_12건")
+               dataset_tag="real_pilot", data_source="촬영증빙_12건")
     rep = rs.score_documents([_label()], [doc], SYNTHETIC_QIDS)
     (meta,) = rep.documents
     assert meta["system"] == "general_ai" and meta["run_id"] == "RUN-A"
@@ -551,7 +566,7 @@ def test_cli_scores_esgenie_result_through_the_adapter(tmp_path, capsys):
     common_dir = tmp_path / "common"
     code = cli.main(["--labels", _cli_labels(tmp_path),
                      "--esgenie-result", f"initial={_cli_esgenie_result(tmp_path)}",
-                     "--run-id", "SYN-RUN-1", "--data-source", "synthetic",
+                     "--run-id", "SYN-RUN-1", "--dataset-tag", "virtual",
                      "--framework", "rba42", "--write-common", str(common_dir),
                      "--out", str(out)])
     # rba42 48행과 맞지 않아 형식 문제가 남는다 — 조용히 넘기지 않는다.
@@ -591,17 +606,17 @@ def test_cli_refuses_to_overwrite_an_existing_result(tmp_path):
     with pytest.raises(SystemExit):
         cli.main(["--labels", _cli_labels(tmp_path),
                   "--esgenie-result", f"initial={_cli_esgenie_result(tmp_path)}",
-                  "--run-id", "SYN-RUN-1", "--data-source", "synthetic",
+                  "--run-id", "SYN-RUN-1", "--dataset-tag", "virtual",
                   "--out", str(out)])
 
 
 def test_cli_scores_a_common_format_document_from_any_system(tmp_path):
     doc_path = tmp_path / "control.json"
     af.dump_document(_doc([
-        af.new_answer(qid="SYN-1", decision=af.D_UNVERIFIED, value=63.0, unit="%"),
-        af.new_answer(qid="SYN-2", decision=af.D_UNVERIFIED, value=0, unit="건",
+        af.new_answer(qid="SYN-1", decision_detail=af.D_UNVERIFIED, value=63.0, unit="%"),
+        af.new_answer(qid="SYN-2", decision_detail=af.D_UNVERIFIED, value=0, unit="건",
                       evidence=[{"file_name": "08.pdf", "page": 1}]),
-        af.new_answer(qid="SYN-3", decision=af.D_NOT_APPLICABLE, value=None),
+        af.new_answer(qid="SYN-3", decision_detail=af.D_NOT_APPLICABLE, value=None),
     ], system="general_ai", model="some-model"), doc_path)
 
     out = tmp_path / "score.json"
@@ -700,8 +715,8 @@ def test_m4_is_the_confirmed_submission_share_not_a_verification_rate():
     m4 = scope["metrics"][rs.M4]
     assert (m4["numerator"], m4["denominator"]) == (1, 4)
     assert "검증 확정률" in m4["note"] and "아니다" in m4["note"]
-    # 값 제출률은 보조로만 낸다 — 같은 지표에 합치지 않는다.
-    aux = scope["auxiliary"]["A3_값_제출률_보조"]
+    # 값 제출률은 별도 공통 비교 지표(M6)다 — M4에 합치지 않는다.
+    aux = scope["auxiliary"]["A3_값_제출률_이전정의"]
     assert (aux["numerator"], aux["denominator"]) == (2, 4)
 
 
@@ -823,3 +838,99 @@ def test_input_completeness_separates_missing_rows_from_holds():
     comp = scope["input_completeness"]
     assert comp["라벨_행"] == 3 and comp["채점된_행"] == 2
     assert comp["응답_누락_행"] == 1 and comp["파싱_실패_행"] == 1
+
+
+# ── 제품 지표와 공통 비교 지표의 분리 (2026-10-07 지민 승인) ─────────────────
+def test_m6_value_submission_share_counts_only_rows_with_a_value():
+    """값 제출률 분자는 **실제 값이 있는** confirmed·unverified_submitted다."""
+    labels = [_label(qid=q, expected_decision="hold", hold_reason="no_evidence")
+              for q in ("A", "B", "C")]
+    answers = [
+        _answer(qid="A", decision=rs.V_CONFIRMED, value=1.0),
+        _answer(qid="B", decision=rs.V_SELF_REPORTED, value=0),      # 0은 채워진 값이다
+        _answer(qid="C", decision=rs.V_SELF_REPORTED, value=None),   # 값 없음 — 빠진다
+    ]
+    _, scope = _scope(labels, answers, ("A", "B", "C", "D"))
+    m6 = scope["metrics"][rs.M6]
+    assert (m6["numerator"], m6["denominator"]) == (2, 4)
+    # 이전 정의(값 없는 행도 포함)는 보조로 그대로 남는다 — 같은 줄에 놓지 않는다.
+    aux = scope["auxiliary"]["A3_값_제출률_이전정의"]
+    assert (aux["numerator"], aux["denominator"]) == (3, 4)
+    assert "정답 여부도, 검증 여부도 아니다" in m6["note"]
+
+
+def test_m4_and_m6_are_separate_metrics_with_the_same_denominator():
+    """확정 제출률과 값 제출률은 분자가 다르고 분모가 같다. 하나로 합치지 않는다."""
+    labels = [_label(qid=q, expected_decision="hold", hold_reason="no_evidence")
+              for q in ("A", "B")]
+    answers = [_answer(qid="A", decision=rs.V_CONFIRMED, value=1.0),
+               _answer(qid="B", decision=rs.V_SELF_REPORTED, value=2.0)]
+    _, scope = _scope(labels, answers, ("A", "B"))
+    m4, m6 = scope["metrics"][rs.M4], scope["metrics"][rs.M6]
+    assert (m4["numerator"], m6["numerator"]) == (1, 2)
+    assert m4["denominator"] == m6["denominator"] == 2
+    # 이름을 갈랐다는 사실이 이전 이름과 함께 남는다.
+    assert rs.M4_PREVIOUS_NAME in m4["note"] and "제품 자동응답률" in m4["note"]
+
+
+def test_product_auto_pct_is_carried_through_untouched_and_absent_for_the_control():
+    """제품 auto_pct는 복사해 구획한다. 대조군에는 없으므로 null이고 0으로 적지 않는다."""
+    sheet = {"auto_pct": 62.5, "coverage_pct": 62.5, "answers": []}
+    metrics = ad.product_metrics(sheet)
+    assert metrics["auto_pct"] == 62.5                      # 재계산하지 않는다
+    assert "확정 응답 집계나 정답 판정의 정의로 쓰지 않는다" in metrics["auto_pct_definition"]["주의"]
+    assert "schema.py" in metrics["auto_pct_definition"]["출처"]
+    # auto_pct가 없는 시스템(대조군)에는 아무 것도 만들지 않는다.
+    assert ad.product_metrics({"answers": []}) == {}
+
+    # 보고서에는 **실행별로** 실린다(실행을 한 단위로 합치지 않으므로 따로 채점한다).
+    labels = [_label(qid="A", expected_decision="hold", hold_reason="no_evidence")]
+    row = af.new_answer(qid="A", decision_detail=af.D_HOLD)
+    esgenie = rs.score_documents(
+        labels, [_doc([row], system="esgenie", product_metrics=metrics)], ("A",))
+    control = rs.score_documents(
+        labels, [_doc([row], system="general_ai", run_id="SYN-RUN-2")], ("A",))
+    (esgenie_doc,), (control_doc,) = esgenie.documents, control.documents
+    assert esgenie_doc["product_metrics"]["auto_pct"] == 62.5
+    assert control_doc["product_metrics"] is None
+    assert "0으로 적지 않는다" in control_doc["product_metrics_note"]
+    # 양쪽 보고 단위에는 **같은 정의의** 공통 비교 지표가 둘 다 있다.
+    for rep in (esgenie, control):
+        assert {rs.M4, rs.M6} <= set(rep.metric_scopes[0]["metrics"])
+    # 대응 표는 보고서에도 그대로 실린다 — 상세 상태를 문구로 추정할 필요가 없다.
+    assert esgenie_doc["decision_mapping"][af.D_UNVERIFIED] == af.X_ANSWER
+    assert esgenie_doc["decision_mapping"][af.D_UNPARSED] is None
+
+
+# ── §2.4 단위 동치 — 기존 유틸 재사용 (새 환산표를 만들지 않는다) ─────────────
+@pytest.mark.parametrize("label_unit, system_unit", [
+    ("tCO2e", "tCO2eq"),      # 지시서 §2.4가 든 예
+    ("톤", "t"),
+    ("kg", "㎏"),
+])
+def test_unit_aliases_are_treated_as_the_same_unit(label_unit, system_unit):
+    labels = [_label(qid="A", expected_decision="answer", hold_reason="",
+                     expected_value="7.5", expected_unit=label_unit,
+                     expected_sources="SYN_합성증빙.pdf#1")]
+    answers = [_answer(qid="A", decision=rs.V_CONFIRMED, value=7.5, unit=system_unit,
+                       evidence=(_ev(),))]
+    rep, _ = _scope(labels, answers, ("A",))
+    (row,) = rep.rows
+    assert row.value_match is True, row.value_reason
+
+
+@pytest.mark.parametrize("label_unit, system_unit", [
+    ("kg", "t"),              # 배율이 다르다 — 환산하지 않는다
+    ("건", "명"),
+    ("자리값단위A", "자리값단위B"),   # 사전에 없는 단위 두 개를 같다고 보지 않는다
+])
+def test_different_or_unknown_units_stay_a_mismatch(label_unit, system_unit):
+    labels = [_label(qid="A", expected_decision="answer", hold_reason="",
+                     expected_value="7.5", expected_unit=label_unit,
+                     expected_sources="SYN_합성증빙.pdf#1")]
+    answers = [_answer(qid="A", decision=rs.V_CONFIRMED, value=7.5, unit=system_unit,
+                       evidence=(_ev(),))]
+    rep, _ = _scope(labels, answers, ("A",))
+    (row,) = rep.rows
+    assert row.value_match is False
+    assert "단위 불일치" in row.value_reason

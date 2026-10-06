@@ -88,11 +88,25 @@ def _norm_text(raw: Any) -> str:
 
 
 def _norm_unit(raw: Any) -> str:
-    """단위 정규화 — 표기만 고른다. 단위 환산·별칭(t↔톤 등)은 하지 않는다.
+    """단위 정규화 — 표기 차이와 **같은 단위의 별칭**까지만 고른다.
 
-    단위가 다르면 의미가 다르다고 보고 불일치로 남긴다(정규화로 숨기지 않는다).
+    작업지시서 §2.4: "단위 동치는 기존 `esgenie` 유틸을 재사용한다(`tCO2e`≡`tCO2eq` 등).
+    새 환산표를 만들지 않는다." 그래서 `rag_gates.units.normalize_unit`을 **읽어 쓴다**
+    (제품 유틸을 고치지 않는다). 사전에 없는 단위는 표기 정규화로만 비교한다 — 모르는
+    단위 두 개를 같다고 보지 않는다.
+
+    **배율 환산은 하지 않는다.** `kg`과 `t`는 여전히 불일치다. 환산하려면 라벨의
+    `tolerance`도 함께 환산해야 하는데 그 규정이 계약에 없다 — 임의로 만들지 않는다.
     """
-    return _norm_text(raw)
+    text = _norm_text(raw)
+    if not text:
+        return ""
+    try:
+        from ..rag_gates.units import normalize_unit
+    except ImportError:          # 제품 패키지 없이 채점할 때 — 표기 비교로 내려간다
+        return text
+    canonical = normalize_unit(str(raw))
+    return canonical.casefold() if canonical else text
 
 
 def _parse_number(raw: Any) -> float | None:
@@ -253,7 +267,11 @@ class SystemAnswer:
     """채점기가 보는 응답 한 행 — 시스템 중립이다."""
     stage: str
     qid: str
-    decision: str
+    #: 외부 형식 3값(`answer`/`hold`/`na`) 또는 `None`(정상 3값을 줄 수 없는 오류 행).
+    decision: str | None
+    #: 내부 상세 상태 6값. **채점은 이것만 본다** — `decision=answer`라는 이유로 확정으로
+    #: 세지 않기 위해서다. 구조화 필드가 없으면 빈 문자열이고, 자유 문구에서 추정하지 않는다.
+    decision_detail: str
     value: Any
     unit: str
     evidence: tuple[EvidenceRef, ...] = ()
@@ -295,14 +313,22 @@ def answers_from_document(doc: dict[str, Any]) -> list[SystemAnswer]:
         if not isinstance(a, dict):
             raise af.FormatError("응답 항목이 객체가 아니다")
         source = a.get("source") if isinstance(a.get("source"), dict) else {}
+        detail = af.detail_of(a)
+        basis = str(a.get("decision_basis") or "")
+        if detail is None:
+            # 상세 상태가 없으면 **추정하지 않는다.** 빈 상태로 두면 판정표에 없는
+            # 값이 되어 `unresolved`로 남는다 — 정상 보류로 섞이지 않는다.
+            basis = (basis + " · decision_detail 누락 — 상세 상태를 자유 문구에서 "
+                     "복원하지 않는다").strip(" ·")
         out.append(SystemAnswer(
             stage=stage,
             qid=str(a.get("qid") or ""),
-            decision=str(a.get("decision") or ""),
+            decision=a.get("decision") if a.get("decision") in af.DECISION_VALUES else None,
+            decision_detail=detail or "",
             value=a.get("value"),
             unit=str(a.get("unit") or ""),
             evidence=_evidence(a.get("evidence")),
-            decision_basis=str(a.get("decision_basis") or ""),
+            decision_basis=basis,
             source_status=str(source.get("status") or ""),
             source_comparison=str(source.get("comparison") or ""),
         ))
@@ -524,7 +550,7 @@ class RowScore:
     system_comparison: str      # 원본 보존 — 대조군은 비어 있을 수 있다
     system_value_filled: bool
     system_evidence_count: int  # 연결한 근거 건수. 정답 여부와 별개다(M5 vs A5)
-    system_verdict: str         # 공통 응답 판정
+    system_verdict: str         # 내부 상세 상태(`decision_detail`) — 채점 기준
     verdict_reason: str
     label_decision: str
     label_hold_reason: str
@@ -537,6 +563,9 @@ class RowScore:
     bucket: str
     bucket_detail: str
     bucket_reason: str
+    #: 외부 형식 3값(`answer`/`hold`/`na`) 또는 `None`(오류 행). 보고에 함께 적는다.
+    #: 상세 상태와 **1:1이 아니다** — `answer`는 confirmed와 미검증 전달을 함께 덮는다.
+    system_decision: str | None = None
 
 
 @dataclass
@@ -599,8 +628,16 @@ def check_structure(
 M1 = "M1_답변근거_동시정답률"
 M2 = "M2_잘못된_확정_수"
 M3 = "M3_불필요한_보류_수"
-M4 = "M4_자동응답률"
+#: **M4 이름 변경 (2026-10-07 지민 승인)** — '자동응답률'에서 '확정 제출률'로 구분한다.
+#: 정의(`confirmed / 예상 문항 전체`)와 결과는 그대로다. 이름만 갈랐다.
+#: 제품 고유 `ResponseSheet.auto_pct`는 **다른 지표**이고 제품 코드에 그대로 남아 있다.
+M4 = "M4_확정_제출률"
+#: 이전 이름. 보존해서 적는다 — 지난 보고의 수치와 이어 읽을 수 있어야 한다.
+M4_PREVIOUS_NAME = "M4_자동응답률"
 M5 = "M5_자료_연결률"
+#: **값 제출률 (2026-10-07 지민 승인)** — 공통 비교 지표로 승격. 이전에는 보조 A3였다.
+M6 = "M6_값_제출률"
+M6_PREVIOUS_NAME = "A3_값_제출률"
 
 #: 지표 산출 상태.
 MS_AVAILABLE = "산출"            # 분자·분모가 모두 정해져 계산했다
@@ -721,11 +758,31 @@ def _metric_scope(rows: list[RowScore], labels: list[Label],
     submitted = confirmed + sum(1 for r in rows if r.system_verdict == V_SELF_REPORTED)
     m4 = _ratio(
         M4, confirmed, m4_denom,
-        "분모: 실행·단계별 예상 문항 전체 / 분자: `confirmed`로 제출한 행",
+        "분모: 실행·단계별 예상 문항 전체 / 분자: `decision_detail=confirmed`인 행",
         undetermined=hold_count, reasons=hold_reasons,
-        note=("**'검증 확정률'이 아니다.** 근거 검증 완료율을 뜻하지 않으며, "
-              "대조군에서도 검증 완료를 뜻하지 않는다. "
-              "`confirmed`+`unverified_submitted`를 합친 값 제출률은 보조 수치다."),
+        note=("**제품 자동응답률(`auto_pct`)이 아니다.** 제품 지표는 분자·분모 조건이 "
+              "다르고 제품 코드에 그대로 있다(`meta.product_metrics`에 구획해 둔다). "
+              "**'검증 확정률'도 아니다** — 근거 검증 완료율을 뜻하지 않는다. "
+              f"이전 이름은 '{M4_PREVIOUS_NAME}'이고 정의·결과는 바뀌지 않았다. "
+              "`decision=answer`인 행 전체가 아니다 — 미검증 전달은 분자에서 빠진다. "
+              "양쪽 비교(ESGenie·대조군)에 **같은 정의로** 쓴다."),
+    )
+
+    # ── M6 값 제출률 — 실제 값이 있는 `confirmed`·`unverified_submitted`.
+    #    분모는 M4와 같다. 두 지표를 같은 정의로 양쪽에 쓴다.
+    value_submitted = sum(1 for r in rows
+                          if r.system_verdict in (V_CONFIRMED, V_SELF_REPORTED)
+                          and r.system_value_filled)
+    m6 = _ratio(
+        M6, value_submitted, m4_denom,
+        "분모: 실행·단계별 예상 문항 전체 / 분자: 실제 값이 있는 "
+        "`confirmed`·`unverified_submitted` 행",
+        undetermined=hold_count, reasons=hold_reasons,
+        note=("값을 제출했는지만 본다 — **정답 여부도, 검증 여부도 아니다.** "
+              f"이전에는 보조 '{M6_PREVIOUS_NAME}'였고(분자에 값 없는 행도 포함) "
+              "이제 값이 채워진 행만 센다. 이전 수치는 A3로 함께 남긴다. "
+              "값 `0`·`False`는 빈 값으로 세지 않는다. "
+              "양쪽 비교(ESGenie·대조군)에 **같은 정의로** 쓴다."),
     )
 
     # ── M5 — 분모는 **실제 값이 채워진** `confirmed`·`unverified_submitted` 행.
@@ -746,7 +803,7 @@ def _metric_scope(rows: list[RowScore], labels: list[Label],
     )
 
     scope = MetricScope(aggregated=aggregated)
-    scope.metrics = {m.key: asdict(m) for m in (m1, m2, m3, m4, m5)}
+    scope.metrics = {m.key: asdict(m) for m in (m1, m2, m3, m4, m5, m6)}
     scope.auxiliary = {
         "A1_값_일치_건수": dict(Counter(_flag(r.value_match) for r in answer_rows)),
         "A2_근거_일치_건수": {
@@ -754,11 +811,13 @@ def _metric_scope(rows: list[RowScore], labels: list[Label],
             "파일_일치(보조)": sum(1 for r in answer_rows if r.source_file_match is True),
             "주의": "파일 일치는 공식 수치를 대체하지 않는다. 공식은 파일+쪽이다.",
         },
-        "A3_값_제출률_보조": asdict(_ratio(
-            "A3_값_제출률", submitted, m4_denom,
-            "분모: 예상 문항 전체 / 분자: `confirmed`+`unverified_submitted`",
+        "A3_값_제출률_이전정의": asdict(_ratio(
+            M6_PREVIOUS_NAME, submitted, m4_denom,
+            "분모: 예상 문항 전체 / 분자: `confirmed`+`unverified_submitted`"
+            "(값이 비어 있는 행도 포함)",
             undetermined=hold_count, reasons=hold_reasons,
-            note="M4의 보조다. 같은 줄에 놓지 않는다.")),
+            note=f"이전 정의를 보존한 수치다. 공통 비교 지표는 {M6}다 — 그쪽은 "
+                 "값이 채워진 행만 센다. 두 값을 같은 줄에 놓지 않는다.")),
         "A4_올바른_보류_수": sum(1 for r in rows if r.bucket == B_CORRECT_HOLD),
         "A5_연결한_근거가_정답인_비율": asdict(_ratio(
             "A5_연결근거_정답률",
@@ -903,7 +962,8 @@ def score(
             rep.unscored_pairs.append(f"{label.stage}/{label.qid}: 대응하는 응답 행이 없다")
             continue
 
-        verdict, verdict_reason = answer.decision, answer.decision_basis
+        # **상세 상태로만 채점한다.** 외부 3값(`answer`)은 확정 여부를 말해 주지 않는다.
+        verdict, verdict_reason = answer.decision_detail, answer.decision_basis
         value_match, value_reason = compare_value(label, answer)
         source_match, source_reason = compare_sources(label, answer)
         file_match, file_reason = compare_sources_file_only(label, answer)
@@ -918,6 +978,7 @@ def score(
             system_value_filled=_is_filled(answer.value),
             system_evidence_count=len(answer.evidence),
             system_verdict=verdict, verdict_reason=verdict_reason,
+            system_decision=answer.decision,
             label_decision=label.expected_decision, label_hold_reason=label.hold_reason,
             value_match=value_match, value_reason=value_reason,
             source_match=source_match, source_reason=source_reason,
@@ -1007,9 +1068,22 @@ def score_documents(
         rep.documents.append({
             "system": meta.get("system"), "model": meta.get("model"),
             "run_id": meta.get("run_id"), "stage": meta.get("stage"),
-            "framework": meta.get("framework"), "data_source": meta.get("data_source"),
+            "framework": meta.get("framework"),
+            # §4 원문 자료 집합 구분과 입력 자료 구성은 **다른 축**이다. 섞지 않는다.
+            "dataset_tag": meta.get("dataset_tag"),
+            "material_kind": meta.get("material_kind"),
+            "data_source": meta.get("data_source"),
             "format_version": doc.get("format_version"),
             "adapter": meta.get("adapter"), "source_ref": meta.get("source_ref"),
             "answer_rows": len(doc.get("answers") or []),
+            # 제품 고유 지표는 **구획해서** 그대로 전달한다. 공통 지표로 바꾸지 않는다.
+            # 없는 시스템(대조군)에는 같은 이름의 값을 만들어 넣지 않는다 — `null`이다.
+            "product_metrics": meta.get("product_metrics"),
+            "product_metrics_note":
+                ("제품 고유 지표다. 공통 비교 지표(M4 확정 제출률·M6 값 제출률)와 "
+                 "같은 줄에 놓지 않는다. 대조군에는 이 지표가 없으므로 null이며, "
+                 "없는 것을 0으로 적지 않는다."),
+            "decision_mapping":
+                {k: v for k, v in af.DETAIL_TO_DECISION.items()},
         })
     return rep

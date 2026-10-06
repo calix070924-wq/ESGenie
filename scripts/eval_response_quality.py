@@ -63,7 +63,11 @@ def main(argv: list[str] | None = None) -> int:
     ap.add_argument("--esgenie-result", action="append", default=[], metavar="STAGE=PATH",
                     help="ESGenie result.json. 어댑터로 공통 형식으로 바꿔 채점한다")
     ap.add_argument("--run-id", help="--esgenie-result를 쓸 때 필수. 실행마다 달라야 한다")
-    ap.add_argument("--data-source", help="--esgenie-result를 쓸 때 필수. 응답이 무엇을 보고 나왔는가")
+    ap.add_argument("--dataset-tag", choices=list(af.DATASET_TAGS),
+                    help="--esgenie-result를 쓸 때 필수. §4 원문 자료 집합 구분")
+    ap.add_argument("--material-kind", default=None, choices=list(af.MATERIAL_KINDS),
+                    help="입력 자료 구성 — dataset_tag와 다른 축이다(섞어 적지 않는다)")
+    ap.add_argument("--data-source", help="사람이 읽는 자유 설명. 집계에 쓰지 않는다")
     ap.add_argument("--system", default="esgenie", help="--esgenie-result 변환 시 기록할 시스템 이름")
     ap.add_argument("--model", default=None, help="--esgenie-result 변환 시 기록할 모델")
     ap.add_argument("--framework", default="rba42", help="문항 구성을 읽을 양식 키")
@@ -79,8 +83,8 @@ def main(argv: list[str] | None = None) -> int:
 
     if not args.answers and not args.esgenie_result:
         ap.error("--answers 또는 --esgenie-result 중 하나는 있어야 한다")
-    if args.esgenie_result and not (args.run_id and args.data_source):
-        ap.error("--esgenie-result를 쓰면 --run-id와 --data-source가 필요하다")
+    if args.esgenie_result and not (args.run_id and args.dataset_tag):
+        ap.error("--esgenie-result를 쓰면 --run-id와 --dataset-tag가 필요하다")
 
     out = Path(args.out)
     if out.exists() and not args.overwrite:
@@ -94,6 +98,7 @@ def main(argv: list[str] | None = None) -> int:
             stage, path = _split_stage_path(ap, spec)
             doc = adapter.convert_result_file(
                 path, stage=stage, run_id=args.run_id, framework=args.framework,
+                dataset_tag=args.dataset_tag, material_kind=args.material_kind,
                 data_source=args.data_source, system=args.system, model=args.model)
             if args.write_common:
                 target = Path(args.write_common) / f"{args.system}_{args.run_id}_{stage}.json"
