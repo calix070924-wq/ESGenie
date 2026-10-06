@@ -406,6 +406,166 @@ def test_cell_exact_records_related_field(bundle):
     assert "boundary_label" in hit["related_fields"]
 
 
+# ── '(이어서)' 행 — 근거/비고가 쪽 높이를 넘어 블록이 쪼개지는 경우 ─────────
+def _long_evidence_sheet() -> ResponseSheet:
+    """근거/비고가 _ROW_LIMIT(420pt)를 넘도록 긴 flags를 넣은 시트."""
+    long_flags = [
+        f"범위 확인 필요: 제{i}공장 {2026}-04 집계는 전사·연간 총량임이 입증되지 "
+        f"않았습니다. 사용 기간과 사업장 범위, 집계 방식을 원문에서 확인해야 하며 "
+        f"부분값으로만 둡니다. 추가 증빙 없이는 확정하지 않습니다."
+        for i in range(1, 12)
+    ]
+    return ResponseSheet(
+        framework_key="rba42", framework_label="테스트 양식", corp_name="테스트사",
+        answers=[
+            Answer(
+                qid="T-LONG-1", section="환경", question_text="에너지 사용량",
+                value=0.513216, status="self_reported", unit="TJ", period=2026,
+                boundary_label="2026-04-01~2026-04-30 · 월간 · 제1공장 · 부분",
+                comparison="scope_unconfirmed", comparison_reason="전사 총량 미확인",
+                rationale="전력 고지서 1건으로 산정", flags=long_flags,
+                evidence_links=[EvidenceLink(
+                    file_name="02_전기요금청구서_2026-04.pdf",
+                    relative_path="evidence_pack/02_전기요금청구서_2026-04.pdf",
+                    origin="ocr_structured", page=0)],
+            ),
+            Answer(qid="T-LONG-2", section="환경", question_text="용수 사용량",
+                   value=1234, status="verified", unit="m3", period=2026,
+                   rationale="상수도 고지서 기준"),
+        ],
+    )
+
+
+@pytest.fixture
+def long_bundle(tmp_path: Path) -> object:
+    sheet = _long_evidence_sheet()
+    out = tmp_path / "response_sheet"
+    xlsx = export_response_sheet(sheet, out)
+    pdf = export_response_sheet_pdf(sheet, out, embed_evidence=False)
+    return checker.OutputBundle(
+        json_rows=checker.load_json_rows({"sheet": sheet.to_dict()}),
+        excel_rows=checker.load_excel_rows(xlsx),
+        pdf_pages=checker.extract_pdf_text(pdf),
+        paths={"result_json": "memory", "sheet_xlsx": str(xlsx), "sheet_pdf": str(pdf)},
+        evidence_base_dir=str(Path(pdf).parent),
+    )
+
+
+def test_continued_row_actually_splits(long_bundle):
+    """긴 근거/비고가 실제로 2개 이상 블록으로 쪼개진다(exporters/pdf.py:299-316)."""
+    rows = checker.parse_pdf_rows(long_bundle.pdf_pages,
+                                  [r.qid for r in long_bundle.json_rows],
+                                  {r.section for r in long_bundle.json_rows})
+    assert rows["T-LONG-1"].blocks >= 2, (
+        "'(이어서)' 행이 생기지 않았다 — _ROW_LIMIT을 넘기지 못했다")
+    assert any("(이어서)" in p for p in long_bundle.pdf_pages)
+
+
+def test_continued_row_passes_cell_exact(long_bundle):
+    """(a) 정상이면 칸 전체 일치까지 통과한다."""
+    outcome = checker.compare(long_bundle)
+    assert outcome["mismatches"] == [], outcome["mismatches"]
+    assert outcome["summary"]["pdf_continued_rows"], "이어지는 행이 집계되지 않았다"
+
+
+def test_continued_row_tail_tamper_fails(long_bundle):
+    """(b) 이어지는 블록 쪽 텍스트를 변조하면 검출된다."""
+    b = copy.deepcopy(long_bundle)
+    # '(이어서)' 다음에 오는 조각의 내용을 바꾼다.
+    hit = False
+    for i, page in enumerate(b.pdf_pages):
+        pos = page.find("(이어서)")
+        if pos == -1:
+            continue
+        b.pdf_pages[i] = page[:pos] + "(이어서)\n전사 연간 총량으로 확정\n" + \
+            page[pos + len("(이어서)"):]
+        hit = True
+        break
+    assert hit, "'(이어서)' 조각을 찾지 못했다"
+    outcome = checker.compare(b)
+    assert outcome["mismatches"], "이어지는 블록의 변조를 놓쳤다"
+    assert any(m["field"] == "cell:note" and m["pdf_page"] for m in outcome["mismatches"])
+
+
+def test_continued_row_chunk_dropped_fails(long_bundle):
+    """이어지는 조각의 문장을 지우면 검출된다."""
+    b = copy.deepcopy(long_bundle)
+    assert _sub_pdf(b, "제11공장", "제99공장") > 0
+    outcome = checker.compare(b)
+    assert outcome["mismatches"], "이어지는 조각의 수치 변조를 놓쳤다"
+
+
+# ── status=draft_ready — 답변 칸이 draft_lines인 경우 ────────────────────────
+def _draft_sheet() -> ResponseSheet:
+    return ResponseSheet(
+        framework_key="rba42", framework_label="테스트 양식", corp_name="테스트사",
+        answers=[
+            Answer(
+                qid="T-DRAFT-1", section="경영시스템", question_text="환경방침 수립 여부",
+                value=None, status="draft_ready",
+                draft_text="환경방침을 2026년에 제정하고 경영진이 승인했다.",
+                draft_citations=[{"node_id": "TEST_TXT_0001", "page": 0,
+                                  "file_name": "06_환경안전관리규정_2026.pdf"}],
+                rationale="규정 문서 1건",
+                evidence_links=[EvidenceLink(
+                    file_name="06_환경안전관리규정_2026.pdf",
+                    relative_path="evidence_pack/06_환경안전관리규정_2026.pdf",
+                    origin="ocr_unstructured", page=0)],
+            ),
+        ],
+    )
+
+
+@pytest.fixture
+def draft_bundle(tmp_path: Path) -> object:
+    sheet = _draft_sheet()
+    out = tmp_path / "response_sheet"
+    xlsx = export_response_sheet(sheet, out)
+    pdf = export_response_sheet_pdf(sheet, out, embed_evidence=False)
+    return checker.OutputBundle(
+        json_rows=checker.load_json_rows({"sheet": sheet.to_dict()}),
+        excel_rows=checker.load_excel_rows(xlsx),
+        pdf_pages=checker.extract_pdf_text(pdf),
+        paths={"result_json": "memory", "sheet_xlsx": str(xlsx), "sheet_pdf": str(pdf)},
+        evidence_base_dir=str(Path(pdf).parent),
+    )
+
+
+def test_draft_ready_answer_cell_expected_is_draft_lines(draft_bundle):
+    """draft_ready 행의 답변 칸 기대값은 display_value가 아니라 draft_lines다."""
+    from esgenie.supplychain.render import draft_lines
+
+    answer = draft_bundle.json_rows[0].answer
+    assert answer.status == "draft_ready"
+    cells = checker.expected_cells(answer)
+    assert cells["answer"]["excel"] == "\n".join(draft_lines(answer))
+    assert "[AI 초안 — 승인 전]" in cells["answer"]["excel"]
+
+
+def test_draft_ready_passes_cell_exact(draft_bundle):
+    outcome = checker.compare(draft_bundle)
+    assert outcome["mismatches"] == [], outcome["mismatches"]
+    # 필드 검사에서는 display_value를 검사할 수 없다고 적힌다.
+    assert any(u["field"] == "display_value" and "draft_ready" in u["reason"]
+               for u in outcome["unchecked"])
+
+
+def test_draft_ready_excel_answer_tamper_fails(draft_bundle):
+    b = copy.deepcopy(draft_bundle)
+    row = b.excel_rows["T-DRAFT-1"]
+    row["answer"] = ("예", row["answer"][1])
+    outcome = checker.compare(b)
+    assert outcome["mismatches"], "draft 답변 칸 변조를 놓쳤다"
+    assert any(m["field"] == "cell:answer" and m["excel_cell"] for m in outcome["mismatches"])
+
+
+def test_draft_ready_pdf_answer_tamper_fails(draft_bundle):
+    b = copy.deepcopy(draft_bundle)
+    assert _sub_pdf(b, "경영진이 승인했다", "경영진 승인 절차가 없다") > 0
+    outcome = checker.compare(b)
+    assert outcome["mismatches"], "draft 답변 칸 PDF 변조를 놓쳤다"
+
+
 # ── 기대 칸 문자열 생성 ──────────────────────────────────────────────────────
 def test_expected_cells_uses_exporter_functions():
     """기대 칸은 render.scope_line·note_lines와 pdf._STATUS_STYLE로 만든다."""

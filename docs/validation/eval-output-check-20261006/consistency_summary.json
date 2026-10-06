@@ -1,0 +1,102 @@
+{
+  "initial": {
+    "run_dir": "<OUTPUTS_EVAL>/20261006_live_d8a0de8/runs/LIVE_d8a0de8/initial",
+    "checked_at": "2026-10-06T17:23:32.849405+09:00",
+    "fields": [
+      "display_value",
+      "badge",
+      "comparison_label",
+      "review_note",
+      "boundary_label",
+      "evidence_links[].file_name"
+    ],
+    "checks": [
+      "필드 검사(6필드가 칸에 실렸는가)",
+      "칸 전체 일치(칸에 그 밖의 내용이 없는가)"
+    ],
+    "inputs": {
+      "result_json": {
+        "path": "<OUTPUTS_EVAL>/20261006_live_d8a0de8/runs/LIVE_d8a0de8/initial/result.json",
+        "sha256": "e00e193f6f246720663f377f764f7428f64b75c7986e0cbfed93c78157d3ad1e"
+      },
+      "sheet_xlsx": {
+        "path": "<OUTPUTS_EVAL>/20261006_live_d8a0de8/runs/LIVE_d8a0de8/initial/exports/response_sheet/실사응답서_rba42_한울정밀공업(주).xlsx",
+        "sha256": "ccf19ea3ff1537132b0639ad46faea624a6a3935814c11d0f3d6dd69691bae38"
+      },
+      "sheet_pdf": {
+        "path": "<OUTPUTS_EVAL>/20261006_live_d8a0de8/runs/LIVE_d8a0de8/initial/exports/response_sheet/실사응답서_rba42_한울정밀공업(주).pdf",
+        "sha256": "f073bb22728fc72960cccbd8357691485603c5c308c2f0cd1c7c35703aac2e5a"
+      }
+    },
+    "summary": {
+      "json_rows": 48,
+      "excel_rows": 48,
+      "pdf_rows": 48,
+      "fields": 6,
+      "checked_field_values": 129,
+      "checked_cells": 384,
+      "mismatches": 0,
+      "cell_exact_mismatches": 0,
+      "unchecked": 48,
+      "pdf_evidence_figures": 4,
+      "pdf_continued_rows": {}
+    },
+    "mismatches": [],
+    "unchecked_kinds": [
+      [
+        "badge(이모지)",
+        "PDF 신뢰 칸은 _STATUS_STYLE 라벨만 그린다 — 이모지가 없다"
+      ]
+    ]
+  },
+  "followup": {
+    "run_dir": "<OUTPUTS_EVAL>/20261006_live_d8a0de8/runs/LIVE_d8a0de8/followup",
+    "checked_at": "2026-10-06T17:23:36.529942+09:00",
+    "fields": [
+      "display_value",
+      "badge",
+      "comparison_label",
+      "review_note",
+      "boundary_label",
+      "evidence_links[].file_name"
+    ],
+    "checks": [
+      "필드 검사(6필드가 칸에 실렸는가)",
+      "칸 전체 일치(칸에 그 밖의 내용이 없는가)"
+    ],
+    "inputs": {
+      "result_json": {
+        "path": "<OUTPUTS_EVAL>/20261006_live_d8a0de8/runs/LIVE_d8a0de8/followup/result.json",
+        "sha256": "2a0bbaad971501b33a68690c27424cfdb46fa48108f7233c937bd91bcbc3d843"
+      },
+      "sheet_xlsx": {
+        "path": "<OUTPUTS_EVAL>/20261006_live_d8a0de8/runs/LIVE_d8a0de8/followup/exports/response_sheet/실사응답서_rba42_한울정밀공업(주).xlsx",
+        "sha256": "a5b258d64e9ddb380ba7a0210f1ed39d74f01c0c41a3b1c29c67afea80b4bdeb"
+      },
+      "sheet_pdf": {
+        "path": "<OUTPUTS_EVAL>/20261006_live_d8a0de8/runs/LIVE_d8a0de8/followup/exports/response_sheet/실사응답서_rba42_한울정밀공업(주).pdf",
+        "sha256": "44ade5f6e6a5de682c1a57f9f8513115816fee3ab696b4657ff763553c4f9a5c"
+      }
+    },
+    "summary": {
+      "json_rows": 48,
+      "excel_rows": 48,
+      "pdf_rows": 48,
+      "fields": 6,
+      "checked_field_values": 132,
+      "checked_cells": 384,
+      "mismatches": 0,
+      "cell_exact_mismatches": 0,
+      "unchecked": 48,
+      "pdf_evidence_figures": 4,
+      "pdf_continued_rows": {}
+    },
+    "mismatches": [],
+    "unchecked_kinds": [
+      [
+        "badge(이모지)",
+        "PDF 신뢰 칸은 _STATUS_STYLE 라벨만 그린다 — 이모지가 없다"
+      ]
+    ]
+  }
+}
