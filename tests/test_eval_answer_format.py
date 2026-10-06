@@ -23,7 +23,7 @@ def _doc(answers, **meta):
 
 
 def _esgenie(**over):
-    row = {"qid": "SYN-1", "status": "verified", "value": 18.4, "unit": "톤",
+    row = {"qid": "SYN-1", "status": "verified", "value": 7.5, "unit": "톤",
            "comparison": "compared"}
     row.update(over)
     return {"sheet": {"answers": [row]}}
@@ -163,7 +163,7 @@ def test_identity_keys_separate_runs():
 
 # ── 어댑터: §6.1 판정 매핑 ───────────────────────────────────────────────
 def test_verified_with_value_is_confirmed():
-    assert ad.classify_decision("verified", "compared", 18.4)[0] == af.D_CONFIRMED
+    assert ad.classify_decision("verified", "compared", 7.5)[0] == af.D_CONFIRMED
 
 
 @pytest.mark.parametrize("empty", [None, "", [], {}])
@@ -183,13 +183,13 @@ def test_zero_and_false_are_filled_values(zero):
 @pytest.mark.parametrize("comparison", sorted(ad.BLOCKING_COMPARISONS))
 def test_blocking_comparison_forces_hold(comparison):
     for status in ("verified", "self_reported"):
-        decision, basis = ad.classify_decision(status, comparison, 92.0)
+        decision, basis = ad.classify_decision(status, comparison, 63.0)
         assert decision == af.D_HOLD, (status, comparison)
         assert comparison in basis
 
 
 def test_self_reported_is_never_confirmed():
-    assert ad.classify_decision("self_reported", "compared", 92.0)[0] == af.D_UNVERIFIED
+    assert ad.classify_decision("self_reported", "compared", 63.0)[0] == af.D_UNVERIFIED
 
 
 @pytest.mark.parametrize("status", ["insufficient", "hitl_required", "draft_ready", "flagged"])

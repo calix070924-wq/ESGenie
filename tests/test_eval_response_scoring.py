@@ -66,7 +66,7 @@ def _doc(answers: list[dict], **meta) -> dict:
 # ── 공통 형식 → 채점 대상 읽기 ───────────────────────────────────────────
 def test_answers_come_from_the_common_format_without_page_conversion():
     """공통 형식 page는 이미 1-기준이다 — 채점기는 다시 변환하지 않는다."""
-    doc = _doc([af.new_answer(qid="SYN-1", decision=af.D_CONFIRMED, value=18.4, unit="톤",
+    doc = _doc([af.new_answer(qid="SYN-1", decision=af.D_CONFIRMED, value=7.5, unit="톤",
                               evidence=[{"file_name": "08.pdf", "page": 3, "quote": None},
                                         {"file_name": "09.pdf", "page": None}])])
     (answer,) = rs.answers_from_document(doc)
@@ -75,7 +75,7 @@ def test_answers_come_from_the_common_format_without_page_conversion():
 
 
 def test_source_fields_are_preserved_for_inspection():
-    doc = _doc([af.new_answer(qid="SYN-1", decision=af.D_UNVERIFIED, value=92.0,
+    doc = _doc([af.new_answer(qid="SYN-1", decision=af.D_UNVERIFIED, value=63.0,
                               source={"status": "self_reported", "comparison": ""})])
     (answer,) = rs.answers_from_document(doc)
     assert (answer.source_status, answer.source_comparison) == ("self_reported", "")
@@ -115,13 +115,13 @@ def test_self_reported_hold_mismatch_family_is_wrong_confirmation(reason):
 
 
 def test_self_reported_answer_value_mismatch_is_wrong_confirmation():
-    label = _label(expected_decision="answer", expected_value="29.3", hold_reason="")
+    label = _label(expected_decision="answer", expected_value="41.6", hold_reason="")
     bucket, detail, _ = rs.assign_bucket(rs.V_SELF_REPORTED, label, False)
     assert (bucket, detail) == (rs.B_WRONG_CONFIRMATION, rs.D_MISSED_MISMATCH)
 
 
 def test_self_reported_answer_value_match_is_unnecessary_hold():
-    label = _label(expected_decision="answer", expected_value="29.3", hold_reason="")
+    label = _label(expected_decision="answer", expected_value="41.6", hold_reason="")
     bucket, detail, _ = rs.assign_bucket(rs.V_SELF_REPORTED, label, True)
     assert (bucket, detail) == (rs.B_UNNECESSARY_HOLD, rs.D_EVIDENCE_LINK_MISSING)
 
@@ -129,7 +129,7 @@ def test_self_reported_answer_value_match_is_unnecessary_hold():
 # ── 2026-10-06 확정 판정표 ───────────────────────────────────────────────
 def test_confirmed_answer_both_match_is_correct_answer():
     """확정 × 정답 라벨에서 값·근거가 모두 맞으면 `correct_answer`다."""
-    label = _label(expected_decision="answer", expected_value="29.3", hold_reason="")
+    label = _label(expected_decision="answer", expected_value="41.6", hold_reason="")
     bucket, detail, _ = rs.assign_bucket(rs.V_CONFIRMED, label, True, True)
     assert (bucket, detail) == (rs.B_CORRECT_ANSWER, "")
 
@@ -141,7 +141,7 @@ def test_confirmed_answer_both_match_is_correct_answer():
 ])
 def test_confirmed_answer_errors_are_split_by_cause(value_match, source_match, detail):
     """근거만 틀린 확정도 잘못된 확정이지만, 원인은 분리해서 센다."""
-    label = _label(expected_decision="answer", expected_value="29.3", hold_reason="")
+    label = _label(expected_decision="answer", expected_value="41.6", hold_reason="")
     bucket, got, _ = rs.assign_bucket(rs.V_CONFIRMED, label, value_match, source_match)
     assert bucket == rs.B_WRONG_CONFIRMATION
     assert got == detail
@@ -253,7 +253,7 @@ def test_self_reported_against_na_label_is_wrong_confirmation():
 
 def test_the_four_self_reported_rules_of_6_2_are_unchanged():
     """판정표를 맞추려고 §6.2 네 줄을 바꾸지 않았다."""
-    answer = _label(expected_decision="answer", expected_value="29.3", hold_reason="")
+    answer = _label(expected_decision="answer", expected_value="41.6", hold_reason="")
     assert rs.assign_bucket(rs.V_SELF_REPORTED, answer, True)[:2] == (
         rs.B_UNNECESSARY_HOLD, rs.D_EVIDENCE_LINK_MISSING)
     assert rs.assign_bucket(rs.V_SELF_REPORTED, answer, False)[:2] == (
@@ -276,38 +276,41 @@ def test_report_never_publishes_a_combined_score():
 
 # ── 값 비교: 허용 오차·단위·0 ────────────────────────────────────────────
 def test_tolerance_boundary_is_inclusive():
-    label = _label(expected_decision="answer", expected_value="29.3", expected_unit="%",
-                   tolerance="0.1", hold_reason="")
-    inside, _ = rs.compare_value(label, _answer(value=29.4, unit="%"))
-    outside, _ = rs.compare_value(label, _answer(value=29.41, unit="%"))
+    # 경계가 **딱 맞는** 값을 쓴다(0.5는 이진 부동소수로 정확히 표현된다). 비교는
+    # `abs(차) <= tolerance`이므로, 표현 오차가 끼는 값으로 경계를 재면 통과·실패가
+    # 숫자 선택에 따라 달라진다 — 그 우연에 의존하지 않는다.
+    label = _label(expected_decision="answer", expected_value="40.0", expected_unit="%",
+                   tolerance="0.5", hold_reason="")
+    inside, _ = rs.compare_value(label, _answer(value=40.5, unit="%"))
+    outside, _ = rs.compare_value(label, _answer(value=40.75, unit="%"))
     assert inside is True
     assert outside is False
 
 
 def test_default_tolerance_is_zero():
-    label = _label(expected_decision="answer", expected_value="18.4", expected_unit="톤",
+    label = _label(expected_decision="answer", expected_value="7.5", expected_unit="톤",
                    hold_reason="")
     assert label.tolerance == 0.0
-    assert rs.compare_value(label, _answer(value=18.4, unit="톤"))[0] is True
-    assert rs.compare_value(label, _answer(value=18.5, unit="톤"))[0] is False
+    assert rs.compare_value(label, _answer(value=7.5, unit="톤"))[0] is True
+    assert rs.compare_value(label, _answer(value=7.6, unit="톤"))[0] is False
 
 
 def test_unit_mismatch_is_not_normalized_away():
     """단위 차이는 의미 차이다 — 환산·별칭으로 숨기지 않는다."""
-    label = _label(expected_decision="answer", expected_value="18.4", expected_unit="톤",
+    label = _label(expected_decision="answer", expected_value="7.5", expected_unit="톤",
                    hold_reason="")
-    match, reason = rs.compare_value(label, _answer(value=18.4, unit="kg"))
+    match, reason = rs.compare_value(label, _answer(value=7.5, unit="kg"))
     assert match is False
     assert "단위 불일치" in reason
     # t↔톤도 환산하지 않는다(별칭 계약이 없다).
-    assert rs.compare_value(label, _answer(value=18.4, unit="t"))[0] is False
+    assert rs.compare_value(label, _answer(value=7.5, unit="t"))[0] is False
 
 
 def test_notation_only_differences_are_normalized():
     """전각·공백·천 단위 구분기호는 표기 차이로 보고 정규화한다."""
-    label = _label(expected_decision="answer", expected_value="12,500", expected_unit="kg",
+    label = _label(expected_decision="answer", expected_value="3,250", expected_unit="kg",
                    hold_reason="")
-    assert rs.compare_value(label, _answer(value=12500.0, unit=" KG "))[0] is True
+    assert rs.compare_value(label, _answer(value=3250.0, unit=" KG "))[0] is True
 
 
 def test_zero_value_is_compared_as_number_not_empty():
@@ -374,11 +377,11 @@ def test_no_expected_sources_is_undetermined():
 
 def test_value_and_source_match_are_recorded_separately(tmp_path):
     rows = [_label_row(qid="SYN-1", expected_decision="answer", hold_reason="",
-                       expected_value="29.3", expected_unit="%",
+                       expected_value="41.6", expected_unit="%",
                        expected_sources="08.pdf#3")]
     labels = rs.load_labels(_write_labels(tmp_path, rows))
     answers = {"initial": [_answer(qid="SYN-1", decision=rs.V_SELF_REPORTED,
-                                   value=29.3, unit="%", evidence=())]}
+                                   value=41.6, unit="%", evidence=())]}
     rep = rs.score(labels, answers, ("SYN-1",))
     (row,) = rep.rows
     assert row.value_match is True and row.source_match is False
@@ -396,7 +399,7 @@ def test_value_and_source_match_are_recorded_separately(tmp_path):
     ({"expected_decision": "hold", "hold_reason": ""}, "hold_reason"),
     ({"expected_decision": "answer", "hold_reason": "no_evidence"}, "hold_reason"),
     ({"expected_decision": "answer", "hold_reason": "", "expected_value": ""}, "expected_value"),
-    ({"expected_value": "29.3"}, "expected_value"),
+    ({"expected_value": "41.6"}, "expected_value"),
     ({"tolerance": "-1"}, "tolerance"),
     ({"tolerance": "약간"}, "tolerance"),
     ({"expected_sources": "08.pdf"}, "expected_sources"),
@@ -535,7 +538,7 @@ def _cli_labels(tmp_path):
 def _cli_esgenie_result(tmp_path):
     path = tmp_path / "result.json"
     path.write_text(json.dumps({"sheet": {"answers": [
-        {"qid": "SYN-1", "status": "self_reported", "value": 92.0, "unit": "%"},
+        {"qid": "SYN-1", "status": "self_reported", "value": 63.0, "unit": "%"},
         {"qid": "SYN-2", "status": "self_reported", "value": 0, "unit": "건",
          "evidence_links": [{"file_name": "08.pdf", "page": 0}]},
         {"qid": "SYN-3", "status": "not_applicable", "value": None},
@@ -595,7 +598,7 @@ def test_cli_refuses_to_overwrite_an_existing_result(tmp_path):
 def test_cli_scores_a_common_format_document_from_any_system(tmp_path):
     doc_path = tmp_path / "control.json"
     af.dump_document(_doc([
-        af.new_answer(qid="SYN-1", decision=af.D_UNVERIFIED, value=92.0, unit="%"),
+        af.new_answer(qid="SYN-1", decision=af.D_UNVERIFIED, value=63.0, unit="%"),
         af.new_answer(qid="SYN-2", decision=af.D_UNVERIFIED, value=0, unit="건",
                       evidence=[{"file_name": "08.pdf", "page": 1}]),
         af.new_answer(qid="SYN-3", decision=af.D_NOT_APPLICABLE, value=None),
@@ -639,24 +642,24 @@ def test_m1_denominator_is_every_answer_label_including_missing_and_unparsed():
     않는다. "제출한 답변 중 정답 비율"이 아니다.
     """
     labels = [
-        _label(qid="A", expected_decision="answer", hold_reason="", expected_value="18.4",
+        _label(qid="A", expected_decision="answer", hold_reason="", expected_value="7.5",
                expected_unit="톤", expected_sources="SYN_합성증빙.pdf#1"),
-        _label(qid="B", expected_decision="answer", hold_reason="", expected_value="18.4",
+        _label(qid="B", expected_decision="answer", hold_reason="", expected_value="7.5",
                expected_unit="톤", expected_sources="SYN_합성증빙.pdf#1"),
-        _label(qid="C", expected_decision="answer", hold_reason="", expected_value="18.4",
+        _label(qid="C", expected_decision="answer", hold_reason="", expected_value="7.5",
                expected_unit="톤", expected_sources="SYN_합성증빙.pdf#1"),
-        _label(qid="D", expected_decision="answer", hold_reason="", expected_value="18.4",
+        _label(qid="D", expected_decision="answer", hold_reason="", expected_value="7.5",
                expected_unit="톤", expected_sources="SYN_합성증빙.pdf#1"),
         _label(qid="E", expected_decision="hold", hold_reason="no_evidence"),
     ]
     answers = [
         # 정답 — 확정 + 값·근거 일치
-        _answer(qid="A", decision=rs.V_CONFIRMED, value=18.4, unit="톤", evidence=(_ev(),)),
+        _answer(qid="A", decision=rs.V_CONFIRMED, value=7.5, unit="톤", evidence=(_ev(),)),
         # 값은 맞지만 **미검증 전달** → 분자 제외
-        _answer(qid="B", decision=rs.V_SELF_REPORTED, value=18.4, unit="톤",
+        _answer(qid="B", decision=rs.V_SELF_REPORTED, value=7.5, unit="톤",
                 evidence=(_ev(),)),
         # 확정이지만 근거가 틀렸다 → 분자 제외
-        _answer(qid="C", decision=rs.V_CONFIRMED, value=18.4, unit="톤",
+        _answer(qid="C", decision=rs.V_CONFIRMED, value=7.5, unit="톤",
                 evidence=(_ev("다른파일.pdf", 9),)),
         # D는 응답 자체가 없다 → 분모에 남고 분자에서 빠진다
     ]
@@ -730,9 +733,9 @@ def test_m5_zero_denominator_is_not_computable_not_zero_percent():
 def test_m5_and_a5_are_different_metrics():
     """'자료 연결률'과 '연결한 근거가 정답인 비율'을 같은 것으로 취급하지 않는다."""
     labels = [_label(qid="A", expected_decision="answer", hold_reason="",
-                     expected_value="18.4", expected_unit="톤",
+                     expected_value="7.5", expected_unit="톤",
                      expected_sources="SYN_합성증빙.pdf#1")]
-    answers = [_answer(qid="A", decision=rs.V_CONFIRMED, value=18.4, unit="톤",
+    answers = [_answer(qid="A", decision=rs.V_CONFIRMED, value=7.5, unit="톤",
                        evidence=(_ev("엉뚱한파일.pdf", 3),))]
     _, scope = _scope(labels, answers, ("A",))
     assert scope["metrics"][rs.M5]["value"] == 1.0        # 연결은 했다
@@ -742,9 +745,9 @@ def test_m5_and_a5_are_different_metrics():
 def test_source_match_has_two_levels_and_file_only_is_auxiliary():
     """근거 일치를 파일 / 파일+쪽 두 단계로 나눈다. 공식은 파일+쪽이다."""
     labels = [_label(qid="A", expected_decision="answer", hold_reason="",
-                     expected_value="18.4", expected_unit="톤",
+                     expected_value="7.5", expected_unit="톤",
                      expected_sources="SYN_합성증빙.pdf#3")]
-    answers = [_answer(qid="A", decision=rs.V_CONFIRMED, value=18.4, unit="톤",
+    answers = [_answer(qid="A", decision=rs.V_CONFIRMED, value=7.5, unit="톤",
                        evidence=(_ev(page=1),))]
     rep, scope = _scope(labels, answers, ("A",))
     (row,) = rep.rows
