@@ -488,12 +488,14 @@ def _sentence_review(sentence: str, entries: list[dict[str, Any]], facts: list, 
                           "rejected": [{"evidence": d, "problems": p} for d, p in result.conflicting]})
     for reason, items in failed.items():
         when = next((w for w in whens if w is not None), None)
-        related = [f.describe() for f in related_facts(sentence, when, units, facts)]
+        related_sources = related_facts(sentence, when, units, facts)
+        related = [f.describe() for f in related_sources]
         issues.append({"reason": reason, "quantities": [q.raw for q, _ in items], "starts": [q.start for q, _ in items],
                        "confirmed": [c for c in dict.fromkeys(confirmed) if c not in related],
                        "numbers": [f"{q.value:g}" for q, _ in items], "related": related,
                        "problems": sorted({p for _q, r in items for p in r.problems}),
                        "cited": list(evidence.cited), "missing_citations": list(evidence.missing),
+                       "scope_corrections": [c for f in related_sources for c in f.scope_corrections],
                        "conflicts": [{"evidence": d, "problems": p} for _q, r in items for d, p in r.conflicting]})
     if legacy_texts is not None:
         # 단위 없는 숫자는 근거 청크의 숫자로만 본다 — 판단이 갈리므로 표시만 붙인다.
@@ -572,7 +574,7 @@ def _apply(sentence: str, issues: list[dict[str, Any]], notes: list[str], marks:
 def _issue_record(issue: dict[str, Any], area: str | None, sentence: str, model_text: str, output: str) -> dict[str, Any]:
     record = {"area": area, "sentence": sentence, "reason": issue["reason"], "action": "replaced",
               "model_text": model_text, "output": output}
-    for key in ("code", "numbers", "quantities", "related", "problems", "cited", "missing_citations", "conflicts"):
+    for key in ("code", "numbers", "quantities", "related", "problems", "cited", "missing_citations", "conflicts", "scope_corrections"):
         if issue.get(key):
             record[key] = issue[key]
     return record

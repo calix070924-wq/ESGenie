@@ -102,11 +102,15 @@ class Fact:
     group: str = ""             # 대상 집단(고용형태, `label_group`). 없으면 집단을 가리지 않은 값(합계 등)
     sites: frozenset = frozenset()   # 사업장 식별값(`ocr_router._site_keys`). 없으면 원문 미기록
     site_conflicts: tuple = ()       # 라벨·경계·원문 인용의 사업장 불일치. 이 사실은 범위 근거로 채택하지 않는다.
+    site_scope: str = ""
+    scope_corrections: tuple = ()    # 원문 범위와 어긋난 모델 라벨·식별값 정정 기록
 
     def describe(self) -> str:
         value = f"{self.value:g}" if isinstance(self.value, float) else str(self.value)
         when = f"({self.period_text})" if self.period_text else ""
-        site = f" [사업장: {', '.join(sorted(self.sites))}]" if self.sites else ""
+        display = ', '.join(sorted(self.sites)) if self.sites else (
+            "전체 사업장" if self.site_scope == "entity" else "원문 미기록" if self.site_scope == "unknown" else "")
+        site = f" [사업장: {display}]" if display else ""
         where = f" — {self.source_file}" if self.source_file else ""
         conflict = " [사업장 충돌: " + "; ".join(self.site_conflicts) + "]" if self.site_conflicts else ""
         return f"{self.label} {value}{self.unit or ''}{when}{site}{conflict}{where}"
@@ -294,7 +298,7 @@ def refine_local_sites(local: frozenset, heading: frozenset) -> frozenset:
         else {key}))
 
 
-def row_site_identity(row: dict[str, Any]) -> tuple[frozenset, tuple]:
+def _row_site_identity(row: dict[str, Any]) -> tuple[frozenset, tuple]:
     if "site_identity" in row:
         return frozenset(row["site_identity"]), tuple(row.get("site_conflicts") or ())
     keys, conflicts = fact_site_identity(row.get("label", ""), row.get("site", ""), row.get("quote", ""))
@@ -302,8 +306,43 @@ def row_site_identity(row: dict[str, Any]) -> tuple[frozenset, tuple]:
     return (frozenset() if conflicts else keys), conflicts
 
 
+def normalize_source_fact(row: dict[str, Any]) -> dict[str, Any]:
+    """원문에서 확정한 수량 범위와 모든 소비 필드를 맞춘다. 모델 라벨·저장 식별값은 범위를 복원하지 못한다.
+
+    `unknown` 기본값만으로 정상 R2 사업장을 지우지 않는다. 수량별 원문 판정이 미기록을 확인했을 때만
+    비운다. 정정 전 모델 필드와 원문 판정은 메타에 보존하고 공개 라벨·사업장은 일관된 사실로 전달한다.
+    """
+    from .ssot.ocr_router import _SITE_MENTION_RE
+    result = dict(row)
+    provenance = row.get("scope_provenance") or {}
+    scope = str(provenance.get("site_scope") or row.get("site_scope") or "")
+    cleared = scope == "entity" or (scope == "unknown" and (
+        row.get("site_scope_verified") or provenance.get("source") == "quantity_scope"))
+    if not cleared:
+        return result
+    label = str(row.get("label") or "")
+    cleaned = re.sub(r"\s+", " ", _SITE_MENTION_RE.sub(" ", label)).strip(" /·:：,-")
+    corrections = list(row.get("scope_corrections") or [])
+    if cleaned != label or row.get("site") or row.get("site_identity"):
+        correction = {"source": "source_scope_consistency", "method": "rule",
+                      "reason": "source_scope_overrides_model_site", "site_scope": scope,
+                      "original_label": label, "original_site": row.get("site") or "",
+                      "original_site_identity": list(row.get("site_identity") or []),
+                      "corrected_label": cleaned, "scope_evidence": provenance.get("scope_heading") or ""}
+        if correction not in corrections:
+            corrections.append(correction)
+    return {**result, "label": cleaned, "site": "", "site_scope": scope, "site_identity": [],
+            "site_scope_verified": True,
+            "scope_corrections": corrections}
+
+
+def row_site_identity(row: dict[str, Any]) -> tuple[frozenset, tuple]:
+    return _row_site_identity(normalize_source_fact(row))
+
+
 def fact_site_display(row: dict[str, Any]) -> str:
-    keys, conflicts = row_site_identity(row)
+    row = normalize_source_fact(row)
+    keys, conflicts = _row_site_identity(row)
     if conflicts:
         return "확인 보류: 사업장 충돌 — " + "; ".join(conflicts)
     if not keys:
@@ -888,7 +927,7 @@ def related_facts(sentence: str, when, units: set[str], facts: list[Fact], limit
         relation = date_relation(when, f.period)
         if relation == "disjoint" or (relation == "coarser" and when is not None and when.grain == "day"):
             continue                  # 하루의 문장에 월 합계를 붙이지 않는다
-        key = (f.value, f.role, f.period_text, f.unit, f.group, f.sites, f.site_conflicts)
+        key = (f.value, f.role, f.period_text, f.unit, f.group, f.sites, f.site_conflicts, f.site_scope)
         if key in seen:
             continue
         seen.add(key)
@@ -942,9 +981,12 @@ def source_facts(graph: Any, source_files: set[str] | None = None, limit: int = 
         verified_scope = next((p for p in reversed(getattr(b, "provenance", ()) or ())
                                if p.get("source") == "quantity_scope"), {})
         site_scope = str(verified_scope.get("site_scope") or getattr(b, "site_scope", "") or "")
-        # 긴 인용의 앞 절 사업장은 수량별 원문 판정으로 비운 경계를 다시 채울 수 없다.
+        row = normalize_source_fact({"label": label, "site": site, "site_scope": site_scope,
+                                     "site_scope_verified": bool(verified_scope), "scope_provenance": verified_scope})
+        label, site = row["label"], row["site"]
+        # 원문 판정으로 비운 범위는 라벨·긴 인용·별칭으로 다시 채우지 않는다.
         sites, site_conflicts = fact_site_identity(
-            label, site, "" if verified_scope.get("site_scope") in {"entity", "unknown"} else quote)
+            label, site, "" if "site_identity" in row else quote)
         if not sites and not site_conflicts and site:
             sites = frozenset({re.sub(r"\s+", "", site)})
         key = (node.source_file, label, float(node.value), str(node.unit), period_text, start, end,
@@ -952,7 +994,7 @@ def source_facts(graph: Any, source_files: set[str] | None = None, limit: int = 
         if key in seen:
             continue
         seen.add(key)
-        rows.append({"label": label, "value": node.value, "unit": str(node.unit or ""),
+        rows.append({**row, "label": label, "value": node.value, "unit": str(node.unit or ""),
                      "role": label_role(label), "value_role": getattr(node, "value_role", ""),
                      "period_text": period_text, "period_start": start, "period_end": end,
                      "site": site, "site_scope": site_scope, "site_identity": sorted(sites), "site_conflicts": list(site_conflicts),
@@ -971,11 +1013,12 @@ def table_rows(rows: list[dict[str, Any]], limit: int = 12) -> list[dict[str, An
     """
     picked, seen = [], set()
     for r in rows:
+        r = normalize_source_fact(r)
         if not (r.get("role") or r.get("value_role") == "total"):
             continue
         # 다른 고용형태·사업장의 같은 값·역할·기간은 한 줄로 합치지 않는다(PR71 재검토 §10 — `참석 · 정규직 6명`·`참석 · 기간제 6명`).
         key = (r.get("value"), r.get("unit"), r.get("role"), r.get("period_text"), label_group(r.get("label", "")),
-               row_site_identity(r))
+               row_site_identity(r), r.get("site_scope"))
         if key in seen:
             continue
         seen.add(key)
@@ -990,6 +1033,7 @@ def table_rows(rows: list[dict[str, Any]], limit: int = 12) -> list[dict[str, An
 
 
 def fact_line(row: dict[str, Any]) -> str:
+    row = normalize_source_fact(row)
     parts = [f"- {row['label']}: {row['value']:g}{row['unit']}" if isinstance(row["value"], float)
              else f"- {row['label']}: {row['value']}{row['unit']}"]
     if row.get("role"):
@@ -998,8 +1042,11 @@ def fact_line(row: dict[str, Any]) -> str:
     parts.append(f"[사업장: {fact_site_display(row)}]")
     page = row.get("page")
     parts.append(f"[출처: {row.get('source_file') or '미상'}" + (f" {page + 1}쪽]" if isinstance(page, int) else "]"))
-    if row.get("quote"):
-        parts.append(f"[원문: {row['quote']}]")
+    # 전사·미기록 수량의 긴 인용 앞 절은 해당 수량의 사업장 근거가 아니다. 원문 범위 근거를 표시한다.
+    quote = (row.get("scope_provenance") or {}).get("scope_heading") if (
+        row.get("site_scope_verified") and row.get("site_scope") in {"entity", "unknown"}) else row.get("quote")
+    if quote:
+        parts.append(f"[원문: {quote}]")
     return " ".join(parts)
 
 
@@ -1007,6 +1054,7 @@ def facts_from_rows(rows: list[dict[str, Any]]) -> list[Fact]:
     from .rag_gates.units import normalize_unit
     out = []
     for row in rows or []:
+        row = normalize_source_fact(row)
         try:
             value = float(row["value"])
         except (KeyError, TypeError, ValueError):
@@ -1020,7 +1068,8 @@ def facts_from_rows(rows: list[dict[str, Any]]) -> list[Fact]:
                                          row.get("period_end", ""), label),
                         period_text=row.get("period_text", ""), source_file=row.get("source_file", ""),
                         kind="source", tokens=label_tokens(label), group=label_group(label),
-                        sites=sites, site_conflicts=site_conflicts))
+                        sites=sites, site_conflicts=site_conflicts, site_scope=row.get("site_scope") or "",
+                        scope_corrections=tuple(row.get("scope_corrections") or ())))
     return out
 
 
