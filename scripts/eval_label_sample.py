@@ -26,6 +26,11 @@ from esgenie.eval import answer_format as af
 from esgenie.eval import response_scoring as rs
 from esgenie.supplychain.frameworks import get_framework
 
+#: 검토 집합 식별자. 두 집합의 결과는 **분리해서 보고한다** — 합치면 공식 무작위 표본의
+#: 일치율이 수치형 가중으로 흔들린다.
+OFFICIAL_SET_ID = "bm_rba42_v1"            # 공식 무작위 표본 (단계별 10문항)
+NUMERIC_CENSUS_SET_ID = "bm_rba42_numeric_census"  # 수치형 전수 (단계별 6문항)
+
 #: 표본 패키지가 내보내는 파일들.
 MANIFEST = "sample.json"
 QUESTIONS = "questions.csv"
@@ -64,8 +69,12 @@ def strata_sizes(sizes: dict[str, int], total: int, k: int) -> dict[str, int]:
     return base
 
 
-def draw(framework_key: str, per_stage: int, seed: int) -> dict:
-    """표본을 뽑는다. 같은 (양식, 수, 씨값)이면 항상 같은 결과다."""
+def draw(framework_key: str, per_stage: int, seed: int, set_id: str = OFFICIAL_SET_ID) -> dict:
+    """공식 무작위 표본을 뽑는다. 같은 (양식, 수, 씨값)이면 항상 같은 결과다.
+
+    **이 표본은 고정이다.** 기대값 노출 여부나 시스템 결과를 이유로 다시 뽑지 않는다
+    (`tests/test_eval_label_sample.py::test_official_sample_is_locked`).
+    """
     questions = get_framework(framework_key).questions
     by_type: dict[str, list[str]] = {}
     for q in questions:
@@ -84,6 +93,8 @@ def draw(framework_key: str, per_stage: int, seed: int) -> dict:
 
     all_qids = tuple(sorted(q.qid for q in questions))
     return {
+        "set_id": set_id,
+        "selection": "random_sample",
         "framework": framework_key,
         "stages": list(af.STAGES),
         "per_stage": per_stage,
@@ -99,6 +110,56 @@ def draw(framework_key: str, per_stage: int, seed: int) -> dict:
                    for key in sorted(sizes)},
         "qids": picked,
         "rows": [{"stage": stage, "qid": qid} for stage in af.STAGES for qid in picked],
+        "notice": ("정답이 들어 있지 않다. 라벨 서식은 비어 있으며, 사람이 원본 증빙을 보고 "
+                   "채운다. A의 정답 라벨과 ESGenie 응답은 이 패키지에 포함되지 않는다."),
+    }
+
+
+def census(framework_key: str, qtype: str, overlap_qids: tuple[str, ...] = (),
+           set_id: str = NUMERIC_CENSUS_SET_ID) -> dict:
+    """한 유형을 **전수** 검토 대상으로 잡는다. 무작위가 아니므로 씨값이 없다.
+
+    수치형은 6문항뿐이라 비율 표본으로는 거의 들어오지 않는다. 값·단위·측정 경계 비교를
+    보려면 전수가 필요하다. 다만 **공식 무작위 표본과 합치지 않는다** — 전수 집합은
+    모집단을 대표하지 않으므로 일치율을 함께 세면 공식 표본 수치가 왜곡된다.
+
+    `overlap_qids`에 공식 표본의 문항을 주면 겹치는 행을 표시한다. 겹친 행은 라벨을
+    **다시 매기지 않고 재사용**한다(같은 문항·같은 단계·같은 원본이므로 라벨이 같다).
+    """
+    questions = get_framework(framework_key).questions
+    qids = sorted(q.qid for q in questions if q.qtype == qtype)
+    if not qids:
+        raise ValueError(f"양식 '{framework_key}'에 유형 '{qtype}' 문항이 없다")
+
+    overlap = sorted(set(qids) & set(overlap_qids))
+    fresh = [q for q in qids if q not in set(overlap)]
+    all_qids = tuple(sorted(q.qid for q in questions))
+    return {
+        "set_id": set_id,
+        "selection": "census",
+        "framework": framework_key,
+        "qtype": qtype,
+        "stages": list(af.STAGES),
+        "per_stage": len(qids),
+        "total_rows": len(qids) * len(af.STAGES),
+        "seed": None,  # 전수는 무작위가 아니다
+        "method": (f"유형 '{qtype}' 전수. 무작위 추출이 아니므로 씨값이 없다. "
+                   "공식 무작위 표본과 **분리해서 보고한다** — 합치면 공식 표본의 "
+                   "일치율이 수치형 가중으로 흔들린다. "
+                   "시스템의 정오답·보류 여부는 선정에 쓰지 않는다."),
+        "framework_question_count": len(questions),
+        "qid_list_sha256": _qid_list_digest(all_qids),
+        "strata": {qtype: {"population": len(qids), "sampled": len(qids)}},
+        "qids": qids,
+        "overlap_with": {
+            "set_id": OFFICIAL_SET_ID,
+            "qids": overlap,
+            "note": "공식 표본과 겹치는 문항이다. 라벨을 다시 매기지 않고 재사용한다.",
+        },
+        "labels_needed_qids": fresh,
+        "rows": [{"stage": stage, "qid": qid,
+                  "reused_from_official_sample": qid in set(overlap)}
+                 for stage in af.STAGES for qid in qids],
         "notice": ("정답이 들어 있지 않다. 라벨 서식은 비어 있으며, 사람이 원본 증빙을 보고 "
                    "채운다. A의 정답 라벨과 ESGenie 응답은 이 패키지에 포함되지 않는다."),
     }
@@ -131,10 +192,16 @@ def _write_blank_labels(path: Path, rows: list[dict]) -> None:
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description="정답 없는 독립 라벨링 표본 패키지를 만든다")
     parser.add_argument("--framework", default="rba42")
+    parser.add_argument("--mode", choices=("sample", "census"), default="sample",
+                        help="sample=공식 무작위 표본, census=한 유형 전수")
     parser.add_argument("--per-stage", type=int, default=10,
-                        help="단계별 표본 문항 수 (기본 10 → 두 단계 20행)")
-    parser.add_argument("--seed", type=int, required=True,
-                        help="재현용 난수 씨값. 기록에 남긴다")
+                        help="sample 모드의 단계별 문항 수 (기본 10 → 두 단계 20행)")
+    parser.add_argument("--seed", type=int,
+                        help="sample 모드의 재현용 난수 씨값. 기록에 남긴다")
+    parser.add_argument("--qtype", help="census 모드에서 전수로 볼 문항 유형 (예: numeric)")
+    parser.add_argument("--set-id", help="검토 집합 식별자 (기본은 모드별 기본값)")
+    parser.add_argument("--overlap-with",
+                        help="census 모드에서 겹치는 행을 표시할 공식 표본의 sample.json")
     parser.add_argument("--out", required=True, help="표본 패키지를 쓸 디렉터리")
     parser.add_argument("--overwrite", action="store_true",
                         help="이미 있는 표본을 덮어쓴다 (기본은 거부)")
@@ -142,8 +209,23 @@ def main(argv: list[str] | None = None) -> int:
 
     out = Path(args.out)
     try:
-        sample = draw(args.framework, args.per_stage, args.seed)
-    except (KeyError, ValueError) as exc:
+        if args.mode == "sample":
+            if args.seed is None:
+                raise ValueError("sample 모드에는 --seed가 필요하다")
+            sample = draw(args.framework, args.per_stage, args.seed,
+                          set_id=args.set_id or OFFICIAL_SET_ID)
+        else:
+            if not args.qtype:
+                raise ValueError("census 모드에는 --qtype이 필요하다")
+            if args.seed is not None:
+                raise ValueError("census는 무작위가 아니다 — --seed를 쓰지 않는다")
+            overlap: tuple[str, ...] = ()
+            if args.overlap_with:
+                official = json.loads(Path(args.overlap_with).read_text(encoding="utf-8"))
+                overlap = tuple(official["qids"])
+            sample = census(args.framework, args.qtype, overlap,
+                            set_id=args.set_id or NUMERIC_CENSUS_SET_ID)
+    except (KeyError, ValueError, OSError) as exc:
         print(f"입력 오류: {exc}", file=sys.stderr)
         return 2
 
@@ -159,10 +241,15 @@ def main(argv: list[str] | None = None) -> int:
     (out / MANIFEST).write_text(
         json.dumps(sample, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
     _write_questions(out / QUESTIONS, args.framework, sample["qids"])
-    _write_blank_labels(out / BLANK_LABELS, sample["rows"])
+    # 겹쳐서 재사용하는 행은 서식에 넣지 않는다 — 같은 문항을 두 번 매기게 하지 않는다.
+    form_rows = [r for r in sample["rows"] if not r.get("reused_from_official_sample")]
+    _write_blank_labels(out / BLANK_LABELS, form_rows)
 
-    print(f"표본 {sample['per_stage']}문항 × {len(sample['stages'])}단계 "
-          f"= {sample['total_rows']}행 (씨값 {sample['seed']}) → {out}")
+    seed_text = "전수" if sample["seed"] is None else f"씨값 {sample['seed']}"
+    reused = sample["total_rows"] - len(form_rows)
+    print(f"[{sample['set_id']}] {sample['per_stage']}문항 × {len(sample['stages'])}단계 "
+          f"= {sample['total_rows']}행 ({seed_text}), 새로 매길 행 {len(form_rows)}"
+          + (f" · 재사용 {reused}" if reused else "") + f" → {out}")
     return 0
 
 

@@ -1,0 +1,107 @@
+{
+  "set_id": "bm_rba42_numeric_census",
+  "selection": "census",
+  "framework": "rba42",
+  "qtype": "numeric",
+  "stages": [
+    "initial",
+    "followup"
+  ],
+  "per_stage": 6,
+  "total_rows": 12,
+  "seed": null,
+  "method": "유형 'numeric' 전수. 무작위 추출이 아니므로 씨값이 없다. 공식 무작위 표본과 **분리해서 보고한다** — 합치면 공식 표본의 일치율이 수치형 가중으로 흔들린다. 시스템의 정오답·보류 여부는 선정에 쓰지 않는다.",
+  "framework_question_count": 48,
+  "qid_list_sha256": "57b2e4ce394d6babbc45ac838f47e1aa66bba6e266785ea7fa1b62afb277ee78",
+  "strata": {
+    "numeric": {
+      "population": 6,
+      "sampled": 6
+    }
+  },
+  "qids": [
+    "RBA-C-4-E-6-1",
+    "RBA-C-4-E-6-2",
+    "RBA-C-5-E-7-1",
+    "RBA-C-8-E-3-1",
+    "RBA-C-8-E-4-1",
+    "RBA-C-8-E-4-2"
+  ],
+  "overlap_with": {
+    "set_id": "bm_rba42_v1",
+    "qids": [
+      "RBA-C-8-E-3-1"
+    ],
+    "note": "공식 표본과 겹치는 문항이다. 라벨을 다시 매기지 않고 재사용한다."
+  },
+  "labels_needed_qids": [
+    "RBA-C-4-E-6-1",
+    "RBA-C-4-E-6-2",
+    "RBA-C-5-E-7-1",
+    "RBA-C-8-E-4-1",
+    "RBA-C-8-E-4-2"
+  ],
+  "rows": [
+    {
+      "stage": "initial",
+      "qid": "RBA-C-4-E-6-1",
+      "reused_from_official_sample": false
+    },
+    {
+      "stage": "initial",
+      "qid": "RBA-C-4-E-6-2",
+      "reused_from_official_sample": false
+    },
+    {
+      "stage": "initial",
+      "qid": "RBA-C-5-E-7-1",
+      "reused_from_official_sample": false
+    },
+    {
+      "stage": "initial",
+      "qid": "RBA-C-8-E-3-1",
+      "reused_from_official_sample": true
+    },
+    {
+      "stage": "initial",
+      "qid": "RBA-C-8-E-4-1",
+      "reused_from_official_sample": false
+    },
+    {
+      "stage": "initial",
+      "qid": "RBA-C-8-E-4-2",
+      "reused_from_official_sample": false
+    },
+    {
+      "stage": "followup",
+      "qid": "RBA-C-4-E-6-1",
+      "reused_from_official_sample": false
+    },
+    {
+      "stage": "followup",
+      "qid": "RBA-C-4-E-6-2",
+      "reused_from_official_sample": false
+    },
+    {
+      "stage": "followup",
+      "qid": "RBA-C-5-E-7-1",
+      "reused_from_official_sample": false
+    },
+    {
+      "stage": "followup",
+      "qid": "RBA-C-8-E-3-1",
+      "reused_from_official_sample": true
+    },
+    {
+      "stage": "followup",
+      "qid": "RBA-C-8-E-4-1",
+      "reused_from_official_sample": false
+    },
+    {
+      "stage": "followup",
+      "qid": "RBA-C-8-E-4-2",
+      "reused_from_official_sample": false
+    }
+  ],
+  "notice": "정답이 들어 있지 않다. 라벨 서식은 비어 있으며, 사람이 원본 증빙을 보고 채운다. A의 정답 라벨과 ESGenie 응답은 이 패키지에 포함되지 않는다."
+}

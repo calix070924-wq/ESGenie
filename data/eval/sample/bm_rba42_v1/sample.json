@@ -1,4 +1,6 @@
 {
+  "set_id": "bm_rba42_v1",
+  "selection": "random_sample",
   "framework": "rba42",
   "stages": [
     "initial",

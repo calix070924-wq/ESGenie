@@ -33,8 +33,22 @@ PR #71 병합 확인 근거(2026-10-06, `git fetch origin --prune` 직후):
 
 | 파일 | 내용 |
 |---|---|
-| `esgenie/eval/response_scoring.py` (신규) | 라벨 로더·시스템 판정 매핑·값/근거 비교·구성 검증·집계·CLI |
-| `tests/test_eval_response_scoring.py` (신규) | 합성 입력 테스트 66건 |
+| `esgenie/eval/answer_format.py` (신규) | 공통 답안 형식 v1 정의·검증기 (판정 6값, 1-기준 페이지) |
+| `esgenie/eval/esgenie_adapter.py` (신규) | ESGenie `result.json` → 공통 형식. §6.1 판정 매핑과 0→1 페이지 변환 **단일 지점** |
+| `esgenie/eval/response_scoring.py` (신규) | 라벨 로더·값/근거 비교·구성 검증·집계. 입력은 공통 형식이며 ESGenie 전용 필드를 모른다 |
+| `scripts/eval_response_quality.py` (신규) | 채점 CLI (단일) |
+| `scripts/eval_label_sample.py` (신규) | 정답 없는 표본 추출 — 공식 무작위 표본과 유형 전수 |
+| `scripts/build_b_package.py` (신규) | B 전달 ZIP 빌더. 금지 검사로 정답·키 혼입을 막는다 |
+| `data/eval/examples/` (신규) | 공통 형식 합성 예시 2건 |
+| `data/eval/sample/bm_rba42_v1/` (신규) | 공식 무작위 표본 20행 (씨값 20261006, **고정**) |
+| `data/eval/sample/bm_rba42_numeric_census/` (신규) | 수치형 전수 12행 (새로 매길 10행) |
+| `docs/공통답안형식_v1초안_2026-10-06.md` (신규) | 형식 문서 — **v1 초안 / 합의 대기** |
+| `docs/독립라벨링_표본패키지_B_2026-10-06.md` (신규) | B용 라벨링 가이드 |
+| `docs/독립성_노출기록_2026-10-06.md` (신규) | 기대값 노출 기록과 독립 검토 인정 판단 절차 |
+| `docs/응답품질채점_사용법_2026-10-06.md` (신규) | 채점 CLI 사용법 |
+| `docs/지표정의표_2026-10-06.md` (신규) | 지표 정의·분자·분모·확정 여부 |
+| `docs/작업시간계측_기존계측조사_2026-10-06.md` (신규) | A-2 기존 계측 조사 (구현 미착수) |
+| `tests/test_eval_answer_format.py`·`test_eval_label_sample.py`·`test_eval_response_scoring.py`·`test_build_b_package.py` | 합성 입력 테스트 **146건** |
 | `docs/validation/eval-scoring-20261006/README.md` (신규) | 이 기록 |
 
 제품 코드는 고치지 않았다. `esgenie/supplychain/exporters/*`·`schema.py`·`mapping.py`는
@@ -49,8 +63,11 @@ PR #71 병합 확인 근거(2026-10-06, `git fetch origin --prune` 직후):
 - **비율·정확도·종합 점수를 내지 않는다.** 지표의 분자·분모가 미정이므로
   `ScoreReport`에는 건수만 있고 `metrics_blocked_reason`에 그 이유가 들어 있다.
   `unresolved`가 0건이어도 비율을 내지 않는다.
-- **공통 형식 추상화를 만들지 않았다.** §4가 없어 입력 해석(`parse_answers`·`load_labels`)과
-  채점(`classify_system`·`compare_*`·`assign_bucket`)만 분리했다. 변환층·플러그인은 없다.
+- **공통 형식은 A가 새로 작성한 v1 초안이다.** 작업지시서 A §4 원문을 찾은 것이 아니다
+  (§6.1 참조). 정민 지시로 A가 초안을 쓰고 B와 합의를 진행한다. 합의 전까지
+  `format_version`은 `1.0-draft`이고, 문서 상태는 "v1 초안 / 합의 대기"다.
+  구조는 세 겹으로만 나눴다 — 형식 정의·검증(`answer_format`), 시스템별 변환
+  (`esgenie_adapter`), 채점(`response_scoring`). 플러그인·배치 프레임워크는 없다.
 
 ### 2.1 시스템 판정 매핑(§6.1)
 
@@ -72,16 +89,22 @@ PR #71 병합 확인 근거(2026-10-06, `git fetch origin --prune` 직후):
 ### 2.2 페이지 번호 변환
 
 시스템 `evidence_links[].page`는 **0-기준**이다(`esgenie/ssot/audit_trace.py:35`,
-UI 출력계약 §2 "0-기준, 화면은 +1"). 라벨 `expected_sources`는 **1-기준**이다.
+UI 출력계약 §2 "0-기준, 화면은 +1"). 공통 형식의 `page`와 라벨 `expected_sources`는
+**둘 다 1-기준**이다.
 
-- 변환 지점은 `to_label_page()` **한 곳뿐**이고, 호출자는 `parse_answers()`뿐이다.
-- 변환된 값은 `EvidenceRef.page_1based`라는 이름으로만 들고 다녀 재변환을 막는다.
+- 변환 지점은 `esgenie_adapter.to_common_page()` **한 곳뿐**이다. 호출자는 어댑터의
+  근거 변환(`_links`)뿐이다.
+- **채점기에는 변환이 없다.** `response_scoring`은 공통 형식의 `page`를 그대로
+  `EvidenceRef.page_1based`에 담는다. 라벨도 1-기준이라 양쪽 모두 변환하지 않는다.
+- 이미 1-기준인 대조군 근거는 어댑터를 거치지 않으므로 다시 변환되지 않는다.
 - 페이지가 없으면(`None`·bool·파싱 실패) **첫 페이지로 간주하지 않고** `None`으로 남기고,
   근거 비교에서 불일치로 처리하며 이유에 "시스템 근거에 페이지가 없다"를 남긴다.
-- 테스트: `test_page_conversion_is_zero_to_one_based_and_single_point`,
-  `test_parse_answers_converts_page_exactly_once`(이미 변환된 값을 다시 넣으면
-  4가 되는 것을 고정해 이중 변환을 드러낸다), `test_source_page_off_by_one_is_mismatch`,
-  `test_source_without_page_is_mismatch_not_first_page`.
+- 테스트: `test_eval_answer_format.py::test_page_conversion_is_zero_to_one_based`,
+  `::test_adapter_converts_page_exactly_once`(이미 변환된 값을 다시 넣으면 4가 되는 것을
+  고정해 이중 변환을 드러낸다), `::test_converted_pages_pass_format_validation`,
+  `test_eval_response_scoring.py::test_source_page_off_by_one_is_mismatch`,
+  `::test_source_without_page_is_mismatch_not_first_page`,
+  `::test_answers_come_from_the_common_format_without_page_conversion`.
 
 ### 2.3 값·근거 비교
 
@@ -145,16 +168,27 @@ stage,qid,expected_decision,hold_reason,expected_value,expected_unit,tolerance,e
 `rba42` 양식에서 qid 목록을 읽는다 — 정답 값은 쓰지 않는다). 파일 머리말에 그 사실을
 적어 두었다. 실제 정답 수치는 제품 코드·테스트에 없다.
 
+### 3.2 빈 라벨 서식 — 정답이 아니다
+
+`data/eval/sample/<집합>/labels_blank.csv`는 **같은 헤더의 빈 서식**이다. `stage`와
+`qid`만 채워져 있고 나머지 열은 전부 비어 있다. 채점기는 이 서식을 그대로 넣으면
+`LabelError`로 거부한다(`test_eval_label_sample.py::test_blank_form_is_refused_by_the_scorer`).
+이 서식은 확정 라벨이 아니므로 `data/eval/labels/`에 두지 않는다.
+
 ## 4. 수행한 검증과 결과
 
 환경: Python 3.14.6, worktree `/tmp/esg_eval_scoring`, 기준 `d8a0de8a…`.
 
 | 검증 | 명령 | 결과 |
 |---|---|---|
-| 채점기 테스트 | `python -m pytest tests/test_eval_response_scoring.py -q` | **66 passed** |
-| 전체 스위트(회귀) | `python -m pytest -q` | **5531 passed, 27 skipped** (skip은 기존 것, 73초) |
+| 평가 도구 테스트(1차, 채점기만) | `python -m pytest tests/test_eval_response_scoring.py -q` | **66 passed** |
+| 평가 도구 테스트(2차, 공통 형식 전환 후) | `python -m pytest tests/test_eval_answer_format.py tests/test_eval_label_sample.py tests/test_eval_response_scoring.py tests/test_build_b_package.py -q` | **146 passed** |
+| 전체 스위트(회귀, 1차) | `python -m pytest -q` | **5531 passed, 27 skipped** (73초) |
+| 전체 스위트(회귀, 2차) | `python -m pytest -q` | **5611 passed, 27 skipped** (69.8초, skip은 기존 것) |
 
-skip·xfail로 실패를 가린 테스트는 추가하지 않았다(새 테스트 66건 전부 실제 통과).
+skip·xfail로 실패를 가린 테스트는 추가하지 않았다(새 테스트 146건 전부 실제 통과).
+2차에서 늘어난 80건은 공통 형식·어댑터·표본 추출·패키지 빌더 테스트이고, 기존 통과
+건수는 줄지 않았다.
 
 ### 4.1 §7 필수 테스트 항목 대응
 
@@ -189,32 +223,59 @@ git fetch origin
 git worktree add -b verify/eval-scoring-20261006 /tmp/verify_eval_scoring origin/codex/eval-scoring-20261006
 cd /tmp/verify_eval_scoring
 
-# 1) 채점기 테스트
-python -m pytest tests/test_eval_response_scoring.py -q      # 66 passed 기대
+# 1) 평가 도구 테스트
+python -m pytest tests/test_eval_answer_format.py tests/test_eval_label_sample.py \
+  tests/test_eval_response_scoring.py tests/test_build_b_package.py -q  # 146 passed 기대
 
 # 2) 회귀
-python -m pytest -q                                          # 5531 passed, 27 skipped 기대
+python -m pytest -q                                          # 5611 passed, 27 skipped 기대
 
-# 3) 파일 해시
-shasum -a 256 esgenie/eval/response_scoring.py tests/test_eval_response_scoring.py
+# 3) 표본 재현 (같은 씨값이면 같은 표본)
+python scripts/eval_label_sample.py --seed 20261006 --out /tmp/chk_sample
+python scripts/eval_label_sample.py --mode census --qtype numeric \
+  --overlap-with data/eval/sample/bm_rba42_v1/sample.json --out /tmp/chk_census
+diff -r data/eval/sample/bm_rba42_v1 /tmp/chk_sample          # README.md만 차이
+diff -r data/eval/sample/bm_rba42_numeric_census /tmp/chk_census
+
+# 4) 파일 해시
+shasum -a 256 esgenie/eval/answer_format.py esgenie/eval/esgenie_adapter.py \
+  esgenie/eval/response_scoring.py scripts/eval_response_quality.py \
+  scripts/eval_label_sample.py scripts/build_b_package.py
 ```
 
-기대 해시(이 기록 작성 시점):
+기대 해시(2차 기록 작성 시점):
 
 ```
-24c6fbe5c25bfc6d88060424363cd824b179a6baad01a71d3f2a1db4c2b627dc  esgenie/eval/response_scoring.py
-98e1d32059c0b639a491e17af4c4baed81b0e8f5708fa0a9daee173291a1f568  tests/test_eval_response_scoring.py
+89ea4ab87940706e54339fe99eca1767e29caed7a709ea106189d2d754175220  esgenie/eval/answer_format.py
+325e1c4af213eb6f6d9878e13ec211d88cf81cb074560752f6e2dcf77100663d  esgenie/eval/esgenie_adapter.py
+122c1598552b5b1d56a51b937f41dcfdee9406cfd4e74f12f497a6ee6d9a78e8  esgenie/eval/response_scoring.py
+faef209a5b7b40a45723e3d75f3876596299f632ea6947b4ac65a58bd0c3a94b  scripts/eval_response_quality.py
+93e5d2cd4ee3017c212335b9dfaf038500e16cac81e3021c3f6ee6796d136460  scripts/eval_label_sample.py
+5450e9b5eafa20e517a0b6958c10da5a4f339982da6e5587d9cddf49924de7c9  scripts/build_b_package.py
 ```
+
+1차 기록의 해시(`response_scoring.py` `24c6fbe5…`, 테스트 `98e1d320…`)는 공통 형식
+전환으로 더 이상 맞지 않는다. 위 해시가 현재 값이다.
 
 라벨과 실제 실행 결과가 생기면 채점은 다음과 같이 돌린다(지금은 입력이 없어 실행하지 않았다).
+사용법 전체는 `docs/응답품질채점_사용법_2026-10-06.md`.
 
 ```bash
-python -m esgenie.eval.response_scoring \
-  --labels data/eval/labels/hanwool_bm_rba42_v1.csv \
-  --result initial=<...>/initial/result.json \
-  --result followup=<...>/followup/result.json \
-  --framework rba42 \
-  --out outputs/eval/<날짜>_<run_id>/score.json
+python scripts/eval_response_quality.py \
+  --labels data/eval/labels/<확정 라벨>.csv \
+  --esgenie-result initial=<...>/initial/result.json \
+  --esgenie-result followup=<...>/followup/result.json \
+  --run-id <실행 식별자> --data-source <자료 출처> \
+  --write-common outputs/eval/common/<실행 식별자> \
+  --out outputs/eval/scores/<실행 식별자>.json
+```
+
+B 전달 ZIP(독립 검토 전 전달본):
+
+```bash
+python scripts/build_b_package.py --stage pre_review \
+  --out outputs/b_package/esgenie_eval_b_pre_review_<날짜>.zip \
+  --manifest outputs/b_package/manifest_pre_review.json
 ```
 
 `outputs/eval/`은 `.gitignore:25`(`outputs/`)로 무시된다 — 실행 결과는 커밋되지 않는다.
@@ -312,16 +373,33 @@ python -m esgenie.eval.response_scoring \
 
 | 항목 | 상태 |
 |---|---|
-| B 연락 경로 | **없음** |
-| §4 공통 답안 형식 합의 | **미시작.** 합의 완료로 적지 않는다 |
-| §5.3 B의 무작위 20% 표본 — 추출 단위·개수·방식·시드 | **미정.** 단계별 추출인지 전체 96행 기준인지 원문·B 합의로 확인해야 한다 |
+| B 연락 경로 | **A가 직접 보내지 않는다.** 정민이 전달한다 |
+| §4 공통 답안 형식 합의 | **미시작.** A가 v1 초안을 작성해 검토 요청만 했다. 합의 완료로 적지 않는다 |
+| §5.3 표본 추출 단위·개수·방식·시드 | **정민 지시로 확정** — 단계별 10문항 × 2단계 = 20행(전체 96행의 20.8%), 유형 층화 후 씨값 20261006. **고정이며 다시 뽑지 않는다** |
+| 수치형 전수 추가 검토 | **정민 지시로 추가** — 수치형 6문항 × 2단계, 공식 표본과 겹치는 1문항은 라벨 재사용. 결과는 **분리 보고** |
 | B 독립 라벨링·일치율·불일치 협의 | **미시작.** A 라벨 자체가 없다 |
+| 기대값 노출과 독립 검토 인정 | `docs/독립성_노출기록_2026-10-06.md`에 기록. **A는 두 문항에 대해 독립 라벨러가 아니다**(아래 6.5) |
 
-### 6.5 이 프롬프트와 기존 문서의 충돌
+### 6.5 A의 기대값 노출 — 숨기지 않고 적는다
 
-1. **페이지 기준이 다르다.** 라벨 `expected_sources`는 1-기준, 시스템
-   `evidence_links[].page`는 0-기준(출력계약 §2). 표현 방식 차이로 보고 `to_label_page()`
-   한 곳에서 변환했다. 의미를 완화한 것은 없다.
+A는 PR #71 작업 과정에서 `docs/validation/...`(이 문서)과
+`docs/UI연결용_수치범위_출력계약_2026-10-05.md`의 기대값을 보았다. 따라서
+`RBA-C-4-E-6-2`와 K-ESG 08 노드(재투입률)에 대해 **A는 독립 라벨러가 아니다.**
+
+- 이 두 문항은 **A가 단독으로 라벨을 확정하지 않는다.** B 또는 제3자의 라벨을 기준으로
+  삼고 A 라벨은 참고로만 쓴다.
+- 공식 표본 20행에는 이 문항이 들어가지 않았다. 수치형 전수 집합에는 전수이므로 들어간다.
+- 노출을 이유로 표본을 다시 뽑지 않는다.
+- B의 열람 여부는 **확인되지 않았다.** 라벨 제출 시 열람 확인 3문항으로 받는다.
+  "PR을 탐색하지 말라"는 안내만으로 독립성이 확보됐다고 보지 않는다.
+- 인정 기준(노출 + 일치 → 독립 일치로 세지 않음 등)은 **제안 상태**이며 정민 확인 대기다.
+
+### 6.6 이 프롬프트와 기존 문서의 충돌
+
+1. **페이지 기준이 다르다.** 라벨 `expected_sources`와 공통 형식 `page`는 1-기준, 시스템
+   `evidence_links[].page`는 0-기준(출력계약 §2). 표현 방식 차이로 보고
+   `esgenie_adapter.to_common_page()` **한 곳에서만** 변환한다(이 문서 §2.2).
+   채점기에는 변환이 없다. 의미를 완화한 것은 없다.
 2. **출력계약 §3의 기대값은 교차 확인 대상이다.** 그 값들이 그대로 정답이라는 뜻이 아니므로
    라벨로 복사하지 않았다. 원본 확보 후 §5.4대로 다시 확인해야 한다.
 3. `AGENTS.md`가 비어 있어 저장소 규약을 문서에서 확인할 수 없었다. 기존 코드·테스트 관행
@@ -363,15 +441,24 @@ python -m esgenie.eval.response_scoring \
 
 | 산출물 | 상태 |
 |---|---|
-| A-1 채점 로직(확정 규칙) | **완료** |
-| A-1 합성 입력 테스트 | **완료** (66건) |
+| A-1 채점 로직(확정 규칙) | **구현 검증 완료** |
+| 공통 답안 형식 v1 정의·검증기·어댑터 | **구현 검증 완료** / 형식 **합의 미완료** |
+| A-1 합성 입력 테스트 | **완료** (146건) |
+| 채점 CLI | **구현 검증 완료** / **실제 채점 미실행** |
+| 채점 사용법 문서·지표 정의표 | **작성 완료** / 지표 산식은 **미정** |
+| 독립 라벨링 표본(공식 20행 + 수치형 전수) | **목록·서식·가이드 완료** / **실제 라벨링 미착수** |
+| B 전달 ZIP (독립 검토 전 전달본) | **생성 완료** — 정답 없음, 금지 검사 통과 |
+| B 전달 ZIP (최종본) | **미생성** — 형식 합의·확정 라벨이 없어 빌더가 거부한다 |
 | A-1 가상 세트 정답 라벨 | **미완료** — 원본 증빙 없음, 사람 작성·승인 없음 |
 | A-1 라벨 선행 커밋·해시 기록 | **미완료** — 라벨 없음 |
-| B 독립 라벨 20% 표본·일치율 | **미완료** — 표본 명세·연락 경로 없음 |
-| §4 공통 답안 형식 합의 | **미완료** — 명세 없음, B 동의 없음 |
-| A-2 작업시간 계측 도구 | **미착수** — A §3 계측 상세 없음 |
+| B 독립 라벨 일치율 | **미완료** — B 라벨 없음. 집합별로 분리해 산출한다 |
+| §4 공통 답안 형식 합의 | **미완료** — 원문 없음, A 초안에 대한 B 동의 없음 |
+| A-2 작업시간 계측 도구 | **미착수** — A §3 계측 상세 없음. 기존 계측 조사 기록만 작성 |
 | 가상 BM 개편 세트 initial·followup 1회 측정 | **미완료** — 원본 증빙·`result.json` 없음 |
 | 지표 산식·종합 점수 | **미확정** — §6.2의 8~10 미정 |
+
+**"채점기 납품 전체 완료"가 아니다.** CLI 구현·합성 테스트가 끝났을 뿐이고, 지표 산식이
+미정이며 실제 산출·측정이 남아 있다.
 
 이번 작업에는 측정 수치가 없다. 도구가 생겼을 뿐이다. 보고서에 쓸 수치는 **2026-10-15
 동결 후보 커밋에서 다시 측정**하며, 그때도 라벨을 먼저 커밋한 뒤 채점한다.
