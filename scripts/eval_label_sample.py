@@ -22,9 +22,11 @@ import sys
 from math import floor
 from pathlib import Path
 
-from esgenie.eval import answer_format as af
-from esgenie.eval import response_scoring as rs
-from esgenie.supplychain.frameworks import get_framework
+sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+
+from esgenie.eval import answer_format as af                 # noqa: E402
+from esgenie.eval import response_scoring as rs              # noqa: E402
+from esgenie.supplychain.frameworks import get_framework     # noqa: E402
 
 #: 검토 집합 식별자. 두 집합의 결과는 **분리해서 보고한다** — 합치면 공식 무작위 표본의
 #: 일치율이 수치형 가중으로 흔들린다.

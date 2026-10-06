@@ -26,9 +26,10 @@ import zipfile
 from datetime import datetime, timezone
 from pathlib import Path
 
-from esgenie.eval import answer_format as af
-
 REPO = Path(__file__).resolve().parents[1]
+sys.path.insert(0, str(REPO))
+
+from esgenie.eval import answer_format as af     # noqa: E402
 
 #: 독립 라벨링 **전** 전달본. 이 목록에 정답이 들어가는 파일은 없다.
 PRE_REVIEW_FILES = (

@@ -250,8 +250,8 @@ shasum -a 256 esgenie/eval/answer_format.py esgenie/eval/esgenie_adapter.py \
 325e1c4af213eb6f6d9878e13ec211d88cf81cb074560752f6e2dcf77100663d  esgenie/eval/esgenie_adapter.py
 122c1598552b5b1d56a51b937f41dcfdee9406cfd4e74f12f497a6ee6d9a78e8  esgenie/eval/response_scoring.py
 faef209a5b7b40a45723e3d75f3876596299f632ea6947b4ac65a58bd0c3a94b  scripts/eval_response_quality.py
-93e5d2cd4ee3017c212335b9dfaf038500e16cac81e3021c3f6ee6796d136460  scripts/eval_label_sample.py
-5450e9b5eafa20e517a0b6958c10da5a4f339982da6e5587d9cddf49924de7c9  scripts/build_b_package.py
+3b2b1d86840985ab33fdb43aeced5bbd4eed75e512d13b5ec10e6e1b49472165  scripts/eval_label_sample.py
+9e9aa6a04d5c005a5c8be66480ee079e8a9ce6db5fde85ed05d40d5364be02af  scripts/build_b_package.py
 ```
 
 1차 기록의 해시(`response_scoring.py` `24c6fbe5…`, 테스트 `98e1d320…`)는 공통 형식
