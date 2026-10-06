@@ -78,16 +78,20 @@ class RunTiming:
         """실행 시작부터 지금까지의 전체 경과 시간."""
         return round(time.perf_counter() - self._run_start, 6)
 
-    def finish(self) -> list[dict[str, Any]]:
+    def finish(self, name: str = "_total") -> list[dict[str, Any]]:
         """전체 경과 시간 행을 마지막에 붙이고 기록을 돌려준다.
 
         단계 시간의 합은 전체 경과 시간보다 **클 수 없다**(§3.3 ②). 단계가 겹치지
         않게 잡았으면 합 ≤ 전체이고, 차이는 단계 밖 구간이다.
+
+        합계 행(`_`로 시작하는 stage)은 합산에서 **제외한다.** 포함하면 뒤에 붙는
+        합계가 앞의 합계를 다시 더해 두 배로 부푼다.
         """
         total = self.elapsed()
-        staged = sum(float(r.get("seconds", 0.0)) for r in self.records)
+        staged = sum(float(r.get("seconds", 0.0)) for r in self.records
+                     if not str(r.get("stage", "")).startswith("_"))
         self.records.append({
-            "stage": "_total",
+            "stage": name,
             "seconds": total,
             "staged_sum": round(staged, 6),
             "unstaged_seconds": round(total - staged, 6),

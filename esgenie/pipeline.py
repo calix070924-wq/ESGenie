@@ -424,8 +424,12 @@ def run(
             issb_gap.in_profile_missing,
         )
 
-        from .embeddings import embedding_backend
-        backend = embedding_backend()
+        # 임베딩 백엔드 확인은 모델 적재를 유발할 수 있어 별도 단계로 잡는다. 안 잡으면
+        # 전체 경과의 상당 부분이 단계 밖으로 남아 어디서 걸렸는지 읽을 수 없다.
+        with timing.stage("L2_embedding_backend") as rec:
+            from .embeddings import embedding_backend
+            backend = embedding_backend()
+            rec["backend"] = backend
         if backend != "sbert":
             logger.warning(
                 "[L2] ⚠ 임베딩 폴백 모드(%s) — D3 의미검증 품질 저하. sentence-transformers 설치 권장",
@@ -591,8 +595,10 @@ def run(
             logger.info("[L5] 저장 완료: %s", path)
     timing.stop(_save_token, "L5_trace_save", traces=len(trace_paths))
 
-    # 전체 경과 시간 행(`_total`)을 마지막에 붙인다. 단계 합 ≤ 전체여야 한다(§3.3 ②).
-    timing.finish()
+    # 파이프라인 전체 경과 행. 단계 합 ≤ 전체여야 한다(§3.3 ②).
+    # 응답서 생성·내보내기는 호출 스크립트가 이 뒤에 같은 모양으로 덧붙이고,
+    # 실행 전체 경과는 `_run_total`로 따로 붙인다.
+    timing.finish("_pipeline_total")
 
     if export_error is not None and SETTINGS.strict_llm:
         raise export_error
