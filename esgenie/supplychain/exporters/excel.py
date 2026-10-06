@@ -40,8 +40,14 @@ def _issb_followup_rows(answers) -> list[dict[str, str]]:
     return rows
 
 
-def export_response_sheet(sheet: ResponseSheet, out_dir: str | Path) -> str:
-    """응답서를 xlsx로 저장하고 경로를 반환한다."""
+def export_response_sheet(sheet: ResponseSheet, out_dir: str | Path, *,
+                          run_info: dict | None = None) -> str:
+    """응답서를 xlsx로 저장하고 경로를 반환한다.
+
+    run_info: `esgenie.run_info.build_run_info()` 결과. 주면 **새 시트 '실행정보'**에
+        한 블록으로 적는다 — 기존 시트의 셀은 하나도 건드리지 않는다. None이면
+        기존과 완전히 같은 파일이 나온다.
+    """
     from openpyxl import Workbook
     from openpyxl.styles import Alignment, Font, PatternFill
 
@@ -233,6 +239,29 @@ def export_response_sheet(sheet: ResponseSheet, out_dir: str | Path) -> str:
                             for line in str(cell.value or "").splitlines())
                 lines = max(lines, count)
             tab.row_dimensions[cells[0].row].height = min(409.5, 15 * lines + 8)
+
+    # ── 실행 정보(B-2) ──
+    # 기존 시트를 건드리지 않고 새 시트에만 적는다 — 응답표를 읽는 쪽(화면·검사기)이
+    # 영향받지 않게. 행 높이 자동 계산 루프 뒤에 두어 그 루프의 대상도 되지 않는다.
+    if run_info:
+        from ...run_info import rows as run_info_rows
+
+        iw = wb.create_sheet("실행정보")
+        iw["A1"] = "실행 정보 — 이 출력물을 만든 코드와 처리 방식"
+        iw["A1"].font = Font(size=12, bold=True)
+        iw["A2"] = "비밀키 값은 싣지 않는다(설정 여부만)."
+        iw["A2"].font = Font(size=10, color="555555")
+        head = PatternFill("solid", fgColor="1F4E78")
+        for col, name in enumerate(("항목", "값"), start=1):
+            c = iw.cell(row=4, column=col, value=name)
+            c.font = Font(bold=True, color="FFFFFF")
+            c.fill = head
+            c.alignment = Alignment(vertical="center", horizontal="center")
+        for idx, (label, value) in enumerate(run_info_rows(run_info), start=5):
+            iw.cell(row=idx, column=1, value=label)
+            iw.cell(row=idx, column=2, value=value).alignment = Alignment(wrap_text=True)
+        for col, width in ((1, 24), (2, 72)):
+            iw.column_dimensions[iw.cell(row=4, column=col).column_letter].width = width
 
     wb.save(out_path)
     return str(out_path)

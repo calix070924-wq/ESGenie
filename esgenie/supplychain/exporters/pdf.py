@@ -167,12 +167,16 @@ def export_response_sheet_pdf(
     *,
     evidence_base_dir: str | Path | None = None,
     embed_evidence: bool = True,
+    run_info: dict | None = None,
 ) -> str:
     """응답서를 PDF로 저장하고 경로를 반환한다.
 
     evidence_base_dir: EvidenceLink.relative_path를 resolve할 기준 폴더(증빙 원본·
         evidence_pack 위치). None이면 out_dir 사용.
     embed_evidence: False면 증빙 부록(원본 페이지+bbox 임베드)을 생략.
+    run_info: `esgenie.run_info.build_run_info()` 결과. 주면 첫 페이지 하단에 한 줄,
+        모든 페이지 바닥글에 커밋 앞 7자리와 처리 방식을 적는다. None이면 기존과
+        같은 추출 텍스트가 나온다(바닥글을 그리지 않는다).
     """
     from reportlab.lib import colors
     from reportlab.lib.enums import TA_CENTER, TA_LEFT
@@ -395,5 +399,29 @@ def export_response_sheet_pdf(
         if rendered:
             elements.extend(flow)
 
-    doc.build(elements)
+    if run_info:
+        # 실행 정보(B-2) — 모든 페이지 바닥글 + 첫 페이지 하단 한 줄.
+        # 본문 흐름(elements)에 넣지 않고 canvas에 직접 그린다. 표 행 안으로 들어가면
+        # 응답 칸의 내용과 섞인다.
+        # 별칭을 쓴다 — 이 모듈은 render.summary_line을 이미 쓰고 있어(표지 요약)
+        # 같은 이름으로 들여오면 함수 전체에서 그 이름이 지역 변수로 가려진다.
+        from ...run_info import footer_line as _run_footer_line
+        from ...run_info import summary_line as _run_summary_line
+
+        footer = pdf_safe_text(_run_footer_line(run_info))
+        summary = pdf_safe_text(_run_summary_line(run_info))
+
+        def _stamp(canvas, doc_):
+            canvas.saveState()
+            canvas.setFillColor(colors.HexColor("#777777"))
+            if doc_.page == 1 and summary:
+                canvas.setFont(font.regular, 6.5)
+                canvas.drawString(12 * mm, 9.5 * mm, summary)
+            canvas.setFont(font.regular, 6.5)
+            canvas.drawString(12 * mm, 5.5 * mm, footer)
+            canvas.restoreState()
+
+        doc.build(elements, onFirstPage=_stamp, onLaterPages=_stamp)
+    else:
+        doc.build(elements)
     return str(out_path)

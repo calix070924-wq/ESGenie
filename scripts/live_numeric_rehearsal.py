@@ -322,6 +322,7 @@ def cmd_core(args) -> None:
             else UpstageTape(target / "raw_upstage", "record") if args.record_upstage else None)
     from esgenie import llm_cache
     from esgenie.pipeline import run
+    from esgenie.run_info import build_run_info
     from esgenie.ssot import ocr_cache
     from esgenie.supplychain import (copy_evidence_pack, export_response_sheet, export_response_sheet_pdf,
                                      parse_saq_claims, respond_from_pipeline)
@@ -340,6 +341,8 @@ def cmd_core(args) -> None:
     company = [f["path"] for f in files if f["role"] == "company_answer"]
     upstage = UpstageCounter()
     llm_cache.reset_stats()
+    # llm_cache.stats()는 프로세스 누적값이다 — 실행 시작 스냅샷을 떠 두고 차이로 센다.
+    llm_stats_start = dict(llm_cache.stats())
     started, output = time.monotonic(), None
     settings.strict_llm = not replay or live_llm
     try:
@@ -352,20 +355,29 @@ def cmd_core(args) -> None:
         dump(target / "pipeline.json", pipeline_record(output))
         sheet = respond_from_pipeline(output, args.framework, supplier_claims=claims, enable_drafts=False)
         sheet.corp_name = args.company
-        dump(target / "result.json", {"sheet": sheet.to_dict(), "generated_at": now()})
+        # 실행 출처(B-2) — 어느 코드로, 신규 처리인지 캐시 재생인지. 내보내기와 같은 값을 쓴다.
+        info = build_run_info(llm_stats_end=llm_cache.stats(), llm_stats_start=llm_stats_start,
+                              ocr_extractions=output.ocr_extractions, upstage_replay=replay,
+                              code_path=code_path, timings=getattr(output, "timings", None))
+        dump(target / "result.json", {"sheet": sheet.to_dict(), "generated_at": now(),
+                                      "run_info": info})
         if args.export:
             sheet_dir = exports / "response_sheet"
             copy_evidence_pack(sheet, sheet_dir, evidence)
-            paths = {"xlsx": export_response_sheet(sheet, sheet_dir),
-                     "pdf": export_response_sheet_pdf(sheet, sheet_dir, evidence_base_dir=sheet_dir)}
+            paths = {"xlsx": export_response_sheet(sheet, sheet_dir, run_info=info),
+                     "pdf": export_response_sheet_pdf(sheet, sheet_dir, evidence_base_dir=sheet_dir,
+                                                      run_info=info)}
             for framework in args.also_framework or []:
                 other = respond_from_pipeline(output, framework, supplier_claims=claims, enable_drafts=False)
                 other.corp_name = args.company
                 other_dir = exports / f"response_sheet_{framework}"
                 copy_evidence_pack(other, other_dir, evidence)
-                dump(target / f"result_{framework}.json", {"sheet": other.to_dict(), "generated_at": now()})
-                paths[framework] = {"xlsx": export_response_sheet(other, other_dir),
-                                    "pdf": export_response_sheet_pdf(other, other_dir, evidence_base_dir=other_dir)}
+                dump(target / f"result_{framework}.json", {"sheet": other.to_dict(),
+                                                           "generated_at": now(), "run_info": info})
+                paths[framework] = {"xlsx": export_response_sheet(other, other_dir, run_info=info),
+                                    "pdf": export_response_sheet_pdf(other, other_dir,
+                                                                     evidence_base_dir=other_dir,
+                                                                     run_info=info)}
             sections = {area: {"final_text": v.final_text, "used_mock_llm": getattr(v, "used_mock_llm", None),
                                "final_score": v.final_score, "converged": v.converged,
                                "hitl_required": v.hitl_required}
