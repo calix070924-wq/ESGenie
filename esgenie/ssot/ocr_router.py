@@ -4593,7 +4593,7 @@ def _source_quantity_site_boundary(boundary: dict[str, Any], quote: str, source_
     인용이 원문에서 유일하게 위치해야 한다. 인용 자체의 사업장을 우선하고, 앞 머리말을 쓰려면 중간에
     다른 사업장 표기가 없어야 한다. 뒤 문장·다른 페이지·요청 사업장에서 범위를 가져오지 않는다.
     """
-    from ..report_claims import _heading_line, sites_compatible
+    from ..report_claims import _heading_line, site_scope_transition, sites_compatible
     if not quote or not source_text:
         return boundary
     compact_quote = re.sub(r"\s+", "", quote)
@@ -4608,6 +4608,13 @@ def _source_quantity_site_boundary(boundary: dict[str, Any], quote: str, source_
         encountered = []
         # 같은 실제 청크에서 인용보다 앞에 있는 가장 가까운 사업장 머리말만 사용한다.
         for line in reversed(source_text[:positions[at]].splitlines()):
+            transition = site_scope_transition(line)
+            if transition:
+                record = {"source": "quantity_scope", "method": "rule", "scope_from": "scope_transition",
+                          "source_site": "", "site_scope": transition, "scope_heading": line.strip(),
+                          "quote": quote, "page": page, "model_site": str(boundary.get("site") or "")}
+                return {**boundary, "site": "", "site_scope": transition,
+                        "provenance": [*(boundary.get("provenance") or []), record]}
             keys = _site_keys(line)
             if not keys:
                 continue

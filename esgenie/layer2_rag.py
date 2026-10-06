@@ -741,7 +741,7 @@ def _render_source_facts_table(rows: list[dict[str, Any]]) -> str:
     실측: 실제 생성 본문이 4월 22일 참석 46명과 추가 교육을 쓰면서도 추가 교육 뒤 중복 제외 합계를 쓰지 않았다.
     값은 원문 확인 수치 그대로다(모델을 거치지 않는다).
     """
-    from .report_claims import table_rows
+    from .report_claims import fact_site_display, table_rows
     picked = table_rows(rows)
     if not picked:
         return ""
@@ -752,7 +752,7 @@ def _render_source_facts_table(rows: list[dict[str, Any]]) -> str:
         page = r.get("page")
         source = (r.get("source_file") or "미상") + (f" {page + 1}쪽" if isinstance(page, int) else "")
         lines.append(f"| {r['label']} | {value}{r.get('unit') or ''} | {r.get('period_text') or '원문 기간 미기록'} | "
-                     f"{r.get('site') or '원문 미기록'} | {source} |")
+                     f"{fact_site_display(r)} | {source} |")
     return "\n".join(lines)
 
 

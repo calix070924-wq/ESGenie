@@ -377,7 +377,7 @@ def _entry_mentions(sentence: str, entries: list[dict[str, Any]], found: list) -
 # 어긋난 관계(`report_claims._relation_problems`)의 보류 문구 낱말.
 _PROBLEM_WORDS = {"role": "역할", "role_unstated": "역할", "group": "고용형태(집단)", "group_unstated": "고용형태(집단)",
                   "group_missing": "고용형태(집단)", "date": "날짜", "date_unstated": "날짜", "site": "사업장",
-                  "site_unstated": "사업장"}
+                  "site_unstated": "사업장", "site_conflict": "사업장"}
 
 
 def _hold_text(issue: dict[str, Any]) -> str:

@@ -101,13 +101,15 @@ class Fact:
     tokens: tuple = field(default_factory=tuple)
     group: str = ""             # 대상 집단(고용형태, `label_group`). 없으면 집단을 가리지 않은 값(합계 등)
     sites: frozenset = frozenset()   # 사업장 식별값(`ocr_router._site_keys`). 없으면 원문 미기록
+    site_conflicts: tuple = ()       # 라벨·경계·원문 인용의 사업장 불일치. 이 사실은 범위 근거로 채택하지 않는다.
 
     def describe(self) -> str:
         value = f"{self.value:g}" if isinstance(self.value, float) else str(self.value)
         when = f"({self.period_text})" if self.period_text else ""
         site = f" [사업장: {', '.join(sorted(self.sites))}]" if self.sites else ""
         where = f" — {self.source_file}" if self.source_file else ""
-        return f"{self.label} {value}{self.unit or ''}{when}{site}{where}"
+        conflict = " [사업장 충돌: " + "; ".join(self.site_conflicts) + "]" if self.site_conflicts else ""
+        return f"{self.label} {value}{self.unit or ''}{when}{site}{conflict}{where}"
 
 
 @dataclass
@@ -253,8 +255,71 @@ def sites_compatible(a: frozenset, b: frozenset) -> bool | None:
         if x == y:
             return True
         short, long_ = sorted((x, y), key=len)
-        return short[:1].isdigit() and long_.endswith(short)
+        return short[:1].isdigit() and bool(re.search(r"(?<!\d)" + re.escape(short) + r"$", long_))
     return any(fits(x, y) for x in a for y in b)
+
+
+def fact_site_identity(label: str = "", site: str = "", quote: str = "") -> tuple[frozenset, tuple]:
+    """라벨·원문 경계·인용을 함께 읽고, 일치하는 짧은 사업장 표기는 구체적인 표기로 합친다.
+
+    인용이 여러 사업장을 포함하면 특정 표 칸의 사업장으로 쓰지 않는다. 단일 사업장 인용과 나머지 필드가
+    충돌하면 식별값 대신 충돌 기록을 돌려준다. 어느 필드도 무조건 우선하지 않는다.
+    """
+    fields = [("라벨", _sites(label)), ("경계", _sites(site))]
+    quoted = _sites(quote)
+    if len(quoted) == 1:
+        fields.append(("원문", quoted))
+    fields = [(name, keys) for name, keys in fields if keys]
+    conflicts = []
+    for i, (name, keys) in enumerate(fields):
+        for other_name, other in fields[i + 1:]:
+            if not all(sites_compatible(frozenset({k}), other) for k in keys) \
+                    or not all(sites_compatible(keys, frozenset({k})) for k in other):
+                conflicts.append(f"{name}={','.join(sorted(keys))} / {other_name}={','.join(sorted(other))}")
+    if conflicts:
+        return frozenset(), tuple(conflicts)
+    keys = frozenset(k for _name, values in fields for k in values)
+    # `1공장`을 보존하면 `부산1공장`까지 허용하므로 일치하는 구체적 표기가 있을 때 짧은 별칭을 제거한다.
+    return frozenset(k for k in keys if not (k[:1].isdigit() and any(
+        len(other) > len(k) and sites_compatible(frozenset({k}), frozenset({other})) for other in keys))), ()
+
+
+def row_site_identity(row: dict[str, Any]) -> tuple[frozenset, tuple]:
+    if "site_identity" in row:
+        return frozenset(row["site_identity"]), tuple(row.get("site_conflicts") or ())
+    keys, conflicts = fact_site_identity(row.get("label", ""), row.get("site", ""), row.get("quote", ""))
+    conflicts = tuple(dict.fromkeys([*(row.get("site_conflicts") or ()), *conflicts]))
+    return (frozenset() if conflicts else keys), conflicts
+
+
+def fact_site_display(row: dict[str, Any]) -> str:
+    keys, conflicts = row_site_identity(row)
+    if conflicts:
+        return "확인 보류: 사업장 충돌 — " + "; ".join(conflicts)
+    if not keys:
+        return row.get("site") or "원문 미기록"
+    from .ssot.ocr_router import _SITE_MENTION_RE
+    texts = [row.get("site", ""), row.get("label", ""), row.get("quote", "")]
+    labels = []
+    for key in sorted(keys):
+        mention = next((m.group(0).strip() for text in texts for m in _SITE_MENTION_RE.finditer(text)
+                        if _sites(m.group(0)) == frozenset({key})), key)
+        labels.append(mention)
+    return ", ".join(labels)
+
+
+def site_scope_transition(line: str) -> str:
+    """사업장 상속을 끊는 명시적 전사·범위 미기록 표기. 일반 소제목은 전환이 아니다."""
+    text = _SOURCE_TAG_RE.sub("", str(line or "")).strip()
+    # 수량 서술 중의 `전사`는 그 수량의 문맥이다. 머리말·범위 정의에서만 상속 상태를 변경한다.
+    if not text or any(q.unit for q in quantities(text)):
+        return ""
+    if re.search(r"(?:사업장|적용\s*범위|사업장\s*범위)\s*[:：]?\s*(?:미기록|미확인|미상|불명확|없음|미지정)", text):
+        return "unknown"
+    from .ssot.boundary import _ENTITY_RE
+    if _ENTITY_RE.search(text) and _heading_line(text) and not re.search(r"전사.*(?:아님|아닌|아니다)", text):
+        return "entity"
+    return ""
 
 
 def date_positions(text: str) -> list[tuple[int, int, Any]]:
@@ -552,6 +617,9 @@ def chunk_occurrences(text: str, chunk_id: str = "", source_file: str = "") -> l
         scoped = _scope_text(line)
         found = quantities(line)
         dates, sites = date_positions(scoped), site_positions(scoped)
+        if site_scope_transition(line):
+            heading_when, heading_sites = None, frozenset()
+            header = []
         cells = [c.strip() for c in line.split("|")] if "|" in line else []
         if cells and all(q.tail for q in found):
             header = cells            # 숫자 없는(또는 `13일 | 14일`처럼 이름으로 쓰인 숫자만 있는) 표 행 — 머리글
@@ -587,7 +655,7 @@ def chunk_occurrences(text: str, chunk_id: str = "", source_file: str = "") -> l
                                   source_file=source_file))
         if _heading_line(line):
             heading_when = dates[-1][2] if dates else heading_when
-            heading_sites = sites[-1][2] if sites else heading_sites
+            heading_sites = (frozenset() if site_scope_transition(line) else sites[-1][2]) if sites else heading_sites
     return out
 
 
@@ -611,7 +679,7 @@ class Support:
 # 문제 코드 → 관계(역할·집단·날짜·사업장). 같은 관계에서 어긋난 후보가 있으면 그 관계가 '확인 안 됨'인 근거는 쓰지 않는다.
 _RELATION_OF = {"role": "role", "role_unstated": "role", "group": "group", "group_unstated": "group",
                 "group_missing": "group", "date": "date", "date_unstated": "date", "site": "site",
-                "site_unstated": "site"}
+                "site_unstated": "site", "site_conflict": "site"}
 
 
 def _relation_problems(claim: Claim, *, role: str, group: str, when, sites: frozenset, named: bool,
@@ -665,6 +733,8 @@ def check_quantity(claim: Claim, facts: list[Fact], scope: list[Occurrence],
         named = any(t in claim.window for t in f.tokens)
         hard, weak = _relation_problems(claim, role=f.role, group=f.group, when=f.period, sites=f.sites,
                                         named=named, soft_role=False)
+        if f.site_conflicts:
+            hard.append("site_conflict")
         candidates.append((hard, weak, f, None, False))
     for outside, pool in ((False, scope), (True, others)):
         for occ in pool:
@@ -707,7 +777,7 @@ def related_facts(sentence: str, when, units: set[str], facts: list[Fact], limit
         relation = date_relation(when, f.period)
         if relation == "disjoint" or (relation == "coarser" and when is not None and when.grain == "day"):
             continue                  # 하루의 문장에 월 합계를 붙이지 않는다
-        key = (f.value, f.role, f.period_text, f.unit, f.group, f.sites)   # 다른 집단·사업장의 같은 값은 따로 적는다
+        key = (f.value, f.role, f.period_text, f.unit, f.group, f.sites, f.site_conflicts)
         if key in seen:
             continue
         seen.add(key)
@@ -757,18 +827,22 @@ def source_facts(graph: Any, source_files: set[str] | None = None, limit: int = 
         if not period_text and start and end:
             period_text = start if start == end else f"{start}~{end}"
         site = str(getattr(b, "site", "") or "")
-        sites = _sites(label) or _sites(site) or frozenset({re.sub(r"\s+", "", site)} if site else ())
+        quote = str(getattr(node, "quote", "") or "")
+        sites, site_conflicts = fact_site_identity(label, site, quote)
+        if not sites and not site_conflicts and site:
+            sites = frozenset({re.sub(r"\s+", "", site)})
         key = (node.source_file, label, float(node.value), str(node.unit), period_text, start, end,
-               label_group(label), sites)
+               label_group(label), sites, site_conflicts)
         if key in seen:
             continue
         seen.add(key)
         rows.append({"label": label, "value": node.value, "unit": str(node.unit or ""),
                      "role": label_role(label), "value_role": getattr(node, "value_role", ""),
                      "period_text": period_text, "period_start": start, "period_end": end,
-                     "site": site, "source_file": node.source_file or "",
+                     "site": site, "site_identity": sorted(sites), "site_conflicts": list(site_conflicts),
+                     "source_file": node.source_file or "",
                      "page": node.page, "node_id": node.id,
-                     "quote": str(getattr(node, "quote", "") or "").splitlines()[0][:120] if getattr(node, "quote", "") else ""})
+                     "quote": quote.splitlines()[0][:120] if quote else ""})
     rows.sort(key=lambda r: (r["source_file"], r["period_text"], r["label"]))
     return rows[:limit]
 
@@ -785,7 +859,7 @@ def table_rows(rows: list[dict[str, Any]], limit: int = 12) -> list[dict[str, An
             continue
         # 다른 고용형태·사업장의 같은 값·역할·기간은 한 줄로 합치지 않는다(PR71 재검토 §10 — `참석 · 정규직 6명`·`참석 · 기간제 6명`).
         key = (r.get("value"), r.get("unit"), r.get("role"), r.get("period_text"), label_group(r.get("label", "")),
-               _sites(r.get("label", "")) or _sites(r.get("site", "")))
+               row_site_identity(r))
         if key in seen:
             continue
         seen.add(key)
@@ -805,7 +879,7 @@ def fact_line(row: dict[str, Any]) -> str:
     if row.get("role"):
         parts.append(f"[역할: {row['role']}]")
     parts.append(f"[기간: {row.get('period_text') or '원문 기간 미기록'}]")
-    parts.append(f"[사업장: {row.get('site') or '원문 미기록'}]")
+    parts.append(f"[사업장: {fact_site_display(row)}]")
     page = row.get("page")
     parts.append(f"[출처: {row.get('source_file') or '미상'}" + (f" {page + 1}쪽]" if isinstance(page, int) else "]"))
     if row.get("quote"):
@@ -822,6 +896,7 @@ def facts_from_rows(rows: list[dict[str, Any]]) -> list[Fact]:
         except (KeyError, TypeError, ValueError):
             continue
         label = row.get("label", "")
+        sites, site_conflicts = row_site_identity(row)
         out.append(Fact(label=label, value=value,
                         unit=normalize_unit(str(row.get("unit") or "")) if row.get("unit") else None,
                         role=row.get("role") or label_role(label),
@@ -829,7 +904,7 @@ def facts_from_rows(rows: list[dict[str, Any]]) -> list[Fact]:
                                          row.get("period_end", ""), label),
                         period_text=row.get("period_text", ""), source_file=row.get("source_file", ""),
                         kind="source", tokens=label_tokens(label), group=label_group(label),
-                        sites=_sites(label) or _sites(row.get("site", ""))))
+                        sites=sites, site_conflicts=site_conflicts))
     return out
 
 
