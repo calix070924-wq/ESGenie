@@ -1,48 +1,51 @@
-"""실사 응답서 채점기 — 정답 라벨 대비 시스템 판정 분류(확정 규칙만).
+"""실사 응답서 채점기 — 정답 라벨 대비 응답 판정 분류(확정 규칙만).
+
+입력은 **공통 답안 형식 v1**(`esgenie/eval/answer_format.py`)이다. 그래서 ESGenie와
+일반 AI 대조군을 같은 채점 로직으로 본다. 이 모듈은 ESGenie 전용 필드
+(`status`·`comparison`·0-기준 페이지)를 모른다 — 변환은 `esgenie_adapter.py`가 한다.
 
 작업지시서 A-1에서 **확정된 규칙만** 구현한다.
 
-- 시스템 판정 매핑(§6.1)과 미검증 전달(`self_reported`) 행의 집계(§6.2)는 확정 규칙이다.
-- 그 밖의 (시스템 판정 × 정답 라벨) 조합, 지표의 분자·분모, 종합 점수 산식은 아직
+- 응답 판정 매핑(§6.1)과 미검증 전달 행의 집계(§6.2)는 확정 규칙이다.
+- 그 밖의 (응답 판정 × 정답 라벨) 조합, 지표의 분자·분모, 종합 점수 산식은 아직
   확정되지 않았다(§6.3). 확정되지 않은 조합은 `unresolved`로 남기고 행별 이유를 기록한다.
 - 분자·분모가 미정이므로 이 모듈은 **비율·정확도·종합 점수를 산출하지 않는다.**
   확정된 분류 결과와 건수까지만 낸다.
 
-페이지 번호: 시스템 `evidence_links[].page`는 0-기준이고(`esgenie/ssot/audit_trace.py`,
-UI 출력계약 §2) 라벨 `expected_sources`는 1-기준이다. 변환은 `to_label_page()` 한 곳에서만
-한다. 페이지가 없는 근거는 첫 페이지로 간주하지 않고 `None`으로 남긴다.
+페이지 번호: 공통 형식과 라벨 `expected_sources`는 **둘 다 1-기준**이다. 이 모듈에는
+변환이 없다(0→1 변환은 어댑터에서 한 번만 한다). 페이지가 없는 근거는 첫 페이지로
+간주하지 않고 `None`으로 남긴다.
 """
 from __future__ import annotations
 
-import argparse
 import csv
-import json
 import unicodedata
 from collections import Counter
 from dataclasses import dataclass, field, asdict
 from pathlib import Path
 from typing import Any
 
+from . import answer_format as af
+
 # ── 계약상의 값 집합 ──────────────────────────────────────────────────────
-STAGES = ("initial", "followup")
+STAGES = af.STAGES
 DECISIONS = ("answer", "hold", "na")
 HOLD_REASONS = (
     "no_evidence", "scope_unconfirmed", "not_comparable", "mismatch", "needs_human_text",
 )
-#: 확정·미검증 전달을 막는 비교 판정(§6.1).
-BLOCKING_COMPARISONS = frozenset({"scope_unconfirmed", "not_comparable", "mismatch"})
 
 LABEL_COLUMNS = (
     "stage", "qid", "expected_decision", "hold_reason", "expected_value", "expected_unit",
     "tolerance", "expected_sources", "boundary_note", "labeler", "note",
 )
 
-# 시스템 판정(§6.1)
-V_CONFIRMED = "confirmed"              # 확정
-V_SELF_REPORTED = "self_reported"      # 미검증 전달
-V_HOLD = "hold"                        # 보류
-V_NOT_APPLICABLE = "not_applicable"    # 해당 없음
-V_UNRESOLVED = "unresolved"            # 계약에 우선순위가 없는 조합
+# 응답 판정(§6.1) — 공통 형식의 판정 값을 그대로 쓴다.
+V_CONFIRMED = af.D_CONFIRMED              # 확정
+V_SELF_REPORTED = af.D_UNVERIFIED         # 미검증 전달
+V_HOLD = af.D_HOLD                        # 보류
+V_NOT_APPLICABLE = af.D_NOT_APPLICABLE    # 해당 없음
+V_UNPARSED = af.D_UNPARSED                # 원출력을 읽을 수 없음
+V_UNDETERMINED = af.D_UNDETERMINED        # 공통 판정으로 옮기는 규칙이 계약에 없음
 
 # 집계 위치(§6.2). 지표 산식이 미정이므로 건수까지만 쓴다.
 B_CORRECT_HOLD = "correct_hold"              # 올바른 보류
@@ -105,32 +108,8 @@ def _parse_bool_token(raw: Any) -> bool | None:
     return None
 
 
-def _is_filled(value: Any) -> bool:
-    """값이 채워졌는가 — `0`과 `False`는 채워진 값이다(§6.1)."""
-    if value is None:
-        return False
-    if isinstance(value, bool) or isinstance(value, (int, float)):
-        return True
-    if isinstance(value, str):
-        return value.strip() != ""
-    if isinstance(value, (list, tuple, dict, set)):
-        return len(value) > 0
-    return True
-
-
-# ── 페이지 변환(유일한 지점) ─────────────────────────────────────────────
-def to_label_page(system_page: Any) -> int | None:
-    """시스템 0-기준 페이지 → 라벨 1-기준 페이지.
-
-    이 함수가 변환의 유일한 지점이다. `EvidenceRef.page_1based`는 이미 변환된 값이므로
-    다시 통과시키지 않는다. 페이지가 없으면 첫 페이지로 간주하지 않고 None으로 남긴다.
-    """
-    if system_page is None or isinstance(system_page, bool):
-        return None
-    try:
-        return int(system_page) + 1
-    except (TypeError, ValueError):
-        return None
+#: 값이 채워졌는가 — `0`과 `False`는 채워진 값이다(§6.1). 공통 형식과 같은 판정을 쓴다.
+_is_filled = af.is_filled
 
 
 # ── 라벨 ──────────────────────────────────────────────────────────────────
@@ -237,78 +216,73 @@ def load_labels(path: str | Path) -> list[Label]:
     return [parse_label_row(r, f"{path.name}:{i + 2}") for i, r in enumerate(rows)]
 
 
-# ── 시스템 응답 ───────────────────────────────────────────────────────────
+# ── 채점 대상 응답 (공통 형식에서 읽는다) ───────────────────────────────
 @dataclass(frozen=True)
 class EvidenceRef:
-    """시스템 근거 1건. `page_1based`는 `to_label_page()`로 이미 변환된 값이다."""
+    """근거 1건. `page_1based`는 공통 형식의 `page`를 그대로 담는다(이미 1-기준)."""
     file_name: str
     page_1based: int | None
 
 
 @dataclass
 class SystemAnswer:
+    """채점기가 보는 응답 한 행 — 시스템 중립이다."""
     stage: str
     qid: str
-    status: str
+    decision: str
     value: Any
     unit: str
-    comparison: str
     evidence: tuple[EvidenceRef, ...] = ()
+    decision_basis: str = ""
+    source_status: str = ""
+    source_comparison: str = ""
 
 
-def parse_answers(result: dict[str, Any], stage: str) -> list[SystemAnswer]:
-    """`result.json`의 `sheet.answers[]`를 읽는다. 페이지 변환은 여기서 한 번만 한다."""
+def _evidence(raw: Any) -> tuple[EvidenceRef, ...]:
+    """공통 형식 근거 목록 → `EvidenceRef`. 페이지는 변환하지 않는다(이미 1-기준)."""
+    return tuple(
+        EvidenceRef(
+            file_name=str(link.get("file_name") or ""),
+            page_1based=link.get("page") if isinstance(link.get("page"), int)
+            and not isinstance(link.get("page"), bool) else None,
+        )
+        for link in (raw or [])
+        if isinstance(link, dict)
+    )
+
+
+def answers_from_document(doc: dict[str, Any]) -> list[SystemAnswer]:
+    """공통 형식 문서 → 채점 대상 응답 목록. 단계는 `meta.stage`에서 읽는다.
+
+    형식 위반은 여기서 바로잡지 않는다. 호출자가 `af.validate_document()`로 먼저 본다.
+    """
+    meta = doc.get("meta")
+    if not isinstance(meta, dict):
+        raise af.FormatError("공통 형식 문서에 'meta'가 없다")
+    stage = str(meta.get("stage") or "")
     if stage not in STAGES:
-        raise ValueError(f"stage '{stage}'는 {STAGES} 중 하나가 아니다")
-    sheet = result.get("sheet")
-    if not isinstance(sheet, dict):
-        raise ValueError("result.json에 'sheet'가 없다")
-    answers = sheet.get("answers")
-    if not isinstance(answers, list):
-        raise ValueError("result.json의 sheet에 'answers'가 없다")
+        raise af.FormatError(f"meta.stage '{stage}'는 {STAGES} 중 하나가 아니다")
+    rows = doc.get("answers")
+    if not isinstance(rows, list):
+        raise af.FormatError("공통 형식 문서에 'answers' 배열이 없다")
 
     out: list[SystemAnswer] = []
-    for a in answers:
-        links = tuple(
-            EvidenceRef(
-                file_name=str(link.get("file_name") or ""),
-                page_1based=to_label_page(link.get("page")),
-            )
-            for link in (a.get("evidence_links") or [])
-            if isinstance(link, dict)
-        )
+    for a in rows:
+        if not isinstance(a, dict):
+            raise af.FormatError("응답 항목이 객체가 아니다")
+        source = a.get("source") if isinstance(a.get("source"), dict) else {}
         out.append(SystemAnswer(
             stage=stage,
             qid=str(a.get("qid") or ""),
-            status=str(a.get("status") or ""),
+            decision=str(a.get("decision") or ""),
             value=a.get("value"),
             unit=str(a.get("unit") or ""),
-            comparison=str(a.get("comparison") or ""),
-            evidence=links,
+            evidence=_evidence(a.get("evidence")),
+            decision_basis=str(a.get("decision_basis") or ""),
+            source_status=str(source.get("status") or ""),
+            source_comparison=str(source.get("comparison") or ""),
         ))
     return out
-
-
-def classify_system(answer: SystemAnswer) -> tuple[str, str]:
-    """§6.1 시스템 판정 매핑. (판정, 이유)를 낸다.
-
-    `not_applicable`과 차단 비교 판정이 함께 오는 조합은 계약에 우선순위가 없어
-    `unresolved`로 남긴다(임의로 한쪽에 넣지 않는다).
-    """
-    blocking = answer.comparison in BLOCKING_COMPARISONS
-    if answer.status == "not_applicable":
-        if blocking:
-            return V_UNRESOLVED, f"not_applicable과 차단 비교 '{answer.comparison}'의 우선순위가 계약에 없다"
-        return V_NOT_APPLICABLE, "status=not_applicable"
-    if answer.status == "verified" and _is_filled(answer.value) and not blocking:
-        return V_CONFIRMED, "status=verified · 값 있음 · 차단 비교 없음"
-    if answer.status == "self_reported" and not blocking:
-        return V_SELF_REPORTED, "status=self_reported · 차단 비교 없음"
-    if blocking:
-        return V_HOLD, f"차단 비교 '{answer.comparison}'"
-    if answer.status == "verified":
-        return V_HOLD, "status=verified이나 값이 비어 있다"
-    return V_HOLD, f"status={answer.status or '(없음)'}"
 
 
 # ── 값·근거 비교 ─────────────────────────────────────────────────────────
@@ -389,8 +363,12 @@ def assign_bucket(
     확정 규칙은 §6.2의 미검증 전달 행뿐이다. 그 밖의 조합은 `unresolved`로 남긴다
     (§6.3). 시스템에 유리하게 바꾸거나 조용히 제외하지 않는다.
     """
+    if verdict == V_UNPARSED:
+        return B_UNRESOLVED, "", "응답을 읽을 수 없어 집계하지 않는다(보류로 세지 않는다)"
+    if verdict == V_UNDETERMINED:
+        return B_UNRESOLVED, "", "응답을 공통 판정으로 옮기는 규칙이 계약에 없다"
     if verdict != V_SELF_REPORTED:
-        return B_UNRESOLVED, "", f"시스템 판정 '{verdict}' × 라벨 '{label.expected_decision}'의 집계 규칙이 계약에 없다"
+        return B_UNRESOLVED, "", f"응답 판정 '{verdict}' × 라벨 '{label.expected_decision}'의 집계 규칙이 계약에 없다"
 
     if label.expected_decision == "hold":
         rule = _SELF_REPORTED_HOLD.get(label.hold_reason)
@@ -414,10 +392,10 @@ def assign_bucket(
 class RowScore:
     stage: str
     qid: str
-    system_status: str
-    system_comparison: str
+    system_status: str          # 원본 보존 — 대조군은 비어 있을 수 있다
+    system_comparison: str      # 원본 보존 — 대조군은 비어 있을 수 있다
     system_value_filled: bool
-    system_verdict: str
+    system_verdict: str         # 공통 응답 판정
     verdict_reason: str
     label_decision: str
     label_hold_reason: str
@@ -497,6 +475,8 @@ class ScoreReport:
     unresolved_reasons: dict[str, int] = field(default_factory=dict)
     unscored_pairs: list[str] = field(default_factory=list)
     structure: StructureReport = field(default_factory=StructureReport)
+    #: 채점에 쓴 입력 문서들 — 어느 시스템·실행·단계·자료 출처였는지 남긴다.
+    documents: list[dict[str, Any]] = field(default_factory=list)
     metrics_blocked_reason: str = (
         "지표의 분자·분모와 종합 점수 산식이 확정되지 않았다(작업지시서 A §4·공통 계약 미확보). "
         "비율·정확도·종합 점수를 산출하지 않는다."
@@ -535,14 +515,15 @@ def score(
             rep.unscored_pairs.append(f"{label.stage}/{label.qid}: 대응하는 응답 행이 없다")
             continue
 
-        verdict, verdict_reason = classify_system(answer)
+        verdict, verdict_reason = answer.decision, answer.decision_basis
         value_match, value_reason = compare_value(label, answer)
         source_match, source_reason = compare_sources(label, answer)
         bucket, detail, bucket_reason = assign_bucket(verdict, label, value_match)
 
         rep.rows.append(RowScore(
             stage=label.stage, qid=label.qid,
-            system_status=answer.status, system_comparison=answer.comparison,
+            system_status=answer.source_status,
+            system_comparison=answer.source_comparison,
             system_value_filled=_is_filled(answer.value),
             system_verdict=verdict, verdict_reason=verdict_reason,
             label_decision=label.expected_decision, label_hold_reason=label.hold_reason,
@@ -567,40 +548,50 @@ def score(
     return rep
 
 
-# ── CLI ───────────────────────────────────────────────────────────────────
-def _framework_qids(framework_key: str) -> tuple[str, ...]:
+# ── 양식에서 문항 구성 읽기 ──────────────────────────────────────────────
+def framework_qids(framework_key: str) -> tuple[str, ...]:
+    """양식의 qid 목록. 채점기에 문항 ID를 박지 않기 위해 여기서 읽는다."""
     from ..supplychain.frameworks import get_framework
     return tuple(q.qid for q in get_framework(framework_key).questions)
 
 
-def main(argv: list[str] | None = None) -> int:
-    ap = argparse.ArgumentParser(description="실사 응답서 채점기(확정 규칙만)")
-    ap.add_argument("--labels", required=True, help="라벨 CSV 경로")
-    ap.add_argument("--result", action="append", default=[], metavar="STAGE=PATH",
-                    help="단계별 result.json (예: initial=.../initial/result.json)")
-    ap.add_argument("--framework", default="rba42", help="문항 구성을 읽을 양식 키")
-    ap.add_argument("--out", help="결과 JSON 경로(없으면 표준출력)")
-    args = ap.parse_args(argv)
+#: 예전 이름 — 내부 호출 호환용.
+_framework_qids = framework_qids
 
+
+def score_documents(
+    labels: list[Label],
+    documents: list[dict[str, Any]],
+    expected_qids: tuple[str, ...],
+) -> ScoreReport:
+    """공통 형식 문서들을 단계별로 묶어 채점한다.
+
+    **같은 단계를 두 문서가 주면 거부한다** — 실행이 다른 응답을 한 단계로 합치면
+    어느 실행의 결과인지 알 수 없다. 실행마다 따로 채점한다.
+    """
     answers_by_stage: dict[str, list[SystemAnswer]] = {}
-    for spec in args.result:
-        stage, sep, path = spec.partition("=")
-        if not sep:
-            ap.error(f"--result 형식은 STAGE=PATH다 (받은 값 '{spec}')")
-        result = json.loads(Path(path).read_text(encoding="utf-8"))
-        answers_by_stage[stage] = parse_answers(result, stage)
+    seen: dict[str, tuple[str, str, str]] = {}
+    for doc in documents:
+        answers = answers_from_document(doc)
+        stage = answers[0].stage if answers else str(
+            (doc.get("meta") or {}).get("stage") or "")
+        key = af.document_key(doc.get("meta") or {})
+        if stage in answers_by_stage:
+            raise af.FormatError(
+                f"단계 '{stage}'에 문서가 둘 이상이다: {seen[stage]} vs {key}. "
+                "실행이 다른 응답을 한 단계로 합치지 않는다 — 실행별로 따로 채점하라")
+        answers_by_stage[stage] = answers
+        seen[stage] = key
 
-    rep = score(load_labels(args.labels), answers_by_stage, _framework_qids(args.framework))
-    text = json.dumps(rep.to_dict(), ensure_ascii=False, indent=2)
-    if args.out:
-        out = Path(args.out)
-        out.parent.mkdir(parents=True, exist_ok=True)
-        out.write_text(text + "\n", encoding="utf-8")
-        print(f"wrote {out}")
-    else:
-        print(text)
-    return 0
-
-
-if __name__ == "__main__":  # pragma: no cover
-    raise SystemExit(main())
+    rep = score(labels, answers_by_stage, expected_qids)
+    for doc in documents:
+        meta = doc.get("meta") or {}
+        rep.documents.append({
+            "system": meta.get("system"), "model": meta.get("model"),
+            "run_id": meta.get("run_id"), "stage": meta.get("stage"),
+            "framework": meta.get("framework"), "data_source": meta.get("data_source"),
+            "format_version": doc.get("format_version"),
+            "adapter": meta.get("adapter"), "source_ref": meta.get("source_ref"),
+            "answer_rows": len(doc.get("answers") or []),
+        })
+    return rep

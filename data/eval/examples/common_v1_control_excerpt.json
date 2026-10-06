@@ -1,0 +1,70 @@
+{
+  "format_version": "1.0-draft",
+  "meta": {
+    "system": "synthetic_example_control",
+    "run_id": "EXAMPLE-RUN-1",
+    "stage": "initial",
+    "framework": "rba42",
+    "data_source": "synthetic_example",
+    "model": "example-general-ai",
+    "produced_at": "2026-10-06T00:00:00+00:00",
+    "source_ref": {
+      "path": "<대조군 원출력 파일 경로>",
+      "sha256": "<원출력 파일 sha256>"
+    },
+    "notice": "합성 예시 발췌다. 값·근거·페이지는 임의 자리값이며 어떤 시스템의 실제 출력도 정답 라벨도 아니다. 정상 실행 한 건은 48행이다."
+  },
+  "answers": [
+    {
+      "qid": "RBA-A-1",
+      "decision": "confirmed",
+      "decision_basis": "모델이 근거 문구를 인용하며 확정 서술했다",
+      "value": true,
+      "unit": "",
+      "value_text": "예",
+      "boundary": {
+        "period": null,
+        "site": null,
+        "target": null,
+        "denominator": null,
+        "label": null,
+        "completeness": null
+      },
+      "evidence": [
+        {
+          "file_name": "예시_인권규정.pdf",
+          "page": null,
+          "quote": "(예시) 강제노동을 금지한다"
+        }
+      ],
+      "source": {
+        "raw": "(예시) 모델 원문 응답 일부"
+      },
+      "notes": "페이지를 모르므로 null로 둔다. 추정해서 1을 넣지 않는다."
+    },
+    {
+      "qid": "RBA-A-2",
+      "decision": "hold",
+      "decision_basis": "모델이 자료가 없어 답할 수 없다고 했다",
+      "value": null,
+      "unit": "",
+      "evidence": [],
+      "source": {
+        "raw": "(예시) 제공된 자료에서 확인할 수 없습니다"
+      },
+      "notes": null
+    },
+    {
+      "qid": "RBA-C-5-E-7-1",
+      "decision": "unparsed",
+      "decision_basis": "원출력에서 이 문항의 응답을 찾지 못했다",
+      "value": null,
+      "unit": "",
+      "evidence": [],
+      "source": {
+        "raw": "(예시) 형식을 벗어난 출력"
+      },
+      "notes": "파싱 실패다. 보류(hold)로 바꾸지 않는다 — 집계에서 unresolved로 드러난다."
+    }
+  ]
+}

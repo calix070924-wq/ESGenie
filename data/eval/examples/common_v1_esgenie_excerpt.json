@@ -1,0 +1,102 @@
+{
+  "format_version": "1.0-draft",
+  "meta": {
+    "system": "synthetic_example_esgenie",
+    "run_id": "EXAMPLE-RUN-1",
+    "stage": "initial",
+    "framework": "rba42",
+    "data_source": "synthetic_example",
+    "model": "example-model",
+    "produced_at": "2026-10-06T00:00:00+00:00",
+    "adapter": {
+      "name": "esgenie_result_json",
+      "version": "1"
+    },
+    "source_ref": {
+      "path": "<원본 result.json 경로>",
+      "sha256": "<원본 파일 sha256>"
+    },
+    "notice": "합성 예시 발췌다. 값·근거·페이지는 임의 자리값이며 ESGenie 실제 출력도 정답 라벨도 아니다. 정상 실행 한 건은 48행이다."
+  },
+  "answers": [
+    {
+      "qid": "RBA-A-1",
+      "decision": "confirmed",
+      "decision_basis": "status=verified · 값 있음 · 차단 비교 없음",
+      "value": true,
+      "unit": "",
+      "value_text": "예",
+      "boundary": {
+        "period": "2026",
+        "site": null,
+        "target": null,
+        "denominator": null,
+        "label": null,
+        "completeness": null
+      },
+      "evidence": [
+        {
+          "file_name": "예시_인권규정.pdf",
+          "page": 3,
+          "quote": "(예시) 강제노동을 금지한다"
+        }
+      ],
+      "source": {
+        "status": "verified",
+        "comparison": "compared"
+      },
+      "notes": null
+    },
+    {
+      "qid": "RBA-A-2",
+      "decision": "hold",
+      "decision_basis": "status=insufficient",
+      "value": null,
+      "unit": "",
+      "boundary": {
+        "period": null,
+        "site": null,
+        "target": null,
+        "denominator": null,
+        "label": null,
+        "completeness": null
+      },
+      "evidence": [],
+      "source": {
+        "status": "insufficient",
+        "comparison": ""
+      },
+      "notes": null
+    },
+    {
+      "qid": "RBA-C-5-E-7-1",
+      "decision": "unverified_submitted",
+      "decision_basis": "status=self_reported · 차단 비교 없음",
+      "value": 123.4,
+      "unit": "kg",
+      "value_text": "123.4 kg (2026년)",
+      "boundary": {
+        "period": "2026",
+        "site": "예시사업장",
+        "target": "대기오염물질 합계",
+        "denominator": null,
+        "label": "2026 · 연간 · 예시사업장 · 부분",
+        "completeness": "partial"
+      },
+      "evidence": [],
+      "references": [
+        {
+          "file_name": "예시_측정대행보고서.pdf",
+          "page": 1,
+          "quote": null
+        }
+      ],
+      "source": {
+        "status": "self_reported",
+        "comparison": "",
+        "comparison_reason": "(예시) 증빙이 연결되지 않아 비교하지 않았다"
+      },
+      "notes": null
+    }
+  ]
+}
