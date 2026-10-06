@@ -31,8 +31,32 @@ def test_pre_review_list_excludes_answers_and_expected_values():
 def test_denied_parts_cover_the_known_leak_paths():
     """기대값이 적힌 문서와 실제 실행 결과가 금지 목록에 들어 있는지 고정한다."""
     for needed in ("docs/validation/", "UI연결용_수치범위_출력계약", "독립성_노출기록",
-                   "result.json", ".env"):
+                   "result.json", ".env", "data/eval/labels_draft/"):
         assert needed in pkg.DENIED_PARTS
+
+
+def test_label_draft_dir_is_denied_for_every_file_actually_on_disk():
+    """A의 AI 라벨 초안은 어느 단계에서도 패키지에 들어갈 수 없다.
+
+    경로 조각만 고정하면 파일명이 바뀔 때 빠져나갈 수 있다. 실제 폴더에 있는
+    파일 전부를 감사에 통과시키려 해 보고, 전부 거부되는지 본다.
+    """
+    draft_dir = REPO / "data/eval/labels_draft"
+    assert draft_dir.is_dir(), "초안 폴더가 없다. 테스트가 아무것도 검사하지 않는다"
+    rels = sorted(
+        str(p.relative_to(REPO)) for p in draft_dir.rglob("*") if p.is_file()
+    )
+    assert rels, "초안 폴더가 비어 있다. 테스트가 아무것도 검사하지 않는다"
+    for rel in rels:
+        for stage in ("pre_review", "tools", "final"):
+            problems = pkg.audit([rel], stage)
+            assert any("금지 경로" in p for p in problems), (rel, stage)
+
+
+def test_no_stage_file_list_contains_the_label_draft():
+    for stage_files in (pkg.PRE_REVIEW_FILES, pkg.TOOLS_FILES, pkg.FINAL_EXTRA_FILES):
+        for rel in stage_files:
+            assert "labels_draft" not in rel, rel
 
 
 def test_pre_review_package_builds_and_matches_its_own_listing(tmp_path):

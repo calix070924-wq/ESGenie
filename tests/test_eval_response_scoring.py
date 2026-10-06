@@ -28,6 +28,11 @@ def _label_row(**over) -> dict[str, str]:
     row.update({"stage": "initial", "qid": "SYN-1", "expected_decision": "hold",
                 "hold_reason": "no_evidence", "labeler": "synthetic"})
     row.update({k: str(v) for k, v in over.items()})
+    # `answer` 라벨에는 expected_sources가 필수다(2026-10-06 확정). 값 비교만 보는
+    # 테스트가 그 때문에 깨지지 않도록 합성 출처를 기본값으로 둔다. 필수 규칙 자체는
+    # `test_answer_label_requires_expected_sources`에서 본다.
+    if row["expected_decision"] == "answer" and "expected_sources" not in over:
+        row["expected_sources"] = "SYN_합성증빙.pdf#1"
     return row
 
 
@@ -121,17 +126,100 @@ def test_self_reported_answer_value_match_is_unnecessary_hold():
     assert (bucket, detail) == (rs.B_UNNECESSARY_HOLD, rs.D_EVIDENCE_LINK_MISSING)
 
 
-# ── §6.3 미정 조합을 임의로 처리하지 않는다 ─────────────────────────────
-@pytest.mark.parametrize("verdict", [rs.V_CONFIRMED, rs.V_HOLD, rs.V_NOT_APPLICABLE])
-def test_non_self_reported_combinations_stay_unresolved(verdict):
-    """확정·보류·해당없음 × 라벨의 집계 규칙은 아직 계약에 없다."""
-    for label in (_label(expected_decision="hold", hold_reason="no_evidence"),
-                  _label(expected_decision="answer", expected_value="1", hold_reason=""),
-                  _label(expected_decision="na", hold_reason="")):
-        bucket, detail, reason = rs.assign_bucket(verdict, label, True)
-        assert bucket == rs.B_UNRESOLVED, (verdict, label.expected_decision)
-        assert detail == ""
-        assert "계약에 없다" in reason
+# ── 2026-10-06 확정 판정표 ───────────────────────────────────────────────
+def test_confirmed_answer_both_match_is_correct_answer():
+    """확정 × 정답 라벨에서 값·근거가 모두 맞으면 `correct_answer`다."""
+    label = _label(expected_decision="answer", expected_value="29.3", hold_reason="")
+    bucket, detail, _ = rs.assign_bucket(rs.V_CONFIRMED, label, True, True)
+    assert (bucket, detail) == (rs.B_CORRECT_ANSWER, "")
+
+
+@pytest.mark.parametrize("value_match,source_match,detail", [
+    (False, True, "value_error"),
+    (True, False, "evidence_error"),
+    (False, False, "value_and_evidence_error"),
+])
+def test_confirmed_answer_errors_are_split_by_cause(value_match, source_match, detail):
+    """근거만 틀린 확정도 잘못된 확정이지만, 원인은 분리해서 센다."""
+    label = _label(expected_decision="answer", expected_value="29.3", hold_reason="")
+    bucket, got, _ = rs.assign_bucket(rs.V_CONFIRMED, label, value_match, source_match)
+    assert bucket == rs.B_WRONG_CONFIRMATION
+    assert got == detail
+
+
+@pytest.mark.parametrize("reason", list(rs.HOLD_REASONS))
+def test_confirmed_against_hold_label_is_wrong_confirmation_for_every_reason(reason):
+    label = _label(expected_decision="hold", hold_reason=reason)
+    bucket, detail, _ = rs.assign_bucket(rs.V_CONFIRMED, label, None, None)
+    assert (bucket, detail) == (rs.B_WRONG_CONFIRMATION, rs.D_MISSED_MISMATCH)
+
+
+def test_confirmed_against_na_label_is_wrong_confirmation():
+    label = _label(expected_decision="na", hold_reason="")
+    bucket, _, _ = rs.assign_bucket(rs.V_CONFIRMED, label, None, None)
+    assert bucket == rs.B_WRONG_CONFIRMATION
+
+
+def test_confirmed_answer_without_a_comparison_rule_stays_unresolved():
+    """판정표 **이전** 단계의 미정은 그대로 남긴다 — 임의로 정답·오답에 넣지 않는다."""
+    label = _label(expected_decision="answer", expected_value="목록", hold_reason="")
+    bucket, detail, reason = rs.assign_bucket(rs.V_CONFIRMED, label, None, True)
+    assert (bucket, detail) == (rs.B_UNRESOLVED, "")
+    assert "판정표 이전" in reason
+
+
+def test_hold_verdict_against_answer_label_is_unnecessary_hold():
+    label = _label(expected_decision="answer", expected_value="1", hold_reason="")
+    bucket, _, _ = rs.assign_bucket(rs.V_HOLD, label, True, True)
+    assert bucket == rs.B_UNNECESSARY_HOLD
+
+
+def test_hold_against_hold_label_is_correct_hold_but_reason_is_separate():
+    """보류 결정 일치로 집계하되, 사유는 따로 기록한다."""
+    label = _label(expected_decision="hold", hold_reason="not_comparable")
+    bucket, detail, _ = rs.assign_bucket(
+        rs.V_HOLD, label, None, None, system_comparison="not_comparable")
+    assert (bucket, detail) == (rs.B_CORRECT_HOLD, rs.D_HOLD_REASON_MATCH)
+
+    bucket, detail, reason = rs.assign_bucket(
+        rs.V_HOLD, label, None, None, system_comparison="mismatch")
+    assert (bucket, detail) == (rs.B_CORRECT_HOLD, rs.D_HOLD_REASON_MISMATCH)
+    assert "사유가 다르다" in reason
+
+
+def test_unknown_system_hold_reason_is_never_counted_as_a_reason_match():
+    """사유가 확인되지 않은 것을 사유 일치로 간주하지 않는다."""
+    label = _label(expected_decision="hold", hold_reason="no_evidence")
+    for comparison in ("", "compared", "알 수 없음"):
+        bucket, detail, reason = rs.assign_bucket(
+            rs.V_HOLD, label, None, None, system_comparison=comparison)
+        assert (bucket, detail) == (rs.B_CORRECT_HOLD, rs.D_HOLD_REASON_UNKNOWN)
+        assert "사유 일치로 세지 않는다" in reason
+
+
+@pytest.mark.parametrize("verdict,decision", [
+    (rs.V_HOLD, "na"),
+    (rs.V_NOT_APPLICABLE, "hold"),
+])
+def test_decision_mismatch_is_neither_a_correct_hold_nor_an_answer(verdict, decision):
+    label = _label(expected_decision=decision,
+                   hold_reason="no_evidence" if decision == "hold" else "")
+    bucket, _, reason = rs.assign_bucket(verdict, label, None, None)
+    assert bucket == rs.B_DECISION_MISMATCH
+    assert bucket not in (rs.B_CORRECT_HOLD, rs.B_CORRECT_ANSWER, rs.B_CORRECT_NA)
+    assert "정상 보류도 정답도 아니다" in reason
+
+
+def test_not_applicable_against_answer_label_is_flagged_as_wrongly_na():
+    label = _label(expected_decision="answer", expected_value="1", hold_reason="")
+    bucket, detail, _ = rs.assign_bucket(rs.V_NOT_APPLICABLE, label, True, True)
+    assert (bucket, detail) == (rs.B_UNNECESSARY_HOLD, rs.D_WRONGLY_NOT_APPLICABLE)
+
+
+def test_not_applicable_against_na_label_is_correct_na():
+    label = _label(expected_decision="na", hold_reason="")
+    bucket, _, _ = rs.assign_bucket(rs.V_NOT_APPLICABLE, label, None, None)
+    assert bucket == rs.B_CORRECT_NA
 
 
 def test_unparsed_is_not_counted_as_a_hold():
@@ -149,19 +237,41 @@ def test_undetermined_decision_stays_unresolved():
     assert "계약에 없다" in reason
 
 
-def test_self_reported_needs_human_text_and_na_are_unresolved():
-    """§6.2가 다루지 않는 조합 — 정답·오답에 임의 배정하지 않는다."""
-    for label in (_label(expected_decision="hold", hold_reason="needs_human_text"),
-                  _label(expected_decision="na", hold_reason="")):
-        bucket, _, reason = rs.assign_bucket(rs.V_SELF_REPORTED, label, None)
-        assert bucket == rs.B_UNRESOLVED
-        assert "계약에 없다" in reason
+def test_self_reported_needs_human_text_is_wrong_confirmation_conservatively():
+    """§6.2 네 줄 밖이지만 2026-10-06에 **보수적 평가 정책**으로 확정됐다."""
+    label = _label(expected_decision="hold", hold_reason="needs_human_text")
+    bucket, detail, reason = rs.assign_bucket(rs.V_SELF_REPORTED, label, None)
+    assert (bucket, detail) == (rs.B_WRONG_CONFIRMATION, rs.D_MISSED_MISMATCH)
+    assert "보수적 평가 정책" in reason
 
 
-def test_report_refuses_to_publish_metrics():
+def test_self_reported_against_na_label_is_wrong_confirmation():
+    label = _label(expected_decision="na", hold_reason="")
+    bucket, _, _ = rs.assign_bucket(rs.V_SELF_REPORTED, label, None)
+    assert bucket == rs.B_WRONG_CONFIRMATION
+
+
+def test_the_four_self_reported_rules_of_6_2_are_unchanged():
+    """판정표를 맞추려고 §6.2 네 줄을 바꾸지 않았다."""
+    answer = _label(expected_decision="answer", expected_value="29.3", hold_reason="")
+    assert rs.assign_bucket(rs.V_SELF_REPORTED, answer, True)[:2] == (
+        rs.B_UNNECESSARY_HOLD, rs.D_EVIDENCE_LINK_MISSING)
+    assert rs.assign_bucket(rs.V_SELF_REPORTED, answer, False)[:2] == (
+        rs.B_WRONG_CONFIRMATION, rs.D_MISSED_MISMATCH)
+    no_ev = _label(expected_decision="hold", hold_reason="no_evidence")
+    assert rs.assign_bucket(rs.V_SELF_REPORTED, no_ev, None)[:2] == (rs.B_CORRECT_HOLD, "")
+    for reason in ("mismatch", "not_comparable", "scope_unconfirmed"):
+        lbl = _label(expected_decision="hold", hold_reason=reason)
+        assert rs.assign_bucket(rs.V_SELF_REPORTED, lbl, None)[:2] == (
+            rs.B_WRONG_CONFIRMATION, rs.D_MISSED_MISMATCH), reason
+
+
+def test_report_never_publishes_a_combined_score():
+    """종합 점수는 **만들지 않는다.** 미완료 기능이 아니라 확정 요구사항이다."""
     rep = rs.ScoreReport()
-    assert "산출하지 않는다" in rep.metrics_blocked_reason
+    assert "만들지 않는다" in rep.metrics_policy["종합_점수"]
     assert not any(k.endswith(("_pct", "_rate", "_score")) for k in rep.to_dict())
+    assert "산출 불가" in rep.metrics_policy["산출_불가"]
 
 
 # ── 값 비교: 허용 오차·단위·0 ────────────────────────────────────────────
@@ -300,6 +410,29 @@ def test_bad_label_values_are_rejected(over, needle):
     assert needle in str(err.value)
 
 
+def test_answer_label_requires_expected_sources():
+    """`answer` 라벨에 근거 출처가 없으면 **라벨 검증 오류**다.
+
+    비어 있는 행을 지표 분모에서 빼면 그만큼 비율이 높아진다. 그래서 조용히 넘기지
+    않고 거부한다(2026-10-06 확정).
+    """
+    with pytest.raises(rs.LabelError) as err:
+        _label(expected_decision="answer", hold_reason="", expected_value="예",
+               expected_sources="")
+    assert "expected_sources" in str(err.value)
+    assert "분모" in str(err.value)
+
+
+@pytest.mark.parametrize("decision, extra", [
+    ("hold", {"hold_reason": "no_evidence"}),
+    ("na", {"hold_reason": ""}),
+])
+def test_expected_sources_stays_optional_for_non_answer_labels(decision, extra):
+    """`hold`·`na`에는 출처를 요구하지 않는다. 자료가 없어서 보류한 행이기 때문이다."""
+    label = _label(expected_decision=decision, expected_sources="", **extra)
+    assert label.expected_sources == ()
+
+
 def test_missing_label_column_is_rejected():
     row = _label_row()
     del row["boundary_note"]
@@ -423,16 +556,24 @@ def test_cli_scores_esgenie_result_through_the_adapter(tmp_path, capsys):
     assert "wrote" in capsys.readouterr().out
 
     report = json.loads(out.read_text(encoding="utf-8"))
+    # `not_applicable × na`는 2026-10-06 확정 판정표에서 `correct_na`다(미정이 아니다).
     assert report["bucket_counts"] == {rs.B_WRONG_CONFIRMATION: 1,
                                        rs.B_UNNECESSARY_HOLD: 1,
-                                       rs.B_UNRESOLVED: 1}
+                                       rs.B_CORRECT_NA: 1}
     assert report["detail_counts"] == {rs.D_MISSED_MISMATCH: 1,
                                        rs.D_EVIDENCE_LINK_MISSING: 1}
     assert report["verdict_counts"] == {rs.V_SELF_REPORTED: 2, rs.V_NOT_APPLICABLE: 1}
-    assert sum(report["unresolved_reasons"].values()) == 1
+    assert report["unresolved_reasons"] == {}
     assert report["structure"]["ok"] is False
     assert len(report["structure"]["missing_answers"]) == 48
-    assert "산출하지 않는다" in report["metrics_blocked_reason"]
+    assert "만들지 않는다" in report["metrics_policy"]["종합_점수"]
+    # 보고 단위는 시스템·실행·단계별이다. 한 단계만 있으므로 합산을 만들지 않는다.
+    (scope,) = report["metric_scopes"]
+    assert (scope["system"], scope["run_id"], scope["stage"]) == ("esgenie", "SYN-RUN-1",
+                                                                  "initial")
+    assert scope["aggregated"] is False
+    # M4 분모는 실행·단계별 예상 문항 전체다 — 응답이 온 행 수가 아니다.
+    assert scope["metrics"][rs.M4]["denominator"] == 48
     assert {i["code"] for i in report["format_issues"]} == {"missing_qid", "unknown_qid",
                                                             "row_count"}
     # 변환 결과를 남겨 원본과 대조할 수 있다.
@@ -468,7 +609,7 @@ def test_cli_scores_a_common_format_document_from_any_system(tmp_path):
     # ESGenie 입력과 같은 집계 — 채점 로직이 하나임을 고정한다.
     assert report["bucket_counts"] == {rs.B_WRONG_CONFIRMATION: 1,
                                        rs.B_UNNECESSARY_HOLD: 1,
-                                       rs.B_UNRESOLVED: 1}
+                                       rs.B_CORRECT_NA: 1}
     assert report["documents"][0]["system"] == "general_ai"
 
 
@@ -479,3 +620,203 @@ def test_cli_rejects_unreadable_input_instead_of_treating_it_as_hold(tmp_path, c
                      "--out", str(tmp_path / "score.json")])
     assert code == 2
     assert "입력 오류" in capsys.readouterr().err
+
+
+# ── 지표(2026-10-06 확정 정책) ───────────────────────────────────────────
+def _ev(file_name="SYN_합성증빙.pdf", page=1) -> rs.EvidenceRef:
+    return rs.EvidenceRef(file_name, page)
+
+
+def _scope(labels, answers, qids, stage="initial"):
+    rep = rs.score(labels, {stage: answers}, qids)
+    return rep, rep.metric_scopes[0]
+
+
+def test_m1_denominator_is_every_answer_label_including_missing_and_unparsed():
+    """M1 분모는 `answer` 라벨 **전체**다 — 응답 누락·파싱 실패도 들어간다.
+
+    분자는 `confirmed`로 내고 값·근거가 **모두** 맞은 행만이다. 미검증 전달은 세지
+    않는다. "제출한 답변 중 정답 비율"이 아니다.
+    """
+    labels = [
+        _label(qid="A", expected_decision="answer", hold_reason="", expected_value="18.4",
+               expected_unit="톤", expected_sources="SYN_합성증빙.pdf#1"),
+        _label(qid="B", expected_decision="answer", hold_reason="", expected_value="18.4",
+               expected_unit="톤", expected_sources="SYN_합성증빙.pdf#1"),
+        _label(qid="C", expected_decision="answer", hold_reason="", expected_value="18.4",
+               expected_unit="톤", expected_sources="SYN_합성증빙.pdf#1"),
+        _label(qid="D", expected_decision="answer", hold_reason="", expected_value="18.4",
+               expected_unit="톤", expected_sources="SYN_합성증빙.pdf#1"),
+        _label(qid="E", expected_decision="hold", hold_reason="no_evidence"),
+    ]
+    answers = [
+        # 정답 — 확정 + 값·근거 일치
+        _answer(qid="A", decision=rs.V_CONFIRMED, value=18.4, unit="톤", evidence=(_ev(),)),
+        # 값은 맞지만 **미검증 전달** → 분자 제외
+        _answer(qid="B", decision=rs.V_SELF_REPORTED, value=18.4, unit="톤",
+                evidence=(_ev(),)),
+        # 확정이지만 근거가 틀렸다 → 분자 제외
+        _answer(qid="C", decision=rs.V_CONFIRMED, value=18.4, unit="톤",
+                evidence=(_ev("다른파일.pdf", 9),)),
+        # D는 응답 자체가 없다 → 분모에 남고 분자에서 빠진다
+    ]
+    rep, scope = _scope(labels, answers, ("A", "B", "C", "D", "E"))
+    m1 = scope["metrics"][rs.M1]
+    assert m1["denominator"] == 4          # answer 라벨 4건. hold 라벨은 섞지 않는다
+    assert m1["numerator"] == 1            # A만
+    assert m1["status"] == rs.MS_AVAILABLE
+    assert m1["value"] == 0.25
+    assert "제출한 답변 중 정답 비율이 아니다" in m1["note"]
+
+
+def test_m1_is_withheld_when_a_row_has_no_comparison_rule():
+    """값 비교 규칙이 없는 행이 남으면 **공식 비율을 보류한다.**
+
+    분모에서 빼서 비율을 만들지 않는다.
+    """
+    labels = [_label(qid="A", expected_decision="answer", hold_reason="",
+                     expected_value="목록", expected_sources="SYN_합성증빙.pdf#1")]
+    answers = [_answer(qid="A", decision=rs.V_CONFIRMED, value=["가", "나"],
+                       evidence=(_ev(),))]
+    _, scope = _scope(labels, answers, ("A",))
+    m1 = scope["metrics"][rs.M1]
+    assert m1["status"] == rs.MS_WITHHELD
+    assert m1["value"] is None
+    assert m1["undetermined_rows"] == 1
+    assert m1["denominator"] == 1          # 분모는 그대로 남는다
+    assert any("목록" in r for r in m1["reasons"])
+
+
+def test_m4_is_the_confirmed_submission_share_not_a_verification_rate():
+    """M4 분모는 예상 문항 전체, 분자는 `confirmed`뿐이다. '검증 확정률'이 아니다."""
+    labels = [_label(qid=q, expected_decision="hold", hold_reason="no_evidence")
+              for q in ("A", "B")]
+    answers = [_answer(qid="A", decision=rs.V_CONFIRMED, value=1.0),
+               _answer(qid="B", decision=rs.V_SELF_REPORTED, value=2.0)]
+    _, scope = _scope(labels, answers, ("A", "B", "C", "D"))
+    m4 = scope["metrics"][rs.M4]
+    assert (m4["numerator"], m4["denominator"]) == (1, 4)
+    assert "검증 확정률" in m4["note"] and "아니다" in m4["note"]
+    # 값 제출률은 보조로만 낸다 — 같은 지표에 합치지 않는다.
+    aux = scope["auxiliary"]["A3_값_제출률_보조"]
+    assert (aux["numerator"], aux["denominator"]) == (2, 4)
+
+
+def test_m5_counts_zero_as_a_filled_value_and_is_not_computable_when_empty():
+    """M5 분모는 **값이 채워진** 제출 행이다. `0`·`False`를 빈 값으로 보지 않는다."""
+    labels = [_label(qid=q, expected_decision="hold", hold_reason="no_evidence")
+              for q in ("A", "B", "C")]
+    answers = [
+        _answer(qid="A", decision=rs.V_CONFIRMED, value=0, evidence=(_ev(),)),
+        _answer(qid="B", decision=rs.V_CONFIRMED, value=False, evidence=()),
+        _answer(qid="C", decision=rs.V_HOLD, value=None),
+    ]
+    _, scope = _scope(labels, answers, ("A", "B", "C"))
+    m5 = scope["metrics"][rs.M5]
+    assert (m5["numerator"], m5["denominator"]) == (1, 2)
+    assert m5["status"] == rs.MS_AVAILABLE
+
+
+def test_m5_zero_denominator_is_not_computable_not_zero_percent():
+    labels = [_label(qid="A", expected_decision="hold", hold_reason="no_evidence")]
+    answers = [_answer(qid="A", decision=rs.V_HOLD, value=None)]
+    _, scope = _scope(labels, answers, ("A",))
+    m5 = scope["metrics"][rs.M5]
+    assert m5["status"] == rs.MS_NOT_COMPUTABLE
+    assert m5["value"] is None and m5["denominator"] == 0
+    assert "0%가 아니다" in m5["note"]
+
+
+def test_m5_and_a5_are_different_metrics():
+    """'자료 연결률'과 '연결한 근거가 정답인 비율'을 같은 것으로 취급하지 않는다."""
+    labels = [_label(qid="A", expected_decision="answer", hold_reason="",
+                     expected_value="18.4", expected_unit="톤",
+                     expected_sources="SYN_합성증빙.pdf#1")]
+    answers = [_answer(qid="A", decision=rs.V_CONFIRMED, value=18.4, unit="톤",
+                       evidence=(_ev("엉뚱한파일.pdf", 3),))]
+    _, scope = _scope(labels, answers, ("A",))
+    assert scope["metrics"][rs.M5]["value"] == 1.0        # 연결은 했다
+    assert scope["auxiliary"]["A5_연결한_근거가_정답인_비율"]["value"] == 0.0  # 정답은 아니다
+
+
+def test_source_match_has_two_levels_and_file_only_is_auxiliary():
+    """근거 일치를 파일 / 파일+쪽 두 단계로 나눈다. 공식은 파일+쪽이다."""
+    labels = [_label(qid="A", expected_decision="answer", hold_reason="",
+                     expected_value="18.4", expected_unit="톤",
+                     expected_sources="SYN_합성증빙.pdf#3")]
+    answers = [_answer(qid="A", decision=rs.V_CONFIRMED, value=18.4, unit="톤",
+                       evidence=(_ev(page=1),))]
+    rep, scope = _scope(labels, answers, ("A",))
+    (row,) = rep.rows
+    assert row.source_match is False          # 쪽이 다르다 → 공식은 불일치
+    assert row.source_file_match is True      # 파일은 같다 → 보조는 일치
+    a2 = scope["auxiliary"]["A2_근거_일치_건수"]
+    assert a2["파일+쪽_일치(공식)"] == 0 and a2["파일_일치(보조)"] == 1
+    assert "대체하지 않는다" in a2["주의"]
+
+
+def test_na_labels_are_excluded_from_m1_kept_in_m4_and_reported_separately():
+    """`na`는 M1 분모에서 빼고 M4 분모에는 넣는다. 판정 일치·불일치를 따로 낸다."""
+    labels = [_label(qid="A", expected_decision="na", hold_reason=""),
+              _label(qid="B", expected_decision="na", hold_reason="")]
+    answers = [_answer(qid="A", decision=rs.V_NOT_APPLICABLE, value=None),
+               _answer(qid="B", decision=rs.V_CONFIRMED, value=5.0, evidence=(_ev(),))]
+    _, scope = _scope(labels, answers, ("A", "B"))
+    assert scope["metrics"][rs.M1]["denominator"] == 0
+    assert scope["metrics"][rs.M1]["status"] == rs.MS_NOT_COMPUTABLE
+    assert scope["metrics"][rs.M4]["denominator"] == 2
+    na = scope["auxiliary"]["na_라벨_판정"]
+    assert (na["행"], na["일치"], na["불일치"]) == (2, 1, 1)
+    # na 행도 값이 채워진 제출이면 M5 분모에 남는다 — 추가 제외하지 않는다.
+    assert scope["metrics"][rs.M5]["denominator"] == 1
+
+
+def test_counts_are_labelled_as_confirmed_rows_only():
+    """M2·M3는 '확정된 행에서 확인된 건수'로 표시한다 — 미정 행은 빠져 있다."""
+    labels = [_label(qid="A", expected_decision="hold", hold_reason="mismatch"),
+              _label(qid="B", expected_decision="hold", hold_reason="no_evidence")]
+    # B는 원출력을 읽을 수 없어 판정표 이전 단계에서 미정이다 — 정상 보류로 바꾸지 않는다.
+    answers = [_answer(qid="A", decision=rs.V_SELF_REPORTED, value=1.0),
+               _answer(qid="B", decision=rs.V_UNPARSED, value=None)]
+    _, scope = _scope(labels, answers, ("A", "B"))
+    m2 = scope["metrics"][rs.M2]
+    assert m2["kind"] == "count" and m2["numerator"] == 1
+    assert "확정된 행 1건" in m2["note"] and "미정 행 1건" in m2["note"]
+    assert scope["auxiliary"]["A6_미해결_행"] == 1
+
+
+def test_one_stage_alone_does_not_produce_an_aggregate_scope():
+    """한 단계만 있으면 합산을 만들지 않는다 — 한 단계를 '전체'라고 부르지 않는다."""
+    labels = [_label(qid="A", expected_decision="hold", hold_reason="no_evidence")]
+    answers = [_answer(qid="A", decision=rs.V_HOLD, value=None)]
+    rep = rs.score(labels, {"initial": answers}, ("A",))
+    assert [s["stage"] for s in rep.metric_scopes] == ["initial"]
+    assert all(s["aggregated"] is False for s in rep.metric_scopes)
+
+
+def test_two_stages_add_a_reference_aggregate_but_keep_per_stage_first():
+    labels = [_label(stage=s, qid="A", expected_decision="hold", hold_reason="no_evidence")
+              for s in ("initial", "followup")]
+    rep = rs.score(labels, {
+        "initial": [_answer(qid="A", decision=rs.V_HOLD, value=None)],
+        "followup": [_answer(stage="followup", qid="A", decision=rs.V_HOLD, value=None)],
+    }, ("A",))
+    scopes = {s["stage"]: s for s in rep.metric_scopes}
+    assert set(scopes) == {"initial", "followup", "initial+followup"}
+    assert scopes["initial"]["aggregated"] is False
+    assert scopes["initial+followup"]["aggregated"] is True
+    assert "참고" in scopes["initial+followup"]["label"]
+    # 합산 M4 분모는 단계 수만큼 늘어난다(표본이 늘어난 것이 아니다).
+    assert scopes["initial+followup"]["metrics"][rs.M4]["denominator"] == 2
+
+
+def test_input_completeness_separates_missing_rows_from_holds():
+    """누락·파싱 실패를 정상 보류로 바꾸지 않는다."""
+    labels = [_label(qid=q, expected_decision="hold", hold_reason="no_evidence")
+              for q in ("A", "B", "C")]
+    answers = [_answer(qid="A", decision=rs.V_HOLD, value=None),
+               _answer(qid="B", decision=rs.V_UNPARSED, value=None)]
+    _, scope = _scope(labels, answers, ("A", "B", "C"))
+    comp = scope["input_completeness"]
+    assert comp["라벨_행"] == 3 and comp["채점된_행"] == 2
+    assert comp["응답_누락_행"] == 1 and comp["파싱_실패_행"] == 1

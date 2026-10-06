@@ -47,15 +47,29 @@ V_NOT_APPLICABLE = af.D_NOT_APPLICABLE    # 해당 없음
 V_UNPARSED = af.D_UNPARSED                # 원출력을 읽을 수 없음
 V_UNDETERMINED = af.D_UNDETERMINED        # 공통 판정으로 옮기는 규칙이 계약에 없음
 
-# 집계 위치(§6.2). 지표 산식이 미정이므로 건수까지만 쓴다.
+# 집계 위치. §6.2 네 줄 + 2026-10-06 지민 확정 판정표.
+B_CORRECT_ANSWER = "correct_answer"          # 올바른 답변 (2026-10-06 신설)
 B_CORRECT_HOLD = "correct_hold"              # 올바른 보류
+B_CORRECT_NA = "correct_na"                  # 올바른 해당 없음 (2026-10-06 신설)
 B_WRONG_CONFIRMATION = "wrong_confirmation"  # 잘못된 확정
 B_UNNECESSARY_HOLD = "unnecessary_hold"      # 불필요한 보류
+B_DECISION_MISMATCH = "decision_mismatch"    # 판정 불일치 (2026-10-06 신설)
 B_UNRESOLVED = "unresolved"                  # 미정 — 임의 배정하지 않는다
 
-# 세부 표시(§6.2)
+#: `decision_mismatch`는 **정상 보류도 정답도 아니다.** 별도 건수로만 센다.
+
+# 세부 표시(§6.2 + 2026-10-06 확정표)
 D_MISSED_MISMATCH = "missed_mismatch"            # 놓친 불일치
 D_EVIDENCE_LINK_MISSING = "evidence_link_missing"  # 근거 연결 누락
+# 확정 응답의 오류를 값·근거·둘 다로 **분리**한다(근거만 틀린 것을 값 오류로 뭉개지 않는다).
+D_VALUE_ERROR = "value_error"                      # 값만 틀렸다
+D_EVIDENCE_ERROR = "evidence_error"                # 근거만 틀렸다
+D_VALUE_AND_EVIDENCE_ERROR = "value_and_evidence_error"  # 둘 다 틀렸다
+D_WRONGLY_NOT_APPLICABLE = "wrongly_not_applicable"      # 답할 수 있는데 해당 없음으로 냈다
+# 보류 결정이 맞은 행의 **사유** 비교. 미확인을 일치로 간주하지 않는다.
+D_HOLD_REASON_MATCH = "hold_reason_match"
+D_HOLD_REASON_MISMATCH = "hold_reason_mismatch"
+D_HOLD_REASON_UNKNOWN = "hold_reason_unknown"
 
 # 예/아니오 토큰. `0`·`1`은 넣지 않는다 — 수치 0을 예/아니오로 읽으면 안 된다(§6.1).
 _YES = frozenset({"예", "y", "yes", "true"})
@@ -193,6 +207,16 @@ def parse_label_row(row: dict[str, str], where: str) -> Label:
     if tolerance is None or tolerance < 0:
         raise LabelError(f"{where}: tolerance '{tol_text}'가 0 이상의 수치가 아니다")
 
+    sources = _parse_sources(row["expected_sources"], where)
+    # `answer` 라벨에는 근거 출처가 **필수**다(2026-10-06 확정). 비면 라벨 검증 오류로
+    # 드러낸다. 비어 있는 행을 지표 분모에서 조용히 빼면 그만큼 수치가 높아진다.
+    if decision == "answer" and not sources:
+        raise LabelError(
+            f"{where}: answer 행에 expected_sources가 없다. "
+            "'파일명#페이지'(1-기준, 여러 개는 ';')를 적는다. "
+            "비워 두고 지표 분모에서 빼지 않는다"
+        )
+
     return Label(
         stage=stage,
         qid=qid,
@@ -201,7 +225,7 @@ def parse_label_row(row: dict[str, str], where: str) -> Label:
         expected_value=expected_value,
         expected_unit=(row["expected_unit"] or "").strip(),
         tolerance=float(tolerance),
-        expected_sources=_parse_sources(row["expected_sources"], where),
+        expected_sources=sources,
         boundary_note=(row["boundary_note"] or "").strip(),
         labeler=(row["labeler"] or "").strip(),
         note=(row["note"] or "").strip(),
@@ -329,6 +353,24 @@ def compare_value(label: Label, answer: SystemAnswer) -> tuple[bool | None, str]
     return False, "한쪽만 수치여서 값 형태가 다르다"
 
 
+def compare_sources_file_only(label: Label, answer: SystemAnswer) -> tuple[bool | None, str]:
+    """**보조** — 파일만 맞으면 일치로 본다(쪽은 보지 않는다).
+
+    공식 수치는 `compare_sources()`의 **파일+쪽** 일치다. 이 함수의 결과가 공식 수치를
+    대체하지 않는다. B 의견대로 근거 일치를 두 단계로 나누어 보기 위한 것이다.
+    """
+    if not label.expected_sources:
+        return None, "라벨에 정답 근거가 없다"
+    if not answer.evidence:
+        return False, "시스템 근거가 없다"
+    wanted = {_norm_text(s.file_name) for s in label.expected_sources}
+    got = {_norm_text(e.file_name) for e in answer.evidence}
+    hit = wanted & got
+    if hit:
+        return True, f"정답 근거 파일 일치(쪽 미확인): {sorted(hit)}"
+    return False, "정답 근거와 일치하는 파일이 없다"
+
+
 def compare_sources(label: Label, answer: SystemAnswer) -> tuple[bool | None, str]:
     """근거 일치 여부. 정답 근거 여러 건 중 하나라도 맞으면 일치(§5.1)."""
     if not label.expected_sources:
@@ -355,36 +397,122 @@ _SELF_REPORTED_HOLD = {
 }
 
 
+#: 시스템 보류 사유를 **구조화해 받는 필드가 공통 형식에 없다.** `source.comparison`이
+#: 라벨 사유와 같은 어휘인 경우만 비교하고, 그 밖은 "미확인"으로 남긴다.
+#: `no_evidence`·`needs_human_text`에 대응하는 `comparison` 값은 없다.
+_COMPARISON_AS_HOLD_REASON = frozenset({"mismatch", "not_comparable", "scope_unconfirmed"})
+
+
+def _hold_reason_detail(label: Label, system_comparison: str) -> tuple[str, str]:
+    """보류 결정이 맞은 행의 **사유** 비교. (세부 표시, 설명).
+
+    사유가 확인되지 않은 것을 **사유 일치로 간주하지 않는다.**
+    """
+    got = _norm_text(system_comparison)
+    if got not in _COMPARISON_AS_HOLD_REASON:
+        return D_HOLD_REASON_UNKNOWN, (
+            "보류 결정은 맞았다. 시스템 보류 사유는 공통 형식에 구조화 필드가 없어 "
+            f"확인되지 않는다(comparison='{system_comparison}'). 사유 일치로 세지 않는다"
+        )
+    if got == label.hold_reason:
+        return D_HOLD_REASON_MATCH, f"보류 결정·사유 모두 일치({got})"
+    return D_HOLD_REASON_MISMATCH, (
+        f"보류 결정은 맞았으나 사유가 다르다(라벨 '{label.hold_reason}' vs 시스템 '{got}')"
+    )
+
+
+def _confirmed_answer_detail(value_match: bool, source_match: bool) -> str:
+    """확정 응답의 오류를 값·근거·둘 다로 분리한다."""
+    if not value_match and not source_match:
+        return D_VALUE_AND_EVIDENCE_ERROR
+    if not value_match:
+        return D_VALUE_ERROR
+    return D_EVIDENCE_ERROR
+
+
 def assign_bucket(
     verdict: str, label: Label, value_match: bool | None,
+    source_match: bool | None = None, system_comparison: str = "",
+    value_reason: str = "", source_reason: str = "",
 ) -> tuple[str, str, str]:
     """(집계 위치, 세부 표시, 이유).
 
-    확정 규칙은 §6.2의 미검증 전달 행뿐이다. 그 밖의 조합은 `unresolved`로 남긴다
-    (§6.3). 시스템에 유리하게 바꾸거나 조용히 제외하지 않는다.
+    §6.1 시스템 판정 매핑과 §6.2 미검증 전달 규칙은 **그대로 유지한다.** 아래는 그
+    판정 이후의 집계 규칙이며 2026-10-06 지민 확정표다. 판정 자체가 미정인 사례
+    (`unparsed`·`undetermined`)는 여기서 임의로 해결하지 않고 `unresolved`로 남긴다.
     """
     if verdict == V_UNPARSED:
         return B_UNRESOLVED, "", "응답을 읽을 수 없어 집계하지 않는다(보류로 세지 않는다)"
     if verdict == V_UNDETERMINED:
         return B_UNRESOLVED, "", "응답을 공통 판정으로 옮기는 규칙이 계약에 없다"
-    if verdict != V_SELF_REPORTED:
-        return B_UNRESOLVED, "", f"응답 판정 '{verdict}' × 라벨 '{label.expected_decision}'의 집계 규칙이 계약에 없다"
 
-    if label.expected_decision == "hold":
-        rule = _SELF_REPORTED_HOLD.get(label.hold_reason)
-        if rule is None:
-            return B_UNRESOLVED, "", f"self_reported × hold({label.hold_reason})의 집계 규칙이 계약에 없다"
-        bucket, detail = rule
-        return bucket, detail, f"§6.2: self_reported × hold({label.hold_reason})"
+    decision = label.expected_decision
 
-    if label.expected_decision == "answer":
-        if value_match is None:
-            return B_UNRESOLVED, "", "값 일치 여부를 판단할 규칙이 없어 집계하지 않는다"
-        if value_match:
-            return B_UNNECESSARY_HOLD, D_EVIDENCE_LINK_MISSING, "§6.2: self_reported × answer(값 일치)"
-        return B_WRONG_CONFIRMATION, D_MISSED_MISMATCH, "§6.2: self_reported × answer(값 불일치)"
+    # ── 확정 응답 ─────────────────────────────────────────────────────────
+    if verdict == V_CONFIRMED:
+        if decision == "answer":
+            if value_match is None or source_match is None:
+                why = value_reason if value_match is None else source_reason
+                return B_UNRESOLVED, "", (
+                    "값·근거 비교 규칙이 없어 집계하지 않는다(판정표 이전 단계의 미정이다)"
+                    + (f": {why}" if why else ""))
+            if value_match and source_match:
+                return B_CORRECT_ANSWER, "", "확정표: confirmed × answer(값·근거 모두 일치)"
+            detail = _confirmed_answer_detail(value_match, source_match)
+            return B_WRONG_CONFIRMATION, detail, (
+                f"확정표: confirmed × answer({detail}). "
+                "근거만 틀린 확정도 잘못된 확정에 넣되 세부 사유로 분리한다")
+        if decision == "hold":
+            return B_WRONG_CONFIRMATION, D_MISSED_MISMATCH, (
+                f"확정표: confirmed × hold({label.hold_reason}) — 모든 사유에서 "
+                "잘못된 확정이다")
+        return B_WRONG_CONFIRMATION, "", "확정표: confirmed × na"
 
-    return B_UNRESOLVED, "", f"self_reported × {label.expected_decision}의 집계 규칙이 계약에 없다"
+    # ── 미검증 전달 — §6.2 기존 규칙을 유지한다 ──────────────────────────
+    if verdict == V_SELF_REPORTED:
+        if decision == "hold":
+            rule = _SELF_REPORTED_HOLD.get(label.hold_reason)
+            if rule is not None:
+                bucket, detail = rule
+                return bucket, detail, f"§6.2: self_reported × hold({label.hold_reason})"
+            if label.hold_reason == "needs_human_text":
+                return B_WRONG_CONFIRMATION, D_MISSED_MISMATCH, (
+                    "확정표: self_reported × hold(needs_human_text) — 보수적 평가 정책. "
+                    "§6.2 네 줄은 바뀌지 않았다")
+            return B_UNRESOLVED, "", (
+                f"self_reported × hold({label.hold_reason})의 집계 규칙이 계약에 없다")
+        if decision == "answer":
+            if value_match is None:
+                return B_UNRESOLVED, "", (
+                    "값 일치 여부를 판단할 규칙이 없어 집계하지 않는다"
+                    + (f": {value_reason}" if value_reason else ""))
+            if value_match:
+                return B_UNNECESSARY_HOLD, D_EVIDENCE_LINK_MISSING, "§6.2: self_reported × answer(값 일치)"
+            return B_WRONG_CONFIRMATION, D_MISSED_MISMATCH, "§6.2: self_reported × answer(값 불일치)"
+        return B_WRONG_CONFIRMATION, "", "확정표: self_reported × na"
+
+    # ── 보류 ──────────────────────────────────────────────────────────────
+    if verdict == V_HOLD:
+        if decision == "answer":
+            return B_UNNECESSARY_HOLD, "", "확정표: hold × answer"
+        if decision == "hold":
+            detail, why = _hold_reason_detail(label, system_comparison)
+            return B_CORRECT_HOLD, detail, f"확정표: hold × hold — {why}"
+        return B_DECISION_MISMATCH, "", (
+            "확정표: hold × na — 정상 보류도 정답도 아니다. 별도로 센다")
+
+    # ── 해당 없음 ─────────────────────────────────────────────────────────
+    if verdict == V_NOT_APPLICABLE:
+        if decision == "answer":
+            return B_UNNECESSARY_HOLD, D_WRONGLY_NOT_APPLICABLE, (
+                "확정표: not_applicable × answer — 답할 수 있는 문항을 해당 없음으로 냈다")
+        if decision == "hold":
+            return B_DECISION_MISMATCH, "", (
+                "확정표: not_applicable × hold — 정상 보류도 정답도 아니다. 별도로 센다")
+        return B_CORRECT_NA, "", "확정표: not_applicable × na"
+
+    return B_UNRESOLVED, "", (
+        f"응답 판정 '{verdict}'는 확정표에 없다. 임의로 배정하지 않는다")
 
 
 # ── 행별 결과·구성 검증 ──────────────────────────────────────────────────
@@ -395,14 +523,17 @@ class RowScore:
     system_status: str          # 원본 보존 — 대조군은 비어 있을 수 있다
     system_comparison: str      # 원본 보존 — 대조군은 비어 있을 수 있다
     system_value_filled: bool
+    system_evidence_count: int  # 연결한 근거 건수. 정답 여부와 별개다(M5 vs A5)
     system_verdict: str         # 공통 응답 판정
     verdict_reason: str
     label_decision: str
     label_hold_reason: str
     value_match: bool | None
     value_reason: str
-    source_match: bool | None
+    source_match: bool | None       # 공식 — 파일+쪽 일치
     source_reason: str
+    source_file_match: bool | None  # 보조 — 파일만 일치. 공식을 대체하지 않는다
+    source_file_reason: str
     bucket: str
     bucket_detail: str
     bucket_reason: str
@@ -463,24 +594,281 @@ def check_structure(
     return rep
 
 
+# ── 지표(2026-10-06 확정 정책) ───────────────────────────────────────────
+#: 핵심 지표 키. **종합 점수는 만들지 않는다** — 확정 요구사항이고 향후 구현 대상도 아니다.
+M1 = "M1_답변근거_동시정답률"
+M2 = "M2_잘못된_확정_수"
+M3 = "M3_불필요한_보류_수"
+M4 = "M4_자동응답률"
+M5 = "M5_자료_연결률"
+
+#: 지표 산출 상태.
+MS_AVAILABLE = "산출"            # 분자·분모가 모두 정해져 계산했다
+MS_WITHHELD = "보류"             # 미정 조합이 남아 공식 비율을 내지 않는다
+MS_NOT_COMPUTABLE = "산출_불가"   # 분모가 0이다. **0%가 아니다**
+
+
+@dataclass
+class Metric:
+    """지표 1건. 비율은 분자·분모를 **항상 함께** 남긴다.
+
+    `value`가 `None`인 경우를 `0`으로 바꾸지 않는다 — 보류와 0%는 다른 뜻이다.
+    """
+    key: str
+    kind: str                     # "ratio" | "count"
+    status: str
+    numerator: int | None = None
+    denominator: int | None = None
+    value: float | None = None    # 비율. 0~1
+    scope_note: str = ""          # 분모가 무엇인지 말로 적는다
+    undetermined_rows: int = 0
+    reasons: dict[str, int] = field(default_factory=dict)
+    note: str = ""
+
+
+def _ratio(key: str, numer: int, denom: int, scope_note: str, *,
+           undetermined: int = 0, reasons: dict[str, int] | None = None,
+           note: str = "") -> Metric:
+    """비율 지표 1건. 미정 행이 남으면 **공식 비율을 내지 않는다.**
+
+    `undetermined`는 **그 보고 단위(실행·단계)에 남은 `unresolved` 행 수**다. 그 지표의
+    분모에 영향을 주는 행만 세는 것이 아니다 — 2026-10-06 지민 승인 범위다.
+    """
+    reasons = reasons or {}
+    if undetermined:
+        return Metric(key=key, kind="ratio", status=MS_WITHHELD,
+                      numerator=numer, denominator=denom, value=None,
+                      scope_note=scope_note, undetermined_rows=undetermined,
+                      reasons=reasons,
+                      note=(note + " 미정 행이 남아 공식 비율을 보류한다. "
+                            "확정 행 기준 분자·분모만 참고로 남긴다.").strip())
+    if denom == 0:
+        return Metric(key=key, kind="ratio", status=MS_NOT_COMPUTABLE,
+                      numerator=numer, denominator=0, value=None,
+                      scope_note=scope_note, reasons=reasons,
+                      note=(note + " 분모가 0이다. 산출 불가이며 0%가 아니다.").strip())
+    return Metric(key=key, kind="ratio", status=MS_AVAILABLE,
+                  numerator=numer, denominator=denom, value=numer / denom,
+                  scope_note=scope_note, reasons=reasons, note=note)
+
+
+@dataclass
+class MetricScope:
+    """보고 단위 1건 — **시스템·실행·단계별이 기본이다.**
+
+    `aggregated`가 True면 단계를 합친 참고용 수치다. 한 단계만 있으면 합산을 만들지
+    않는다(한 단계를 '전체'라고 부르지 않는다).
+    """
+    system: str = ""
+    run_id: str = ""
+    stage: str = ""
+    aggregated: bool = False
+    label: str = ""
+    metrics: dict[str, Any] = field(default_factory=dict)
+    auxiliary: dict[str, Any] = field(default_factory=dict)
+    input_completeness: dict[str, Any] = field(default_factory=dict)
+
+
+def _metric_scope(rows: list[RowScore], labels: list[Label],
+                  expected_qid_count: int, stages: tuple[str, ...],
+                  *, aggregated: bool) -> MetricScope:
+    """한 보고 단위의 지표를 계산한다. 확정된 조건만 계산하고, 미정은 보류로 남긴다."""
+    answer_labels = [l for l in labels if l.expected_decision == "answer"]
+    answer_rows = [r for r in rows if r.label_decision == "answer"]
+    na_rows = [r for r in rows if r.label_decision == "na"]
+
+    # ── Q7(2026-10-06 승인) — **이 보고 단위에 `unresolved` 행이 1건이라도 남으면
+    #    그 실행·단계의 공식 비율 전체를 보류한다.** 지표별 분모에 영향을 주는 행만
+    #    보는 것으로 좁히지 않는다. 확정표로 해결되는 조합을 먼저 구현한 뒤에도 남는
+    #    미정이 여기 걸린다.
+    unresolved_rows = [r for r in rows if r.bucket == B_UNRESOLVED]
+    hold_count = len(unresolved_rows)
+    hold_reasons = dict(Counter(r.bucket_reason for r in unresolved_rows))
+
+    # ── M1 — 분모는 해당 단계 `answer` 라벨 **전체**(응답 누락·파싱 실패 포함).
+    m1_denom = len(answer_labels)
+    m1_numer = sum(1 for r in answer_rows if r.bucket == B_CORRECT_ANSWER)
+    m1_missing = m1_denom - len(answer_rows)
+    m1_unparsed = sum(1 for r in answer_rows if r.system_verdict == V_UNPARSED)
+    m1 = _ratio(
+        M1, m1_numer, m1_denom,
+        "분모: `answer` 라벨 전체(응답 누락·파싱 실패 포함) / "
+        "분자: 집계 위치가 `correct_answer`인 행 — `confirmed`로 제출하고 값·근거가 "
+        "모두 정답인 행이다(확정표와 같은 조건)",
+        undetermined=hold_count, reasons=hold_reasons,
+        note=("제출한 답변 중 정답 비율이 아니다. "
+              "답할 수 있어야 하는 문항 중 근거까지 갖춰 확정한 비율이다. "
+              "미검증 전달(`unverified_submitted`)은 분자에 넣지 않는다. "
+              f"응답 누락 {m1_missing}건·파싱 실패 {m1_unparsed}건은 분모에 들어가고 "
+              "분자에서 빠진다. `hold`·`na` 라벨은 섞지 않는다."),
+    )
+
+    # ── M2·M3 — 건수. **확정된 행에서 확인된 건수**다.
+    unresolved = hold_count
+    resolved = len(rows) - unresolved
+    count_note = (f"확정된 행 {resolved}건에서 확인된 건수다. "
+                  f"미정 행 {unresolved}건은 포함되지 않는다 — 실제 건수는 이보다 많을 수 있다.")
+    m2 = Metric(key=M2, kind="count", status=MS_AVAILABLE,
+                numerator=sum(1 for r in rows if r.bucket == B_WRONG_CONFIRMATION),
+                scope_note="보류해야 할 문항에 확정 답변을 낸 건수", note=count_note)
+    m3 = Metric(key=M3, kind="count", status=MS_AVAILABLE,
+                numerator=sum(1 for r in rows if r.bucket == B_UNNECESSARY_HOLD),
+                scope_note="답할 수 있는 문항을 보류한 건수", note=count_note)
+
+    # ── M4 — 분모는 실행·단계별 **예상 문항 전체**.
+    m4_denom = expected_qid_count * len(stages)
+    confirmed = sum(1 for r in rows if r.system_verdict == V_CONFIRMED)
+    submitted = confirmed + sum(1 for r in rows if r.system_verdict == V_SELF_REPORTED)
+    m4 = _ratio(
+        M4, confirmed, m4_denom,
+        "분모: 실행·단계별 예상 문항 전체 / 분자: `confirmed`로 제출한 행",
+        undetermined=hold_count, reasons=hold_reasons,
+        note=("**'검증 확정률'이 아니다.** 근거 검증 완료율을 뜻하지 않으며, "
+              "대조군에서도 검증 완료를 뜻하지 않는다. "
+              "`confirmed`+`unverified_submitted`를 합친 값 제출률은 보조 수치다."),
+    )
+
+    # ── M5 — 분모는 **실제 값이 채워진** `confirmed`·`unverified_submitted` 행.
+    #    값 `0`·`False`는 빈 값으로 취급하지 않는다.
+    m5_rows = [r for r in rows
+               if r.system_verdict in (V_CONFIRMED, V_SELF_REPORTED)
+               and r.system_value_filled]
+    m5_numer = sum(1 for r in m5_rows if r.system_evidence_count > 0)
+    m5 = _ratio(
+        M5, m5_numer, len(m5_rows),
+        "분모: 실제 값이 채워진 `confirmed`·`unverified_submitted` 행 / "
+        "분자: 그중 근거를 연결한 행",
+        undetermined=hold_count, reasons=hold_reasons,
+        note=("**연결했는지만 본다.** 연결한 근거가 정답인지는 보조 A5에서 따로 센다. "
+              "값 `0`·`False`를 빈 값으로 취급하지 않는다. "
+              "응답 누락·파싱 실패 행은 억지로 분모에 넣지 않는다 — 입력 완전성에 적는다. "
+              "`na` 라벨 행을 추가로 제외하지 않는다."),
+    )
+
+    scope = MetricScope(aggregated=aggregated)
+    scope.metrics = {m.key: asdict(m) for m in (m1, m2, m3, m4, m5)}
+    scope.auxiliary = {
+        "A1_값_일치_건수": dict(Counter(_flag(r.value_match) for r in answer_rows)),
+        "A2_근거_일치_건수": {
+            "파일+쪽_일치(공식)": sum(1 for r in answer_rows if r.source_match is True),
+            "파일_일치(보조)": sum(1 for r in answer_rows if r.source_file_match is True),
+            "주의": "파일 일치는 공식 수치를 대체하지 않는다. 공식은 파일+쪽이다.",
+        },
+        "A3_값_제출률_보조": asdict(_ratio(
+            "A3_값_제출률", submitted, m4_denom,
+            "분모: 예상 문항 전체 / 분자: `confirmed`+`unverified_submitted`",
+            undetermined=hold_count, reasons=hold_reasons,
+            note="M4의 보조다. 같은 줄에 놓지 않는다.")),
+        "A4_올바른_보류_수": sum(1 for r in rows if r.bucket == B_CORRECT_HOLD),
+        "A5_연결한_근거가_정답인_비율": asdict(_ratio(
+            "A5_연결근거_정답률",
+            sum(1 for r in m5_rows if r.source_match is True),
+            sum(1 for r in m5_rows if r.system_evidence_count > 0),
+            "분모: 근거를 연결한 행 / 분자: 그 근거가 정답 위치와 맞은 행",
+            undetermined=hold_count, reasons=hold_reasons,
+            note="M5(자료 연결률)와 **다른 지표다.** 같은 것으로 취급하지 않는다.")),
+        "A6_미해결_행": unresolved,
+        "올바른_답변_수": m1_numer,
+        "올바른_해당없음_수": sum(1 for r in rows if r.bucket == B_CORRECT_NA),
+        "판정_불일치": {
+            "건수": sum(1 for r in rows if r.bucket == B_DECISION_MISMATCH),
+            "이유": dict(Counter(r.bucket_reason for r in rows
+                                 if r.bucket == B_DECISION_MISMATCH)),
+            "주의": ("`decision_mismatch`는 정상 보류도 정답도 아니다. "
+                     "`correct_hold`·`correct_answer`에 섞지 않는다."),
+        },
+        "보류_사유_일치": {
+            "사유_일치": sum(1 for r in rows if r.bucket_detail == D_HOLD_REASON_MATCH),
+            "사유_불일치": sum(1 for r in rows if r.bucket_detail == D_HOLD_REASON_MISMATCH),
+            "사유_미확인": sum(1 for r in rows if r.bucket_detail == D_HOLD_REASON_UNKNOWN),
+            "주의": ("보류 **결정**이 맞은 행만 센다. 공통 형식에 시스템 보류 사유를 "
+                     "담는 구조화 필드가 없어 대부분 '사유 미확인'이 된다. "
+                     "미확인을 사유 일치로 간주하지 않는다."),
+        },
+        "확정_응답_오류_구분": {
+            "값만_오류": sum(1 for r in rows if r.bucket_detail == D_VALUE_ERROR),
+            "근거만_오류": sum(1 for r in rows if r.bucket_detail == D_EVIDENCE_ERROR),
+            "값·근거_모두_오류": sum(1 for r in rows
+                                    if r.bucket_detail == D_VALUE_AND_EVIDENCE_ERROR),
+            "주의": "세 가지 모두 `wrong_confirmation`에 들어간다. 원인만 분리한다.",
+        },
+        "na_라벨_판정": {
+            "행": len(na_rows),
+            "일치": sum(1 for r in na_rows if r.system_verdict == V_NOT_APPLICABLE),
+            "불일치": sum(1 for r in na_rows if r.system_verdict != V_NOT_APPLICABLE),
+            "주의": ("`na`는 M1 분모에서 빼고 M4 분모에는 넣는다. M5에서 추가 제외하지 "
+                     "않는다. `na` 문항의 오답이 사라지지 않게 일치·불일치를 따로 적는다."),
+        },
+    }
+    scope.input_completeness = {
+        "라벨_행": len(labels),
+        "채점된_행": len(rows),
+        "응답_누락_행": len(labels) - len(rows),
+        "파싱_실패_행": sum(1 for r in rows if r.system_verdict == V_UNPARSED),
+        "판정_규칙_미정_행": sum(1 for r in rows if r.system_verdict == V_UNDETERMINED),
+        "주의": "누락·파싱 실패를 정상 보류로 바꾸지 않는다. M1·M4 분모에 포함하고 분자에서 뺀다.",
+    }
+    return scope
+
+
+def compute_metric_scopes(rep: "ScoreReport", labels: list[Label],
+                          expected_qid_count: int) -> list[MetricScope]:
+    """보고 단위별 지표. **단계별이 기본이고, 합산은 두 단계가 모두 있을 때만 참고로 낸다.**"""
+    stages = tuple(s for s in STAGES if any(r.stage == s for r in rep.rows))
+    out: list[MetricScope] = []
+    for s in stages:
+        sc = _metric_scope([r for r in rep.rows if r.stage == s],
+                           [l for l in labels if l.stage == s],
+                           expected_qid_count, (s,), aggregated=False)
+        sc.stage = s
+        sc.label = s
+        out.append(sc)
+    if len(stages) > 1:
+        sc = _metric_scope(list(rep.rows), list(labels), expected_qid_count,
+                           stages, aggregated=True)
+        sc.stage = "+".join(stages)
+        sc.label = f"{'+'.join(stages)} 합산(참고)"
+        out.append(sc)
+    return out
+
+
 @dataclass
 class ScoreReport:
-    """채점 결과 — 분류와 건수까지만. 비율·정확도·종합 점수는 내지 않는다."""
+    """채점 결과 — 행별 분류·건수와 **확정된 산식의 지표**. 종합 점수는 내지 않는다."""
     rows: list[RowScore] = field(default_factory=list)
     verdict_counts: dict[str, int] = field(default_factory=dict)
     bucket_counts: dict[str, int] = field(default_factory=dict)
     detail_counts: dict[str, int] = field(default_factory=dict)
     value_match_counts: dict[str, int] = field(default_factory=dict)
     source_match_counts: dict[str, int] = field(default_factory=dict)
+    source_file_match_counts: dict[str, int] = field(default_factory=dict)
+    #: 보고 단위별 지표. **시스템·실행·단계별이 기본**이고 합산은 참고다.
+    metric_scopes: list[dict[str, Any]] = field(default_factory=list)
     unresolved_reasons: dict[str, int] = field(default_factory=dict)
     unscored_pairs: list[str] = field(default_factory=list)
     structure: StructureReport = field(default_factory=StructureReport)
     #: 채점에 쓴 입력 문서들 — 어느 시스템·실행·단계·자료 출처였는지 남긴다.
     documents: list[dict[str, Any]] = field(default_factory=list)
-    metrics_blocked_reason: str = (
-        "지표의 분자·분모와 종합 점수 산식이 확정되지 않았다(작업지시서 A §4·공통 계약 미확보). "
-        "비율·정확도·종합 점수를 산출하지 않는다."
-    )
+    #: 지표별 상태 — 하나의 문장으로 전부 차단하지 않는다. 보류는 지표·보고 단위별이다.
+    metrics_policy: dict[str, Any] = field(default_factory=lambda: {
+        "확정일": "2026-10-06",
+        "종합_점수": "만들지 않는다. 확정 요구사항이고 향후 구현 대상도 아니다.",
+        "보고_단위": ("시스템·실행·단계별이 기본이다. initial+followup 합산은 참고이며, "
+                      "한 단계만 있으면 합산을 만들지 않고 '전체'라고 부르지 않는다."),
+        "표본_분리": "공식 표본과 수치형 전수는 분리해 보고한다. 합치지 않는다.",
+        "반복_실행": "실행별로 보존한다. 표본 수가 늘어난 것처럼 보고하지 않는다.",
+        "산출_불가": "분모 0은 산출 불가다. 0%로 적지 않는다.",
+        "미정_조합": ("`unresolved` 행이 **1건이라도 남은 실행·단계**는 그 보고 단위의 "
+                      "공식 비율 전체를 보류하고, 확정 행별 결과·부분 건수·미정 건수·"
+                      "이유를 낸다. 분모에서 빼서 비율을 만들지 않고, '그 지표의 분모에 "
+                      "영향을 주는 미정만' 보는 것으로 좁히지도 않는다."),
+        "집계_판정표": ("2026-10-06 확정. §6.1 시스템 판정 매핑과 §6.2 미검증 전달 규칙은 "
+                        "바뀌지 않았다. 그 뒤의 집계만 정했다."),
+        "판정_불일치": ("`decision_mismatch`는 정상 보류도 정답도 아니다. 별도 건수와 "
+                        "이유로만 남긴다."),
+        "보류_사유": ("공통 형식에 시스템 보류 사유를 담는 구조화 필드가 없다. 사유가 "
+                      "확인되지 않은 행을 사유 일치로 간주하지 않는다."),
+    })
 
     def to_dict(self) -> dict[str, Any]:
         d = asdict(self)
@@ -518,17 +906,22 @@ def score(
         verdict, verdict_reason = answer.decision, answer.decision_basis
         value_match, value_reason = compare_value(label, answer)
         source_match, source_reason = compare_sources(label, answer)
-        bucket, detail, bucket_reason = assign_bucket(verdict, label, value_match)
+        file_match, file_reason = compare_sources_file_only(label, answer)
+        bucket, detail, bucket_reason = assign_bucket(
+            verdict, label, value_match, source_match, answer.source_comparison,
+            value_reason, source_reason)
 
         rep.rows.append(RowScore(
             stage=label.stage, qid=label.qid,
             system_status=answer.source_status,
             system_comparison=answer.source_comparison,
             system_value_filled=_is_filled(answer.value),
+            system_evidence_count=len(answer.evidence),
             system_verdict=verdict, verdict_reason=verdict_reason,
             label_decision=label.expected_decision, label_hold_reason=label.hold_reason,
             value_match=value_match, value_reason=value_reason,
             source_match=source_match, source_reason=source_reason,
+            source_file_match=file_match, source_file_reason=file_reason,
             bucket=bucket, bucket_detail=detail, bucket_reason=bucket_reason,
         ))
 
@@ -541,10 +934,14 @@ def score(
     rep.detail_counts = dict(Counter(r.bucket_detail for r in rep.rows if r.bucket_detail))
     rep.value_match_counts = dict(Counter(_flag(r.value_match) for r in rep.rows))
     rep.source_match_counts = dict(Counter(_flag(r.source_match) for r in rep.rows))
+    rep.source_file_match_counts = dict(Counter(
+        _flag(r.source_file_match) for r in rep.rows))
     rep.unresolved_reasons = dict(Counter(
         r.bucket_reason for r in rep.rows if r.bucket == B_UNRESOLVED
     ))
     rep.unscored_pairs.sort()
+    rep.metric_scopes = [asdict(s) for s in
+                         compute_metric_scopes(rep, labels, len(set(expected_qids)))]
     return rep
 
 
@@ -584,6 +981,27 @@ def score_documents(
         seen[stage] = key
 
     rep = score(labels, answers_by_stage, expected_qids)
+
+    # 보고 단위에 시스템·실행을 붙인다. **단계마다 문서가 하나**라는 제약(위) 덕에
+    # 단계 → 문서가 1:1이다. 실행이 섞이면 합산 단위는 비워 둔다.
+    by_stage_meta = {str((d.get("meta") or {}).get("stage") or ""): (d.get("meta") or {})
+                     for d in documents}
+    systems = {str(m.get("system") or "") for m in by_stage_meta.values()}
+    runs = {str(m.get("run_id") or "") for m in by_stage_meta.values()}
+    for scope in rep.metric_scopes:
+        meta = by_stage_meta.get(scope["stage"])
+        if meta is not None:
+            scope["system"] = str(meta.get("system") or "")
+            scope["run_id"] = str(meta.get("run_id") or "")
+            scope["label"] = f"{scope['system']} / {scope['run_id']} / {scope['stage']}"
+        elif len(systems) == 1 and len(runs) == 1:
+            scope["system"], scope["run_id"] = next(iter(systems)), next(iter(runs))
+            scope["label"] = (f"{scope['system']} / {scope['run_id']} / "
+                              f"{scope['stage']} 합산(참고)")
+        else:
+            scope["label"] = (f"{scope['stage']} 합산 — 시스템·실행이 섞여 있어 "
+                              "합산 수치를 쓰지 않는다")
+
     for doc in documents:
         meta = doc.get("meta") or {}
         rep.documents.append({
