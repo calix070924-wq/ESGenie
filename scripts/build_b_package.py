@@ -12,6 +12,12 @@
 
 담는 방식은 **허용 목록**이다. 목록에 없는 파일은 들어가지 않는다. 그 위에 금지 검사를
 돌려, 허용 목록이 잘못 바뀌어도 정답·키가 섞이면 실패한다.
+
+**금지 검사가 잡지 못하는 것:** 허용된 문서 **본문에 인용된** 실제 기대값이다. 검사는
+경로·키 표식·빈 서식만 본다. 실제 수치를 이 스크립트에 적어 두고 비교하면 그 수치가
+저장소에 남으므로 그렇게 하지 않는다. 따라서 **전달 전에 사람이 압축 내용을 읽고
+기대값 인용이 없는지 확인한다.** (실제로 이 경로로 한 건 — 형식 문서 §5의 근거 예시에
+실제 증빙 문구가 들어가 있던 것 — 을 전달 전에 찾아 합성 자리값으로 바꿨다.)
 """
 from __future__ import annotations
 
@@ -110,6 +116,34 @@ def _label_csv_is_blank(path: Path) -> list[str]:
     return filled
 
 
+def _unmarked_quotes(path: Path) -> list[str]:
+    """합성 예시의 근거 인용문이 합성임을 표시하는지 본다.
+
+    실제 증빙 문구가 예시 자리에 들어가면 그것만으로 정답 힌트가 된다. 기대값을 목록으로
+    적어 비교하지 않고(그러면 수치가 저장소에 남는다), **인용문에 합성 표시가 있는지**만
+    본다. `null`은 미상이라 통과한다.
+    """
+    marks = ("예시", "합성", "SYN", "자리값")
+    bad: list[str] = []
+
+    def walk(node: object, where: str) -> None:
+        if isinstance(node, dict):
+            for key, val in node.items():
+                if key == "quote" and isinstance(val, str) and not any(m in val for m in marks):
+                    bad.append(f"{where}.quote={val[:30]!r}")
+                else:
+                    walk(val, f"{where}.{key}")
+        elif isinstance(node, list):
+            for i, val in enumerate(node):
+                walk(val, f"{where}[{i}]")
+
+    try:
+        walk(json.loads(path.read_text(encoding="utf-8")), path.name)
+    except (json.JSONDecodeError, UnicodeDecodeError) as exc:
+        bad.append(f"{path.name} 를 읽을 수 없다: {exc}")
+    return bad
+
+
 def audit(files: list[str], stage: str) -> list[str]:
     """담기 전 금지 검사. 문제를 **목록으로** 돌려준다 (조용히 고치지 않는다)."""
     problems: list[str] = []
@@ -133,6 +167,9 @@ def audit(files: list[str], stage: str) -> list[str]:
             if marker in text:
                 problems.append(f"키로 보이는 표식이 들어 있다: {rel} ('{marker}')")
 
+        if rel.endswith("_excerpt.json"):
+            problems.extend(f"합성 표시가 없는 근거 인용문: {rel} — {p}"
+                            for p in _unmarked_quotes(path))
         if rel.endswith("labels_blank.csv"):
             problems.extend(f"빈 서식에 값이 들어 있다: {p}" for p in _label_csv_is_blank(path))
         if stage == "pre_review" and rel.startswith(FINAL_LABEL_DIR):

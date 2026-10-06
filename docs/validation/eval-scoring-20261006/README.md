@@ -48,7 +48,7 @@ PR #71 병합 확인 근거(2026-10-06, `git fetch origin --prune` 직후):
 | `docs/응답품질채점_사용법_2026-10-06.md` (신규) | 채점 CLI 사용법 |
 | `docs/지표정의표_2026-10-06.md` (신규) | 지표 정의·분자·분모·확정 여부 |
 | `docs/작업시간계측_기존계측조사_2026-10-06.md` (신규) | A-2 기존 계측 조사 (구현 미착수) |
-| `tests/test_eval_answer_format.py`·`test_eval_label_sample.py`·`test_eval_response_scoring.py`·`test_build_b_package.py` | 합성 입력 테스트 **146건** |
+| `tests/test_eval_answer_format.py`·`test_eval_label_sample.py`·`test_eval_response_scoring.py`·`test_build_b_package.py` | 합성 입력 테스트 **148건** |
 | `docs/validation/eval-scoring-20261006/README.md` (신규) | 이 기록 |
 
 제품 코드는 고치지 않았다. `esgenie/supplychain/exporters/*`·`schema.py`·`mapping.py`는
@@ -182,12 +182,12 @@ stage,qid,expected_decision,hold_reason,expected_value,expected_unit,tolerance,e
 | 검증 | 명령 | 결과 |
 |---|---|---|
 | 평가 도구 테스트(1차, 채점기만) | `python -m pytest tests/test_eval_response_scoring.py -q` | **66 passed** |
-| 평가 도구 테스트(2차, 공통 형식 전환 후) | `python -m pytest tests/test_eval_answer_format.py tests/test_eval_label_sample.py tests/test_eval_response_scoring.py tests/test_build_b_package.py -q` | **146 passed** |
+| 평가 도구 테스트(2차, 공통 형식 전환 후) | `python -m pytest tests/test_eval_answer_format.py tests/test_eval_label_sample.py tests/test_eval_response_scoring.py tests/test_build_b_package.py -q` | **148 passed** |
 | 전체 스위트(회귀, 1차) | `python -m pytest -q` | **5531 passed, 27 skipped** (73초) |
-| 전체 스위트(회귀, 2차) | `python -m pytest -q` | **5611 passed, 27 skipped** (69.8초, skip은 기존 것) |
+| 전체 스위트(회귀, 2차) | `python -m pytest -q` | **5613 passed, 27 skipped** (66.6초, skip은 기존 것) |
 
-skip·xfail로 실패를 가린 테스트는 추가하지 않았다(새 테스트 146건 전부 실제 통과).
-2차에서 늘어난 80건은 공통 형식·어댑터·표본 추출·패키지 빌더 테스트이고, 기존 통과
+skip·xfail로 실패를 가린 테스트는 추가하지 않았다(새 테스트 148건 전부 실제 통과).
+2차에서 늘어난 82건은 공통 형식·어댑터·표본 추출·패키지 빌더 테스트이고, 기존 통과
 건수는 줄지 않았다.
 
 ### 4.1 §7 필수 테스트 항목 대응
@@ -225,10 +225,10 @@ cd /tmp/verify_eval_scoring
 
 # 1) 평가 도구 테스트
 python -m pytest tests/test_eval_answer_format.py tests/test_eval_label_sample.py \
-  tests/test_eval_response_scoring.py tests/test_build_b_package.py -q  # 146 passed 기대
+  tests/test_eval_response_scoring.py tests/test_build_b_package.py -q  # 148 passed 기대
 
 # 2) 회귀
-python -m pytest -q                                          # 5611 passed, 27 skipped 기대
+python -m pytest -q                                          # 5613 passed, 27 skipped 기대
 
 # 3) 표본 재현 (같은 씨값이면 같은 표본)
 python scripts/eval_label_sample.py --seed 20261006 --out /tmp/chk_sample
@@ -251,7 +251,7 @@ shasum -a 256 esgenie/eval/answer_format.py esgenie/eval/esgenie_adapter.py \
 122c1598552b5b1d56a51b937f41dcfdee9406cfd4e74f12f497a6ee6d9a78e8  esgenie/eval/response_scoring.py
 faef209a5b7b40a45723e3d75f3876596299f632ea6947b4ac65a58bd0c3a94b  scripts/eval_response_quality.py
 3b2b1d86840985ab33fdb43aeced5bbd4eed75e512d13b5ec10e6e1b49472165  scripts/eval_label_sample.py
-9e9aa6a04d5c005a5c8be66480ee079e8a9ce6db5fde85ed05d40d5364be02af  scripts/build_b_package.py
+d486649b8a369c20c376c6c9156aed28559958589a53f5daf916ef32c7ad6342  scripts/build_b_package.py
 ```
 
 1차 기록의 해시(`response_scoring.py` `24c6fbe5…`, 테스트 `98e1d320…`)는 공통 형식
@@ -394,6 +394,18 @@ A는 PR #71 작업 과정에서 `docs/validation/...`(이 문서)과
   "PR을 탐색하지 말라"는 안내만으로 독립성이 확보됐다고 보지 않는다.
 - 인정 기준(노출 + 일치 → 독립 일치로 세지 않음 등)은 **제안 상태**이며 정민 확인 대기다.
 
+**전달 전에 찾아 고친 유출 1건.** 공통 형식 초안 §5의 근거 예시에 실제 증빙 문구
+(K-ESG 08 노드 재투입률의 값이 들어간 인용문)를 써 두었다. ZIP을 만든 뒤 압축을 풀어
+사람이 읽다가 찾았고, 합성 자리값으로 바꾼 뒤 ZIP을 다시 만들었다. **B에게 전달한
+ZIP에는 들어가지 않았다**(전달 전에 고쳤고, 최종 ZIP의 sha256으로 구분된다).
+
+- 빌더의 금지 검사는 **경로·키 표식·빈 서식**만 본다. 허용된 문서 **본문에 인용된**
+  기대값은 잡지 못했다. 실제 수치를 빌더에 적어 비교하면 그 수치가 저장소에 남으므로
+  그렇게 하지 않는다.
+- 보완으로 넣은 것: 합성 예시 JSON의 근거 인용문에 합성 표시가 있는지 보는 검사
+  (`_unmarked_quotes`, `test_audit_rejects_an_unmarked_evidence_quote`). 이것도
+  **문서 본문은 보지 못한다.** 따라서 **전달 전 사람의 압축 내용 확인이 절차에 남는다.**
+
 ### 6.6 이 프롬프트와 기존 문서의 충돌
 
 1. **페이지 기준이 다르다.** 라벨 `expected_sources`와 공통 형식 `page`는 1-기준, 시스템
@@ -443,7 +455,7 @@ A는 PR #71 작업 과정에서 `docs/validation/...`(이 문서)과
 |---|---|
 | A-1 채점 로직(확정 규칙) | **구현 검증 완료** |
 | 공통 답안 형식 v1 정의·검증기·어댑터 | **구현 검증 완료** / 형식 **합의 미완료** |
-| A-1 합성 입력 테스트 | **완료** (146건) |
+| A-1 합성 입력 테스트 | **완료** (148건) |
 | 채점 CLI | **구현 검증 완료** / **실제 채점 미실행** |
 | 채점 사용법 문서·지표 정의표 | **작성 완료** / 지표 산식은 **미정** |
 | 독립 라벨링 표본(공식 20행 + 수치형 전수) | **목록·서식·가이드 완료** / **실제 라벨링 미착수** |

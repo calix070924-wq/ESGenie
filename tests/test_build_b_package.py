@@ -7,6 +7,7 @@ from __future__ import annotations
 import csv
 import importlib
 import io
+import json
 import zipfile
 from pathlib import Path
 
@@ -136,6 +137,34 @@ def test_audit_rejects_key_markers_and_denied_paths(tmp_path, monkeypatch):
     (tmp_path / "docs" / "validation" / "README.md").write_text("x", encoding="utf-8")
     problems = pkg.audit(["docs/validation/README.md"], "pre_review")
     assert any("금지 경로" in p for p in problems)
+
+
+def test_audit_rejects_an_unmarked_evidence_quote(tmp_path, monkeypatch):
+    """합성 예시 자리에 실제 증빙 문구가 들어가면 걸린다.
+
+    실제 수치를 테스트에 적지 않는다. 검사 대상은 "합성 표시가 있는가"다.
+    """
+    bad = tmp_path / "x_excerpt.json"
+    bad.write_text(json.dumps(
+        {"answers": [{"evidence": [{"quote": "어떤 지표 00.0%"}]}]}, ensure_ascii=False),
+        encoding="utf-8")
+    monkeypatch.setattr(pkg, "REPO", tmp_path)
+    assert any("합성 표시가 없는 근거 인용문" in p
+               for p in pkg.audit(["x_excerpt.json"], "pre_review"))
+
+    ok = tmp_path / "y_excerpt.json"
+    ok.write_text(json.dumps(
+        {"answers": [{"evidence": [{"quote": "(예시) 어떤 문구"}, {"quote": None}]}]},
+        ensure_ascii=False), encoding="utf-8")
+    assert not [p for p in pkg.audit(["y_excerpt.json"], "pre_review")
+                if "근거 인용문" in p]
+
+
+def test_packaged_examples_have_only_synthetic_quotes():
+    """전달본에 실제로 들어가는 예시 파일이 이 검사를 통과하는지 본다."""
+    for rel in pkg.PRE_REVIEW_FILES:
+        if rel.endswith("_excerpt.json"):
+            assert pkg._unmarked_quotes(pkg.REPO / rel) == []
 
 
 def test_audit_rejects_missing_and_empty_files(tmp_path, monkeypatch):
