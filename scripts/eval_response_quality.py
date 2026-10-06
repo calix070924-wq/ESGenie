@@ -39,6 +39,22 @@ def _split_stage_path(ap: argparse.ArgumentParser, spec: str) -> tuple[str, str]
     return stage, path
 
 
+def _read_qid_file(path: str) -> tuple[str, ...]:
+    """문항 ID 목록 파일을 읽는다 — 한 줄에 하나, `#`은 주석.
+
+    제품 패키지(`esgenie.supplychain`)를 설치하지 않고도 채점할 수 있게 하기 위한
+    입구다. **문항 ID만 들어 있고 정답은 없다.** 비었거나 중복이면 거부한다.
+    """
+    lines = Path(path).read_text(encoding="utf-8").splitlines()
+    qids = [s for s in (line.split("#", 1)[0].strip() for line in lines) if s]
+    if not qids:
+        raise ValueError(f"문항 ID 목록이 비어 있다: {path}")
+    dupes = sorted({q for q in qids if qids.count(q) > 1})
+    if dupes:
+        raise ValueError(f"문항 ID 목록에 중복이 있다: {path} {dupes}")
+    return tuple(qids)
+
+
 def main(argv: list[str] | None = None) -> int:
     ap = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     ap.add_argument("--labels", required=True, help="정답 라벨 CSV 경로")
@@ -51,6 +67,9 @@ def main(argv: list[str] | None = None) -> int:
     ap.add_argument("--system", default="esgenie", help="--esgenie-result 변환 시 기록할 시스템 이름")
     ap.add_argument("--model", default=None, help="--esgenie-result 변환 시 기록할 모델")
     ap.add_argument("--framework", default="rba42", help="문항 구성을 읽을 양식 키")
+    ap.add_argument("--expected-qids", metavar="PATH",
+                    help="문항 ID 목록 파일(한 줄에 하나, '#'은 주석). 주면 양식 대신 "
+                         "이것을 쓴다 — 제품 패키지를 설치하지 않고도 채점할 수 있다")
     ap.add_argument("--write-common", metavar="DIR",
                     help="변환한 공통 형식 문서를 이 디렉터리에 남긴다(원본 추적용)")
     ap.add_argument("--out", required=True, help="채점 결과 JSON 경로(실행별로 다른 경로)")
@@ -87,7 +106,17 @@ def main(argv: list[str] | None = None) -> int:
         print(f"입력 오류: {exc}", file=sys.stderr)
         return 2
 
-    qids = rs.framework_qids(args.framework)
+    try:
+        if args.expected_qids:
+            qids = _read_qid_file(args.expected_qids)
+            qid_source = f"file:{args.expected_qids}"
+        else:
+            qids = rs.framework_qids(args.framework)
+            qid_source = f"framework:{args.framework}"
+    except (OSError, ValueError, KeyError, ImportError) as exc:
+        print(f"문항 구성을 읽을 수 없다: {exc}", file=sys.stderr)
+        return 2
+
     issues: list[dict] = []
     for doc in documents:
         key = af.document_key(doc.get("meta") or {})
@@ -104,6 +133,8 @@ def main(argv: list[str] | None = None) -> int:
     payload = report.to_dict()
     payload["format_issues"] = issues
     payload["label_file"] = str(args.labels)
+    payload["expected_qids_source"] = qid_source
+    payload["expected_qid_count"] = len(qids)
     out.parent.mkdir(parents=True, exist_ok=True)
     out.write_text(json.dumps(payload, ensure_ascii=False, indent=2) + "\n",
                    encoding="utf-8")

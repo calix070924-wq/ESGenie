@@ -185,10 +185,15 @@ stage,qid,expected_decision,hold_reason,expected_value,expected_unit,tolerance,e
 | 평가 도구 테스트(2차, 공통 형식 전환 후) | `python -m pytest tests/test_eval_answer_format.py tests/test_eval_label_sample.py tests/test_eval_response_scoring.py tests/test_build_b_package.py -q` | **148 passed** |
 | 전체 스위트(회귀, 1차) | `python -m pytest -q` | **5531 passed, 27 skipped** (73초) |
 | 전체 스위트(회귀, 2차) | `python -m pytest -q` | **5613 passed, 27 skipped** (66.6초, skip은 기존 것) |
+| 평가 도구 테스트(3차, 독립성·도구 패키지 추가 후) | 위 2차 명령 + `tests/test_eval_independence.py` | **170 passed** |
+| 전체 스위트(회귀, 3차) | `python -m pytest -q` | **5635 passed, 27 skipped** (67.8초) |
+| 합성 입력 CLI 실행(제품 의존성 없이) | `scripts/eval_response_quality.py --expected-qids …/qids_SYN.txt` | 종료 코드 0, `bucket_counts` 네 종류 각 1건 |
 
-skip·xfail로 실패를 가린 테스트는 추가하지 않았다(새 테스트 148건 전부 실제 통과).
-2차에서 늘어난 82건은 공통 형식·어댑터·표본 추출·패키지 빌더 테스트이고, 기존 통과
-건수는 줄지 않았다.
+skip·xfail로 실패를 가린 테스트는 추가하지 않았다(새 테스트 170건 전부 실제 통과).
+2차에서 늘어난 82건은 공통 형식·어댑터·표본 추출·패키지 빌더 테스트이고, 3차에서 늘어난
+22건은 독립 검토 인정 규칙(13건)과 도구 패키지 단계(9건)이다. 기존 통과 건수는 줄지 않았다.
+
+**합성 실행이 통과한 것을 실제 평가 완료로 적지 않는다.** 입력이 전부 합성이다.
 
 ### 4.1 §7 필수 테스트 항목 대응
 
@@ -225,10 +230,11 @@ cd /tmp/verify_eval_scoring
 
 # 1) 평가 도구 테스트
 python -m pytest tests/test_eval_answer_format.py tests/test_eval_label_sample.py \
-  tests/test_eval_response_scoring.py tests/test_build_b_package.py -q  # 148 passed 기대
+  tests/test_eval_response_scoring.py tests/test_eval_independence.py \
+  tests/test_build_b_package.py -q                           # 170 passed 기대
 
 # 2) 회귀
-python -m pytest -q                                          # 5613 passed, 27 skipped 기대
+python -m pytest -q                                          # 5635 passed, 27 skipped 기대
 
 # 3) 표본 재현 (같은 씨값이면 같은 표본)
 python scripts/eval_label_sample.py --seed 20261006 --out /tmp/chk_sample
@@ -237,25 +243,46 @@ python scripts/eval_label_sample.py --mode census --qtype numeric \
 diff -r data/eval/sample/bm_rba42_v1 /tmp/chk_sample          # README.md만 차이
 diff -r data/eval/sample/bm_rba42_numeric_census /tmp/chk_census
 
-# 4) 파일 해시
+# 4) 합성 입력으로 채점기 실행 (설치 없이, 종료 코드 0)
+python scripts/eval_response_quality.py \
+  --labels data/eval/examples/synthetic_run/labels_SYN.csv \
+  --answers data/eval/examples/synthetic_run/answers_SYN_initial.json \
+  --expected-qids data/eval/examples/synthetic_run/qids_SYN.txt \
+  --out /tmp/chk_syn.json
+
+# 5) 독립 검토 인정 집계
+python scripts/eval_independence_report.py \
+  --sample data/eval/sample/bm_rba42_v1/sample.json \
+  --sample data/eval/sample/bm_rba42_numeric_census/sample.json \
+  --exposures data/eval/independence/exposure_log.csv --labeler A --labeler B
+
+# 6) 파일 해시
 shasum -a 256 esgenie/eval/answer_format.py esgenie/eval/esgenie_adapter.py \
-  esgenie/eval/response_scoring.py scripts/eval_response_quality.py \
-  scripts/eval_label_sample.py scripts/build_b_package.py
+  esgenie/eval/response_scoring.py esgenie/eval/independence.py \
+  scripts/eval_response_quality.py scripts/eval_label_sample.py \
+  scripts/eval_independence_report.py scripts/export_framework_qids.py \
+  scripts/build_b_package.py data/eval/framework/rba42_qids.txt
 ```
 
-기대 해시(2차 기록 작성 시점):
+기대 해시(3차 기록 작성 시점):
 
 ```
 89ea4ab87940706e54339fe99eca1767e29caed7a709ea106189d2d754175220  esgenie/eval/answer_format.py
 325e1c4af213eb6f6d9878e13ec211d88cf81cb074560752f6e2dcf77100663d  esgenie/eval/esgenie_adapter.py
 122c1598552b5b1d56a51b937f41dcfdee9406cfd4e74f12f497a6ee6d9a78e8  esgenie/eval/response_scoring.py
-faef209a5b7b40a45723e3d75f3876596299f632ea6947b4ac65a58bd0c3a94b  scripts/eval_response_quality.py
+2f1e9d005e2e04e5708c4e9cd54f891d502fa339e315c8940c450c3450913a53  esgenie/eval/independence.py
+69a87ef6338ec3eba1635d8f1b7077d545776d272ca2e7481faca4cd9af632ea  scripts/eval_response_quality.py
 3b2b1d86840985ab33fdb43aeced5bbd4eed75e512d13b5ec10e6e1b49472165  scripts/eval_label_sample.py
-d486649b8a369c20c376c6c9156aed28559958589a53f5daf916ef32c7ad6342  scripts/build_b_package.py
+c52871953c7afbd00efd03ba26a544c3348537c431eab883eee7bf944b3c5288  scripts/eval_independence_report.py
+ce521a6524af9f41302dee1e6850850219c3d015141b90e7f74e0cf3f8143c59  scripts/export_framework_qids.py
+7c6dd0cabc22cf1cc333edc79f01ed9cc6a0974e8b74d7d3b1dd4a77fd9ef01e  scripts/build_b_package.py
+30b3a119112dfcc2768259bbe72d3f1cad97527dade72909729d7354707ee5df  data/eval/framework/rba42_qids.txt
 ```
 
 1차 기록의 해시(`response_scoring.py` `24c6fbe5…`, 테스트 `98e1d320…`)는 공통 형식
-전환으로 더 이상 맞지 않는다. 위 해시가 현재 값이다.
+전환으로 더 이상 맞지 않는다. 2차 기록의 `eval_response_quality.py` `faef209a…`와
+`build_b_package.py` `d486649b…`도 `--expected-qids`·`tools` 단계 추가로 바뀌었다.
+위 해시가 현재 값이다.
 
 라벨과 실제 실행 결과가 생기면 채점은 다음과 같이 돌린다(지금은 입력이 없어 실행하지 않았다).
 사용법 전체는 `docs/응답품질채점_사용법_2026-10-06.md`.
@@ -417,6 +444,27 @@ ZIP에는 들어가지 않았다**(전달 전에 고쳤고, 최종 ZIP의 sha256
 3. `AGENTS.md`가 비어 있어 저장소 규약을 문서에서 확인할 수 없었다. 기존 코드·테스트 관행
    (`esgenie/eval/rag_eval.py`의 dataclass + argparse CLI, `tests/test_*.py`)을 따랐다.
 
+### 6.7 독립 검토 인정 집계 — 지금 세어 둔 것
+
+확정 기준(노출 확인 행은 **일치 여부와 무관하게** 분자·분모에서 제외, 확인 대기는 독립으로
+세지 않음)을 구현해 현재 상태를 셌다. 표본은 **다시 뽑지 않았다.**
+
+| 집합 | 라벨러 | 원래 표본 행 | 독립 확인 완료 | 노출 제외 | 확인 대기 |
+|---|---|---|---|---|---|
+| `bm_rba42_v1` | A | 20 | 0 | 0 | **20** |
+| `bm_rba42_v1` | B | 20 | 0 | 0 | **20** |
+| `bm_rba42_numeric_census` | A | 12 | 0 | **2** (`RBA-C-4-E-6-2` 두 단계) | 10 |
+| `bm_rba42_numeric_census` | B | 12 | 0 | 0 | **12** |
+
+확인 대기의 이유는 하나다: **열람 확인 회신이 없다.** 제외된 A의 2행은 §6.5의 자가 신고
+노출 기록에서 나온다. 전체 PR 접근을 이유로 일괄 제외하지 않았다 — 사람·단계·문항별로
+적힌 기록만 센다.
+
+**독립 일치율은 산출하지 않는다.** 라벨이 없고 분모가 확정되지 않았다. 0%로 적지 않는다.
+제외한 행의 라벨은 생기면 **폐기하지 않고** 비독립 검토 기록으로 보존하며, 최종 정답
+라벨로 쓸 수 있는지는 **별개 판단**이다. 기준·기록·재현 명령은
+`docs/독립성_노출기록_2026-10-06.md` §5~§7.
+
 ## 7. 자료 확보 후 진행 순서
 
 **명세 확보와 원본 확보는 서로 선행 조건이 아니다.** 아래 두 줄기는 독립이며,
@@ -455,11 +503,17 @@ ZIP에는 들어가지 않았다**(전달 전에 고쳤고, 최종 ZIP의 sha256
 |---|---|
 | A-1 채점 로직(확정 규칙) | **구현 검증 완료** |
 | 공통 답안 형식 v1 정의·검증기·어댑터 | **구현 검증 완료** / 형식 **합의 미완료** |
-| A-1 합성 입력 테스트 | **완료** (148건) |
+| A-1 합성 입력 테스트 | **완료** (170건) |
 | 채점 CLI | **구현 검증 완료** / **실제 채점 미실행** |
+| 채점 CLI를 제품 의존성 없이 돌리는 경로(`--expected-qids`) | **구현·실행 검증 완료** (합성 입력, 종료 코드 0) |
+| 순수 합성 실행 예시 세트 | **작성·실행 검증 완료** — 실제 평가가 아니다 |
 | 채점 사용법 문서·지표 정의표 | **작성 완료** / 지표 산식은 **미정** |
+| 지표 산식 결정 요청표(D1~D5) | **작성 완료** / **결정 대기** — 코드에 적용하지 않았다 |
+| 독립 검토 인정 제외 규칙 | **확정 기준 구현 검증 완료** (13건) |
+| 독립 검토 인정 집계(원표본·확인완료·제외·대기) | **산출 완료** — §6.7 |
 | 독립 라벨링 표본(공식 20행 + 수치형 전수) | **목록·서식·가이드 완료** / **실제 라벨링 미착수** |
-| B 전달 ZIP (독립 검토 전 전달본) | **생성 완료** — 정답 없음, 금지 검사 통과 |
+| B 전달 ZIP (독립 검토 전 전달본) | **생성 완료** — 정답 없음, 금지 검사 통과. **보존 대상** |
+| B 전달 ZIP (채점 도구 패키지) | **생성·재현 검증 완료** — 정답 없음. 전달 기록은 `docs/B전달기록_2026-10-06.md` |
 | B 전달 ZIP (최종본) | **미생성** — 형식 합의·확정 라벨이 없어 빌더가 거부한다 |
 | A-1 가상 세트 정답 라벨 | **미완료** — 원본 증빙 없음, 사람 작성·승인 없음 |
 | A-1 라벨 선행 커밋·해시 기록 | **미완료** — 라벨 없음 |

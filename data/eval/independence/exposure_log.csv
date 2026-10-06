@@ -1,0 +1,2 @@
+labeler,stage,qid,exposure,source,confirmed_by,note
+A,all,RBA-C-4-E-6-2,expected_value,docs/UI연결용_수치범위_출력계약_2026-10-05.md §3 + docs/validation/eval-scoring-20261006/README.md,본인 신고(A),PR #71 작업 중 기대값을 읽었다. 값·단위·비교 불가 사유를 보았다

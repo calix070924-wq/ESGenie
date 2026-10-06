@@ -181,4 +181,89 @@ def test_pre_review_stage_refuses_confirmed_labels_in_the_list(tmp_path, monkeyp
     (label_dir / "real.csv").write_text("stage,qid\n", encoding="utf-8")
     monkeypatch.setattr(pkg, "REPO", tmp_path)
     problems = pkg.audit([f"{pkg.FINAL_LABEL_DIR}/real.csv"], "pre_review")
-    assert any("독립 검토 전 전달본에 정답 라벨" in p for p in problems)
+    assert any("정답 라벨을 담으려 한다" in p for p in problems)
+
+
+# --- 도구 패키지 (`tools`) — 라벨 확정을 기다리지 않고 먼저 보내는 것 -----------------
+
+def test_tools_list_has_no_labels_no_results_no_denied_paths():
+    for rel in pkg.TOOLS_FILES:
+        assert not rel.startswith(pkg.FINAL_LABEL_DIR), rel
+        for part in pkg.DENIED_PARTS:
+            assert part not in rel, (rel, part)
+        # 합성 예시 밖의 CSV(실제 라벨일 수 있는 것)는 들어가지 않는다.
+        assert not (rel.endswith(".csv") and "/examples/" not in rel), rel
+
+
+def test_tools_list_carries_the_cli_and_its_inputs():
+    """B가 실행 준비를 할 수 있어야 한다 — CLI·코드·사용법·지표 정의·합성 입력."""
+    for needed in ("scripts/eval_response_quality.py",
+                   "esgenie/eval/response_scoring.py",
+                   "esgenie/eval/answer_format.py",
+                   "esgenie/eval/esgenie_adapter.py",
+                   "docs/응답품질채점_사용법_2026-10-06.md",
+                   "docs/지표정의표_2026-10-06.md",
+                   "docs/지표결정요청표_2026-10-06.md",
+                   "data/eval/framework/rba42_qids.txt",
+                   "data/eval/examples/synthetic_run/labels_SYN.csv",
+                   "data/eval/examples/synthetic_run/answers_SYN_initial.json",
+                   "data/eval/examples/synthetic_run/qids_SYN.txt"):
+        assert needed in pkg.TOOLS_FILES, needed
+
+
+def test_tools_package_builds_and_matches_its_own_listing(tmp_path):
+    result = pkg.build("tools", tmp_path / "t.zip")
+    with zipfile.ZipFile(tmp_path / "t.zip") as zf:
+        names = set(zf.namelist())
+    assert names == {f"{result['root']}/README.md"} | {
+        f"{result['root']}/{rel}" for rel in pkg.TOOLS_FILES}
+
+
+def test_tools_readme_separates_usable_from_blocked(tmp_path):
+    readme = pkg.build_readme("tools", list(pkg.TOOLS_FILES), "deadbeef")
+    assert "지금 할 수 있다" in readme and "아직 못 한다" in readme
+    assert "행별 대조" in readme          # 쓸 수 있는 입력 검증·행별 비교
+    assert "미정" in readme               # 산식 미정
+    assert "0%로 적지 않는다" in readme    # 산출 불가를 0으로 적지 않는다
+    assert "합의 대기" in readme          # 형식은 합의 전
+    assert "평가가 아니다" in readme      # 합성 실행 성공 ≠ 평가 완료
+
+
+def test_tools_readme_states_dependencies_and_checkout(tmp_path):
+    """숨은 로컬 설정에 의존하지 않도록, 실행 전제를 문서에 적는다."""
+    readme = pkg.build_readme("tools", list(pkg.TOOLS_FILES), "deadbeef")
+    assert "표준 라이브러리만" in readme
+    assert "PYTHONPATH" in readme
+    assert "--expected-qids" in readme
+    assert "git checkout deadbeef" in readme   # 재현에 필요한 커밋
+    assert "pip install -r requirements.txt" in readme
+
+
+def test_tools_package_examples_are_synthetic_only(tmp_path):
+    """도구 패키지의 모든 JSON 근거 인용문에 합성 표시가 있는지 본다."""
+    for rel in pkg.TOOLS_FILES:
+        if rel.endswith(".json"):
+            assert pkg._unmarked_quotes(pkg.REPO / rel) == [], rel
+
+
+def test_tools_stage_refuses_a_real_label_csv(tmp_path, monkeypatch):
+    real = tmp_path / "data/eval/labels"
+    real.mkdir(parents=True)
+    (real / "confirmed.csv").write_text("stage,qid\n", encoding="utf-8")
+    monkeypatch.setattr(pkg, "REPO", tmp_path)
+    problems = pkg.audit(["data/eval/labels/confirmed.csv"], "tools")
+    assert any("정답 라벨을 담으려 한다" in p for p in problems)
+
+
+def test_tools_stage_refuses_to_fill_missing_files(monkeypatch):
+    monkeypatch.setattr(pkg, "TOOLS_FILES", pkg.TOOLS_FILES + ("docs/없는문서.md",))
+    with pytest.raises(pkg.PackageError, match="빈 파일로 채우지 않는다"):
+        pkg.collect("tools")
+
+
+def test_final_package_contains_the_tools_without_duplicates():
+    """최종본은 도구 일체를 포함하되 같은 파일을 두 번 담지 않는다."""
+    merged = pkg._dedupe(pkg.PRE_REVIEW_FILES, pkg.FINAL_EXTRA_FILES)
+    assert len(merged) == len(set(merged))
+    assert set(pkg.TOOLS_FILES) <= set(merged)
+    assert set(pkg.PRE_REVIEW_FILES) <= set(merged)
