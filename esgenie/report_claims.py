@@ -284,6 +284,16 @@ def fact_site_identity(label: str = "", site: str = "", quote: str = "") -> tupl
         len(other) > len(k) and sites_compatible(frozenset({k}), frozenset({other})) for other in keys))), ()
 
 
+def refine_local_sites(local: frozenset, heading: frozenset) -> frozenset:
+    """수량의 짧은 사업장 표기만 일치하는 상위 머리말로 구체화한다. 명시한 다른 지역은 덮지 않는다."""
+    if not local:
+        return heading
+    return frozenset(specific for key in local for specific in (
+        {h for h in heading if sites_compatible(frozenset({key}), frozenset({h}))}
+        if key[:1].isdigit() and any(sites_compatible(frozenset({key}), frozenset({h})) for h in heading)
+        else {key}))
+
+
 def row_site_identity(row: dict[str, Any]) -> tuple[frozenset, tuple]:
     if "site_identity" in row:
         return frozenset(row["site_identity"]), tuple(row.get("site_conflicts") or ())
@@ -580,7 +590,7 @@ def _row_items(cells: list[str], header: list[str] | None, heading_when=None,
             q = Quantity(q.start, q.end, q.value, _header_unit(head), q.raw, q.decimals)
         head_dates = date_positions(_scope_text(head))
         when = nearest(dates, scoped, q.start, q.end) or (head_dates[0][2] if head_dates else None) or heading_when
-        where = nearest(sites, scoped, q.start, q.end) or _sites(head) or heading_sites
+        where = refine_local_sites(nearest(sites, scoped, q.start, q.end) or _sites(head) or frozenset(), heading_sites)
         role = count_role(head) or next((r for r in map(count_role, labels) if r), "")
         group = _cell_group(head) or next((g for g in map(_cell_group, labels) if g), "")
         items.append((k, q, role, group, when, frozenset(where), " ".join([*labels, head]).strip()))
@@ -648,7 +658,8 @@ def chunk_occurrences(text: str, chunk_id: str = "", source_file: str = "") -> l
                     and not re.search(r"예정|계획", previous)
                 if dated_heading or linked_total:
                     when = previous_dates[-1][2]
-            where = nearest(sites, scoped, q.start, q.end) or (frozenset() if sites else heading_sites)
+            local_sites = nearest(sites, scoped, q.start, q.end) or frozenset()
+            where = refine_local_sites(local_sites, heading_sites) if local_sites or not sites else frozenset()
             out.append(Occurrence(q, role=count_role(window, anchor, anchor_end),
                                   group=count_group(window, anchor, anchor_end), when=when, sites=frozenset(where),
                                   context=window.replace(NEXT_QUANTITY, ""), chunk_id=chunk_id,

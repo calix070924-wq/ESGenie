@@ -194,6 +194,24 @@ def test_specific_source_site_and_short_alias_form_one_identity():
     assert sites_compatible(frozenset({"1공장"}), frozenset({"김해11공장"})) is False
 
 
+@pytest.mark.parametrize("raw", ["제1공장 교육 참석 인원 27명", "항목 | 값\n제1공장 교육 참석 인원 | 27명"])
+def test_a_short_site_in_a_raw_quantity_keeps_its_specific_heading(raw):
+    from esgenie.report_claims import chunk_occurrences
+    text = "교육 기록: 김해 제1공장 / 2026-06-03\n" + raw
+    occurrences = [o for o in chunk_occurrences(text) if o.q.unit == "명"]
+    assert occurrences[0].sites == frozenset({"김해1공장"})
+    source = IndexedDoc(text=text, meta={"source_file": "교육집계.pdf"}, chunk_id="c1")
+    body, marks = review_claim("2026년 6월 3일 부산 제1공장 교육에는 27명이 참석했다 [c1].", [source])
+    assert any(m.get("action") == "replaced" for m in marks)
+
+
+def test_a_short_site_in_an_ocr_quote_keeps_the_source_heading():
+    from esgenie.ssot.ocr_router import _source_quantity_site_boundary
+    quote = "제1공장 교육 참석 인원 27명"
+    boundary = _source_quantity_site_boundary({}, quote, "교육 기록: 김해 제1공장 / 2026-06-03\n" + quote, 0)
+    assert boundary["site"] == "김해 제1공장"
+
+
 def test_source_transition_clears_an_invented_model_site_and_records_why():
     from esgenie.ssot.ocr_router import _source_quantity_site_boundary
     boundary = _source_quantity_site_boundary({"site": "김해 제1공장"}, "참석 27명", source_text(NEW_SCOPES["entity"]), 0)
