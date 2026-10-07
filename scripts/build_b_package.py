@@ -65,6 +65,18 @@ PRE_REVIEW_FILES = (
     "data/eval/sample/bm_rba42_numeric_census/labels_blank.csv",
 )
 
+#: 형식 회신용 전달본 — **최신 형식·합성 예시·변경표만.** 표본 목록·빈 라벨 서식조차
+#: 넣지 않는다(그것은 `pre_review`로 이미 보냈다). B의 독립 라벨 제출을 기다리지 않고
+#: 보낸다 — 형식 합의와 독립 라벨링은 서로의 선행 조건이 아니다.
+FORMAT_REVIEW_FILES = (
+    "docs/B회신_2026-10-07.md",
+    "docs/공통답안형식_v1.1초안_2026-10-07.md",
+    "docs/공통답안형식_v1초안_2026-10-06.md",
+    "data/eval/examples/README.md",
+    "data/eval/examples/common_v1_esgenie_excerpt.json",
+    "data/eval/examples/common_v1_control_excerpt.json",
+)
+
 #: 채점기 도구 패키지 — **정답 라벨과 무관하게** 먼저 보낸다. B가 실행 준비를 할 수
 #: 있어야 하므로 라벨 확정을 기다리지 않는다. 라벨·실행 결과·실제 기대값은 없다.
 TOOLS_FILES = (
@@ -201,7 +213,8 @@ def audit(files: list[str], stage: str) -> list[str]:
                             for p in _unmarked_quotes(path))
         if rel.endswith("labels_blank.csv"):
             problems.extend(f"빈 서식에 값이 들어 있다: {p}" for p in _label_csv_is_blank(path))
-        if stage in ("pre_review", "tools") and rel.startswith(FINAL_LABEL_DIR):
+        if stage in ("pre_review", "tools", "format_review") \
+                and rel.startswith(FINAL_LABEL_DIR):
             problems.append(f"정답 없는 전달본({stage})에 정답 라벨을 담으려 한다: {rel}")
         if stage == "tools" and rel.endswith(".csv") and "/examples/" not in rel:
             # 합성 예시 밖의 라벨 CSV는 실제 라벨일 수 있다. 도구 패키지에 넣지 않는다.
@@ -225,6 +238,12 @@ def collect(stage: str) -> list[str]:
     """담을 파일 목록. 최종본은 준비되지 않으면 거부한다."""
     if stage == "pre_review":
         return list(PRE_REVIEW_FILES)
+    if stage == "format_review":
+        missing = [rel for rel in FORMAT_REVIEW_FILES if not (REPO / rel).exists()]
+        if missing:
+            raise PackageError("형식 전달본을 만들 수 없다. 빈 파일로 채우지 않는다:\n  - "
+                               + "\n  - ".join(missing))
+        return list(FORMAT_REVIEW_FILES)
     if stage == "tools":
         missing = [rel for rel in TOOLS_FILES if not (REPO / rel).exists()]
         if missing:
@@ -266,8 +285,11 @@ def _verification_state(stage: str) -> list[tuple[str, str]]:
         ("실제 채점·지표 산출", "**미실행**"),
         ("지표 분자·분모 산식", "**미정 — 임의 구현하지 않았다**"),
     ]
-    if stage in ("pre_review", "tools"):
+    if stage in ("pre_review", "tools", "format_review"):
         rows.append(("이 패키지의 정답 포함 여부", "없음 — 금지 검사를 통과했다"))
+    if stage == "format_review":
+        rows.append(("A의 라벨 초안·판단 메모 포함 여부", "없음 — 금지 경로로 차단했다"))
+        rows.append(("B 독립 표본 라벨", "**미수신 — 이 전달본은 그것을 기다리지 않는다**"))
     if stage == "tools":
         rows.insert(4, ("합성 입력으로 CLI 실행", "확인 완료 — 종료 코드 0, 행 4건 분류"))
         rows.insert(5, ("실제 평가 완료 여부", "**아니다 — 합성 실행 성공은 평가가 아니다**"))
@@ -277,6 +299,7 @@ def _verification_state(stage: str) -> list[tuple[str, str]]:
 
 def build_readme(stage: str, files: list[str], sha: str) -> str:
     title = {"pre_review": "독립 검토 전 전달본 (정답 없음)",
+             "format_review": "공통 형식 회신용 전달본 (정답 없음)",
              "tools": "채점 도구 패키지 (정답 없음)",
              "final": "독립 검토 완료 후 최종본"}[stage]
     lines = [
@@ -323,6 +346,42 @@ def build_readme(stage: str, files: list[str], sha: str) -> str:
             "| 검증 문서·출력계약 문서 | ESGenie 기대값이 인용되어 있다 |",
             "| 채점기 코드·사용법·지표 정의 | 라벨링에 필요하지 않다. 최종본에서 전달한다 |",
             "| API 키·캐시·실행 기록 | 전달하지 않는다 |",
+            "",
+        ]
+    elif stage == "format_review":
+        lines += [
+            "## 이 패키지가 무엇이고 무엇이 아닌가",
+            "",
+            "- **무엇인가:** 공통 답안 형식 **최신 초안(1.1-draft)**, 이전 전달본(1.0-draft,",
+            "  보존), 이전본 대비 **변경표 10건과 확인 항목**(`docs/B회신_2026-10-07.md`),",
+            "  그리고 **순수 합성** 예시 두 개와 그 설명.",
+            "- **무엇이 아닌가:** 정답 라벨, A의 라벨 초안·판단 메모, 실제 ESGenie/대조군",
+            "  응답, 실제 기대값이 인용된 문서는 들어 있지 않다. 들어 있지 않은지 기계",
+            "  검사로 확인했다.",
+            "- 표본 목록·빈 라벨 서식은 **이미 보낸** `esgenie_eval_b_pre_review_20261006.zip`",
+            "  에 있다. 중복해 넣지 않았다.",
+            "",
+            "## 회신을 부탁하는 것 — 세 가지",
+            "",
+            "1. **형식 회신** — `docs/B회신_2026-10-07.md` §1 변경표 10건과 §2 확인 항목",
+            "   C-1~C-5의 수용 여부, 또는 구체적 수정 의견. C-6(보류 사유 구조화 필드)은",
+            "   이번에 넣지 않은 선택적 후속안이며 **확정을 막는 조건이 아니다.**",
+            "2. **독립 표본 20행 라벨** — `bm_rba42_v1` 10문항 × initial·followup.",
+            "   원본 증빙만 보고 독립적으로 작성해 주시고, 열람한 파일 목록·해시, 열람",
+            "   일시, 작성자, A의 초안·메모를 보지 않았다는 확인을 함께 적어 주세요.",
+            "   **이 라벨은 B가 직접 작성해야 한다.** A나 A 측 담당자가 대신 작성한 것은",
+            "   독립 검토로 세지 않는다.",
+            "3. **회신 가능한 일정** — §6. 코드 동결 2026-10-16 / 보고서 2026-10-23 기준.",
+            "",
+            "1번과 2번은 **서로의 선행 조건이 아니다.** 먼저 되는 것부터 보내 주셔도 된다.",
+            "",
+            "## 독립성 — 라벨 제출 전에 열지 말아 주세요",
+            "",
+            "- `docs/validation/...`, `docs/UI연결용_수치범위_출력계약_...`, PR #71 본문에는",
+            "  ESGenie 기대값이 인용되어 있다. 이 압축에는 **없다.**",
+            "- 열었더라도 적어 주시면 그 문항만 독립 인정에서 제외하고 라벨 자체는 보존한다",
+            "  — 라벨이 무효가 되지 않는다.",
+            "- **안내만으로 독립성이 확보됐다고 보지 않는다.** 열람 확인 기록을 함께 받는다.",
             "",
         ]
     elif stage == "tools":
@@ -553,7 +612,8 @@ def build(stage: str, out_path: Path, overwrite: bool = False) -> dict:
 
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description="B 전달용 패키지 ZIP을 만든다")
-    parser.add_argument("--stage", choices=("pre_review", "tools", "final"),
+    parser.add_argument("--stage",
+                        choices=("pre_review", "format_review", "tools", "final"),
                         default="pre_review")
     parser.add_argument("--out", required=True, help="만들 ZIP 경로")
     parser.add_argument("--overwrite", action="store_true")
