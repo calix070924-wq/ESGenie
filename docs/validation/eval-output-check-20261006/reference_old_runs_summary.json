@@ -1,0 +1,256 @@
+{
+  "INJ_61b6167_followup": {
+    "run_dir": "<DATA_PACK>/2_PR71_최종실행결과/INJ_61b6167/followup",
+    "checked_at": "2026-10-06T17:27:59.617241+09:00",
+    "fields": [
+      "display_value",
+      "badge",
+      "comparison_label",
+      "review_note",
+      "boundary_label",
+      "evidence_links[].file_name"
+    ],
+    "checks": [
+      "필드 검사(6필드가 칸에 실렸는가)",
+      "칸 전체 일치(칸에 그 밖의 내용이 없는가)"
+    ],
+    "inputs": {
+      "result_json": {
+        "path": "<DATA_PACK>/2_PR71_최종실행결과/INJ_61b6167/followup/result.json",
+        "sha256": "cf0e375d940fc65d17aaca4696867aa7e5fcbc665484cd31baa4fb785468193f"
+      },
+      "sheet_xlsx": {
+        "path": "<DATA_PACK>/2_PR71_최종실행결과/INJ_61b6167/followup/exports/response_sheet/실사응답서_rba42_한울정밀공업(주).xlsx",
+        "sha256": "2fd0e20d9f7de7368aa6be372e907b9d61c517378772f1fa4cb7da1094c78714"
+      },
+      "sheet_pdf": {
+        "path": "<DATA_PACK>/2_PR71_최종실행결과/INJ_61b6167/followup/exports/response_sheet/실사응답서_rba42_한울정밀공업(주).pdf",
+        "sha256": "574c30f9774272c017057c7c787dd2baf190b0af94c2daefcc048e200ea31864"
+      }
+    },
+    "summary": {
+      "json_rows": 48,
+      "excel_rows": 48,
+      "pdf_rows": 48,
+      "fields": 6,
+      "checked_field_values": 133,
+      "checked_cells": 384,
+      "mismatches": 0,
+      "cell_exact_mismatches": 0,
+      "unchecked": 48,
+      "pdf_evidence_figures": 4,
+      "pdf_continued_rows": {
+        "RBA-E-6": 2
+      }
+    },
+    "mismatches": [],
+    "unchecked_kinds": [
+      [
+        "badge(이모지)",
+        "PDF 신뢰 칸은 _STATUS_STYLE 라벨만 그린다 — 이모지가 없다"
+      ]
+    ]
+  },
+  "INJ_61b6167_initial": {
+    "run_dir": "<DATA_PACK>/2_PR71_최종실행결과/INJ_61b6167/initial",
+    "checked_at": "2026-10-06T17:27:52.667356+09:00",
+    "fields": [
+      "display_value",
+      "badge",
+      "comparison_label",
+      "review_note",
+      "boundary_label",
+      "evidence_links[].file_name"
+    ],
+    "checks": [
+      "필드 검사(6필드가 칸에 실렸는가)",
+      "칸 전체 일치(칸에 그 밖의 내용이 없는가)"
+    ],
+    "inputs": {
+      "result_json": {
+        "path": "<DATA_PACK>/2_PR71_최종실행결과/INJ_61b6167/initial/result.json",
+        "sha256": "cae01e454751138216ad7ec367d0ddc2abd5e3cbd52c280cda8306be41ef08ad"
+      },
+      "sheet_xlsx": {
+        "path": "<DATA_PACK>/2_PR71_최종실행결과/INJ_61b6167/initial/exports/response_sheet/실사응답서_rba42_한울정밀공업(주).xlsx",
+        "sha256": "207a197a8ac3a80f337e73102f76f1d2afd5520d37c68b5ec080248996c0fa46"
+      },
+      "sheet_pdf": {
+        "path": "<DATA_PACK>/2_PR71_최종실행결과/INJ_61b6167/initial/exports/response_sheet/실사응답서_rba42_한울정밀공업(주).pdf",
+        "sha256": "73e93894dea163769a36a00e992d7a67a1f0f5ae2a587a0a57aaf5b8fc30b4fd"
+      }
+    },
+    "summary": {
+      "json_rows": 48,
+      "excel_rows": 48,
+      "pdf_rows": 48,
+      "fields": 6,
+      "checked_field_values": 129,
+      "checked_cells": 384,
+      "mismatches": 0,
+      "cell_exact_mismatches": 0,
+      "unchecked": 48,
+      "pdf_evidence_figures": 4,
+      "pdf_continued_rows": {}
+    },
+    "mismatches": [],
+    "unchecked_kinds": [
+      [
+        "badge(이모지)",
+        "PDF 신뢰 칸은 _STATUS_STYLE 라벨만 그린다 — 이모지가 없다"
+      ]
+    ]
+  },
+  "LIVE_61b6167_followup": {
+    "run_dir": "<DATA_PACK>/2_PR71_최종실행결과/LIVE_61b6167/followup",
+    "checked_at": "2026-10-06T17:27:44.052700+09:00",
+    "fields": [
+      "display_value",
+      "badge",
+      "comparison_label",
+      "review_note",
+      "boundary_label",
+      "evidence_links[].file_name"
+    ],
+    "checks": [
+      "필드 검사(6필드가 칸에 실렸는가)",
+      "칸 전체 일치(칸에 그 밖의 내용이 없는가)"
+    ],
+    "inputs": {
+      "result_json": {
+        "path": "<DATA_PACK>/2_PR71_최종실행결과/LIVE_61b6167/followup/result.json",
+        "sha256": "a486f0827ed8871ddd1131bdf8b2716aa095812786b1161374d1fae86efb9099"
+      },
+      "sheet_xlsx": {
+        "path": "<DATA_PACK>/2_PR71_최종실행결과/LIVE_61b6167/followup/exports/response_sheet/실사응답서_rba42_한울정밀공업(주).xlsx",
+        "sha256": "236b3689c2538133a5e694e635f53fc0889388d949a61946836e89df39ca2349"
+      },
+      "sheet_pdf": {
+        "path": "<DATA_PACK>/2_PR71_최종실행결과/LIVE_61b6167/followup/exports/response_sheet/실사응답서_rba42_한울정밀공업(주).pdf",
+        "sha256": "1c8d765825b8bfc56ecd791d7eb9d2b73c2af0c694df41654cbd69692650a2b0"
+      }
+    },
+    "summary": {
+      "json_rows": 48,
+      "excel_rows": 48,
+      "pdf_rows": 48,
+      "fields": 6,
+      "checked_field_values": 133,
+      "checked_cells": 384,
+      "mismatches": 0,
+      "cell_exact_mismatches": 0,
+      "unchecked": 48,
+      "pdf_evidence_figures": 4,
+      "pdf_continued_rows": {
+        "RBA-E-6": 2
+      }
+    },
+    "mismatches": [],
+    "unchecked_kinds": [
+      [
+        "badge(이모지)",
+        "PDF 신뢰 칸은 _STATUS_STYLE 라벨만 그린다 — 이모지가 없다"
+      ]
+    ]
+  },
+  "LIVE_61b6167_initial": {
+    "run_dir": "<DATA_PACK>/2_PR71_최종실행결과/LIVE_61b6167/initial",
+    "checked_at": "2026-10-06T17:27:37.603571+09:00",
+    "fields": [
+      "display_value",
+      "badge",
+      "comparison_label",
+      "review_note",
+      "boundary_label",
+      "evidence_links[].file_name"
+    ],
+    "checks": [
+      "필드 검사(6필드가 칸에 실렸는가)",
+      "칸 전체 일치(칸에 그 밖의 내용이 없는가)"
+    ],
+    "inputs": {
+      "result_json": {
+        "path": "<DATA_PACK>/2_PR71_최종실행결과/LIVE_61b6167/initial/result.json",
+        "sha256": "86cd8582e31cde8b9dee3522aae1e42c76a5e576d4317e36b71a99f37c5eadee"
+      },
+      "sheet_xlsx": {
+        "path": "<DATA_PACK>/2_PR71_최종실행결과/LIVE_61b6167/initial/exports/response_sheet/실사응답서_rba42_한울정밀공업(주).xlsx",
+        "sha256": "f7043c6ec8a47eaf95350982cdbc016ae4b13c46f077d60f3ee81c8a1f3f2249"
+      },
+      "sheet_pdf": {
+        "path": "<DATA_PACK>/2_PR71_최종실행결과/LIVE_61b6167/initial/exports/response_sheet/실사응답서_rba42_한울정밀공업(주).pdf",
+        "sha256": "b71af6c889d77d350f9438324215582b9f5d7bfdea4bfc7d39768c1f580df2b8"
+      }
+    },
+    "summary": {
+      "json_rows": 48,
+      "excel_rows": 48,
+      "pdf_rows": 48,
+      "fields": 6,
+      "checked_field_values": 129,
+      "checked_cells": 384,
+      "mismatches": 0,
+      "cell_exact_mismatches": 0,
+      "unchecked": 48,
+      "pdf_evidence_figures": 4,
+      "pdf_continued_rows": {}
+    },
+    "mismatches": [],
+    "unchecked_kinds": [
+      [
+        "badge(이모지)",
+        "PDF 신뢰 칸은 _STATUS_STYLE 라벨만 그린다 — 이모지가 없다"
+      ]
+    ]
+  },
+  "LIVEV_61b6167_initial": {
+    "run_dir": "<DATA_PACK>/2_PR71_최종실행결과/LIVEV_61b6167/initial",
+    "checked_at": "2026-10-06T17:28:06.783585+09:00",
+    "fields": [
+      "display_value",
+      "badge",
+      "comparison_label",
+      "review_note",
+      "boundary_label",
+      "evidence_links[].file_name"
+    ],
+    "checks": [
+      "필드 검사(6필드가 칸에 실렸는가)",
+      "칸 전체 일치(칸에 그 밖의 내용이 없는가)"
+    ],
+    "inputs": {
+      "result_json": {
+        "path": "<DATA_PACK>/2_PR71_최종실행결과/LIVEV_61b6167/initial/result.json",
+        "sha256": "8aeb7e5669161e1261139805e1dae8f29f731551e1cf41883e91d58b6f1f38f3"
+      },
+      "sheet_xlsx": {
+        "path": "<DATA_PACK>/2_PR71_최종실행결과/LIVEV_61b6167/initial/exports/response_sheet/실사응답서_rba42_한울정밀공업(주).xlsx",
+        "sha256": "4a60bdb1e6f3c416f0a1074b8d2eb105571b52e150ddd091ef88d1294139577f"
+      },
+      "sheet_pdf": {
+        "path": "<DATA_PACK>/2_PR71_최종실행결과/LIVEV_61b6167/initial/exports/response_sheet/실사응답서_rba42_한울정밀공업(주).pdf",
+        "sha256": "112e57286de2bb6ae1f141e5f6a05cae6137e9a768cdfe3c1cd42b35f94aae93"
+      }
+    },
+    "summary": {
+      "json_rows": 48,
+      "excel_rows": 48,
+      "pdf_rows": 48,
+      "fields": 6,
+      "checked_field_values": 129,
+      "checked_cells": 384,
+      "mismatches": 0,
+      "cell_exact_mismatches": 0,
+      "unchecked": 48,
+      "pdf_evidence_figures": 4,
+      "pdf_continued_rows": {}
+    },
+    "mismatches": [],
+    "unchecked_kinds": [
+      [
+        "badge(이모지)",
+        "PDF 신뢰 칸은 _STATUS_STYLE 라벨만 그린다 — 이모지가 없다"
+      ]
+    ]
+  }
+}
