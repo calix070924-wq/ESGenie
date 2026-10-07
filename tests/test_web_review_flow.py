@@ -135,6 +135,36 @@ def test_replacement_reanalysis_preserves_human_answer_other_completion_and_old_
     assert not p['affected_questions']
 
 
+@pytest.mark.parametrize('answer, expected', [('', '답변 없음'), ('   ', '답변 없음'), ('0', '0 kWh')])
+@pytest.mark.parametrize('complete', [False, True])
+def test_empty_numeric_answer_does_not_display_unit_in_screen_or_exports(client, answer, expected, complete):
+    pid, _ = setup(client)
+    p = analyze(client, pid)
+    row = p['result']['answers'][0]
+    values = {**row['saved'], 'answer': answer, 'memo': '전력 집계 자료 부족'}
+    p = save(client, pid, row, values, complete=complete)
+    shown = p['result']['answers'][0]
+    assert shown['value_text'] == expected
+    assert shown['saved']['answer'] == answer
+    assert shown['saved']['unit'] == 'kWh'
+    assert shown['review_status'] == ('complete' if complete else 'pending' if answer.strip() else 'missing')
+    xlsx = client.get(f'/api/projects/{pid}/download/xlsx')
+    assert xlsx.status_code == 200
+    wb = load_workbook(BytesIO(xlsx.content))
+    record = next(r for r in wb['응답서'].iter_rows(values_only=True) if r[0] == row['id'])
+    assert record[3] == expected
+    assert record[7] == shown['review_label']
+    assert record[9] == values['memo']
+    response = client.get(f'/api/projects/{pid}/download/pdf')
+    assert response.status_code == 200
+    with fitz.open(stream=response.content, filetype='pdf') as doc:
+        text = ''.join(page.get_text() for page in doc)
+    normalized = ''.join(text.split())
+    assert ''.join(expected.split()) in normalized
+    assert ''.join(values['memo'].split()) in normalized
+    assert '답변없음kWh' not in normalized
+
+
 def test_broken_encrypted_documents_remain_actionable_and_excluded_inputs_are_not_analyzed(client):
     pid, p = setup(client)
     broken = client.post(f'/api/projects/{pid}/documents', files={'file': ('broken.pdf', b'broken')}).json()['documents'][-1]

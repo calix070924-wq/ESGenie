@@ -51,7 +51,7 @@ def review_rows(project, shown):
                    review_status=state, review_label=REVIEW_LABELS[state],
                    history=sorted((saved.get("history", []) if saved else []) + project.get("analysis_history", {}).get(row["id"], []), key=lambda h: h["at"]),
                    candidates=result.get("candidates", {}).get(row["id"], []))
-        row["value_text"] = (effective["answer"] + (" " + effective["unit"] if effective["unit"] else "")) or "답변 없음"
+        row["value_text"] = (effective["answer"] + (" " + effective["unit"] if effective["unit"] else "")) if effective["answer"].strip() else "답변 없음"
         row["scope_label"] = effective["scope"]
         row["sources"] = effective["sources"]
         row["reference_sources"] = [source_from_link(link, documents) for link in item.get("reference_links", [])]

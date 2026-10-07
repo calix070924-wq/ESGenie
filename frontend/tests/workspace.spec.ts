@@ -7,6 +7,33 @@ const nav = (page: any, name: string) =>
     .getByRole('navigation', { name: '실사 응답 준비 단계' })
     .getByRole('button', { name: new RegExp(name) });
 
+test('saving clears unsaved warnings after API field reordering', async ({ page }) => {
+  await page.goto('/');
+  await page.getByRole('button', { name: '예시로 먼저 둘러보기' }).click();
+  await page.getByRole('button', { name: '사용한 전력량을 확인해 주세요. 살펴보기' }).click();
+  await page.getByLabel('답변', { exact: true }).fill('140000');
+  await page.getByRole('button', { name: '저장', exact: true }).click();
+  await expect(page.getByText('답변을 저장했습니다. 검토 완료는 별도 동작입니다.')).toBeVisible();
+  await expect(page.getByText('저장하지 않은 수정이 있습니다.', { exact: true })).toBeHidden();
+  await expect(page.getByRole('button', { name: '저장', exact: true })).toBeDisabled();
+  await page.getByRole('button', { name: '문항 목록', exact: true }).click();
+  await expect(page.getByRole('dialog')).toBeHidden();
+  await expect(page.getByRole('table', { name: '실사 응답 목록' })).toContainText('140000 kWh');
+  await page.getByRole('button', { name: '사용한 전력량을 확인해 주세요. 살펴보기' }).click();
+  await page.getByLabel('답변', { exact: true }).fill('');
+  await page.getByLabel('검토 메모').fill('전력 집계 자료 부족');
+  await page.getByRole('button', { name: '저장', exact: true }).click();
+  await expect(page.getByRole('button', { name: '저장', exact: true })).toBeDisabled();
+  await page.getByRole('button', { name: '문항 목록', exact: true }).click();
+  const row = page.getByRole('row').filter({ hasText: '사용한 전력량을 확인해 주세요.' });
+  await expect(row).toContainText('답변 없음');
+  await expect(row).toContainText('자료 필요');
+  await page.getByRole('button', { name: '사용한 전력량을 확인해 주세요. 살펴보기' }).click();
+  await page.getByLabel('답변', { exact: true }).fill('150000');
+  await page.getByRole('button', { name: '문항 목록', exact: true }).click();
+  await expect(page.getByRole('dialog')).toBeVisible();
+});
+
 test('save protection, saved values, review completion and real Excel/PDF downloads', async ({
   page,
 }, info) => {

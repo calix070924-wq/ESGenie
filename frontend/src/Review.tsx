@@ -3,6 +3,27 @@ import { ArrowLeft, ArrowRight, ChevronLeft, ChevronRight, Search } from 'lucide
 import type { Answer, Candidate, ListState, Project, ReviewValues, Source } from './types';
 import { questionHelp } from './questionHelp';
 
+// JSON object key order can change when the API resolves saved evidence.
+// Compare content recursively, while keeping evidence and coordinate array order meaningful.
+function sameContent(left: unknown, right: unknown): boolean {
+  if (left === right) return true;
+  if (Array.isArray(left) || Array.isArray(right)) {
+    return (
+      Array.isArray(left) &&
+      Array.isArray(right) &&
+      left.length === right.length &&
+      left.every((value, index) => sameContent(value, right[index]))
+    );
+  }
+  if (!left || !right || typeof left !== 'object' || typeof right !== 'object') return false;
+  const a = left as Record<string, unknown>;
+  const b = right as Record<string, unknown>;
+  return (
+    Object.keys(a).length === Object.keys(b).length &&
+    Object.keys(a).every((key) => Object.hasOwn(b, key) && sameContent(a[key], b[key]))
+  );
+}
+
 export function Badge({ answer }: { answer: Answer }) {
   return <span className={`badge ${answer.review_status}`}>{answer.review_label}</span>;
 }
@@ -217,7 +238,7 @@ export function Review({
     values.sources[0] || answer.reference_sources[0],
   );
   const [candidate, setCandidate] = useState<Candidate | null>(null);
-  const dirty = JSON.stringify(values) !== JSON.stringify(answer.saved);
+  const dirty = !sameContent(values, answer.saved);
   const answers = project.result!.answers;
   const index = answers.findIndex((a) => a.id === answer.id);
   const change = (v: ReviewValues) => {
