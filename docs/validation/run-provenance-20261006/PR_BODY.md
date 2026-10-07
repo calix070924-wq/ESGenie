@@ -8,7 +8,8 @@
 
 - 기준 main SHA: **`d8a0de8a434e4be97143f05d4694c9aa6b5ee14c`**
 - 브랜치: `codex/run-provenance-20261006`
-- **B-1 브랜치(`codex/eval-output-check-20261006`, PR #73)를 merge했다.** #73이 main에 병합되기 전까지 이 PR의 커밋 목록에 B-1 커밋 3개(`9d55114`·`f0f5737`·`cbe27bd`)가 함께 보인다. #73이 먼저 병합되면 사라진다. B-2가 B-1 검사기를 고쳐야 해서(아래 §바닥글) 합쳤고, **rebase는 하지 않았다.**
+- **B-1 브랜치(`codex/eval-output-check-20261006`, PR #73)를 merge했다** — merge 커밋 **`e5c2966`**, 충돌 없음, **rebase 미사용**. #73이 main에 병합되기 전까지 이 PR의 커밋 목록에 B-1 커밋 3개(`9d55114`·`f0f5737`·`cbe27bd`)가 함께 보인다. #73이 먼저 병합되면 사라진다. B-2가 B-1 검사기를 고쳐야 해서(아래 §바닥글) 합쳤다.
+- 검증 입력: 새 증빙 세트(정상 5건 보강, `hanwool_bm_normal5_20261007_v1`) — initial 17건 / followup 18건.
 - 코어 수정 없음 — `esgenie/pipeline.py` · `supplychain/schema.py` · `supplychain/mapping.py` · `esgenie/ui/**`를 고치지 않았다.
 
 ## 무엇이 들어오는가
@@ -81,19 +82,67 @@ B-1 README §9가 예측한 문제가 **실제로 걸렸다.** 바닥글이 각 
 - 새 검사 `run_info_excel`: Excel `실행정보` 시트가 `run_info`와 **칸 전체 일치**하는가.
 - **`run_info`가 없으면 동작이 전혀 바뀌지 않는다.**
 
-## 결과
+## 통과 조건 검증 결과 (실데이터)
+
+입력은 새 증빙 세트(정상 5건 보강, initial 17건). 두 실행 모두 `--code-path ../ESGenie-B2`, `--stage initial`.
+상세는 `README.md`, 원문은 `run_provenance_summary.json`, 캡처는 `CAPTURES.md`.
+
+### 조건 2 — 신규 처리 1회 + 캐시 재생 1회
+
+| | 캐시 재생 (`REPLAY_n5`, 유료 0건) | 신규 처리 (`FRESH_n5`, 유료 1회) |
+|---|---|---|
+| **`processing.label`** | **`캐시 재생`** | **`신규 처리`** |
+| LLM hits / misses / live_calls | 7 / 0 / **0** | **0** / 28 / 28 |
+| OCR hits / misses | 22 / **0** | **0** / 22 |
+| **Upstage live_requests / replay** | **0 / true** | **4 / false** |
+| Upstage tape | `replayed` 4건 | `recorded` 4건 |
+| 실제 응답 model · 토큰 | — (실호출 0) | `gpt-4.1-mini-2025-04-14` · 80,778 |
+| 실행 시간 | 130.1초 | 510.1초 |
+
+캐시 재생은 공통 LIVE 캐시의 **사본**과 그 실행이 기록한 Upstage 원시 응답으로 돌렸다 — 원본 캐시 파일 수가 전후 같다(`{ocr 23, llm 34}`).
+
+표시 위치(두 실행 모두 PDF 23쪽): **바닥글이 모든 쪽에 정확히 1번**, **요약 줄은 1쪽에만**, Excel `실행정보` 시트 20행. 캡처 PNG 6장.
+
+### 조건 1 — `run_info=None` 동일성
+
+단위 테스트(기준값은 exporters 수정 **전**에 떴다) + **실데이터 재확인**: 공통 LIVE의 sheet를 되살려 `run_info` 없이 다시 내보내 원래 파일과 대조.
+
+| stage | Excel 셀 수 | **셀 차이** | PDF 쪽수 | **쪽 텍스트 차이** |
+|---|---|---|---|---|
+| initial | 611 | **0건** | 23 → 23 | **0건** |
+| followup | 611 | **0건** | 23 → 23 | **0건** |
+
+`실행정보` 시트는 생기지 않았다.
+
+### 조건 3 — B-1 검사기
+
+| 실행 | 종료코드 | **불일치** | 필드 검사 | 칸 전체 일치 | **도장 줄 제거** |
+|---|---|---|---|---|---|
+| 신규 처리 | **0** | **0** | 150 | 384 | **24** |
+| 캐시 재생 | **0** | **0** | 157 | 384 | **24** |
+
+도장 줄 24 = 바닥글 23쪽 + 1쪽 요약 1줄 → **바닥글 검사와 Excel 실행정보 검사가 실데이터에서 실제로 돌았고 통과**했다.
+
+### 조건 4 — 단위 테스트
 
 | 검사 | 결과 |
 |---|---|
-| `tests/test_run_info.py` + `test_run_info_export_identity.py` | **38 passed** |
+| `tests/test_run_info.py` + `test_run_info_export_identity.py` | **38 passed** (판정 경계·dirty·키 미기록·동일성) |
 | `tests/test_check_output_consistency_run_info.py` | **18 passed** |
-| `tests/test_check_output_consistency.py` (B-1, 회귀) | **52 passed** — 그대로 |
-| B-1 주입 하네스 20종 × 공통 LIVE 2단계 | **20/20 검출** 그대로(run_info 없는 실행이라 변화 없음) |
+| `tests/test_check_output_consistency.py` (B-1 회귀) | **52 passed** — 그대로 |
+| `tests/test_live_numeric_rehearsal_inputs.py` | **18 passed** |
+| B-1 주입 하네스 20종 | **20/20** — 신규 처리 실행 / 예전 세트 / 새 공통 LIVE 세 곳 모두 |
 | 전체 `pytest` | 기준선과 같음 — failed 22 / skipped 27 / errors 6 불변 |
+
+주입 하네스에서 `excel_note_page` 1건이 처음에 **적용 실패**였다(검출 실패가 아니다). 쪽 표기를 `p.1`로 적어 넣고 있었는데 새 세트에서 그 자리가 `p.2`가 됐다. 실제 칸에서 `p.(\d+)`를 찾아 `p.N → p.N0`으로 늘리게 고쳤고(세트에 독립), 예전 세트에서도 20/20이다.
 
 ## 한계 · 확인 못 한 것
 
-- **실제 LIVE 실행에 돌린 결과가 없다.** 이 PR은 구현·단위 테스트까지다. 신규 처리 1회 + 캐시 재생 1회 실행(§3 통과 조건 2)과 그 출력에 B-1 검사기를 돌리는 것(통과 조건 3)은 다음 단계에서 한다.
-- `PipelineOutput.timings`가 현재 코드에 **없다.** `getattr`로 읽고 없으면 생략하며, 가짜 값으로만 테스트했다. A-2가 넣은 뒤 실제 구조와 맞는지 확인해야 한다.
-- Azure 엔드포인트 환경에서의 `llm_provider` 값은 키 없이 돌린 테스트에서 확인하지 못했다.
-- 화면 표시는 PR #65에서 붙인다 — 이 PR은 **UI를 건드리지 않는다.**
+- **`PipelineOutput.timings`가 아직 없다**(`esgenie/pipeline.py:54-75`에 그 필드가 없다 — A-2 작업). `getattr`로 읽고 없으면 생략하므로 **두 실행 모두 `timings` 키가 없다.** A-2가 넣은 뒤 실제 구조와 맞는지 확인해야 한다.
+- **`anthropic` 키가 없어**(`keys.anthropic = "없음"`) Anthropic 공급자 경로의 `run_info`를 확인하지 못했다.
+- `run_stats.upstage.requests`(함수 호출 수)와 `run_info.processing.upstage.live_requests`(네트워크 실요청)가 재생 실행에서 4 vs 0으로 다르다 — 의도된 차이이고 `run_stats`는 바꾸지 않았다.
+- 캐시 재생은 `initial`에서만 확인했다.
+- **화면 표시는 PR #65에서 붙인다** — 이 PR은 UI를 건드리지 않는다. `from_snapshot`·`upstage.counted`가 `false`일 때의 화면 문구는 계약 §3-1에만 적혀 있다.
+- Excel `실행정보` 시트를 이미지로 렌더하지 못했다(렌더 도구가 `requirements.txt`에 없고 새 의존성을 넣지 않는다). `CAPTURES.md`에 시트 20행을 표로 실었다.
+- 새 증빙 세트에 대한 **판정 정확성은 보지 않았다**(정답 미열람, 독립 라벨링 진행 중).
+- 참고로 전달: 새 공통 LIVE에 `check_outputs.py`를 돌리면 `[report_md] 사회 본문에 … 교육 인원 보존` 2종이 실패한다(initial 40/41, followup 43/45). 정답표가 예전 12건 세트의 보고서 구성을 가정한 것으로 보이며 **고치지 않았다**. 자세한 내용은 P1-0b 기록에 있다.

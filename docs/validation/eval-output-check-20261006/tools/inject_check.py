@@ -105,6 +105,26 @@ def excel_append(b, qid: str, cell: str, suffix: str) -> dict | None:
             "after": f"{before[:40]}… + {suffix!r}"}
 
 
+def excel_bump_page(b, qid: str, cell: str) -> dict | None:
+    """근거 칸의 쪽 표기를 한 자리 늘린다(`p.2` → `p.20`).
+
+    쪽 번호를 적어 넣지 않는다 — 세트가 바뀌면 그 문서의 쪽이 달라진다(실측:
+    예전 세트는 `p.1`, 새 세트의 같은 자리는 `p.2`). 실제 칸에서 패턴을 찾아
+    바꾸되, 원래 값이 **부분 문자열로 남게** 늘린다 — 그래야 '포함 검사'로는
+    통과하고 '칸 전체 일치'로만 잡히는 변조를 재현한다.
+    """
+    row = b.excel_rows.get(qid)
+    if row is None:
+        return None
+    before = str(row[cell][0])
+    m = re.search(r"p\.(\d+)", before)
+    if m is None:
+        return None
+    old, new = m.group(0), f"p.{m.group(1)}0"
+    row[cell] = (before.replace(old, new, 1), row[cell][1])
+    return {"target": f"{qid} / Excel {row[cell][1]}", "before": old, "after": new}
+
+
 def excel_swap(b, qid_a: str, qid_b: str, cell: str) -> dict | None:
     ra, rb = b.excel_rows.get(qid_a), b.excel_rows.get(qid_b)
     if ra is None or rb is None:
@@ -196,8 +216,8 @@ def cases(p: dict[str, str]) -> list[tuple[str, str, str, object]]:
          lambda b: excel_set(b, dec, "note", "에너지 사용량 집계")),
         ("excel_note_number", "excel", "Excel 근거/비고의 수치 미세 변경(부분 문자열로는 통과)",
          lambda b: excel_sub(b, pct, "note", "29.3", "29.35")),
-        ("excel_note_page", "excel", "Excel 근거/비고의 쪽 번호 변경(p.1 → p.10)",
-         lambda b: excel_sub(b, ev, "note", "p.1", "p.10")),
+        ("excel_note_page", "excel", "Excel 근거/비고의 쪽 번호 변경(p.N → p.N0)",
+         lambda b: excel_bump_page(b, ev, "note")),
         ("excel_scope_append", "excel", "Excel 범위 칸 끝에 문구 덧붙임",
          lambda b: excel_append(b, pct, "scope", " · 전사 · 연간")),
         ("excel_blank_scope_add", "excel", "비교 판정이 빈 행의 Excel 범위 칸에 문구 추가",
