@@ -22,20 +22,22 @@ def _ocr(hits=0, misses=0):
 
 
 def test_classify_cache_replay():
-    """LLM live_calls == 0 이고 OCR misses == 0 → 캐시 재생."""
-    assert run_info.classify(_llm(hits=6, live_calls=0), _ocr(hits=10, misses=0)) == run_info.REPLAY
+    """LLM live_calls == 0 ∧ OCR misses == 0 ∧ Upstage 실요청 == 0 → 캐시 재생."""
+    assert run_info.classify(_llm(hits=6, live_calls=0), _ocr(hits=10, misses=0),
+                             upstage_live_requests=0, upstage_replay=True) == run_info.REPLAY
 
 
 def test_classify_fresh():
-    """LLM hits == 0 이고 OCR hits == 0 → 신규 처리."""
+    """LLM hits == 0 ∧ OCR hits == 0 ∧ Upstage 재생 아님 → 신규 처리."""
     assert run_info.classify(_llm(hits=0, misses=17, live_calls=17),
-                             _ocr(hits=0, misses=10)) == run_info.NEW
+                             _ocr(hits=0, misses=10),
+                             upstage_live_requests=4, upstage_replay=False) == run_info.NEW
 
 
 def test_classify_mixed():
     """그 밖 → 혼합."""
-    assert run_info.classify(_llm(hits=3, misses=5, live_calls=5),
-                             _ocr(hits=10, misses=1)) == run_info.MIXED
+    assert run_info.classify(_llm(hits=3, misses=5, live_calls=5), _ocr(hits=10, misses=1),
+                             upstage_live_requests=4) == run_info.MIXED
 
 
 def test_classify_all_zero_is_replay():
@@ -43,19 +45,81 @@ def test_classify_all_zero_is_replay():
 
     2번도 만족하지만 작업지시서가 1번을 먼저 보라고 정했다 — 순서가 결과를 가른다.
     """
-    assert run_info.classify(_llm(), _ocr()) == run_info.REPLAY
+    assert run_info.classify(_llm(), _ocr(), upstage_live_requests=0) == run_info.REPLAY
 
 
 def test_classify_llm_live_only():
     """LLM만 실호출하고 OCR은 전부 캐시 적중 → 혼합(1·2 모두 불만족)."""
-    assert run_info.classify(_llm(hits=0, live_calls=3),
-                             _ocr(hits=5, misses=0)) == run_info.MIXED
+    assert run_info.classify(_llm(hits=0, live_calls=3), _ocr(hits=5, misses=0),
+                             upstage_live_requests=0) == run_info.MIXED
 
 
 def test_classify_ocr_miss_only():
     """OCR만 미스이고 LLM은 캐시 적중만 → 혼합."""
-    assert run_info.classify(_llm(hits=6, live_calls=0),
-                             _ocr(hits=2, misses=1)) == run_info.MIXED
+    assert run_info.classify(_llm(hits=6, live_calls=0), _ocr(hits=2, misses=1),
+                             upstage_live_requests=0) == run_info.MIXED
+
+
+# ── Upstage 항을 더한 이유를 고정하는 경계 ───────────────────────────────────
+def test_classify_upstage_live_with_all_caches_hit_is_mixed():
+    """Upstage를 실제로 불렀는데 LLM·OCR이 전부 캐시 적중 → 혼합(캐시 재생이 아니다).
+
+    `ocr_cache`는 Upstage 응답 캐시가 아니라 Upstage 결과를 입력으로 받는 VLM 보정
+    LLM 응답 캐시다. 그래서 OCR 캐시가 전부 적중해도 Upstage는 매번 불린다
+    (P1-0 followup 실측: OCR 적중 10·미스 1에 Upstage 요청 4건). 두 캐시만 보면
+    이 실행이 '캐시 재생'으로 찍힌다 — 그걸 막는다.
+    """
+    assert run_info.classify(_llm(hits=6, live_calls=0), _ocr(hits=11, misses=0),
+                             upstage_live_requests=4,
+                             upstage_replay=False) == run_info.MIXED
+
+
+def test_classify_upstage_replay_with_all_caches_miss_is_mixed():
+    """Upstage 기록을 재생했는데 LLM·OCR이 전부 미스 → 혼합(신규 처리가 아니다).
+
+    OCR 원본 추출을 새로 하지 않았으므로 '신규 AI 처리'라고 말할 수 없다.
+    """
+    assert run_info.classify(_llm(hits=0, misses=17, live_calls=17),
+                             _ocr(hits=0, misses=10),
+                             upstage_live_requests=0,
+                             upstage_replay=True) == run_info.MIXED
+
+
+def test_classify_unknown_upstage_never_replay():
+    """Upstage 실요청 수를 모르면 '캐시 재생'으로 판정하지 않는다."""
+    assert run_info.classify(_llm(hits=6, live_calls=0), _ocr(hits=10, misses=0),
+                             upstage_live_requests=None) == run_info.MIXED
+
+
+def test_classify_unknown_upstage_still_allows_fresh():
+    """모르더라도 나머지 두 조건으로 '신규 처리' 판정은 허용한다."""
+    assert run_info.classify(_llm(hits=0, misses=17, live_calls=17),
+                             _ocr(hits=0, misses=10),
+                             upstage_live_requests=None) == run_info.NEW
+
+
+def test_upstage_recorded_in_processing():
+    info = run_info.build_run_info(
+        llm_stats_end={"mode": "on", "hits": 0, "misses": 3, "live_calls": 3},
+        llm_stats_start={"mode": "on", "hits": 0, "misses": 0, "live_calls": 0},
+        ocr_stats={"hits": 0, "misses": 2, "mode": "miss"},
+        upstage_live_requests=4)
+    assert info["processing"]["upstage"] == {"live_requests": 4, "replay": False,
+                                            "counted": True}
+    assert "Upstage 실요청 4" in run_info.summary_line(info)
+    assert ("Upstage 실요청", "4") in run_info.rows(info)
+
+
+def test_upstage_unknown_is_marked_everywhere():
+    """요청 수를 모르면 요약 줄·Excel 행에도 '확인 못 함'으로 적는다."""
+    info = run_info.build_run_info(
+        llm_stats_end={"mode": "on", "hits": 0, "misses": 3, "live_calls": 3},
+        llm_stats_start={"mode": "on", "hits": 0, "misses": 0, "live_calls": 0},
+        ocr_stats={"hits": 0, "misses": 2, "mode": "miss"})
+    assert info["processing"]["upstage"]["counted"] is False
+    assert info["processing"]["upstage"]["live_requests"] is None
+    assert "Upstage 실요청 확인 못 함" in run_info.summary_line(info)
+    assert ("Upstage 실요청", "확인 못 함") in run_info.rows(info)
 
 
 # ── 스냅샷 차이 ──────────────────────────────────────────────────────────────
@@ -127,9 +191,11 @@ def test_timings_optional():
 
 def test_upstage_replay_flag():
     info = run_info.build_run_info(llm_stats_end={"mode": "on"}, ocr_stats={},
-                                   upstage_replay=True)
-    assert info["processing"]["upstage_replay"] is True
+                                   upstage_replay=True, upstage_live_requests=0)
+    assert info["processing"]["upstage"]["replay"] is True
+    assert info["processing"]["upstage_replay"] is True   # 이전 판 호환 자리
     assert "Upstage 기록 재생" in run_info.summary_line(info)
+    assert ("Upstage 기록 재생", "예") in run_info.rows(info)
 
 
 # ── dirty 감지 (임시 git 저장소) ─────────────────────────────────────────────

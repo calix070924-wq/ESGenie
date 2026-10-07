@@ -356,8 +356,12 @@ def cmd_core(args) -> None:
         sheet = respond_from_pipeline(output, args.framework, supplier_claims=claims, enable_drafts=False)
         sheet.corp_name = args.company
         # 실행 출처(B-2) — 어느 코드로, 신규 처리인지 캐시 재생인지. 내보내기와 같은 값을 쓴다.
+        # Upstage 실요청 수는 판정에 쓰인다 — OCR 캐시가 전부 적중해도 Upstage는
+        # 매번 불리므로(ocr_router: 호출이 캐시 조회보다 먼저) 두 캐시만으로는
+        # 신규 처리와 캐시 재생이 뒤집힌다.
         info = build_run_info(llm_stats_end=llm_cache.stats(), llm_stats_start=llm_stats_start,
                               ocr_extractions=output.ocr_extractions, upstage_replay=replay,
+                              upstage_live_requests=0 if replay else upstage.summary()["requests"],
                               code_path=code_path, timings=getattr(output, "timings", None))
         dump(target / "result.json", {"sheet": sheet.to_dict(), "generated_at": now(),
                                       "run_info": info})

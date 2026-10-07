@@ -60,19 +60,33 @@ def _diff(end: dict | None, start: dict | None) -> tuple[dict[str, int], bool]:
              for k in _LLM_KEYS}, True)
 
 
-def classify(llm: dict[str, int], ocr: dict[str, int]) -> str:
-    """처리 방식 판정 — 작업지시서 §3의 순서를 그대로 따른다.
+def classify(llm: dict[str, int], ocr: dict[str, int], *,
+             upstage_live_requests: int | None = None,
+             upstage_replay: bool = False) -> str:
+    """처리 방식 판정.
 
-    1. LLM live_calls == 0 이고 OCR misses == 0 → 캐시 재생
-    2. LLM hits == 0 이고 OCR hits == 0        → 신규 처리
-    3. 그 밖                                    → 혼합
+    1. LLM live_calls == 0 ∧ OCR misses == 0 ∧ Upstage 실요청 == 0 → 캐시 재생
+    2. LLM hits == 0 ∧ OCR hits == 0 ∧ Upstage 재생 아님           → 신규 처리
+    3. 그 밖                                                        → 혼합
 
-    순서가 중요하다. 아무것도 부르지 않은 실행(모두 0)은 1번에 걸려 '캐시 재생'이
-    된다 — 2번도 만족하지만 지시가 1번을 먼저 보라고 정했다.
+    **Upstage 항을 더한 이유** — 작업지시서 §3의 판정식은 LLM·OCR 두 캐시만 본다.
+    그런데 `ocr_cache`는 Upstage 응답 캐시가 아니라 **Upstage 결과를 입력으로 받는
+    VLM 보정 LLM 응답 캐시**다(`ocr_router.py`: `extract_unstructured`가 1941행에서
+    Upstage를 부르고, 그 텍스트로 `_extract_unstructured_text`가 2034행에서 캐시 키를
+    만들어 2042행에서 조회한다 — 순서가 바뀔 수 없다). 그래서 OCR 캐시가 전부
+    적중해도 Upstage는 매번 실제로 불린다(P1-0 followup 실측: OCR 적중 10·미스 1에
+    Upstage 요청 4건 성공). 두 항만 보면 **Upstage를 실제로 부른 실행이 '캐시 재생'으로,
+    Upstage 기록을 재생한 실행이 '신규 처리'로** 찍힌다.
+
+    `upstage_live_requests`가 None이면(값을 모름) **'캐시 재생'으로 판정하지 않는다** —
+    1번 조건이 성립할 수 없게 둔다. 신규 처리 판정은 나머지 두 조건으로 허용한다.
+
+    아무것도 부르지 않은 실행(모두 0 + Upstage 0)은 1번에 걸려 '캐시 재생'이 된다.
     """
-    if llm.get("live_calls", 0) == 0 and ocr.get("misses", 0) == 0:
+    if (llm.get("live_calls", 0) == 0 and ocr.get("misses", 0) == 0
+            and upstage_live_requests == 0):
         return REPLAY
-    if llm.get("hits", 0) == 0 and ocr.get("hits", 0) == 0:
+    if llm.get("hits", 0) == 0 and ocr.get("hits", 0) == 0 and not upstage_replay:
         return NEW
     return MIXED
 
@@ -88,6 +102,7 @@ def build_run_info(
     ocr_extractions: list | None = None,
     ocr_stats: dict | None = None,
     upstage_replay: bool = False,
+    upstage_live_requests: int | None = None,
     code_path: str | Path | None = None,
     timings: Any | None = None,
     extra: dict | None = None,
@@ -104,6 +119,9 @@ def build_run_info(
         (summarize를 두 번 돌리지 않게). ocr_extractions보다 우선한다.
     upstage_replay:
         Upstage 원시 응답을 재생했는가(`live_numeric_rehearsal.py --replay-upstage`).
+    upstage_live_requests:
+        Upstage에 실제로 보낸 요청 수. 판정에 쓴다(`classify` 설명 참조).
+        **모르면 None** — 그때는 '캐시 재생'으로 판정하지 않고 그 사실을 기록한다.
     timings:
         `PipelineOutput.timings`가 있으면 넘긴다. 없어도 동작한다.
     """
@@ -147,9 +165,17 @@ def build_run_info(
             "upstage": _key_state(_upstage_key_present()),
         },
         "processing": {
-            "label": classify(llm, ocr),
+            "label": classify(llm, ocr, upstage_live_requests=upstage_live_requests,
+                              upstage_replay=bool(upstage_replay)),
             "llm": {**llm, "mode": llm_mode, "from_snapshot": from_snapshot},
             "ocr": {**ocr, "mode": ocr_mode},
+            "upstage": {
+                "live_requests": upstage_live_requests,
+                "replay": bool(upstage_replay),
+                # 요청 수를 모르면 '캐시 재생' 판정을 쓸 수 없다 — 그 사실을 남긴다.
+                "counted": upstage_live_requests is not None,
+            },
+            # 이전 판과의 호환 — 화면·검사기가 이미 읽고 있던 자리.
             "upstage_replay": bool(upstage_replay),
         },
     }
@@ -204,13 +230,21 @@ def summary_line(info: dict | None) -> str:
         str(processing.get("label") or ""),
         f"LLM 실호출 {llm.get('live_calls', 0)} · 캐시 적중 {llm.get('hits', 0)}",
         f"OCR 미스 {ocr.get('misses', 0)} · 적중 {ocr.get('hits', 0)}",
+        _upstage_bit(processing.get("upstage", {})),
         f"모델 {models.get('llm', '')} / {models.get('ocr', '')}",
     ]
-    if processing.get("upstage_replay"):
-        bits.append("Upstage 기록 재생")
     if llm.get("from_snapshot") is False:
         bits.append("LLM 수치는 프로세스 누적값")
     return f"{STAMP_PREFIX} " + " | ".join(b for b in bits if b)
+
+
+def _upstage_bit(upstage: dict) -> str:
+    """Upstage 한 조각. 요청 수를 모르면 그 사실을 적는다."""
+    if upstage.get("replay"):
+        return "Upstage 기록 재생"
+    if upstage.get("counted"):
+        return f"Upstage 실요청 {upstage.get('live_requests', 0)}"
+    return "Upstage 실요청 확인 못 함"
 
 
 def rows(info: dict | None) -> list[tuple[str, str]]:
@@ -220,6 +254,7 @@ def rows(info: dict | None) -> list[tuple[str, str]]:
     processing = info.get("processing", {})
     llm = processing.get("llm", {})
     ocr = processing.get("ocr", {})
+    upstage = processing.get("upstage", {})
     models = info.get("models", {})
     keys = info.get("keys", {})
     dirty = info.get("dirty")
@@ -236,7 +271,9 @@ def rows(info: dict | None) -> list[tuple[str, str]]:
         ("OCR 캐시 적중", str(ocr.get("hits", 0))),
         ("OCR 캐시 미스", str(ocr.get("misses", 0))),
         ("OCR 캐시 모드", str(ocr.get("mode") or "")),
-        ("Upstage 기록 재생", "예" if processing.get("upstage_replay") else "아니오"),
+        ("Upstage 기록 재생", "예" if upstage.get("replay") else "아니오"),
+        ("Upstage 실요청", str(upstage.get("live_requests"))
+         if upstage.get("counted") else "확인 못 함"),
         ("LLM 모델", f"{models.get('llm', '')} ({models.get('llm_provider', '')})"),
         ("OCR 모델", f"{models.get('ocr', '')} ({models.get('ocr_provider', '')})"),
         ("OCR 보정 LLM", str(models.get("ocr_vlm") or "")),
