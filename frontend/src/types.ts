@@ -6,6 +6,27 @@ export type Source = {
   independent: boolean;
   document_id: string | null;
   preview_available: boolean;
+  version?: number | null;
+  manual?: boolean;
+};
+export type ReviewValues = {
+  answer: string;
+  unit: string;
+  scope: string;
+  sources: Source[];
+  memo: string;
+  reason: string;
+};
+export type Candidate = Pick<ReviewValues, 'answer' | 'unit' | 'scope' | 'sources'> & {
+  id: string;
+  notices: string[];
+};
+export type History = {
+  at: string;
+  action: string;
+  reason: string;
+  before: ReviewValues;
+  after: ReviewValues;
 };
 export type Answer = {
   id: string;
@@ -30,14 +51,33 @@ export type Answer = {
   company_answers: { value?: number | null; unit?: string; raw?: string; source?: string }[];
   flags: string[];
   technical_reason: string;
+  saved: ReviewValues;
+  automatic: ReviewValues;
+  review_status: 'pending' | 'complete' | 'missing' | 'again';
+  review_label: string;
+  method: string;
+  history: History[];
+  candidates: Candidate[];
+};
+export type DocumentVersion = {
+  version: number;
+  name: string;
+  pages: number;
+  size: number;
+  error?: string;
 };
 export type Document = {
   id: string;
   name: string;
   role: 'evidence' | 'company_answer';
+  included: boolean;
   size: number;
   pages: number;
   example: boolean;
+  version: number;
+  versions?: DocumentVersion[];
+  error?: string;
+  status: string;
 };
 export type ReviewNote = { answer: string; text: string; revision: number; updated_at: string };
 export type Project = {
@@ -50,9 +90,16 @@ export type Project = {
   documents: Document[];
   input_revision: number;
   result_revision: number | null;
-  result: { answers: Answer[]; limitations: string[]; generated_at: string; mode: string } | null;
+  result: {
+    answers: Answer[];
+    limitations: string[];
+    generated_at: string;
+    mode: string;
+    document_errors?: Record<string, string>;
+  } | null;
   notes: Record<string, ReviewNote>;
   stale: boolean;
+  affected_questions: string[];
   updated_at: string;
   job: {
     status: 'idle' | 'queued' | 'running' | 'complete' | 'failed';
@@ -68,3 +115,4 @@ export type Config = {
   max_project_mb: number;
   frameworks: { key: string; label: string; description: string }[];
 };
+export type ListState = { filter: string; search: string; section: string; page: number };

@@ -117,7 +117,8 @@ def presented_answers(project: dict) -> list[dict]:
     for shown in result.get("answers", []):
         if any("표를 읽은 결과" in note for note in shown.get("notices", [])):
             pending.update(source["name"] for source in shown.get("sources", []))
-    return present_sheet(result["sheet"], project["documents"], pending)
+    from .review import review_rows
+    return review_rows(project, present_sheet(result["sheet"], result.get("documents", project["documents"]), pending))
 
 
 def public_project(project: dict[str, Any]) -> dict[str, Any]:
@@ -127,6 +128,12 @@ def public_project(project: dict[str, Any]) -> dict[str, Any]:
     public["result"] = {key: value for key, value in result.items() if key != "sheet"} if result else None
     if result:
         public["result"]["answers"] = presented_answers(project)
+    public["documents"] = [dict(d, included=d.get("included", True), version=d.get("version", 1),
+                                 status=("실패" if d.get("error") else "분석 제외" if not d.get("included", True) else
+                                         "분석 중" if project["job"]["status"] in {"queued", "running"} else
+                                         "재분석 필요" if public["stale"] else
+                                         (result or {}).get("document_statuses", {}).get(d["id"], "완료" if result else "분석 대기")))
+                           for d in project["documents"]]
     return public
 
 

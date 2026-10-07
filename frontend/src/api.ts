@@ -24,7 +24,7 @@ export async function api<T>(path: string, method = 'GET', body?: unknown): Prom
   return response.json();
 }
 
-export async function download(projectId: string, kind: 'xlsx' | 'bundle') {
+export async function download(projectId: string, kind: 'xlsx' | 'pdf' | 'bundle') {
   const response = await fetch(`/api/projects/${projectId}/download/${kind}`);
   if (!response.ok) {
     const data = await response.json().catch(() => ({}));
@@ -33,7 +33,8 @@ export async function download(projectId: string, kind: 'xlsx' | 'bundle') {
   const blob = await response.blob();
   const disposition = response.headers.get('Content-Disposition') || '';
   const name = decodeURIComponent(
-    disposition.split("UTF-8''")[1] || `ESGenie.${kind === 'xlsx' ? 'xlsx' : 'zip'}`,
+    disposition.split("UTF-8''")[1] ||
+      `ESGenie.${kind === 'xlsx' ? 'xlsx' : kind === 'pdf' ? 'pdf' : 'zip'}`,
   );
   const url = URL.createObjectURL(blob);
   const link = document.createElement('a');

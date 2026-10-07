@@ -15,7 +15,7 @@ export default defineConfig({
   },
   reporter: [['list'], ['html', { open: 'never' }]],
   webServer: {
-    command: `${process.env.ESGENIE_PYTHON || 'python3'} -m esgenie.web --port 8771`,
+    command: `${process.env.ESGENIE_PYTHON || 'python3'} -m scripts.serve_ui_validation`,
     cwd: '..',
     url: 'http://127.0.0.1:8771/api/config',
     timeout: 30000,

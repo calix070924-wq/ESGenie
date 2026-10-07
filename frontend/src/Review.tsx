@@ -1,257 +1,191 @@
 import { useEffect, useState } from 'react';
-import {
-  ArrowDownToLine,
-  ArrowLeft,
-  ArrowRight,
-  ArrowUpRight,
-  Check,
-  ChevronLeft,
-  ChevronRight,
-  CircleHelp,
-  FileQuestion,
-  FileText,
-  Image,
-  Info,
-  LoaderCircle,
-  Package,
-  Plus,
-  Search,
-  TriangleAlert,
-} from 'lucide-react';
-import type { Answer, Project, Source } from './types';
+import { ArrowLeft, ArrowRight, ChevronLeft, ChevronRight, Search } from 'lucide-react';
+import type { Answer, Candidate, ListState, Project, ReviewValues, Source } from './types';
 import { questionHelp } from './questionHelp';
 
 export function Badge({ answer }: { answer: Answer }) {
-  return (
-    <span className={`badge ${answer.status}`}>
-      {answer.status === 'linked' ? (
-        <Check />
-      ) : answer.status === 'review' ? (
-        <TriangleAlert />
-      ) : null}
-      {answer.status_label}
-    </span>
-  );
+  return <span className={`badge ${answer.review_status}`}>{answer.review_label}</span>;
 }
-
 export function AnswerList({
   project,
   onSelect,
   onDocuments,
+  state,
+  onState,
 }: {
   project: Project;
   onSelect: (id: string) => void;
   onDocuments: () => void;
+  state: ListState;
+  onState: (v: ListState) => void;
 }) {
-  const [filter, setFilter] = useState('attention');
-  const [search, setSearch] = useState('');
-  const [page, setPage] = useState(0);
   const answers = project.result?.answers || [];
-  const attention = answers.filter((a) => a.needs_attention);
-  const matches = (a: Answer) =>
-    filter === 'all' || (filter === 'attention' ? a.needs_attention : a.status === filter);
+  const sections = [...new Set(answers.map((a) => a.section))];
+  const query = state.search.trim().toLocaleLowerCase();
   const filtered = answers.filter(
     (a) =>
-      matches(a) &&
-      `${a.question} ${a.section} ${a.why} ${a.evidence_needed.join(' ')}`.includes(search.trim()),
+      (state.section === 'all' || a.section === state.section) &&
+      (state.filter === 'all' ||
+        (state.filter === 'pending' && a.review_status !== 'complete') ||
+        a.review_status === state.filter) &&
+      `${a.id} ${a.question} ${a.value_text} ${a.section} ${a.sources.map((s) => s.name).join(' ')}`
+        .toLocaleLowerCase()
+        .includes(query),
   );
-  const visible = filtered.slice(page * 8, page * 8 + 8);
-  useEffect(() => setPage(0), [search, filter, project.result_revision]);
+  const pages = Math.max(1, Math.ceil(filtered.length / 10));
+  const page = Math.min(state.page, pages - 1);
+  const update = (v: Partial<ListState>) => onState({ ...state, page: 0, ...v });
   if (!project.result)
     return (
       <div className="empty-state">
-        <FileQuestion />
-        <h2>자료를 올리면 질문별 안내가 생깁니다.</h2>
+        <h2>분석 후 문항별 답변을 검토할 수 있습니다.</h2>
         <button className="primary" onClick={onDocuments}>
-          서류 올리기
-          <ArrowRight />
+          자료 준비로 이동
         </button>
       </div>
     );
   return (
     <>
-      <div className="review-metrics" aria-label="응답 준비 현황">
-        {[
-          ['all', '전체 문항', answers.length, '이번 작업의 질문'],
-          [
-            'review',
-            '확인 필요',
-            answers.filter((a) => ['review', 'unconfirmed', 'draft'].includes(a.status)).length,
-            '값·기간·내용 대조',
-          ],
-          [
-            'missing',
-            '자료 필요',
-            answers.filter((a) => a.status === 'missing').length,
-            '근거 자료 보완',
-          ],
-          [
-            'write',
-            '직접 작성',
-            answers.filter((a) => a.status === 'write').length,
-            '담당자 설명 필요',
-          ],
-        ].map(([key, label, count, note]) => (
-          <div className={`review-metric ${key}`} key={String(key)}>
-            <span>{label}</span>
-            <strong>
-              {count}
-              <small>개</small>
-            </strong>
-            <p>{note}</p>
+      <div className="counts">
+        <span>
+          전체 <strong>{answers.length}</strong>
+        </span>
+        <span>
+          검토 완료 <strong>{answers.filter((a) => a.review_status === 'complete').length}</strong>
+        </span>
+        <span>
+          자료 필요 <strong>{answers.filter((a) => a.review_status === 'missing').length}</strong>
+        </span>
+        <span>
+          자료 변경 <strong>{answers.filter((a) => a.review_status === 'again').length}</strong>
+        </span>
+      </div>
+      <div className="list-tools">
+        <label>
+          분야
+          <select
+            aria-label="분야"
+            value={state.section}
+            onChange={(e) => update({ section: e.target.value })}
+          >
+            <option value="all">전체 분야</option>
+            {sections.map((s) => (
+              <option key={s}>{s}</option>
+            ))}
+          </select>
+        </label>
+        <label>
+          검토 상태
+          <select
+            aria-label="검토 상태"
+            value={state.filter}
+            onChange={(e) => update({ filter: e.target.value })}
+          >
+            {[
+              ['all', '전체'],
+              ['pending', '남은 문항'],
+              ['complete', '검토 완료'],
+              ['missing', '자료 필요'],
+              ['again', '자료 변경'],
+            ].map(([v, t]) => (
+              <option key={v} value={v}>
+                {t}
+              </option>
+            ))}
+          </select>
+        </label>
+        <label className="question-search">
+          <Search />
+          <input
+            aria-label="문항 검색"
+            placeholder="문항·답변·파일명 검색"
+            value={state.search}
+            onChange={(e) => update({ search: e.target.value })}
+          />
+        </label>
+      </div>
+      <div className="answer-table" role="table" aria-label="실사 응답 목록">
+        <div className="answer-table-head" role="row">
+          {['문항', '저장된 답변', '검토 상태', '근거 파일'].map((t) => (
+            <span key={t} role="columnheader">
+              {t}
+            </span>
+          ))}
+        </div>
+        {filtered.slice(page * 10, page * 10 + 10).map((a) => (
+          <div className="answer-table-row" role="row" key={a.id}>
+            <div role="cell">
+              <small>
+                {a.id} · {a.section}
+              </small>
+              <button
+                className="question-link"
+                aria-label={`${a.question} 살펴보기`}
+                onClick={() => onSelect(a.id)}
+              >
+                {a.question}
+              </button>
+            </div>
+            <div role="cell" className="table-value">
+              <strong>{a.value_text}</strong>
+              <small>
+                {a.method} · {a.scope_label || '범위 미확인'}
+              </small>
+            </div>
+            <div role="cell">
+              <Badge answer={a} />
+              <small className="trust-note">근거 판단: {a.status_label}</small>
+            </div>
+            <div role="cell" className="table-sources">
+              {a.sources.length ? (
+                a.sources.map((s, i) => (
+                  <button key={i} className="source-link" onClick={() => onSelect(a.id)}>
+                    {s.name}
+                    <small>
+                      {s.page !== null ? `${s.page + 1}쪽` : '페이지 미확인'} · 버전{' '}
+                      {s.version || 1}
+                    </small>
+                  </button>
+                ))
+              ) : (
+                <button className="source-link" onClick={() => onSelect(a.id)}>
+                  근거 연결하기
+                </button>
+              )}
+            </div>
           </div>
         ))}
       </div>
-      <div className="answer-table-panel">
-        <div className="section-heading">
-          <h2>지금 확인할 내용</h2>
-          <span>
-            확인할 항목 {attention.length}개 / 전체 {answers.length}개
-          </span>
-        </div>
-        <p className="intro">
-          질문을 열면 응답 초안, 원문 근거와 보완할 내용을 함께 볼 수 있습니다.
-        </p>
-        <div className="list-tools">
-          <div className="list-tabs" aria-label="질문 보기">
-            {[
-              ['attention', '확인할 내용'],
-              ['all', '전체 답변'],
-              ['missing', '자료 필요'],
-              ['write', '작성 필요'],
-            ].map(([key, label]) => (
-              <button key={key} aria-pressed={filter === key} onClick={() => setFilter(key)}>
-                {label}
-              </button>
-            ))}
-          </div>
-          <label className="question-search">
-            <Search />
-            <span className="sr-only">질문 찾기</span>
-            <input
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              placeholder="질문·자료 검색"
-            />
-          </label>
-        </div>
-        <div className="answer-table" role="table" aria-label="실사 응답 목록">
-          <div className="answer-table-head" role="row">
-            <span role="columnheader">질문</span>
-            <span role="columnheader">응답 초안</span>
-            <span role="columnheader">확인 상태</span>
-            <span role="columnheader">근거</span>
-            <span role="columnheader" className="sr-only">
-              열기
-            </span>
-          </div>
-          {visible.map((answer, i) => (
-            <div className="answer-table-row" role="row" key={answer.id}>
-              <div role="cell" className="question-cell">
-                <span className="row-index">{String(page * 8 + i + 1).padStart(2, '0')}</span>
-                <div>
-                  <span className="answer-section">{answer.section}</span>
-                  <button
-                    className="question-link"
-                    onClick={() => onSelect(answer.id)}
-                    aria-label={`${answer.question} 살펴보기`}
-                  >
-                    {answer.question}
-                  </button>
-                  {project.notes[answer.id] && (
-                    <small className="note-present">
-                      {project.notes[answer.id].revision === project.result_revision
-                        ? '검토 기록 저장됨'
-                        : '이전 분석 기록 · 재확인 필요'}
-                    </small>
-                  )}
-                </div>
-              </div>
-              <div role="cell" className="table-value">
-                <strong>{answer.draft_text ? '작성된 초안 있음' : answer.value_text}</strong>
-                <small>{answer.scope_label || answer.period_label || '기간·범위 미확인'}</small>
-              </div>
-              <div role="cell">
-                <Badge answer={answer} />
-              </div>
-              <div role="cell" className="table-sources">
-                <FileText />
-                {answer.sources.length ? `${answer.sources.length}개` : '없음'}
-              </div>
-              <div role="cell">
-                <button
-                  className="icon-button"
-                  aria-label={`${answer.question} 자세히`}
-                  onClick={() => onSelect(answer.id)}
-                >
-                  <ArrowUpRight />
-                </button>
-              </div>
-            </div>
-          ))}
-        </div>
-        {!filtered.length && (
-          <div className="empty-list">
-            <CircleHelp />
-            <p>
-              {search
-                ? '검색 결과가 없습니다. 다른 단어로 찾아보세요.'
-                : '이 목록에는 남은 항목이 없습니다.'}
-            </p>
-          </div>
-        )}
-        {filtered.length > 8 && (
-          <div className="pagination">
-            <span>
-              {page * 8 + 1}–{Math.min(page * 8 + 8, filtered.length)} / {filtered.length}개
-            </span>
-            <button
-              className="icon-button"
-              aria-label="이전 질문 목록"
-              disabled={!page}
-              onClick={() => setPage(page - 1)}
-            >
-              <ChevronLeft />
-            </button>
-            <button
-              className="icon-button"
-              aria-label="다음 질문 목록"
-              disabled={(page + 1) * 8 >= filtered.length}
-              onClick={() => setPage(page + 1)}
-            >
-              <ChevronRight />
-            </button>
-          </div>
-        )}
-        <div className="table-footnote">
-          <Info />
-          자료 연결은 최종 승인이 아닙니다. 기간과 범위를 확인한 뒤 제출해 주세요.
-        </div>
+      {!filtered.length && <p className="empty-list">조건에 맞는 문항이 없습니다.</p>}
+      <div className="pagination">
+        <span>
+          {filtered.length ? `${page * 10 + 1}–${Math.min((page + 1) * 10, filtered.length)}` : '0'}{' '}
+          / {filtered.length}문항
+        </span>
+        <button className="secondary" disabled={!page} onClick={() => update({ page: page - 1 })}>
+          <ChevronLeft />
+          이전
+        </button>
+        <span>
+          {page + 1} / {pages}
+        </span>
+        <button
+          className="secondary"
+          disabled={page + 1 >= pages}
+          onClick={() => update({ page: page + 1 })}
+        >
+          다음
+          <ChevronRight />
+        </button>
       </div>
-      {!!project.result.limitations.length && (
-        <details className="more-details limitations">
-          <summary>이번 자료에서 더 확인할 내용</summary>
-          <ul>
-            {project.result.limitations.map((item) => (
-              <li key={item}>{item}</li>
-            ))}
-          </ul>
-        </details>
-      )}
+      <p className="table-footnote">
+        담당자 검토 완료는 작업의 완료 표시입니다. 근거 자료의 사실성·충분성 판단은 별도로
+        유지됩니다.
+      </p>
     </>
   );
 }
 
-type NoteValues = { answer: string; text: string };
-type ReviewProps = {
-  project: Project;
-  answer: Answer;
-  busy: boolean;
-  onBack: () => void;
-  onSelect: (id: string) => void;
-  onDocuments: () => void;
-  onSave: (id: string, values: NoteValues) => Promise<void>;
-};
 export function Review({
   project,
   answer,
@@ -260,72 +194,94 @@ export function Review({
   onSelect,
   onDocuments,
   onSave,
-}: ReviewProps) {
-  const saved = project.notes[answer.id];
-  const draftKey = `esgenie-draft:${project.id}:${answer.id}:${project.result_revision}`;
-  const [values, setValues] = useState<NoteValues>(() => {
+  onDraft,
+}: {
+  project: Project;
+  answer: Answer;
+  busy: boolean;
+  onBack: () => void;
+  onSelect: (id: string) => void;
+  onDocuments: () => void;
+  onSave: (id: string, values: ReviewValues, complete?: boolean) => Promise<void>;
+  onDraft: (dirty: boolean, save: () => Promise<void>, discard: () => void) => void;
+}) {
+  const key = `esgenie-draft:${project.id}:${answer.id}:${project.result_revision}`;
+  const [values, setValues] = useState<ReviewValues>(() => {
     try {
-      const local = localStorage.getItem(draftKey);
-      if (local) {
-        const parsed = JSON.parse(local);
-        if (typeof parsed.answer === 'string' && typeof parsed.text === 'string') return parsed;
-      }
-    } catch {
-      /* Keep server copy when local storage is unavailable. */
-    }
-    return { answer: saved?.answer || '', text: saved?.text || '' };
+      const v = JSON.parse(localStorage.getItem(key) || 'null');
+      if (v && typeof v.answer === 'string' && Array.isArray(v.sources)) return v;
+    } catch {}
+    return structuredClone(answer.saved);
   });
-  const dirty = values.answer !== (saved?.answer || '') || values.text !== (saved?.text || '');
+  const [preview, setPreview] = useState<Source | undefined>(
+    values.sources[0] || answer.reference_sources[0],
+  );
+  const [candidate, setCandidate] = useState<Candidate | null>(null);
+  const dirty = JSON.stringify(values) !== JSON.stringify(answer.saved);
   const answers = project.result!.answers;
-  const index = answers.findIndex((item) => item.id === answer.id);
-  const change = (next: NoteValues) => {
-    setValues(next);
+  const index = answers.findIndex((a) => a.id === answer.id);
+  const change = (v: ReviewValues) => {
+    setValues(v);
     try {
-      localStorage.setItem(draftKey, JSON.stringify(next));
-    } catch {
-      /* Server save remains available. */
-    }
+      localStorage.setItem(key, JSON.stringify(v));
+    } catch {}
+  };
+  const save = async (complete = false) => {
+    await onSave(answer.id, values, complete);
+    localStorage.removeItem(key);
   };
   useEffect(() => {
-    if (!dirty) {
-      try {
-        localStorage.removeItem(draftKey);
-      } catch {
-        /* Optional local draft. */
-      }
-    }
-  }, [dirty, draftKey]);
+    onDraft(
+      dirty,
+      () => save(),
+      () => {
+        setValues(structuredClone(answer.saved));
+        localStorage.removeItem(key);
+      },
+    );
+    return () =>
+      onDraft(
+        false,
+        async () => {},
+        () => {},
+      );
+  }, [dirty, values, answer.saved]);
   useEffect(() => {
     if (!dirty) return;
-    const guard = (event: BeforeUnloadEvent) => {
-      event.preventDefault();
+    const guard = (e: BeforeUnloadEvent) => {
+      e.preventDefault();
+      e.returnValue = '';
     };
     window.addEventListener('beforeunload', guard);
     return () => window.removeEventListener('beforeunload', guard);
   }, [dirty]);
+  const options: Candidate[] = [
+    { id: 'automatic', ...answer.automatic, notices: answer.notices },
+    ...answer.candidates,
+  ];
   return (
     <div className="review-workspace">
       <div className="review-bar">
         <button className="back-button" onClick={onBack}>
           <ArrowLeft />
-          확인할 내용
+          문항 목록
         </button>
         <div className="question-position">
           <span>
-            {index + 1} / {answers.length}개 질문
+            {index + 1} / {answers.length}문항
           </span>
           <button
             className="icon-button"
-            aria-label="이전 질문"
-            disabled={index === 0}
+            aria-label="이전 문항"
+            disabled={!index}
             onClick={() => onSelect(answers[index - 1].id)}
           >
             <ChevronLeft />
           </button>
           <button
             className="icon-button"
-            aria-label="다음 질문"
-            disabled={index === answers.length - 1}
+            aria-label="다음 문항"
+            disabled={index + 1 === answers.length}
             onClick={() => onSelect(answers[index + 1].id)}
           >
             <ChevronRight />
@@ -333,357 +289,419 @@ export function Review({
         </div>
       </div>
       <div className="review-title">
-        <span className="eyebrow">{answer.section}</span>
+        <small>
+          {answer.id} · {answer.section}
+        </small>
         <h2>{answer.question}</h2>
-        <p>{answer.why}</p>
-        <details className="question-help">
-          <summary>이 질문은 어떤 뜻인가요?</summary>
-          {questionHelp(answer).map((explanation) => (
-            <p key={explanation}>{explanation}</p>
-          ))}
-        </details>
+        <Badge answer={answer} />
       </div>
       <div className="review-columns">
-        <section className="answer-paper" aria-label="답변 검토">
-          <div className="section-heading">
-            <h3>응답 초안</h3>
-            <Badge answer={answer} />
-          </div>
-          <div className="answer-value">{answer.draft_text || answer.value_text}</div>
-          {answer.period_label && (
-            <div className="period-label">자료 연도 · {answer.period_label}</div>
-          )}
-          <div className="answer-scope">
-            <span>기간과 범위</span>
-            <strong>{answer.scope_label || '기간·사업장 범위 미확인'}</strong>
-            {answer.comparison_label && <span>{answer.comparison_label}</span>}
-          </div>
-          {answer.draft_sources?.map((source) => (
-            <p className="draft-source" key={source}>
-              {source}
-            </p>
-          ))}
-          {answer.company_answers.length > 0 && (
-            <div className="claim-comparison">
-              <div>
-                <span>회사가 직접 적은 답변</span>
-                {answer.company_answers.map((claim, i) => (
-                  <strong key={i}>
-                    {claim.value ?? '확인 필요'} {claim.unit}
-                  </strong>
-                ))}
-              </div>
-              <div>
-                <span>현재 자료로 찾은 값</span>
-                <strong>{answer.value_text}</strong>
-              </div>
+        <section className="answer-paper" aria-label="답변 편집">
+          {answer.review_status === 'again' && (
+            <div className="feedback warning">
+              <p>
+                {project.stale
+                  ? '자료가 변경되었습니다. 기존 답변을 보관 중입니다. 재분석 후 새 근거를 확인하세요.'
+                  : '재분석을 완료했습니다. 저장된 답변을 유지했습니다. 새 근거와 비교한 뒤 검토를 완료하세요.'}
+              </p>
             </div>
           )}
-          {answer.notices.length > 0 && (
-            <ul className="answer-notices">
-              {answer.notices.map((notice) => (
-                <li key={notice}>
-                  <Info />
-                  <span>{notice}</span>
-                </li>
-              ))}
-            </ul>
-          )}
-          <div className="next-help">
-            <span className="next-help-title">이렇게 확인해 보세요</span>
-            <p>{answer.next_step}</p>
-            {answer.evidence_needed.length > 0 && (
-              <>
-                <span className="needed-label">찾아보면 좋은 서류</span>
-                <ul>
-                  {answer.evidence_needed.map((item) => (
-                    <li key={item}>{item}</li>
-                  ))}
-                </ul>
-                {project.mode !== 'example' && (
-                  <button className="text-button" onClick={onDocuments}>
-                    서류 추가하기
-                    <Plus />
-                  </button>
-                )}
-              </>
-            )}
-          </div>
-          {saved && saved.revision !== project.result_revision && (
-            <p className="inline-warning">
-              이전 분석에서 작성한 내용이에요. 새 자료와 맞는지 다시 확인해 주세요.
-            </p>
-          )}
-          <details className="manual-answer" open={answer.status === 'write' || !!values.answer}>
-            <summary>직접 답변을 적거나 보완하기</summary>
+          <div className="answer-fields">
             <label>
-              직접 작성한 답변 <span className="optional">자료 확인 전</span>
+              답변
               <textarea
+                aria-label="답변"
                 value={values.answer}
                 maxLength={5000}
-                onChange={(event) => change({ ...values, answer: event.target.value })}
-                placeholder="예: 담당자는 생산팀이며, 매월 사용 내역을 확인합니다."
+                onChange={(e) => change({ ...values, answer: e.target.value })}
                 disabled={busy || project.stale}
               />
-              <small>자동으로 만든 답변과 구분해 보관하고, 내려받는 파일에도 따로 표시해요.</small>
             </label>
-          </details>
-          <label className="review-note-label">
-            확인한 내용 메모 <span className="optional">선택</span>
+            <label>
+              단위
+              <input
+                aria-label="단위"
+                value={values.unit}
+                maxLength={100}
+                onChange={(e) => change({ ...values, unit: e.target.value })}
+                disabled={busy || project.stale}
+              />
+            </label>
+          </div>
+          <label>
+            측정 범위 / 기준
+            <input
+              aria-label="측정 범위"
+              value={values.scope}
+              maxLength={2000}
+              placeholder="기간 · 사업장 · 대상 · 집계 기준"
+              onChange={(e) => change({ ...values, scope: e.target.value })}
+              disabled={busy || project.stale}
+            />
+          </label>
+          <div className="connected-sources">
+            <h3>답변에 연결된 근거</h3>
+            {values.sources.length ? (
+              values.sources.map((s, i) => (
+                <div key={i}>
+                  <button
+                    className="source-link"
+                    onClick={() => {
+                      setPreview(s);
+                      setCandidate(null);
+                    }}
+                  >
+                    {s.name} · {s.page !== null ? `${s.page + 1}쪽` : '페이지 미확인'} · 버전{' '}
+                    {s.version || 1}
+                  </button>
+                  <button
+                    className="text-button"
+                    aria-label={`${s.name} 근거 해제`}
+                    disabled={busy || project.stale}
+                    onClick={() =>
+                      change({ ...values, sources: values.sources.filter((_, j) => j !== i) })
+                    }
+                  >
+                    해제
+                  </button>
+                </div>
+              ))
+            ) : (
+              <p>연결된 근거 없음</p>
+            )}
+          </div>
+          <label>
+            메모 / 자료 부족 사유
             <textarea
-              value={values.text}
+              aria-label="검토 메모"
+              value={values.memo}
               maxLength={5000}
-              onChange={(event) => change({ ...values, text: event.target.value })}
-              placeholder="예: 회계팀에 지난해 전기요금 고지서 요청하기"
+              onChange={(e) => change({ ...values, memo: e.target.value })}
+              disabled={busy || project.stale}
+              placeholder="추가 확인 사항이나 자료가 부족한 이유"
+            />
+          </label>
+          <label>
+            수정 이유
+            <input
+              aria-label="수정 이유"
+              value={values.reason}
+              maxLength={2000}
+              onChange={(e) => change({ ...values, reason: e.target.value })}
               disabled={busy || project.stale}
             />
           </label>
           <div className="review-save">
             <button
-              className="primary"
-              disabled={
-                busy ||
-                project.stale ||
-                (!dirty && (!saved || saved.revision === project.result_revision))
-              }
-              onClick={() => onSave(answer.id, values)}
+              className="secondary"
+              disabled={busy || project.stale || !dirty}
+              onClick={() => void save().catch(() => {})}
             >
-              {busy ? <LoaderCircle className="spin" /> : <Check />}작성 내용 저장
+              저장
             </button>
-            <span>
-              {dirty
-                ? '아직 저장하지 않은 내용이 있어요.'
-                : saved
-                  ? '저장됨 · 확인 상태는 유지돼요.'
-                  : '모르면 비워두고 나중에 이어가세요.'}
-            </span>
+            <button
+              className="primary"
+              disabled={busy || project.stale}
+              onClick={async () => {
+                try {
+                  await save(true);
+                } catch {
+                  return;
+                }
+                const next = [...answers.slice(index + 1), ...answers.slice(0, index)].find(
+                  (a) => a.review_status !== 'complete',
+                );
+                onSelect(next?.id || '');
+              }}
+            >
+              검토 완료 후 다음
+              <ArrowRight />
+            </button>
           </div>
+          <p className="save-status" role="status">
+            {dirty
+              ? '저장하지 않은 수정이 있습니다.'
+              : '저장된 답변 기준 · 검토 완료는 별도 동작입니다.'}
+          </p>
           <details className="more-details">
-            <summary>질문의 기준과 자세한 확인 내용</summary>
-            <p>질문 번호: {answer.id}</p>
-            {answer.technical_reason && <p>{answer.technical_reason}</p>}
-            {answer.flags.length > 0 && (
-              <ul>
-                {answer.flags.map((flag, i) => (
-                  <li key={i}>{flag}</li>
-                ))}
-              </ul>
+            <summary>근거 판단 · 확인 사유</summary>
+            <p>
+              {answer.status_label} · {answer.why}
+            </p>
+            <p>{answer.next_step}</p>
+            {answer.notices.map((n) => (
+              <p key={n}>{n}</p>
+            ))}
+            {answer.evidence_needed.length > 0 && (
+              <p>필요 자료: {answer.evidence_needed.join(' · ')}</p>
             )}
+            <button className="text-button" onClick={onDocuments}>
+              자료 준비로 이동
+            </button>
+            <p>{questionHelp(answer).join(' ')}</p>
+          </details>
+          <details className="more-details">
+            <summary>변경 기록 ({answer.history.length})</summary>
+            {answer.history
+              .slice()
+              .reverse()
+              .map((h, i) => (
+                <div className="history-entry" key={i}>
+                  <small>
+                    {new Date(h.at).toLocaleString('ko-KR')} · {h.action}
+                  </small>
+                  <p>
+                    {h.before.answer || '답변 없음'} {h.before.unit} →{' '}
+                    {h.after.answer || '답변 없음'} {h.after.unit}
+                  </p>
+                  <p>
+                    범위: {h.before.scope} → {h.after.scope}
+                  </p>
+                  <p>
+                    근거:{' '}
+                    {h.after.sources.map((s) => `${s.name} v${s.version || 1}`).join(' · ') ||
+                      '없음'}
+                  </p>
+                  <p>수정 이유: {h.reason || '미기재'}</p>
+                </div>
+              ))}
           </details>
         </section>
-        <EvidencePanel key={answer.id} project={project} answer={answer} />
+        <aside className="evidence-panel" aria-label="원문 확인">
+          <h3>원문 확인</h3>
+          <p className="intro">다른 근거를 살펴보는 동안 저장된 답변은 유지됩니다.</p>
+          <label>
+            새 분석 값과 근거
+            <select
+              aria-label="새 근거 선택"
+              value={candidate?.id || ''}
+              onChange={(e) => {
+                const c = options.find((c) => c.id === e.target.value) || null;
+                setCandidate(c);
+                setPreview(c?.sources[0]);
+              }}
+            >
+              <option value="">연결된 원문 보기</option>
+              {options
+                .filter((c) => c.answer || c.sources.length)
+                .map((c) => (
+                  <option key={c.id} value={c.id}>
+                    {c.answer} {c.unit} · {c.sources[0]?.name || '근거 없음'} · {c.scope}
+                  </option>
+                ))}
+            </select>
+          </label>
+          {candidate && (
+            <div className="candidate">
+              <strong>
+                {candidate.answer} {candidate.unit}
+              </strong>
+              <p>{candidate.scope || '범위 미확인'}</p>
+              {candidate.notices.map((n) => (
+                <small key={n}>{n}</small>
+              ))}
+              {candidate.sources.map((s, i) => (
+                <button key={i} className="source-link" onClick={() => setPreview(s)}>
+                  {s.name} · {s.page !== null ? `${s.page + 1}쪽` : '페이지 미확인'}
+                </button>
+              ))}
+              <button
+                className="primary"
+                disabled={busy || project.stale || !candidate.sources.length}
+                onClick={() =>
+                  change({
+                    ...values,
+                    answer: candidate.answer,
+                    unit: candidate.unit,
+                    scope: candidate.scope,
+                    sources: structuredClone(candidate.sources),
+                  })
+                }
+              >
+                이 값과 근거 적용
+              </button>
+              <small>답변 값·단위·범위·근거를 함께 바꿉니다. 적용 후 저장하세요.</small>
+            </div>
+          )}
+          {!!answer.reference_sources.length && (
+            <details className="more-details">
+              <summary>보완 대상 자료 · 값 산정 미사용</summary>
+              {answer.reference_sources.map((s, i) => (
+                <button
+                  className="source-link"
+                  key={i}
+                  onClick={() => {
+                    setPreview(s);
+                    setCandidate(null);
+                  }}
+                >
+                  {s.name}
+                </button>
+              ))}
+            </details>
+          )}
+          <SourceViewer
+            key={`${preview?.document_id}:${preview?.version}:${preview?.page}:${preview?.quote}`}
+            project={project}
+            source={preview}
+            canLink={!busy && !project.stale}
+            onLink={(source) => {
+              if (
+                !values.sources.some(
+                  (s) =>
+                    s.document_id === source.document_id &&
+                    s.version === source.version &&
+                    s.page === source.page,
+                )
+              )
+                change({ ...values, sources: [...values.sources, source] });
+            }}
+          />
+          <div className="connected-sources">
+            <label>
+              자료 보관함의 원문
+              <select
+                aria-label="다른 원문 보기"
+                value=""
+                onChange={(e) => {
+                  const d = project.documents.find((d) => d.id === e.target.value);
+                  if (d) {
+                    setCandidate(null);
+                    setPreview({
+                      name: d.name,
+                      document_id: d.id,
+                      version: d.version,
+                      page: 0,
+                      quote: '담당자 직접 연결 · 해당 원문 페이지 확인 필요',
+                      manual: true,
+                      independent: d.role === 'evidence',
+                      preview_available: !d.example && !d.error,
+                      bbox: null,
+                    });
+                  }
+                }}
+              >
+                <option value="">파일 선택</option>
+                {project.documents.map((d) => (
+                  <option key={d.id} value={d.id}>
+                    {d.name} · {d.included ? '분석 포함' : '제외'}
+                  </option>
+                ))}
+              </select>
+            </label>
+          </div>
+        </aside>
       </div>
     </div>
   );
 }
 
-function EvidencePanel({ project, answer }: { project: Project; answer: Answer }) {
-  const [index, setIndex] = useState(0);
-  const [mode, setMode] = useState<'quote' | 'original'>('quote');
-  const [imageError, setImageError] = useState(false);
-  const source: Source | undefined = answer.sources[index];
-  const document = project.documents.find((doc) => doc.id === source?.document_id);
+function SourceViewer({
+  project,
+  source,
+  canLink,
+  onLink,
+}: {
+  project: Project;
+  source?: Source;
+  canLink: boolean;
+  onLink: (source: Source) => void;
+}) {
   const [page, setPage] = useState(source?.page ?? 0);
-  const bbox = source?.bbox;
-  const validBox =
+  const [failed, setFailed] = useState(false);
+  const document = project.documents.find((d) => d.id === source?.document_id);
+  const version = document?.versions?.find((v) => v.version === source?.version);
+  const pages = version?.pages ?? document?.pages ?? 0;
+  if (!source)
+    return (
+      <div className="empty-state">
+        <p>연결된 원문이 없습니다. 자료를 선택하세요.</p>
+      </div>
+    );
+  const path = `/api/projects/${project.id}/documents/${source.document_id}`;
+  const query = `?version=${source.version || 1}`;
+  const bbox = source.bbox;
+  const valid =
     bbox?.length === 4 &&
-    bbox.every((n) => n >= 0 && n <= 1) &&
+    bbox.every((n) => Number.isFinite(n) && n >= 0 && n <= 1) &&
     bbox[2] > bbox[0] &&
     bbox[3] > bbox[1] &&
     page === source.page;
   return (
-    <section className="evidence-panel" aria-label="답변과 연결된 자료">
-      <div className="section-heading">
-        <h3>답변과 연결된 자료</h3>
-        <span>{answer.sources.length}개 연결</span>
+    <>
+      <div className="source-title">
+        <div>
+          <strong>{source.name}</strong>
+          <span>
+            버전 {source.version || 1}
+            {document && source.version !== document.version ? ' · 이전 원본' : ''} · {page + 1}쪽
+          </span>
+        </div>
       </div>
-      {!source ? (
-        <div className="no-evidence">
-          <FileQuestion />
-          <h3>아직 연결된 자료가 없어요</h3>
-          <p>
-            왼쪽에 안내된 서류를 찾아보세요.
-            <br />
-            자료가 없다면 메모를 남기고 나중에 이어갈 수 있어요.
-          </p>
+      {source.preview_available && !failed ? (
+        <div className="original-page">
+          <img
+            alt={`${source.name} ${page + 1}쪽 원문`}
+            src={`${path}/pages/${page}${query}`}
+            onError={() => setFailed(true)}
+          />
+          {valid && (
+            <div
+              className="evidence-highlight"
+              style={{
+                left: `${bbox![0] * 100}%`,
+                top: `${bbox![1] * 100}%`,
+                width: `${(bbox![2] - bbox![0]) * 100}%`,
+                height: `${(bbox![3] - bbox![1]) * 100}%`,
+              }}
+            />
+          )}
         </div>
       ) : (
-        <>
-          {answer.sources.length > 1 && (
-            <label className="source-picker">
-              자료 선택
-              <select
-                value={index}
-                onChange={(event) => {
-                  const next = Number(event.target.value);
-                  setIndex(next);
-                  setPage(answer.sources[next].page ?? 0);
-                  setMode('quote');
-                  setImageError(false);
-                }}
-              >
-                {answer.sources.map((item, i) => (
-                  <option key={i} value={i}>
-                    {item.name}
-                    {item.page === null ? '' : ` · ${item.page + 1}쪽`}
-                  </option>
-                ))}
-              </select>
-            </label>
-          )}
-          <div className="source-title">
-            <FileText />
-            <div>
-              <strong>{source.name}</strong>
-              <span>
-                {project.mode === 'example'
-                  ? '사용법 예시 · 검증값 요약'
-                  : source.page === null
-                    ? '페이지 정보 없음'
-                    : `연결 위치 · ${source.page + 1}쪽`}
-              </span>
-            </div>
-          </div>
-          <div className="source-tabs" aria-label="자료 보기">
-            <button aria-pressed={mode === 'quote'} onClick={() => setMode('quote')}>
-              <FileText />
-              읽은 내용
-            </button>
-            <button
-              aria-pressed={mode === 'original'}
-              onClick={() => {
-                setMode('original');
-                setImageError(false);
-              }}
-              disabled={!source.preview_available}
-            >
-              <Image />
-              원본 페이지
-            </button>
-          </div>
-          {mode === 'quote' ? (
-            <div className="source-quote">
-              <span className="source-label">
-                {project.mode === 'example'
-                  ? '시연 결과의 알려진 값으로 구성'
-                  : '연결된 원문에서 읽은 내용'}
-              </span>
-              <blockquote>
-                {source.quote ||
-                  '연결된 위치에서 텍스트를 표시하지 못했어요. 원본을 확인해 주세요.'}
-              </blockquote>
-              <div className="source-bottom">
-                <span>
-                  {source.independent ? '답변을 확인할 자료' : '직접 작성한 내용 · 독립 자료 아님'}
-                </span>
-                {source.preview_available && (
-                  <button className="text-button" onClick={() => setMode('original')}>
-                    원본과 비교
-                    <ArrowUpRight />
-                  </button>
-                )}
-              </div>
-            </div>
-          ) : (
-            <>
-              {document && document.pages > 1 && (
-                <div className="page-controls">
-                  <button
-                    className="icon-button"
-                    aria-label="원본 이전 페이지"
-                    disabled={page === 0}
-                    onClick={() => {
-                      setPage(page - 1);
-                      setImageError(false);
-                    }}
-                  >
-                    <ChevronLeft />
-                  </button>
-                  <span>
-                    {page + 1} / {document.pages}쪽
-                  </span>
-                  <button
-                    className="icon-button"
-                    aria-label="원본 다음 페이지"
-                    disabled={page >= document.pages - 1}
-                    onClick={() => {
-                      setPage(page + 1);
-                      setImageError(false);
-                    }}
-                  >
-                    <ChevronRight />
-                  </button>
-                </div>
-              )}
-              {imageError ? (
-                <div className="no-evidence">
-                  <p>원본 페이지를 표시하지 못했어요.</p>
-                </div>
-              ) : (
-                <div className="source-image">
-                  <img
-                    src={`/api/projects/${project.id}/documents/${source.document_id}/pages/${page}`}
-                    alt={`${source.name} ${page + 1}쪽`}
-                    onError={() => setImageError(true)}
-                  />
-                  {validBox && (
-                    <span
-                      className="source-highlight"
-                      aria-label="관련 내용 위치"
-                      style={{
-                        left: `${bbox![0] * 100}%`,
-                        top: `${bbox![1] * 100}%`,
-                        width: `${(bbox![2] - bbox![0]) * 100}%`,
-                        height: `${(bbox![3] - bbox![1]) * 100}%`,
-                      }}
-                    />
-                  )}
-                </div>
-              )}
-            </>
-          )}
-          {source.document_id && project.mode !== 'example' && (
-            <a
-              className="text-button original-download"
-              href={`/api/projects/${project.id}/documents/${source.document_id}/original`}
-            >
-              <ArrowDownToLine />
-              원본 파일 받기
-            </a>
-          )}
-          {project.mode === 'example' && (
-            <p className="source-example-note">
-              예시에는 원본 파일이 포함되어 있지 않아요. 회사 서류를 올리면 연결된 페이지를 볼 수
-              있어요.
-            </p>
-          )}
-        </>
+        <p className="inline-warning">
+          {project.mode === 'example'
+            ? '사용법 예시 · 실제 원본이 없습니다.'
+            : failed
+              ? '원문을 표시하지 못했습니다. 원본을 내려받아 확인하세요.'
+              : '원문 페이지를 확인할 수 없습니다.'}
+        </p>
       )}
-      {!!answer.reference_sources?.length && (
-        <details className="company-claims">
-          <summary>보완 대상 자료 · 값 산정에 사용하지 않음</summary>
-          {answer.reference_sources.map((source, i) => (
-            <div key={i}>
-              <strong>{source.name}</strong>
-              <p>{source.quote}</p>
-            </div>
-          ))}
+      {source.manual && source.preview_available && (
+        <button
+          className="secondary"
+          disabled={!canLink}
+          onClick={() => onLink({ ...source, page })}
+        >
+          이 페이지를 근거로 연결
+        </button>
+      )}
+      {!!source.quote && (
+        <details className="more-details" open>
+          <summary>읽은 원문</summary>
+          <p className="source-quote">{source.quote}</p>
         </details>
       )}
-      {answer.company_answers.length > 0 && (
-        <details className="company-claims">
-          <summary>회사가 직접 적은 답변 보기</summary>
-          {answer.company_answers.map((claim, i) => (
-            <div key={i}>
-              <span className="badge unconfirmed">직접 작성한 답변</span>
-              <p>{claim.raw || `${claim.value ?? '확인 필요'} ${claim.unit || ''}`}</p>
-              <small>{claim.source?.replace(/^saq:/, '')}</small>
-            </div>
-          ))}
-          <p className="intro">회사의 답변은 다른 서류와 비교해서 확인해요.</p>
-        </details>
+      {source.preview_available && (
+        <div className="pagination">
+          <button className="secondary" disabled={!page} onClick={() => setPage(page - 1)}>
+            이전 쪽
+          </button>
+          <span>
+            {page + 1} / {pages}
+          </span>
+          <button
+            className="secondary"
+            disabled={page + 1 >= pages}
+            onClick={() => setPage(page + 1)}
+          >
+            다음 쪽
+          </button>
+          <a className="text-button" href={`${path}/original${query}`}>
+            원본 내려받기
+          </a>
+        </div>
       )}
-    </section>
+    </>
   );
 }
 
@@ -691,98 +709,136 @@ export function Submission({
   project,
   busy,
   onDownload,
-  onSelect,
+  onReview,
 }: {
   project: Project;
   busy: boolean;
-  onDownload: (kind: 'xlsx' | 'bundle') => void;
-  onSelect: (id: string) => void;
+  onDownload: (kind: 'xlsx' | 'pdf' | 'bundle') => void;
+  onReview: (id: string) => void;
 }) {
-  if (!project.result)
-    return (
-      <div className="empty-state">
-        <h2>서류를 읽은 뒤 응답서를 받을 수 있어요</h2>
-      </div>
-    );
-  const attention = project.result.answers.filter((answer) => answer.needs_attention).length;
+  const answers = project.result?.answers || [];
+  const remaining = answers.filter((a) => a.review_status !== 'complete').length;
+  const [page, setPage] = useState(0);
+  const pages = Math.max(1, Math.ceil(answers.length / 10));
   return (
     <>
-      <div className="section-heading">
-        <h2>응답서 초안이 준비되어 있어요</h2>
-        <span className="badge neutral">
-          {project.mode === 'example' ? '사용법 예시' : '검토용 초안'}
-        </span>
-      </div>
-      <p className="intro">
-        {attention
-          ? `확인할 항목 ${attention}개가 남아 있어요. 아직 확인하지 못한 내용도 함께 표시해서 받아보세요.`
-          : '제출 전에 답변과 근거가 회사 상황에 맞는지 한 번 더 확인해 주세요.'}
-      </p>
-      <div className="download-actions">
-        <button
-          className="primary"
-          disabled={busy || project.stale}
-          onClick={() => onDownload('xlsx')}
-        >
-          {busy ? <LoaderCircle className="spin" /> : <ArrowDownToLine />}응답서 Excel 받기
-        </button>
-        <button
-          className="secondary"
-          disabled={busy || project.stale}
-          onClick={() => onDownload('bundle')}
-        >
-          <Package />
-          자료와 함께 받기
-        </button>
-      </div>
-      <p className="download-note">
-        Excel에는 직접 작성한 답변을 별도 시트로 담아요. 묶음에는 PDF, 연결된 원문, 작성 내용과 검증
-        근거가 함께 들어갑니다.
-      </p>
-      <div className="submission-paper">
-        <div className="paper-heading">
-          <span>응답서 미리보기</span>
+      <div className={`feedback ${project.stale ? 'warning' : 'neutral'}`}>
+        <div>
           <strong>
-            {project.company_name} · {project.year}
+            {project.stale
+              ? '자료 변경 전의 응답서입니다'
+              : remaining
+                ? `검토가 남은 문항 ${remaining}개`
+                : '전체 문항의 담당자 검토를 완료했습니다'}
           </strong>
-          <span>{project.result.answers.length}개 질문</span>
+          <p>
+            {project.stale
+              ? '재분석 전까지 내려받기를 제한합니다. 저장된 답변은 보관됩니다.'
+              : '검토용 응답서는 미완료 상태와 자료 부족 사유를 포함합니다.'}
+          </p>
         </div>
-        {project.result.answers.map((answer, i) => (
-          <section className="preview-answer" key={answer.id}>
-            <div className="preview-question">
-              <span>{String(i + 1).padStart(2, '0')}</span>
-              <h3>{answer.question}</h3>
-              <Badge answer={answer} />
-            </div>
-            <p>
-              {answer.draft_text || answer.value_text}
-              {answer.period_label && <small> · {answer.period_label}</small>}
-            </p>
-            <p className="preview-scope">
-              {answer.scope_label || '기간·사업장 범위 미확인'}
-              {answer.comparison_label ? ` · ${answer.comparison_label}` : ''}
-            </p>
-            {answer.notices.length > 0 && (
-              <p className="preview-caution">{answer.notices.join(' ')}</p>
-            )}
-            {project.notes[answer.id]?.answer && (
-              <div className="preview-manual">
-                <span>
-                  직접 작성한 답변 · 확인 전
-                  {project.notes[answer.id].revision !== project.result_revision
-                    ? ' · 이전 분석 기록'
-                    : ''}
-                </span>
-                <p>{project.notes[answer.id].answer}</p>
-              </div>
-            )}
-            <button className="text-button" onClick={() => onSelect(answer.id)}>
-              답변과 근거 살펴보기
-              <ArrowUpRight />
+        <div className="download-actions">
+          {[
+            ['xlsx', 'Excel 내려받기'],
+            ['pdf', 'PDF 내려받기'],
+          ].map(([k, t]) => (
+            <button
+              className={k === 'xlsx' ? 'primary' : 'secondary'}
+              key={k}
+              disabled={
+                busy ||
+                project.stale ||
+                !project.result ||
+                ['queued', 'running'].includes(project.job.status)
+              }
+              onClick={() => onDownload(k as 'xlsx' | 'pdf')}
+            >
+              {t}
             </button>
-          </section>
-        ))}
+          ))}
+        </div>
       </div>
+      <div className="response-sheet">
+        <h2>{project.company_name} ESG 응답서</h2>
+        <p>
+          {project.year}년 · {project.framework} · 저장된 답변 기준
+        </p>
+        <div role="table" className="response-table" aria-label="응답서 미리보기">
+          <div role="row" className="response-head">
+            {['문항', '답변', '측정 범위 / 기준', '검토 상태', '근거'].map((h) => (
+              <span role="columnheader" key={h}>
+                {h}
+              </span>
+            ))}
+          </div>
+          {answers.slice(page * 10, page * 10 + 10).map((a) => (
+            <div role="row" key={a.id} className="response-row">
+              <div role="cell">
+                <small>{a.id}</small>
+                <button className="question-link" onClick={() => onReview(a.id)}>
+                  {a.question}
+                </button>
+              </div>
+              <div role="cell">
+                <strong>{a.value_text}</strong>
+                <small>{a.method}</small>
+              </div>
+              <div role="cell">{a.scope_label || '범위 미확인'}</div>
+              <div role="cell">
+                <Badge answer={a} />
+                <small>근거 판단: {a.status_label}</small>
+                {a.saved.memo && <small>{a.saved.memo}</small>}
+              </div>
+              <div role="cell">
+                {a.sources.map((s, i) => (
+                  <button className="source-link" key={i} onClick={() => onReview(a.id)}>
+                    {s.name}
+                    <small>
+                      {s.page !== null ? `${s.page + 1}쪽` : '페이지 미확인'} · 버전{' '}
+                      {s.version || 1}
+                    </small>
+                  </button>
+                ))}
+                {!a.sources.length && <span>연결된 근거 없음</span>}
+              </div>
+            </div>
+          ))}
+        </div>
+        <div className="pagination">
+          <span>
+            {page + 1} / {pages}
+          </span>
+          <button className="secondary" disabled={!page} onClick={() => setPage(page - 1)}>
+            이전
+          </button>
+          <button
+            className="secondary"
+            disabled={page + 1 >= pages}
+            onClick={() => setPage(page + 1)}
+          >
+            다음
+          </button>
+        </div>
+      </div>
+      <details className="more-details">
+        <summary>근거 판단과 확인 사유</summary>
+        {answers.map((a) => (
+          <p key={a.id}>
+            {a.id} · {a.status_label} · {a.why} · {a.notices.join(' · ')} · {a.saved.memo}
+          </p>
+        ))}
+      </details>
+      <button
+        className="text-button"
+        disabled={busy || project.stale || !project.result}
+        onClick={() => onDownload('bundle')}
+      >
+        응답서와 근거 묶음 내려받기
+      </button>
+      <p className="table-footnote">
+        검토 완료 표시는 담당자의 작업 진행 상태입니다. 근거의 사실성·충분성 판단을 대신하지
+        않습니다.
+      </p>
     </>
   );
 }

@@ -1,125 +1,185 @@
 import { expect, test } from '@playwright/test';
 import path from 'node:path';
-import { questionHelp } from '../src/questionHelp';
 
-test('plain explanations distinguish purchased energy from other indirect emissions', () => {
-  const scopeThree = questionHelp({ question: '기타 간접 배출 (Scope 3)', section: '환경' });
-  expect(scopeThree).toHaveLength(1);
-  expect(scopeThree[0]).toContain('구매·운송·제품 사용·폐기');
-  const combined = questionHelp({ question: 'Scope 1+2 배출량', section: '환경' });
-  expect(combined).toHaveLength(2);
-  expect(combined[0]).toContain('보일러·차량');
-  expect(combined[1]).toContain('구매한 전기·열');
-});
+const fixture = path.resolve('tests/fixtures/electricity.pdf');
+const nav = (page: any, name: string) =>
+  page
+    .getByRole('navigation', { name: '실사 응답 준비 단계' })
+    .getByRole('button', { name: new RegExp(name) });
 
-test('beginner can explore, compare evidence, save, resume and download', async ({
+test('save protection, saved values, review completion and real Excel/PDF downloads', async ({
   page,
 }, info) => {
   const errors: string[] = [];
-  page.on('pageerror', (error) => errors.push(error.message));
+  page.on('pageerror', (e) => errors.push(e.message));
   await page.goto('/');
-  await expect(page.getByRole('heading', { name: '실사 응답, 근거부터 차근차근.' })).toBeVisible();
-  await page.screenshot({ path: info.outputPath('01-welcome.png'), fullPage: true });
   await page.getByRole('button', { name: '예시로 먼저 둘러보기' }).click();
-  await expect(page.getByRole('heading', { name: '지금 확인할 내용' })).toBeVisible();
-  await page.screenshot({ path: info.outputPath('02-guided-project.png'), fullPage: true });
+  await expect(page.getByRole('table', { name: '실사 응답 목록' })).toBeVisible();
+  await page.screenshot({ path: info.outputPath('review-list.png'), fullPage: true });
+  await page.getByLabel('문항 검색').fill('폐기물');
   await page
     .getByRole('button', { name: '폐기물 중 재활용하는 비율은 얼마인가요? 살펴보기' })
     .click();
-  await expect(page.getByText('두 값의 기간과 범위를 먼저 확인해야 합니다.')).toBeVisible();
-  await expect(page.getByText('2026년 · 추정', { exact: false }).first()).toBeVisible();
-  await page.getByText('이 질문은 어떤 뜻인가요?', { exact: true }).click();
-  await expect(
-    page.getByText('비율만 보지 말고, 전체 양과 재활용한 양이 같은 기간·범위인지', {
-      exact: false,
-    }),
-  ).toBeVisible();
-  await page.getByText('회사가 직접 적은 답변 보기', { exact: true }).click();
-  await expect(page.getByText('재활용률 92%', { exact: true })).toBeVisible();
-  await page.getByLabel('확인한 내용 메모').fill('회계팀에 원본 처리 내역 요청하기');
-  await page.getByRole('button', { name: '작성 내용 저장' }).click();
-  await expect(page.getByText('저장됨 · 확인 상태는 유지돼요.')).toBeVisible();
-  await expect(page.getByLabel('답변 검토').getByText('확인 필요', { exact: true })).toBeVisible();
-  await page.screenshot({ path: info.outputPath('03-answer-evidence.png'), fullPage: true });
+  await page.getByLabel('답변', { exact: true }).fill('30.25');
+  await page
+    .getByLabel('측정 범위', { exact: true })
+    .fill('2026년 4월 · 김해 제1공장 · 위탁 폐기물');
+  await page.getByLabel('검토 메모').fill('연간 자료 추가 확인 필요');
+  await page.getByLabel('수정 이유').fill('원문 값과 적용 범위 확인');
+  await nav(page, '응답서').click();
+  await expect(page.getByRole('dialog')).toBeVisible();
+  await page.getByRole('button', { name: '계속 작성' }).click();
+  await expect(page.getByLabel('답변', { exact: true })).toHaveValue('30.25');
+  await page.getByRole('button', { name: '문항 목록', exact: true }).click();
+  await page.getByRole('button', { name: '저장하고 이동' }).click();
+  await expect(page.getByLabel('문항 검색')).toHaveValue('폐기물');
+  await expect(page.getByRole('table', { name: '실사 응답 목록' })).toContainText('30.25 %');
+  await expect(nav(page, '답변 검토')).toContainText('0 / 3 검토 완료');
+  await page
+    .getByRole('button', { name: '폐기물 중 재활용하는 비율은 얼마인가요? 살펴보기' })
+    .click();
+  await page.screenshot({ path: info.outputPath('review-detail.png'), fullPage: true });
+  await page.getByLabel('답변', { exact: true }).fill('99');
+  await nav(page, '응답서').click();
+  await page.getByRole('button', { name: '수정 버리고 이동' }).click();
+  await expect(page.getByRole('table', { name: '응답서 미리보기' })).toContainText('30.25 %');
+  await expect(page.getByRole('table', { name: '응답서 미리보기' })).toContainText(
+    '연간 자료 추가 확인 필요',
+  );
+  await page.screenshot({ path: info.outputPath('response-sheet.png'), fullPage: true });
+  for (const [kind, label] of [
+    ['xlsx', 'Excel 내려받기'],
+    ['pdf', 'PDF 내려받기'],
+  ]) {
+    const waiting = page.waitForEvent('download');
+    await page.getByRole('button', { name: label }).click();
+    const download = await waiting;
+    expect(download.suggestedFilename()).toMatch(new RegExp(`\\.${kind}$`));
+    await download.saveAs(info.outputPath(`response.${kind}`));
+  }
+  await page
+    .getByRole('button', { name: '폐기물 중 재활용하는 비율은 얼마인가요?', exact: true })
+    .click();
+  await page.getByRole('button', { name: '검토 완료 후 다음' }).click();
+  await expect(nav(page, '답변 검토')).toContainText('1 / 3 검토 완료');
   await page.reload();
-  await page
-    .getByRole('button', { name: '폐기물 중 재활용하는 비율은 얼마인가요? 살펴보기' })
-    .click();
-  await expect(page.getByLabel('확인한 내용 메모')).toHaveValue('회계팀에 원본 처리 내역 요청하기');
-  await page.getByRole('button', { name: '확인할 내용', exact: true }).click();
-  await page
-    .getByRole('button', { name: '윤리 규정과 운영 내용을 설명해 주세요. 살펴보기' })
-    .click();
-  await expect(page.getByText('아직 확인하지 못했어요', { exact: true })).toBeVisible();
-  await page.getByLabel('직접 작성한 답변').fill('분기별로 직원 윤리 교육을 진행합니다.');
-  await page.getByRole('button', { name: '작성 내용 저장' }).click();
-  await expect(page.getByText('저장됨 · 확인 상태는 유지돼요.')).toBeVisible();
-  await page
-    .getByRole('navigation', { name: '실사 응답 준비 단계' })
-    .getByRole('button', { name: /응답서 받기/ })
-    .click();
-  await expect(
-    page.getByText('분기별로 직원 윤리 교육을 진행합니다.', { exact: true }),
-  ).toBeVisible();
-  const download = page.waitForEvent('download');
-  await page.getByRole('button', { name: '응답서 Excel 받기' }).click();
-  expect((await download).suggestedFilename()).toMatch(/사용법 예시.*\.xlsx$/);
+  await expect(page.getByRole('table', { name: '실사 응답 목록' })).toContainText('30.25 %');
   expect(errors).toEqual([]);
 });
 
-test('new company uploads familiar files and receives actionable errors', async ({ page }) => {
-  await page.goto('/');
-  await page.getByRole('button', { name: '우리 회사로 시작하기' }).click();
-  await page.getByLabel('회사명', { exact: true }).fill('처음 사용하는 회사');
-  await page.getByRole('button', { name: '서류 올리러 가기' }).click();
-  await expect(page.getByRole('heading', { name: '지금 가지고 있는 서류부터' })).toBeVisible();
-  await page
-    .locator('input[type=file]')
-    .setInputFiles(path.resolve('tests/fixtures/electricity.pdf'));
-  await expect(page.getByText('electricity.pdf', { exact: true })).toBeVisible();
-  await expect(page.getByLabel('electricity.pdf 자료 종류')).toHaveValue('evidence');
-  await page.getByLabel('electricity.pdf 자료 종류').selectOption('company_answer');
-  await page.reload();
-  await expect(page.getByLabel('electricity.pdf 자료 종류')).toHaveValue('company_answer');
-  await page.locator('input[type=file]').setInputFiles({
-    name: 'broken.pdf',
-    mimeType: 'application/pdf',
-    buffer: Buffer.from('not a document'),
-  });
-  await expect(page.getByRole('alert')).toContainText('파일을 읽을 수 없어요.');
-  await expect(page.getByRole('button', { name: '서류를 읽고 답변 준비하기' })).toBeDisabled();
-  await expect(
-    page.getByText('분석 연결이 아직 준비되지 않았어요.', { exact: false }),
-  ).toBeVisible();
-  await page.getByRole('button', { name: 'electricity.pdf 목록에서 빼기' }).click();
-  await expect(page.getByText('electricity.pdf', { exact: true })).toHaveCount(0);
-});
-
-test('mobile and keyboard users can reach help and review without sideways scrolling', async ({
+test('upload → analysis → save → replace → reanalysis preserves old originals and other completion', async ({
   page,
 }, info) => {
-  await page.setViewportSize({ width: 375, height: 850 });
   await page.goto('/');
-  await page.getByText('쉬운 설명', { exact: true }).click();
-  await expect(page.getByText('실사 응답서가 뭔가요?')).toBeVisible();
-  await page.getByText('쉬운 설명', { exact: true }).click();
-  await page.getByRole('button', { name: '예시로 먼저 둘러보기' }).click();
-  await expect(page.getByRole('heading', { name: '지금 확인할 내용' })).toBeVisible();
-  expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(
-    true,
+  await page.getByRole('button', { name: '우리 회사로 시작하기' }).click();
+  await page.getByLabel('회사명', { exact: true }).fill('실제 PDF 흐름 검증 회사');
+  await page.getByRole('button', { name: '서류 올리러 가기' }).click();
+  await page.getByLabel('자료 파일 추가').setInputFiles([
+    {
+      name: 'electricity.pdf',
+      mimeType: 'application/pdf',
+      buffer: await (await import('node:fs/promises')).readFile(fixture),
+    },
+    {
+      name: 'other.pdf',
+      mimeType: 'application/pdf',
+      buffer: await (await import('node:fs/promises')).readFile(fixture),
+    },
+  ]);
+  await expect(page.getByRole('table', { name: '자료 목록' })).toContainText('other.pdf');
+  await page.screenshot({ path: info.outputPath('documents.png'), fullPage: true });
+  await page.getByRole('button', { name: '분석 시작', exact: true }).click();
+  await expect(page.getByRole('table', { name: '실사 응답 목록' })).toBeVisible();
+  await page.getByRole('button', { name: 'electricity.pdf 살펴보기', exact: true }).click();
+  await expect(page.getByRole('img', { name: 'electricity.pdf 1쪽 원문' })).toBeVisible();
+  await page.getByLabel('답변', { exact: true }).fill('140000');
+  await page.getByLabel('수정 이유').fill('담당자 집계로 수정');
+  await page.getByRole('button', { name: '검토 완료 후 다음' }).click();
+  await page.getByRole('button', { name: '검토 완료 후 다음' }).click();
+  await expect(nav(page, '답변 검토')).toContainText('2 / 2 검토 완료');
+  await nav(page, '자료 준비').click();
+  await page.getByLabel('electricity.pdf 파일 교체').setInputFiles(fixture);
+  await expect(page.getByRole('status').filter({ hasText: '서류나 회사 정보' })).toBeVisible();
+  await nav(page, '응답서').click();
+  await expect(page.getByRole('button', { name: 'Excel 내려받기' })).toBeDisabled();
+  await expect(nav(page, '답변 검토')).toContainText('1 / 2 검토 완료');
+  await nav(page, '자료 준비').click();
+  await page.getByRole('button', { name: '재분석', exact: true }).click();
+  await expect(page.getByRole('table', { name: '실사 응답 목록' })).toBeVisible();
+  await expect(page.getByRole('table', { name: '실사 응답 목록' })).toContainText('140000 kWh');
+  await page.getByRole('button', { name: 'electricity.pdf 살펴보기', exact: true }).click();
+  await expect(page.getByText('이전 원본', { exact: false })).toBeVisible();
+  await expect(page.getByRole('img', { name: 'electricity.pdf 1쪽 원문' })).toBeVisible();
+  await page.getByLabel('새 근거 선택').selectOption('automatic');
+  await expect(page.getByLabel('답변', { exact: true })).toHaveValue('140000');
+  await page.getByRole('button', { name: '이 값과 근거 적용' }).click();
+  await expect(page.getByLabel('답변', { exact: true })).toHaveValue('142,560');
+  await page.getByRole('button', { name: '검토 완료 후 다음' }).click();
+  await expect(nav(page, '답변 검토')).toContainText('2 / 2 검토 완료');
+  await nav(page, '자료 준비').click();
+  await page.getByLabel('자료 파일 추가').setInputFiles({
+    name: 'broken.pdf',
+    mimeType: 'application/pdf',
+    buffer: Buffer.from('broken'),
+  });
+  await expect(page.getByRole('table', { name: '자료 목록' })).toContainText(
+    '파일을 읽을 수 없어요.',
   );
-  await page.screenshot({ path: info.outputPath('04-mobile-project.png'), fullPage: true });
+  await expect(page.getByLabel('broken.pdf 파일 교체')).toBeEnabled();
+});
+
+test('many long file names, filters, pages and narrow windows remain readable', async ({
+  page,
+  request,
+}, info) => {
+  const headers = { 'X-ESGenie-Client': 'workspace' };
+  const companyName = `많은 문항 검증 회사 ${Date.now()}`;
+  const p = await (
+    await request.post('/api/projects', {
+      headers,
+      data: { company_name: companyName, year: 2026 },
+    })
+  ).json();
+  const data = await (await import('node:fs/promises')).readFile(fixture);
+  for (let i = 1; i <= 23; i++) {
+    await request.post(`/api/projects/${p.id}/documents`, {
+      headers,
+      multipart: {
+        file: {
+          name: `매우_긴_파일명_사업장별_전력사용량_월별집계_증빙문서_${i}.pdf`,
+          mimeType: 'application/pdf',
+          buffer: data,
+        },
+      },
+    });
+  }
+  await request.post(`/api/projects/${p.id}/analysis`, { headers });
+  await page.goto('/');
+  await page.getByRole('button', { name: new RegExp(companyName) }).click();
+  await expect(page.getByRole('table', { name: '실사 응답 목록' })).toBeVisible();
+  await page.getByRole('button', { name: '다음', exact: true }).click();
   await page
-    .getByRole('button', { name: '폐기물 중 재활용하는 비율은 얼마인가요? 살펴보기' })
+    .getByRole('button', { name: /살펴보기/ })
+    .first()
     .click();
-  await page.setViewportSize({ width: 320, height: 800 });
-  await expect(page.getByLabel('답변과 연결된 자료')).toBeVisible();
-  expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(
-    true,
-  );
-  await page.screenshot({ path: info.outputPath('05-small-review.png'), fullPage: true });
-  await page.keyboard.press('Control+Home');
-  await page.getByRole('button', { name: '확인할 내용', exact: true }).focus();
-  await page.keyboard.press('Enter');
-  await expect(page.getByRole('heading', { name: '지금 확인할 내용' })).toBeVisible();
+  await page.getByRole('button', { name: '문항 목록', exact: true }).click();
+  await expect(page.getByText('11–20 / 23문항')).toBeVisible();
+  for (const width of [1440, 1024, 768, 375, 320]) {
+    await page.setViewportSize({ width, height: 950 });
+    expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(
+      true,
+    );
+    await page.screenshot({ path: info.outputPath(`list-${width}.png`), fullPage: true });
+  }
+  await page
+    .getByRole('button', { name: /살펴보기/ })
+    .first()
+    .click();
+  for (const width of [1440, 1024, 768, 375, 320]) {
+    await page.setViewportSize({ width, height: 950 });
+    expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(
+      true,
+    );
+    await page.screenshot({ path: info.outputPath(`detail-${width}.png`), fullPage: true });
+  }
 });

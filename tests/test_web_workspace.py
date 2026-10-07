@@ -14,7 +14,7 @@ import pytest
 
 from esgenie.web.app import create_app
 from esgenie.web.demo import populate_example
-from esgenie.web.presenter import present_sheet
+from esgenie.web.presenter import present_sheet, presented_answers
 
 HEADERS = {"X-ESGenie-Client": "workspace"}
 COMPANY = {"company_name": "테스트 회사", "year": 2026, "industry": "금속가공", "framework": "rba42"}
@@ -73,10 +73,11 @@ def test_upload_preview_roles_and_project_isolation(client):
     revised = client.patch(f"/api/projects/{pid}/documents/{doc['id']}", json={"role": "company_answer"}).json()
     assert revised["documents"][0]["role"] == "company_answer"
     assert client.delete(f"/api/projects/{pid}/documents/{doc['id']}").status_code == 200
-    assert client.get(f"/api/projects/{pid}/documents/{doc['id']}/original").status_code == 404
+    assert client.get(f"/api/projects/{pid}/documents/{doc['id']}/original").status_code == 200
+    assert not client.get(f"/api/projects/{pid}").json()["documents"][0]["included"]
 
 
-@pytest.mark.parametrize("filename,data", [("../escape.pdf", b"x"), ("bad.txt", b"text"), ("bad.pdf", b"not a pdf"), ("..\\escape.pdf", b"x")])
+@pytest.mark.parametrize("filename,data", [("../escape.pdf", b"x"), ("bad.txt", b"text"), ("..\\escape.pdf", b"x")])
 def test_invalid_files_do_not_enter_project(client, filename, data):
     pid = create(client)
     response = client.post(f"/api/projects/{pid}/documents", files={"file": (filename, data)})
@@ -114,7 +115,8 @@ def test_processing_locks_inputs_and_failures_preserve_previous_result(tmp_path)
         result = wait_for_analysis(client, pid)
         assert len(calls) == 1 and result["job"]["status"] == "failed"
         assert "private diagnostic" not in json.dumps(result)
-        assert result["result"]["answers"] == previous_result["answers"]
+        assert client.app.state.store.read(pid)["result"] == previous_result
+        assert [a["value_text"] for a in result["result"]["answers"]] == [a["value_text"] for a in presented_answers(stored)]
 
 
 def test_analysis_stale_export_blocking_and_note_versions(client):
@@ -128,7 +130,9 @@ def test_analysis_stale_export_blocking_and_note_versions(client):
     assert saved["result"]["answers"][0]["original_status"] == "flagged"
     assert saved["notes"][qid]["revision"] == saved["result_revision"]
     stale = client.patch(f"/api/projects/{pid}", json={**COMPANY, "year": 2025}).json()
-    assert stale["stale"] and stale["result"] == saved["result"]
+    assert stale["stale"]
+    assert [a["saved"] for a in stale["result"]["answers"]] == [a["saved"] for a in saved["result"]["answers"]]
+    assert all(a["review_status"] == "again" for a in stale["result"]["answers"])
     assert client.get(f"/api/projects/{pid}/download/xlsx").status_code == 409
     assert client.put(f"/api/projects/{pid}/notes/{qid}", json={"text": "outdated"}).status_code == 409
     client.post(f"/api/projects/{pid}/analysis")
@@ -147,7 +151,7 @@ def test_restart_restores_manual_answers_without_promoting_trust(tmp_path):
         assert restored["notes"]["example-governance"]["answer"] == "월별 점검"
         answer = restored["result"]["answers"][-1]
         assert answer["original_status"] == "hitl_required"
-        assert answer["value_text"] == "아직 확인하지 못했어요"
+        assert answer["value_text"] == "월별 점검"
 
 
 def test_bundle_preserves_limitations_and_separates_human_content(client):

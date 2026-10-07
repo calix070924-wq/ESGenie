@@ -1,14 +1,5 @@
-import {
-  ArrowDownToLine,
-  ArrowUpRight,
-  FileCheck2,
-  FolderOpen,
-  LayoutGrid,
-  Plus,
-  Sprout,
-} from 'lucide-react';
+import { Plus, Sprout } from 'lucide-react';
 import type { Project } from './types';
-
 export function WorkspaceNav({
   project,
   step,
@@ -17,7 +8,6 @@ export function WorkspaceNav({
   onHome,
   onCreate,
   onGo,
-  onExample,
 }: {
   project: Project | null;
   step: number;
@@ -26,74 +16,54 @@ export function WorkspaceNav({
   onHome: () => void;
   onCreate: () => void;
   onGo: (step: number) => void;
-  onExample: () => void;
 }) {
+  const answers = project?.result?.answers || [];
+  const done = answers.filter((a) => a.review_status === 'complete').length;
   return (
     <aside className="sidebar" aria-label="작업 공간 탐색">
       <button className="brand" onClick={onHome} disabled={busy} aria-label="ESGenie 시작 화면">
-        <span className="brand-mark">
-          <Sprout />
-        </span>
-        esgenie<span className="brand-dot">.</span>
+        <Sprout />
+        ESGenie
       </button>
-      <div className="workspace-label">공급업체 워크스페이스</div>
-      <button className="new-project" onClick={onCreate} disabled={busy}>
-        <Plus />새 응답 작업
-      </button>
-      <nav className="side-nav">
-        <button
-          aria-current={!project && !creating ? 'page' : undefined}
-          onClick={onHome}
-          disabled={busy}
-        >
-          <LayoutGrid />
-          작업 홈
-        </button>
-        {project && (
-          <>
-            <div className="nav-section">현재 작업</div>
-            {[
-              [FolderOpen, '자료 보관함'],
-              [FileCheck2, '답변 검토'],
-              [ArrowDownToLine, '응답서 받기'],
-            ].map(([Icon, label], i) => {
-              const NavIcon = Icon as typeof FolderOpen;
-              return (
-                <button
-                  key={String(label)}
-                  aria-current={!creating && step === i + 1 ? 'page' : undefined}
-                  disabled={busy || (i > 0 && !project.result)}
-                  onClick={() => onGo(i + 1)}
-                >
-                  <NavIcon />
-                  {String(label)}
-                  {i === 1 && project.result && (
-                    <span className="nav-count">
-                      {project.result.answers.filter((a) => a.needs_attention).length}
-                    </span>
-                  )}
-                </button>
-              );
-            })}
-          </>
-        )}
+      <p className="workspace-label">ESG 응답 작업</p>
+      <nav className="side-nav" aria-label="실사 응답 준비 단계">
+        {['자료 준비', '답변 검토', '응답서'].map((label, i) => (
+          <button
+            key={label}
+            aria-current={project && !creating && step === i + 1 ? 'step' : undefined}
+            disabled={busy || !project}
+            onClick={() => onGo(i + 1)}
+          >
+            <span className="nav-number">0{i + 1}</span>
+            <span>
+              {label}
+              <small>
+                {i === 0
+                  ? project?.stale
+                    ? '자료 변경 · 재분석 필요'
+                    : project?.job.status === 'complete'
+                      ? '분석 완료'
+                      : project?.job.status === 'failed'
+                        ? '분석 실패'
+                        : '자료를 준비하세요'
+                  : i === 1
+                    ? `${done} / ${answers.length} 검토 완료`
+                    : project?.stale
+                      ? '이전 결과 · 내려받기 제한'
+                      : '저장된 답변 기준'}
+              </small>
+            </span>
+          </button>
+        ))}
       </nav>
       <div className="sidebar-bottom">
-        <div className="sidebar-note">
-          <span className="small-caps">EVIDENCE BEFORE ANSWERS</span>
-          <p>
-            답변의 시작은,
-            <br />
-            우리 회사의 근거에서.
-          </p>
-          <button onClick={onExample} disabled={busy}>
-            예시로 살펴보기
-            <ArrowUpRight />
-          </button>
-        </div>
-        <div className="local-indicator">
-          <span />이 컴퓨터에 작업 저장
-        </div>
+        <button className="secondary" onClick={onCreate} disabled={busy}>
+          <Plus />새 응답 작업
+        </button>
+        <button className="text-button" onClick={onHome} disabled={busy}>
+          저장한 작업
+        </button>
+        <p>이 컴퓨터에 작업 저장</p>
       </div>
     </aside>
   );

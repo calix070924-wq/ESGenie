@@ -44,12 +44,37 @@ class Company(BaseModel):
 
 
 class DocumentRole(BaseModel):
-    role: Literal["evidence", "company_answer"]
+    role: Literal["evidence", "company_answer"] | None = None
+    included: bool | None = None
 
 
 class Note(BaseModel):
     text: str = Field(default="", max_length=5000)
     answer: str = Field(default="", max_length=5000)
+
+
+class SourceSelection(BaseModel):
+    model_config = {"extra": "allow"}
+    name: str = Field(max_length=160)
+    document_id: str | None = None
+    version: int | None = None
+    page: int | None = Field(default=None, ge=0, le=199)
+    quote: str = Field(default="", max_length=100000)
+    manual: bool = False
+
+
+class ReviewValues(BaseModel):
+    answer: str = Field(default="", max_length=5000)
+    unit: str = Field(default="", max_length=100)
+    scope: str = Field(default="", max_length=2000)
+    memo: str = Field(default="", max_length=5000)
+    reason: str = Field(default="", max_length=2000)
+    sources: list[SourceSelection] = Field(default_factory=list, max_length=100)
+
+
+class ReviewSave(BaseModel):
+    values: ReviewValues
+    complete: bool = False
 
 
 def create_app(*, data_root: Path | None = None, runner=None, available=None, static_dir: Path | None = None) -> FastAPI:
@@ -117,53 +142,81 @@ def create_app(*, data_root: Path | None = None, runner=None, available=None, st
     def patch(project_id: str, company: Company):
         return public_project(store.patch(project_id, company.model_dump()))
 
-    @app.post("/api/projects/{project_id}/documents", status_code=201)
-    def upload(project_id: str, file: UploadFile = File()):
+    def upload_document(project_id: str, file: UploadFile, document_id: str | None = None):
+        from copy import deepcopy
+        from .review import affected_by_document, invalidate
         name = file.filename or ""
         if len(name) > 160 or name in {"", ".", ".."} or re.search(r'[\\/\x00-\x1f]', name) or name.startswith("."):
             raise WorkspaceError("파일 이름에 사용할 수 없는 문자가 있어요. 이름을 바꿔 올려 주세요.")
         if Path(name).suffix.lower() not in {".pdf", ".png", ".jpg", ".jpeg"}:
             raise WorkspaceError("PDF 또는 사진 파일(PNG, JPG)을 올려 주세요.")
         data = file.file.read(MAX_FILE + 1)
-        if len(data) > MAX_FILE:
-            raise WorkspaceError("파일 한 개는 20MB까지 올릴 수 있어요.", 413)
+        if not data or len(data) > MAX_FILE:
+            raise WorkspaceError("빈 파일은 올릴 수 없으며 파일 한 개는 20MB까지 올릴 수 있어요.", 413)
+        pages, error = 0, ""
         try:
             import fitz
             with fitz.open(stream=data, filetype=Path(name).suffix[1:]) as doc:
-                if doc.needs_pass or not 1 <= doc.page_count <= 200:
-                    raise ValueError("encrypted or too many pages")
-                pages = doc.page_count
+                if doc.needs_pass:
+                    error = "암호가 설정된 파일입니다. 암호를 해제한 원본으로 교체해 주세요."
+                elif not 1 <= doc.page_count <= 200:
+                    error = "파일은 1~200쪽까지 처리할 수 있습니다. 파일을 나누어 교체해 주세요."
+                else:
+                    pages = doc.page_count
         except Exception:
-            raise WorkspaceError("파일을 읽을 수 없어요. 암호를 해제하거나 잘 열리는 PDF·사진으로 다시 올려 주세요.") from None
+            error = "파일을 읽을 수 없어요. 잘 열리는 PDF·사진으로 교체해 주세요."
         with store.lock:
             current = store.read(project_id)
             store.editable(current)
-            if len(current["documents"]) >= 20 or sum(d["size"] for d in current["documents"]) + len(data) > MAX_PROJECT:
-                raise WorkspaceError("한 작업에는 최대 20개, 합계 100MB까지 올릴 수 있어요.", 413)
-            if any(d["name"].casefold() == name.casefold() for d in current["documents"]):
-                raise WorkspaceError("같은 이름의 자료가 있어요. 기존 자료를 빼거나 파일 이름을 바꿔 주세요.", 409)
-            document_id = uuid4().hex
-            path = store.directory(project_id) / "uploads" / document_id / name
+            if current.get("result") and "documents" not in current["result"]:
+                current["result"]["documents"] = deepcopy(current["documents"])
+            previous = next((d for d in current["documents"] if d["id"] == document_id), None)
+            if document_id and not previous:
+                raise WorkspaceError("교체할 자료를 찾지 못했어요.", 404)
+            total = sum(d["size"] + sum(v.get("size", 0) for v in d.get("versions", [])) for d in current["documents"])
+            if (not previous and len(current["documents"]) >= 200) or total + len(data) > MAX_PROJECT:
+                raise WorkspaceError("한 작업은 최대 200개, 이전 원본을 포함해 합계 100MB까지 보관할 수 있어요.", 413)
+            if any(d["id"] != document_id and d["name"].casefold() == name.casefold() for d in current["documents"]):
+                raise WorkspaceError("같은 이름의 자료가 있어요. 해당 행에서 교체하거나 이름을 바꿔 주세요.", 409)
+            identity = document_id or uuid4().hex
+            version = previous.get("version", 1) + 1 if previous else 1
+            relative = Path("uploads") / identity / str(version) / name
+            path = store.directory(project_id) / relative
             path.parent.mkdir(parents=True)
             path.write_bytes(data)
             from esgenie.supplychain import is_saq_upload
-            role = "company_answer" if is_saq_upload(str(path), file_name=name) else "evidence"
-            current["documents"].append({"id": document_id, "name": name, "role": role, "size": len(data), "pages": pages, "example": False})
+            role = previous["role"] if previous else "company_answer" if not error and is_saq_upload(str(path), file_name=name) else "evidence"
+            document = {"id": identity, "name": name, "role": role, "included": previous.get("included", True) if previous else True,
+                        "size": len(data), "pages": pages, "example": False, "error": error, "version": version, "path": str(relative)}
+            if previous:
+                invalidate(current, affected_by_document(current, previous))
+                document["versions"] = previous.get("versions", []) + [{k: deepcopy(v) for k, v in previous.items() if k != "versions"}]
+                current["documents"][current["documents"].index(previous)] = document
+            else:
+                current["documents"].append(document)
             current["input_revision"] += 1
             store.save(current)
             return public_project(current)
 
+    @app.post("/api/projects/{project_id}/documents", status_code=201)
+    def upload(project_id: str, file: UploadFile = File()):
+        return upload_document(project_id, file)
+
+    @app.post("/api/projects/{project_id}/documents/{document_id}/replace")
+    def replace(project_id: str, document_id: str, file: UploadFile = File()):
+        return upload_document(project_id, file, document_id)
+
     @app.patch("/api/projects/{project_id}/documents/{document_id}")
     def role(project_id: str, document_id: str, value: DocumentRole):
-        return public_project(store.change_document(project_id, document_id, value.role))
+        return public_project(store.change_document(project_id, document_id, value.role, value.included))
 
     @app.delete("/api/projects/{project_id}/documents/{document_id}")
     def remove(project_id: str, document_id: str):
         return public_project(store.change_document(project_id, document_id, None))
 
     @app.get("/api/projects/{project_id}/documents/{document_id}/pages/{page}")
-    def page_image(project_id: str, document_id: str, page: int):
-        document, path = store.document_path(store.read(project_id), document_id)
+    def page_image(project_id: str, document_id: str, page: int, version: int | None = None):
+        document, path = store.document_path(store.read(project_id), document_id, version)
         if not 0 <= page < document["pages"]:
             raise WorkspaceError("해당 페이지가 없어요.", 404)
         import fitz
@@ -176,8 +229,8 @@ def create_app(*, data_root: Path | None = None, runner=None, available=None, st
             raise WorkspaceError("이 페이지를 표시하지 못했어요. 원본 파일을 확인해 주세요.", 422) from None
 
     @app.get("/api/projects/{project_id}/documents/{document_id}/original")
-    def original(project_id: str, document_id: str):
-        document, path = store.document_path(store.read(project_id), document_id)
+    def original(project_id: str, document_id: str, version: int | None = None):
+        document, path = store.document_path(store.read(project_id), document_id, version)
         return FileResponse(path, filename=document["name"], content_disposition_type="attachment")
 
     @app.post("/api/projects/{project_id}/analysis", status_code=202)
@@ -190,8 +243,12 @@ def create_app(*, data_root: Path | None = None, runner=None, available=None, st
     def note(project_id: str, question_id: str, value: Note):
         return public_project(store.save_note(project_id, question_id, value.model_dump()))
 
+    @app.put("/api/projects/{project_id}/reviews/{question_id}")
+    def review(project_id: str, question_id: str, value: ReviewSave):
+        return public_project(store.save_review(project_id, question_id, value.values.model_dump(), value.complete))
+
     @app.get("/api/projects/{project_id}/download/{kind}")
-    def download(project_id: str, kind: Literal["xlsx", "bundle"]):
+    def download(project_id: str, kind: Literal["xlsx", "pdf", "bundle"]):
         current = store.read(project_id)
         try:
             content, name, media_type = build_download(current, store.directory(project_id), kind)

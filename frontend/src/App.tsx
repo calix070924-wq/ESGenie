@@ -11,17 +11,16 @@ import {
   Files,
   FolderOpen,
   LoaderCircle,
-  NotebookPen,
   Plus,
   ShieldCheck,
   Sparkles,
-  UploadCloud,
   X,
 } from 'lucide-react';
 import { api, download, lastProject, rememberProject } from './api';
-import type { Company, Config, Project, ProjectSummary } from './types';
+import type { Company, Config, ListState, Project, ProjectSummary, ReviewValues } from './types';
 import { Review, AnswerList, Submission } from './Review';
 import { WorkspaceNav } from './WorkspaceNav';
+import { Documents } from './Documents';
 
 export default function App() {
   const [config, setConfig] = useState<Config | null>(null);
@@ -34,6 +33,44 @@ export default function App() {
   const [booting, setBooting] = useState(true);
   const [error, setError] = useState('');
   const [message, setMessage] = useState('');
+  const [listState, setListState] = useState<ListState>({
+    filter: 'all',
+    search: '',
+    section: 'all',
+    page: 0,
+  });
+  const [dirty, setDirty] = useState(false);
+  const draft = useRef({ dirty: false, save: async () => {}, discard: () => {} });
+  const [pending, setPending] = useState<(() => void) | null>(null);
+  const navigate = (action: () => void) => {
+    if (draft.current.dirty) setPending(() => action);
+    else action();
+  };
+  async function saveReview(id: string, values: ReviewValues, complete = false) {
+    if (!project) return;
+    setBusy(true);
+    setError('');
+    try {
+      accept(
+        await api<Project>(`/projects/${project.id}/reviews/${encodeURIComponent(id)}`, 'PUT', {
+          values,
+          complete,
+        }),
+      );
+      draft.current.dirty = false;
+      setMessage(
+        complete
+          ? '담당자 검토를 완료했습니다.'
+          : '답변을 저장했습니다. 검토 완료는 별도 동작입니다.',
+      );
+    } catch (err) {
+      setError((err as Error).message);
+      throw err;
+    } finally {
+      setBusy(false);
+    }
+  }
+
   const processing = project?.job.status === 'queued' || project?.job.status === 'running';
 
   const accept = (value: Project) => {
@@ -133,7 +170,7 @@ export default function App() {
     act(async () => {
       if (project) accept(await api<Project>(`/projects/${project.id}/analysis`, 'POST'));
     });
-  const exportFile = (kind: 'xlsx' | 'bundle') =>
+  const exportFile = (kind: 'xlsx' | 'pdf' | 'bundle') =>
     act(async () => {
       if (project) {
         await download(project.id, kind);
@@ -144,10 +181,6 @@ export default function App() {
     setStep(next);
     setSelected(null);
     setMessage('');
-  };
-  const updateProject = (next: Project) => {
-    accept(next);
-    setMessage('저장했어요. 확인 상태는 그대로 유지됩니다.');
   };
 
   return (
@@ -160,33 +193,83 @@ export default function App() {
         step={step}
         busy={busy || !!processing}
         creating={creating}
-        onHome={home}
-        onCreate={() => {
-          setCreating(true);
-          setSelected(null);
-        }}
-        onGo={(next) => {
-          setCreating(false);
-          go(next);
-        }}
-        onExample={startExample}
+        onHome={() => navigate(home)}
+        onCreate={() =>
+          navigate(() => {
+            setCreating(true);
+            setSelected(null);
+          })
+        }
+        onGo={(next) =>
+          navigate(() => {
+            setCreating(false);
+            go(next);
+          })
+        }
       />
+      {pending && (
+        <div className="modal-backdrop">
+          <section
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="unsaved-title"
+            className="unsaved-dialog"
+          >
+            <h2 id="unsaved-title">저장하지 않은 수정이 있습니다</h2>
+            <p>이동하기 전에 수정 내용을 어떻게 처리할지 선택하세요.</p>
+            <div>
+              <button
+                className="primary"
+                disabled={busy}
+                onClick={async () => {
+                  try {
+                    await draft.current.save();
+                    const move = pending;
+                    setPending(null);
+                    move();
+                  } catch {}
+                }}
+              >
+                저장하고 이동
+              </button>
+              <button
+                className="secondary"
+                disabled={busy}
+                onClick={() => {
+                  draft.current.discard();
+                  draft.current.dirty = false;
+                  const move = pending;
+                  setPending(null);
+                  move();
+                }}
+              >
+                수정 버리고 이동
+              </button>
+              <button className="text-button" onClick={() => setPending(null)}>
+                계속 작성
+              </button>
+            </div>
+          </section>
+        </div>
+      )}
       <div className="main-shell">
         <header className="appbar">
-          <div className="breadcrumb">
-            <span>워크스페이스</span>
-            <span>/</span>
+          <div className="context-info">
             <strong>
-              {creating ? '새 응답 작업' : project ? project.company_name : '작업 홈'}
+              {creating ? '새 응답 작업' : project?.company_name || 'ESGenie 작업 홈'}
             </strong>
+            {project && (
+              <span>
+                {project.year}년 ·{' '}
+                {config?.frameworks.find((f) => f.key === project.framework)?.label ||
+                  project.framework}
+              </span>
+            )}
           </div>
-          <div className="appbar-actions">
-            <span className="private-label">
-              <ShieldCheck />
-              고객사 자동 전송 없음
-            </span>
-            <Help />
-          </div>
+          <Help />
+          <span className="save-status">
+            {dirty ? '현재 문항 · 저장하지 않음' : '저장된 답변 기준'}
+          </span>
         </header>
         <main id="main-content" className={`page ${selected ? 'page-review' : ''}`}>
           {error && (
@@ -246,7 +329,7 @@ export default function App() {
                     <strong>사용법 예시</strong> · 대표 질문 3개를 살펴보는 화면이에요. 실제 회사
                     분석 결과가 아니에요.
                   </span>
-                  <button className="text-button" onClick={() => setCreating(true)}>
+                  <button className="text-button" onClick={() => navigate(() => setCreating(true))}>
                     내 회사로 시작
                     <ArrowRight />
                   </button>
@@ -254,45 +337,31 @@ export default function App() {
               )}
               <div className="project-heading">
                 <div>
-                  <p className="eyebrow">
-                    {project.year} · {project.industry} · 실사 응답 준비
-                  </p>
                   <h1>
                     {step === 1
-                      ? '답변의 근거를 모으세요.'
+                      ? '자료 준비'
                       : step === 3
-                        ? '검토한 내용을 한 묶음으로.'
-                        : '제출 전, 확인할 것부터.'}
+                        ? '응답서'
+                        : selected
+                          ? '답변 검토'
+                          : '답변 검토'}
                   </h1>
-                  <p>
-                    {step === 1
-                      ? '고지서와 규정집, 작성해 둔 답변을 모아 문항별로 연결합니다.'
-                      : step === 3
-                        ? '응답 초안과 근거, 남은 확인 사항을 함께 내려받으세요.'
-                        : '답변과 원문을 비교하고, 부족한 자료와 확인할 범위를 정리하세요.'}
-                  </p>
+                  {!selected && (
+                    <p>
+                      {step === 1
+                        ? '분석할 자료와 회사 작성 답변을 정리하세요.'
+                        : step === 3
+                          ? '저장한 답변·측정 범위·검토 상태·근거를 확인하세요.'
+                          : '문항을 열어 저장된 답변과 실제 원문을 함께 확인하세요.'}
+                    </p>
+                  )}
                 </div>
                 {project.result && step !== 3 && (
-                  <button className="secondary" onClick={() => go(3)} disabled={busy}>
+                  <button className="secondary" onClick={() => navigate(() => go(3))}>
                     응답서 미리보기
-                    <ArrowUpRight />
                   </button>
                 )}
               </div>
-              <nav className="steps" aria-label="실사 응답 준비 단계">
-                {['자료 올리기', '내용 확인하기', '응답서 받기'].map((label, i) => (
-                  <button
-                    key={label}
-                    aria-current={step === i + 1 ? 'step' : undefined}
-                    onClick={() => go(i + 1)}
-                    disabled={i > 0 && !project.result}
-                  >
-                    <span className="step-number">{i + 1}</span>
-                    {label}
-                    <ArrowRight />
-                  </button>
-                ))}
-              </nav>
               {project.stale && (
                 <div className="feedback warning" role="status">
                   <FileSearch />
@@ -338,7 +407,7 @@ export default function App() {
                   onUpdate={accept}
                   act={act}
                   onAnalyze={analyze}
-                  onMessage={setMessage}
+                  onReview={() => go(2)}
                 />
               ) : selected && project.result ? (
                 <Review
@@ -346,20 +415,14 @@ export default function App() {
                   project={project}
                   answer={project.result.answers.find((a) => a.id === selected)!}
                   busy={busy || processing}
-                  onBack={() => setSelected(null)}
-                  onSelect={setSelected}
-                  onDocuments={() => go(1)}
-                  onSave={(id, values) =>
-                    act(async () =>
-                      updateProject(
-                        await api<Project>(
-                          `/projects/${project.id}/notes/${encodeURIComponent(id)}`,
-                          'PUT',
-                          values,
-                        ),
-                      ),
-                    )
-                  }
+                  onBack={() => navigate(() => setSelected(null))}
+                  onSelect={(id) => navigate(() => setSelected(id || null))}
+                  onDocuments={() => navigate(() => go(1))}
+                  onSave={saveReview}
+                  onDraft={(dirty, save, discard) => {
+                    draft.current = { dirty, save, discard };
+                    setDirty(dirty);
+                  }}
                 />
               ) : (
                 <div className="workspace-grid">
@@ -367,6 +430,8 @@ export default function App() {
                     {step === 2 ? (
                       <AnswerList
                         project={project}
+                        state={listState}
+                        onState={setListState}
                         onSelect={setSelected}
                         onDocuments={() => go(1)}
                       />
@@ -375,14 +440,13 @@ export default function App() {
                         project={project}
                         busy={busy || processing}
                         onDownload={exportFile}
-                        onSelect={(id) => {
+                        onReview={(id) => {
                           setStep(2);
                           setSelected(id);
                         }}
                       />
                     )}
                   </section>
-                  <PackageSummary project={project} onPreview={() => go(3)} />
                 </div>
               )}
               <footer className="project-footer">
@@ -684,286 +748,6 @@ function CreateProject({
         </button>
       </form>
     </div>
-  );
-}
-
-type DocumentsProps = {
-  project: Project;
-  config: Config;
-  busy: boolean;
-  onUpdate: (value: Project) => void;
-  act: (work: () => Promise<void>) => Promise<void>;
-  onAnalyze: () => void;
-  onMessage: (value: string) => void;
-};
-function Documents({ project, config, busy, onUpdate, act, onAnalyze, onMessage }: DocumentsProps) {
-  const input = useRef<HTMLInputElement>(null);
-  const [dragging, setDragging] = useState(false);
-  const [values, setValues] = useState<Company>({
-    company_name: project.company_name,
-    year: project.year,
-    industry: project.industry,
-    framework: project.framework,
-  });
-  const example = project.mode === 'example';
-  async function upload(files: FileList | null) {
-    if (!files?.length || busy || example) return;
-    await act(async () => {
-      try {
-        for (const file of Array.from(files)) {
-          const form = new FormData();
-          form.append('file', file);
-          onUpdate(await api<Project>(`/projects/${project.id}/documents`, 'POST', form));
-        }
-      } finally {
-        onUpdate(await api<Project>(`/projects/${project.id}`));
-        if (input.current) input.current.value = '';
-      }
-      onMessage('서류를 올렸어요. 자료 종류를 확인한 뒤 답변 준비를 시작해 주세요.');
-    });
-  }
-  const changeRole = (id: string, role: string) =>
-    act(async () =>
-      onUpdate(await api<Project>(`/projects/${project.id}/documents/${id}`, 'PATCH', { role })),
-    );
-  return (
-    <div className="documents-grid">
-      <section>
-        <div className="section-heading">
-          <h2>지금 가지고 있는 서류부터</h2>
-          <span>{project.documents.length}개 자료</span>
-        </div>
-        <p className="intro">모두 준비할 필요는 없어요. 부족한 자료는 읽어본 뒤 알려드릴게요.</p>
-        {!example && (
-          <div
-            className={`upload-area ${dragging ? 'dragging' : ''}`}
-            onDragOver={(event) => {
-              event.preventDefault();
-              if (!busy) setDragging(true);
-            }}
-            onDragLeave={() => setDragging(false)}
-            onDrop={(event) => {
-              event.preventDefault();
-              setDragging(false);
-              void upload(event.dataTransfer.files);
-            }}
-          >
-            <UploadCloud />
-            <h3>서류를 여기에 놓아 주세요</h3>
-            <p>PDF, PNG, JPG · 파일당 20MB</p>
-            <input
-              ref={input}
-              type="file"
-              accept=".pdf,.png,.jpg,.jpeg"
-              multiple
-              hidden
-              onChange={(event) => void upload(event.target.files)}
-            />
-            <button className="secondary" onClick={() => input.current?.click()} disabled={busy}>
-              {busy ? <LoaderCircle className="spin" /> : <Plus />}파일 선택하기
-            </button>
-          </div>
-        )}
-        {project.documents.length > 0 && (
-          <div className="document-list">
-            {project.documents.map((doc) => (
-              <div className="document-row" key={doc.id}>
-                <FileText />
-                <div className="document-name">
-                  <strong>{doc.name}</strong>
-                  <small>
-                    {doc.example
-                      ? '사용법 예시 · 원본 파일 없음'
-                      : `${doc.pages}쪽 · ${(doc.size / 1024).toFixed(0)}KB`}
-                  </small>
-                </div>
-                <label className="document-role">
-                  <span className="sr-only">{doc.name} 자료 종류</span>
-                  <select
-                    value={doc.role}
-                    disabled={busy || example}
-                    onChange={(event) => changeRole(doc.id, event.target.value)}
-                  >
-                    <option value="evidence">내용을 확인할 서류</option>
-                    <option value="company_answer">직접 작성한 답변</option>
-                  </select>
-                </label>
-                {!example && (
-                  <button
-                    className="icon-button"
-                    aria-label={`${doc.name} 목록에서 빼기`}
-                    disabled={busy}
-                    onClick={() =>
-                      act(async () =>
-                        onUpdate(
-                          await api<Project>(
-                            `/projects/${project.id}/documents/${doc.id}`,
-                            'DELETE',
-                          ),
-                        ),
-                      )
-                    }
-                  >
-                    <X />
-                  </button>
-                )}
-              </div>
-            ))}
-          </div>
-        )}
-        <p className="data-use-note">
-          작업은 이 컴퓨터에 저장됩니다. 분석 시 문서 내용이 연결된 AI 서비스로 전달되며, 고객사로
-          자동 전송되지는 않습니다.
-        </p>
-        <div className="document-note">
-          <ShieldCheck />
-          <p>
-            <strong>서류와 직접 작성한 답변을 구분해요.</strong> 고지서·규정은 내용을 확인할 자료로,
-            설문에 직접 적은 답변은 확인 전 답변으로 다뤄요. 자동으로 나눈 종류가 다르면 바꿔
-            주세요.
-          </p>
-        </div>
-        {!example && (
-          <>
-            <div className="analysis-action">
-              <button
-                className="primary"
-                disabled={busy || !project.documents.length || !config.analysis_available}
-                onClick={onAnalyze}
-              >
-                {busy ? <LoaderCircle className="spin" /> : <Sparkles />}
-                {project.result ? '새 내용으로 답변 다시 준비' : '서류를 읽고 답변 준비하기'}
-                <ArrowRight />
-              </button>
-              <small>
-                {!project.documents.length
-                  ? '서류를 한 개 이상 올리면 시작할 수 있어요.'
-                  : '서류에서 질문과 관련된 내용을 찾아 초안으로 정리해요.'}
-              </small>
-            </div>
-            {!config.analysis_available && (
-              <p className="connection-note">
-                분석 연결이 아직 준비되지 않았어요. 지금은 서류를 보관하거나 시작 화면의 예시로
-                사용법을 살펴볼 수 있어요.
-              </p>
-            )}
-            <details className="company-settings">
-              <summary>회사 정보 수정</summary>
-              <form
-                onSubmit={(event) => {
-                  event.preventDefault();
-                  void act(async () =>
-                    onUpdate(await api<Project>(`/projects/${project.id}`, 'PATCH', values)),
-                  );
-                }}
-              >
-                <label>
-                  회사명
-                  <input
-                    value={values.company_name}
-                    required
-                    maxLength={100}
-                    onChange={(event) => setValues({ ...values, company_name: event.target.value })}
-                  />
-                </label>
-                <label>
-                  자료 연도
-                  <input
-                    type="number"
-                    min={2000}
-                    max={2100}
-                    required
-                    value={values.year}
-                    onChange={(event) => setValues({ ...values, year: Number(event.target.value) })}
-                  />
-                </label>
-                <label>
-                  응답서 종류
-                  <select
-                    value={values.framework}
-                    onChange={(event) => setValues({ ...values, framework: event.target.value })}
-                  >
-                    {config.frameworks.map((item) => (
-                      <option key={item.key} value={item.key}>
-                        {item.label}
-                      </option>
-                    ))}
-                  </select>
-                </label>
-                <button className="secondary" disabled={busy}>
-                  회사 정보 저장
-                </button>
-              </form>
-            </details>
-          </>
-        )}
-      </section>
-      <aside className="document-guide">
-        <p className="eyebrow">이런 서류가 도움이 돼요</p>
-        <h2>
-          어떤 서류를 올릴지
-          <br />
-          막막하다면
-        </h2>
-        {[
-          ['전기·가스 고지서', '얼마나 사용했는지, 어느 기간의 자료인지 확인해요.'],
-          ['취업규칙·안전·윤리 규정', '회사가 사람을 보호하고 운영하는 방법을 살펴봐요.'],
-          [
-            '직접 작성한 자가진단 답변',
-            '기존 답변을 근거 자료와 구분해 올리고, 같은 기간과 범위인지 확인해요.',
-          ],
-        ].map(([title, body], i) => (
-          <div className="guide-row" key={title}>
-            <span>0{i + 1}</span>
-            <div>
-              <h3>{title}</h3>
-              <p>{body}</p>
-            </div>
-          </div>
-        ))}
-        <p className="guide-last">
-          서류가 없는 항목은 “자료 필요”로 남겨둡니다. 답변을 임의로 채우지 않아요.
-        </p>
-      </aside>
-    </div>
-  );
-}
-
-function PackageSummary({ project, onPreview }: { project: Project; onPreview: () => void }) {
-  const answers = project.result?.answers || [];
-  const attention = answers.filter((a) => a.needs_attention).length;
-  return (
-    <aside className="package-summary">
-      <div className="section-heading">
-        <h2>검토 후 받는 결과물</h2>
-        <span className="badge neutral">검토용 초안</span>
-      </div>
-      {[
-        [FileText, '질문별 답변', '자료로 찾은 내용과 확인 상태'],
-        [Files, '연결된 근거', '답변에 사용한 서류와 위치'],
-        [NotebookPen, '직접 작성한 답변·메모', '담당자가 확인하고 남긴 내용'],
-      ].map(([Icon, title, body]) => {
-        const ItemIcon = Icon as typeof Files;
-        return (
-          <div className="package-item" key={String(title)}>
-            <ItemIcon />
-            <div>
-              <h3>{String(title)}</h3>
-              <p>{String(body)}</p>
-            </div>
-          </div>
-        );
-      })}
-      <div className="package-note">
-        {attention
-          ? `아직 확인할 항목이 ${attention}개 있어요. 초안을 받을 때도 확인 상태를 함께 표시해요.`
-          : '자료가 연결된 항목도 제출 전에 회사 상황에 맞는지 읽어 주세요.'}
-      </div>
-      <button className="text-button" onClick={onPreview}>
-        응답서 미리보기
-        <ArrowUpRight />
-      </button>
-    </aside>
   );
 }
 
