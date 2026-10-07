@@ -1,0 +1,47 @@
+PASSED tests/test_pr68_review_r8.py::test_r8a_local_pdf_keeps_heat_and_drops_fee
+PASSED tests/test_pr68_review_r8.py::test_r8b_local_pdf_keeps_volume_only[]
+PASSED tests/test_pr68_review_r8.py::test_r8b_local_pdf_keeps_volume_only[-]
+PASSED tests/test_pr68_review_r8.py::test_r8b_local_pdf_keeps_volume_only[\u2014]
+PASSED tests/test_pr68_review_r8.py::test_r8b_local_pdf_keeps_volume_only[\uac80\uce68 \uc608\uc815]
+PASSED tests/test_pr68_review_r8.py::test_r8b_local_pdf_fee_with_or_without_won[247,500]
+PASSED tests/test_pr68_review_r8.py::test_r8b_local_pdf_fee_with_or_without_won[247,500\uc6d0]
+PASSED tests/test_pr68_review_r8.py::test_r8b_local_pdf_fee_with_or_without_won[\u20a9247,500]
+PASSED tests/test_pr68_review_r8.py::test_r8a_local_pdf_explicit_zero_heat_is_kept
+PASSED tests/test_pr68_review_r8.py::test_r8_local_pdf_swapped_columns_fee_under_volume
+PASSED tests/test_pr68_review_r8.py::test_r8_local_pdf_fee_value_exactly_on_heat_column
+PASSED tests/test_pr68_review_r8.py::test_r8_table_cells_empty_heat_with_fee[]
+PASSED tests/test_pr68_review_r8.py::test_r8_table_cells_empty_heat_with_fee[-]
+PASSED tests/test_pr68_review_r8.py::test_r8_table_cells_empty_heat_with_fee[\u2014]
+PASSED tests/test_pr68_review_r8.py::test_r8_table_cells_empty_heat_with_fee[\uac80\uce68 \uc608\uc815]
+PASSED tests/test_pr68_review_r8.py::test_r8_table_cells_valid_heat_with_fee
+PASSED tests/test_pr68_review_r8.py::test_r8_money_labels_are_not_usage[247,500-\uae30\ubcf8\uc694\uae08]
+PASSED tests/test_pr68_review_r8.py::test_r8_money_labels_are_not_usage[247,500-\uc0ac\uc6a9\uc694\uae08]
+PASSED tests/test_pr68_review_r8.py::test_r8_money_labels_are_not_usage[247,500-\uacf5\uae09\uac00\uc561]
+PASSED tests/test_pr68_review_r8.py::test_r8_money_labels_are_not_usage[247,500-\ubd80\uac00\uac00\uce58\uc138]
+PASSED tests/test_pr68_review_r8.py::test_r8_money_labels_are_not_usage[247,500-\uc138\uc561]
+PASSED tests/test_pr68_review_r8.py::test_r8_money_labels_are_not_usage[247,500-\ub0a9\ubd80\uae08\uc561]
+PASSED tests/test_pr68_review_r8.py::test_r8_money_labels_are_not_usage[247,500-\uccad\uad6c\uae08\uc561]
+PASSED tests/test_pr68_review_r8.py::test_r8_money_labels_are_not_usage[247,500-\ub2f9\uc6d4 \uccad\uad6c\uc561]
+PASSED tests/test_pr68_review_r8.py::test_r8_money_labels_are_not_usage[247,500\uc6d0-\uae30\ubcf8\uc694\uae08]
+PASSED tests/test_pr68_review_r8.py::test_r8_money_labels_are_not_usage[247,500\uc6d0-\uc0ac\uc6a9\uc694\uae08]
+PASSED tests/test_pr68_review_r8.py::test_r8_money_labels_are_not_usage[247,500\uc6d0-\uacf5\uae09\uac00\uc561]
+PASSED tests/test_pr68_review_r8.py::test_r8_money_labels_are_not_usage[247,500\uc6d0-\ubd80\uac00\uac00\uce58\uc138]
+PASSED tests/test_pr68_review_r8.py::test_r8_money_labels_are_not_usage[247,500\uc6d0-\uc138\uc561]
+PASSED tests/test_pr68_review_r8.py::test_r8_money_labels_are_not_usage[247,500\uc6d0-\ub0a9\ubd80\uae08\uc561]
+PASSED tests/test_pr68_review_r8.py::test_r8_money_labels_are_not_usage[247,500\uc6d0-\uccad\uad6c\uae08\uc561]
+PASSED tests/test_pr68_review_r8.py::test_r8_money_labels_are_not_usage[247,500\uc6d0-\ub2f9\uc6d4 \uccad\uad6c\uc561]
+PASSED tests/test_pr68_review_r8.py::test_r8_text_line_replay[360,772-expected0]
+PASSED tests/test_pr68_review_r8.py::test_r8_text_line_replay[--expected1]
+PASSED tests/test_pr68_review_r8.py::test_r8_markdown_replay[360,772-expected0]
+PASSED tests/test_pr68_review_r8.py::test_r8_markdown_replay[--expected1]
+PASSED tests/test_pr68_review_r8.py::test_r8_llm_normalization_never_sees_the_fee[360,772]
+PASSED tests/test_pr68_review_r8.py::test_r8_llm_normalization_never_sees_the_fee[-]
+PASSED tests/test_pr68_review_r8.py::test_r8_fee_text_is_kept_as_review_record_only
+PASSED tests/test_pr68_review_r8.py::test_r8_usage_and_fee_in_separate_columns_keep_usage
+PASSED tests/test_pr68_review_r8.py::test_r8_same_number_as_heat_is_kept_only_the_fee_cell_is_excluded
+PASSED tests/test_pr68_review_r8.py::test_r8_valid_heat_in_other_table_is_kept_and_linked
+PASSED tests/test_pr68_review_r8.py::test_r8_valid_heat_in_body_text_is_kept
+PASSED tests/test_pr68_review_r8.py::test_r8_site_period_meter_rows_are_not_money_rows
+PASSED tests/test_pr68_review_r8.py::test_r8_label_table_total_and_detail_rows_are_kept
+PASSED tests/test_pr68_review_r8.py::test_r8_electric_table_with_fee_row_keeps_r1_index_check
+46 passed in 0.49s

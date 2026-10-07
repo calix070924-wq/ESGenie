@@ -1,0 +1,124 @@
+{
+  "elapsed_seconds": 9.019,
+  "llm": {
+    "mode": "on",
+    "hits": 3,
+    "misses": 10,
+    "live_calls": 10,
+    "successes": 0,
+    "failures": 10
+  },
+  "llm_response_events": [],
+  "upstage": {
+    "requests": 4,
+    "successes": 4,
+    "failures": 0,
+    "events": [
+      {
+        "function": "_call_upstage_dp_payload",
+        "file": "02_전기요금청구서_2026-04.pdf",
+        "pages": null,
+        "status": "success",
+        "seconds": 0.001
+      },
+      {
+        "function": "_call_upstage_dp_payload",
+        "file": "03_도시가스요금고지서_2026-04.pdf",
+        "pages": null,
+        "status": "success",
+        "seconds": 0.001
+      },
+      {
+        "function": "_call_upstage_dp_payload",
+        "file": "04_사업장폐기물위탁처리명세_2026-04.pdf",
+        "pages": null,
+        "status": "success",
+        "seconds": 0.001
+      },
+      {
+        "function": "_call_upstage_dp_payload",
+        "file": "07_상수도청구서_2026-04.pdf",
+        "pages": null,
+        "status": "success",
+        "seconds": 0.001
+      }
+    ]
+  },
+  "stage": "initial",
+  "document_count": 12,
+  "evidence_count": 11,
+  "company_answer_count": 1,
+  "cache_files_at_end": {
+    "ocr": 11,
+    "llm": 22
+  },
+  "upstage_tape": [
+    {
+      "file": "02_전기요금청구서_2026-04.pdf",
+      "key": "83046501dfa002e036872796",
+      "status": "replayed"
+    },
+    {
+      "file": "03_도시가스요금고지서_2026-04.pdf",
+      "key": "6a81bd9709ce5d4cf5c8992b",
+      "status": "replayed"
+    },
+    {
+      "file": "04_사업장폐기물위탁처리명세_2026-04.pdf",
+      "key": "e48e53be0215fcbca7ac8f49",
+      "status": "replayed"
+    },
+    {
+      "file": "07_상수도청구서_2026-04.pdf",
+      "key": "d5d12d585559bc42c86303e6",
+      "status": "replayed"
+    }
+  ],
+  "replay_llm_misses": [
+    {
+      "user_sha256": "6f49650bcc52cddeb1cf4470e1ca9b286f5bd0b5498a54d5725228b20dd23d79",
+      "user_head": "회사: 한울정밀공업(주) (자동차 차체부품, 2026년)\n영역: E (환경)\n\n[K-ESG 공시값 원장] — 지표 수치는 아래 값만 언급 가능하며, 수치가 든 문장 끝에는 [kesg_items_E]를 인용하시오:\n- E-3-1 온실가스 배출량 (Scope1 + Scope2): 68.15"
+    },
+    {
+      "user_sha256": "fb38c48749f991a7db58b4171ea60edd519761402fdaaa071af3df2c9179bade",
+      "user_head": "회사: 한울정밀공업(주) (자동차 차체부품, 2026년)\n영역: E (환경)\n\n[K-ESG 공시값 원장] — 지표 수치는 아래 값만 언급 가능하며, 수치가 든 문장 끝에는 [kesg_items_E]를 인용하시오:\n- E-3-1 온실가스 배출량 (Scope1 + Scope2): 68.15"
+    },
+    {
+      "user_sha256": "fb38c48749f991a7db58b4171ea60edd519761402fdaaa071af3df2c9179bade",
+      "user_head": "회사: 한울정밀공업(주) (자동차 차체부품, 2026년)\n영역: E (환경)\n\n[K-ESG 공시값 원장] — 지표 수치는 아래 값만 언급 가능하며, 수치가 든 문장 끝에는 [kesg_items_E]를 인용하시오:\n- E-3-1 온실가스 배출량 (Scope1 + Scope2): 68.15"
+    },
+    {
+      "user_sha256": "fb38c48749f991a7db58b4171ea60edd519761402fdaaa071af3df2c9179bade",
+      "user_head": "회사: 한울정밀공업(주) (자동차 차체부품, 2026년)\n영역: E (환경)\n\n[K-ESG 공시값 원장] — 지표 수치는 아래 값만 언급 가능하며, 수치가 든 문장 끝에는 [kesg_items_E]를 인용하시오:\n- E-3-1 온실가스 배출량 (Scope1 + Scope2): 68.15"
+    },
+    {
+      "user_sha256": "c3f0822075ab0ff804c55703fe72b9264074d60415ac94315a52393483e82f53",
+      "user_head": "회사: 한울정밀공업(주) (자동차 차체부품, 2026년)\n영역: S (사회)\n\n[K-ESG 공시값 원장] — 지표 수치는 아래 값만 언급 가능하며, 수치가 든 문장 끝에는 [kesg_items_S]를 인용하시오:\n\n\n[미공시 항목] — 값을 지어내지 말 것. '향후 계획 및 공시 보완 "
+    },
+    {
+      "user_sha256": "22fa237c1bb92ba13fed6a837d618b926fe5d5235901d7c08b94d2961213727c",
+      "user_head": "회사: 한울정밀공업(주) (자동차 차체부품, 2026년)\n영역: G (지배구조)\n\n[K-ESG 공시값 원장] — 지표 수치는 아래 값만 언급 가능하며, 수치가 든 문장 끝에는 [kesg_items_G]를 인용하시오:\n\n\n[미공시 항목] — 값을 지어내지 말 것. '향후 계획 및 공시 보"
+    },
+    {
+      "user_sha256": "def8cc168719f302d230c27754a28d20a782288229a368da656e196caca5e380",
+      "user_head": "회사: 한울정밀공업(주) (자동차 차체부품, 2026년)\n영역: G (지배구조)\n\n[K-ESG 공시값 원장] — 지표 수치는 아래 값만 언급 가능하며, 수치가 든 문장 끝에는 [kesg_items_G]를 인용하시오:\n\n\n[미공시 항목] — 값을 지어내지 말 것. '향후 계획 및 공시 보"
+    },
+    {
+      "user_sha256": "def8cc168719f302d230c27754a28d20a782288229a368da656e196caca5e380",
+      "user_head": "회사: 한울정밀공업(주) (자동차 차체부품, 2026년)\n영역: G (지배구조)\n\n[K-ESG 공시값 원장] — 지표 수치는 아래 값만 언급 가능하며, 수치가 든 문장 끝에는 [kesg_items_G]를 인용하시오:\n\n\n[미공시 항목] — 값을 지어내지 말 것. '향후 계획 및 공시 보"
+    },
+    {
+      "user_sha256": "def8cc168719f302d230c27754a28d20a782288229a368da656e196caca5e380",
+      "user_head": "회사: 한울정밀공업(주) (자동차 차체부품, 2026년)\n영역: G (지배구조)\n\n[K-ESG 공시값 원장] — 지표 수치는 아래 값만 언급 가능하며, 수치가 든 문장 끝에는 [kesg_items_G]를 인용하시오:\n\n\n[미공시 항목] — 값을 지어내지 말 것. '향후 계획 및 공시 보"
+    },
+    {
+      "user_sha256": "53b5c0fce31d8dd7c810f4066c51f3f71e86f333b8c4963fa5c04ef339889359",
+      "user_head": "다음 분석 결과를 바탕으로 Executive Summary를 작성하라.\n{\"기업\": \"한울정밀공업(주)\", \"업종\": \"자동차 차체부품\", \"연도\": 2026, \"K-ESG_커버리지_pct\": 17.9, \"증빙_연결_커버리지_pct\": 17.9, \"종합_위험도\": 41.7, \"영역별_평"
+    }
+  ],
+  "ocr_vlm_cache": {
+    "hits": 10,
+    "misses": 0,
+    "mode": "hit"
+  }
+}

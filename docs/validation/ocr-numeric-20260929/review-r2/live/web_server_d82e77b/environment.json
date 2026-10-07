@@ -1,0 +1,34 @@
+{
+  "started_at": "2026-09-29T08:43:39.338592+00:00",
+  "pid": 88569,
+  "code_path": "/private/tmp/ESGenie-web-integ-r2-20260929",
+  "commit": "d82e77b21ed9e33d320129f98b6a3d911b3e0858",
+  "branch": "HEAD",
+  "log": [
+    "d82e77b fix(ocr): 빈 사용량 칸의 지침 되살림(R6)과 같은 쪽 다른 기간·계량기 병합(R7)",
+    "58d4696 fix(ocr): PR #68 검토 R1~R5 — 지침 단위 환산, 검산 불일치 답변 전파, 가스 MJ, 행 라벨 보존, 비율 표시 자릿수",
+    "8a61022 fix(ocr): 본문에서 고정한 비율(%)의 위치 정밀도를 사실대로 남기기",
+    "8ab547a fix(ocr): 고지서·위탁명세 표 셀에서 사용량·총량을 머리글·단위와 함께 읽기",
+    "6bf9750 feat: rebuild supplier workspace around evidence review"
+  ],
+  "dirty": false,
+  "dirty_files": [],
+  "imported_esgenie": "/private/tmp/ESGenie-web-integ-r2-20260929/esgenie/__init__.py",
+  "force_mock": false,
+  "strict_llm": true,
+  "model": "gpt-4.1-mini",
+  "llm_provider": "azure_openai",
+  "ocr_provider": "upstage_document_parse",
+  "ocr_key_present": true,
+  "llm_key_present": true,
+  "cache_dir": "/private/tmp/ESGenie-ocr-numeric-20260929/docs/validation/ocr-numeric-20260929/review-r2/live/web_cache_d82e77b",
+  "cache_files_at_start": {
+    "ocr": 8,
+    "llm": 29
+  },
+  "mode": "web_integration",
+  "host": "127.0.0.1",
+  "port": 8796,
+  "data_root": "/private/tmp/ESGenie-ocr-numeric-20260929/docs/validation/ocr-numeric-20260929/review-r2/live/web_server_d82e77b/web_workspace",
+  "observer": "unmodified esgenie.web.engine.run_analysis; PipelineOutput captured without changes"
+}

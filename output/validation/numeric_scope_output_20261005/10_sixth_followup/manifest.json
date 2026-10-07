@@ -1,0 +1,142 @@
+{
+  "product_commit": "231b116548f553dec494c941cf47fe6e361d07dd",
+  "code_manifest_equal": true,
+  "source_manifest_equal": true,
+  "code_files": 99,
+  "source_files": 19,
+  "tests": {
+    "independent93.xml": {
+      "tests": 93,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "passed": 93
+    },
+    "before12.xml": {
+      "tests": 12,
+      "failures": 8,
+      "errors": 0,
+      "skipped": 0,
+      "passed": 4
+    },
+    "full.xml": {
+      "tests": 5492,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 12,
+      "passed": 5480
+    },
+    "related468.xml": {
+      "tests": 468,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "passed": 468
+    }
+  },
+  "runs": {
+    "RVS": {
+      "commit": "231b116548f553dec494c941cf47fe6e361d07dd",
+      "dirty": false,
+      "mode": "core_replay",
+      "llm": {
+        "mode": "on",
+        "hits": 3,
+        "misses": 4,
+        "live_calls": 4,
+        "successes": 0,
+        "failures": 4
+      },
+      "upstage_tape_replays": 4,
+      "note": "LLM live_calls counts blocked cache misses, not successful provider calls. Saved E/S/G and summary responses injected."
+    },
+    "RV": {
+      "commit": "231b116548f553dec494c941cf47fe6e361d07dd",
+      "dirty": false,
+      "mode": "core_replay",
+      "llm": {
+        "mode": "on",
+        "hits": 3,
+        "misses": 4,
+        "live_calls": 4,
+        "successes": 0,
+        "failures": 4
+      },
+      "upstage_tape_replays": 4,
+      "note": "LLM live_calls counts blocked cache misses, not successful provider calls. Saved E/S/G and summary responses injected."
+    }
+  },
+  "outputs_sha256": {
+    "runs/RVS/followup/exports/response_sheet/실사응답서_rba42_한울정밀공업(주).xlsx": "0684d7e39ecf54f3666ce8ca2e0aa73b4f9a86e239a42f3382bef0f1d152fca2",
+    "runs/RVS/followup/exports/response_sheet/실사응답서_rba42_한울정밀공업(주).pdf": "10b9ab88a9567178f50c506be35a54acdcfd78b6efcfd65543f849a6f38cc380",
+    "runs/RVS/followup/exports/hanwool-core-followup_2026/audit_trace_v15.json": "b93e76215bf3c171fc13d69d4564e6e2f568e897e5f44494013d36a6ae21d87e",
+    "runs/RVS/followup/exports/hanwool-core-followup_2026/report_body_review.json": "bb18ebcb3cef5efc9b3be7276551e73c45ba31a79eec92cace09e6bd2ed09206",
+    "runs/RVS/followup/exports/hanwool-core-followup_2026/source_review.json": "fa662ac5234cb98cf9e9c9e4c7b26599ea3e1c69c8edc06ff0d84e069c8b492d",
+    "runs/RVS/followup/exports/hanwool-core-followup_2026/ESG보고서_한울정밀공업(주)_2026.pdf": "79b246acf50cbca0f87bab6c517a48f52fa5ebbaaefa078369e856dce9cb8285",
+    "runs/RVS/followup/exports/hanwool-core-followup_2026/ESG보고서_한울정밀공업(주)_2026.md": "6fe4277065a90542d0f65f624b41b4d30e88f2f5ccfe8042aabc2552f3aed267",
+    "runs/RVS/followup/exports/hanwool-core-followup_2026/ESG_DataSheet_대기업제출용.xlsx": "41e2a3203132756487cdf16e34be6832ca19ee5a9d0f9ef82e7475038d3266f2",
+    "runs/RVS/followup/exports/hanwool-core-followup_2026/evidence_pack/02_전기요금청구서_2026-04.pdf": "cc0a3ee26da633572e0d76b34876d78375e4067df0e59625f659fbe61059fe2f",
+    "runs/RVS/followup/exports/hanwool-core-followup_2026/evidence_pack/07_상수도청구서_2026-04.pdf": "09a5f17e97675eefbc5df1b1a4b18e6f0edb1b40aa0ebd030b7f421118999ac9",
+    "runs/RVS/followup/exports/hanwool-core-followup_2026/evidence_pack/index.json": "cae6aa86df3bb4e7f6a80a97c0a017f168254b849dc6cab9f07c88334c51d904",
+    "runs/RVS/followup/exports/hanwool-core-followup_2026/evidence_pack/04_사업장폐기물위탁처리명세_2026-04.pdf": "6fed320f47c59297eee75508fcbbf9caccf387603ca35a640c8de21f98a1ab07",
+    "runs/RVS/followup/exports/response_sheet/evidence_pack/10_윤리경영및고충처리규정_2026.pdf": "98da23a43336d69302e75491603474a31e57811534474d7a768959c4b399034a",
+    "runs/RVS/followup/exports/response_sheet/evidence_pack/08_공정스크랩관리대장_2026-04.pdf": "97a2de17616cbdafe5c7f600397bb5d9be45becd5215972d739788c07a2f197e",
+    "runs/RVS/followup/exports/response_sheet/evidence_pack/06_환경안전관리규정_2026.pdf": "ad45751200c110de869abe5dac6f04cbe4e78152674189bef49045b690be4b20",
+    "runs/RVS/followup/exports/response_sheet/evidence_pack/02_전기요금청구서_2026-04.pdf": "cc0a3ee26da633572e0d76b34876d78375e4067df0e59625f659fbe61059fe2f",
+    "runs/RVS/followup/exports/response_sheet/evidence_pack/13_안전보건추가교육실시기록_2026-04-27.pdf": "4bf4dfbfb0ac37204c383b835002f876786e10cfec4d2cd488e64b6b2c4d1ca2",
+    "runs/RVS/followup/exports/response_sheet/evidence_pack/09_안전보건교육실시기록_2026-04-22.pdf": "f27baad4ce8e31c4feecbeee359d55cef6d9a9472dd1d30f379917e86a53b109",
+    "runs/RVS/followup/exports/response_sheet/evidence_pack/01_기업및임직원현황_2026-04.pdf": "380b85acd568fa085fb0fb3ded6581ebccd5ac17630fdbf66a6f58346d0dcc08",
+    "runs/RVS/followup/exports/response_sheet/evidence_pack/11_정보보호관리규정_2026.pdf": "af32e08354ac1f41eb8012e25ff196ad53ab4f28d2643ef0ea4493e28f2880ac",
+    "runs/RVS/followup/exports/response_sheet/evidence_pack/04_사업장폐기물위탁처리명세_2026-04.pdf": "6fed320f47c59297eee75508fcbbf9caccf387603ca35a640c8de21f98a1ab07",
+    "runs/RV/followup/exports/response_sheet/실사응답서_rba42_한울정밀공업(주).xlsx": "971095b3d0ada3420638c6ee09ee1dfdcb22340af6a1121e5f2980eca08f9c3c",
+    "runs/RV/followup/exports/response_sheet/실사응답서_rba42_한울정밀공업(주).pdf": "94fed92bbb6ac7bf73fd7179d0a98875f0f1545b25b4ffc1004974c996a2ec8b",
+    "runs/RV/followup/exports/hanwool-core-followup_2026/audit_trace_v15.json": "cd860eacf5c2ed2901463e0e1b2cd9badeed905fc5bb5d726dfd7d382c37e0c4",
+    "runs/RV/followup/exports/hanwool-core-followup_2026/report_body_review.json": "8a9f54322e18579c2c626e8fb73291a6ba069fa7539261cb8676f96f8fa1a5cc",
+    "runs/RV/followup/exports/hanwool-core-followup_2026/source_review.json": "a1b143bd90458eaccd626d4ed4f725344b97d0c95d894766783b9667a89edbc7",
+    "runs/RV/followup/exports/hanwool-core-followup_2026/ESG보고서_한울정밀공업(주)_2026.pdf": "33802c4f7fb2d785f5340a443685f7533f7df578dd7703aefe4bf9892169e38f",
+    "runs/RV/followup/exports/hanwool-core-followup_2026/ESG보고서_한울정밀공업(주)_2026.md": "5e672a66b602fb78fa5d8909b8fad82b5b9df4fdb233acc5155f242d412aec97",
+    "runs/RV/followup/exports/hanwool-core-followup_2026/ESG_DataSheet_대기업제출용.xlsx": "01d4fb027240ed69049c2fdf1c0f643867c278e4bce059d288adbf9bebf0f3c9",
+    "runs/RV/followup/exports/hanwool-core-followup_2026/evidence_pack/02_전기요금청구서_2026-04.pdf": "cc0a3ee26da633572e0d76b34876d78375e4067df0e59625f659fbe61059fe2f",
+    "runs/RV/followup/exports/hanwool-core-followup_2026/evidence_pack/07_상수도청구서_2026-04.pdf": "09a5f17e97675eefbc5df1b1a4b18e6f0edb1b40aa0ebd030b7f421118999ac9",
+    "runs/RV/followup/exports/hanwool-core-followup_2026/evidence_pack/index.json": "cae6aa86df3bb4e7f6a80a97c0a017f168254b849dc6cab9f07c88334c51d904",
+    "runs/RV/followup/exports/hanwool-core-followup_2026/evidence_pack/04_사업장폐기물위탁처리명세_2026-04.pdf": "6fed320f47c59297eee75508fcbbf9caccf387603ca35a640c8de21f98a1ab07",
+    "runs/RV/followup/exports/response_sheet/evidence_pack/10_윤리경영및고충처리규정_2026.pdf": "98da23a43336d69302e75491603474a31e57811534474d7a768959c4b399034a",
+    "runs/RV/followup/exports/response_sheet/evidence_pack/08_공정스크랩관리대장_2026-04.pdf": "97a2de17616cbdafe5c7f600397bb5d9be45becd5215972d739788c07a2f197e",
+    "runs/RV/followup/exports/response_sheet/evidence_pack/06_환경안전관리규정_2026.pdf": "ad45751200c110de869abe5dac6f04cbe4e78152674189bef49045b690be4b20",
+    "runs/RV/followup/exports/response_sheet/evidence_pack/02_전기요금청구서_2026-04.pdf": "cc0a3ee26da633572e0d76b34876d78375e4067df0e59625f659fbe61059fe2f",
+    "runs/RV/followup/exports/response_sheet/evidence_pack/13_안전보건추가교육실시기록_2026-04-27.pdf": "4bf4dfbfb0ac37204c383b835002f876786e10cfec4d2cd488e64b6b2c4d1ca2",
+    "runs/RV/followup/exports/response_sheet/evidence_pack/09_안전보건교육실시기록_2026-04-22.pdf": "f27baad4ce8e31c4feecbeee359d55cef6d9a9472dd1d30f379917e86a53b109",
+    "runs/RV/followup/exports/response_sheet/evidence_pack/01_기업및임직원현황_2026-04.pdf": "380b85acd568fa085fb0fb3ded6581ebccd5ac17630fdbf66a6f58346d0dcc08",
+    "runs/RV/followup/exports/response_sheet/evidence_pack/11_정보보호관리규정_2026.pdf": "af32e08354ac1f41eb8012e25ff196ad53ab4f28d2643ef0ea4493e28f2880ac",
+    "runs/RV/followup/exports/response_sheet/evidence_pack/04_사업장폐기물위탁처리명세_2026-04.pdf": "6fed320f47c59297eee75508fcbbf9caccf387603ca35a640c8de21f98a1ab07",
+    "edge_output/page_1.png": "2102c84582747fd3efa33f8e1042d3ef05b2dbcac4cec4b3145ddb2078b102d0",
+    "edge_output/ESG보고서_검증용_2026.pdf": "26ae5412546f7af57e96eab52981c3e936f275a81287e4e060dfbb562f73bd01",
+    "edge_output/results.json": "e77a52f456e51afcd4c80a9b3bc97a37e45e8b5c161be67da45757358391d105",
+    "edge_output/scope_labels.md": "0907d149222650224c92e71c888eb8a67ec0c0d8d3ba8ba7be6265be419d28ae"
+  },
+  "verification_sha256": {
+    "tools/record_manifest.py": "d801ca86c202a1ca621e8afc1f8dba75a623963b04334d6ff6394412d1c4cd99",
+    "tools/export_scope_labels.py": "987ca7103f33b3032d7c3c23c46b0f499a340c510adcf0b92a1b94cef3186416",
+    "tools/replay_runs.py": "89202d4ddec5ef484460fdc5caf6882b82efe85865104a44bb7fd70654451dca",
+    "tools/check_replays.py": "b0654cb6e5df1061dd60143fc2341180344e54014b8cb23dcfb4dab8ede78ef2",
+    "tests/full.log": "598a9231163fea2d544f6a734d9f9a6e01547ac2181e3a6e026b9ac9c92caade",
+    "tests/independent93.xml": "2124c66bd2c5c625b7947f1d4a286382c1856c48d1a539dad9588f51db9ef7e2",
+    "tests/before12.xml": "f1f226958e1866563140acb633c2d4e656a0bc8705bd574b53e469f7df19e3dc",
+    "tests/full.xml": "89ecc1f40df940ae7b282ce026cf1d7d68a9a4efb35d419fea0bf5a202d8da09",
+    "tests/related468.xml": "aac28ba7bb0010d61b5f87f692bbe04f76a024c85516b8c91c5f164f449d83c1",
+    "checks/RVS.json": "0f87fb102fc05915ba510e5ff480ceb3baff05f577a5f12a3350c364350b35bd",
+    "checks/RVS_variants.json": "62191164aea3cd582bcba953fd2764a000c99fbfe4e7bb2525c534e8e89dae5c",
+    "checks/RVS.log": "f0602b542ce3bb23b1b0131427ee78e4947567ea319d8ace8cc767b5c1bec41e",
+    "checks/RV_variants.log": "aad73a3a0aebbcf1fe6135f05c87fee1864650bf97f51cc9a5fb22351a688ad5",
+    "checks/RV_variants.json": "37136d8eec80edf3e2ddd5a0d816321b6bdb56eeef1d3af8f259ba2e18a0c7af",
+    "checks/RV.log": "e303ee0db98ff0b395c896038e1b761fbfac296c7c5b4604da49718e2aefa31c",
+    "checks/RV.json": "b5b671e907b47470ee2cc1e17e29975beb59f53c20e9389cafb5cfea2c539ce6",
+    "checks/RVS_variants.log": "788a21643ec25c41423f3f17eb62b00e4f98c7981ab9284cae7ed21ab4d7bd32",
+    "render/RVS_page_9.png": "71e2916933ef2472df077f2b941cea2fac3b804f49c12c823b9d5293870137a0",
+    "render/RV_page_1.png": "4c6437d215a371138156983a784e86c15367a1997db3f3049d5fe1793ae2c3d1",
+    "render/RVS_page_1.png": "afa22673758483c4a40a3906202db89bed19992851ea237f52af160e40db2d2b",
+    "render/RV_page_4.png": "ed4794bec4973ba47c14ccaa3abac6dbbc1a5f9d1a707cd06f700771293b8888",
+    "render/RVS_page_4.png": "19a54c11a278477bac7cb8ca24e2e82ff0047fd61b1b9ead9341029fc6c58473",
+    "render/RV_page_10.png": "b810ae8c193f7c7468c4b55a8bab6e358bbe2c5b29a3c97b67d19b1747a7f8b8"
+  }
+}

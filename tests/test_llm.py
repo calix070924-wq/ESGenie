@@ -92,6 +92,44 @@ def test_openai_retry_then_success():
     assert resp.content == "실제 응답"
 
 
+@pytest.mark.parametrize("provider", ["openai", "anthropic"])
+def test_retry_waits_for_server_window(provider, monkeypatch):
+    waits = []
+    monkeypatch.setattr(llm_module.time, "sleep", waits.append)
+    monkeypatch.setattr(llm_module.random, "uniform", lambda *_: 0)
+    error = _RetryableError("rate limited")
+    error.response = SimpleNamespace(headers={"retry-after": "60"})
+    client = _client()
+    if provider == "openai":
+        fake = _FakeOpenAI([error, _openai_response("ok")])
+        client._openai_client = fake
+    else:
+        fake = _FakeAnthropic([error, _anthropic_response("ok")])
+        client._openai_client = None
+        client._anthropic_client = fake
+    assert client.complete(system="s", user="u").used_mock is False
+    assert waits == [60]
+    assert fake.calls == 2
+
+
+@pytest.mark.parametrize("headers,expected", [
+    ({"retry-after-ms": "1250", "retry-after": "99"}, 1.25),
+    ({"x-ms-retry-after-ms": "2500"}, 2.5),
+    ({"retry-after": "Thu, 01 Jan 1970 00:01:00 GMT"}, 50),
+    ({"retry-after": "invalid"}, 2),
+    ({"retry-after": "nan"}, 2),
+    ({"retry-after": "inf"}, 2),
+    ({"retry-after": "-1"}, 2),
+    ({}, 2),
+])
+def test_retry_delay_header_formats(headers, expected, monkeypatch):
+    monkeypatch.setattr(llm_module.random, "uniform", lambda *_: 0)
+    monkeypatch.setattr(llm_module.time, "time", lambda: 10)
+    error = _RetryableError("rate limited")
+    error.response = SimpleNamespace(headers=headers)
+    assert llm_module._retry_delay(error, attempt=2) == expected
+
+
 def test_live_response_cache_replays_without_second_call(monkeypatch, tmp_path):
     monkeypatch.setattr(llm_module.SETTINGS, "force_mock", False)
     monkeypatch.delenv("ESGENIE_FORCE_MOCK", raising=False)

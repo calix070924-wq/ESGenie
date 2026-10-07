@@ -1,0 +1,744 @@
+{
+ "INJV_61b6167/initial": {
+  "mode": "core_replay",
+  "commit": "61b61673c9e66460b2cb039e45423e3e4d365fa0",
+  "dirty": false,
+  "imported_esgenie": "/private/tmp/ESGenie-numeric-scope-output-20261005/esgenie/__init__.py",
+  "model": "gpt-4.1-mini",
+  "llm_provider": "azure_openai",
+  "keys_present": {
+   "ocr": true,
+   "llm": true
+  },
+  "inputs": [
+   [
+    "01_기업및임직원현황_2026-04.pdf",
+    "380b85acd568fa08",
+    true
+   ],
+   [
+    "02_전기요금청구서_2026-04.pdf",
+    "cc0a3ee26da63357",
+    true
+   ],
+   [
+    "03_도시가스요금고지서_2026-04.pdf",
+    "42f22294502cbc48",
+    true
+   ],
+   [
+    "04_사업장폐기물위탁처리명세_2026-04.pdf",
+    "6fed320f47c59297",
+    true
+   ],
+   [
+    "05_한성모터스_자가진단응답초안_2026-09.pdf",
+    "564435e198609898",
+    true
+   ],
+   [
+    "06_환경안전관리규정_2026.pdf",
+    "ad45751200c110de",
+    true
+   ],
+   [
+    "07_상수도청구서_2026-04.pdf",
+    "09a5f17e97675eef",
+    true
+   ],
+   [
+    "08_공정스크랩관리대장_2026-04.pdf",
+    "97a2de17616cbdaf",
+    true
+   ],
+   [
+    "09_안전보건교육실시기록_2026-04-22.pdf",
+    "f27baad4ce8e31c4",
+    true
+   ],
+   [
+    "10_윤리경영및고충처리규정_2026.pdf",
+    "98da23a43336d693",
+    true
+   ],
+   [
+    "11_정보보호관리규정_2026.pdf",
+    "af32e08354ac1f41",
+    true
+   ],
+   [
+    "12_개인별주간근로시간기록_2026-04-13_19.pdf",
+    "dea5414ee1eda7e8",
+    true
+   ],
+   [
+    "14_검증용변형본_FY2026환경법규준수_위반0건.pdf",
+    "d5e3268fb697c867",
+    null
+   ]
+  ],
+  "llm": {
+   "mode": "on",
+   "hits": 4,
+   "misses": 5,
+   "live_calls": 5,
+   "successes": 0,
+   "failures": 5
+  },
+  "returned_models": [],
+  "upstage_function_calls": 4,
+  "upstage_tape": [
+   "replayed"
+  ],
+  "replay_llm_misses": [
+   "회사: 한울정밀공업(주) (자동차 차체부품, 2026년)\n영역: E (환경)\n\n[K-ESG 공시값 원장] —",
+   "회사: 한울정밀공업(주) (자동차 차체부품, 2026년)\n영역: S (사회)\n\n[K-ESG 공시값 원장] —",
+   "회사: 한울정밀공업(주) (자동차 차체부품, 2026년)\n영역: G (지배구조)\n\n[K-ESG 공시값 원장]",
+   "회사: 한울정밀공업(주) (자동차 차체부품, 2026년)\n영역: G (지배구조)\n\n[K-ESG 공시값 원장]",
+   "다음 분석 결과를 바탕으로 Executive Summary를 작성하라.\n{\"기업\": \"한울정밀공업(주)\", "
+  ],
+  "injected": [
+   [
+    "E",
+    0,
+    "2bb20c283b8e"
+   ],
+   [
+    "S",
+    0,
+    "8681f9a415ae"
+   ],
+   [
+    "G",
+    0,
+    "89de30798338"
+   ],
+   [
+    "G",
+    1,
+    "83dd53f5f185"
+   ]
+  ],
+  "checks": "40/40",
+  "checks_by_artifact": {
+   "graph": "14/14",
+   "answer": "8/8",
+   "report_md": "5/5",
+   "answer+report_md": "1/1",
+   "report_audit": "1/1",
+   "excel": "3/3",
+   "datasheet": "3/3",
+   "sheet_pdf": "1/1",
+   "report_pdf": "4/4"
+  },
+  "injections": {
+   "applied": 16,
+   "all_detected": true,
+   "not_applicable": [
+    "변형본 데이터시트 E-8-1 상태 제거"
+   ]
+  }
+ },
+ "INJ_61b6167/followup": {
+  "mode": "core_replay",
+  "commit": "61b61673c9e66460b2cb039e45423e3e4d365fa0",
+  "dirty": false,
+  "imported_esgenie": "/private/tmp/ESGenie-numeric-scope-output-20261005/esgenie/__init__.py",
+  "model": "gpt-4.1-mini",
+  "llm_provider": "azure_openai",
+  "keys_present": {
+   "ocr": true,
+   "llm": true
+  },
+  "inputs": [
+   [
+    "01_기업및임직원현황_2026-04.pdf",
+    "380b85acd568fa08",
+    true
+   ],
+   [
+    "02_전기요금청구서_2026-04.pdf",
+    "cc0a3ee26da63357",
+    true
+   ],
+   [
+    "03_도시가스요금고지서_2026-04.pdf",
+    "42f22294502cbc48",
+    true
+   ],
+   [
+    "04_사업장폐기물위탁처리명세_2026-04.pdf",
+    "6fed320f47c59297",
+    true
+   ],
+   [
+    "05_한성모터스_자가진단응답초안_2026-09.pdf",
+    "564435e198609898",
+    true
+   ],
+   [
+    "06_환경안전관리규정_2026.pdf",
+    "ad45751200c110de",
+    true
+   ],
+   [
+    "07_상수도청구서_2026-04.pdf",
+    "09a5f17e97675eef",
+    true
+   ],
+   [
+    "08_공정스크랩관리대장_2026-04.pdf",
+    "97a2de17616cbdaf",
+    true
+   ],
+   [
+    "09_안전보건교육실시기록_2026-04-22.pdf",
+    "f27baad4ce8e31c4",
+    true
+   ],
+   [
+    "10_윤리경영및고충처리규정_2026.pdf",
+    "98da23a43336d693",
+    true
+   ],
+   [
+    "11_정보보호관리규정_2026.pdf",
+    "af32e08354ac1f41",
+    true
+   ],
+   [
+    "12_개인별주간근로시간기록_2026-04-13_19.pdf",
+    "dea5414ee1eda7e8",
+    true
+   ],
+   [
+    "13_안전보건추가교육실시기록_2026-04-27.pdf",
+    "4bf4dfbfb0ac3720",
+    true
+   ]
+  ],
+  "llm": {
+   "mode": "on",
+   "hits": 3,
+   "misses": 4,
+   "live_calls": 4,
+   "successes": 0,
+   "failures": 4
+  },
+  "returned_models": [],
+  "upstage_function_calls": 4,
+  "upstage_tape": [
+   "replayed"
+  ],
+  "replay_llm_misses": [
+   "회사: 한울정밀공업(주) (자동차 차체부품, 2026년)\n영역: E (환경)\n\n[K-ESG 공시값 원장] —",
+   "회사: 한울정밀공업(주) (자동차 차체부품, 2026년)\n영역: S (사회)\n\n[K-ESG 공시값 원장] —",
+   "회사: 한울정밀공업(주) (자동차 차체부품, 2026년)\n영역: G (지배구조)\n\n[K-ESG 공시값 원장]",
+   "다음 분석 결과를 바탕으로 Executive Summary를 작성하라.\n{\"기업\": \"한울정밀공업(주)\", "
+  ],
+  "injected": [
+   [
+    "E",
+    0,
+    "843d78523255"
+   ],
+   [
+    "S",
+    0,
+    "8de7bd3056b1"
+   ],
+   [
+    "G",
+    0,
+    "53abd47c92d9"
+   ]
+  ],
+  "checks": "38/38",
+  "checks_by_artifact": {
+   "graph": "16/16",
+   "answer": "7/7",
+   "report_md": "5/5",
+   "answer+report_md": "1/1",
+   "report_audit": "1/1",
+   "excel": "2/2",
+   "datasheet": "2/2",
+   "sheet_pdf": "1/1",
+   "report_pdf": "3/3"
+  },
+  "injections": {
+   "applied": 11,
+   "all_detected": true,
+   "not_applicable": []
+  }
+ },
+ "INJ_61b6167/initial": {
+  "mode": "core_replay",
+  "commit": "61b61673c9e66460b2cb039e45423e3e4d365fa0",
+  "dirty": false,
+  "imported_esgenie": "/private/tmp/ESGenie-numeric-scope-output-20261005/esgenie/__init__.py",
+  "model": "gpt-4.1-mini",
+  "llm_provider": "azure_openai",
+  "keys_present": {
+   "ocr": true,
+   "llm": true
+  },
+  "inputs": [
+   [
+    "01_기업및임직원현황_2026-04.pdf",
+    "380b85acd568fa08",
+    true
+   ],
+   [
+    "02_전기요금청구서_2026-04.pdf",
+    "cc0a3ee26da63357",
+    true
+   ],
+   [
+    "03_도시가스요금고지서_2026-04.pdf",
+    "42f22294502cbc48",
+    true
+   ],
+   [
+    "04_사업장폐기물위탁처리명세_2026-04.pdf",
+    "6fed320f47c59297",
+    true
+   ],
+   [
+    "05_한성모터스_자가진단응답초안_2026-09.pdf",
+    "564435e198609898",
+    true
+   ],
+   [
+    "06_환경안전관리규정_2026.pdf",
+    "ad45751200c110de",
+    true
+   ],
+   [
+    "07_상수도청구서_2026-04.pdf",
+    "09a5f17e97675eef",
+    true
+   ],
+   [
+    "08_공정스크랩관리대장_2026-04.pdf",
+    "97a2de17616cbdaf",
+    true
+   ],
+   [
+    "09_안전보건교육실시기록_2026-04-22.pdf",
+    "f27baad4ce8e31c4",
+    true
+   ],
+   [
+    "10_윤리경영및고충처리규정_2026.pdf",
+    "98da23a43336d693",
+    true
+   ],
+   [
+    "11_정보보호관리규정_2026.pdf",
+    "af32e08354ac1f41",
+    true
+   ],
+   [
+    "12_개인별주간근로시간기록_2026-04-13_19.pdf",
+    "dea5414ee1eda7e8",
+    true
+   ]
+  ],
+  "llm": {
+   "mode": "on",
+   "hits": 3,
+   "misses": 5,
+   "live_calls": 5,
+   "successes": 0,
+   "failures": 5
+  },
+  "returned_models": [],
+  "upstage_function_calls": 4,
+  "upstage_tape": [
+   "replayed"
+  ],
+  "replay_llm_misses": [
+   "회사: 한울정밀공업(주) (자동차 차체부품, 2026년)\n영역: E (환경)\n\n[K-ESG 공시값 원장] —",
+   "회사: 한울정밀공업(주) (자동차 차체부품, 2026년)\n영역: S (사회)\n\n[K-ESG 공시값 원장] —",
+   "회사: 한울정밀공업(주) (자동차 차체부품, 2026년)\n영역: G (지배구조)\n\n[K-ESG 공시값 원장]",
+   "회사: 한울정밀공업(주) (자동차 차체부품, 2026년)\n영역: G (지배구조)\n\n[K-ESG 공시값 원장]",
+   "다음 분석 결과를 바탕으로 Executive Summary를 작성하라.\n{\"기업\": \"한울정밀공업(주)\", "
+  ],
+  "injected": [
+   [
+    "E",
+    0,
+    "d32c228d3104"
+   ],
+   [
+    "S",
+    0,
+    "8681f9a415ae"
+   ],
+   [
+    "G",
+    0,
+    "89de30798338"
+   ],
+   [
+    "G",
+    1,
+    "83dd53f5f185"
+   ]
+  ],
+  "checks": "34/34",
+  "checks_by_artifact": {
+   "graph": "13/13",
+   "answer": "7/7",
+   "report_md": "4/4",
+   "answer+report_md": "1/1",
+   "report_audit": "1/1",
+   "excel": "2/2",
+   "datasheet": "2/2",
+   "sheet_pdf": "1/1",
+   "report_pdf": "3/3"
+  },
+  "injections": {
+   "applied": 11,
+   "all_detected": true,
+   "not_applicable": []
+  }
+ },
+ "LIVEV_61b6167/initial": {
+  "mode": "core_upstage_replay_live_llm",
+  "commit": "61b61673c9e66460b2cb039e45423e3e4d365fa0",
+  "dirty": false,
+  "imported_esgenie": "/private/tmp/ESGenie-numeric-scope-output-20261005/esgenie/__init__.py",
+  "model": "gpt-4.1-mini",
+  "llm_provider": "azure_openai",
+  "keys_present": {
+   "ocr": true,
+   "llm": true
+  },
+  "inputs": [
+   [
+    "01_기업및임직원현황_2026-04.pdf",
+    "380b85acd568fa08",
+    true
+   ],
+   [
+    "02_전기요금청구서_2026-04.pdf",
+    "cc0a3ee26da63357",
+    true
+   ],
+   [
+    "03_도시가스요금고지서_2026-04.pdf",
+    "42f22294502cbc48",
+    true
+   ],
+   [
+    "04_사업장폐기물위탁처리명세_2026-04.pdf",
+    "6fed320f47c59297",
+    true
+   ],
+   [
+    "05_한성모터스_자가진단응답초안_2026-09.pdf",
+    "564435e198609898",
+    true
+   ],
+   [
+    "06_환경안전관리규정_2026.pdf",
+    "ad45751200c110de",
+    true
+   ],
+   [
+    "07_상수도청구서_2026-04.pdf",
+    "09a5f17e97675eef",
+    true
+   ],
+   [
+    "08_공정스크랩관리대장_2026-04.pdf",
+    "97a2de17616cbdaf",
+    true
+   ],
+   [
+    "09_안전보건교육실시기록_2026-04-22.pdf",
+    "f27baad4ce8e31c4",
+    true
+   ],
+   [
+    "10_윤리경영및고충처리규정_2026.pdf",
+    "98da23a43336d693",
+    true
+   ],
+   [
+    "11_정보보호관리규정_2026.pdf",
+    "af32e08354ac1f41",
+    true
+   ],
+   [
+    "12_개인별주간근로시간기록_2026-04-13_19.pdf",
+    "dea5414ee1eda7e8",
+    true
+   ],
+   [
+    "14_검증용변형본_FY2026환경법규준수_위반0건.pdf",
+    "d5e3268fb697c867",
+    null
+   ]
+  ],
+  "llm": {
+   "mode": "on",
+   "hits": 7,
+   "misses": 1,
+   "live_calls": 1,
+   "successes": 1,
+   "failures": 0
+  },
+  "returned_models": [
+   "gpt-4.1-mini-2025-04-14"
+  ],
+  "upstage_function_calls": 4,
+  "upstage_tape": [
+   "replayed"
+  ],
+  "replay_llm_misses": [],
+  "injected": [],
+  "checks": "40/40",
+  "checks_by_artifact": {
+   "graph": "14/14",
+   "answer": "8/8",
+   "report_md": "5/5",
+   "answer+report_md": "1/1",
+   "report_audit": "1/1",
+   "excel": "3/3",
+   "datasheet": "3/3",
+   "sheet_pdf": "1/1",
+   "report_pdf": "4/4"
+  },
+  "injections": {
+   "applied": 15,
+   "all_detected": true,
+   "not_applicable": [
+    "변형본 본문 '[검토: 범위 미확정 …]' 표시만 제거(문장은 그대로)",
+    "변형본 데이터시트 E-8-1 상태 제거"
+   ]
+  }
+ },
+ "LIVE_61b6167/followup": {
+  "mode": "core_upstage_replay_live_llm",
+  "commit": "61b61673c9e66460b2cb039e45423e3e4d365fa0",
+  "dirty": false,
+  "imported_esgenie": "/private/tmp/ESGenie-numeric-scope-output-20261005/esgenie/__init__.py",
+  "model": "gpt-4.1-mini",
+  "llm_provider": "azure_openai",
+  "keys_present": {
+   "ocr": true,
+   "llm": true
+  },
+  "inputs": [
+   [
+    "01_기업및임직원현황_2026-04.pdf",
+    "380b85acd568fa08",
+    true
+   ],
+   [
+    "02_전기요금청구서_2026-04.pdf",
+    "cc0a3ee26da63357",
+    true
+   ],
+   [
+    "03_도시가스요금고지서_2026-04.pdf",
+    "42f22294502cbc48",
+    true
+   ],
+   [
+    "04_사업장폐기물위탁처리명세_2026-04.pdf",
+    "6fed320f47c59297",
+    true
+   ],
+   [
+    "05_한성모터스_자가진단응답초안_2026-09.pdf",
+    "564435e198609898",
+    true
+   ],
+   [
+    "06_환경안전관리규정_2026.pdf",
+    "ad45751200c110de",
+    true
+   ],
+   [
+    "07_상수도청구서_2026-04.pdf",
+    "09a5f17e97675eef",
+    true
+   ],
+   [
+    "08_공정스크랩관리대장_2026-04.pdf",
+    "97a2de17616cbdaf",
+    true
+   ],
+   [
+    "09_안전보건교육실시기록_2026-04-22.pdf",
+    "f27baad4ce8e31c4",
+    true
+   ],
+   [
+    "10_윤리경영및고충처리규정_2026.pdf",
+    "98da23a43336d693",
+    true
+   ],
+   [
+    "11_정보보호관리규정_2026.pdf",
+    "af32e08354ac1f41",
+    true
+   ],
+   [
+    "12_개인별주간근로시간기록_2026-04-13_19.pdf",
+    "dea5414ee1eda7e8",
+    true
+   ],
+   [
+    "13_안전보건추가교육실시기록_2026-04-27.pdf",
+    "4bf4dfbfb0ac3720",
+    true
+   ]
+  ],
+  "llm": {
+   "mode": "on",
+   "hits": 6,
+   "misses": 1,
+   "live_calls": 1,
+   "successes": 1,
+   "failures": 0
+  },
+  "returned_models": [
+   "gpt-4.1-mini-2025-04-14"
+  ],
+  "upstage_function_calls": 4,
+  "upstage_tape": [
+   "replayed"
+  ],
+  "replay_llm_misses": [],
+  "injected": [],
+  "checks": "38/38",
+  "checks_by_artifact": {
+   "graph": "16/16",
+   "answer": "7/7",
+   "report_md": "5/5",
+   "answer+report_md": "1/1",
+   "report_audit": "1/1",
+   "excel": "2/2",
+   "datasheet": "2/2",
+   "sheet_pdf": "1/1",
+   "report_pdf": "3/3"
+  },
+  "injections": {
+   "applied": 11,
+   "all_detected": true,
+   "not_applicable": []
+  }
+ },
+ "LIVE_61b6167/initial": {
+  "mode": "core_upstage_replay_live_llm",
+  "commit": "61b61673c9e66460b2cb039e45423e3e4d365fa0",
+  "dirty": false,
+  "imported_esgenie": "/private/tmp/ESGenie-numeric-scope-output-20261005/esgenie/__init__.py",
+  "model": "gpt-4.1-mini",
+  "llm_provider": "azure_openai",
+  "keys_present": {
+   "ocr": true,
+   "llm": true
+  },
+  "inputs": [
+   [
+    "01_기업및임직원현황_2026-04.pdf",
+    "380b85acd568fa08",
+    true
+   ],
+   [
+    "02_전기요금청구서_2026-04.pdf",
+    "cc0a3ee26da63357",
+    true
+   ],
+   [
+    "03_도시가스요금고지서_2026-04.pdf",
+    "42f22294502cbc48",
+    true
+   ],
+   [
+    "04_사업장폐기물위탁처리명세_2026-04.pdf",
+    "6fed320f47c59297",
+    true
+   ],
+   [
+    "05_한성모터스_자가진단응답초안_2026-09.pdf",
+    "564435e198609898",
+    true
+   ],
+   [
+    "06_환경안전관리규정_2026.pdf",
+    "ad45751200c110de",
+    true
+   ],
+   [
+    "07_상수도청구서_2026-04.pdf",
+    "09a5f17e97675eef",
+    true
+   ],
+   [
+    "08_공정스크랩관리대장_2026-04.pdf",
+    "97a2de17616cbdaf",
+    true
+   ],
+   [
+    "09_안전보건교육실시기록_2026-04-22.pdf",
+    "f27baad4ce8e31c4",
+    true
+   ],
+   [
+    "10_윤리경영및고충처리규정_2026.pdf",
+    "98da23a43336d693",
+    true
+   ],
+   [
+    "11_정보보호관리규정_2026.pdf",
+    "af32e08354ac1f41",
+    true
+   ],
+   [
+    "12_개인별주간근로시간기록_2026-04-13_19.pdf",
+    "dea5414ee1eda7e8",
+    true
+   ]
+  ],
+  "llm": {
+   "mode": "on",
+   "hits": 6,
+   "misses": 1,
+   "live_calls": 1,
+   "successes": 1,
+   "failures": 0
+  },
+  "returned_models": [
+   "gpt-4.1-mini-2025-04-14"
+  ],
+  "upstage_function_calls": 4,
+  "upstage_tape": [
+   "replayed"
+  ],
+  "replay_llm_misses": [],
+  "injected": [],
+  "checks": "34/34",
+  "checks_by_artifact": {
+   "graph": "13/13",
+   "answer": "7/7",
+   "report_md": "4/4",
+   "answer+report_md": "1/1",
+   "report_audit": "1/1",
+   "excel": "2/2",
+   "datasheet": "2/2",
+   "sheet_pdf": "1/1",
+   "report_pdf": "3/3"
+  },
+  "injections": {
+   "applied": 11,
+   "all_detected": true,
+   "not_applicable": []
+  }
+ }
+}

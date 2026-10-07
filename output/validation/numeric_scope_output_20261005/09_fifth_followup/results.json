@@ -1,0 +1,1536 @@
+{
+  "checks": 19,
+  "passed": 19,
+  "results": [
+    {
+      "case": "entity_heading",
+      "extent": "quantity",
+      "boundary": {
+        "period_text": "2026-06-03",
+        "site": "",
+        "site_scope": "entity",
+        "provenance": [
+          {
+            "source": "quantity_scope",
+            "method": "rule",
+            "scope_from": "scope_transition",
+            "source_site": "",
+            "site_scope": "entity",
+            "scope_heading": "전사 교육 집계 / 2026-06-03",
+            "quote": "참석 27명",
+            "page": 0,
+            "model_site": ""
+          }
+        ]
+      },
+      "facts": [
+        {
+          "label": "교육 참석 인원",
+          "value": 27.0,
+          "unit": "명",
+          "role": "참석",
+          "value_role": "unknown",
+          "period_text": "2026-06-03",
+          "period_start": "",
+          "period_end": "",
+          "site": "",
+          "site_scope": "entity",
+          "site_identity": [],
+          "site_conflicts": [],
+          "source_file": "교육집계.pdf",
+          "page": 0,
+          "node_id": "n27",
+          "quote": "참석 27명"
+        }
+      ],
+      "body": "[확인 보류] 생성 문장의 수치(27명)는 원문에서 이 문장의 사업장 관계를 확인하지 못해 이 문장을 본문에 싣지 않았습니다. 원문 확인 값: 교육 참석 인원 27명(2026-06-03) — 교육집계.pdf.",
+      "marks": [
+        {
+          "area": "S",
+          "sentence": "2026년 6월 3일 김해 제1공장 교육에는 27명이 참석했다 .",
+          "reason": "relation_mismatch",
+          "action": "replaced",
+          "model_text": "2026년 6월 3일 김해 제1공장 교육에는 27명이 참석했다 .",
+          "output": "[확인 보류] 생성 문장의 수치(27명)는 원문에서 이 문장의 사업장 관계를 확인하지 못해 이 문장을 본문에 싣지 않았습니다. 원문 확인 값: 교육 참석 인원 27명(2026-06-03) — 교육집계.pdf.",
+          "numbers": [
+            "27"
+          ],
+          "quantities": [
+            "27명"
+          ],
+          "related": [
+            "교육 참석 인원 27명(2026-06-03) — 교육집계.pdf"
+          ],
+          "problems": [
+            "site_unstated"
+          ],
+          "cited": [
+            "source_facts_S"
+          ],
+          "conflicts": [
+            {
+              "evidence": "교육 참석 인원 27명(2026-06-03) — 교육집계.pdf",
+              "problems": [
+                "site_unstated"
+              ]
+            },
+            {
+              "evidence": "원문 '참석 27명'의 27명(2026-06-03) — 교육집계.pdf",
+              "problems": [
+                "site_unstated"
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "case": "entity_heading",
+      "extent": "scope_and_quantity",
+      "boundary": {
+        "period_text": "2026-06-03",
+        "site": "",
+        "site_scope": "entity",
+        "provenance": [
+          {
+            "source": "quantity_scope",
+            "method": "rule",
+            "scope_from": "scope_transition",
+            "source_site": "",
+            "site_scope": "entity",
+            "scope_heading": "전사 교육 집계 / 2026-06-03",
+            "quote": "전사 교육 집계 / 2026-06-03\n참석 27명",
+            "page": 0,
+            "model_site": ""
+          }
+        ]
+      },
+      "facts": [
+        {
+          "label": "교육 참석 인원",
+          "value": 27.0,
+          "unit": "명",
+          "role": "참석",
+          "value_role": "unknown",
+          "period_text": "2026-06-03",
+          "period_start": "",
+          "period_end": "",
+          "site": "",
+          "site_scope": "entity",
+          "site_identity": [],
+          "site_conflicts": [],
+          "source_file": "교육집계.pdf",
+          "page": 0,
+          "node_id": "n27",
+          "quote": "전사 교육 집계 / 2026-06-03"
+        }
+      ],
+      "body": "[확인 보류] 생성 문장의 수치(27명)는 원문에서 이 문장의 사업장 관계를 확인하지 못해 이 문장을 본문에 싣지 않았습니다. 원문 확인 값: 교육 참석 인원 27명(2026-06-03) — 교육집계.pdf.",
+      "marks": [
+        {
+          "area": "S",
+          "sentence": "2026년 6월 3일 김해 제1공장 교육에는 27명이 참석했다 .",
+          "reason": "relation_mismatch",
+          "action": "replaced",
+          "model_text": "2026년 6월 3일 김해 제1공장 교육에는 27명이 참석했다 .",
+          "output": "[확인 보류] 생성 문장의 수치(27명)는 원문에서 이 문장의 사업장 관계를 확인하지 못해 이 문장을 본문에 싣지 않았습니다. 원문 확인 값: 교육 참석 인원 27명(2026-06-03) — 교육집계.pdf.",
+          "numbers": [
+            "27"
+          ],
+          "quantities": [
+            "27명"
+          ],
+          "related": [
+            "교육 참석 인원 27명(2026-06-03) — 교육집계.pdf"
+          ],
+          "problems": [
+            "site_unstated"
+          ],
+          "cited": [
+            "source_facts_S"
+          ],
+          "conflicts": [
+            {
+              "evidence": "교육 참석 인원 27명(2026-06-03) — 교육집계.pdf",
+              "problems": [
+                "site_unstated"
+              ]
+            },
+            {
+              "evidence": "원문 '참석 27명'의 27명(2026-06-03) — 교육집계.pdf",
+              "problems": [
+                "site_unstated"
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "case": "entity_heading",
+      "extent": "previous_section",
+      "boundary": {
+        "period_text": "2026-06-03",
+        "site": "",
+        "site_scope": "entity",
+        "provenance": [
+          {
+            "source": "quantity_scope",
+            "method": "rule",
+            "scope_from": "scope_transition",
+            "source_site": "",
+            "site_scope": "entity",
+            "scope_heading": "전사 교육 집계 / 2026-06-03",
+            "quote": "교육 기록: 김해 제1공장 / 2026-06-03\n참석 15명\n전사 교육 집계 / 2026-06-03\n참석 27명",
+            "page": 0,
+            "model_site": ""
+          }
+        ]
+      },
+      "facts": [
+        {
+          "label": "교육 참석 인원",
+          "value": 27.0,
+          "unit": "명",
+          "role": "참석",
+          "value_role": "unknown",
+          "period_text": "2026-06-03",
+          "period_start": "",
+          "period_end": "",
+          "site": "",
+          "site_scope": "entity",
+          "site_identity": [],
+          "site_conflicts": [],
+          "source_file": "교육집계.pdf",
+          "page": 0,
+          "node_id": "n27",
+          "quote": "교육 기록: 김해 제1공장 / 2026-06-03"
+        }
+      ],
+      "body": "[확인 보류] 생성 문장의 수치(27명)는 원문에서 이 문장의 사업장 관계를 확인하지 못해 이 문장을 본문에 싣지 않았습니다. 원문 확인 값: 교육 참석 인원 27명(2026-06-03) — 교육집계.pdf.",
+      "marks": [
+        {
+          "area": "S",
+          "sentence": "2026년 6월 3일 김해 제1공장 교육에는 27명이 참석했다 .",
+          "reason": "relation_mismatch",
+          "action": "replaced",
+          "model_text": "2026년 6월 3일 김해 제1공장 교육에는 27명이 참석했다 .",
+          "output": "[확인 보류] 생성 문장의 수치(27명)는 원문에서 이 문장의 사업장 관계를 확인하지 못해 이 문장을 본문에 싣지 않았습니다. 원문 확인 값: 교육 참석 인원 27명(2026-06-03) — 교육집계.pdf.",
+          "numbers": [
+            "27"
+          ],
+          "quantities": [
+            "27명"
+          ],
+          "related": [
+            "교육 참석 인원 27명(2026-06-03) — 교육집계.pdf"
+          ],
+          "problems": [
+            "site_unstated"
+          ],
+          "cited": [
+            "source_facts_S"
+          ],
+          "conflicts": [
+            {
+              "evidence": "교육 참석 인원 27명(2026-06-03) — 교육집계.pdf",
+              "problems": [
+                "site_unstated"
+              ]
+            },
+            {
+              "evidence": "원문 '참석 27명'의 27명(2026-06-03) — 교육집계.pdf",
+              "problems": [
+                "site_unstated"
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "case": "unknown_heading",
+      "extent": "quantity",
+      "boundary": {
+        "period_text": "2026-06-03",
+        "site": "",
+        "site_scope": "unknown",
+        "provenance": [
+          {
+            "source": "quantity_scope",
+            "method": "rule",
+            "scope_from": "scope_transition",
+            "source_site": "",
+            "site_scope": "unknown",
+            "scope_heading": "교육 기록: 사업장 미기록 / 2026-06-03",
+            "quote": "참석 27명",
+            "page": 0,
+            "model_site": ""
+          }
+        ]
+      },
+      "facts": [
+        {
+          "label": "교육 참석 인원",
+          "value": 27.0,
+          "unit": "명",
+          "role": "참석",
+          "value_role": "unknown",
+          "period_text": "2026-06-03",
+          "period_start": "",
+          "period_end": "",
+          "site": "",
+          "site_scope": "unknown",
+          "site_identity": [],
+          "site_conflicts": [],
+          "source_file": "교육집계.pdf",
+          "page": 0,
+          "node_id": "n27",
+          "quote": "참석 27명"
+        }
+      ],
+      "body": "[확인 보류] 생성 문장의 수치(27명)는 원문에서 이 문장의 사업장 관계를 확인하지 못해 이 문장을 본문에 싣지 않았습니다. 원문 확인 값: 교육 참석 인원 27명(2026-06-03) — 교육집계.pdf.",
+      "marks": [
+        {
+          "area": "S",
+          "sentence": "2026년 6월 3일 김해 제1공장 교육에는 27명이 참석했다 .",
+          "reason": "relation_mismatch",
+          "action": "replaced",
+          "model_text": "2026년 6월 3일 김해 제1공장 교육에는 27명이 참석했다 .",
+          "output": "[확인 보류] 생성 문장의 수치(27명)는 원문에서 이 문장의 사업장 관계를 확인하지 못해 이 문장을 본문에 싣지 않았습니다. 원문 확인 값: 교육 참석 인원 27명(2026-06-03) — 교육집계.pdf.",
+          "numbers": [
+            "27"
+          ],
+          "quantities": [
+            "27명"
+          ],
+          "related": [
+            "교육 참석 인원 27명(2026-06-03) — 교육집계.pdf"
+          ],
+          "problems": [
+            "site_unstated"
+          ],
+          "cited": [
+            "source_facts_S"
+          ],
+          "conflicts": [
+            {
+              "evidence": "교육 참석 인원 27명(2026-06-03) — 교육집계.pdf",
+              "problems": [
+                "site_unstated"
+              ]
+            },
+            {
+              "evidence": "원문 '참석 27명'의 27명(2026-06-03) — 교육집계.pdf",
+              "problems": [
+                "site_unstated"
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "case": "unknown_heading",
+      "extent": "scope_and_quantity",
+      "boundary": {
+        "period_text": "2026-06-03",
+        "site": "",
+        "site_scope": "unknown",
+        "provenance": [
+          {
+            "source": "quantity_scope",
+            "method": "rule",
+            "scope_from": "scope_transition",
+            "source_site": "",
+            "site_scope": "unknown",
+            "scope_heading": "교육 기록: 사업장 미기록 / 2026-06-03",
+            "quote": "교육 기록: 사업장 미기록 / 2026-06-03\n참석 27명",
+            "page": 0,
+            "model_site": ""
+          }
+        ]
+      },
+      "facts": [
+        {
+          "label": "교육 참석 인원",
+          "value": 27.0,
+          "unit": "명",
+          "role": "참석",
+          "value_role": "unknown",
+          "period_text": "2026-06-03",
+          "period_start": "",
+          "period_end": "",
+          "site": "",
+          "site_scope": "unknown",
+          "site_identity": [],
+          "site_conflicts": [],
+          "source_file": "교육집계.pdf",
+          "page": 0,
+          "node_id": "n27",
+          "quote": "교육 기록: 사업장 미기록 / 2026-06-03"
+        }
+      ],
+      "body": "[확인 보류] 생성 문장의 수치(27명)는 원문에서 이 문장의 사업장 관계를 확인하지 못해 이 문장을 본문에 싣지 않았습니다. 원문 확인 값: 교육 참석 인원 27명(2026-06-03) — 교육집계.pdf.",
+      "marks": [
+        {
+          "area": "S",
+          "sentence": "2026년 6월 3일 김해 제1공장 교육에는 27명이 참석했다 .",
+          "reason": "relation_mismatch",
+          "action": "replaced",
+          "model_text": "2026년 6월 3일 김해 제1공장 교육에는 27명이 참석했다 .",
+          "output": "[확인 보류] 생성 문장의 수치(27명)는 원문에서 이 문장의 사업장 관계를 확인하지 못해 이 문장을 본문에 싣지 않았습니다. 원문 확인 값: 교육 참석 인원 27명(2026-06-03) — 교육집계.pdf.",
+          "numbers": [
+            "27"
+          ],
+          "quantities": [
+            "27명"
+          ],
+          "related": [
+            "교육 참석 인원 27명(2026-06-03) — 교육집계.pdf"
+          ],
+          "problems": [
+            "site_unstated"
+          ],
+          "cited": [
+            "source_facts_S"
+          ],
+          "conflicts": [
+            {
+              "evidence": "교육 참석 인원 27명(2026-06-03) — 교육집계.pdf",
+              "problems": [
+                "site_unstated"
+              ]
+            },
+            {
+              "evidence": "원문 '참석 27명'의 27명(2026-06-03) — 교육집계.pdf",
+              "problems": [
+                "site_unstated"
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "case": "unknown_heading",
+      "extent": "previous_section",
+      "boundary": {
+        "period_text": "2026-06-03",
+        "site": "",
+        "site_scope": "unknown",
+        "provenance": [
+          {
+            "source": "quantity_scope",
+            "method": "rule",
+            "scope_from": "scope_transition",
+            "source_site": "",
+            "site_scope": "unknown",
+            "scope_heading": "교육 기록: 사업장 미기록 / 2026-06-03",
+            "quote": "교육 기록: 김해 제1공장 / 2026-06-03\n참석 15명\n교육 기록: 사업장 미기록 / 2026-06-03\n참석 27명",
+            "page": 0,
+            "model_site": ""
+          }
+        ]
+      },
+      "facts": [
+        {
+          "label": "교육 참석 인원",
+          "value": 27.0,
+          "unit": "명",
+          "role": "참석",
+          "value_role": "unknown",
+          "period_text": "2026-06-03",
+          "period_start": "",
+          "period_end": "",
+          "site": "",
+          "site_scope": "unknown",
+          "site_identity": [],
+          "site_conflicts": [],
+          "source_file": "교육집계.pdf",
+          "page": 0,
+          "node_id": "n27",
+          "quote": "교육 기록: 김해 제1공장 / 2026-06-03"
+        }
+      ],
+      "body": "[확인 보류] 생성 문장의 수치(27명)는 원문에서 이 문장의 사업장 관계를 확인하지 못해 이 문장을 본문에 싣지 않았습니다. 원문 확인 값: 교육 참석 인원 27명(2026-06-03) — 교육집계.pdf.",
+      "marks": [
+        {
+          "area": "S",
+          "sentence": "2026년 6월 3일 김해 제1공장 교육에는 27명이 참석했다 .",
+          "reason": "relation_mismatch",
+          "action": "replaced",
+          "model_text": "2026년 6월 3일 김해 제1공장 교육에는 27명이 참석했다 .",
+          "output": "[확인 보류] 생성 문장의 수치(27명)는 원문에서 이 문장의 사업장 관계를 확인하지 못해 이 문장을 본문에 싣지 않았습니다. 원문 확인 값: 교육 참석 인원 27명(2026-06-03) — 교육집계.pdf.",
+          "numbers": [
+            "27"
+          ],
+          "quantities": [
+            "27명"
+          ],
+          "related": [
+            "교육 참석 인원 27명(2026-06-03) — 교육집계.pdf"
+          ],
+          "problems": [
+            "site_unstated"
+          ],
+          "cited": [
+            "source_facts_S"
+          ],
+          "conflicts": [
+            {
+              "evidence": "교육 참석 인원 27명(2026-06-03) — 교육집계.pdf",
+              "problems": [
+                "site_unstated"
+              ]
+            },
+            {
+              "evidence": "원문 '참석 27명'의 27명(2026-06-03) — 교육집계.pdf",
+              "problems": [
+                "site_unstated"
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "case": "entity_same_line",
+      "extent": "quantity",
+      "boundary": {
+        "period_text": "2026-06-03",
+        "site": "",
+        "site_scope": "entity",
+        "provenance": [
+          {
+            "source": "quantity_scope",
+            "method": "rule",
+            "scope_from": "scope_transition",
+            "source_site": "",
+            "site_scope": "entity",
+            "scope_heading": "전사 교육 집계 / 2026-06-03 / 참석 27명",
+            "quote": "참석 27명",
+            "page": 0,
+            "model_site": ""
+          }
+        ]
+      },
+      "facts": [
+        {
+          "label": "교육 참석 인원",
+          "value": 27.0,
+          "unit": "명",
+          "role": "참석",
+          "value_role": "unknown",
+          "period_text": "2026-06-03",
+          "period_start": "",
+          "period_end": "",
+          "site": "",
+          "site_scope": "entity",
+          "site_identity": [],
+          "site_conflicts": [],
+          "source_file": "교육집계.pdf",
+          "page": 0,
+          "node_id": "n27",
+          "quote": "참석 27명"
+        }
+      ],
+      "body": "[확인 보류] 생성 문장의 수치(27명)는 원문에서 이 문장의 사업장 관계를 확인하지 못해 이 문장을 본문에 싣지 않았습니다. 원문 확인 값: 교육 참석 인원 27명(2026-06-03) — 교육집계.pdf.",
+      "marks": [
+        {
+          "area": "S",
+          "sentence": "2026년 6월 3일 김해 제1공장 교육에는 27명이 참석했다 .",
+          "reason": "relation_mismatch",
+          "action": "replaced",
+          "model_text": "2026년 6월 3일 김해 제1공장 교육에는 27명이 참석했다 .",
+          "output": "[확인 보류] 생성 문장의 수치(27명)는 원문에서 이 문장의 사업장 관계를 확인하지 못해 이 문장을 본문에 싣지 않았습니다. 원문 확인 값: 교육 참석 인원 27명(2026-06-03) — 교육집계.pdf.",
+          "numbers": [
+            "27"
+          ],
+          "quantities": [
+            "27명"
+          ],
+          "related": [
+            "교육 참석 인원 27명(2026-06-03) — 교육집계.pdf"
+          ],
+          "problems": [
+            "site_unstated"
+          ],
+          "cited": [
+            "source_facts_S"
+          ],
+          "conflicts": [
+            {
+              "evidence": "교육 참석 인원 27명(2026-06-03) — 교육집계.pdf",
+              "problems": [
+                "site_unstated"
+              ]
+            },
+            {
+              "evidence": "원문 '전사 교육 집계 / 2026-06-03 / 참석 27명'의 27명(2026-06-03) — 교육집계.pdf",
+              "problems": [
+                "site_unstated"
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "case": "entity_same_line",
+      "extent": "scope_and_quantity",
+      "boundary": {
+        "period_text": "2026-06-03",
+        "site": "",
+        "site_scope": "entity",
+        "provenance": [
+          {
+            "source": "quantity_scope",
+            "method": "rule",
+            "scope_from": "scope_transition",
+            "source_site": "",
+            "site_scope": "entity",
+            "scope_heading": "전사 교육 집계 / 2026-06-03 / 참석 27명",
+            "quote": "전사 교육 집계 / 2026-06-03 / 참석 27명",
+            "page": 0,
+            "model_site": ""
+          }
+        ]
+      },
+      "facts": [
+        {
+          "label": "교육 참석 인원",
+          "value": 27.0,
+          "unit": "명",
+          "role": "참석",
+          "value_role": "unknown",
+          "period_text": "2026-06-03",
+          "period_start": "",
+          "period_end": "",
+          "site": "",
+          "site_scope": "entity",
+          "site_identity": [],
+          "site_conflicts": [],
+          "source_file": "교육집계.pdf",
+          "page": 0,
+          "node_id": "n27",
+          "quote": "전사 교육 집계 / 2026-06-03 / 참석 27명"
+        }
+      ],
+      "body": "[확인 보류] 생성 문장의 수치(27명)는 원문에서 이 문장의 사업장 관계를 확인하지 못해 이 문장을 본문에 싣지 않았습니다. 원문 확인 값: 교육 참석 인원 27명(2026-06-03) — 교육집계.pdf.",
+      "marks": [
+        {
+          "area": "S",
+          "sentence": "2026년 6월 3일 김해 제1공장 교육에는 27명이 참석했다 .",
+          "reason": "relation_mismatch",
+          "action": "replaced",
+          "model_text": "2026년 6월 3일 김해 제1공장 교육에는 27명이 참석했다 .",
+          "output": "[확인 보류] 생성 문장의 수치(27명)는 원문에서 이 문장의 사업장 관계를 확인하지 못해 이 문장을 본문에 싣지 않았습니다. 원문 확인 값: 교육 참석 인원 27명(2026-06-03) — 교육집계.pdf.",
+          "numbers": [
+            "27"
+          ],
+          "quantities": [
+            "27명"
+          ],
+          "related": [
+            "교육 참석 인원 27명(2026-06-03) — 교육집계.pdf"
+          ],
+          "problems": [
+            "site_unstated"
+          ],
+          "cited": [
+            "source_facts_S"
+          ],
+          "conflicts": [
+            {
+              "evidence": "교육 참석 인원 27명(2026-06-03) — 교육집계.pdf",
+              "problems": [
+                "site_unstated"
+              ]
+            },
+            {
+              "evidence": "원문 '전사 교육 집계 / 2026-06-03 / 참석 27명'의 27명(2026-06-03) — 교육집계.pdf",
+              "problems": [
+                "site_unstated"
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "case": "entity_same_line",
+      "extent": "previous_section",
+      "boundary": {
+        "period_text": "2026-06-03",
+        "site": "",
+        "site_scope": "entity",
+        "provenance": [
+          {
+            "source": "quantity_scope",
+            "method": "rule",
+            "scope_from": "scope_transition",
+            "source_site": "",
+            "site_scope": "entity",
+            "scope_heading": "전사 교육 집계 / 2026-06-03 / 참석 27명",
+            "quote": "교육 기록: 김해 제1공장 / 2026-06-03\n참석 15명\n전사 교육 집계 / 2026-06-03 / 참석 27명",
+            "page": 0,
+            "model_site": ""
+          }
+        ]
+      },
+      "facts": [
+        {
+          "label": "교육 참석 인원",
+          "value": 27.0,
+          "unit": "명",
+          "role": "참석",
+          "value_role": "unknown",
+          "period_text": "2026-06-03",
+          "period_start": "",
+          "period_end": "",
+          "site": "",
+          "site_scope": "entity",
+          "site_identity": [],
+          "site_conflicts": [],
+          "source_file": "교육집계.pdf",
+          "page": 0,
+          "node_id": "n27",
+          "quote": "교육 기록: 김해 제1공장 / 2026-06-03"
+        }
+      ],
+      "body": "[확인 보류] 생성 문장의 수치(27명)는 원문에서 이 문장의 사업장 관계를 확인하지 못해 이 문장을 본문에 싣지 않았습니다. 원문 확인 값: 교육 참석 인원 27명(2026-06-03) — 교육집계.pdf.",
+      "marks": [
+        {
+          "area": "S",
+          "sentence": "2026년 6월 3일 김해 제1공장 교육에는 27명이 참석했다 .",
+          "reason": "relation_mismatch",
+          "action": "replaced",
+          "model_text": "2026년 6월 3일 김해 제1공장 교육에는 27명이 참석했다 .",
+          "output": "[확인 보류] 생성 문장의 수치(27명)는 원문에서 이 문장의 사업장 관계를 확인하지 못해 이 문장을 본문에 싣지 않았습니다. 원문 확인 값: 교육 참석 인원 27명(2026-06-03) — 교육집계.pdf.",
+          "numbers": [
+            "27"
+          ],
+          "quantities": [
+            "27명"
+          ],
+          "related": [
+            "교육 참석 인원 27명(2026-06-03) — 교육집계.pdf"
+          ],
+          "problems": [
+            "site_unstated"
+          ],
+          "cited": [
+            "source_facts_S"
+          ],
+          "conflicts": [
+            {
+              "evidence": "교육 참석 인원 27명(2026-06-03) — 교육집계.pdf",
+              "problems": [
+                "site_unstated"
+              ]
+            },
+            {
+              "evidence": "원문 '전사 교육 집계 / 2026-06-03 / 참석 27명'의 27명(2026-06-03) — 교육집계.pdf",
+              "problems": [
+                "site_unstated"
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "case": "unknown_same_line",
+      "extent": "quantity",
+      "boundary": {
+        "period_text": "2026-06-03",
+        "site": "",
+        "site_scope": "unknown",
+        "provenance": [
+          {
+            "source": "quantity_scope",
+            "method": "rule",
+            "scope_from": "scope_transition",
+            "source_site": "",
+            "site_scope": "unknown",
+            "scope_heading": "사업장 미기록 / 2026-06-03 / 참석 27명",
+            "quote": "참석 27명",
+            "page": 0,
+            "model_site": ""
+          }
+        ]
+      },
+      "facts": [
+        {
+          "label": "교육 참석 인원",
+          "value": 27.0,
+          "unit": "명",
+          "role": "참석",
+          "value_role": "unknown",
+          "period_text": "2026-06-03",
+          "period_start": "",
+          "period_end": "",
+          "site": "",
+          "site_scope": "unknown",
+          "site_identity": [],
+          "site_conflicts": [],
+          "source_file": "교육집계.pdf",
+          "page": 0,
+          "node_id": "n27",
+          "quote": "참석 27명"
+        }
+      ],
+      "body": "[확인 보류] 생성 문장의 수치(27명)는 원문에서 이 문장의 사업장 관계를 확인하지 못해 이 문장을 본문에 싣지 않았습니다. 원문 확인 값: 교육 참석 인원 27명(2026-06-03) — 교육집계.pdf.",
+      "marks": [
+        {
+          "area": "S",
+          "sentence": "2026년 6월 3일 김해 제1공장 교육에는 27명이 참석했다 .",
+          "reason": "relation_mismatch",
+          "action": "replaced",
+          "model_text": "2026년 6월 3일 김해 제1공장 교육에는 27명이 참석했다 .",
+          "output": "[확인 보류] 생성 문장의 수치(27명)는 원문에서 이 문장의 사업장 관계를 확인하지 못해 이 문장을 본문에 싣지 않았습니다. 원문 확인 값: 교육 참석 인원 27명(2026-06-03) — 교육집계.pdf.",
+          "numbers": [
+            "27"
+          ],
+          "quantities": [
+            "27명"
+          ],
+          "related": [
+            "교육 참석 인원 27명(2026-06-03) — 교육집계.pdf"
+          ],
+          "problems": [
+            "site_unstated"
+          ],
+          "cited": [
+            "source_facts_S"
+          ],
+          "conflicts": [
+            {
+              "evidence": "교육 참석 인원 27명(2026-06-03) — 교육집계.pdf",
+              "problems": [
+                "site_unstated"
+              ]
+            },
+            {
+              "evidence": "원문 '사업장 미기록 / 2026-06-03 / 참석 27명'의 27명(2026-06-03) — 교육집계.pdf",
+              "problems": [
+                "site_unstated"
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "case": "unknown_same_line",
+      "extent": "scope_and_quantity",
+      "boundary": {
+        "period_text": "2026-06-03",
+        "site": "",
+        "site_scope": "unknown",
+        "provenance": [
+          {
+            "source": "quantity_scope",
+            "method": "rule",
+            "scope_from": "scope_transition",
+            "source_site": "",
+            "site_scope": "unknown",
+            "scope_heading": "사업장 미기록 / 2026-06-03 / 참석 27명",
+            "quote": "사업장 미기록 / 2026-06-03 / 참석 27명",
+            "page": 0,
+            "model_site": ""
+          }
+        ]
+      },
+      "facts": [
+        {
+          "label": "교육 참석 인원",
+          "value": 27.0,
+          "unit": "명",
+          "role": "참석",
+          "value_role": "unknown",
+          "period_text": "2026-06-03",
+          "period_start": "",
+          "period_end": "",
+          "site": "",
+          "site_scope": "unknown",
+          "site_identity": [],
+          "site_conflicts": [],
+          "source_file": "교육집계.pdf",
+          "page": 0,
+          "node_id": "n27",
+          "quote": "사업장 미기록 / 2026-06-03 / 참석 27명"
+        }
+      ],
+      "body": "[확인 보류] 생성 문장의 수치(27명)는 원문에서 이 문장의 사업장 관계를 확인하지 못해 이 문장을 본문에 싣지 않았습니다. 원문 확인 값: 교육 참석 인원 27명(2026-06-03) — 교육집계.pdf.",
+      "marks": [
+        {
+          "area": "S",
+          "sentence": "2026년 6월 3일 김해 제1공장 교육에는 27명이 참석했다 .",
+          "reason": "relation_mismatch",
+          "action": "replaced",
+          "model_text": "2026년 6월 3일 김해 제1공장 교육에는 27명이 참석했다 .",
+          "output": "[확인 보류] 생성 문장의 수치(27명)는 원문에서 이 문장의 사업장 관계를 확인하지 못해 이 문장을 본문에 싣지 않았습니다. 원문 확인 값: 교육 참석 인원 27명(2026-06-03) — 교육집계.pdf.",
+          "numbers": [
+            "27"
+          ],
+          "quantities": [
+            "27명"
+          ],
+          "related": [
+            "교육 참석 인원 27명(2026-06-03) — 교육집계.pdf"
+          ],
+          "problems": [
+            "site_unstated"
+          ],
+          "cited": [
+            "source_facts_S"
+          ],
+          "conflicts": [
+            {
+              "evidence": "교육 참석 인원 27명(2026-06-03) — 교육집계.pdf",
+              "problems": [
+                "site_unstated"
+              ]
+            },
+            {
+              "evidence": "원문 '사업장 미기록 / 2026-06-03 / 참석 27명'의 27명(2026-06-03) — 교육집계.pdf",
+              "problems": [
+                "site_unstated"
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "case": "unknown_same_line",
+      "extent": "previous_section",
+      "boundary": {
+        "period_text": "2026-06-03",
+        "site": "",
+        "site_scope": "unknown",
+        "provenance": [
+          {
+            "source": "quantity_scope",
+            "method": "rule",
+            "scope_from": "scope_transition",
+            "source_site": "",
+            "site_scope": "unknown",
+            "scope_heading": "사업장 미기록 / 2026-06-03 / 참석 27명",
+            "quote": "교육 기록: 김해 제1공장 / 2026-06-03\n참석 15명\n사업장 미기록 / 2026-06-03 / 참석 27명",
+            "page": 0,
+            "model_site": ""
+          }
+        ]
+      },
+      "facts": [
+        {
+          "label": "교육 참석 인원",
+          "value": 27.0,
+          "unit": "명",
+          "role": "참석",
+          "value_role": "unknown",
+          "period_text": "2026-06-03",
+          "period_start": "",
+          "period_end": "",
+          "site": "",
+          "site_scope": "unknown",
+          "site_identity": [],
+          "site_conflicts": [],
+          "source_file": "교육집계.pdf",
+          "page": 0,
+          "node_id": "n27",
+          "quote": "교육 기록: 김해 제1공장 / 2026-06-03"
+        }
+      ],
+      "body": "[확인 보류] 생성 문장의 수치(27명)는 원문에서 이 문장의 사업장 관계를 확인하지 못해 이 문장을 본문에 싣지 않았습니다. 원문 확인 값: 교육 참석 인원 27명(2026-06-03) — 교육집계.pdf.",
+      "marks": [
+        {
+          "area": "S",
+          "sentence": "2026년 6월 3일 김해 제1공장 교육에는 27명이 참석했다 .",
+          "reason": "relation_mismatch",
+          "action": "replaced",
+          "model_text": "2026년 6월 3일 김해 제1공장 교육에는 27명이 참석했다 .",
+          "output": "[확인 보류] 생성 문장의 수치(27명)는 원문에서 이 문장의 사업장 관계를 확인하지 못해 이 문장을 본문에 싣지 않았습니다. 원문 확인 값: 교육 참석 인원 27명(2026-06-03) — 교육집계.pdf.",
+          "numbers": [
+            "27"
+          ],
+          "quantities": [
+            "27명"
+          ],
+          "related": [
+            "교육 참석 인원 27명(2026-06-03) — 교육집계.pdf"
+          ],
+          "problems": [
+            "site_unstated"
+          ],
+          "cited": [
+            "source_facts_S"
+          ],
+          "conflicts": [
+            {
+              "evidence": "교육 참석 인원 27명(2026-06-03) — 교육집계.pdf",
+              "problems": [
+                "site_unstated"
+              ]
+            },
+            {
+              "evidence": "원문 '사업장 미기록 / 2026-06-03 / 참석 27명'의 27명(2026-06-03) — 교육집계.pdf",
+              "problems": [
+                "site_unstated"
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "case": "heading_with_count",
+      "extent": "quantity",
+      "boundary": {
+        "period_text": "2026-06-03",
+        "site": "",
+        "site_scope": "entity",
+        "provenance": [
+          {
+            "source": "quantity_scope",
+            "method": "rule",
+            "scope_from": "scope_transition",
+            "source_site": "",
+            "site_scope": "entity",
+            "scope_heading": "전사 교육 집계 / 2026-06-03 (대상 30명)",
+            "quote": "참석 27명",
+            "page": 0,
+            "model_site": ""
+          }
+        ]
+      },
+      "facts": [
+        {
+          "label": "교육 참석 인원",
+          "value": 27.0,
+          "unit": "명",
+          "role": "참석",
+          "value_role": "unknown",
+          "period_text": "2026-06-03",
+          "period_start": "",
+          "period_end": "",
+          "site": "",
+          "site_scope": "entity",
+          "site_identity": [],
+          "site_conflicts": [],
+          "source_file": "교육집계.pdf",
+          "page": 0,
+          "node_id": "n27",
+          "quote": "참석 27명"
+        }
+      ],
+      "body": "[확인 보류] 생성 문장의 수치(27명)는 원문에서 이 문장의 사업장 관계를 확인하지 못해 이 문장을 본문에 싣지 않았습니다. 원문 확인 값: 교육 참석 인원 27명(2026-06-03) — 교육집계.pdf.",
+      "marks": [
+        {
+          "area": "S",
+          "sentence": "2026년 6월 3일 김해 제1공장 교육에는 27명이 참석했다 .",
+          "reason": "relation_mismatch",
+          "action": "replaced",
+          "model_text": "2026년 6월 3일 김해 제1공장 교육에는 27명이 참석했다 .",
+          "output": "[확인 보류] 생성 문장의 수치(27명)는 원문에서 이 문장의 사업장 관계를 확인하지 못해 이 문장을 본문에 싣지 않았습니다. 원문 확인 값: 교육 참석 인원 27명(2026-06-03) — 교육집계.pdf.",
+          "numbers": [
+            "27"
+          ],
+          "quantities": [
+            "27명"
+          ],
+          "related": [
+            "교육 참석 인원 27명(2026-06-03) — 교육집계.pdf"
+          ],
+          "problems": [
+            "site_unstated"
+          ],
+          "cited": [
+            "source_facts_S"
+          ],
+          "conflicts": [
+            {
+              "evidence": "교육 참석 인원 27명(2026-06-03) — 교육집계.pdf",
+              "problems": [
+                "site_unstated"
+              ]
+            },
+            {
+              "evidence": "원문 '참석 27명'의 27명(2026-06-03) — 교육집계.pdf",
+              "problems": [
+                "site_unstated"
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "case": "heading_with_count",
+      "extent": "scope_and_quantity",
+      "boundary": {
+        "period_text": "2026-06-03",
+        "site": "",
+        "site_scope": "entity",
+        "provenance": [
+          {
+            "source": "quantity_scope",
+            "method": "rule",
+            "scope_from": "scope_transition",
+            "source_site": "",
+            "site_scope": "entity",
+            "scope_heading": "전사 교육 집계 / 2026-06-03 (대상 30명)",
+            "quote": "전사 교육 집계 / 2026-06-03 (대상 30명)\n참석 27명",
+            "page": 0,
+            "model_site": ""
+          }
+        ]
+      },
+      "facts": [
+        {
+          "label": "교육 참석 인원",
+          "value": 27.0,
+          "unit": "명",
+          "role": "참석",
+          "value_role": "unknown",
+          "period_text": "2026-06-03",
+          "period_start": "",
+          "period_end": "",
+          "site": "",
+          "site_scope": "entity",
+          "site_identity": [],
+          "site_conflicts": [],
+          "source_file": "교육집계.pdf",
+          "page": 0,
+          "node_id": "n27",
+          "quote": "전사 교육 집계 / 2026-06-03 (대상 30명)"
+        }
+      ],
+      "body": "[확인 보류] 생성 문장의 수치(27명)는 원문에서 이 문장의 사업장 관계를 확인하지 못해 이 문장을 본문에 싣지 않았습니다. 원문 확인 값: 교육 참석 인원 27명(2026-06-03) — 교육집계.pdf.",
+      "marks": [
+        {
+          "area": "S",
+          "sentence": "2026년 6월 3일 김해 제1공장 교육에는 27명이 참석했다 .",
+          "reason": "relation_mismatch",
+          "action": "replaced",
+          "model_text": "2026년 6월 3일 김해 제1공장 교육에는 27명이 참석했다 .",
+          "output": "[확인 보류] 생성 문장의 수치(27명)는 원문에서 이 문장의 사업장 관계를 확인하지 못해 이 문장을 본문에 싣지 않았습니다. 원문 확인 값: 교육 참석 인원 27명(2026-06-03) — 교육집계.pdf.",
+          "numbers": [
+            "27"
+          ],
+          "quantities": [
+            "27명"
+          ],
+          "related": [
+            "교육 참석 인원 27명(2026-06-03) — 교육집계.pdf"
+          ],
+          "problems": [
+            "site_unstated"
+          ],
+          "cited": [
+            "source_facts_S"
+          ],
+          "conflicts": [
+            {
+              "evidence": "교육 참석 인원 27명(2026-06-03) — 교육집계.pdf",
+              "problems": [
+                "site_unstated"
+              ]
+            },
+            {
+              "evidence": "원문 '참석 27명'의 27명(2026-06-03) — 교육집계.pdf",
+              "problems": [
+                "site_unstated"
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "case": "heading_with_count",
+      "extent": "previous_section",
+      "boundary": {
+        "period_text": "2026-06-03",
+        "site": "",
+        "site_scope": "entity",
+        "provenance": [
+          {
+            "source": "quantity_scope",
+            "method": "rule",
+            "scope_from": "scope_transition",
+            "source_site": "",
+            "site_scope": "entity",
+            "scope_heading": "전사 교육 집계 / 2026-06-03 (대상 30명)",
+            "quote": "교육 기록: 김해 제1공장 / 2026-06-03\n참석 15명\n전사 교육 집계 / 2026-06-03 (대상 30명)\n참석 27명",
+            "page": 0,
+            "model_site": ""
+          }
+        ]
+      },
+      "facts": [
+        {
+          "label": "교육 참석 인원",
+          "value": 27.0,
+          "unit": "명",
+          "role": "참석",
+          "value_role": "unknown",
+          "period_text": "2026-06-03",
+          "period_start": "",
+          "period_end": "",
+          "site": "",
+          "site_scope": "entity",
+          "site_identity": [],
+          "site_conflicts": [],
+          "source_file": "교육집계.pdf",
+          "page": 0,
+          "node_id": "n27",
+          "quote": "교육 기록: 김해 제1공장 / 2026-06-03"
+        }
+      ],
+      "body": "[확인 보류] 생성 문장의 수치(27명)는 원문에서 이 문장의 사업장 관계를 확인하지 못해 이 문장을 본문에 싣지 않았습니다. 원문 확인 값: 교육 참석 인원 27명(2026-06-03) — 교육집계.pdf.",
+      "marks": [
+        {
+          "area": "S",
+          "sentence": "2026년 6월 3일 김해 제1공장 교육에는 27명이 참석했다 .",
+          "reason": "relation_mismatch",
+          "action": "replaced",
+          "model_text": "2026년 6월 3일 김해 제1공장 교육에는 27명이 참석했다 .",
+          "output": "[확인 보류] 생성 문장의 수치(27명)는 원문에서 이 문장의 사업장 관계를 확인하지 못해 이 문장을 본문에 싣지 않았습니다. 원문 확인 값: 교육 참석 인원 27명(2026-06-03) — 교육집계.pdf.",
+          "numbers": [
+            "27"
+          ],
+          "quantities": [
+            "27명"
+          ],
+          "related": [
+            "교육 참석 인원 27명(2026-06-03) — 교육집계.pdf"
+          ],
+          "problems": [
+            "site_unstated"
+          ],
+          "cited": [
+            "source_facts_S"
+          ],
+          "conflicts": [
+            {
+              "evidence": "교육 참석 인원 27명(2026-06-03) — 교육집계.pdf",
+              "problems": [
+                "site_unstated"
+              ]
+            },
+            {
+              "evidence": "원문 '참석 27명'의 27명(2026-06-03) — 교육집계.pdf",
+              "problems": [
+                "site_unstated"
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "case": "scope_table",
+      "extent": "quantity",
+      "boundary": {
+        "period_text": "2026-06-03",
+        "site": "",
+        "site_scope": "entity",
+        "provenance": [
+          {
+            "source": "quantity_scope",
+            "method": "rule",
+            "scope_from": "scope_transition",
+            "source_site": "",
+            "site_scope": "entity",
+            "scope_heading": "적용 범위 | 전체 사업장",
+            "quote": "참석 27명",
+            "page": 0,
+            "model_site": ""
+          }
+        ]
+      },
+      "facts": [
+        {
+          "label": "교육 참석 인원",
+          "value": 27.0,
+          "unit": "명",
+          "role": "참석",
+          "value_role": "unknown",
+          "period_text": "2026-06-03",
+          "period_start": "",
+          "period_end": "",
+          "site": "",
+          "site_scope": "entity",
+          "site_identity": [],
+          "site_conflicts": [],
+          "source_file": "교육집계.pdf",
+          "page": 0,
+          "node_id": "n27",
+          "quote": "참석 27명"
+        }
+      ],
+      "body": "[확인 보류] 생성 문장의 수치(27명)는 원문에서 이 문장의 날짜·사업장 관계를 확인하지 못해 이 문장을 본문에 싣지 않았습니다. 원문 확인 값: 교육 참석 인원 27명(2026-06-03) — 교육집계.pdf.",
+      "marks": [
+        {
+          "area": "S",
+          "sentence": "2026년 6월 3일 김해 제1공장 교육에는 27명이 참석했다 .",
+          "reason": "relation_mismatch",
+          "action": "replaced",
+          "model_text": "2026년 6월 3일 김해 제1공장 교육에는 27명이 참석했다 .",
+          "output": "[확인 보류] 생성 문장의 수치(27명)는 원문에서 이 문장의 날짜·사업장 관계를 확인하지 못해 이 문장을 본문에 싣지 않았습니다. 원문 확인 값: 교육 참석 인원 27명(2026-06-03) — 교육집계.pdf.",
+          "numbers": [
+            "27"
+          ],
+          "quantities": [
+            "27명"
+          ],
+          "related": [
+            "교육 참석 인원 27명(2026-06-03) — 교육집계.pdf"
+          ],
+          "problems": [
+            "date_unstated",
+            "site_unstated"
+          ],
+          "cited": [
+            "source_facts_S"
+          ],
+          "conflicts": [
+            {
+              "evidence": "교육 참석 인원 27명(2026-06-03) — 교육집계.pdf",
+              "problems": [
+                "site_unstated"
+              ]
+            },
+            {
+              "evidence": "원문 '참석 27명'의 27명 — 교육집계.pdf",
+              "problems": [
+                "date_unstated",
+                "site_unstated"
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "case": "scope_table",
+      "extent": "scope_and_quantity",
+      "boundary": {
+        "period_text": "2026-06-03",
+        "site": "",
+        "site_scope": "entity",
+        "provenance": [
+          {
+            "source": "quantity_scope",
+            "method": "rule",
+            "scope_from": "scope_transition",
+            "source_site": "",
+            "site_scope": "entity",
+            "scope_heading": "적용 범위 | 전체 사업장",
+            "quote": "적용 범위 | 전체 사업장\n참석 27명",
+            "page": 0,
+            "model_site": ""
+          }
+        ]
+      },
+      "facts": [
+        {
+          "label": "교육 참석 인원",
+          "value": 27.0,
+          "unit": "명",
+          "role": "참석",
+          "value_role": "unknown",
+          "period_text": "2026-06-03",
+          "period_start": "",
+          "period_end": "",
+          "site": "",
+          "site_scope": "entity",
+          "site_identity": [],
+          "site_conflicts": [],
+          "source_file": "교육집계.pdf",
+          "page": 0,
+          "node_id": "n27",
+          "quote": "적용 범위 | 전체 사업장"
+        }
+      ],
+      "body": "[확인 보류] 생성 문장의 수치(27명)는 원문에서 이 문장의 날짜·사업장 관계를 확인하지 못해 이 문장을 본문에 싣지 않았습니다. 원문 확인 값: 교육 참석 인원 27명(2026-06-03) — 교육집계.pdf.",
+      "marks": [
+        {
+          "area": "S",
+          "sentence": "2026년 6월 3일 김해 제1공장 교육에는 27명이 참석했다 .",
+          "reason": "relation_mismatch",
+          "action": "replaced",
+          "model_text": "2026년 6월 3일 김해 제1공장 교육에는 27명이 참석했다 .",
+          "output": "[확인 보류] 생성 문장의 수치(27명)는 원문에서 이 문장의 날짜·사업장 관계를 확인하지 못해 이 문장을 본문에 싣지 않았습니다. 원문 확인 값: 교육 참석 인원 27명(2026-06-03) — 교육집계.pdf.",
+          "numbers": [
+            "27"
+          ],
+          "quantities": [
+            "27명"
+          ],
+          "related": [
+            "교육 참석 인원 27명(2026-06-03) — 교육집계.pdf"
+          ],
+          "problems": [
+            "date_unstated",
+            "site_unstated"
+          ],
+          "cited": [
+            "source_facts_S"
+          ],
+          "conflicts": [
+            {
+              "evidence": "교육 참석 인원 27명(2026-06-03) — 교육집계.pdf",
+              "problems": [
+                "site_unstated"
+              ]
+            },
+            {
+              "evidence": "원문 '참석 27명'의 27명 — 교육집계.pdf",
+              "problems": [
+                "date_unstated",
+                "site_unstated"
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "case": "scope_table",
+      "extent": "previous_section",
+      "boundary": {
+        "period_text": "2026-06-03",
+        "site": "",
+        "site_scope": "entity",
+        "provenance": [
+          {
+            "source": "quantity_scope",
+            "method": "rule",
+            "scope_from": "scope_transition",
+            "source_site": "",
+            "site_scope": "entity",
+            "scope_heading": "적용 범위 | 전체 사업장",
+            "quote": "교육 기록: 김해 제1공장 / 2026-06-03\n참석 15명\n적용 범위 | 전체 사업장\n참석 27명",
+            "page": 0,
+            "model_site": ""
+          }
+        ]
+      },
+      "facts": [
+        {
+          "label": "교육 참석 인원",
+          "value": 27.0,
+          "unit": "명",
+          "role": "참석",
+          "value_role": "unknown",
+          "period_text": "2026-06-03",
+          "period_start": "",
+          "period_end": "",
+          "site": "",
+          "site_scope": "entity",
+          "site_identity": [],
+          "site_conflicts": [],
+          "source_file": "교육집계.pdf",
+          "page": 0,
+          "node_id": "n27",
+          "quote": "교육 기록: 김해 제1공장 / 2026-06-03"
+        }
+      ],
+      "body": "[확인 보류] 생성 문장의 수치(27명)는 원문에서 이 문장의 날짜·사업장 관계를 확인하지 못해 이 문장을 본문에 싣지 않았습니다. 원문 확인 값: 교육 참석 인원 27명(2026-06-03) — 교육집계.pdf.",
+      "marks": [
+        {
+          "area": "S",
+          "sentence": "2026년 6월 3일 김해 제1공장 교육에는 27명이 참석했다 .",
+          "reason": "relation_mismatch",
+          "action": "replaced",
+          "model_text": "2026년 6월 3일 김해 제1공장 교육에는 27명이 참석했다 .",
+          "output": "[확인 보류] 생성 문장의 수치(27명)는 원문에서 이 문장의 날짜·사업장 관계를 확인하지 못해 이 문장을 본문에 싣지 않았습니다. 원문 확인 값: 교육 참석 인원 27명(2026-06-03) — 교육집계.pdf.",
+          "numbers": [
+            "27"
+          ],
+          "quantities": [
+            "27명"
+          ],
+          "related": [
+            "교육 참석 인원 27명(2026-06-03) — 교육집계.pdf"
+          ],
+          "problems": [
+            "date_unstated",
+            "site_unstated"
+          ],
+          "cited": [
+            "source_facts_S"
+          ],
+          "conflicts": [
+            {
+              "evidence": "교육 참석 인원 27명(2026-06-03) — 교육집계.pdf",
+              "problems": [
+                "site_unstated"
+              ]
+            },
+            {
+              "evidence": "원문 '참석 27명'의 27명 — 교육집계.pdf",
+              "problems": [
+                "date_unstated",
+                "site_unstated"
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "case": "normal",
+      "extent": "subheading",
+      "boundary": {
+        "period_text": "2026-06-03",
+        "site": "김해 제1공장",
+        "site_scope": "site",
+        "provenance": [
+          {
+            "source": "quantity_scope",
+            "method": "rule",
+            "scope_from": "heading",
+            "source_site": "김해 제1공장",
+            "site_scope": "site",
+            "scope_heading": "교육 기록: 김해 제1공장 / 2026-06-03",
+            "quote": "교육 내용\n참석 27명",
+            "page": 0,
+            "model_site": ""
+          }
+        ]
+      },
+      "facts": [
+        {
+          "label": "교육 참석 인원",
+          "value": 27.0,
+          "unit": "명",
+          "role": "참석",
+          "value_role": "unknown",
+          "period_text": "2026-06-03",
+          "period_start": "",
+          "period_end": "",
+          "site": "김해 제1공장",
+          "site_scope": "site",
+          "site_identity": [
+            "김해1공장"
+          ],
+          "site_conflicts": [],
+          "source_file": "교육집계.pdf",
+          "page": 0,
+          "node_id": "n27",
+          "quote": "교육 내용"
+        }
+      ],
+      "body": "2026년 6월 3일 김해 제1공장 교육에는 27명이 참석했다 .",
+      "marks": []
+    }
+  ],
+  "pdf": "/Users/heojeongmin/Documents/Claude/Projects/ESGenie/output/reviews/pr71_20261006/fifth_followup_fix_validation/final_31ecec0/edge_output/ESG보고서_검증용_2026.pdf",
+  "pages": 1
+}

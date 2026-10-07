@@ -1,0 +1,452 @@
+{
+ "code": "29defa05c722edb879f7897689d8310aef61c595",
+ "test_file_from": "0d6a130",
+ "note": "최종 회귀 검사 파일을 수정 전 코드에 그대로 실행. api_only = 새 인자·함수가 없어 실행 불가(의미 판정 아님)",
+ "counts": {
+  "pass": 51,
+  "fail": 51,
+  "api_only": 8
+ },
+ "rows": [
+  {
+   "test": "test_body_title_table_with_every_citation_form[sentence-structured-correct]",
+   "result": "pass"
+  },
+  {
+   "test": "test_body_title_table_with_every_citation_form[sentence-structured-wrong_date]",
+   "result": "pass"
+  },
+  {
+   "test": "test_body_title_table_with_every_citation_form[sentence-structured-swapped_groups]",
+   "result": "fail"
+  },
+  {
+   "test": "test_body_title_table_with_every_citation_form[sentence-structured-orphan_quantity]",
+   "result": "pass"
+  },
+  {
+   "test": "test_body_title_table_with_every_citation_form[sentence-chunk-correct]",
+   "result": "pass"
+  },
+  {
+   "test": "test_body_title_table_with_every_citation_form[sentence-chunk-wrong_date]",
+   "result": "fail"
+  },
+  {
+   "test": "test_body_title_table_with_every_citation_form[sentence-chunk-swapped_groups]",
+   "result": "fail"
+  },
+  {
+   "test": "test_body_title_table_with_every_citation_form[sentence-chunk-orphan_quantity]",
+   "result": "pass"
+  },
+  {
+   "test": "test_body_title_table_with_every_citation_form[sentence-none-correct]",
+   "result": "pass"
+  },
+  {
+   "test": "test_body_title_table_with_every_citation_form[sentence-none-wrong_date]",
+   "result": "fail"
+  },
+  {
+   "test": "test_body_title_table_with_every_citation_form[sentence-none-swapped_groups]",
+   "result": "fail"
+  },
+  {
+   "test": "test_body_title_table_with_every_citation_form[sentence-none-orphan_quantity]",
+   "result": "pass"
+  },
+  {
+   "test": "test_body_title_table_with_every_citation_form[heading-structured-correct]",
+   "result": "pass"
+  },
+  {
+   "test": "test_body_title_table_with_every_citation_form[heading-structured-wrong_date]",
+   "result": "pass"
+  },
+  {
+   "test": "test_body_title_table_with_every_citation_form[heading-structured-swapped_groups]",
+   "result": "fail"
+  },
+  {
+   "test": "test_body_title_table_with_every_citation_form[heading-structured-orphan_quantity]",
+   "result": "pass"
+  },
+  {
+   "test": "test_body_title_table_with_every_citation_form[heading-chunk-correct]",
+   "result": "pass"
+  },
+  {
+   "test": "test_body_title_table_with_every_citation_form[heading-chunk-wrong_date]",
+   "result": "fail"
+  },
+  {
+   "test": "test_body_title_table_with_every_citation_form[heading-chunk-swapped_groups]",
+   "result": "fail"
+  },
+  {
+   "test": "test_body_title_table_with_every_citation_form[heading-chunk-orphan_quantity]",
+   "result": "pass"
+  },
+  {
+   "test": "test_body_title_table_with_every_citation_form[heading-none-correct]",
+   "result": "pass"
+  },
+  {
+   "test": "test_body_title_table_with_every_citation_form[heading-none-wrong_date]",
+   "result": "pass"
+  },
+  {
+   "test": "test_body_title_table_with_every_citation_form[heading-none-swapped_groups]",
+   "result": "fail"
+  },
+  {
+   "test": "test_body_title_table_with_every_citation_form[heading-none-orphan_quantity]",
+   "result": "pass"
+  },
+  {
+   "test": "test_body_title_table_with_every_citation_form[table-structured-correct]",
+   "result": "pass"
+  },
+  {
+   "test": "test_body_title_table_with_every_citation_form[table-structured-wrong_date]",
+   "result": "pass"
+  },
+  {
+   "test": "test_body_title_table_with_every_citation_form[table-structured-swapped_groups]",
+   "result": "fail"
+  },
+  {
+   "test": "test_body_title_table_with_every_citation_form[table-structured-orphan_quantity]",
+   "result": "pass"
+  },
+  {
+   "test": "test_body_title_table_with_every_citation_form[table-chunk-correct]",
+   "result": "pass"
+  },
+  {
+   "test": "test_body_title_table_with_every_citation_form[table-chunk-wrong_date]",
+   "result": "fail"
+  },
+  {
+   "test": "test_body_title_table_with_every_citation_form[table-chunk-swapped_groups]",
+   "result": "fail"
+  },
+  {
+   "test": "test_body_title_table_with_every_citation_form[table-chunk-orphan_quantity]",
+   "result": "pass"
+  },
+  {
+   "test": "test_body_title_table_with_every_citation_form[table-none-correct]",
+   "result": "pass"
+  },
+  {
+   "test": "test_body_title_table_with_every_citation_form[table-none-wrong_date]",
+   "result": "fail"
+  },
+  {
+   "test": "test_body_title_table_with_every_citation_form[table-none-swapped_groups]",
+   "result": "fail"
+  },
+  {
+   "test": "test_body_title_table_with_every_citation_form[table-none-orphan_quantity]",
+   "result": "fail"
+  },
+  {
+   "test": "test_the_chunk_path_alone_keeps_dates_and_groups[sentence-chunk-correct]",
+   "result": "pass"
+  },
+  {
+   "test": "test_the_chunk_path_alone_keeps_dates_and_groups[sentence-chunk-wrong_date]",
+   "result": "fail"
+  },
+  {
+   "test": "test_the_chunk_path_alone_keeps_dates_and_groups[sentence-chunk-swapped_groups]",
+   "result": "fail"
+  },
+  {
+   "test": "test_the_chunk_path_alone_keeps_dates_and_groups[sentence-chunk-orphan_quantity]",
+   "result": "pass"
+  },
+  {
+   "test": "test_the_chunk_path_alone_keeps_dates_and_groups[sentence-none-correct]",
+   "result": "pass"
+  },
+  {
+   "test": "test_the_chunk_path_alone_keeps_dates_and_groups[sentence-none-wrong_date]",
+   "result": "fail"
+  },
+  {
+   "test": "test_the_chunk_path_alone_keeps_dates_and_groups[sentence-none-swapped_groups]",
+   "result": "fail"
+  },
+  {
+   "test": "test_the_chunk_path_alone_keeps_dates_and_groups[sentence-none-orphan_quantity]",
+   "result": "pass"
+  },
+  {
+   "test": "test_the_chunk_path_alone_keeps_dates_and_groups[heading-chunk-correct]",
+   "result": "pass"
+  },
+  {
+   "test": "test_the_chunk_path_alone_keeps_dates_and_groups[heading-chunk-wrong_date]",
+   "result": "fail"
+  },
+  {
+   "test": "test_the_chunk_path_alone_keeps_dates_and_groups[heading-chunk-swapped_groups]",
+   "result": "fail"
+  },
+  {
+   "test": "test_the_chunk_path_alone_keeps_dates_and_groups[heading-chunk-orphan_quantity]",
+   "result": "pass"
+  },
+  {
+   "test": "test_the_chunk_path_alone_keeps_dates_and_groups[heading-none-correct]",
+   "result": "fail"
+  },
+  {
+   "test": "test_the_chunk_path_alone_keeps_dates_and_groups[heading-none-wrong_date]",
+   "result": "pass"
+  },
+  {
+   "test": "test_the_chunk_path_alone_keeps_dates_and_groups[heading-none-swapped_groups]",
+   "result": "pass"
+  },
+  {
+   "test": "test_the_chunk_path_alone_keeps_dates_and_groups[heading-none-orphan_quantity]",
+   "result": "pass"
+  },
+  {
+   "test": "test_the_chunk_path_alone_keeps_dates_and_groups[table-chunk-correct]",
+   "result": "pass"
+  },
+  {
+   "test": "test_the_chunk_path_alone_keeps_dates_and_groups[table-chunk-wrong_date]",
+   "result": "fail"
+  },
+  {
+   "test": "test_the_chunk_path_alone_keeps_dates_and_groups[table-chunk-swapped_groups]",
+   "result": "fail"
+  },
+  {
+   "test": "test_the_chunk_path_alone_keeps_dates_and_groups[table-chunk-orphan_quantity]",
+   "result": "pass"
+  },
+  {
+   "test": "test_the_chunk_path_alone_keeps_dates_and_groups[table-none-correct]",
+   "result": "pass"
+  },
+  {
+   "test": "test_the_chunk_path_alone_keeps_dates_and_groups[table-none-wrong_date]",
+   "result": "fail"
+  },
+  {
+   "test": "test_the_chunk_path_alone_keeps_dates_and_groups[table-none-swapped_groups]",
+   "result": "fail"
+  },
+  {
+   "test": "test_the_chunk_path_alone_keeps_dates_and_groups[table-none-orphan_quantity]",
+   "result": "fail"
+  },
+  {
+   "test": "test_the_summary_checks_the_same_four_relations[correct]",
+   "result": "pass"
+  },
+  {
+   "test": "test_the_summary_checks_the_same_four_relations[wrong_date]",
+   "result": "fail"
+  },
+  {
+   "test": "test_the_summary_checks_the_same_four_relations[swapped_groups]",
+   "result": "fail"
+  },
+  {
+   "test": "test_the_summary_checks_the_same_four_relations[orphan_quantity]",
+   "result": "fail"
+  },
+  {
+   "test": "test_the_summary_keeps_values_it_was_given",
+   "result": "api_only"
+  },
+  {
+   "test": "test_a_chunk_with_two_dates_does_not_lend_one_dates_count_to_the_other",
+   "result": "fail"
+  },
+  {
+   "test": "test_a_comma_does_not_switch_off_the_date",
+   "result": "fail"
+  },
+  {
+   "test": "test_a_matching_candidate_is_chosen_over_a_same_value_candidate_of_another_date",
+   "result": "api_only"
+  },
+  {
+   "test": "test_units_in_cells_or_column_headers_and_swapped_column_order",
+   "result": "fail"
+  },
+  {
+   "test": "test_a_table_keeps_empty_cells_neighbouring_values_and_notes_in_place",
+   "result": "fail"
+  },
+  {
+   "test": "test_an_unknown_citation_is_not_made_valid_by_another_sources_same_number",
+   "result": "api_only"
+  },
+  {
+   "test": "test_a_citation_to_another_document_records_the_document_actually_used",
+   "result": "api_only"
+  },
+  {
+   "test": "test_the_system_table_is_identified_by_its_generation_path_not_by_its_title",
+   "result": "fail"
+  },
+  {
+   "test": "test_employment_group_counts_keep_their_group[2026\\ub144 5\\uc6d4 12\\uc77c \\uad50\\uc721\\uc5d0 \\uc815\\uaddc\\uc9c1 9\\uba85\\uacfc \\uae30\\uac04\\uc81c 3\\uba85\\uc774 \\ucd9c\\uc11d\\ud588\\ub2e4 [c1].-True]",
+   "result": "pass"
+  },
+  {
+   "test": "test_employment_group_counts_keep_their_group[2026\\ub144 5\\uc6d4 12\\uc77c \\uad50\\uc721\\uc5d0 \\uae30\\uac04\\uc81c 3\\uba85\\uacfc \\uc815\\uaddc\\uc9c1 9\\uba85\\uc774 \\ucd9c\\uc11d\\ud588\\ub2e4 [c1].-True]",
+   "result": "pass"
+  },
+  {
+   "test": "test_employment_group_counts_keep_their_group[2026\\ub144 5\\uc6d4 12\\uc77c \\uad50\\uc721\\uc5d0 \\uc815\\uaddc\\uc9c1 3\\uba85\\uacfc \\uae30\\uac04\\uc81c 9\\uba85\\uc774 \\ucd9c\\uc11d\\ud588\\ub2e4 [c1].-False]",
+   "result": "fail"
+  },
+  {
+   "test": "test_employment_group_counts_keep_their_group[2026\\ub144 5\\uc6d4 12\\uc77c \\uad50\\uc721\\uc5d0 \\uc815\\uaddc\\uc9c1 12\\uba85\\uc774 \\ucd9c\\uc11d\\ud588\\ub2e4 [c1].-False]",
+   "result": "fail"
+  },
+  {
+   "test": "test_employment_group_counts_keep_their_group[2026\\ub144 5\\uc6d4 12\\uc77c \\uad50\\uc721\\uc5d0 9\\uba85\\uc774 \\ucd9c\\uc11d\\ud588\\ub2e4 [c1].-False]",
+   "result": "fail"
+  },
+  {
+   "test": "test_employment_group_counts_keep_their_group[2026\\ub144 5\\uc6d4 12\\uc77c \\uad50\\uc721\\uc5d0 \\ucd1d 12\\uba85\\uc774 \\ucd9c\\uc11d\\ud588\\ub2e4 [c1].-True]",
+   "result": "pass"
+  },
+  {
+   "test": "test_the_same_count_in_two_groups_is_a_valid_control",
+   "result": "fail"
+  },
+  {
+   "test": "test_a_breakdown_that_the_source_does_not_state_is_held_and_the_totals_are_kept",
+   "result": "pass"
+  },
+  {
+   "test": "test_group_words_are_read_from_the_word_that_modifies_the_count",
+   "result": "api_only"
+  },
+  {
+   "test": "test_a_count_of_one_site_is_not_another_sites_count",
+   "result": "fail"
+  },
+  {
+   "test": "test_a_range_date_is_located_and_masked",
+   "result": "fail"
+  },
+  {
+   "test": "test_a_heading_line_lends_its_date_but_a_prose_sentence_does_not",
+   "result": "api_only"
+  },
+  {
+   "test": "test_wrong_claims_in_body_heading_table_and_summary_do_not_reach_markdown_or_pdf",
+   "result": "fail"
+  },
+  {
+   "test": "test_fiscal_definitions_apply_only_where_they_apply[-expected0]",
+   "result": "pass"
+  },
+  {
+   "test": "test_fiscal_definitions_apply_only_where_they_apply[\\ubd80\\uc0b0 \\uc81c2\\uacf5\\uc7a5 FY2026 = 2026-01-01~2026-12-31-expected1]",
+   "result": "fail"
+  },
+  {
+   "test": "test_fiscal_definitions_apply_only_where_they_apply[\\ubd80\\uc0b0 \\uc81c2\\uacf5\\uc7a5 FY2026 = 2025-04-01~2026-03-31-expected2]",
+   "result": "fail"
+  },
+  {
+   "test": "test_fiscal_definitions_apply_only_where_they_apply[FY2026 = 2026-01-01~2026-12-31-expected3]",
+   "result": "pass"
+  },
+  {
+   "test": "test_fiscal_definitions_apply_only_where_they_apply[FY2026 = 2025-04-01~2026-03-31-expected4]",
+   "result": "pass"
+  },
+  {
+   "test": "test_fiscal_definitions_apply_only_where_they_apply[\\uae40\\ud574 \\uc81c1\\uacf5\\uc7a5 FY2026 = 2026-01-01~2026-12-31-expected5]",
+   "result": "pass"
+  },
+  {
+   "test": "test_fiscal_definitions_apply_only_where_they_apply[\\uae40\\ud574 \\uc81c1\\uacf5\\uc7a5 FY2026 = 2026-01-01~2026-12-31\\n\\ubd80\\uc0b0 \\uc81c2\\uacf5\\uc7a5 FY2026 = 2025-04-01~2026-03-31-expected6]",
+   "result": "pass"
+  },
+  {
+   "test": "test_fiscal_definitions_apply_only_where_they_apply[\\ubd80\\uc0b0 \\uc81c2\\uacf5\\uc7a5 FY2026 = 2026-01-01~2026-12-31\\n\\uae40\\ud574 \\uc81c1\\uacf5\\uc7a5 FY2026 = 2025-04-01~2026-03-31-expected7]",
+   "result": "pass"
+  },
+  {
+   "test": "test_fiscal_definitions_apply_only_where_they_apply[\\uae40\\ud574 \\uc81c1\\uacf5\\uc7a5 FY2026 = 2026-01-01~2026-12-31\\n\\uae40\\ud574 \\uc81c1\\uacf5\\uc7a5 FY2026 = 2025-04-01~2026-03-31-expected8]",
+   "result": "pass"
+  },
+  {
+   "test": "test_fiscal_definitions_apply_only_where_they_apply[\\uae40\\ud574 \\uc81c1\\uacf5\\uc7a5 FY2026 = 2025-04-01~2026-03-31\\n\\uae40\\ud574 \\uc81c1\\uacf5\\uc7a5 FY2026 = 2026-01-01~2026-12-31-expected9]",
+   "result": "pass"
+  },
+  {
+   "test": "test_fiscal_definitions_apply_only_where_they_apply[\\uae40\\ud574 \\uc81c1\\uacf5\\uc7a5 FY2026 = 2026-01-01~2026-12-31\\n\\uae40\\ud574 \\uc81c1\\uacf5\\uc7a5 FY2026 = 2026-01-01~2026-12-31-expected10]",
+   "result": "pass"
+  },
+  {
+   "test": "test_fiscal_definitions_apply_only_where_they_apply[FY2026 = 2026-01-01~2026-12-31\\n\\uae40\\ud574 \\uc81c1\\uacf5\\uc7a5 FY2026 = 2025-04-01~2026-03-31-expected11]",
+   "result": "pass"
+  },
+  {
+   "test": "test_fiscal_definitions_apply_only_where_they_apply[FY2026 = 2025-04-01~2026-03-31\\n\\ubd80\\uc0b0 \\uc81c2\\uacf5\\uc7a5 FY2026 = 2026-01-01~2026-12-31-expected12]",
+   "result": "fail"
+  },
+  {
+   "test": "test_an_alias_keeps_the_applicability_and_conflicts_of_its_target[FY26 = FY2026\\nFY2026 = 2026-01-01~2026-12-31-expected0]",
+   "result": "pass"
+  },
+  {
+   "test": "test_an_alias_keeps_the_applicability_and_conflicts_of_its_target[FY26 = FY2026\\n\\ubd80\\uc0b0 \\uc81c2\\uacf5\\uc7a5 FY2026 = 2026-01-01~2026-12-31-expected1]",
+   "result": "fail"
+  },
+  {
+   "test": "test_an_alias_keeps_the_applicability_and_conflicts_of_its_target[FY26 = FY2026\\n\\uae40\\ud574 \\uc81c1\\uacf5\\uc7a5 FY2026 = 2026-01-01~2026-12-31\\n\\uae40\\ud574 \\uc81c1\\uacf5\\uc7a5 FY2026 = 2025-04-01~2026-03-31-expected2]",
+   "result": "pass"
+  },
+  {
+   "test": "test_the_not_applicable_reason_names_the_site_and_keeps_the_definitions",
+   "result": "fail"
+  },
+  {
+   "test": "test_a_request_without_a_site_uses_the_evidence_site_for_its_definition",
+   "result": "fail"
+  },
+  {
+   "test": "test_held_fiscal_years_do_not_hold_plain_dates_and_a_clear_other_year_is_still_rejected",
+   "result": "pass"
+  },
+  {
+   "test": "test_the_review_list_does_not_republish_a_sentence_the_body_held",
+   "result": "api_only"
+  },
+  {
+   "test": "test_a_person_id_range_is_not_a_head_count",
+   "result": "fail"
+  },
+  {
+   "test": "test_merging_keeps_counts_of_different_groups_apart",
+   "result": "fail"
+  },
+  {
+   "test": "test_an_unstated_site_is_not_blocked_by_a_same_value_conflict_on_another_relation",
+   "result": "fail"
+  },
+  {
+   "test": "test_a_day_column_header_is_not_a_head_count",
+   "result": "api_only"
+  }
+ ]
+}

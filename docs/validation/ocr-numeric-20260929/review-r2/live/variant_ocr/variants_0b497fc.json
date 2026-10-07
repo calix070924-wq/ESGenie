@@ -1,0 +1,262 @@
+{
+ "code_path": "/private/tmp/ESGenie-ocr-numeric-20260929",
+ "commit": "0b497fc705154f5ecd6f111a22efcc68d0186a7f",
+ "imported_esgenie": "/private/tmp/ESGenie-ocr-numeric-20260929/esgenie/__init__.py",
+ "force_mock": false,
+ "llm_key_present": true,
+ "ocr_key_present": true,
+ "cache_dir": "/private/tmp/ESGenie-ocr-numeric-20260929/docs/validation/ocr-numeric-20260929/review-r2/live/variant_ocr/cache_0b497fc",
+ "llm": {
+  "mode": "on",
+  "hits": 0,
+  "misses": 0,
+  "live_calls": 0,
+  "successes": 0,
+  "failures": 0
+ },
+ "documents": [
+  {
+   "file": "R6a_전기_사용량칸대시_배율없음.pdf",
+   "sha256": "3f74a581e864b0baee7149a6562b78d902628efe5e2291edebcc14713c9eb421",
+   "doc_type": "kepco_bill",
+   "engine": "upstage_dp",
+   "seconds": 1.6,
+   "upstage": {
+    "requests": 1,
+    "successes": 1,
+    "failures": 0
+   },
+   "metrics": [],
+   "review": [
+    "multiplier_missing",
+    "value_absent"
+   ],
+   "absent_cells": [
+    {
+     "role": "usage",
+     "header": "사용량(kWh)",
+     "raw_text": "",
+     "state": "held:multiplier_missing",
+     "table_id": "upstage_table_0"
+    }
+   ],
+   "hitl_required": null
+  },
+  {
+   "file": "R6b_전기_사용량칸공백_배율없음.pdf",
+   "sha256": "078b105d9dbbf44b753bbb7b69cc7712f8b989a6ec7e3bf4052bcc9a08ce988e",
+   "doc_type": "kepco_bill",
+   "engine": "upstage_dp",
+   "seconds": 1.47,
+   "upstage": {
+    "requests": 1,
+    "successes": 1,
+    "failures": 0
+   },
+   "metrics": [],
+   "review": [
+    "multiplier_missing",
+    "value_absent"
+   ],
+   "absent_cells": [
+    {
+     "role": "usage",
+     "header": "사용량(kWh)",
+     "raw_text": "",
+     "state": "held:multiplier_missing",
+     "table_id": "upstage_table_0"
+    }
+   ],
+   "hitl_required": null
+  },
+  {
+   "file": "R6c_가스_열량칸대시_전월지침만.pdf",
+   "sha256": "97bec7343e90e86d74753010a6eaa63e482ce24d8c32bd4e5c9da6967d378f86",
+   "doc_type": "gas_bill",
+   "engine": "upstage_dp",
+   "seconds": 1.52,
+   "upstage": {
+    "requests": 1,
+    "successes": 1,
+    "failures": 0
+   },
+   "metrics": [],
+   "review": [
+    "value_absent"
+   ],
+   "absent_cells": [
+    {
+     "role": "heat",
+     "header": "가스사용량(MJ)",
+     "raw_text": "",
+     "state": "absent",
+     "table_id": "upstage_table_0"
+    }
+   ],
+   "hitl_required": null
+  },
+  {
+   "file": "R6d_가스_열량칸공백_전월지침만.pdf",
+   "sha256": "e799689f13b8d26e096090fba0cce6c8557771830346f949be326ae24b1fe82c",
+   "doc_type": "gas_bill",
+   "engine": "upstage_dp",
+   "seconds": 1.54,
+   "upstage": {
+    "requests": 1,
+    "successes": 1,
+    "failures": 0
+   },
+   "metrics": [],
+   "review": [
+    "value_absent"
+   ],
+   "absent_cells": [
+    {
+     "role": "heat",
+     "header": "가스사용량(MJ)",
+     "raw_text": "",
+     "state": "absent",
+     "table_id": "upstage_table_0"
+    }
+   ],
+   "hitl_required": null
+  },
+  {
+   "file": "R6e변형_02_전기요금청구서_사용량칸대시.pdf",
+   "sha256": "7c05851ec9a2ce158a2ffda2242d9e11676ae8645e4caebc476fac0062a1a268",
+   "doc_type": "kepco_bill",
+   "engine": "upstage_dp",
+   "seconds": 1.43,
+   "upstage": {
+    "requests": 1,
+    "successes": 1,
+    "failures": 0
+   },
+   "metrics": [],
+   "review": [
+    "unit_missing",
+    "value_absent"
+   ],
+   "absent_cells": [
+    {
+     "role": "usage",
+     "header": "당월 전력 사용량",
+     "raw_text": "-",
+     "state": "held:unit_missing",
+     "table_id": "upstage_table_1"
+    }
+   ],
+   "hitl_required": null
+  },
+  {
+   "file": "R7a_전기_같은쪽_4월5월표.pdf",
+   "sha256": "1c4d7302d4226e4faa095759419bf405be0e9e3a1bab95fbf0b43cc14d502a90",
+   "doc_type": "kepco_bill",
+   "engine": "upstage_dp",
+   "seconds": 1.46,
+   "upstage": {
+    "requests": 1,
+    "successes": 1,
+    "failures": 0
+   },
+   "metrics": [
+    {
+     "hint": "사용전력량 (김해 제1공장 · 2026년 4월)",
+     "value": 1000.0,
+     "unit": "kWh",
+     "code": "E-4-1",
+     "period": "2026년 4월",
+     "page": 0,
+     "role": "usage",
+     "row_label": "김해 제1공장 · 2026년 4월",
+     "scope": {
+      "site": "김해 제1공장",
+      "period": "2026년 4월"
+     },
+     "value_source": "explicit",
+     "duplicate_status": null,
+     "header": "사용량(kWh)",
+     "raw_text": "1,000",
+     "index_check": null
+    },
+    {
+     "hint": "사용전력량 (김해 제1공장 · 2026년 5월)",
+     "value": 1000.0,
+     "unit": "kWh",
+     "code": "E-4-1",
+     "period": "2026년 5월",
+     "page": 0,
+     "role": "usage",
+     "row_label": "김해 제1공장 · 2026년 5월",
+     "scope": {
+      "site": "김해 제1공장",
+      "period": "2026년 5월"
+     },
+     "value_source": "explicit",
+     "duplicate_status": null,
+     "header": "사용량(kWh)",
+     "raw_text": "1,000",
+     "index_check": null
+    }
+   ],
+   "review": [],
+   "absent_cells": [],
+   "hitl_required": null
+  },
+  {
+   "file": "R7b_전기_같은쪽_계량기AB표.pdf",
+   "sha256": "7c7bb7791e0601cb0af9ec3e3a8e9ae2ea42de8c57693f9773d0436b5fad1559",
+   "doc_type": "kepco_bill",
+   "engine": "upstage_dp",
+   "seconds": 1.49,
+   "upstage": {
+    "requests": 1,
+    "successes": 1,
+    "failures": 0
+   },
+   "metrics": [
+    {
+     "hint": "사용전력량 (김해 제1공장 · 전력계 A)",
+     "value": 1000.0,
+     "unit": "kWh",
+     "code": "E-4-1",
+     "period": "",
+     "page": 0,
+     "role": "usage",
+     "row_label": "김해 제1공장 · 전력계 A",
+     "scope": {
+      "site": "김해 제1공장",
+      "meter": "전력계 A"
+     },
+     "value_source": "explicit",
+     "duplicate_status": null,
+     "header": "사용량(kWh)",
+     "raw_text": "1,000",
+     "index_check": null
+    },
+    {
+     "hint": "사용전력량 (김해 제1공장 · 전력계 B)",
+     "value": 1200.0,
+     "unit": "kWh",
+     "code": "E-4-1",
+     "period": "",
+     "page": 0,
+     "role": "usage",
+     "row_label": "김해 제1공장 · 전력계 B",
+     "scope": {
+      "site": "김해 제1공장",
+      "meter": "전력계 B"
+     },
+     "value_source": "explicit",
+     "duplicate_status": null,
+     "header": "사용량(kWh)",
+     "raw_text": "1,200",
+     "index_check": null
+    }
+   ],
+   "review": [],
+   "absent_cells": [],
+   "hitl_required": null
+  }
+ ]
+}

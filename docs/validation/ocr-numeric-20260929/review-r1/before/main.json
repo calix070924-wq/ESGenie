@@ -1,0 +1,220 @@
+[
+  {
+    "case": "gas_MJ_usage_header",
+    "metrics": [
+      {
+        "label": "가스사용량",
+        "value": 360772.0,
+        "unit": "MJ",
+        "code": "E-4-1",
+        "period": "",
+        "confidence": 0.8,
+        "detail": {}
+      }
+    ],
+    "meta": {
+      "engine": "upstage_dp"
+    },
+    "nodes": [
+      {
+        "label": "E-4-1",
+        "value": 360772.0,
+        "unit": "MJ",
+        "period": "",
+        "site": "",
+        "review_notes": []
+      },
+      {
+        "label": "E-3-1",
+        "value": 20.239,
+        "unit": "tCO2eq",
+        "period": "",
+        "site": "",
+        "review_notes": []
+      }
+    ]
+  },
+  {
+    "case": "two_sites_equal_values",
+    "metrics": [
+      {
+        "label": "사용전력량",
+        "value": 1000.0,
+        "unit": "kWh",
+        "code": "E-4-1",
+        "period": "",
+        "confidence": 0.8,
+        "detail": {}
+      }
+    ],
+    "meta": {
+      "engine": "upstage_dp"
+    },
+    "nodes": [
+      {
+        "label": "E-4-1",
+        "value": 1000.0,
+        "unit": "kWh",
+        "period": "",
+        "site": "",
+        "review_notes": []
+      },
+      {
+        "label": "E-3-1",
+        "value": 0.478,
+        "unit": "tCO2eq",
+        "period": "",
+        "site": "",
+        "review_notes": []
+      }
+    ]
+  },
+  {
+    "case": "two_months_equal_values",
+    "metrics": [
+      {
+        "label": "사용전력량",
+        "value": 1000.0,
+        "unit": "kWh",
+        "code": "E-4-1",
+        "period": "",
+        "confidence": 0.8,
+        "detail": {}
+      }
+    ],
+    "meta": {
+      "engine": "upstage_dp"
+    },
+    "nodes": [
+      {
+        "label": "E-4-1",
+        "value": 1000.0,
+        "unit": "kWh",
+        "period": "",
+        "site": "",
+        "review_notes": []
+      },
+      {
+        "label": "E-3-1",
+        "value": 0.478,
+        "unit": "tCO2eq",
+        "period": "",
+        "site": "",
+        "review_notes": []
+      }
+    ]
+  },
+  {
+    "case": "computed_mixed_energy_units",
+    "metrics": [],
+    "meta": {
+      "engine": "upstage_dp"
+    },
+    "nodes": []
+  },
+  {
+    "case": "computed_usage_unit_differs_from_index",
+    "metrics": [
+      {
+        "label": "사용전력량",
+        "value": 1.0,
+        "unit": "kWh",
+        "code": "E-4-1",
+        "period": "",
+        "confidence": 0.8,
+        "detail": {}
+      }
+    ],
+    "meta": {
+      "engine": "upstage_dp"
+    },
+    "nodes": [
+      {
+        "label": "E-4-1",
+        "value": 1.0,
+        "unit": "kWh",
+        "period": "",
+        "site": "",
+        "review_notes": []
+      },
+      {
+        "label": "E-3-1",
+        "value": 0.0,
+        "unit": "tCO2eq",
+        "period": "",
+        "site": "",
+        "review_notes": []
+      }
+    ]
+  },
+  {
+    "case": "explicit_false_agreement_different_units",
+    "metrics": [
+      {
+        "label": "사용전력량",
+        "value": 1.0,
+        "unit": "kWh",
+        "code": "E-4-1",
+        "period": "",
+        "confidence": 0.8,
+        "detail": {}
+      }
+    ],
+    "meta": {
+      "engine": "upstage_dp"
+    },
+    "nodes": [
+      {
+        "label": "E-4-1",
+        "value": 1.0,
+        "unit": "kWh",
+        "period": "",
+        "site": "",
+        "review_notes": []
+      },
+      {
+        "label": "E-3-1",
+        "value": 0.0,
+        "unit": "tCO2eq",
+        "period": "",
+        "site": "",
+        "review_notes": []
+      }
+    ]
+  },
+  {
+    "case": "rounded_integer_rate",
+    "metrics": [
+      {
+        "label": "재활용 비율",
+        "value": 29.0,
+        "unit": "%",
+        "code": "E-6-2",
+        "period": "",
+        "confidence": 0.9,
+        "detail": {}
+      }
+    ],
+    "meta": {
+      "engine": "upstage_dp"
+    },
+    "nodes": [
+      {
+        "label": "E-6-2",
+        "value": 29.0,
+        "unit": "%",
+        "period": "",
+        "site": "",
+        "review_notes": []
+      }
+    ]
+  },
+  {
+    "case": "explicit_meter_mismatch",
+    "metrics": [],
+    "meta": {
+      "engine": "upstage_dp"
+    },
+    "nodes": []
+  }
+]

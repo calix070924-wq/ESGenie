@@ -1,0 +1,929 @@
+{
+ "source_file": "04_사업장폐기물위탁처리명세_2026-04.pdf",
+ "recorded_doc_type": "waste_ledger",
+ "source_sha256": "6fed320f47c59297eee75508fcbbf9caccf387603ca35a640c8de21f98a1ab07",
+ "stage": "upstage_dp_output (raw_text elements + parsed HTML table cells)",
+ "origin": {
+  "pipeline_json": "/Users/heojeongmin/Documents/Claude/Projects/ESGenie/output/rehearsal/hanwool_bm_20260928/runs/20260928T035715Z_11976e3b984b43f6941f780a7f4a80cb_rev13/pipeline.json",
+  "pipeline_json_sha256": "6b4c54164b2520f20b42ad05578672841751230195e183da853fb8aca7f18ac2",
+  "code_commit": "6bf975005364e1a32aee1ca6e58c761edb11db08"
+ },
+ "recorded_metrics": [
+  {
+   "metric_hint": "재활용 비율",
+   "value": 29.3,
+   "unit": "%",
+   "period": "",
+   "kesg_code_guess": "E-6-2",
+   "bbox": [
+    0.0985,
+    0.5958,
+    0.4227,
+    0.6159
+   ],
+   "page": 0,
+   "confidence": 0.9,
+   "boundary": {}
+  }
+ ],
+ "tokens": [
+  {
+   "text": "ESGenie / FICTIONAL DOCUMENT",
+   "bbox": null,
+   "page": 0
+  },
+  {
+   "text": "HW-WST-202604",
+   "bbox": null,
+   "page": 0
+  },
+  {
+   "text": "사업장폐기물 위탁처리 명세",
+   "bbox": null,
+   "page": 0
+  },
+  {
+   "text": "한울정밀공업(주) / 김해 제1공장 / 2026-04-01 ~ 2026-04-30",
+   "bbox": null,
+   "page": 0
+  },
+  {
+   "text": "문서 범위: 이 기간에 공장 밖으로 위탁 처리한 폐기물의 인계·처리 중량. 공정 안에서 재투입한 스크랩은 제외합니다.",
+   "bbox": null,
+   "page": 0
+  },
+  {
+   "text": "| 처리일 | 폐기물 | 중량(kg) | 처리 방법 |\n| --- | --- | --- | --- |\n| 04-03 | 폐합성수지 | 2,400 | 재활용 |\n| 04-06 | 폐목재 | 800 | 재활용 |\n| 04-09 | 폐유 | 1,200 | 재활용 |\n| 04-30 | 금속 스크랩 | 1,000 | 재활용 |\n| 04-12 | 폐절삭유 | 900 | 소각 |\n| 04-15 | 혼합 폐플라스틱 | 5,200 | 소각 |\n| 04-18 | 도장 슬러지 | 2,100 | 매립 |\n| 04-24 | 공정 슬러지 | 3,000 | 매립 |\n| 04-28 | 혼합 폐기물 | 1,800 | 매립 |",
+   "bbox": [
+    0.099,
+    0.1881,
+    0.9198,
+    0.4853
+   ],
+   "page": 0
+  },
+  {
+   "text": "처리 결과 집계",
+   "bbox": null,
+   "page": 0
+  },
+  {
+   "text": "| 재활용 | 소각 | 매립 | 전체 위탁 처리 |\n| --- | --- | --- | --- |\n| 5,400 kg | 6,100 kg | 6,900 kg | 18,400 kg |",
+   "bbox": [
+    0.1008,
+    0.5259,
+    0.9193,
+    0.5839
+   ],
+   "page": 0
+  },
+  {
+   "text": "사업장폐기물 재활용률 29.3%",
+   "bbox": null,
+   "page": 0
+  },
+  {
+   "text": "계산: 5,400 kg ÷ 18,400 kg × 100 = 29.3478···% → 소수 첫째 자리 29.3%",
+   "bbox": null,
+   "page": 0
+  },
+  {
+   "text": "집계 기준",
+   "bbox": null,
+   "page": 0
+  },
+  {
+   "text": "분자: 외부 위탁 폐기물 중 재활용 처리 중량. 분모: 재활용·소각·매립을 합한 전체 외부 위탁 처리 중량. 내부 재투입 11,500",
+   "bbox": null,
+   "page": 0
+  },
+  {
+   "text": "kg는 이 집계에 포함하지 않습니다.",
+   "bbox": null,
+   "page": 0
+  },
+  {
+   "text": "금속 스크랩 1,000 kg는 공정 스크랩 대장 HW-SCR-202604의 외부 반출량과 같습니다.",
+   "bbox": null,
+   "page": 0
+  },
+  {
+   "text": "처리업체: 한결환경자원(가상) / 작성: 생산·안전 담당자 / 확인일: 2026-05-04. 처리업체 허가증과 등록 확인서는 별도 자료이며 이 명세에",
+   "bbox": null,
+   "page": 0
+  },
+  {
+   "text": "첨부하지 않았습니다.",
+   "bbox": null,
+   "page": 0
+  },
+  {
+   "text": "시연용 가상자료 | 모든 기업·인물·수치·기록은 가상이며 실제 제출용이 아닙니다.",
+   "bbox": null,
+   "page": 0
+  },
+  {
+   "text": "BM 개편 2026-09-28 / 1",
+   "bbox": null,
+   "page": 0
+  }
+ ],
+ "tables": [
+  {
+   "table_id": "upstage_table_0",
+   "row_count": 10,
+   "column_count": 4,
+   "cells": [
+    {
+     "row_index": 0,
+     "column_index": 0,
+     "content": "처리일",
+     "row_span": 1,
+     "column_span": 1,
+     "kind": null,
+     "bbox": [
+      0.099,
+      0.1881,
+      0.9198,
+      0.4853
+     ],
+     "page": 0,
+     "confidence": null
+    },
+    {
+     "row_index": 0,
+     "column_index": 1,
+     "content": "폐기물",
+     "row_span": 1,
+     "column_span": 1,
+     "kind": null,
+     "bbox": [
+      0.099,
+      0.1881,
+      0.9198,
+      0.4853
+     ],
+     "page": 0,
+     "confidence": null
+    },
+    {
+     "row_index": 0,
+     "column_index": 2,
+     "content": "중량(kg)",
+     "row_span": 1,
+     "column_span": 1,
+     "kind": null,
+     "bbox": [
+      0.099,
+      0.1881,
+      0.9198,
+      0.4853
+     ],
+     "page": 0,
+     "confidence": null
+    },
+    {
+     "row_index": 0,
+     "column_index": 3,
+     "content": "처리 방법",
+     "row_span": 1,
+     "column_span": 1,
+     "kind": null,
+     "bbox": [
+      0.099,
+      0.1881,
+      0.9198,
+      0.4853
+     ],
+     "page": 0,
+     "confidence": null
+    },
+    {
+     "row_index": 1,
+     "column_index": 0,
+     "content": "04-03",
+     "row_span": 1,
+     "column_span": 1,
+     "kind": null,
+     "bbox": [
+      0.099,
+      0.1881,
+      0.9198,
+      0.4853
+     ],
+     "page": 0,
+     "confidence": null
+    },
+    {
+     "row_index": 1,
+     "column_index": 1,
+     "content": "폐합성수지",
+     "row_span": 1,
+     "column_span": 1,
+     "kind": null,
+     "bbox": [
+      0.099,
+      0.1881,
+      0.9198,
+      0.4853
+     ],
+     "page": 0,
+     "confidence": null
+    },
+    {
+     "row_index": 1,
+     "column_index": 2,
+     "content": "2,400",
+     "row_span": 1,
+     "column_span": 1,
+     "kind": null,
+     "bbox": [
+      0.099,
+      0.1881,
+      0.9198,
+      0.4853
+     ],
+     "page": 0,
+     "confidence": null
+    },
+    {
+     "row_index": 1,
+     "column_index": 3,
+     "content": "재활용",
+     "row_span": 1,
+     "column_span": 1,
+     "kind": null,
+     "bbox": [
+      0.099,
+      0.1881,
+      0.9198,
+      0.4853
+     ],
+     "page": 0,
+     "confidence": null
+    },
+    {
+     "row_index": 2,
+     "column_index": 0,
+     "content": "04-06",
+     "row_span": 1,
+     "column_span": 1,
+     "kind": null,
+     "bbox": [
+      0.099,
+      0.1881,
+      0.9198,
+      0.4853
+     ],
+     "page": 0,
+     "confidence": null
+    },
+    {
+     "row_index": 2,
+     "column_index": 1,
+     "content": "폐목재",
+     "row_span": 1,
+     "column_span": 1,
+     "kind": null,
+     "bbox": [
+      0.099,
+      0.1881,
+      0.9198,
+      0.4853
+     ],
+     "page": 0,
+     "confidence": null
+    },
+    {
+     "row_index": 2,
+     "column_index": 2,
+     "content": "800",
+     "row_span": 1,
+     "column_span": 1,
+     "kind": null,
+     "bbox": [
+      0.099,
+      0.1881,
+      0.9198,
+      0.4853
+     ],
+     "page": 0,
+     "confidence": null
+    },
+    {
+     "row_index": 2,
+     "column_index": 3,
+     "content": "재활용",
+     "row_span": 1,
+     "column_span": 1,
+     "kind": null,
+     "bbox": [
+      0.099,
+      0.1881,
+      0.9198,
+      0.4853
+     ],
+     "page": 0,
+     "confidence": null
+    },
+    {
+     "row_index": 3,
+     "column_index": 0,
+     "content": "04-09",
+     "row_span": 1,
+     "column_span": 1,
+     "kind": null,
+     "bbox": [
+      0.099,
+      0.1881,
+      0.9198,
+      0.4853
+     ],
+     "page": 0,
+     "confidence": null
+    },
+    {
+     "row_index": 3,
+     "column_index": 1,
+     "content": "폐유",
+     "row_span": 1,
+     "column_span": 1,
+     "kind": null,
+     "bbox": [
+      0.099,
+      0.1881,
+      0.9198,
+      0.4853
+     ],
+     "page": 0,
+     "confidence": null
+    },
+    {
+     "row_index": 3,
+     "column_index": 2,
+     "content": "1,200",
+     "row_span": 1,
+     "column_span": 1,
+     "kind": null,
+     "bbox": [
+      0.099,
+      0.1881,
+      0.9198,
+      0.4853
+     ],
+     "page": 0,
+     "confidence": null
+    },
+    {
+     "row_index": 3,
+     "column_index": 3,
+     "content": "재활용",
+     "row_span": 1,
+     "column_span": 1,
+     "kind": null,
+     "bbox": [
+      0.099,
+      0.1881,
+      0.9198,
+      0.4853
+     ],
+     "page": 0,
+     "confidence": null
+    },
+    {
+     "row_index": 4,
+     "column_index": 0,
+     "content": "04-30",
+     "row_span": 1,
+     "column_span": 1,
+     "kind": null,
+     "bbox": [
+      0.099,
+      0.1881,
+      0.9198,
+      0.4853
+     ],
+     "page": 0,
+     "confidence": null
+    },
+    {
+     "row_index": 4,
+     "column_index": 1,
+     "content": "금속 스크랩",
+     "row_span": 1,
+     "column_span": 1,
+     "kind": null,
+     "bbox": [
+      0.099,
+      0.1881,
+      0.9198,
+      0.4853
+     ],
+     "page": 0,
+     "confidence": null
+    },
+    {
+     "row_index": 4,
+     "column_index": 2,
+     "content": "1,000",
+     "row_span": 1,
+     "column_span": 1,
+     "kind": null,
+     "bbox": [
+      0.099,
+      0.1881,
+      0.9198,
+      0.4853
+     ],
+     "page": 0,
+     "confidence": null
+    },
+    {
+     "row_index": 4,
+     "column_index": 3,
+     "content": "재활용",
+     "row_span": 1,
+     "column_span": 1,
+     "kind": null,
+     "bbox": [
+      0.099,
+      0.1881,
+      0.9198,
+      0.4853
+     ],
+     "page": 0,
+     "confidence": null
+    },
+    {
+     "row_index": 5,
+     "column_index": 0,
+     "content": "04-12",
+     "row_span": 1,
+     "column_span": 1,
+     "kind": null,
+     "bbox": [
+      0.099,
+      0.1881,
+      0.9198,
+      0.4853
+     ],
+     "page": 0,
+     "confidence": null
+    },
+    {
+     "row_index": 5,
+     "column_index": 1,
+     "content": "폐절삭유",
+     "row_span": 1,
+     "column_span": 1,
+     "kind": null,
+     "bbox": [
+      0.099,
+      0.1881,
+      0.9198,
+      0.4853
+     ],
+     "page": 0,
+     "confidence": null
+    },
+    {
+     "row_index": 5,
+     "column_index": 2,
+     "content": "900",
+     "row_span": 1,
+     "column_span": 1,
+     "kind": null,
+     "bbox": [
+      0.099,
+      0.1881,
+      0.9198,
+      0.4853
+     ],
+     "page": 0,
+     "confidence": null
+    },
+    {
+     "row_index": 5,
+     "column_index": 3,
+     "content": "소각",
+     "row_span": 1,
+     "column_span": 1,
+     "kind": null,
+     "bbox": [
+      0.099,
+      0.1881,
+      0.9198,
+      0.4853
+     ],
+     "page": 0,
+     "confidence": null
+    },
+    {
+     "row_index": 6,
+     "column_index": 0,
+     "content": "04-15",
+     "row_span": 1,
+     "column_span": 1,
+     "kind": null,
+     "bbox": [
+      0.099,
+      0.1881,
+      0.9198,
+      0.4853
+     ],
+     "page": 0,
+     "confidence": null
+    },
+    {
+     "row_index": 6,
+     "column_index": 1,
+     "content": "혼합 폐플라스틱",
+     "row_span": 1,
+     "column_span": 1,
+     "kind": null,
+     "bbox": [
+      0.099,
+      0.1881,
+      0.9198,
+      0.4853
+     ],
+     "page": 0,
+     "confidence": null
+    },
+    {
+     "row_index": 6,
+     "column_index": 2,
+     "content": "5,200",
+     "row_span": 1,
+     "column_span": 1,
+     "kind": null,
+     "bbox": [
+      0.099,
+      0.1881,
+      0.9198,
+      0.4853
+     ],
+     "page": 0,
+     "confidence": null
+    },
+    {
+     "row_index": 6,
+     "column_index": 3,
+     "content": "소각",
+     "row_span": 1,
+     "column_span": 1,
+     "kind": null,
+     "bbox": [
+      0.099,
+      0.1881,
+      0.9198,
+      0.4853
+     ],
+     "page": 0,
+     "confidence": null
+    },
+    {
+     "row_index": 7,
+     "column_index": 0,
+     "content": "04-18",
+     "row_span": 1,
+     "column_span": 1,
+     "kind": null,
+     "bbox": [
+      0.099,
+      0.1881,
+      0.9198,
+      0.4853
+     ],
+     "page": 0,
+     "confidence": null
+    },
+    {
+     "row_index": 7,
+     "column_index": 1,
+     "content": "도장 슬러지",
+     "row_span": 1,
+     "column_span": 1,
+     "kind": null,
+     "bbox": [
+      0.099,
+      0.1881,
+      0.9198,
+      0.4853
+     ],
+     "page": 0,
+     "confidence": null
+    },
+    {
+     "row_index": 7,
+     "column_index": 2,
+     "content": "2,100",
+     "row_span": 1,
+     "column_span": 1,
+     "kind": null,
+     "bbox": [
+      0.099,
+      0.1881,
+      0.9198,
+      0.4853
+     ],
+     "page": 0,
+     "confidence": null
+    },
+    {
+     "row_index": 7,
+     "column_index": 3,
+     "content": "매립",
+     "row_span": 1,
+     "column_span": 1,
+     "kind": null,
+     "bbox": [
+      0.099,
+      0.1881,
+      0.9198,
+      0.4853
+     ],
+     "page": 0,
+     "confidence": null
+    },
+    {
+     "row_index": 8,
+     "column_index": 0,
+     "content": "04-24",
+     "row_span": 1,
+     "column_span": 1,
+     "kind": null,
+     "bbox": [
+      0.099,
+      0.1881,
+      0.9198,
+      0.4853
+     ],
+     "page": 0,
+     "confidence": null
+    },
+    {
+     "row_index": 8,
+     "column_index": 1,
+     "content": "공정 슬러지",
+     "row_span": 1,
+     "column_span": 1,
+     "kind": null,
+     "bbox": [
+      0.099,
+      0.1881,
+      0.9198,
+      0.4853
+     ],
+     "page": 0,
+     "confidence": null
+    },
+    {
+     "row_index": 8,
+     "column_index": 2,
+     "content": "3,000",
+     "row_span": 1,
+     "column_span": 1,
+     "kind": null,
+     "bbox": [
+      0.099,
+      0.1881,
+      0.9198,
+      0.4853
+     ],
+     "page": 0,
+     "confidence": null
+    },
+    {
+     "row_index": 8,
+     "column_index": 3,
+     "content": "매립",
+     "row_span": 1,
+     "column_span": 1,
+     "kind": null,
+     "bbox": [
+      0.099,
+      0.1881,
+      0.9198,
+      0.4853
+     ],
+     "page": 0,
+     "confidence": null
+    },
+    {
+     "row_index": 9,
+     "column_index": 0,
+     "content": "04-28",
+     "row_span": 1,
+     "column_span": 1,
+     "kind": null,
+     "bbox": [
+      0.099,
+      0.1881,
+      0.9198,
+      0.4853
+     ],
+     "page": 0,
+     "confidence": null
+    },
+    {
+     "row_index": 9,
+     "column_index": 1,
+     "content": "혼합 폐기물",
+     "row_span": 1,
+     "column_span": 1,
+     "kind": null,
+     "bbox": [
+      0.099,
+      0.1881,
+      0.9198,
+      0.4853
+     ],
+     "page": 0,
+     "confidence": null
+    },
+    {
+     "row_index": 9,
+     "column_index": 2,
+     "content": "1,800",
+     "row_span": 1,
+     "column_span": 1,
+     "kind": null,
+     "bbox": [
+      0.099,
+      0.1881,
+      0.9198,
+      0.4853
+     ],
+     "page": 0,
+     "confidence": null
+    },
+    {
+     "row_index": 9,
+     "column_index": 3,
+     "content": "매립",
+     "row_span": 1,
+     "column_span": 1,
+     "kind": null,
+     "bbox": [
+      0.099,
+      0.1881,
+      0.9198,
+      0.4853
+     ],
+     "page": 0,
+     "confidence": null
+    }
+   ],
+   "source": "upstage_dp",
+   "page": 0,
+   "meta": {
+    "resolved_tier": 0,
+    "gate_flags": [],
+    "hard_fail_codes": []
+   }
+  },
+  {
+   "table_id": "upstage_table_1",
+   "row_count": 2,
+   "column_count": 4,
+   "cells": [
+    {
+     "row_index": 0,
+     "column_index": 0,
+     "content": "재활용",
+     "row_span": 1,
+     "column_span": 1,
+     "kind": null,
+     "bbox": [
+      0.1008,
+      0.5259,
+      0.9193,
+      0.5839
+     ],
+     "page": 0,
+     "confidence": null
+    },
+    {
+     "row_index": 0,
+     "column_index": 1,
+     "content": "소각",
+     "row_span": 1,
+     "column_span": 1,
+     "kind": null,
+     "bbox": [
+      0.1008,
+      0.5259,
+      0.9193,
+      0.5839
+     ],
+     "page": 0,
+     "confidence": null
+    },
+    {
+     "row_index": 0,
+     "column_index": 2,
+     "content": "매립",
+     "row_span": 1,
+     "column_span": 1,
+     "kind": null,
+     "bbox": [
+      0.1008,
+      0.5259,
+      0.9193,
+      0.5839
+     ],
+     "page": 0,
+     "confidence": null
+    },
+    {
+     "row_index": 0,
+     "column_index": 3,
+     "content": "전체 위탁 처리",
+     "row_span": 1,
+     "column_span": 1,
+     "kind": null,
+     "bbox": [
+      0.1008,
+      0.5259,
+      0.9193,
+      0.5839
+     ],
+     "page": 0,
+     "confidence": null
+    },
+    {
+     "row_index": 1,
+     "column_index": 0,
+     "content": "5,400 kg",
+     "row_span": 1,
+     "column_span": 1,
+     "kind": null,
+     "bbox": [
+      0.1008,
+      0.5259,
+      0.9193,
+      0.5839
+     ],
+     "page": 0,
+     "confidence": null
+    },
+    {
+     "row_index": 1,
+     "column_index": 1,
+     "content": "6,100 kg",
+     "row_span": 1,
+     "column_span": 1,
+     "kind": null,
+     "bbox": [
+      0.1008,
+      0.5259,
+      0.9193,
+      0.5839
+     ],
+     "page": 0,
+     "confidence": null
+    },
+    {
+     "row_index": 1,
+     "column_index": 2,
+     "content": "6,900 kg",
+     "row_span": 1,
+     "column_span": 1,
+     "kind": null,
+     "bbox": [
+      0.1008,
+      0.5259,
+      0.9193,
+      0.5839
+     ],
+     "page": 0,
+     "confidence": null
+    },
+    {
+     "row_index": 1,
+     "column_index": 3,
+     "content": "18,400 kg",
+     "row_span": 1,
+     "column_span": 1,
+     "kind": null,
+     "bbox": [
+      0.1008,
+      0.5259,
+      0.9193,
+      0.5839
+     ],
+     "page": 0,
+     "confidence": null
+    }
+   ],
+   "source": "upstage_dp",
+   "page": 0,
+   "meta": {
+    "resolved_tier": 0,
+    "gate_flags": [],
+    "hard_fail_codes": []
+   }
+  }
+ ]
+}

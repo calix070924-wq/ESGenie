@@ -64,8 +64,9 @@ class _CountingClient:
             "clauses": [{"section": "환경경영 방침", "text": "환경법규를 준수한다.",
                          "kesg_code": "E-1-1", "page": 3}],
         }
+        # 성공한 실제 응답의 계약을 흉내 낸 대역이다. 실제 mock fallback은 캐시하면 안 된다.
         return LLMResponse(content=json.dumps(payload, ensure_ascii=False),
-                           used_mock=True, meta={})
+                           used_mock=False, meta={"provider": "test-double", "model": "test-double"})
 
 
 @pytest.fixture
@@ -368,3 +369,15 @@ def test_actual_client_connection_changes_outer_ocr_cache(cache_on, counting_cli
     address['name'] = 'B'
     _extract_unstructured_text(**kwargs)
     assert len(counting_client.calls) == 2
+
+
+def test_mock_fallback_never_populates_live_ocr_cache(cache_on, counting_client, monkeypatch):
+    from esgenie.config import SETTINGS
+    from esgenie.llm import LLMResponse
+    monkeypatch.setattr(SETTINGS, "strict_llm", False)
+    monkeypatch.setattr(counting_client, "complete", lambda *a, **k: LLMResponse(
+        content='{"metrics": [], "clauses": []}', used_mock=True, meta={}))
+    ext = _extract_unstructured_text("x.pdf", doc_type="report", raw_text="원문")
+    assert ext.router_meta["extraction_status"] == "failed"
+    assert ext.router_meta["mock"] is True
+    assert not list(cache_on.glob("*.json"))

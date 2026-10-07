@@ -1,0 +1,87 @@
+{
+ "code_path": "/private/tmp/ESGenie-r8h-before-95683bc",
+ "commit": "95683bc7653d30b9983dfbbbc565813bb00ec1ae",
+ "ocr_mode": "replay",
+ "raw_dir": "/private/tmp/ESGenie-ocr-numeric-20260929/docs/validation/ocr-numeric-20260929/review-r6/../review-r5/live/variant_ocr/raw_upstage",
+ "imported_esgenie": "/private/tmp/ESGenie-r8h-before-95683bc/esgenie/__init__.py",
+ "force_mock": false,
+ "llm_key_present": true,
+ "ocr_key_present": true,
+ "cache_dir": "/private/tmp/ESGenie-ocr-numeric-20260929/docs/validation/ocr-numeric-20260929/review-r6/live/variant_ocr/cache_95683bc_r8o",
+ "llm": {
+  "mode": "on",
+  "hits": 0,
+  "misses": 0,
+  "live_calls": 0,
+  "successes": 0,
+  "failures": 0
+ },
+ "documents": [
+  {
+   "file": "R8o_가스_혼합표_납부예정금액행_정상열량.pdf",
+   "sha256": "e959bd17f140ffb23de2d1d2e8cbb4c80ea9dc460880ad0a8843459b386f436e",
+   "doc_type": "gas_bill",
+   "engine": "upstage_dp",
+   "seconds": 0.49,
+   "upstage": {
+    "requests": 1,
+    "successes": 1,
+    "failures": 0
+   },
+   "metrics": [
+    {
+     "hint": "도시가스 사용량 (납부예정금액)",
+     "value": 8420.0,
+     "unit": "m³",
+     "code": null,
+     "period": "",
+     "page": 0,
+     "role": "usage",
+     "row_label": "납부예정금액",
+     "row_item": null,
+     "scope": null,
+     "value_source": "explicit",
+     "header": "사용량(m3)",
+     "raw_text": "8,420",
+     "index_check": null
+    },
+    {
+     "hint": "도시가스 사용열량 (납부예정금액)",
+     "value": 360772.0,
+     "unit": "MJ",
+     "code": "E-4-1",
+     "period": "",
+     "page": 0,
+     "role": "heat",
+     "row_label": "납부예정금액",
+     "row_item": null,
+     "scope": null,
+     "value_source": "explicit",
+     "header": "사용열량(MJ)",
+     "raw_text": "360,772",
+     "index_check": null
+    }
+   ],
+   "review": [],
+   "absent_cells": [],
+   "money_rows": [],
+   "hitl_required": null,
+   "not_numeric": [],
+   "node_basis": [
+    [
+     "도시가스 사용량 (납부예정금액)",
+     "도시가스 사용량 (납부예정금액)=8420.0m³ (R8o_가스_혼합표_납부예정금액행_정상열량.pdf)",
+     8420.0,
+     "plan"
+    ],
+    [
+     "도시가스 사용열량 (납부예정금액)",
+     "도시가스 사용열량 (납부예정금액)=360772.0MJ (R8o_가스_혼합표_납부예정금액행_정상열량.pdf)",
+     360772.0,
+     "plan"
+    ]
+   ],
+   "answers": {}
+  }
+ ]
+}

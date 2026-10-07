@@ -1,0 +1,800 @@
+{
+ "source_file": "01_기업및임직원현황_2026-04.pdf",
+ "recorded_doc_type": "waste_ledger",
+ "source_sha256": "380b85acd568fa085fb0fb3ded6581ebccd5ac17630fdbf66a6f58346d0dcc08",
+ "stage": "upstage_dp_output (raw_text elements + parsed HTML table cells)",
+ "origin": {
+  "pipeline_json": "/Users/heojeongmin/Documents/Claude/Projects/ESGenie/output/rehearsal/hanwool_bm_20260928/runs/20260928T035715Z_11976e3b984b43f6941f780a7f4a80cb_rev13/pipeline.json",
+  "pipeline_json_sha256": "6b4c54164b2520f20b42ad05578672841751230195e183da853fb8aca7f18ac2",
+  "code_commit": "6bf975005364e1a32aee1ca6e58c761edb11db08"
+ },
+ "recorded_metrics": [],
+ "tokens": [
+  {
+   "text": "ESGenie / FICTIONAL DOCUMENT",
+   "bbox": null,
+   "page": 0
+  },
+  {
+   "text": "HW-HR-202604",
+   "bbox": null,
+   "page": 0
+  },
+  {
+   "text": "기업 · 임직원 현황",
+   "bbox": null,
+   "page": 0
+  },
+  {
+   "text": "한울정밀공업(주) / 기준일 2026-04-30 / 내부 관리자료",
+   "bbox": null,
+   "page": 0
+  },
+  {
+   "text": "| 항목 | 내용 |\n| --- | --- |\n| 업종 | 자동차 차체 프레스・용접 부품 제조 |\n| 사업장 | 김해 제1공장 / 양산 제2공장 |\n| 인원 | 총 73명: 직접 고용 70명 + 파견 3명 |\n| ESG 대응 | 전담 조직 없음. 경영지원 담당자 1명이 고객사 실사 대응을 겸직 |",
+   "bbox": [
+    0.0994,
+    0.1643,
+    0.9191,
+    0.3134
+   ],
+   "page": 0
+  },
+  {
+   "text": "사업장별 인원",
+   "bbox": null,
+   "page": 0
+  },
+  {
+   "text": "| 사업장 | 정규직 | 기간제 | 파견 | 합계 |\n| --- | --- | --- | --- | --- |\n| 김해 제1공장 | 40 | 8 | 2 | 50 |\n| 양산 제2공장 | 18 | 4 | 1 | 23 |\n| 전체 | 58 | 12 | 3 | 73 |",
+   "bbox": [
+    0.0995,
+    0.3535,
+    0.9189,
+    0.4685
+   ],
+   "page": 0
+  },
+  {
+   "text": "본 세트에서 '인원'은 현장 근무 파견 인원을 포함합니다. 직접 고용 인원과 혼용하지 않습니다.",
+   "bbox": null,
+   "page": 0
+  },
+  {
+   "text": "자료 확인 업무분장",
+   "bbox": null,
+   "page": 0
+  },
+  {
+   "text": "| 담당 | 확인할 자료 |\n| --- | --- |\n| 경영지원 담당자 / 실사 겸직 | 고객 요청 접수, 답변 초안 취합, 인원·근태, 제출 전 확인 |\n| 생산·안전 담당자 | 폐기물 인계·처리 명세, 스크랩 대장, 안전교육 기록 |\n| 설비·총무 담당자 | 전기·가스·수도 고지서, 정보보호 규정 |\n| 대표이사 | 규정 승인 및 최종 회신 내용 확인 |",
+   "bbox": [
+    0.0993,
+    0.5274,
+    0.919,
+    0.6765
+   ],
+   "page": 0
+  },
+  {
+   "text": "이번 자료 묶음의 범위",
+   "bbox": null,
+   "page": 0
+  },
+  {
+   "text": "운영 수치와 교육 기록은 김해 제1공장을 중심으로 정리했습니다. 해당 공장 인원 50명에는 직접 고용 48명과 파견 2명이",
+   "bbox": null,
+   "page": 0
+  },
+  {
+   "text": "포함됩니다. 익명 인원번호 HN-G01~HN-G50을 교육·근태 기록에 동일하게 사용합니다.",
+   "bbox": null,
+   "page": 0
+  },
+  {
+   "text": "2025년 전사 연간 온실가스 산정자료는 이 묶음에 포함하지 않았습니다. 2026년 4월 고지서로 대체할 수 없습니다.",
+   "bbox": null,
+   "page": 0
+  },
+  {
+   "text": "작성: 경영지원 담당자 / 확인: 대표이사 / 작성일: 2026-04-30",
+   "bbox": null,
+   "page": 0
+  },
+  {
+   "text": "시연용 가상자료 | 모든 기업·인물·수치·기록은 가상이며 실제 제출용이 아닙니다.",
+   "bbox": null,
+   "page": 0
+  },
+  {
+   "text": "BM 개편 2026-09-28 / 1",
+   "bbox": null,
+   "page": 0
+  }
+ ],
+ "tables": [
+  {
+   "table_id": "upstage_table_0",
+   "row_count": 5,
+   "column_count": 2,
+   "cells": [
+    {
+     "row_index": 0,
+     "column_index": 0,
+     "content": "항목",
+     "row_span": 1,
+     "column_span": 1,
+     "kind": null,
+     "bbox": [
+      0.0994,
+      0.1643,
+      0.9191,
+      0.3134
+     ],
+     "page": 0,
+     "confidence": null
+    },
+    {
+     "row_index": 0,
+     "column_index": 1,
+     "content": "내용",
+     "row_span": 1,
+     "column_span": 1,
+     "kind": null,
+     "bbox": [
+      0.0994,
+      0.1643,
+      0.9191,
+      0.3134
+     ],
+     "page": 0,
+     "confidence": null
+    },
+    {
+     "row_index": 1,
+     "column_index": 0,
+     "content": "업종",
+     "row_span": 1,
+     "column_span": 1,
+     "kind": null,
+     "bbox": [
+      0.0994,
+      0.1643,
+      0.9191,
+      0.3134
+     ],
+     "page": 0,
+     "confidence": null
+    },
+    {
+     "row_index": 1,
+     "column_index": 1,
+     "content": "자동차 차체 프레스・용접 부품 제조",
+     "row_span": 1,
+     "column_span": 1,
+     "kind": null,
+     "bbox": [
+      0.0994,
+      0.1643,
+      0.9191,
+      0.3134
+     ],
+     "page": 0,
+     "confidence": null
+    },
+    {
+     "row_index": 2,
+     "column_index": 0,
+     "content": "사업장",
+     "row_span": 1,
+     "column_span": 1,
+     "kind": null,
+     "bbox": [
+      0.0994,
+      0.1643,
+      0.9191,
+      0.3134
+     ],
+     "page": 0,
+     "confidence": null
+    },
+    {
+     "row_index": 2,
+     "column_index": 1,
+     "content": "김해 제1공장 / 양산 제2공장",
+     "row_span": 1,
+     "column_span": 1,
+     "kind": null,
+     "bbox": [
+      0.0994,
+      0.1643,
+      0.9191,
+      0.3134
+     ],
+     "page": 0,
+     "confidence": null
+    },
+    {
+     "row_index": 3,
+     "column_index": 0,
+     "content": "인원",
+     "row_span": 1,
+     "column_span": 1,
+     "kind": null,
+     "bbox": [
+      0.0994,
+      0.1643,
+      0.9191,
+      0.3134
+     ],
+     "page": 0,
+     "confidence": null
+    },
+    {
+     "row_index": 3,
+     "column_index": 1,
+     "content": "총 73명: 직접 고용 70명 + 파견 3명",
+     "row_span": 1,
+     "column_span": 1,
+     "kind": null,
+     "bbox": [
+      0.0994,
+      0.1643,
+      0.9191,
+      0.3134
+     ],
+     "page": 0,
+     "confidence": null
+    },
+    {
+     "row_index": 4,
+     "column_index": 0,
+     "content": "ESG 대응",
+     "row_span": 1,
+     "column_span": 1,
+     "kind": null,
+     "bbox": [
+      0.0994,
+      0.1643,
+      0.9191,
+      0.3134
+     ],
+     "page": 0,
+     "confidence": null
+    },
+    {
+     "row_index": 4,
+     "column_index": 1,
+     "content": "전담 조직 없음. 경영지원 담당자 1명이 고객사 실사 대응을 겸직",
+     "row_span": 1,
+     "column_span": 1,
+     "kind": null,
+     "bbox": [
+      0.0994,
+      0.1643,
+      0.9191,
+      0.3134
+     ],
+     "page": 0,
+     "confidence": null
+    }
+   ],
+   "source": "upstage_dp",
+   "page": 0,
+   "meta": {
+    "resolved_tier": 0,
+    "gate_flags": [],
+    "hard_fail_codes": []
+   }
+  },
+  {
+   "table_id": "upstage_table_1",
+   "row_count": 4,
+   "column_count": 5,
+   "cells": [
+    {
+     "row_index": 0,
+     "column_index": 0,
+     "content": "사업장",
+     "row_span": 1,
+     "column_span": 1,
+     "kind": null,
+     "bbox": [
+      0.0995,
+      0.3535,
+      0.9189,
+      0.4685
+     ],
+     "page": 0,
+     "confidence": null
+    },
+    {
+     "row_index": 0,
+     "column_index": 1,
+     "content": "정규직",
+     "row_span": 1,
+     "column_span": 1,
+     "kind": null,
+     "bbox": [
+      0.0995,
+      0.3535,
+      0.9189,
+      0.4685
+     ],
+     "page": 0,
+     "confidence": null
+    },
+    {
+     "row_index": 0,
+     "column_index": 2,
+     "content": "기간제",
+     "row_span": 1,
+     "column_span": 1,
+     "kind": null,
+     "bbox": [
+      0.0995,
+      0.3535,
+      0.9189,
+      0.4685
+     ],
+     "page": 0,
+     "confidence": null
+    },
+    {
+     "row_index": 0,
+     "column_index": 3,
+     "content": "파견",
+     "row_span": 1,
+     "column_span": 1,
+     "kind": null,
+     "bbox": [
+      0.0995,
+      0.3535,
+      0.9189,
+      0.4685
+     ],
+     "page": 0,
+     "confidence": null
+    },
+    {
+     "row_index": 0,
+     "column_index": 4,
+     "content": "합계",
+     "row_span": 1,
+     "column_span": 1,
+     "kind": null,
+     "bbox": [
+      0.0995,
+      0.3535,
+      0.9189,
+      0.4685
+     ],
+     "page": 0,
+     "confidence": null
+    },
+    {
+     "row_index": 1,
+     "column_index": 0,
+     "content": "김해 제1공장",
+     "row_span": 1,
+     "column_span": 1,
+     "kind": null,
+     "bbox": [
+      0.0995,
+      0.3535,
+      0.9189,
+      0.4685
+     ],
+     "page": 0,
+     "confidence": null
+    },
+    {
+     "row_index": 1,
+     "column_index": 1,
+     "content": "40",
+     "row_span": 1,
+     "column_span": 1,
+     "kind": null,
+     "bbox": [
+      0.0995,
+      0.3535,
+      0.9189,
+      0.4685
+     ],
+     "page": 0,
+     "confidence": null
+    },
+    {
+     "row_index": 1,
+     "column_index": 2,
+     "content": "8",
+     "row_span": 1,
+     "column_span": 1,
+     "kind": null,
+     "bbox": [
+      0.0995,
+      0.3535,
+      0.9189,
+      0.4685
+     ],
+     "page": 0,
+     "confidence": null
+    },
+    {
+     "row_index": 1,
+     "column_index": 3,
+     "content": "2",
+     "row_span": 1,
+     "column_span": 1,
+     "kind": null,
+     "bbox": [
+      0.0995,
+      0.3535,
+      0.9189,
+      0.4685
+     ],
+     "page": 0,
+     "confidence": null
+    },
+    {
+     "row_index": 1,
+     "column_index": 4,
+     "content": "50",
+     "row_span": 1,
+     "column_span": 1,
+     "kind": null,
+     "bbox": [
+      0.0995,
+      0.3535,
+      0.9189,
+      0.4685
+     ],
+     "page": 0,
+     "confidence": null
+    },
+    {
+     "row_index": 2,
+     "column_index": 0,
+     "content": "양산 제2공장",
+     "row_span": 1,
+     "column_span": 1,
+     "kind": null,
+     "bbox": [
+      0.0995,
+      0.3535,
+      0.9189,
+      0.4685
+     ],
+     "page": 0,
+     "confidence": null
+    },
+    {
+     "row_index": 2,
+     "column_index": 1,
+     "content": "18",
+     "row_span": 1,
+     "column_span": 1,
+     "kind": null,
+     "bbox": [
+      0.0995,
+      0.3535,
+      0.9189,
+      0.4685
+     ],
+     "page": 0,
+     "confidence": null
+    },
+    {
+     "row_index": 2,
+     "column_index": 2,
+     "content": "4",
+     "row_span": 1,
+     "column_span": 1,
+     "kind": null,
+     "bbox": [
+      0.0995,
+      0.3535,
+      0.9189,
+      0.4685
+     ],
+     "page": 0,
+     "confidence": null
+    },
+    {
+     "row_index": 2,
+     "column_index": 3,
+     "content": "1",
+     "row_span": 1,
+     "column_span": 1,
+     "kind": null,
+     "bbox": [
+      0.0995,
+      0.3535,
+      0.9189,
+      0.4685
+     ],
+     "page": 0,
+     "confidence": null
+    },
+    {
+     "row_index": 2,
+     "column_index": 4,
+     "content": "23",
+     "row_span": 1,
+     "column_span": 1,
+     "kind": null,
+     "bbox": [
+      0.0995,
+      0.3535,
+      0.9189,
+      0.4685
+     ],
+     "page": 0,
+     "confidence": null
+    },
+    {
+     "row_index": 3,
+     "column_index": 0,
+     "content": "전체",
+     "row_span": 1,
+     "column_span": 1,
+     "kind": null,
+     "bbox": [
+      0.0995,
+      0.3535,
+      0.9189,
+      0.4685
+     ],
+     "page": 0,
+     "confidence": null
+    },
+    {
+     "row_index": 3,
+     "column_index": 1,
+     "content": "58",
+     "row_span": 1,
+     "column_span": 1,
+     "kind": null,
+     "bbox": [
+      0.0995,
+      0.3535,
+      0.9189,
+      0.4685
+     ],
+     "page": 0,
+     "confidence": null
+    },
+    {
+     "row_index": 3,
+     "column_index": 2,
+     "content": "12",
+     "row_span": 1,
+     "column_span": 1,
+     "kind": null,
+     "bbox": [
+      0.0995,
+      0.3535,
+      0.9189,
+      0.4685
+     ],
+     "page": 0,
+     "confidence": null
+    },
+    {
+     "row_index": 3,
+     "column_index": 3,
+     "content": "3",
+     "row_span": 1,
+     "column_span": 1,
+     "kind": null,
+     "bbox": [
+      0.0995,
+      0.3535,
+      0.9189,
+      0.4685
+     ],
+     "page": 0,
+     "confidence": null
+    },
+    {
+     "row_index": 3,
+     "column_index": 4,
+     "content": "73",
+     "row_span": 1,
+     "column_span": 1,
+     "kind": null,
+     "bbox": [
+      0.0995,
+      0.3535,
+      0.9189,
+      0.4685
+     ],
+     "page": 0,
+     "confidence": null
+    }
+   ],
+   "source": "upstage_dp",
+   "page": 0,
+   "meta": {
+    "resolved_tier": 0,
+    "gate_flags": [
+     "B2_unit_presence"
+    ],
+    "hard_fail_codes": []
+   }
+  },
+  {
+   "table_id": "upstage_table_2",
+   "row_count": 5,
+   "column_count": 2,
+   "cells": [
+    {
+     "row_index": 0,
+     "column_index": 0,
+     "content": "담당",
+     "row_span": 1,
+     "column_span": 1,
+     "kind": null,
+     "bbox": [
+      0.0993,
+      0.5274,
+      0.919,
+      0.6765
+     ],
+     "page": 0,
+     "confidence": null
+    },
+    {
+     "row_index": 0,
+     "column_index": 1,
+     "content": "확인할 자료",
+     "row_span": 1,
+     "column_span": 1,
+     "kind": null,
+     "bbox": [
+      0.0993,
+      0.5274,
+      0.919,
+      0.6765
+     ],
+     "page": 0,
+     "confidence": null
+    },
+    {
+     "row_index": 1,
+     "column_index": 0,
+     "content": "경영지원 담당자 / 실사 겸직",
+     "row_span": 1,
+     "column_span": 1,
+     "kind": null,
+     "bbox": [
+      0.0993,
+      0.5274,
+      0.919,
+      0.6765
+     ],
+     "page": 0,
+     "confidence": null
+    },
+    {
+     "row_index": 1,
+     "column_index": 1,
+     "content": "고객 요청 접수, 답변 초안 취합, 인원·근태, 제출 전 확인",
+     "row_span": 1,
+     "column_span": 1,
+     "kind": null,
+     "bbox": [
+      0.0993,
+      0.5274,
+      0.919,
+      0.6765
+     ],
+     "page": 0,
+     "confidence": null
+    },
+    {
+     "row_index": 2,
+     "column_index": 0,
+     "content": "생산·안전 담당자",
+     "row_span": 1,
+     "column_span": 1,
+     "kind": null,
+     "bbox": [
+      0.0993,
+      0.5274,
+      0.919,
+      0.6765
+     ],
+     "page": 0,
+     "confidence": null
+    },
+    {
+     "row_index": 2,
+     "column_index": 1,
+     "content": "폐기물 인계·처리 명세, 스크랩 대장, 안전교육 기록",
+     "row_span": 1,
+     "column_span": 1,
+     "kind": null,
+     "bbox": [
+      0.0993,
+      0.5274,
+      0.919,
+      0.6765
+     ],
+     "page": 0,
+     "confidence": null
+    },
+    {
+     "row_index": 3,
+     "column_index": 0,
+     "content": "설비·총무 담당자",
+     "row_span": 1,
+     "column_span": 1,
+     "kind": null,
+     "bbox": [
+      0.0993,
+      0.5274,
+      0.919,
+      0.6765
+     ],
+     "page": 0,
+     "confidence": null
+    },
+    {
+     "row_index": 3,
+     "column_index": 1,
+     "content": "전기·가스·수도 고지서, 정보보호 규정",
+     "row_span": 1,
+     "column_span": 1,
+     "kind": null,
+     "bbox": [
+      0.0993,
+      0.5274,
+      0.919,
+      0.6765
+     ],
+     "page": 0,
+     "confidence": null
+    },
+    {
+     "row_index": 4,
+     "column_index": 0,
+     "content": "대표이사",
+     "row_span": 1,
+     "column_span": 1,
+     "kind": null,
+     "bbox": [
+      0.0993,
+      0.5274,
+      0.919,
+      0.6765
+     ],
+     "page": 0,
+     "confidence": null
+    },
+    {
+     "row_index": 4,
+     "column_index": 1,
+     "content": "규정 승인 및 최종 회신 내용 확인",
+     "row_span": 1,
+     "column_span": 1,
+     "kind": null,
+     "bbox": [
+      0.0993,
+      0.5274,
+      0.919,
+      0.6765
+     ],
+     "page": 0,
+     "confidence": null
+    }
+   ],
+   "source": "upstage_dp",
+   "page": 0,
+   "meta": {
+    "resolved_tier": 0,
+    "gate_flags": [],
+    "hard_fail_codes": []
+   }
+  }
+ ]
+}

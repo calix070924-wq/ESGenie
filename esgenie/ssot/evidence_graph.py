@@ -58,6 +58,8 @@ class EvidenceNode:
     period_inferred: bool = False
     # 코드 배정(근거 보존)과 대표값 자격을 분리한다. unknown은 구버전 노드 호환 기본값.
     value_role: ValueRole = "unknown"
+    quote: str = ""                   # 추출기가 원문에서 확인한 인용(요약과 분리)
+    page_source: str = ""             # chunk / quote 등 페이지 확인 경로
     # 측정 경계 — 기간/집계·사업장 범위·측정 대상·실적여부·총량여부·분모.
     # period(연도 정수)만으로는 월간값과 연간값을 가를 수 없어 별도 축으로 둔다.
     # 기본값은 빈 Boundary이고, 빈 Boundary는 '모른다'로 취급된다(같다고 보지 않는다).
@@ -79,6 +81,8 @@ class TextNode:
     page: int | None = None
     origin: Origin = "ocr_unstructured"
     rba_code: str | None = None    # RBA 자가진단 substrate 매칭(고유 조항용)
+    quote: str = ""
+    page_source: str = ""
 
     def to_dict(self) -> dict[str, Any]:
         return asdict(self)
@@ -342,8 +346,19 @@ def merge_ocr_extraction(
             base=getattr(m, "boundary", None),
         )
         provenance = tuple(dict(p, page=m.page, bbox=m.bbox, source_file=extraction.source_file) for p in boundary.provenance)
-        boundary = replace(boundary, provenance=provenance,
-                           review_notes=renewable_notes if code == "E-4-2" else boundary.review_notes)
+        detail = getattr(m, "source_detail", None)
+        if detail:
+            # 표 셀 근거(원문·머리글·원 단위·검산식·입력 칸·위치 정밀도)를 경계 출처에 잇는다.
+            # 본문 비율 고정(raw_rate_pin)은 표 셀이 아니므로 text_span으로 구분한다.
+            provenance += (dict(
+                {k: detail[k] for k in _TABLE_CELL_PROVENANCE_KEYS if k in detail},
+                source="text_span" if detail.get("extractor") == "raw_rate_pin" else "table_cell",
+                page=m.page, bbox=m.bbox, source_file=extraction.source_file),)
+        review_notes = renewable_notes if code == "E-4-2" else boundary.review_notes
+        mismatch_note = _index_mismatch_note(detail, m, extraction.source_file)
+        if mismatch_note:
+            review_notes = tuple(review_notes) + (mismatch_note,)
+        boundary = replace(boundary, provenance=provenance, review_notes=review_notes)
         if period_inferred and boundary.period_year:
             period, period_inferred = boundary.period_year, False
         confidence = m.confidence
@@ -387,6 +402,8 @@ def merge_ocr_extraction(
             page=m.page,
             confidence=confidence,
             period_inferred=period_inferred,
+            quote=getattr(m, "quote", ""),
+            page_source=getattr(m, "page_source", ""),
             boundary=boundary,
             document_id=document_id,
         )
@@ -416,6 +433,8 @@ def merge_ocr_extraction(
             page=c.page,
             origin=origin,
             rba_code=getattr(c, "rba_code_guess", None),
+            quote=getattr(c, "quote", ""),
+            page_source=getattr(c, "page_source", ""),
         )
         graph.add_text_node(tnode)
 
@@ -456,9 +475,15 @@ def build_unified_graph(
 _HINT_EXCLUDE: tuple[str, ...] = ("지정폐기물",)
 
 # 배정 단계의 코드별 충돌 어휘. node_select에만 두면 잘못 배정된 노드가 후보 풀을 먼저
-# 오염시킨다. 이번 결함의 실측 범위(E-3-1 ← Scope 3)만 최소 적용한다.
+# 오염시킨다. 실측된 결함 범위만 최소 적용한다.
+#   E-3-1 ← Scope 3.
+#   E-2-2(재생 원부자재 비율 = 재활용 원부자재 사용량 ÷ 원부자재 사용량) ← 공정에서 **발생한** 스크랩을
+#     되돌려 쓴 재투입률·발생량·반출량(2026-10-05 한울정밀 08: `생산 스크랩 내부 재투입률 92.0%`
+#     = 내부 재투입 ÷ 스크랩 발생량). 별칭 `스크랩`만으로 원부자재 비율이 됐다. 분모가 다른 원문 지표는
+#     코드 없이 원문 라벨로 보존한다.
 _ASSIGNMENT_NEGATIVE_KEYWORDS: dict[str, tuple[str, ...]] = {
     "E-3-1": ("scope3", "1+2+3", "가치사슬"),
+    "E-2-2": ("재투입", "발생량", "반출"),
 }
 
 # G1 가드 어휘 — "실적 총량이 아닌 값"을 알리는 수식어. hint에 포함되면 코드 미부여.
@@ -476,6 +501,13 @@ _GUARD_TERMS: tuple[str, ...] = (
 # G4. 미래 기간 분리 임계값 — period가 report_year보다 이 값 이상 앞서면 projection.
 # 2로 둔다: report_year+1(최신 증빙)은 실적, +2 이상(2030/2035/2040 목표축)은 전망.
 _PROJECTION_YEAR_GAP: int = 2
+
+
+_TABLE_CELL_PROVENANCE_KEYS = (
+    "precision", "raw_text", "raw_value", "raw_unit", "unit", "unit_source", "header", "row_label",
+    "table_id", "grid_source", "value_source", "formula", "index_check", "cells", "pinned_unit",
+    "scope", "duplicate_status", "possible_duplicate_cells",
+)
 
 
 def _resolve_kesg_code(
@@ -602,6 +634,38 @@ def _link_cross_check(graph: EvidenceGraph, node: EvidenceNode) -> None:
             detail=f"{COMPARISON_LABEL[status]}: {reason} ({other.source_file} ↔ {node.source_file})"))
 
 
+def _fmt_qty(value: Any) -> str:
+    try:
+        v = float(value)
+    except (TypeError, ValueError):
+        return str(value)
+    return f"{v:,.0f}" if v == int(v) else f"{v:,.6g}"
+
+
+def _index_mismatch_note(detail: dict | None, m: Any, source_file: str | None) -> str:
+    """같은 문서 안에서 명시 사용량과 지침 계산이 다르면 두 값·식·사유를 검토 사유로 남긴다.
+
+    기존 원측정값 상충 표식(SOURCE_CONFLICT_NOTE)을 써서 선택·답변·출력의 상충 경로를
+    그대로 탄다. 범위 문구로 대신하지 않는다 — 수치 자체가 서로 다르다는 경고다."""
+    check = (detail or {}).get("index_check") or {}
+    if check.get("status") != "mismatch":
+        return ""
+    from .selection import SOURCE_CONFLICT_NOTE
+    inputs = check.get("inputs") or {}
+    units = check.get("input_units") or {}
+    def arg(key: str, label: str) -> str:
+        u = units.get(key) or ""
+        return f"{label} {_fmt_qty(inputs.get(key))}{(' ' + u) if u else ''}"
+    formula = f"({arg('current', '당월 지침')} − {arg('previous', '이전 지침')})"
+    if inputs.get("multiplier") is not None:
+        formula += f" × {arg('multiplier', '배율')}"
+    computed_unit = check.get("computed_unit") or m.unit
+    where = f"{source_file or '원문'} {int(m.page) + 1}쪽" if m.page is not None else (source_file or "원문")
+    return (f"{where} {SOURCE_CONFLICT_NOTE}(같은 문서 검산 불일치) — 명시 사용량 "
+            f"{_fmt_qty(m.value)} {m.unit} ≠ 지침 계산 {_fmt_qty(check.get('computed'))} {computed_unit} "
+            f"[{formula}]. 명시값을 보존했으나 채택 전 원문 확인 필요")
+
+
 def _emit_derived_emission(
     graph: EvidenceGraph,
     node: EvidenceNode,
@@ -652,6 +716,8 @@ def _emit_derived_emission(
         completeness="partial",
         inferred=tuple(sorted(set(node.boundary.inferred) | {"measure_kind"})),
         source_quote=node.boundary.source_quote,
+        # 원측정값의 검토 사유(검산 불일치 등)는 환산값에도 그대로 남긴다.
+        review_notes=node.boundary.review_notes,
     )
     derived = EvidenceNode(
         id=_make_derived_node_id(

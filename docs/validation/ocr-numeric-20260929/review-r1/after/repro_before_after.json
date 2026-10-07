@@ -1,0 +1,594 @@
+{
+ "script": "before/repro.py (ESGENIE_FORCE_MOCK=1, 외부 API 없음)",
+ "cases": [
+  {
+   "case": "gas_MJ_usage_header",
+   "before_50b8d72": {
+    "metrics": [],
+    "review": [],
+    "checks": [],
+    "nodes": []
+   },
+   "after_89f34aa": {
+    "metrics": [
+     {
+      "value": 360772.0,
+      "unit": "MJ",
+      "code": "E-4-1",
+      "role": "heat"
+     }
+    ],
+    "review": [],
+    "checks": [],
+    "nodes": [
+     {
+      "label": "E-4-1",
+      "value": 360772.0,
+      "unit": "MJ",
+      "period": "",
+      "site": "",
+      "review_notes": 0
+     },
+     {
+      "label": "E-3-1",
+      "value": 20.239,
+      "unit": "tCO2eq",
+      "period": "",
+      "site": "",
+      "review_notes": 0
+     }
+    ]
+   }
+  },
+  {
+   "case": "two_sites_equal_values",
+   "before_50b8d72": {
+    "metrics": [
+     {
+      "value": 1000.0,
+      "unit": "kWh",
+      "code": "E-4-1",
+      "role": "usage"
+     }
+    ],
+    "review": [],
+    "checks": [],
+    "nodes": [
+     {
+      "label": "E-4-1",
+      "value": 1000.0,
+      "unit": "kWh",
+      "period": "",
+      "site": "",
+      "review_notes": 0
+     },
+     {
+      "label": "E-3-1",
+      "value": 0.478,
+      "unit": "tCO2eq",
+      "period": "",
+      "site": "",
+      "review_notes": 0
+     }
+    ]
+   },
+   "after_89f34aa": {
+    "metrics": [
+     {
+      "value": 1000.0,
+      "unit": "kWh",
+      "code": "E-4-1",
+      "role": "usage",
+      "row_label": "김해 제1공장"
+     },
+     {
+      "value": 1000.0,
+      "unit": "kWh",
+      "code": "E-4-1",
+      "role": "usage",
+      "row_label": "양산 제2공장"
+     }
+    ],
+    "review": [],
+    "checks": [],
+    "nodes": [
+     {
+      "label": "E-4-1",
+      "value": 1000.0,
+      "unit": "kWh",
+      "period": "",
+      "site": "제1공장",
+      "review_notes": 0
+     },
+     {
+      "label": "E-3-1",
+      "value": 0.478,
+      "unit": "tCO2eq",
+      "period": "",
+      "site": "제1공장",
+      "review_notes": 0
+     },
+     {
+      "label": "E-4-1",
+      "value": 1000.0,
+      "unit": "kWh",
+      "period": "",
+      "site": "제2공장",
+      "review_notes": 0
+     },
+     {
+      "label": "E-3-1",
+      "value": 0.478,
+      "unit": "tCO2eq",
+      "period": "",
+      "site": "제2공장",
+      "review_notes": 0
+     }
+    ]
+   }
+  },
+  {
+   "case": "two_months_equal_values",
+   "before_50b8d72": {
+    "metrics": [
+     {
+      "value": 1000.0,
+      "unit": "kWh",
+      "code": "E-4-1",
+      "role": "usage"
+     }
+    ],
+    "review": [],
+    "checks": [],
+    "nodes": [
+     {
+      "label": "E-4-1",
+      "value": 1000.0,
+      "unit": "kWh",
+      "period": "",
+      "site": "",
+      "review_notes": 0
+     },
+     {
+      "label": "E-3-1",
+      "value": 0.478,
+      "unit": "tCO2eq",
+      "period": "",
+      "site": "",
+      "review_notes": 0
+     }
+    ]
+   },
+   "after_89f34aa": {
+    "metrics": [
+     {
+      "value": 1000.0,
+      "unit": "kWh",
+      "code": "E-4-1",
+      "period": "2026년 4월",
+      "role": "usage",
+      "row_label": "2026년 4월"
+     },
+     {
+      "value": 1000.0,
+      "unit": "kWh",
+      "code": "E-4-1",
+      "period": "2026년 5월",
+      "role": "usage",
+      "row_label": "2026년 5월"
+     }
+    ],
+    "review": [],
+    "checks": [],
+    "nodes": [
+     {
+      "label": "E-4-1",
+      "value": 1000.0,
+      "unit": "kWh",
+      "period": "2026년 4월",
+      "site": "",
+      "review_notes": 0
+     },
+     {
+      "label": "E-3-1",
+      "value": 0.478,
+      "unit": "tCO2eq",
+      "period": "2026년 4월",
+      "site": "",
+      "review_notes": 0
+     },
+     {
+      "label": "E-4-1",
+      "value": 1000.0,
+      "unit": "kWh",
+      "period": "2026년 5월",
+      "site": "",
+      "review_notes": 0
+     },
+     {
+      "label": "E-3-1",
+      "value": 0.478,
+      "unit": "tCO2eq",
+      "period": "2026년 5월",
+      "site": "",
+      "review_notes": 0
+     }
+    ]
+   }
+  },
+  {
+   "case": "computed_mixed_energy_units",
+   "before_50b8d72": {
+    "metrics": [],
+    "review": [
+     "index_decreased"
+    ],
+    "checks": [],
+    "nodes": []
+   },
+   "after_89f34aa": {
+    "metrics": [
+     {
+      "value": 1.0,
+      "unit": "MWh",
+      "code": "E-4-1",
+      "role": "usage",
+      "index_check": "computed_only",
+      "computed": 1.0,
+      "computed_unit": "MWh"
+     }
+    ],
+    "review": [],
+    "checks": [],
+    "nodes": [
+     {
+      "label": "E-4-1",
+      "value": 1.0,
+      "unit": "MWh",
+      "period": "",
+      "site": "",
+      "review_notes": 0
+     }
+    ]
+   }
+  },
+  {
+   "case": "computed_usage_unit_differs_from_index",
+   "before_50b8d72": {
+    "metrics": [
+     {
+      "value": 1.0,
+      "unit": "kWh",
+      "code": "E-4-1",
+      "role": "usage",
+      "index_check": "computed_only",
+      "computed": 1.0
+     }
+    ],
+    "review": [],
+    "checks": [],
+    "nodes": [
+     {
+      "label": "E-4-1",
+      "value": 1.0,
+      "unit": "kWh",
+      "period": "",
+      "site": "",
+      "review_notes": 0
+     },
+     {
+      "label": "E-3-1",
+      "value": 0.0,
+      "unit": "tCO2eq",
+      "period": "",
+      "site": "",
+      "review_notes": 0
+     }
+    ]
+   },
+   "after_89f34aa": {
+    "metrics": [
+     {
+      "value": 1000.0,
+      "unit": "kWh",
+      "code": "E-4-1",
+      "role": "usage",
+      "index_check": "computed_only",
+      "computed": 1000.0,
+      "computed_unit": "kWh"
+     }
+    ],
+    "review": [],
+    "checks": [],
+    "nodes": [
+     {
+      "label": "E-4-1",
+      "value": 1000.0,
+      "unit": "kWh",
+      "period": "",
+      "site": "",
+      "review_notes": 0
+     },
+     {
+      "label": "E-3-1",
+      "value": 0.478,
+      "unit": "tCO2eq",
+      "period": "",
+      "site": "",
+      "review_notes": 0
+     }
+    ]
+   }
+  },
+  {
+   "case": "explicit_false_agreement_different_units",
+   "before_50b8d72": {
+    "metrics": [
+     {
+      "value": 1.0,
+      "unit": "kWh",
+      "code": "E-4-1",
+      "role": "usage",
+      "index_check": "match",
+      "computed": 1.0
+     }
+    ],
+    "review": [],
+    "checks": [],
+    "nodes": [
+     {
+      "label": "E-4-1",
+      "value": 1.0,
+      "unit": "kWh",
+      "period": "",
+      "site": "",
+      "review_notes": 0
+     },
+     {
+      "label": "E-3-1",
+      "value": 0.0,
+      "unit": "tCO2eq",
+      "period": "",
+      "site": "",
+      "review_notes": 0
+     }
+    ]
+   },
+   "after_89f34aa": {
+    "metrics": [
+     {
+      "value": 1.0,
+      "unit": "kWh",
+      "code": "E-4-1",
+      "role": "usage",
+      "index_check": "mismatch",
+      "computed": 1000.0,
+      "computed_unit": "kWh"
+     }
+    ],
+    "review": [
+     "explicit_vs_index_mismatch"
+    ],
+    "checks": [],
+    "nodes": [
+     {
+      "label": "E-4-1",
+      "value": 1.0,
+      "unit": "kWh",
+      "period": "",
+      "site": "",
+      "review_notes": 1
+     },
+     {
+      "label": "E-3-1",
+      "value": 0.0,
+      "unit": "tCO2eq",
+      "period": "",
+      "site": "",
+      "review_notes": 1
+     }
+    ]
+   }
+  },
+  {
+   "case": "rounded_integer_rate",
+   "before_50b8d72": {
+    "metrics": [
+     {
+      "value": 29.3,
+      "unit": "kg",
+      "role": "recycled"
+     },
+     {
+      "value": 100.0,
+      "unit": "kg",
+      "code": "E-6-1",
+      "role": "total"
+     },
+     {
+      "value": 29.0,
+      "unit": "%",
+      "code": "E-6-2"
+     }
+    ],
+    "review": [],
+    "checks": [
+     {
+      "name": "waste_components_sum",
+      "status": "match"
+     },
+     {
+      "name": "waste_components_sum",
+      "status": "match"
+     },
+     {
+      "name": "waste_recycling_rate",
+      "status": "mismatch"
+     }
+    ],
+    "nodes": [
+     {
+      "label": "재활용량",
+      "value": 29.3,
+      "unit": "kg",
+      "period": "",
+      "site": "",
+      "review_notes": 0
+     },
+     {
+      "label": "E-6-1",
+      "value": 100.0,
+      "unit": "kg",
+      "period": "",
+      "site": "",
+      "review_notes": 0
+     },
+     {
+      "label": "E-6-2",
+      "value": 29.0,
+      "unit": "%",
+      "period": "",
+      "site": "",
+      "review_notes": 0
+     }
+    ]
+   },
+   "after_89f34aa": {
+    "metrics": [
+     {
+      "value": 29.3,
+      "unit": "kg",
+      "role": "recycled"
+     },
+     {
+      "value": 100.0,
+      "unit": "kg",
+      "code": "E-6-1",
+      "role": "total"
+     },
+     {
+      "value": 29.0,
+      "unit": "%",
+      "code": "E-6-2"
+     }
+    ],
+    "review": [],
+    "checks": [
+     {
+      "name": "waste_components_sum",
+      "status": "match"
+     },
+     {
+      "name": "waste_components_sum",
+      "status": "match"
+     },
+     {
+      "name": "waste_recycling_rate",
+      "status": "match",
+      "reported_text": "29%",
+      "display_decimals": 0,
+      "computed_rounded": "29"
+     }
+    ],
+    "nodes": [
+     {
+      "label": "재활용량",
+      "value": 29.3,
+      "unit": "kg",
+      "period": "",
+      "site": "",
+      "review_notes": 0
+     },
+     {
+      "label": "E-6-1",
+      "value": 100.0,
+      "unit": "kg",
+      "period": "",
+      "site": "",
+      "review_notes": 0
+     },
+     {
+      "label": "E-6-2",
+      "value": 29.0,
+      "unit": "%",
+      "period": "",
+      "site": "",
+      "review_notes": 0
+     }
+    ]
+   }
+  },
+  {
+   "case": "explicit_meter_mismatch",
+   "before_50b8d72": {
+    "metrics": [
+     {
+      "value": 150000.0,
+      "unit": "kWh",
+      "code": "E-4-1",
+      "role": "usage",
+      "index_check": "mismatch",
+      "computed": 142560.0
+     }
+    ],
+    "review": [
+     "explicit_vs_index_mismatch"
+    ],
+    "checks": [],
+    "nodes": [
+     {
+      "label": "E-4-1",
+      "value": 150000.0,
+      "unit": "kWh",
+      "period": "2026-04-01~2026-04-30",
+      "site": "제1공장",
+      "review_notes": 0
+     },
+     {
+      "label": "E-3-1",
+      "value": 71.715,
+      "unit": "tCO2eq",
+      "period": "2026-04-01~2026-04-30",
+      "site": "제1공장",
+      "review_notes": 0
+     }
+    ]
+   },
+   "after_89f34aa": {
+    "metrics": [
+     {
+      "value": 150000.0,
+      "unit": "kWh",
+      "code": "E-4-1",
+      "role": "usage",
+      "index_check": "mismatch",
+      "computed": 142560.0,
+      "computed_unit": "kWh"
+     }
+    ],
+    "review": [
+     "explicit_vs_index_mismatch"
+    ],
+    "checks": [],
+    "nodes": [
+     {
+      "label": "E-4-1",
+      "value": 150000.0,
+      "unit": "kWh",
+      "period": "2026-04-01~2026-04-30",
+      "site": "제1공장",
+      "review_notes": 1
+     },
+     {
+      "label": "E-3-1",
+      "value": 71.715,
+      "unit": "tCO2eq",
+      "period": "2026-04-01~2026-04-30",
+      "site": "제1공장",
+      "review_notes": 1
+     }
+    ]
+   }
+  }
+ ]
+}

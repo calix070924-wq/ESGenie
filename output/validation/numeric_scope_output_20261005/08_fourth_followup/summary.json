@@ -1,0 +1,54 @@
+{
+  "product_commit": "e195aacbe6347d68c13e964b86b2cd9cddb13b33",
+  "validation_artifacts": "/Users/heojeongmin/Documents/Claude/Projects/ESGenie/output/reviews/pr71_20261006/fourth_followup_fix_validation/final_e195aac",
+  "tests": {
+    "full.xml": {
+      "tests": 5428,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 12,
+      "passed": 5416
+    },
+    "independent12.xml": {
+      "tests": 12,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "passed": 12
+    },
+    "previous55.xml": {
+      "tests": 55,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "passed": 55
+    },
+    "related404.xml": {
+      "tests": 404,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "passed": 404
+    }
+  },
+  "before_independent": {
+    "failures": 8,
+    "passed": 4
+  },
+  "source_user_files_unchanged": true,
+  "new_provider_calls": 0,
+  "RVS": {
+    "commit": "e195aacbe6347d68c13e964b86b2cd9cddb13b33",
+    "dirty": false,
+    "upstage_tape_replays": 4,
+    "blocked_cache_misses": 4,
+    "mode": "offline_saved_response_injection"
+  },
+  "RV": {
+    "commit": "e195aacbe6347d68c13e964b86b2cd9cddb13b33",
+    "dirty": false,
+    "upstage_tape_replays": 4,
+    "blocked_cache_misses": 4,
+    "mode": "offline_saved_response_injection"
+  }
+}

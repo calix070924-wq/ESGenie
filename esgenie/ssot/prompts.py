@@ -45,18 +45,25 @@ STRUCTURED_NORMALIZE_PROMPT = """\
 
 VLM_EXTRACT_SYSTEM = """\
 너는 한국 중소기업의 비정형 ESG 증빙(안전보건위원회 회의록·비상대응 매뉴얼·
-사내 규정집)을 읽는 멀티모달 추출기다.
-페이지 이미지를 보고 (a) 표/숫자가 있으면 정량 수치를, (b) 서술형 조항을 분리 추출한다.
-이미지에 없는 내용은 절대 만들어내지 않는다."""
+사내 규정집·지속가능경영보고서)의 원문 텍스트를 읽는 추출기다.
+제공된 텍스트에서 (a) 표/숫자가 있으면 정량 수치를, (b) 서술형 조항을 분리 추출한다.
+원문에 없는 내용·연도·페이지·수치는 절대 만들어내지 않는다."""
 
 VLM_EXTRACT_PROMPT = """\
 [문서 유형] {doc_type}
-이 페이지 이미지에서 아래 JSON으로 추출하라:
+아래 문서 텍스트를 다음 JSON으로 추출하라:
 {{
-  "metrics":  [{{"metric_hint": str, "value": number, "unit": str, "period": str, "kesg_code": str|null}}],
-  "clauses":  [{{"section": str, "text": str, "kesg_code": str|null, "page": int}}]
+  "metrics":  [{{"metric_hint": str, "value": number, "unit": str, "period": str, "kesg_code": str|null, "page": int|null, "quote": str}}],
+  "clauses":  [{{"section": str, "text": str, "kesg_code": str|null, "page": int|null, "quote": str}}]
 }}
+- page는 제공된 원본 페이지 인덱스(0부터)를 사용하고, 미상이면 null로 둔다. 인쇄된 쪽수로 바꾸지 않는다.
+- quote는 해당 수치 또는 조항을 뒷받침하는 본문을 그대로 인용한다. 표의 행 제목·단위·연도·범위를 보존한다.
+- 표의 모든 실적 연도와 목표 연도를 구분한다. '(합계|2024)'의 연도는 period로, 합계는 metric_hint로 옮긴다.
+- '(연결|2030 목표)'의 '목표'는 metric_hint에 남기고 period는 '2030'으로 둔다. 미상 연도를 보고연도로 추정하지 않는다.
+- 원문 숫자는 고치거나 계산하지 않는다. 각주 번호와 반복된 머리글은 실적 수치가 아니다.
+- 반복된 '표 머리글 문맥'은 본문 해석에만 쓰고, 거기서 별도 수치·조항을 만들지 않는다.
 - clauses는 의미 단위(조·항)로 끊는다.
+- 위반·벌금·재해·이수율 저하·산정 기준 변경과 같은 사실 및 비교의 한계도 생략하지 않는다.
 - 회의록이면 안건/심의결과를, 매뉴얼이면 절차/책임을 section으로 명명한다."""
 
 

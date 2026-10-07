@@ -148,6 +148,10 @@ def build_data_points(
             comparison, comparison_reason = cross, detail
         if scope_incomplete and _COMPARISON_RANK.get(comparison, -1) < _COMPARISON_RANK["scope_unconfirmed"]:
             comparison, comparison_reason = "scope_unconfirmed", "; ".join(fact.scope_notes)
+        # 원문 사실로만 보존한 0(SOURCE_ONLY)은 요청 범위 실적과 대조된 값이 아니다(2026-10-05 §4) —
+        # 같은 0끼리 비교됐다고 '대조 완료'로 표시하지 않는다. 범위 미확정 사유를 그대로 싣는다.
+        if "scope_source_only" in flags and _COMPARISON_RANK.get(comparison, -1) < _COMPARISON_RANK["scope_unconfirmed"]:
+            comparison, comparison_reason = "scope_unconfirmed", "; ".join(fact.scope_notes) or "원문 범위로만 보존한 값"
         # 파생값은 원측정값의 상충을 물려받는다 — 환산했다는 이유로 상충이 사라지면
         # 같은 사실이 E-4-1(불일치)과 E-3-1(범위 확인)로 갈린다(§4-2, 재검토 R1).
         if "source_conflict" in flags and _COMPARISON_RANK.get(comparison, -1) < _COMPARISON_RANK["mismatch"]:
@@ -160,7 +164,8 @@ def build_data_points(
             verification = "unverified"
         elif (scope_incomplete or not valid
                 or comparison in ("not_comparable", "scope_unconfirmed")
-                or flags.intersection({"period_inferred", "partial_aggregate", "partial_value", "derived", "no_representative_node"})):
+                or flags.intersection({"period_inferred", "partial_aggregate", "partial_value", "derived", "no_representative_node",
+                                    "scope_source_only"})):
             verification = "estimated"
         else:
             verification = "verified" if d1 < 0.2 else "estimated"

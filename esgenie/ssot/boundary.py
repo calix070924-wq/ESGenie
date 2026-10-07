@@ -40,7 +40,7 @@ OCR 캐시를 재생해도 같은 경계가 나온다. 새 필드를 채우려�
 from __future__ import annotations
 
 import re
-from dataclasses import dataclass, field, asdict, fields
+from dataclasses import dataclass, field, asdict, fields, replace
 from typing import Any, Iterable, Literal
 from .measurement_context import period_bounds, header_context, site_path
 
@@ -649,10 +649,15 @@ def derive_boundary(
     if base is None:
         return derived
     prior = Boundary.from_dict(base)
+    # 원문 대조 기록(`provenance`·`review_notes`)은 범위를 읽지 못한 경계에서도 잃지 않고
+    # 규칙 추론 기록 뒤에 덧붙인다(PR 69 3차 검토: 범위 미확정 0의 판정 기록이 사라졌다).
+    carried = {"provenance": derived.provenance + prior.provenance,
+               "review_notes": tuple(dict.fromkeys(derived.review_notes + prior.review_notes))}
     if not prior.is_known:
-        return derived
+        return replace(derived, **carried)
     # 정형 파서가 직접 읽은 축이 규칙 추론을 이긴다.
-    return derived.merged(**{k: v for k, v in asdict(prior).items() if k != "inferred"})
+    return replace(derived.merged(**{k: v for k, v in asdict(prior).items()
+                                     if k not in ("inferred", "provenance", "review_notes")}), **carried)
 
 
 # ====================================================================
@@ -668,6 +673,22 @@ COMPARISON_LABEL: dict[str, str] = {
     "not_comparable": "비교 불가",
     "scope_unconfirmed": "범위 확인 필요",
 }
+
+
+def scope_meter(b: Boundary | dict | None) -> str:
+    """표 범위 칸의 계량기 표기(전력계 A 등). 경계 필드가 아니라 원문 칸 출처에만 남는
+    최소 식별 정보다 — 같은 사업장·기간이라도 계량기가 다르면 같은 측정값이 아니다."""
+    for p in Boundary.from_dict(b).provenance:
+        meter = ((p.get("scope") or {}) if isinstance(p, dict) else {}).get("meter")
+        if meter:
+            return str(meter)
+    return ""
+
+
+def different_meters(a: Boundary | dict | None, b: Boundary | dict | None) -> str:
+    """두 경계의 계량기가 둘 다 적혀 있고 다르면 사유 문구, 아니면 빈 문자열."""
+    ma, mb = scope_meter(a), scope_meter(b)
+    return f"계량기 상이({ma} ↔ {mb})" if ma and mb and ma != mb else ""
 
 
 def comparable(a: Boundary | dict | None, b: Boundary | dict | None) -> tuple[str, str]:
@@ -705,6 +726,9 @@ def comparable(a: Boundary | dict | None, b: Boundary | dict | None) -> tuple[st
     period_status, period_reason = same_period(ba, bb)
     if period_status != "compared":
         return period_status, period_reason
+    meter_reason = different_meters(ba, bb)
+    if meter_reason:
+        return "not_comparable", meter_reason
     if ba.denominator_kind != bb.denominator_kind:
         if "unknown" in (ba.denominator_kind, bb.denominator_kind):
             return "scope_unconfirmed", "비율 분모 미상 — 총전력/총에너지 분모 확인 필요"
@@ -902,6 +926,9 @@ def plan_sum(items: Iterable[Any], *, boundary_of=None, unit_of=None, report_yea
             decision.reference.append((n, why + " — 합산 보류"))
         elif not compatible_sites(ab, b, inclusion=True):
             decision.reference.append((n, "사업장 범위 미상 또는 상이 — 합산 보류"))
+        elif different_meters(ab, b):
+            # 다른 계량기는 중복도 상충도 아니다. 합산 범위를 넓히지 않고 참고 근거로 둔다.
+            decision.reference.append((n, different_meters(ab, b) + " — 합산 보류"))
         else:
             staged.append((n, b))
     # 미상 경계의 단독값은 참고값으로 유지하되 다른 항목을 더하지 않는다.
@@ -973,6 +1000,8 @@ __all__ = [
     "compatible_sites",
     "site_covers",
     "plan_sum",
+    "scope_meter",
+    "different_meters",
     "SOURCE_CONFLICT_REASON",
     "DUPLICATE_MEASURE_REASON",
     "SumDecision",

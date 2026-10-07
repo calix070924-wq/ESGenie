@@ -1,0 +1,5 @@
+code=6bf9750 + cherry-pick ec0bb4e -> ea5aa6f + 1dea0c5 -> 7dd7f01 + 89f34aa -> cd66424 (/private/tmp/ESGenie-web-integ-r1-20260929), python=/Users/heojeongmin/Documents/Claude/Projects/ESGenie/outputs/ui_redesign_workspace/.venv/bin/python
+=========================== short test summary info ============================
+SKIPPED [5] tests/test_table_structure.py:38: 실보고서 PDF 없음: data/real_reports/051910_lgchem_2025.pdf
+SKIPPED [7] tests/test_table_structure.py:38: 실보고서 PDF 없음: data/real_reports/012330_mobis_2025.pdf
+1707 passed, 12 skipped in 73.53s (0:01:13)

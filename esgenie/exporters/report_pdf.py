@@ -33,10 +33,21 @@ def _pdf_safe_text(text: str) -> str:
 
 def _inline(text: str) -> str:
     """마크다운 인라인 → reportlab 마크업. HTML 이스케이프 후 태그만 복원."""
+    # 원문 인용은 Markdown 문법을 이스케이프한다. 이를 먼저 보호하지 않으면
+    # PDF에 역슬래시가 남거나 원문의 별표가 강조 문법으로 바뀐다.
+    escaped: list[str] = []
+
+    def protect(match):
+        escaped.append(html.escape(match[1]))
+        return f"\x00escaped{len(escaped) - 1}\x00"
+
+    text = re.sub(r"\\([!\"#$%&'()*+,\-./:;<=>?@\[\]\\^_`{|}~])", protect, text)
     text = html.escape(text)
     text = re.sub(r"\*\*(.+?)\*\*", r"<b>\1</b>", text)
     text = re.sub(r"`(.+?)`", r"<font face='Courier'>\1</font>", text)
     text = re.sub(r"(?<!\w)_(.+?)_(?!\w)", r"<i>\1</i>", text)
+    for index, literal in enumerate(escaped):
+        text = text.replace(f"\x00escaped{index}\x00", literal)
     return text
 
 

@@ -1,0 +1,537 @@
+{
+ "source_file": "07_상수도청구서_2026-04.pdf",
+ "recorded_doc_type": "water_bill",
+ "source_sha256": "09a5f17e97675eefbc5df1b1a4b18e6f0edb1b40aa0ebd030b7f421118999ac9",
+ "stage": "upstage_dp_output (raw_text elements + parsed HTML table cells)",
+ "origin": {
+  "pipeline_json": "/Users/heojeongmin/Documents/Claude/Projects/ESGenie/output/rehearsal/hanwool_bm_20260928/runs/20260928T035715Z_11976e3b984b43f6941f780a7f4a80cb_rev13/pipeline.json",
+  "pipeline_json_sha256": "6b4c54164b2520f20b42ad05578672841751230195e183da853fb8aca7f18ac2",
+  "code_commit": "6bf975005364e1a32aee1ca6e58c761edb11db08"
+ },
+ "recorded_metrics": [],
+ "tokens": [
+  {
+   "text": "ESGenie / FICTIONAL DOCUMENT",
+   "bbox": null,
+   "page": 0
+  },
+  {
+   "text": "HW-WTR-202604",
+   "bbox": null,
+   "page": 0
+  },
+  {
+   "text": "상수도 요금 청구서",
+   "bbox": null,
+   "page": 0
+  },
+  {
+   "text": "김해산업용수서비스(가상) / 2026년 4월 사용분",
+   "bbox": null,
+   "page": 0
+  },
+  {
+   "text": "| 항목 | 내용 |\n| --- | --- |\n| 고객 / 사업장 | 한울정밀공업(주) / 김해 제1공장 |\n| 고객번호 | DEMO-WTR-G01 |\n| 사용 기간 | 2026-04-01 ~ 2026-04-30 (30일) |\n| 발행 / 납기 | 2026-05-07 / 2026-05-25 |",
+   "bbox": [
+    0.0994,
+    0.1641,
+    0.9189,
+    0.3136
+   ],
+   "page": 0
+  },
+  {
+   "text": "검침과 사용량",
+   "bbox": null,
+   "page": 0
+  },
+  {
+   "text": "| 이전 지침 | 당월 지침 | 상수도 사용량 |\n| --- | --- | --- |\n| 12,320 m3 | 13,000 m3 | 680 m3 |",
+   "bbox": [
+    0.1006,
+    0.3534,
+    0.9189,
+    0.412
+   ],
+   "page": 0
+  },
+  {
+   "text": "사용량 계산: 13,000 - 12,320 = 680 m3",
+   "bbox": null,
+   "page": 0
+  },
+  {
+   "text": "청구 내역",
+   "bbox": null,
+   "page": 0
+  },
+  {
+   "text": "| 항목 | 금액 |\n| --- | --- |\n| 기본요금 | 42,000원 |\n| 사용요금: 680 m3 × 1,200원 | 816,000원 |\n| 청구금액 합계 | 858,000원 |",
+   "bbox": [
+    0.0998,
+    0.4681,
+    0.9193,
+    0.5866
+   ],
+   "page": 0
+  },
+  {
+   "text": "청구 범위",
+   "bbox": null,
+   "page": 0
+  },
+  {
+   "text": "이 청구서는 2026년 4월 김해 제1공장의 상수도 공급량만 기록합니다. 연간 추정량, 냉각수 재이용량, 양산 제2공장 사용량은",
+   "bbox": null,
+   "page": 0
+  },
+  {
+   "text": "이 고지서에 포함하지 않습니다.",
+   "bbox": null,
+   "page": 0
+  },
+  {
+   "text": "단가는 시연용 가상 요금입니다. 실제 수도요금 고지서나 행정기관 문서가 아닙니다.",
+   "bbox": null,
+   "page": 0
+  },
+  {
+   "text": "시연용 가상자료 | 모든 기업·인물·수치·기록은 가상이며 실제 제출용이 아닙니다.",
+   "bbox": null,
+   "page": 0
+  },
+  {
+   "text": "BM 개편 2026-09-28 / 1",
+   "bbox": null,
+   "page": 0
+  }
+ ],
+ "tables": [
+  {
+   "table_id": "upstage_table_0",
+   "row_count": 5,
+   "column_count": 2,
+   "cells": [
+    {
+     "row_index": 0,
+     "column_index": 0,
+     "content": "항목",
+     "row_span": 1,
+     "column_span": 1,
+     "kind": null,
+     "bbox": [
+      0.0994,
+      0.1641,
+      0.9189,
+      0.3136
+     ],
+     "page": 0,
+     "confidence": null
+    },
+    {
+     "row_index": 0,
+     "column_index": 1,
+     "content": "내용",
+     "row_span": 1,
+     "column_span": 1,
+     "kind": null,
+     "bbox": [
+      0.0994,
+      0.1641,
+      0.9189,
+      0.3136
+     ],
+     "page": 0,
+     "confidence": null
+    },
+    {
+     "row_index": 1,
+     "column_index": 0,
+     "content": "고객 / 사업장",
+     "row_span": 1,
+     "column_span": 1,
+     "kind": null,
+     "bbox": [
+      0.0994,
+      0.1641,
+      0.9189,
+      0.3136
+     ],
+     "page": 0,
+     "confidence": null
+    },
+    {
+     "row_index": 1,
+     "column_index": 1,
+     "content": "한울정밀공업(주) / 김해 제1공장",
+     "row_span": 1,
+     "column_span": 1,
+     "kind": null,
+     "bbox": [
+      0.0994,
+      0.1641,
+      0.9189,
+      0.3136
+     ],
+     "page": 0,
+     "confidence": null
+    },
+    {
+     "row_index": 2,
+     "column_index": 0,
+     "content": "고객번호",
+     "row_span": 1,
+     "column_span": 1,
+     "kind": null,
+     "bbox": [
+      0.0994,
+      0.1641,
+      0.9189,
+      0.3136
+     ],
+     "page": 0,
+     "confidence": null
+    },
+    {
+     "row_index": 2,
+     "column_index": 1,
+     "content": "DEMO-WTR-G01",
+     "row_span": 1,
+     "column_span": 1,
+     "kind": null,
+     "bbox": [
+      0.0994,
+      0.1641,
+      0.9189,
+      0.3136
+     ],
+     "page": 0,
+     "confidence": null
+    },
+    {
+     "row_index": 3,
+     "column_index": 0,
+     "content": "사용 기간",
+     "row_span": 1,
+     "column_span": 1,
+     "kind": null,
+     "bbox": [
+      0.0994,
+      0.1641,
+      0.9189,
+      0.3136
+     ],
+     "page": 0,
+     "confidence": null
+    },
+    {
+     "row_index": 3,
+     "column_index": 1,
+     "content": "2026-04-01 ~ 2026-04-30 (30일)",
+     "row_span": 1,
+     "column_span": 1,
+     "kind": null,
+     "bbox": [
+      0.0994,
+      0.1641,
+      0.9189,
+      0.3136
+     ],
+     "page": 0,
+     "confidence": null
+    },
+    {
+     "row_index": 4,
+     "column_index": 0,
+     "content": "발행 / 납기",
+     "row_span": 1,
+     "column_span": 1,
+     "kind": null,
+     "bbox": [
+      0.0994,
+      0.1641,
+      0.9189,
+      0.3136
+     ],
+     "page": 0,
+     "confidence": null
+    },
+    {
+     "row_index": 4,
+     "column_index": 1,
+     "content": "2026-05-07 / 2026-05-25",
+     "row_span": 1,
+     "column_span": 1,
+     "kind": null,
+     "bbox": [
+      0.0994,
+      0.1641,
+      0.9189,
+      0.3136
+     ],
+     "page": 0,
+     "confidence": null
+    }
+   ],
+   "source": "upstage_dp",
+   "page": 0,
+   "meta": {
+    "resolved_tier": 0,
+    "gate_flags": [],
+    "hard_fail_codes": []
+   }
+  },
+  {
+   "table_id": "upstage_table_1",
+   "row_count": 2,
+   "column_count": 3,
+   "cells": [
+    {
+     "row_index": 0,
+     "column_index": 0,
+     "content": "이전 지침",
+     "row_span": 1,
+     "column_span": 1,
+     "kind": null,
+     "bbox": [
+      0.1006,
+      0.3534,
+      0.9189,
+      0.412
+     ],
+     "page": 0,
+     "confidence": null
+    },
+    {
+     "row_index": 0,
+     "column_index": 1,
+     "content": "당월 지침",
+     "row_span": 1,
+     "column_span": 1,
+     "kind": null,
+     "bbox": [
+      0.1006,
+      0.3534,
+      0.9189,
+      0.412
+     ],
+     "page": 0,
+     "confidence": null
+    },
+    {
+     "row_index": 0,
+     "column_index": 2,
+     "content": "상수도 사용량",
+     "row_span": 1,
+     "column_span": 1,
+     "kind": null,
+     "bbox": [
+      0.1006,
+      0.3534,
+      0.9189,
+      0.412
+     ],
+     "page": 0,
+     "confidence": null
+    },
+    {
+     "row_index": 1,
+     "column_index": 0,
+     "content": "12,320 m3",
+     "row_span": 1,
+     "column_span": 1,
+     "kind": null,
+     "bbox": [
+      0.1006,
+      0.3534,
+      0.9189,
+      0.412
+     ],
+     "page": 0,
+     "confidence": null
+    },
+    {
+     "row_index": 1,
+     "column_index": 1,
+     "content": "13,000 m3",
+     "row_span": 1,
+     "column_span": 1,
+     "kind": null,
+     "bbox": [
+      0.1006,
+      0.3534,
+      0.9189,
+      0.412
+     ],
+     "page": 0,
+     "confidence": null
+    },
+    {
+     "row_index": 1,
+     "column_index": 2,
+     "content": "680 m3",
+     "row_span": 1,
+     "column_span": 1,
+     "kind": null,
+     "bbox": [
+      0.1006,
+      0.3534,
+      0.9189,
+      0.412
+     ],
+     "page": 0,
+     "confidence": null
+    }
+   ],
+   "source": "upstage_dp",
+   "page": 0,
+   "meta": {
+    "resolved_tier": 0,
+    "gate_flags": [],
+    "hard_fail_codes": []
+   }
+  },
+  {
+   "table_id": "upstage_table_2",
+   "row_count": 4,
+   "column_count": 2,
+   "cells": [
+    {
+     "row_index": 0,
+     "column_index": 0,
+     "content": "항목",
+     "row_span": 1,
+     "column_span": 1,
+     "kind": null,
+     "bbox": [
+      0.0998,
+      0.4681,
+      0.9193,
+      0.5866
+     ],
+     "page": 0,
+     "confidence": null
+    },
+    {
+     "row_index": 0,
+     "column_index": 1,
+     "content": "금액",
+     "row_span": 1,
+     "column_span": 1,
+     "kind": null,
+     "bbox": [
+      0.0998,
+      0.4681,
+      0.9193,
+      0.5866
+     ],
+     "page": 0,
+     "confidence": null
+    },
+    {
+     "row_index": 1,
+     "column_index": 0,
+     "content": "기본요금",
+     "row_span": 1,
+     "column_span": 1,
+     "kind": null,
+     "bbox": [
+      0.0998,
+      0.4681,
+      0.9193,
+      0.5866
+     ],
+     "page": 0,
+     "confidence": null
+    },
+    {
+     "row_index": 1,
+     "column_index": 1,
+     "content": "42,000원",
+     "row_span": 1,
+     "column_span": 1,
+     "kind": null,
+     "bbox": [
+      0.0998,
+      0.4681,
+      0.9193,
+      0.5866
+     ],
+     "page": 0,
+     "confidence": null
+    },
+    {
+     "row_index": 2,
+     "column_index": 0,
+     "content": "사용요금: 680 m3 × 1,200원",
+     "row_span": 1,
+     "column_span": 1,
+     "kind": null,
+     "bbox": [
+      0.0998,
+      0.4681,
+      0.9193,
+      0.5866
+     ],
+     "page": 0,
+     "confidence": null
+    },
+    {
+     "row_index": 2,
+     "column_index": 1,
+     "content": "816,000원",
+     "row_span": 1,
+     "column_span": 1,
+     "kind": null,
+     "bbox": [
+      0.0998,
+      0.4681,
+      0.9193,
+      0.5866
+     ],
+     "page": 0,
+     "confidence": null
+    },
+    {
+     "row_index": 3,
+     "column_index": 0,
+     "content": "청구금액 합계",
+     "row_span": 1,
+     "column_span": 1,
+     "kind": null,
+     "bbox": [
+      0.0998,
+      0.4681,
+      0.9193,
+      0.5866
+     ],
+     "page": 0,
+     "confidence": null
+    },
+    {
+     "row_index": 3,
+     "column_index": 1,
+     "content": "858,000원",
+     "row_span": 1,
+     "column_span": 1,
+     "kind": null,
+     "bbox": [
+      0.0998,
+      0.4681,
+      0.9193,
+      0.5866
+     ],
+     "page": 0,
+     "confidence": null
+    }
+   ],
+   "source": "upstage_dp",
+   "page": 0,
+   "meta": {
+    "resolved_tier": 0,
+    "gate_flags": [],
+    "hard_fail_codes": []
+   }
+  }
+ ]
+}

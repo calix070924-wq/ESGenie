@@ -38,6 +38,7 @@ from .ssot import (
     ocr_router,
 )
 from .ssot.ssot_pipeline import build_rag_with_ssot, extract_with_ssot
+from .source_review import ReviewFinding, build_source_review
 
 logger = logging.getLogger(__name__)
 
@@ -69,6 +70,9 @@ class PipelineOutput:
     industry_module_key: str | None = None   # 적용된 업종 모듈 키(없으면 전역). 점수 변동 설명용.
     supplier_claims: dict[str, Any] = field(default_factory=dict)
     supplier_claim_files: list[str] = field(default_factory=list)
+    item_retrievals: list[dict[str, Any]] = field(default_factory=list)
+    review_findings: list[ReviewFinding] = field(default_factory=list)
+    report_export: dict[str, Any] = field(default_factory=dict)
 
 
 def _load_industry_stats(industry: str) -> dict[str, Any] | None:
@@ -106,6 +110,16 @@ def _collect_ocr_extractions(
             extractions.append(extraction)
         except Exception as exc:
             logger.warning("OCR 처리 실패 [%s]: %s", fname, exc)
+            if SETTINGS.strict_llm:
+                raise  # 평가·운영의 입력 실패를 성공한 빈 입력으로 바꾸지 않는다.
+            extractions.append(ocr_router.OcrExtraction(
+                source_file=fname, channel=ocr_router.DocChannel.UNSTRUCTURED,
+                doc_type="extraction_failed", router_meta={
+                    "extraction_status": "failed",
+                    "chunk_failures": [{"page": None, "reason": type(exc).__name__,
+                                        "detail": str(exc)}],
+                },
+            ))
 
     clauses: list[ocr_router.ExtractedClause] = []
     for code, answer in (survey_answers or {}).items():
@@ -372,6 +386,7 @@ def run(
     sections: dict[str, VerificationResult] = {}
     audit_traces: dict[str, AuditTrace] = {}
     trace_paths: dict[str, str] = {}
+    item_retrievals: list[dict[str, Any]] = []
 
     if report is not None:
         logger.info("[L1] K-ESG 항목 추출 중...")
@@ -403,6 +418,10 @@ def run(
         logger.info("[L2] Hybrid RAG 인덱스 로드 중... (backend=%s)", backend)
         rag = get_hybrid_rag()
         corp = build_rag_with_ssot(rag, report, evidence_graph)
+        from .knowledge.kesg_items import items_for_profile
+        review_items = [item for item in items_for_profile(extraction.profile)
+                        if item.area in areas]
+        item_retrievals = [item.to_dict() for item in rag.retrieve_for_items(review_items, corp=corp)]
 
         industry_stats = _load_industry_stats(report.industry)
         for area in areas:
@@ -442,10 +461,6 @@ def run(
             )
             audit_traces[area] = trace
 
-            if save_traces:
-                path = save_audit_trace(trace)
-                trace_paths[area] = str(path)
-                logger.info("[L5] 저장 완료: %s", path)
     effective_industry = ((report.industry if report is not None else "") or industry or "")
     v15_trace, export_paths, risk_rows, policy_results, policy_drafts = _export_v15_artifacts(
         evidence_graph,
@@ -476,22 +491,78 @@ def run(
         ocr_extractions=extractions,
         requested_areas=list(areas),
         industry_module_key=industry_module_key,
+        item_retrievals=item_retrievals,
     )
-
-    if export_report and sections:
+    result.review_findings = build_source_review(result)
+    result.report_export = {"status": "not_requested"}
+    export_error = None
+    if export_report and not sections:
+        result.report_export = {
+            "status": "unavailable", "stage": "assemble", "reason": "no_sections",
+            "detail": "작성된 본문이 없어 통합 보고서를 생성하지 않았습니다.",
+        }
+    elif export_report:
+        stage = "assemble"
         try:
             from .layer6_report import assemble_report
-            from .exporters.report_pdf import export_report_pdf
             doc = assemble_report(result)
+            stage = "markdown"
             out_dir = Path(export_root) / f"{corp_code_final or corp_name_final}_{report_year_final}"
             out_dir.mkdir(parents=True, exist_ok=True)
             md_path = out_dir / f"ESG보고서_{(corp_name_final or 'corp').replace('/', '_')}_{report_year_final}.md"
             md_path.write_text(doc.to_markdown(), encoding="utf-8")
             result.export_paths["report_md"] = str(md_path)
+            # 생성 본문에서 바꾸거나 표시한 문장의 모델 원문·사유(PR71 검토 R1) — 본문 옆 감사 기록.
+            review_md = out_dir / "report_body_review.json"
+            review_md.write_text(json.dumps(doc.meta.get("body_reviews") or [], ensure_ascii=False, indent=2,
+                                            default=str), encoding="utf-8")
+            result.export_paths["report_body_review_json"] = str(review_md)
+            stage = "pdf"
+            from .exporters.report_pdf import export_report_pdf
             result.export_paths["report_pdf"] = export_report_pdf(doc, out_dir)
+            result.report_export = {"status": "complete"}
             logger.info("[L6] 통합 보고서 저장: %s", result.export_paths["report_pdf"])
         except Exception as exc:
-            logger.warning("[L6] 통합 보고서 생성 실패: %s", exc)
+            export_error = exc
+            result.report_export = {
+                "status": "partial" if result.export_paths.get("report_md") else "failed",
+                "stage": stage, "reason": type(exc).__name__, "detail": str(exc),
+            }
+            logger.warning("[L6] 통합 보고서 생성 실패 (%s): %s", stage, exc)
+
+    if save_traces or export_outputs or export_report:
+        try:
+            out_dir = Path(export_root) / f"{corp_code_final or corp_name_final}_{report_year_final}"
+            out_dir.mkdir(parents=True, exist_ok=True)
+            review_path = out_dir / "source_review.json"
+            review_path.write_text(json.dumps({
+                "findings": [finding.to_dict() for finding in result.review_findings],
+                "item_retrievals": item_retrievals,
+                "ocr_status": [{"source_file": ext.source_file, "metadata": ext.router_meta}
+                               for ext in extractions],
+                "report_export": result.report_export,
+            }, ensure_ascii=False, indent=2, default=str), encoding="utf-8")
+            result.export_paths["source_review_json"] = str(review_path)
+        except Exception as exc:
+            if export_error is None:
+                raise
+            # 같은 저장 경로의 재실패가 최초 보고서 실패를 덮지 않도록 보존한다.
+            result.report_export["review_save_error"] = {"reason": type(exc).__name__, "detail": str(exc)}
+            logger.warning("검토 결과 저장 실패: %s", exc)
+
+    for area, trace in audit_traces.items():
+        if trace is None:
+            continue
+        trace.summary["source_review"] = [finding.to_dict() for finding in result.review_findings
+                                          if not finding.area or finding.area == area]
+        trace.summary["item_retrievals"] = [item for item in item_retrievals if item.get("area") == area]
+        trace.summary["report_export"] = result.report_export
+        if save_traces:
+            path = save_audit_trace(trace)
+            trace_paths[area] = str(path)
+            logger.info("[L5] 저장 완료: %s", path)
+    if export_error is not None and SETTINGS.strict_llm:
+        raise export_error
 
     return result
 

@@ -1,0 +1,26 @@
+{
+ "code_commit": "0b770dff5ab54e66b666f9e13d578bdc285a973d",
+ "validated_head": "61b61673c9e66460b2cb039e45423e3e4d365fa0",
+ "base_main": "bba2206e0d8e766c8b37ef84de43f5c52e9c4dfa",
+ "review_head": "4972df26af927d5c5bc616752a520b2e9c2ae8b9",
+ "tests": {
+  "independent_20_61b6167.log": "20 passed in 0.29s",
+  "baseline_period_bba2206.log": "4 passed in 0.17s",
+  "pr71_61b6167.txt": "225 passed, 5 warnings in 0.71s",
+  "pr69_61b6167.txt": "1981 passed in 1.86s",
+  "pr68_pr70_units_61b6167.txt": "1218 passed in 7.79s",
+  "scope_ledger_answer_report_export_hmc_61b6167.txt": "541 passed, 8 warnings in 25.03s",
+  "full_61b6167.txt": "5237 passed, 12 skipped, 8 warnings in 129.55s (0:02:09)"
+ },
+ "full_skips": [
+  "SKIPPED [5] tests/test_table_structure.py:38: 실보고서 PDF 없음: data/real_reports/051910_lgchem_2025.pdf",
+  "SKIPPED [7] tests/test_table_structure.py:38: 실보고서 PDF 없음: data/real_reports/012330_mobis_2025.pdf"
+ ],
+ "hmc_failed": [
+  "renewable:source_identity_page",
+  "renewable:source_identity_page"
+ ],
+ "real_zero_records": 80,
+ "real_zero_offline_misses": 0,
+ "hashes": "unchanged (before/after in followup_fix_validation/02_final_0b770df/hashes)"
+}

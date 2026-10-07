@@ -69,9 +69,9 @@ def test_upstage_bbox_from_points_and_page(monkeypatch, tmp_path):
     # multipart 전송 + Bearer 인증 확인
     assert captured["headers"]["Authorization"] == "Bearer k"
     assert "document" in captured["files"]
-    # 2026-07 마이그레이션: 구 alias(7/31 종료) → 260630 명시 pin
+    # 2026-10 마이그레이션: 260630 명시 pin(11/2 종료) → document-parse alias
     assert captured["data"]["model"] == ocr_router.UPSTAGE_DP_MODEL
-    assert captured["data"]["model"] == "document-parse-260630"
+    assert captured["data"]["model"] == "document-parse"
 
 
 def test_upstage_table_html_parsed_to_cells(monkeypatch, tmp_path):

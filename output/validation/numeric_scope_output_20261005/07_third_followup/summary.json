@@ -1,0 +1,85 @@
+{
+  "baseline": "c18a9f3",
+  "branch": "codex/fix-numeric-scope-output-20261005",
+  "source_user_files_changed": [],
+  "runs": {
+    "RVS": {
+      "mode": "offline_saved_response_injection",
+      "new_provider_calls": 0,
+      "blocked_cache_misses": 4,
+      "upstage_tape_replays": 4,
+      "events": [
+        {
+          "kind": "saved_section",
+          "area": "E",
+          "saved_key": "c4855580c7e17c0418801379bd8c2b714b6b1cca75d5ed684c17356c1ef73f9f",
+          "response_source": null
+        },
+        {
+          "kind": "saved_section",
+          "area": "S",
+          "saved_key": "2e5ee9ccdcbf7d6c6cff97f080ba6f97b220c79eeaf90d0c0d8d6a26f79d4d82",
+          "response_source": null
+        },
+        {
+          "kind": "section_S",
+          "area": null,
+          "saved_key": null,
+          "response_source": "saved_section"
+        },
+        {
+          "kind": "saved_section",
+          "area": "G",
+          "saved_key": "e20cecb7b9e91e36b10133c83dd0f4173d9acf6ef61d204fe49f1e41bda88c5d",
+          "response_source": null
+        },
+        {
+          "kind": "summary",
+          "area": null,
+          "saved_key": null,
+          "response_source": "saved_summary"
+        }
+      ]
+    },
+    "RV": {
+      "mode": "offline_saved_response_injection",
+      "new_provider_calls": 0,
+      "blocked_cache_misses": 4,
+      "upstage_tape_replays": 4,
+      "events": [
+        {
+          "kind": "saved_section",
+          "area": "E",
+          "saved_key": "c4855580c7e17c0418801379bd8c2b714b6b1cca75d5ed684c17356c1ef73f9f",
+          "response_source": null
+        },
+        {
+          "kind": "saved_section",
+          "area": "S",
+          "saved_key": "2e5ee9ccdcbf7d6c6cff97f080ba6f97b220c79eeaf90d0c0d8d6a26f79d4d82",
+          "response_source": null
+        },
+        {
+          "kind": "section_S",
+          "area": null,
+          "saved_key": null,
+          "response_source": "saved_section"
+        },
+        {
+          "kind": "saved_section",
+          "area": "G",
+          "saved_key": "e20cecb7b9e91e36b10133c83dd0f4173d9acf6ef61d204fe49f1e41bda88c5d",
+          "response_source": null
+        },
+        {
+          "kind": "summary",
+          "area": null,
+          "saved_key": null,
+          "response_source": "saved_summary"
+        }
+      ]
+    }
+  },
+  "artifacts": "/Users/heojeongmin/Documents/Claude/Projects/ESGenie/output/reviews/pr71_20261006/third_followup_fix_validation",
+  "product_commit": "7361690"
+}

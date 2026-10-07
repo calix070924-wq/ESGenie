@@ -1,0 +1,49 @@
+{
+  "stage": "/Users/heojeongmin/Documents/Claude/Projects/ESGenie/output/reviews/pr71_20261006/third_followup_fix_validation/runs/RVS/followup",
+  "rows": [
+    {
+      "event": "section_S",
+      "variant": "F1 다른 사업장 오답",
+      "expect": "hold",
+      "kind": "sentence",
+      "in_markdown": false,
+      "in_pdf": false,
+      "replaced_records": 3,
+      "hold_output": "[확인 보류] 생성 문장의 수치(46명)는 원문에서 이 문장의 사업장 관계를 확인하지 못해 이 문장을 본문에 싣지 않았습니다. 원문 확인 값: 이번 교육 출석 집계 · 대상 50명(2026-04-22) [사업장: 김해1공장] — 09_안전보건교육실시기록_2026-04-22.pdf; 교육 참석 인원 46명(2026-04-22) [사업장: 김해1공장] — 09_안전보건교육실시기록_2026-04-22.pdf; 교육 미참석 인원 4명",
+      "reason": "relation_mismatch",
+      "problems": [
+        "site"
+      ],
+      "pass": true
+    },
+    {
+      "event": "section_S",
+      "variant": "F1 원본 사업장 정상",
+      "expect": "keep",
+      "kind": "sentence",
+      "in_markdown": true,
+      "in_pdf": true,
+      "replaced_records": 0,
+      "hold_output": "",
+      "reason": "",
+      "problems": null,
+      "pass": true
+    },
+    {
+      "event": "summary",
+      "variant": "요약 F1 다른 사업장 오답",
+      "expect": "hold",
+      "kind": "sentence",
+      "in_markdown": false,
+      "in_pdf": false,
+      "replaced_records": 3,
+      "hold_output": "[확인 보류] 생성 문장의 수치(46명)는 원문에서 이 문장의 사업장 관계를 확인하지 못해 이 문장을 본문에 싣지 않았습니다. 원문 확인 값: 이번 교육 출석 집계 · 대상 50명(2026-04-22) [사업장: 김해1공장] — 09_안전보건교육실시기록_2026-04-22.pdf; 교육 참석 인원 46명(2026-04-22) [사업장: 김해1공장] — 09_안전보건교육실시기록_2026-04-22.pdf; 교육 미참석 인원 4명",
+      "reason": "relation_mismatch",
+      "problems": [
+        "site"
+      ],
+      "pass": true
+    }
+  ],
+  "all_pass": true
+}

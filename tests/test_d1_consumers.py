@@ -86,7 +86,14 @@ def test_report_pdf_keeps_numeric_coverage(tmp_path, case):
     with fitz.open(export_report_pdf(doc,tmp_path)) as pdf:
         text = ' '.join(' '.join(page.get_text().split()) for page in pdf)
     assert f'비교 {compared}건' in text and f'미검증 {unverified}건' in text
-    assert sentence in text.replace('\n', ' ') or all(token in text for token in sentence.split())
+    # 계약 변경(PR71 검토 R1): 생성 문맥의 근거 문구(31%·92%·100 tCO2eq)에 없는 수량을 단정한 문장은 표시만 붙여
+    # 두지 않고 같은 자리의 확인 보류 문구로 바꾼다 — 용수 100톤(단위가 다른 100 tCO2eq는 근거가 아니다),
+    # 9999 tCO2eq. 근거에 있는 값만 쓴 문장(뒤바뀐 31%·92% 포함)은 그대로 두고 D1이 판정한다.
+    held = {'missing': '100톤', 'normal_missing': '100톤', 'error_missing': '100톤', 'plain_error': '9999 tCO2eq'}
+    if name in held:
+        assert f'[확인 보류] 생성 문장의 수치({held[name]})' in text and sentence not in text
+    else:
+        assert sentence in text.replace('\n', ' ') or all(token in text for token in sentence.split())
     if unverified:
         assert '부분 평가' in text and '사람 검토 필요' in text
         assert ('D1 평가불가' if not compared else 'D1 부분 평가') in text

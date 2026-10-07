@@ -59,6 +59,47 @@ def _fmt_evidence(answer, fig_map: dict[int, str] | None = None) -> str:
     return "<br/>".join(note_lines(answer, fig_map=fig_map))
 
 
+# 한 표 행에 담을 근거·비고 칸의 최대 높이(pt). 가로 A4 틀(약 515pt)에서 머리글 행·여백을 뺀 값.
+_ROW_LIMIT = 420.0
+
+
+def _evidence_chunks(html: str, style, width: float, limit: float, make) -> list:
+    """근거·비고 칸 HTML을 높이 `limit` 안에 드는 조각들로 나눈다(`<br/>` 줄 → ` / ` 구분 → 글자 순).
+
+    reportlab 표는 한 행을 쪽에 걸쳐 나누지 못한다(splitInRow는 쪽 경계의 모든 행을 쪼갠다). 쪽보다 긴
+    행만 이어지는 행으로 옮기고, 각 조각은 원문 순서를 그대로 둔다 — 문장을 고치거나 버리지 않는다.
+    """
+    def height(text: str) -> float:
+        return make(text, style).wrap(width - 6, 100000)[1]
+
+    if height(html) <= limit:
+        return [make(html, style)]
+    units: list[str] = []
+    for line in html.split("<br/>"):
+        parts = line.split(" / ")
+        for i, part in enumerate(parts):
+            piece = part + (" /" if i < len(parts) - 1 else "")
+            while height(piece) > limit and len(piece) > 1:
+                # 공백에서 자른다 — 단어·`&amp;` 같은 표기를 가르지 않는다
+                cut = piece.rfind(" ", 0, len(piece) // 2 + 1)
+                cut = cut if cut > 0 else len(piece) // 2
+                units.append(piece[:cut])
+                piece = piece[cut:]
+            units.append(piece)
+        units.append("<br/>")
+    chunks, current = [], ""
+    for unit in units:
+        joined = (current + ("" if unit == "<br/>" or not current or current.endswith("<br/>") else " ") + unit)
+        if current and height(joined) > limit:
+            chunks.append(current)
+            current = "" if unit == "<br/>" else unit
+        else:
+            current = joined
+    if current.strip("<br/> "):
+        chunks.append(current)
+    return [make(c.removesuffix("<br/>"), style) for c in chunks if c.strip()]
+
+
 def _resolve_evidence_path(base_dir: Path, link) -> Path | None:
     """EvidenceLink → 원본 파일 절대경로. 못 찾으면 None.
 
@@ -258,6 +299,9 @@ def export_response_sheet_pdf(
                 x.replace("\n", "<br/>") for x in draft), cell)
         else:
             answer_para = Paragraph(a.display_value, cell)
+        # 근거·비고가 쪽 높이를 넘는 답변은 같은 문항 ID의 이어지는 행으로 나눈다(2026-10-05: 인용이 긴 교육
+        # 문항 한 행이 556pt로 515pt 틀을 넘어 PDF 전체가 실패했다). 내용은 자르지 않고, 쪽에 들어가는 행은 그대로 둔다.
+        chunks = _evidence_chunks(_fmt_evidence(a, fig_map) or "—", cell, col_w[6], _ROW_LIMIT, Paragraph)
         data.append([
             Paragraph(a.qid, cell),
             Paragraph(a.section, cell),
@@ -265,9 +309,14 @@ def export_response_sheet_pdf(
             answer_para,
             Paragraph(scope_line(a) or "—", cell),
             Paragraph(label, cell_c),
-            Paragraph(_fmt_evidence(a, fig_map) or "—", cell),
+            chunks[0],
         ])
         style_cmds.append(("BACKGROUND", (0, ri), (-1, ri), colors.HexColor(bg)))
+        for chunk in chunks[1:]:
+            ri += 1
+            data.append([Paragraph(a.qid, cell), Paragraph(a.section, cell), Paragraph("(이어서)", cell),
+                         "", "", "", chunk])
+            style_cmds.append(("BACKGROUND", (0, ri), (-1, ri), colors.HexColor(bg)))
     table = Table(data, colWidths=col_w, repeatRows=1)
     table.setStyle(TableStyle(style_cmds))
     elements.append(table)

@@ -1,0 +1,974 @@
+[
+  {
+    "case": "gas_MJ_usage_header",
+    "metrics": [],
+    "meta": {
+      "engine": "upstage_dp"
+    },
+    "nodes": []
+  },
+  {
+    "case": "two_sites_equal_values",
+    "metrics": [
+      {
+        "label": "사용전력량",
+        "value": 1000.0,
+        "unit": "kWh",
+        "code": "E-4-1",
+        "period": "",
+        "confidence": 0.9,
+        "detail": {
+          "extractor": "ocr_table_metrics",
+          "role": "usage",
+          "table_id": "t0",
+          "grid_source": "table_cells",
+          "header": "사용량(kWh)",
+          "row_label": "",
+          "raw_text": "1,000",
+          "raw_value": 1000.0,
+          "raw_unit": "kWh",
+          "unit": "kWh",
+          "unit_source": "header",
+          "value_source": "explicit",
+          "precision": "cell",
+          "cells": [
+            {
+              "text": "1,000",
+              "bbox": [
+                0.21000000000000002,
+                0.23,
+                0.35,
+                0.24
+              ],
+              "page": 0,
+              "precision": "cell"
+            }
+          ]
+        }
+      }
+    ],
+    "meta": {
+      "engine": "upstage_dp",
+      "table_metrics": {
+        "records": [
+          {
+            "extractor": "ocr_table_metrics",
+            "role": "usage",
+            "table_id": "t0",
+            "grid_source": "table_cells",
+            "header": "사용량(kWh)",
+            "row_label": "",
+            "raw_text": "1,000",
+            "raw_value": 1000.0,
+            "raw_unit": "kWh",
+            "unit": "kWh",
+            "unit_source": "header",
+            "value_source": "explicit",
+            "precision": "cell",
+            "metric_hint": "사용전력량"
+          }
+        ],
+        "review": [],
+        "checks": [],
+        "claimed_roles": [
+          "usage"
+        ]
+      }
+    },
+    "nodes": [
+      {
+        "label": "E-4-1",
+        "value": 1000.0,
+        "unit": "kWh",
+        "period": "",
+        "site": "",
+        "review_notes": []
+      },
+      {
+        "label": "E-3-1",
+        "value": 0.478,
+        "unit": "tCO2eq",
+        "period": "",
+        "site": "",
+        "review_notes": []
+      }
+    ]
+  },
+  {
+    "case": "two_months_equal_values",
+    "metrics": [
+      {
+        "label": "사용전력량",
+        "value": 1000.0,
+        "unit": "kWh",
+        "code": "E-4-1",
+        "period": "",
+        "confidence": 0.9,
+        "detail": {
+          "extractor": "ocr_table_metrics",
+          "role": "usage",
+          "table_id": "t0",
+          "grid_source": "table_cells",
+          "header": "사용량(kWh)",
+          "row_label": "",
+          "raw_text": "1,000",
+          "raw_value": 1000.0,
+          "raw_unit": "kWh",
+          "unit": "kWh",
+          "unit_source": "header",
+          "value_source": "explicit",
+          "precision": "cell",
+          "cells": [
+            {
+              "text": "1,000",
+              "bbox": [
+                0.21000000000000002,
+                0.23,
+                0.35,
+                0.24
+              ],
+              "page": 0,
+              "precision": "cell"
+            }
+          ]
+        }
+      }
+    ],
+    "meta": {
+      "engine": "upstage_dp",
+      "table_metrics": {
+        "records": [
+          {
+            "extractor": "ocr_table_metrics",
+            "role": "usage",
+            "table_id": "t0",
+            "grid_source": "table_cells",
+            "header": "사용량(kWh)",
+            "row_label": "",
+            "raw_text": "1,000",
+            "raw_value": 1000.0,
+            "raw_unit": "kWh",
+            "unit": "kWh",
+            "unit_source": "header",
+            "value_source": "explicit",
+            "precision": "cell",
+            "metric_hint": "사용전력량"
+          }
+        ],
+        "review": [],
+        "checks": [],
+        "claimed_roles": [
+          "usage"
+        ]
+      }
+    },
+    "nodes": [
+      {
+        "label": "E-4-1",
+        "value": 1000.0,
+        "unit": "kWh",
+        "period": "",
+        "site": "",
+        "review_notes": []
+      },
+      {
+        "label": "E-3-1",
+        "value": 0.478,
+        "unit": "tCO2eq",
+        "period": "",
+        "site": "",
+        "review_notes": []
+      }
+    ]
+  },
+  {
+    "case": "computed_mixed_energy_units",
+    "metrics": [],
+    "meta": {
+      "engine": "upstage_dp",
+      "table_metrics": {
+        "records": [],
+        "review": [
+          {
+            "reason": "index_decreased",
+            "table_id": "t0",
+            "cells": [
+              "1,000",
+              "2"
+            ]
+          },
+          {
+            "reason": "index_decreased",
+            "table_id": "text_block_0",
+            "cells": [
+              "1,000",
+              "2"
+            ]
+          }
+        ],
+        "checks": [],
+        "claimed_roles": []
+      }
+    },
+    "nodes": []
+  },
+  {
+    "case": "computed_usage_unit_differs_from_index",
+    "metrics": [
+      {
+        "label": "사용전력량",
+        "value": 1.0,
+        "unit": "kWh",
+        "code": "E-4-1",
+        "period": "",
+        "confidence": 0.75,
+        "detail": {
+          "extractor": "ocr_table_metrics",
+          "role": "usage",
+          "table_id": "t0",
+          "grid_source": "table_cells",
+          "header": "(당월 지침 − 이전 지침) × 배율",
+          "row_label": "",
+          "raw_text": "",
+          "raw_value": 1.0,
+          "raw_unit": "kWh",
+          "unit": "kWh",
+          "unit_source": "header",
+          "value_source": "computed",
+          "precision": "cells",
+          "cells": [
+            {
+              "text": "1",
+              "bbox": [
+                0.05,
+                0.23,
+                0.19,
+                0.24
+              ],
+              "page": 0,
+              "precision": "cell"
+            },
+            {
+              "text": "2",
+              "bbox": [
+                0.21000000000000002,
+                0.23,
+                0.35,
+                0.24
+              ],
+              "page": 0,
+              "precision": "cell"
+            },
+            {
+              "text": "1",
+              "bbox": [
+                0.37,
+                0.23,
+                0.51,
+                0.24
+              ],
+              "page": 0,
+              "precision": "cell"
+            }
+          ],
+          "formula": "(당월 지침 − 이전 지침) × 배율",
+          "index_check": {
+            "formula": "(당월 지침 − 이전 지침) × 배율",
+            "inputs": {
+              "previous": 1.0,
+              "current": 2.0,
+              "multiplier": 1.0
+            },
+            "computed": 1.0,
+            "cells": [
+              {
+                "text": "1",
+                "bbox": [
+                  0.05,
+                  0.23,
+                  0.19,
+                  0.24
+                ],
+                "page": 0,
+                "precision": "cell"
+              },
+              {
+                "text": "2",
+                "bbox": [
+                  0.21000000000000002,
+                  0.23,
+                  0.35,
+                  0.24
+                ],
+                "page": 0,
+                "precision": "cell"
+              },
+              {
+                "text": "1",
+                "bbox": [
+                  0.37,
+                  0.23,
+                  0.51,
+                  0.24
+                ],
+                "page": 0,
+                "precision": "cell"
+              }
+            ],
+            "status": "computed_only"
+          }
+        }
+      }
+    ],
+    "meta": {
+      "engine": "upstage_dp",
+      "table_metrics": {
+        "records": [
+          {
+            "extractor": "ocr_table_metrics",
+            "role": "usage",
+            "table_id": "t0",
+            "grid_source": "table_cells",
+            "header": "(당월 지침 − 이전 지침) × 배율",
+            "row_label": "",
+            "raw_text": "",
+            "raw_value": 1.0,
+            "raw_unit": "kWh",
+            "unit": "kWh",
+            "unit_source": "header",
+            "value_source": "computed",
+            "precision": "cells",
+            "formula": "(당월 지침 − 이전 지침) × 배율",
+            "index_check": {
+              "formula": "(당월 지침 − 이전 지침) × 배율",
+              "inputs": {
+                "previous": 1.0,
+                "current": 2.0,
+                "multiplier": 1.0
+              },
+              "computed": 1.0,
+              "cells": [
+                {
+                  "text": "1",
+                  "bbox": [
+                    0.05,
+                    0.23,
+                    0.19,
+                    0.24
+                  ],
+                  "page": 0,
+                  "precision": "cell"
+                },
+                {
+                  "text": "2",
+                  "bbox": [
+                    0.21000000000000002,
+                    0.23,
+                    0.35,
+                    0.24
+                  ],
+                  "page": 0,
+                  "precision": "cell"
+                },
+                {
+                  "text": "1",
+                  "bbox": [
+                    0.37,
+                    0.23,
+                    0.51,
+                    0.24
+                  ],
+                  "page": 0,
+                  "precision": "cell"
+                }
+              ],
+              "status": "computed_only"
+            },
+            "metric_hint": "사용전력량"
+          }
+        ],
+        "review": [],
+        "checks": [],
+        "claimed_roles": [
+          "usage"
+        ]
+      }
+    },
+    "nodes": [
+      {
+        "label": "E-4-1",
+        "value": 1.0,
+        "unit": "kWh",
+        "period": "",
+        "site": "",
+        "review_notes": []
+      },
+      {
+        "label": "E-3-1",
+        "value": 0.0,
+        "unit": "tCO2eq",
+        "period": "",
+        "site": "",
+        "review_notes": []
+      }
+    ]
+  },
+  {
+    "case": "explicit_false_agreement_different_units",
+    "metrics": [
+      {
+        "label": "사용전력량",
+        "value": 1.0,
+        "unit": "kWh",
+        "code": "E-4-1",
+        "period": "",
+        "confidence": 0.9,
+        "detail": {
+          "extractor": "ocr_table_metrics",
+          "role": "usage",
+          "table_id": "t0",
+          "grid_source": "table_cells",
+          "header": "사용량(kWh)",
+          "row_label": "",
+          "raw_text": "1",
+          "raw_value": 1.0,
+          "raw_unit": "kWh",
+          "unit": "kWh",
+          "unit_source": "header",
+          "value_source": "explicit",
+          "precision": "cell",
+          "cells": [
+            {
+              "text": "1",
+              "bbox": [
+                0.53,
+                0.23,
+                0.6699999999999999,
+                0.24
+              ],
+              "page": 0,
+              "precision": "cell"
+            }
+          ],
+          "index_check": {
+            "formula": "(당월 지침 − 이전 지침) × 배율",
+            "inputs": {
+              "previous": 1.0,
+              "current": 2.0,
+              "multiplier": 1.0
+            },
+            "computed": 1.0,
+            "cells": [
+              {
+                "text": "1",
+                "bbox": [
+                  0.05,
+                  0.23,
+                  0.19,
+                  0.24
+                ],
+                "page": 0,
+                "precision": "cell"
+              },
+              {
+                "text": "2",
+                "bbox": [
+                  0.21000000000000002,
+                  0.23,
+                  0.35,
+                  0.24
+                ],
+                "page": 0,
+                "precision": "cell"
+              },
+              {
+                "text": "1",
+                "bbox": [
+                  0.37,
+                  0.23,
+                  0.51,
+                  0.24
+                ],
+                "page": 0,
+                "precision": "cell"
+              }
+            ],
+            "status": "match"
+          }
+        }
+      }
+    ],
+    "meta": {
+      "engine": "upstage_dp",
+      "table_metrics": {
+        "records": [
+          {
+            "extractor": "ocr_table_metrics",
+            "role": "usage",
+            "table_id": "t0",
+            "grid_source": "table_cells",
+            "header": "사용량(kWh)",
+            "row_label": "",
+            "raw_text": "1",
+            "raw_value": 1.0,
+            "raw_unit": "kWh",
+            "unit": "kWh",
+            "unit_source": "header",
+            "value_source": "explicit",
+            "precision": "cell",
+            "index_check": {
+              "formula": "(당월 지침 − 이전 지침) × 배율",
+              "inputs": {
+                "previous": 1.0,
+                "current": 2.0,
+                "multiplier": 1.0
+              },
+              "computed": 1.0,
+              "cells": [
+                {
+                  "text": "1",
+                  "bbox": [
+                    0.05,
+                    0.23,
+                    0.19,
+                    0.24
+                  ],
+                  "page": 0,
+                  "precision": "cell"
+                },
+                {
+                  "text": "2",
+                  "bbox": [
+                    0.21000000000000002,
+                    0.23,
+                    0.35,
+                    0.24
+                  ],
+                  "page": 0,
+                  "precision": "cell"
+                },
+                {
+                  "text": "1",
+                  "bbox": [
+                    0.37,
+                    0.23,
+                    0.51,
+                    0.24
+                  ],
+                  "page": 0,
+                  "precision": "cell"
+                }
+              ],
+              "status": "match"
+            },
+            "metric_hint": "사용전력량"
+          }
+        ],
+        "review": [],
+        "checks": [],
+        "claimed_roles": [
+          "usage"
+        ]
+      }
+    },
+    "nodes": [
+      {
+        "label": "E-4-1",
+        "value": 1.0,
+        "unit": "kWh",
+        "period": "",
+        "site": "",
+        "review_notes": []
+      },
+      {
+        "label": "E-3-1",
+        "value": 0.0,
+        "unit": "tCO2eq",
+        "period": "",
+        "site": "",
+        "review_notes": []
+      }
+    ]
+  },
+  {
+    "case": "rounded_integer_rate",
+    "metrics": [
+      {
+        "label": "재활용량",
+        "value": 29.3,
+        "unit": "kg",
+        "code": null,
+        "period": "",
+        "confidence": 0.9,
+        "detail": {
+          "extractor": "ocr_table_metrics",
+          "role": "recycled",
+          "table_id": "t0",
+          "grid_source": "table_cells",
+          "header": "재활용",
+          "row_label": "",
+          "raw_text": "29.3 kg",
+          "raw_value": 29.3,
+          "raw_unit": "kg",
+          "unit": "kg",
+          "unit_source": "cell",
+          "value_source": "explicit",
+          "precision": "cell",
+          "cells": [
+            {
+              "text": "29.3 kg",
+              "bbox": [
+                0.05,
+                0.23,
+                0.19,
+                0.24
+              ],
+              "page": 0,
+              "precision": "cell"
+            }
+          ]
+        }
+      },
+      {
+        "label": "총 위탁량",
+        "value": 100.0,
+        "unit": "kg",
+        "code": "E-6-1",
+        "period": "",
+        "confidence": 0.9,
+        "detail": {
+          "extractor": "ocr_table_metrics",
+          "role": "total",
+          "table_id": "t0",
+          "grid_source": "table_cells",
+          "header": "합계",
+          "row_label": "",
+          "raw_text": "100 kg",
+          "raw_value": 100.0,
+          "raw_unit": "kg",
+          "unit": "kg",
+          "unit_source": "cell",
+          "value_source": "explicit",
+          "precision": "cell",
+          "cells": [
+            {
+              "text": "100 kg",
+              "bbox": [
+                0.53,
+                0.23,
+                0.6699999999999999,
+                0.24
+              ],
+              "page": 0,
+              "precision": "cell"
+            }
+          ]
+        }
+      },
+      {
+        "label": "재활용 비율",
+        "value": 29.0,
+        "unit": "%",
+        "code": "E-6-2",
+        "period": "",
+        "confidence": 0.9,
+        "detail": {}
+      }
+    ],
+    "meta": {
+      "engine": "upstage_dp",
+      "table_metrics": {
+        "records": [
+          {
+            "extractor": "ocr_table_metrics",
+            "role": "recycled",
+            "table_id": "t0",
+            "grid_source": "table_cells",
+            "header": "재활용",
+            "row_label": "",
+            "raw_text": "29.3 kg",
+            "raw_value": 29.3,
+            "raw_unit": "kg",
+            "unit": "kg",
+            "unit_source": "cell",
+            "value_source": "explicit",
+            "precision": "cell",
+            "metric_hint": "재활용량"
+          },
+          {
+            "extractor": "ocr_table_metrics",
+            "role": "total",
+            "table_id": "t0",
+            "grid_source": "table_cells",
+            "header": "합계",
+            "row_label": "",
+            "raw_text": "100 kg",
+            "raw_value": 100.0,
+            "raw_unit": "kg",
+            "unit": "kg",
+            "unit_source": "cell",
+            "value_source": "explicit",
+            "precision": "cell",
+            "metric_hint": "총 위탁량"
+          }
+        ],
+        "review": [],
+        "checks": [
+          {
+            "name": "waste_components_sum",
+            "table_id": "t0",
+            "status": "match",
+            "total_kg": 100.0,
+            "components_kg": [
+              29.3,
+              30.0,
+              40.7
+            ],
+            "sum_kg": 100.0
+          },
+          {
+            "name": "waste_components_sum",
+            "table_id": "text_block_0",
+            "status": "match",
+            "total_kg": 100.0,
+            "components_kg": [
+              29.3,
+              30.0,
+              40.7
+            ],
+            "sum_kg": 100.0
+          },
+          {
+            "name": "waste_recycling_rate",
+            "status": "mismatch",
+            "computed": 29.3,
+            "reported": 29.0,
+            "formula": "재활용량 ÷ 총 위탁량 × 100"
+          }
+        ],
+        "claimed_roles": [
+          "recycled",
+          "total"
+        ]
+      },
+      "hitl_required": true
+    },
+    "nodes": [
+      {
+        "label": "재활용량",
+        "value": 29.3,
+        "unit": "kg",
+        "period": "",
+        "site": "",
+        "review_notes": []
+      },
+      {
+        "label": "E-6-1",
+        "value": 100.0,
+        "unit": "kg",
+        "period": "",
+        "site": "",
+        "review_notes": []
+      },
+      {
+        "label": "E-6-2",
+        "value": 29.0,
+        "unit": "%",
+        "period": "",
+        "site": "",
+        "review_notes": []
+      }
+    ]
+  },
+  {
+    "case": "explicit_meter_mismatch",
+    "metrics": [
+      {
+        "label": "사용전력량",
+        "value": 150000.0,
+        "unit": "kWh",
+        "code": "E-4-1",
+        "period": "",
+        "confidence": 0.6,
+        "detail": {
+          "extractor": "ocr_table_metrics",
+          "role": "usage",
+          "table_id": "t0",
+          "grid_source": "table_cells",
+          "header": "당월 전력 사용량",
+          "row_label": "",
+          "raw_text": "150,000 kWh",
+          "raw_value": 150000.0,
+          "raw_unit": "kWh",
+          "unit": "kWh",
+          "unit_source": "cell",
+          "value_source": "explicit",
+          "precision": "cell",
+          "cells": [
+            {
+              "text": "150,000 kWh",
+              "bbox": [
+                0.53,
+                0.23,
+                0.6699999999999999,
+                0.24
+              ],
+              "page": 0,
+              "precision": "cell"
+            }
+          ],
+          "index_check": {
+            "formula": "(당월 지침 − 이전 지침) × 배율",
+            "inputs": {
+              "previous": 48210.0,
+              "current": 50586.0,
+              "multiplier": 60.0
+            },
+            "computed": 142560.0,
+            "cells": [
+              {
+                "text": "48,210",
+                "bbox": [
+                  0.05,
+                  0.23,
+                  0.19,
+                  0.24
+                ],
+                "page": 0,
+                "precision": "cell"
+              },
+              {
+                "text": "50,586",
+                "bbox": [
+                  0.21000000000000002,
+                  0.23,
+                  0.35,
+                  0.24
+                ],
+                "page": 0,
+                "precision": "cell"
+              },
+              {
+                "text": "60",
+                "bbox": [
+                  0.37,
+                  0.23,
+                  0.51,
+                  0.24
+                ],
+                "page": 0,
+                "precision": "cell"
+              }
+            ],
+            "status": "mismatch"
+          }
+        }
+      }
+    ],
+    "meta": {
+      "engine": "upstage_dp",
+      "table_metrics": {
+        "records": [
+          {
+            "extractor": "ocr_table_metrics",
+            "role": "usage",
+            "table_id": "t0",
+            "grid_source": "table_cells",
+            "header": "당월 전력 사용량",
+            "row_label": "",
+            "raw_text": "150,000 kWh",
+            "raw_value": 150000.0,
+            "raw_unit": "kWh",
+            "unit": "kWh",
+            "unit_source": "cell",
+            "value_source": "explicit",
+            "precision": "cell",
+            "index_check": {
+              "formula": "(당월 지침 − 이전 지침) × 배율",
+              "inputs": {
+                "previous": 48210.0,
+                "current": 50586.0,
+                "multiplier": 60.0
+              },
+              "computed": 142560.0,
+              "cells": [
+                {
+                  "text": "48,210",
+                  "bbox": [
+                    0.05,
+                    0.23,
+                    0.19,
+                    0.24
+                  ],
+                  "page": 0,
+                  "precision": "cell"
+                },
+                {
+                  "text": "50,586",
+                  "bbox": [
+                    0.21000000000000002,
+                    0.23,
+                    0.35,
+                    0.24
+                  ],
+                  "page": 0,
+                  "precision": "cell"
+                },
+                {
+                  "text": "60",
+                  "bbox": [
+                    0.37,
+                    0.23,
+                    0.51,
+                    0.24
+                  ],
+                  "page": 0,
+                  "precision": "cell"
+                }
+              ],
+              "status": "mismatch"
+            },
+            "metric_hint": "사용전력량"
+          }
+        ],
+        "review": [
+          {
+            "reason": "explicit_vs_index_mismatch",
+            "explicit": 150000.0,
+            "computed": 142560.0,
+            "table_id": "t0"
+          },
+          {
+            "reason": "explicit_vs_index_mismatch",
+            "explicit": 150000.0,
+            "computed": 142560.0,
+            "table_id": "text_block_0"
+          }
+        ],
+        "checks": [],
+        "claimed_roles": [
+          "usage"
+        ]
+      },
+      "hitl_required": true
+    },
+    "nodes": [
+      {
+        "label": "E-4-1",
+        "value": 150000.0,
+        "unit": "kWh",
+        "period": "2026-04-01~2026-04-30",
+        "site": "제1공장",
+        "review_notes": []
+      },
+      {
+        "label": "E-3-1",
+        "value": 71.715,
+        "unit": "tCO2eq",
+        "period": "2026-04-01~2026-04-30",
+        "site": "제1공장",
+        "review_notes": []
+      }
+    ]
+  }
+]

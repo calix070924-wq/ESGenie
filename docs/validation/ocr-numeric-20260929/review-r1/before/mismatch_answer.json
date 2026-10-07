@@ -1,0 +1,65 @@
+{
+  "ocr_hitl": true,
+  "ocr_review": [
+    {
+      "reason": "explicit_vs_index_mismatch",
+      "explicit": 150000.0,
+      "computed": 142560.0,
+      "table_id": "upstage_table_0"
+    }
+  ],
+  "data_points": [
+    {
+      "code": "E-4-1",
+      "value": 150000.0,
+      "verification": "estimated",
+      "flags": [
+        "partial_aggregate",
+        "incomplete_scope"
+      ],
+      "comparison": "scope_unconfirmed",
+      "scope_notes": [
+        "E-4-1: 부분값 — 2026-04-01~2026-04-30 · 월간 · 제1공장 · 사용전력량 · 부분. 전사·연간·전체 범위 총량임이 입증되지 않아 검증 보류. 연간 실적의 실제 사용기간·집계 방식 확인; 전사/공장 조직·사업장 범위 확인; 전체 에너지원 포함 여부 확인"
+      ]
+    },
+    {
+      "code": "E-3-1",
+      "value": 71.715,
+      "verification": "estimated",
+      "flags": [
+        "derived",
+        "incomplete_scope"
+      ],
+      "comparison": "scope_unconfirmed",
+      "scope_notes": [
+        "E-3-1: 부분값 — 2026-04-01~2026-04-30 · 월간 · 제1공장 · 사용전력량 환산 배출량 · 부분. 전사·연간·전체 범위 총량임이 입증되지 않아 검증 보류. 연간 실적의 실제 사용기간·집계 방식 확인; 전사/공장 조직·사업장 범위 확인"
+      ]
+    }
+  ],
+  "answers": [
+    {
+      "qid": "RBA-C-8-E-3-1",
+      "value": 71.715,
+      "unit": "tCO2eq",
+      "status": "self_reported",
+      "flags": [],
+      "comparison": "scope_unconfirmed",
+      "scope_notes": [
+        "E-3-1: 부분값 — 2026-04-01~2026-04-30 · 월간 · 제1공장 · 사용전력량 환산 배출량 · 부분. 전사·연간·전체 범위 총량임이 입증되지 않아 검증 보류. 연간 실적의 실제 사용기간·집계 방식 확인; 전사/공장 조직·사업장 범위 확인"
+      ],
+      "rationale": "온실가스 배출량 (Scope1 + Scope2) = 71.715tCO2eq (보고 연도 2026, D1 위험 평가불가, 검증=estimated) · 평가불가 · 비교 0건 · 미검증 1건 · 범위 확인 필요 1건 · 신뢰 정보: derived, incomplete_scope"
+    },
+    {
+      "qid": "RBA-C-8-E-4-1",
+      "value": 150000.0,
+      "unit": "kWh",
+      "status": "self_reported",
+      "flags": [],
+      "comparison": "scope_unconfirmed",
+      "scope_notes": [
+        "E-4-1: 부분값 — 2026-04-01~2026-04-30 · 월간 · 제1공장 · 사용전력량 · 부분. 전사·연간·전체 범위 총량임이 입증되지 않아 검증 보류. 연간 실적의 실제 사용기간·집계 방식 확인; 전사/공장 조직·사업장 범위 확인; 전체 에너지원 포함 여부 확인"
+      ],
+      "rationale": "에너지 사용량 = 150000.0kWh (보고 연도 2026, D1 위험 평가불가, 검증=estimated) · 평가불가 · 비교 0건 · 미검증 1건 · 범위 확인 필요 1건 · 신뢰 정보: partial_aggregate, incomplete_scope"
+    }
+  ]
+}

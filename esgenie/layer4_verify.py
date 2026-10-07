@@ -186,7 +186,8 @@ def verify_and_refine(
     ctx = rag.retrieve_for_area(area, k=5, corp=corp)
     retrieval_decision = ctx.retrieval_decision
     if retrieval_decision is not None and retrieval_decision.decision != "ACCEPT":
-        gen = rag.generate_section(report, area, demo_greenwash=demo_greenwash, context=ctx, corp=corp, extraction=extraction)
+        gen = rag.generate_section(report, area, demo_greenwash=demo_greenwash, context=ctx, corp=corp, extraction=extraction,
+                                   evidence_graph=evidence_graph)
         det = _retrieval_blocked_detection(gen)
         step = VerificationStep(
             iteration=0,
@@ -213,7 +214,8 @@ def verify_and_refine(
         )
 
     # --- 초안 생성 (iteration 0) ---
-    gen = rag.generate_section(report, area, demo_greenwash=demo_greenwash, context=ctx, corp=corp, extraction=extraction)
+    gen = rag.generate_section(report, area, demo_greenwash=demo_greenwash, context=ctx, corp=corp, extraction=extraction,
+                                   evidence_graph=evidence_graph)
     clean_text = strip_citation_markers(gen.text)
     det = detect(clean_text, report)
     grounding = grounding_evaluator(gen.text, gen.context.as_chunk_dicts())
@@ -249,7 +251,8 @@ def verify_and_refine(
         applied_constraints = applied_axes + grounding.hard_fails
 
         # 재생성
-        gen = rag.generate_section(report, area, extra_instruction=instruction, context=ctx, corp=corp, extraction=extraction)
+        gen = rag.generate_section(report, area, extra_instruction=instruction, context=ctx, corp=corp, extraction=extraction,
+                                   evidence_graph=evidence_graph)
         clean_text = strip_citation_markers(gen.text)
         det = detect(clean_text, report)
         grounding = grounding_evaluator(gen.text, gen.context.as_chunk_dicts())
@@ -357,7 +360,7 @@ def _compute_text_risk_vector(
 
     # RAG 청크를 retrieved_chunks 형식으로 변환
     chunks = [
-        {"id": f"kesg_{i}", "text": doc.text}
+        {"id": doc.chunk_id or str(doc.meta.get("id") or f"kesg_{i}"), "text": doc.text}
         for i, (doc, _) in enumerate(gen.context.kesg_hits + gen.context.corp_hits)
     ]
 
@@ -378,6 +381,7 @@ def _compute_text_risk_vector(
     best_rv: RiskVector | None = None
     incomplete = []
     numeric_records = []
+    sentence_axis_reviews = []
     text_offset = 0
     for sent in sents:
         rv = _detect(
@@ -389,6 +393,13 @@ def _compute_text_risk_vector(
             _d3_index=d3_index,
         )
         text_offset = text.index(sent, text_offset)
+        # 설명용 기록만 보존한다. 기존 최악 문장 선정과 점수 집계에는 참여하지 않는다.
+        sentence_axis_reviews.append({
+            "sentence": sent, "start": text_offset, "end": text_offset + len(sent),
+            "high_axes": rv.high_axes(),
+            "axes": {name: getattr(rv, name).to_dict()
+                     for name in ("D2_modifier", "D3_semantic", "D5_timeseries")},
+        })
         for record in rv.D1_numeric.evaluation.get("claims", []):
             numeric_records.append(dict(record, start=record["start"] + text_offset,
                                         end=record["end"] + text_offset))
@@ -406,6 +417,7 @@ def _compute_text_risk_vector(
     if numeric_records:
         from .layer3_detect import _numeric_axis
         best_rv.aggregate["numeric_evaluation"] = _numeric_axis(numeric_records, 0).evaluation
+    best_rv.aggregate["sentence_axis_reviews"] = sentence_axis_reviews
     if incomplete:
         best_rv.aggregate["evaluation_complete"] = False
         best_rv.aggregate["evaluation_status"] = "partial" if best_rv.risk_score is not None else "unavailable"
