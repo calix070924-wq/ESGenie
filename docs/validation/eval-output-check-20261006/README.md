@@ -206,6 +206,20 @@ python -m pytest tests/test_check_output_consistency.py -q
 
 **검사기를 미리 바꾸지 않았다.** B-2에서 `run_info`를 붙인 뒤 이 검사기를 반드시 재실행해 확인하고(작업지시서 §3 통과 조건 3), 실제로 잡히면 그때 바닥글을 제외하는 처리를 넣는다. 지금 추측으로 예외를 넣으면 진짜 불일치도 함께 가려진다.
 
+### 9-1. 결과(2026-10-07, B-2 브랜치에서 해소)
+
+예측대로 **걸렸다.** 수제 시트 실측: 근거 링크가 없는 행이 많은 30문항·6쪽 PDF에서 `cell:note` 불일치 2건(`T-008`·`T-025`). 바닥글이 각 페이지 추출 텍스트의 **맨 앞**에 오므로(reportlab이 `handle_pageBegin`에서 콜백을 부른다) 페이지를 이어 붙이면 **이전 페이지 마지막 블록의 꼬리**가 되고, `_trim_block`은 표 반복 머리글까지만 자르기 때문이다.
+
+**해소 방식(B-2 브랜치 `codex/run-provenance-20261006`에서 이 검사기를 고쳤다):**
+
+- `result.json`에 `run_info`가 있으면 `esgenie.run_info.footer_line`·`summary_line`에 `exporters/_fonts.pdf_safe_text`를 적용해 기대 문자열을 만들고, 페이지 텍스트에서 **정확히 같은 줄만** 제거한다. 제거는 **블록 파싱 전에** 한다(`strip_run_info_lines`).
+- **접두어(`실행 정보:`)로 줄을 빼는 방식은 쓰지 않는다.** 응답 칸에 `실행 정보: …`로 시작하는 내용이 들어가도 함께 지워져 검사를 피해 가기 때문이다. `test_stamp_like_text_in_answer_cell_is_not_swallowed`가 이걸 고정한다.
+- 새 검사 `field="run_info_footer"`: **(a) 모든 쪽에 기대 바닥글이 정확히 1번** **(b) 1쪽에 기대 요약 줄이 있고 다른 쪽에는 없는가**. 아니면 불일치.
+- 새 검사 `field="run_info_excel"`: Excel **`실행정보`** 시트의 (항목, 값)이 `run_info.rows(run_info)`와 **칸 전체 일치**하는가. `result.json`에 `run_info`가 없는데 시트가 있는 경우도 잡는다.
+- **`run_info`가 없으면 동작이 전혀 바뀌지 않는다** — B-1 테스트 52개가 그대로 통과하고, 주입 하네스 20종 × 2단계도 그대로 20/20이다.
+
+연동 테스트는 `tests/test_check_output_consistency_run_info.py`(18개)다.
+
 ## 10. 이 폴더의 파일
 
 | 파일 | 내용 |

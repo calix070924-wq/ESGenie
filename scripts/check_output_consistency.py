@@ -60,6 +60,9 @@ PDF_APPENDIX_MARK = "증빙 부록"
 PDF_CONTINUED = "(이어서)"          # 이어지는 행의 문항 칸 (exporters/pdf.py:314)
 EXCEL_SHEET = "응답서"
 EXCEL_FIRST_DATA_ROW = 5          # 헤더가 4행 (exporters/excel.py:75)
+# 실행 정보(B-2)는 기존 시트를 건드리지 않고 새 시트에만 적힌다 (exporters/excel.py).
+EXCEL_RUN_INFO_SHEET = "실행정보"
+EXCEL_RUN_INFO_FIRST_ROW = 5      # 머리글이 4행
 EXCEL_GROUP_PREFIX = "▌"          # 섹션 그룹 헤더 행 (exporters/excel.py:115)
 COL = {"qid": 1, "section": 2, "question_text": 3, "answer": 4,
        "scope": 5, "badge": 6, "note": 7}
@@ -333,6 +336,89 @@ def _trim_block(text: str, header: str, group_re: re.Pattern | None) -> str:
     return text[:min(cuts)] if cuts else text
 
 
+# ── 실행 정보(B-2) 도장 줄 ───────────────────────────────────────────────────
+def run_info_stamps(run_info: dict | None) -> dict[str, str]:
+    """PDF에 그려진 실행 정보 줄의 기대 문자열(원문 그대로, 정규화 전).
+
+    `esgenie.run_info`의 같은 함수로 만들고 `exporters/_fonts.pdf_safe_text`를
+    적용한다 — exporters가 canvas에 그릴 때 거치는 변환과 같아야 한다.
+    """
+    if not run_info:
+        return {}
+    from esgenie.run_info import footer_line, summary_line
+    from esgenie.supplychain.exporters._fonts import pdf_safe_text
+
+    return {"footer": pdf_safe_text(footer_line(run_info)),
+            "summary": pdf_safe_text(summary_line(run_info))}
+
+
+def strip_run_info_lines(pages: list[str], stamps: dict[str, str]) -> tuple[list[str], list[dict]]:
+    """페이지 텍스트에서 실행 정보 줄만 떼어낸다 — 블록 파싱 **전에** 한다.
+
+    **'정확히 같은 줄'만 제거한다.** 접두어(`실행 정보:`)로 시작하는 줄을 싹 지우면,
+    응답 칸에 우연히 또는 악의로 들어간 `실행 정보: …` 문구도 함께 사라져 검사를
+    피해 간다. 그래서 기대 문자열과 공백 제거 후 **완전히 일치하는 줄만** 지우고,
+    몇 번 지웠는지 페이지별로 돌려준다(그 수를 (a)·(b) 검사가 쓴다).
+    """
+    if not stamps:
+        return list(pages), [{"footer": 0, "summary": 0} for _ in pages]
+    want = {k: normalize(v) for k, v in stamps.items() if v}
+    out_pages: list[str] = []
+    counts: list[dict] = []
+    for text in pages:
+        kept: list[str] = []
+        found = {"footer": 0, "summary": 0}
+        for line in text.split("\n"):
+            flat = normalize(line)
+            hit = next((k for k, v in want.items() if v and flat == v), None)
+            if hit is not None:
+                found[hit] += 1
+                continue
+            kept.append(line)
+        out_pages.append("\n".join(kept))
+        counts.append(found)
+    return out_pages, counts
+
+
+def check_run_info_stamps(counts: list[dict], stamps: dict[str, str]) -> list[dict]:
+    """(a) 모든 페이지에 바닥글이 정확히 1번 (b) 1쪽에 요약 줄이 있는가."""
+    if not stamps:
+        return []
+    problems: list[dict] = []
+    if stamps.get("footer"):
+        for i, found in enumerate(counts):
+            if found["footer"] != 1:
+                problems.append({"page": i + 1, "kind": "footer", "count": found["footer"],
+                                 "expected": 1})
+    if stamps.get("summary"):
+        first = counts[0]["summary"] if counts else 0
+        if first != 1:
+            problems.append({"page": 1, "kind": "summary", "count": first, "expected": 1})
+        for i, found in enumerate(counts[1:], start=2):
+            if found["summary"]:
+                problems.append({"page": i, "kind": "summary_on_later_page",
+                                 "count": found["summary"], "expected": 0})
+    return problems
+
+
+def load_excel_run_info(xlsx_path: str | Path) -> list[tuple[str, str]]:
+    """Excel '실행정보' 시트의 (항목, 값) 목록. 시트가 없으면 빈 목록."""
+    import openpyxl
+
+    wb = openpyxl.load_workbook(xlsx_path, data_only=True)
+    if EXCEL_RUN_INFO_SHEET not in wb.sheetnames:
+        return []
+    ws = wb[EXCEL_RUN_INFO_SHEET]
+    out: list[tuple[str, str]] = []
+    for r in range(EXCEL_RUN_INFO_FIRST_ROW, ws.max_row + 1):
+        label = ws.cell(row=r, column=1).value
+        if label is None:
+            continue
+        value = ws.cell(row=r, column=2).value
+        out.append((str(label), "" if value is None else str(value)))
+    return out
+
+
 def parse_pdf_rows(pages: list[str], qids: list[str],
                    sections: set[str] | None = None) -> dict[str, PdfRow]:
     """추출된 페이지 텍스트에서 qid별 응답표 블록을 뽑는다.
@@ -398,6 +484,9 @@ class OutputBundle:
     pdf_pages: list[str]
     paths: dict[str, str] = field(default_factory=dict)
     evidence_base_dir: str | None = None   # PDF [E#] 맵 재현용(응답서 PDF가 있는 폴더)
+    # result.json의 run_info(B-2). 있으면 PDF 바닥글·Excel '실행정보' 시트를 함께 검사한다.
+    run_info: dict | None = None
+    excel_run_info_rows: list[tuple[str, str]] = field(default_factory=list)
 
     def sheet(self):
         from esgenie.supplychain.schema import ResponseSheet
@@ -464,15 +553,75 @@ def _blame(want: str, got: str, cell: str, row: JsonRow, *, pdf: bool) -> list[s
     return out
 
 
+def _compare_excel_run_info(bundle: OutputBundle) -> list[Mismatch]:
+    """Excel '실행정보' 시트가 result.json의 run_info와 같은지 — 칸 전체 일치."""
+    if not bundle.run_info:
+        if bundle.excel_run_info_rows:
+            return [Mismatch("-", "run_info_excel", "(run_info 없음)",
+                             excel_value=f"'{EXCEL_RUN_INFO_SHEET}' 시트에 "
+                                         f"{len(bundle.excel_run_info_rows)}행 있음",
+                             cell_exact=True,
+                             note="result.json에 run_info가 없는데 Excel에 실행정보가 있다")]
+        return []
+
+    from esgenie.run_info import rows as run_info_rows
+
+    want = [(label, value) for label, value in run_info_rows(bundle.run_info)]
+    got = bundle.excel_run_info_rows
+    if not got:
+        return [Mismatch("-", "run_info_excel", f"{len(want)}행",
+                         excel_value=f"'{EXCEL_RUN_INFO_SHEET}' 시트 없음", cell_exact=True,
+                         note="run_info가 있는데 Excel에 실행정보 시트가 없다")]
+    out: list[Mismatch] = []
+    if len(got) != len(want):
+        out.append(Mismatch("-", "run_info_excel", f"{len(want)}행",
+                            excel_value=f"{len(got)}행", cell_exact=True,
+                            note="실행정보 행 수가 다르다"))
+    for i, (label, value) in enumerate(want):
+        if i >= len(got):
+            out.append(Mismatch(label, "run_info_excel", value,
+                                excel_value="없음", excel_cell=f"{EXCEL_RUN_INFO_SHEET}!B{i + 5}",
+                                cell_exact=True))
+            continue
+        got_label, got_value = got[i]
+        cell = f"{EXCEL_RUN_INFO_SHEET}!B{i + EXCEL_RUN_INFO_FIRST_ROW}"
+        if normalize(got_label) != normalize(label):
+            out.append(Mismatch(label, "run_info_excel", label, excel_value=got_label,
+                                excel_cell=f"{EXCEL_RUN_INFO_SHEET}!A{i + EXCEL_RUN_INFO_FIRST_ROW}",
+                                cell_exact=True, note="항목 이름이 다르다"))
+        if not values_match(normalize(value), normalize(got_value)):
+            out.append(Mismatch(label, "run_info_excel", value, excel_value=got_value,
+                                excel_cell=cell, cell_exact=True,
+                                note=_cell_note(normalize(value), normalize(got_value))))
+    return out
+
+
 def compare(bundle: OutputBundle) -> dict:
     """행·필드별로 JSON ↔ Excel ↔ PDF를 대조한다."""
-    pdf_rows = parse_pdf_rows(bundle.pdf_pages, [r.qid for r in bundle.json_rows],
-                              {r.section for r in bundle.json_rows})
-    fig_map = build_fig_map(bundle.sheet(), bundle.pdf_pages, bundle.evidence_base_dir)
     mismatches: list[Mismatch] = []
     unchecked: list[dict] = []
     checked_fields = 0
     checked_cells = 0
+
+    # 실행 정보(B-2) 도장 줄은 응답 칸의 내용이 아니다 — 블록을 나누기 **전에** 떼어낸다.
+    # run_info가 없으면 stamps가 비어 아무것도 바뀌지 않는다(기존 동작 그대로).
+    stamps = run_info_stamps(bundle.run_info)
+    pdf_pages, stamp_counts = strip_run_info_lines(bundle.pdf_pages, stamps)
+    for problem in check_run_info_stamps(stamp_counts, stamps):
+        kind, want = problem["kind"], stamps.get(
+            "summary" if "summary" in problem["kind"] else "footer", "")
+        mismatches.append(Mismatch(
+            "-", "run_info_footer", want,
+            pdf_value=f"{problem['count']}번 (기대 {problem['expected']}번)",
+            pdf_page=problem["page"], cell_exact=True,
+            note={"footer": "바닥글이 모든 쪽에 정확히 1번 있어야 한다",
+                  "summary": "1쪽에 요약 줄이 있어야 한다",
+                  "summary_on_later_page": "요약 줄은 1쪽에만 있어야 한다"}[kind]))
+    mismatches.extend(_compare_excel_run_info(bundle))
+
+    pdf_rows = parse_pdf_rows(pdf_pages, [r.qid for r in bundle.json_rows],
+                              {r.section for r in bundle.json_rows})
+    fig_map = build_fig_map(bundle.sheet(), pdf_pages, bundle.evidence_base_dir)
 
     for row in bundle.json_rows:
         xl = bundle.excel_rows.get(row.qid)
@@ -627,6 +776,11 @@ def compare(bundle: OutputBundle) -> dict:
             "unchecked": len(unchecked),
             "pdf_evidence_figures": len(fig_map),
             "pdf_continued_rows": continued,
+            # 실행 출처(B-2) — run_info가 없는 실행이면 모두 0/False다.
+            "run_info_present": bool(bundle.run_info),
+            "run_info_stamp_lines_removed": sum(
+                c["footer"] + c["summary"] for c in stamp_counts),
+            "excel_run_info_rows": len(bundle.excel_run_info_rows),
         },
         "mismatches": [m.to_dict() for m in mismatches],
         "unchecked": unchecked,
@@ -682,6 +836,9 @@ def load_bundle(run_dir: Path) -> OutputBundle:
         paths={"result_json": str(result_path), "sheet_xlsx": str(xlsx), "sheet_pdf": str(pdf)},
         # exporters는 evidence_base_dir 기본값으로 out_dir(= 응답서 폴더)을 쓴다.
         evidence_base_dir=str(pdf.parent),
+        # 실행 출처(B-2) — 없는 실행도 그대로 검사된다.
+        run_info=result.get("run_info"),
+        excel_run_info_rows=load_excel_run_info(xlsx),
     )
 
 
