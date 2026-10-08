@@ -86,11 +86,55 @@ def code_state(code_path: Path) -> dict:
             "dirty": bool(status), "dirty_files": status.splitlines()}
 
 
-def input_files(pack: Path, stage: str) -> tuple[list[dict], dict]:
+def manifest_entries(manifest: dict) -> dict[str, dict]:
+    """구성 목록 → {상대경로: {role, sha256}}. 두 형식을 모두 읽는다.
+
+    옛 형식(BM 개편 2026-09-28): `files: [{file, role, sha256, …}]`
+    새 형식(정상 5건 보강 2026-10-07): `original_uploads` + `new_documents`,
+        둘 다 `{file, role, sha256, …}`를 담는다(앞쪽은 예전 세트에서 그대로 옮긴
+        문서, 뒤쪽은 새로 만든 문서). 정답에 해당하는 키는 읽지 않는다.
+    """
+    if manifest.get("files"):
+        return {f["file"]: {"role": f["role"], "sha256": f["sha256"]}
+                for f in manifest["files"]}
+    out: dict[str, dict] = {}
+    for key in ("original_uploads", "new_documents"):
+        for f in manifest.get(key) or []:
+            out[f["file"]] = {"role": f["role"], "sha256": f["sha256"]}
+    if not out:
+        raise SystemExit("구성 목록에서 입력 목록을 찾지 못했다"
+                         " (files 또는 original_uploads/new_documents 필요)")
+    return out
+
+
+def manifest_expected(manifest: dict, stage: str) -> int:
+    """그 단계에 올려야 하는 문서 수.
+
+    옛 형식: `counts.initial_upload`(+ followup이면 `counts.followup_evidence`) — 누계가 아니다.
+    새 형식: `initial.total` / `followup.total` — 이미 누계다(followup = initial + 보완).
+    """
+    counts = manifest.get("counts") or {}
+    if "initial_upload" in counts:
+        return int(counts["initial_upload"]) + (
+            int(counts.get("followup_evidence", 0)) if stage == "followup" else 0)
+    section = manifest.get(stage)
+    if isinstance(section, dict) and "total" in section:
+        return int(section["total"])
+    raise SystemExit(f"구성 목록에서 {stage} 문서 수를 찾지 못했다")
+
+
+def manifest_version(manifest: dict) -> str:
+    return str(manifest.get("version") or manifest.get("dataset_id") or "unknown")
+
+
+def input_files(pack: Path, stage: str, *, initial_dir: str = INITIAL_DIR,
+                followup_dir: str = FOLLOWUP_DIR,
+                manifest_rel: str = MANIFEST) -> tuple[list[dict], dict]:
     """원본 구성 목록과 해시를 대조한 입력 목록. 요청서(context_only)는 넣지 않는다."""
-    manifest = json.loads((pack / MANIFEST).read_text(encoding="utf-8"))
-    by_file = {f["file"]: f for f in manifest["files"]}
-    dirs = [INITIAL_DIR] + ([FOLLOWUP_DIR] if stage == "followup" else [])
+    manifest_path = pack / manifest_rel
+    manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+    by_file = manifest_entries(manifest)
+    dirs = [initial_dir] + ([followup_dir] if stage == "followup" else [])
     out = []
     for d in dirs:
         for path in sorted((pack / d).glob("*.pdf")):
@@ -103,10 +147,18 @@ def input_files(pack: Path, stage: str) -> tuple[list[dict], dict]:
                 raise SystemExit(f"입력 해시 불일치: {rel}")
             out.append({"file": rel, "path": str(path), "name": path.name, "role": entry["role"],
                         "sha256": digest, "manifest_sha256_match": True})
-    expected = manifest["counts"]["initial_upload"] + (manifest["counts"]["followup_evidence"] if stage == "followup" else 0)
+    expected = manifest_expected(manifest, stage)
     if len(out) != expected or sum(f["role"] == "company_answer" for f in out) != 1:
         raise SystemExit(f"입력 구성 불일치: {len(out)}건 (기대 {expected}), 회사 답변 1건 필요")
-    return out, {"manifest": str(pack / MANIFEST), "manifest_version": manifest["version"]}
+    return out, {"manifest": str(manifest_path),
+                 "manifest_version": manifest_version(manifest),
+                 "input_dirs": {"initial": initial_dir, "followup": followup_dir}}
+
+
+def _pack_opts(args) -> dict:
+    """CLI에서 받은 증빙 세트 구성 옵션."""
+    return {"initial_dir": args.initial_dir, "followup_dir": args.followup_dir,
+            "manifest_rel": args.manifest}
 
 
 def live_env(cache_dir: Path) -> None:
@@ -297,7 +349,7 @@ def cmd_core(args) -> None:
         # 로컬에 받아 둔 모델을 그대로 쓰도록 허브 조회를 끈다(import 전에 정해야 한다).
         os.environ["HF_HUB_OFFLINE"] = "1"
         os.environ["TRANSFORMERS_OFFLINE"] = "1"
-    files, manifest = input_files(args.pack_dir, args.stage)
+    files, manifest = input_files(args.pack_dir, args.stage, **_pack_opts(args))
     for extra in args.extra_evidence or []:
         # 검증용 가상 변형본만 받는다 — 원본 세트에 섞여 원본으로 오인되지 않게 이름에 표시를 요구한다.
         if "변형본" not in extra.name:
@@ -323,6 +375,12 @@ def cmd_core(args) -> None:
     from esgenie import llm_cache
     from esgenie.pipeline import run
     from esgenie.ssot import ocr_cache
+    # 실행 출처(B-2)는 --code-path의 코드에 그 모듈이 있을 때만 남긴다. 예전 커밋을
+    # 불러 돌리는 경우(검증·회귀)에는 없는 것이 정상이므로 예외를 내지 않는다.
+    try:
+        from esgenie.run_info import build_run_info
+    except ImportError:
+        build_run_info = None
     from esgenie.supplychain import (copy_evidence_pack, export_response_sheet, export_response_sheet_pdf,
                                      parse_saq_claims, respond_from_pipeline)
 
@@ -335,11 +393,16 @@ def cmd_core(args) -> None:
                 "respond_from_pipeline(framework, supplier_claims=parse_saq_claims(company_answer))"
                 + (" + export_response_sheet(.xlsx/.pdf)" if args.export else ""),
         "framework": args.framework, "run_id": args.run_id or target.parent.name,
+        # --code-path의 코드에 esgenie.run_info가 있는가. 없으면 실행 출처 표시 없이
+        # 진행한다(예전 커밋을 불러 돌리는 경우) — 그 사실을 여기 남긴다.
+        "run_info_available": build_run_info is not None,
         "upstage_tape": {"mode": tape.mode, "directory": str(tape.directory)} if tape else None}))
     evidence = {f["name"]: f["path"] for f in files if f["role"] != "company_answer"}
     company = [f["path"] for f in files if f["role"] == "company_answer"]
     upstage = UpstageCounter()
     llm_cache.reset_stats()
+    # llm_cache.stats()는 프로세스 누적값이다 — 실행 시작 스냅샷을 떠 두고 차이로 센다.
+    llm_stats_start = dict(llm_cache.stats())
     started, output = time.monotonic(), None
     settings.strict_llm = not replay or live_llm
     try:
@@ -352,20 +415,42 @@ def cmd_core(args) -> None:
         dump(target / "pipeline.json", pipeline_record(output))
         sheet = respond_from_pipeline(output, args.framework, supplier_claims=claims, enable_drafts=False)
         sheet.corp_name = args.company
-        dump(target / "result.json", {"sheet": sheet.to_dict(), "generated_at": now()})
+        # 실행 출처(B-2) — 어느 코드로, 신규 처리인지 캐시 재생인지. 내보내기와 같은 값을 쓴다.
+        # Upstage 실요청 수는 판정에 쓰인다 — OCR 캐시가 전부 적중해도 Upstage는
+        # 매번 불리므로(ocr_router: 호출이 캐시 조회보다 먼저) 두 캐시만으로는
+        # 신규 처리와 캐시 재생이 뒤집힌다.
+        info = None
+        if build_run_info is not None:
+            info = build_run_info(
+                llm_stats_end=llm_cache.stats(), llm_stats_start=llm_stats_start,
+                ocr_extractions=output.ocr_extractions, upstage_replay=replay,
+                upstage_live_requests=0 if replay else upstage.summary()["requests"],
+                code_path=code_path, timings=getattr(output, "timings", None))
+        # run_info가 없으면 키워드를 아예 넘기지 않는다 — 그 인자가 없는 예전
+        # exporters(--code-path로 옛 커밋을 불러 돌리는 경우)에서도 동작해야 한다.
+        stamp = {"run_info": info} if info is not None else {}
+        result = {"sheet": sheet.to_dict(), "generated_at": now()}
+        if info is not None:
+            result["run_info"] = info
+        dump(target / "result.json", result)
         if args.export:
             sheet_dir = exports / "response_sheet"
             copy_evidence_pack(sheet, sheet_dir, evidence)
-            paths = {"xlsx": export_response_sheet(sheet, sheet_dir),
-                     "pdf": export_response_sheet_pdf(sheet, sheet_dir, evidence_base_dir=sheet_dir)}
+            paths = {"xlsx": export_response_sheet(sheet, sheet_dir, **stamp),
+                     "pdf": export_response_sheet_pdf(sheet, sheet_dir, evidence_base_dir=sheet_dir, **stamp)}
             for framework in args.also_framework or []:
                 other = respond_from_pipeline(output, framework, supplier_claims=claims, enable_drafts=False)
                 other.corp_name = args.company
                 other_dir = exports / f"response_sheet_{framework}"
                 copy_evidence_pack(other, other_dir, evidence)
-                dump(target / f"result_{framework}.json", {"sheet": other.to_dict(), "generated_at": now()})
-                paths[framework] = {"xlsx": export_response_sheet(other, other_dir),
-                                    "pdf": export_response_sheet_pdf(other, other_dir, evidence_base_dir=other_dir)}
+                other_result = {"sheet": other.to_dict(), "generated_at": now()}
+                if info is not None:
+                    other_result["run_info"] = info
+                dump(target / f"result_{framework}.json", other_result)
+                paths[framework] = {"xlsx": export_response_sheet(other, other_dir, **stamp),
+                                    "pdf": export_response_sheet_pdf(other, other_dir,
+                                                                     evidence_base_dir=other_dir,
+                                                                     **stamp)}
             sections = {area: {"final_text": v.final_text, "used_mock_llm": getattr(v, "used_mock_llm", None),
                                "final_score": v.final_score, "converged": v.converged,
                                "hitl_required": v.hitl_required}
@@ -483,8 +568,8 @@ def cmd_drive(args) -> None:
             p = folder / f"검토용초안_{stage}.{ext}"
             p.write_bytes(call("GET", f"/api/projects/{pid}/download/{kind}").content)
 
-    initial, manifest = input_files(args.pack_dir, "initial")
-    followup, _ = input_files(args.pack_dir, "followup")
+    initial, manifest = input_files(args.pack_dir, "initial", **_pack_opts(args))
+    followup, _ = input_files(args.pack_dir, "followup", **_pack_opts(args))
     expected = {f["name"]: f["role"] for f in initial}
     if args.resume_project_id:
         # 최초 분석이 이미 끝난 프로젝트를 이어서 내려받기·보완 분석만 한다(유료 재분석 방지).
@@ -561,6 +646,13 @@ def main() -> None:
     drive.add_argument("--resume-project-id", default="")
     for p in (core, drive):
         p.add_argument("--pack-dir", type=Path, required=True)
+        # 증빙 세트 구성이 바뀌어도 코드를 고치지 않게 — 기본값은 BM 개편 세트 그대로.
+        p.add_argument("--initial-dir", default=INITIAL_DIR,
+                       help="최초 업로드 폴더(팩 기준 상대 경로)")
+        p.add_argument("--followup-dir", default=FOLLOWUP_DIR,
+                       help="보완 때 더하는 폴더(팩 기준 상대 경로)")
+        p.add_argument("--manifest", default=MANIFEST,
+                       help="구성 목록 JSON(팩 기준 상대 경로)")
         p.add_argument("--company", default="한울정밀공업(주)")
         p.add_argument("--industry", default="자동차 차체부품")
         p.add_argument("--year", type=int, default=2026)
