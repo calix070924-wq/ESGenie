@@ -25,161 +25,14 @@ assert _SPEC.loader is not None
 _SPEC.loader.exec_module(bg)
 
 
-# ── 최소 answer_format 대역 ─────────────────────────────────────────────────
-# A 가 소유하는 모듈이 저장소에 아직 없다(A 브랜치에 있다). 변환 단계가 요구하는
-# 생성 함수와 검증 규칙만 공통 형식 v1 초안 문서(§2·§3·§4·§5·§6)대로 세운 대역을 쓴다.
-# 실제 실행에서는 `--answer-format` 또는 `ESGENIE_EVAL_ANSWER_FORMAT` 로 A 의 모듈을 쓴다.
-_AF_SOURCE = '''
-FORMAT_VERSION = "1.0-draft"
-SUPPORTED_MAJOR = "1"
-STAGES = ("initial", "followup")
-DECISIONS = ("confirmed", "unverified_submitted", "hold", "not_applicable",
-             "unparsed", "undetermined")
-COMPLETENESS = ("total", "partial", "unknown")
-META_REQUIRED = ("system", "run_id", "stage", "framework", "data_source")
-BOUNDARY_FIELDS = ("period", "site", "target", "denominator", "label", "completeness")
+# ── A 의 v1.1 모듈을 git 에서 꺼내 쓴다 (저장소에 남기지 않는다) ─────────────
+# 대역을 쓰지 않는다. 검증 규칙을 우리가 다시 쓰면 "통과했다"가 거짓 신호가 된다.
+# scripts/baseline_generic_llm.py 의 기본 해석 경로(고정 git ref)를 그대로 쓴다.
 
 
-def _issue(code, where, detail):
-    return {"code": code, "where": where, "detail": detail}
-
-
-def _check_evidence(items, where, field):
-    out = []
-    if items is None:
-        return out
-    if not isinstance(items, list):
-        return [_issue("bad_type", where, field + "는 배열이어야 한다")]
-    for i, item in enumerate(items):
-        at = "%s.%s[%d]" % (where, field, i)
-        if not isinstance(item, dict):
-            out.append(_issue("bad_type", at, "근거 항목은 객체여야 한다"))
-            continue
-        name = item.get("file_name")
-        if not isinstance(name, str) or not name.strip():
-            out.append(_issue("missing_field", at, "file_name이 비어 있다"))
-        page = item.get("page")
-        if page is None:
-            pass
-        elif isinstance(page, bool) or not isinstance(page, int):
-            out.append(_issue("bad_type", at, "page는 1-기준 정수 또는 null"))
-        elif page < 1:
-            out.append(_issue("bad_value", at, "page는 1 이상"))
-        quote = item.get("quote")
-        if quote is not None and not isinstance(quote, str):
-            out.append(_issue("bad_type", at, "quote는 문자열 또는 null"))
-    return out
-
-
-def validate_document(doc, expected_qids=None):
-    issues = []
-    version = doc.get("format_version")
-    if not isinstance(version, str) or not version:
-        issues.append(_issue("missing_field", "format_version", "없다"))
-    elif version.split(".")[0] != SUPPORTED_MAJOR:
-        issues.append(_issue("unsupported_version", "format_version", version))
-    meta = doc.get("meta")
-    if not isinstance(meta, dict):
-        issues.append(_issue("missing_field", "meta", "meta가 없다"))
-        meta = {}
-    for key in META_REQUIRED:
-        v = meta.get(key)
-        if not isinstance(v, str) or not v.strip():
-            issues.append(_issue("missing_field", "meta." + key, "비어 있다"))
-    if isinstance(meta.get("stage"), str) and meta["stage"] not in STAGES:
-        issues.append(_issue("bad_value", "meta.stage", "initial|followup"))
-    answers = doc.get("answers")
-    if not isinstance(answers, list):
-        issues.append(_issue("missing_field", "answers", "배열이 없다"))
-        return issues
-    seen = {}
-    for i, a in enumerate(answers):
-        where = "answers[%d]" % i
-        if not isinstance(a, dict):
-            issues.append(_issue("bad_type", where, "객체여야 한다"))
-            continue
-        qid = a.get("qid")
-        if not isinstance(qid, str) or not qid.strip():
-            issues.append(_issue("missing_field", where + ".qid", "비어 있다"))
-        else:
-            seen[qid] = seen.get(qid, 0) + 1
-            where = "answers[%d](%s)" % (i, qid)
-        if a.get("decision") not in DECISIONS:
-            issues.append(_issue("bad_value", where + ".decision", repr(a.get("decision"))))
-        if not isinstance(a.get("value"), (int, float, bool, str, type(None))):
-            issues.append(_issue("bad_type", where + ".value", "자료형 위반"))
-        if not isinstance(a.get("unit", ""), str):
-            issues.append(_issue("bad_type", where + ".unit", "문자열이어야 한다"))
-        b = a.get("boundary")
-        if b is not None:
-            if not isinstance(b, dict):
-                issues.append(_issue("bad_type", where + ".boundary", "객체여야 한다"))
-            else:
-                for k, v in b.items():
-                    if k not in BOUNDARY_FIELDS:
-                        issues.append(_issue("unknown_field", where + ".boundary." + k, "허용 밖"))
-                    elif v is not None and not isinstance(v, str):
-                        issues.append(_issue("bad_type", where + ".boundary." + k, "문자열/null"))
-                c = b.get("completeness")
-                if c is not None and c not in COMPLETENESS:
-                    issues.append(_issue("bad_value", where + ".boundary.completeness", str(c)))
-        issues += _check_evidence(a.get("evidence"), where, "evidence")
-        issues += _check_evidence(a.get("references"), where, "references")
-        src = a.get("source")
-        if src is not None and not isinstance(src, dict):
-            issues.append(_issue("bad_type", where + ".source", "객체여야 한다"))
-    for qid, n in sorted(seen.items()):
-        if n > 1:
-            issues.append(_issue("duplicate_qid", "answers(%s)" % qid, "%d번" % n))
-    if expected_qids is not None:
-        expected = set(expected_qids)
-        for qid in sorted(set(seen) - expected):
-            issues.append(_issue("unknown_qid", "answers(%s)" % qid, "양식에 없다"))
-        for qid in sorted(expected - set(seen)):
-            issues.append(_issue("missing_qid", "answers(%s)" % qid, "응답이 없다"))
-        if len(answers) != len(expected):
-            issues.append(_issue("row_count", "answers", "%d행" % len(answers)))
-    return issues
-
-
-def new_document(*, system, run_id, stage, framework, data_source, model=None,
-                 produced_at=None, adapter=None, source_ref=None, notice=None,
-                 answers=None):
-    meta = {"system": system, "run_id": run_id, "stage": stage,
-            "framework": framework, "data_source": data_source}
-    for k, v in (("model", model), ("produced_at", produced_at), ("adapter", adapter),
-                 ("source_ref", source_ref), ("notice", notice)):
-        if v is not None:
-            meta[k] = v
-    return {"format_version": FORMAT_VERSION, "meta": meta, "answers": answers or []}
-
-
-def new_answer(*, qid, decision, decision_basis="", value=None, unit="",
-               value_text=None, boundary=None, evidence=None, references=None,
-               source=None, notes=None):
-    row = {"qid": qid, "decision": decision, "value": value, "unit": unit,
-           "evidence": list(evidence or [])}
-    if decision_basis:
-        row["decision_basis"] = decision_basis
-    if value_text is not None:
-        row["value_text"] = value_text
-    if boundary is not None:
-        row["boundary"] = boundary
-    if references:
-        row["references"] = list(references)
-    if source is not None:
-        row["source"] = source
-    if notes is not None:
-        row["notes"] = notes
-    return row
-'''
-
-
-@pytest.fixture()
-def af(tmp_path):
-    path = tmp_path / "answer_format.py"
-    path.write_text(_AF_SOURCE, encoding="utf-8")
-    return bg.load_answer_format(str(path))
+@pytest.fixture(scope="session")
+def af():
+    return bg.load_answer_format()
 
 
 CASES = [
@@ -308,9 +161,14 @@ def test_convert_structural_decisions(af):
     ]}
     doc, stats = _convert(af, parsed)
     assert af.validate_document(doc, EXPECTED) == []
+    details = {a["qid"]: a["decision_detail"] for a in doc["answers"]}
     decisions = {a["qid"]: a["decision"] for a in doc["answers"]}
-    assert decisions == {"Q-1": "confirmed", "Q-2": "unverified_submitted", "Q-3": "hold"}
-    assert stats["confirmed"] == 1 and stats["unverified_submitted"] == 1 and stats["hold"] == 1
+    assert details == {"Q-1": "confirmed", "Q-2": "unverified_submitted", "Q-3": "hold"}
+    assert decisions == {"Q-1": "answer", "Q-2": "answer", "Q-3": "hold"}
+    assert stats["detail_counts"]["confirmed"] == 1
+    assert stats["detail_counts"]["unverified_submitted"] == 1
+    assert stats["detail_counts"]["hold"] == 1
+    assert stats["decision_counts"] == {"answer": 2, "hold": 1}
     q1 = doc["answers"][0]
     assert q1["boundary"] == {"period": "2026", "site": None, "target": None,
                               "denominator": None, "label": "제1공장", "completeness": None}
@@ -326,15 +184,19 @@ def test_convert_not_applicable_and_meta(af):
     ]}
     doc, stats = _convert(af, parsed)
     assert af.validate_document(doc, EXPECTED) == []
-    assert doc["answers"][0]["decision"] == "not_applicable"
-    assert stats["not_applicable"] == 1
+    assert doc["answers"][0]["decision_detail"] == "not_applicable"
+    assert doc["answers"][0]["decision"] == "na"
+    assert stats["detail_counts"]["not_applicable"] == 1
+    assert stats["decision_counts"] == {"na": 1, "hold": 2}
     assert doc["meta"]["system"] == "baseline_mock-model-1"
     assert doc["meta"]["model"] == "mock-model-1"
     assert doc["meta"]["stage"] == "initial"
+    assert doc["meta"]["dataset_tag"] == "virtual" == bg.DATASET_TAG
+    assert doc["meta"]["material_kind"] == "photo_evidence" == bg.MATERIAL_KIND
     assert doc["meta"]["data_source"] == "촬영증빙_17건"
     assert doc["meta"]["notice"] == bg.COMPANY_NOTICE
     assert doc["meta"]["source_ref"]["sha256"] == "0" * 64
-    assert doc["format_version"] == af.FORMAT_VERSION
+    assert doc["format_version"] == af.FORMAT_VERSION == "1.1-draft"
 
 
 def test_hedging_text_does_not_change_decision(af):
@@ -347,7 +209,8 @@ def test_hedging_text_does_not_change_decision(af):
         {"qid": "Q-3", "decision": "hold", "value": None, "evidence": []},
     ]}
     doc, _ = _convert(af, parsed)
-    assert doc["answers"][0]["decision"] == "confirmed"
+    assert doc["answers"][0]["decision_detail"] == "confirmed"
+    assert doc["answers"][0]["decision"] == "answer"
     assert "추가 확인이 필요" in doc["answers"][0]["value_text"]
     assert "추가 확인이 필요" in doc["answers"][0]["source"]["raw"]
 
@@ -390,7 +253,8 @@ def test_company_answer_citation_is_counted_not_removed(af):
     ]}
     doc, stats = _convert(af, parsed)
     assert stats["cited_company_answer"] == 1
-    assert doc["answers"][0]["decision"] == "confirmed"      # 출력을 고치지 않는다
+    assert doc["answers"][0]["decision_detail"] == "confirmed"   # 출력을 고치지 않는다
+    assert doc["answers"][0]["decision"] == "answer"
     assert doc["answers"][0]["evidence"][0]["file_name"] == "05_회사답변.pdf"
 
 
@@ -431,24 +295,32 @@ def test_parse_object_without_answers_is_failure():
     assert obj is None and err == "answers_not_list"
 
 
-def test_broken_json_yields_all_rows_unparsed(af):
+def test_broken_json_makes_no_rows_and_validation_reports_it(af):
+    """v1.1: 전체 파싱 실패면 어느 qid 도 행이 없다. 보류로 채우지 않는다."""
     obj, err = bg.parse_model_output("응답을 만들 수 없습니다")
     doc, stats = _convert(af, obj, parse_error=err)
     assert obj is None
-    assert stats["unparsed"] == 3 and stats["rows"] == 3
+    assert stats["rows"] == 0
+    assert doc["answers"] == []
     assert sorted(stats["missing_qid"]) == ["Q-1", "Q-2", "Q-3"]
-    assert all(a["decision"] == "unparsed" for a in doc["answers"])
-    assert af.validate_document(doc, EXPECTED) == []       # 48행 자리는 유지된다
+    assert stats["parse_error"]
+    # 검증 실패를 그대로 드러낸다(고치지 않는다).
+    codes = sorted({i["code"] for i in af.validate_document(doc, EXPECTED)})
+    assert codes == ["missing_qid", "row_count"]
 
 
 # ── 4. 문항 누락·중복·허용값 밖 ───────────────────────────────────────────
-def test_missing_qid_is_unparsed_not_hold(af):
+def test_missing_qid_makes_no_row_and_is_recorded(af):
+    """v1.1 계약: 누락 qid 는 행을 만들지 않고 검증에서 누락으로 드러낸다."""
     parsed = {"answers": [{"qid": "Q-1", "decision": "hold", "evidence": []}]}
     doc, stats = _convert(af, parsed)
     assert stats["missing_qid"] == ["Q-2", "Q-3"]
-    rows = {a["qid"]: a["decision"] for a in doc["answers"]}
-    assert rows == {"Q-1": "hold", "Q-2": "unparsed", "Q-3": "unparsed"}
-    assert af.validate_document(doc, EXPECTED) == []
+    assert stats["rows"] == 1
+    assert [a["qid"] for a in doc["answers"]] == ["Q-1"]      # 보류로 채우지 않는다
+    issues = af.validate_document(doc, EXPECTED)
+    missing = sorted(i["where"] for i in issues if i["code"] == "missing_qid")
+    assert missing == ["answers(Q-2)", "answers(Q-3)"]
+    assert any(i["code"] == "row_count" for i in issues)
 
 
 def test_duplicate_qid_recorded_and_first_row_used(af):
@@ -486,18 +358,21 @@ def test_out_of_range_model_decision_is_unparsed(af):
         {"qid": "Q-3", "decision": "hold", "evidence": []},
     ]}
     doc, stats = _convert(af, parsed)
-    assert doc["answers"][0]["decision"] == "unparsed"
+    assert doc["answers"][0]["decision_detail"] == "unparsed"
+    assert doc["answers"][0]["decision"] is None          # 보류와 외부 값부터 다르다
+    assert "decision" in doc["answers"][0]                # 필드를 생략하지 않는다
     assert "허용값" in doc["answers"][0]["decision_basis"]
-    assert stats["unparsed"] == 1
+    assert stats["detail_counts"]["unparsed"] == 1
+    assert stats["decision_counts"] == {"null": 1, "hold": 2}
     assert af.validate_document(doc, EXPECTED) == []
 
 
 # ── 5. 반복 간 판정 변경 수 ────────────────────────────────────────────────
-def test_count_decision_flips():
+def test_count_decision_flips_uses_detail_not_external_three_values():
     def mk(d1, d2, d3):
-        return {"answers": [{"qid": "Q-1", "decision": d1},
-                            {"qid": "Q-2", "decision": d2},
-                            {"qid": "Q-3", "decision": d3}]}
+        return {"answers": [{"qid": "Q-1", "decision_detail": d1},
+                            {"qid": "Q-2", "decision_detail": d2},
+                            {"qid": "Q-3", "decision_detail": d3}]}
     out = bg.count_decision_flips([mk("hold", "confirmed", "hold"),
                                    mk("confirmed", "confirmed", "hold"),
                                    mk("hold", "confirmed", "hold")])
@@ -505,9 +380,22 @@ def test_count_decision_flips():
     assert out["changed_rows"] == 1
     assert out["changed_qids"] == ["Q-1"]
 
+    # confirmed ↔ unverified_submitted 는 외부 3값으로는 둘 다 answer 라 안 보인다.
+    out2 = bg.count_decision_flips([mk("confirmed", "hold", "hold"),
+                                    mk("unverified_submitted", "hold", "hold")])
+    assert out2["changed_rows"] == 1 and out2["changed_qids"] == ["Q-1"]
+
+
+def test_count_decision_flips_counts_absent_row_as_change():
+    docs = [{"answers": [{"qid": "Q-1", "decision_detail": "hold"},
+                         {"qid": "Q-2", "decision_detail": "hold"}]},
+            {"answers": [{"qid": "Q-1", "decision_detail": "hold"}]}]
+    out = bg.count_decision_flips(docs)
+    assert out["changed_rows"] == 1 and out["changed_qids"] == ["Q-2"]
+
 
 def test_count_decision_flips_single_repeat():
-    out = bg.count_decision_flips([{"answers": [{"qid": "Q-1", "decision": "hold"}]}])
+    out = bg.count_decision_flips([{"answers": [{"qid": "Q-1", "decision_detail": "hold"}]}])
     assert out == {"repeats": 1, "changed_rows": 0, "changed_qids": []}
 
 
@@ -530,6 +418,19 @@ def _fake_pipeline(tmp_path: Path) -> Path:
          "sha256": hashlib.sha256(pdf.read_bytes()).hexdigest()},
     ]}, ensure_ascii=False), encoding="utf-8")
     return stage / "pipeline.json"
+
+
+def _fake_ca(path):
+    """05 추출 대역 — PDF 가 진짜가 아니어도 sha256 은 실제 파일로 맞춘다."""
+    import hashlib
+    return {
+        "file_name": "05_회사답변.pdf", "pdf_path": str(path),
+        "pdf_sha256": hashlib.sha256(Path(path).read_bytes()).hexdigest(),
+        "pages": ["회사 답변 본문"], "page_count": 1, "chars": 8,
+        "text": "회사 답변 본문", "text_sha256": "c" * 64,
+        "extractor": {"function": "esgenie/supplychain/claims.py::_extract_text",
+                      "route_taken": "pymupdf"},
+    }
 
 
 def _cases_file(tmp_path: Path) -> Path:
@@ -570,6 +471,7 @@ def test_saved_files_contain_no_api_key(tmp_path, monkeypatch, af):
         "--model", "mock-model-1", "--provider", "openai", "--repeats", "2",
         "--out", str(out), "--run-id", "RUN", "--cases", str(_cases_file(tmp_path)),
         "--prompt", str(REPO_ROOT / bg.DEFAULT_PROMPT), "--answer-format", str(af_path),
+        "--max-input-tokens", "100000",
     ])
     assert rc == 0
 
@@ -616,7 +518,7 @@ def test_rescore_only_rebuilds_from_saved_response(tmp_path, monkeypatch, af):
         "--pipeline-json", str(_fake_pipeline(tmp_path)), "--stage", "initial",
         "--model", "mock-model-1", "--out", str(out), "--run-id", "RUN",
         "--cases", str(cases), "--prompt", str(REPO_ROOT / bg.DEFAULT_PROMPT),
-        "--answer-format", str(af_path),
+        "--answer-format", str(af_path), "--max-input-tokens", "100000",
     ]) == 0
 
     target = out / "RUN" / "rep_1" / "common_v1_initial.json"
@@ -673,6 +575,156 @@ def test_company_answer_uses_esgenie_claims_extract_text(tmp_path, monkeypatch):
     assert ca["extractor"]["function"] == "esgenie/supplychain/claims.py::_extract_text"
     assert ca["extractor"]["page_separator"] == "\\f"
     assert len(ca["pdf_sha256"]) == 64 and len(ca["text_sha256"]) == 64
+
+
+# ── 10. v1.1 — 6값 → 3값 대응과 A 모듈 의존 ────────────────────────────────
+def test_all_six_details_map_to_three_values_via_a_module(af):
+    """대응은 A 모듈의 표 하나뿐이다. 우리 코드에 다시 쓰지 않는다."""
+    expected = {
+        "confirmed": "answer",
+        "unverified_submitted": "answer",
+        "hold": "hold",
+        "not_applicable": "na",
+        "unparsed": None,
+        "undetermined": None,
+    }
+    assert set(af.DECISION_DETAILS) == set(expected)
+    assert {d: af.decision_for_detail(d) for d in af.DECISION_DETAILS} == expected
+    assert dict(af.DETAIL_TO_DECISION) == expected
+    assert set(af.DECISIONS) == {"answer", "hold", "na"}
+
+
+def test_rows_carry_both_fields_and_match_the_table(af):
+    """만든 모든 행에서 decision 이 decision_detail 의 표 값과 같다."""
+    cases = [{"qid": "Q-%d" % i, "question_text": "t"} for i in range(1, 5)]
+    parsed = {"answers": [
+        {"qid": "Q-1", "decision": "answer", "value": 1, "unit": "",
+         "evidence": [{"file_name": "01.pdf", "page": 1, "quote": "q"}]},
+        {"qid": "Q-2", "decision": "answer", "value": 2, "unit": "", "evidence": []},
+        {"qid": "Q-3", "decision": "hold", "evidence": []},
+        {"qid": "Q-4", "decision": "not_applicable", "evidence": []},
+    ]}
+    doc, _ = _convert(af, parsed, cases=cases)
+    for a in doc["answers"]:
+        assert a["decision"] == af.decision_for_detail(a["decision_detail"])
+        assert a["decision_detail"] in af.DECISION_DETAILS
+    assert af.validate_document(doc, tuple(c["qid"] for c in cases)) == []
+
+
+def test_unparsed_row_has_null_decision_and_detail_unparsed(af):
+    """파싱 실패 행: decision=null 을 **명시**하고 detail 로 사유를 남긴다."""
+    parsed = {"answers": [
+        {"qid": "Q-1", "decision": 123, "evidence": []},      # 허용값 밖
+        {"qid": "Q-2", "decision": "hold", "evidence": []},
+        {"qid": "Q-3", "decision": "hold", "evidence": []},
+    ]}
+    doc, _ = _convert(af, parsed)
+    row = doc["answers"][0]
+    assert row["decision"] is None and "decision" in row
+    assert row["decision_detail"] == "unparsed"
+    assert af.validate_document(doc, EXPECTED) == []
+
+
+def test_dataset_tag_is_required_by_validator(af, monkeypatch):
+    """dataset_tag 가 비면 v1.1 검증이 missing_field 로 떨어진다."""
+    parsed = {"answers": [{"qid": q, "decision": "hold", "evidence": []} for q in EXPECTED]}
+    doc, _ = _convert(af, parsed)
+    assert af.validate_document(doc, EXPECTED) == []
+    broken = json.loads(json.dumps(doc))
+    del broken["meta"]["dataset_tag"]
+    issues = af.validate_document(broken, EXPECTED)
+    assert any(i["code"] == "missing_field" and i["where"] == "meta.dataset_tag"
+               for i in issues)
+    bad = json.loads(json.dumps(doc))
+    bad["meta"]["dataset_tag"] = "made_up"
+    assert any(i["code"] == "bad_value" and i["where"] == "meta.dataset_tag"
+               for i in af.validate_document(bad, EXPECTED))
+
+
+def test_constants_are_inside_validator_enums(af):
+    assert bg.DATASET_TAG in af.DATASET_TAGS
+    assert bg.MATERIAL_KIND in af.MATERIAL_KINDS
+
+
+def test_answer_format_loader_fails_when_module_missing(tmp_path):
+    with pytest.raises(FileNotFoundError):
+        bg.load_answer_format(str(tmp_path / "없는경로"))
+
+
+def test_answer_format_loader_fails_when_required_names_absent(tmp_path):
+    """표를 우리가 다시 쓰지 않으므로, 이름이 없으면 건너뛰지 않고 실패한다."""
+    stub = tmp_path / "answer_format.py"
+    stub.write_text("FORMAT_VERSION = '1.1-draft'\n", encoding="utf-8")
+    with pytest.raises(AttributeError) as exc:
+        bg.load_answer_format(str(stub))
+    assert "decision_for_detail" in str(exc.value)
+
+
+def test_answer_format_default_is_a_v11_from_pinned_ref(af):
+    rec = bg.answer_format_record(af)
+    assert rec["format_version"] == "1.1-draft"
+    assert rec["origin"].startswith("git:") or rec["origin"].startswith("repo:")
+    assert len(rec["sha256"]) == 64
+    if rec["origin"].startswith("git:"):
+        assert rec["git_commit"] == bg.ANSWER_FORMAT_GIT_REF
+        assert len(rec["git_blob"]) == 40
+
+
+# ── 11. 컨텍스트 한도를 모르면 실호출을 거부한다 ──────────────────────────
+def test_resolve_input_limit_refuses_unknown_model():
+    assert bg.MODEL_CONTEXT_LIMITS == {}, "표에 추측값을 넣지 않는다"
+    with pytest.raises(RuntimeError, match="컨텍스트 한도를 모른다"):
+        bg.resolve_input_limit("모르는-모델", None)
+
+
+def test_resolve_input_limit_uses_cli_then_table(monkeypatch):
+    assert bg.resolve_input_limit("아무모델", 1234) == (1234, "cli")
+    with pytest.raises(ValueError):
+        bg.resolve_input_limit("아무모델", 0)
+    monkeypatch.setitem(bg.MODEL_CONTEXT_LIMITS, "표에있는모델",
+                        {"max_input_tokens": 999, "source": "u", "checked_on": "2026-10-09"})
+    assert bg.resolve_input_limit("표에있는모델", None) == (999, "table:2026-10-09")
+
+
+def test_live_run_refuses_without_limit(tmp_path, monkeypatch, af):
+    monkeypatch.setattr(bg, "extract_company_answer", _fake_ca)
+
+    def boom(*a, **k):
+        raise AssertionError("한도를 모르는데 호출했다")
+    monkeypatch.setattr(bg, "call_model", boom)
+    rc = bg.main([
+        "--pipeline-json", str(_fake_pipeline(tmp_path)), "--stage", "initial",
+        "--model", "표에-없는-모델", "--out", str(tmp_path / "out"), "--run-id", "RUN",
+        "--cases", str(_cases_file(tmp_path)),
+        "--prompt", str(REPO_ROOT / bg.DEFAULT_PROMPT),
+        "--answer-format", str(Path(af.__source_path__)),
+    ])
+    assert rc == 2
+    assert not (tmp_path / "out" / "RUN" / "rep_1").exists()
+
+
+def test_dry_run_allowed_without_limit(tmp_path, monkeypatch, af):
+    """dry-run 은 호출이 없고, 표를 채울 입력 길이를 재는 것이 목적이다."""
+    monkeypatch.setattr(bg, "extract_company_answer", _fake_ca)
+
+    def boom(*a, **k):
+        raise AssertionError("dry-run 이 호출했다")
+    monkeypatch.setattr(bg, "call_model", boom)
+    out = tmp_path / "out"
+    rc = bg.main([
+        "--pipeline-json", str(_fake_pipeline(tmp_path)), "--stage", "initial",
+        "--model", "표에-없는-모델", "--out", str(out), "--run-id", "RUN",
+        "--cases", str(_cases_file(tmp_path)),
+        "--prompt", str(REPO_ROOT / bg.DEFAULT_PROMPT),
+        "--answer-format", str(Path(af.__source_path__)), "--dry-run",
+    ])
+    assert rc == 0
+    req = json.loads((out / "RUN" / "rep_1" / "request.json").read_text(encoding="utf-8"))
+    assert req["max_input_tokens"] is None
+    assert req["max_input_tokens_source"] == "dry_run_unchecked"
+    assert req["dataset_tag"] == bg.DATASET_TAG
+    assert req["material_kind"] == bg.MATERIAL_KIND
+    assert req["answer_format"]["format_version"] == "1.1-draft"
 
 
 def test_company_answer_sha_mismatch_aborts(tmp_path, monkeypatch, af):

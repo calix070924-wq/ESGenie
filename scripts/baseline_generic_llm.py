@@ -16,13 +16,16 @@ ESGenie 가 같은 실행에서 쓴 OCR 결과를 그대로 일반 LLM 에 넣�
 * 회사 답변(05)은 증빙 OCR 경로가 아니라 `esgenie.supplychain.claims._extract_text` 를 **불러서**
   추출한다(다시 구현하지 않는다). `\f` 를 쪽 경계로 본다.
 * 자동 재시도·자동 분할·프롬프트 수정을 하지 않는다. 실패는 그대로 기록한다.
-* 공통 답안 형식 문서는 내보내기 전에 A 의 `validate_document` 로 검증한다.
+* 공통 답안 형식은 **A 의 v1.1-draft** 를 따른다. 행은 `decision_detail`(6값)만 정하고
+  외부 `decision`(3값/null)은 A 모듈의 `DETAIL_TO_DECISION` 표가 계산한다 — 표를 여기 다시
+  쓰지 않는다. 누락 qid 는 **행을 만들지 않고** 검증이 누락으로 드러낸다.
+  내보내기 전에 A 의 `validate_document` 로 검증하고, 실패하면 고치지 않고 기록한다.
 
 출력 (`<out>/<run_id>/rep_<k>/`)
 -------------------------------
 * `request.json`        프롬프트 sha256·모델·파라미터·입력 길이 (키 값 없음)
 * `response_raw.json`   응답 원문 전체
-* `common_v1_<stage>.json`  A 공통 답안 형식 v1 (JSON 객체 1개 = 한 시스템·한 실행·한 단계)
+* `common_v1_<stage>.json`  A 공통 답안 형식 v1.1 (JSON 객체 1개 = 한 시스템·한 실행·한 단계)
 * `run_log.json`        토큰·시각(KST)·파싱 결과·검증 결과
 
 사용 예
@@ -59,11 +62,26 @@ KST = _dt.timezone(_dt.timedelta(hours=9))
 DEFAULT_CASES = "data/eval/cases/baseline_cases_v1.csv"
 DEFAULT_PROMPT = "data/eval/prompts/baseline_prompt_v1.md"
 
-#: 단계별 `meta.data_source`. A 확인 대기 — 바뀌면 이 상수만 고친다.
+#: 단계별 `meta.data_source` — v1.1 에서 **선택 필드**(사람이 읽는 설명, 집계에 쓰지 않는다).
+#: A 확인 대기 — 바뀌면 이 상수만 고친다.
 DATA_SOURCE = {
     "initial": "촬영증빙_17건",
     "followup": "촬영증빙_17건+보완_1건",
 }
+
+#: `meta.dataset_tag` — v1.1 **필수**. 허용값 `virtual`/`public_report`/`real_pilot`.
+#: 이 비교는 팀이 만든 가상 세트다. **A 확인 대기.** 바뀌면 이 상수만 고친다.
+DATASET_TAG = "virtual"
+
+#: `meta.material_kind` — v1.1 선택. `dataset_tag` 와 다른 축(입력 자료 구성)이다.
+#: 입력이 촬영 증빙이라 `photo_evidence`. **A 확인 대기**
+#: (A 어댑터 예시는 ESGenie 쪽에 `mixed` 를 쓴다 — 회신 목록에 올렸다).
+MATERIAL_KIND = "photo_evidence"
+
+#: A 공통 답안 형식 모듈을 꺼낼 기준 ref. **고정 SHA**로 둔다(브랜치 이름은 움직인다).
+#: `origin/codex/eval-scoring-20261006` 의 2026-10-09 확인 시점 커밋.
+ANSWER_FORMAT_GIT_REF = "f6d2c576b691b4cda2d59df628772abfc751e578"
+ANSWER_FORMAT_GIT_PATH = "esgenie/eval/answer_format.py"
 
 #: 회사 답변 구획의 제목·표지. 증빙 블록과 표지를 다르게 둔다.
 COMPANY_SECTION_TITLE = "회사 자가 답변 초안 — 검증된 증빙 아님"
@@ -72,7 +90,8 @@ DOC_OPEN, DOC_CLOSE = "[문서 시작]", "[문서 끝]"
 CA_OPEN, CA_CLOSE = "[회사 답변 시작]", "[회사 답변 끝]"
 PAGE_UNKNOWN = "미상"
 
-#: 모델이 내는 판정값 → 공통 형식 판정. 구조로만 옮긴다(단서 문구로 바꾸지 않는다).
+#: 모델이 내는 판정값 → `decision_detail`. 구조로만 옮긴다(단서 문구로 바꾸지 않는다).
+#: 외부 `decision` 은 A 모듈의 대응 표가 계산한다.
 MODEL_DECISIONS = ("answer", "hold", "not_applicable")
 
 #: 입력 토큰 추정 계수. tiktoken 은 requirements.txt 에 없어 쓰지 않는다(새 의존성 금지).
@@ -82,6 +101,15 @@ TOKEN_ESTIMATE_METHOD = (
     "chars/%.1f (tiktoken 미설치·requirements.txt 에 없음. 호출 후 API prompt_tokens 로 대체 기록)"
     % TOKEN_CHARS_PER_TOKEN
 )
+
+#: 입력 토큰 한도 표. **값은 공급자 공식 문서에서 확인해 넣는다.**
+#: 확인하지 않은 모델은 **넣지 않는다** — 추측해 넣으면 컨텍스트 초과를 못 잡는다.
+#: 표가 비어 있으면 모든 모델이 `--max-input-tokens` 를 요구한다(fail closed).
+#: 출처 URL·확인 날짜는 `docs/validation/eval-baseline-20261006/README.md` §6 표에 함께 적는다.
+CONTEXT_LIMIT_DOC = "docs/validation/eval-baseline-20261006/README.md §6"
+MODEL_CONTEXT_LIMITS: dict[str, dict[str, Any]] = {
+    # "<model-id>": {"max_input_tokens": <int>, "source": "<URL>", "checked_on": "YYYY-MM-DD"},
+}
 
 
 # ── 작은 유틸 ────────────────────────────────────────────────────────────────
@@ -121,41 +149,114 @@ def read_json(path: str | Path) -> Any:
 
 
 # ── A 공통 답안 형식 모듈 로딩 ───────────────────────────────────────────────
-def load_answer_format(explicit: str | None = None):
+#: 변환기가 반드시 불러 써야 하는 A 모듈의 이름. 없으면 실패한다(우리가 다시 구현하지 않는다).
+AF_REQUIRED_NAMES = (
+    "FORMAT_VERSION", "DECISION_DETAILS", "DETAIL_TO_DECISION",
+    "decision_for_detail", "new_document", "new_answer", "validate_document",
+)
+
+
+def _load_module_from_file(path: Path, *, origin: str):
+    spec = importlib.util.spec_from_file_location("_b3_answer_format", path)
+    if not (spec and spec.loader):
+        raise ImportError(f"answer_format 를 불러올 수 없다: {path}")
+    mod = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(mod)
+    mod.__source_path__ = str(path)              # type: ignore[attr-defined]
+    mod.__source_sha256__ = sha256_file(path)    # type: ignore[attr-defined]
+    mod.__source_origin__ = origin               # type: ignore[attr-defined]
+    return mod
+
+
+def _answer_format_from_git(ref: str, *, tmp_root: Path | None = None):
+    """고정 ref 에서 A 의 모듈을 꺼내 임시 파일로 불러온다(저장소에 복사하지 않는다)."""
+    import subprocess
+    import tempfile
+
+    def _git(*args: str) -> str:
+        out = subprocess.run(["git", *args], cwd=str(REPO_ROOT),
+                             capture_output=True, check=True)
+        return out.stdout.decode("utf-8", "replace").strip()
+
+    commit = _git("rev-parse", ref)
+    blob = _git("rev-parse", f"{ref}:{ANSWER_FORMAT_GIT_PATH}")
+    raw = subprocess.run(["git", "cat-file", "blob", blob], cwd=str(REPO_ROOT),
+                         capture_output=True, check=True).stdout
+    root = Path(tmp_root) if tmp_root else Path(tempfile.mkdtemp(prefix="b3_af_"))
+    root.mkdir(parents=True, exist_ok=True)
+    path = root / "answer_format.py"
+    path.write_bytes(raw)
+    mod = _load_module_from_file(path, origin=f"git:{ref}@{commit}:{ANSWER_FORMAT_GIT_PATH}")
+    mod.__git_commit__ = commit          # type: ignore[attr-defined]
+    mod.__git_blob__ = blob              # type: ignore[attr-defined]
+    return mod
+
+
+def load_answer_format(explicit: str | None = None, *, git_ref: str | None = None):
     """A 가 소유하는 `answer_format` 모듈을 찾는다.
 
     해석 순서
       1. `--answer-format <경로>` (파일 또는 패키지 루트)
       2. 환경변수 `ESGENIE_EVAL_ANSWER_FORMAT`
       3. 저장소의 `esgenie.eval.answer_format` (A 브랜치가 병합되면 여기 있다)
+      4. **고정 ref `ANSWER_FORMAT_GIT_REF`** 에서 `git cat-file` 로 꺼내 임시 파일로 로딩
 
-    못 찾으면 예외를 올린다. 검증을 건너뛰지 않는다.
+    v1.1 로 갈아탄 뒤의 기본 대상은 4번(= A 브랜치 v1.1)이다. 3번이 생기면 그쪽이 먼저지만,
+    A 브랜치가 병합된 뒤의 저장소 모듈은 같은 v1.1 이다.
+
+    못 찾거나 필요한 이름이 없으면 예외를 올린다. **검증을 건너뛰지 않는다.**
     """
     candidates = [c for c in (explicit, os.getenv("ESGENIE_EVAL_ANSWER_FORMAT")) if c]
-    tried: list[str] = []
-    for cand in candidates:
-        p = Path(cand)
-        if p.is_dir():
-            for sub in (p / "esgenie" / "eval" / "answer_format.py", p / "answer_format.py"):
-                if sub.is_file():
-                    p = sub
-                    break
-        if p.is_file():
-            spec = importlib.util.spec_from_file_location("_b3_answer_format", p)
-            if spec and spec.loader:
-                mod = importlib.util.module_from_spec(spec)
-                spec.loader.exec_module(mod)
-                mod.__source_path__ = str(p)       # type: ignore[attr-defined]
-                mod.__source_sha256__ = sha256_file(p)  # type: ignore[attr-defined]
-                return mod
-        tried.append(str(p))
+    mod = None
     if candidates:
-        raise FileNotFoundError("answer_format 를 찾을 수 없다: " + ", ".join(tried))
-    mod = importlib.import_module("esgenie.eval.answer_format")
-    src = Path(mod.__file__)  # type: ignore[arg-type]
-    mod.__source_path__ = str(src)             # type: ignore[attr-defined]
-    mod.__source_sha256__ = sha256_file(src)   # type: ignore[attr-defined]
+        tried: list[str] = []
+        for cand in candidates:
+            p = Path(cand)
+            if p.is_dir():
+                for sub in (p / "esgenie" / "eval" / "answer_format.py",
+                            p / "answer_format.py"):
+                    if sub.is_file():
+                        p = sub
+                        break
+            if p.is_file():
+                mod = _load_module_from_file(p, origin=f"path:{p}")
+                break
+            tried.append(str(p))
+        if mod is None:
+            raise FileNotFoundError("answer_format 를 찾을 수 없다: " + ", ".join(tried))
+    else:
+        try:
+            repo_mod = importlib.import_module("esgenie.eval.answer_format")
+        except ModuleNotFoundError:
+            repo_mod = None
+        if repo_mod is not None:
+            src = Path(repo_mod.__file__)  # type: ignore[arg-type]
+            repo_mod.__source_path__ = str(src)            # type: ignore[attr-defined]
+            repo_mod.__source_sha256__ = sha256_file(src)  # type: ignore[attr-defined]
+            repo_mod.__source_origin__ = f"repo:{repo_relpath(src)}"  # type: ignore[attr-defined]
+            mod = repo_mod
+        else:
+            mod = _answer_format_from_git(git_ref or ANSWER_FORMAT_GIT_REF)
+
+    missing = [n for n in AF_REQUIRED_NAMES if not hasattr(mod, n)]
+    if missing:
+        raise AttributeError(
+            "answer_format 에 필요한 이름이 없다: %s (경로 %s). "
+            "대응 표를 우리 코드에 다시 쓰지 않는다 — 모듈을 고쳐 받아야 한다"
+            % (", ".join(missing), getattr(mod, "__source_path__", "?")))
     return mod
+
+
+def answer_format_record(af) -> dict[str, Any]:
+    """어느 판으로 검증했는지 실행 기록에 남길 식별자."""
+    return {
+        "path": getattr(af, "__source_path__", None),
+        "sha256": getattr(af, "__source_sha256__", None),
+        "origin": getattr(af, "__source_origin__", None),
+        "git_commit": getattr(af, "__git_commit__", None),
+        "git_blob": getattr(af, "__git_blob__", None),
+        "format_version": getattr(af, "FORMAT_VERSION", None),
+    }
 
 
 # ── 사례 파일(문항 목록) ────────────────────────────────────────────────────
@@ -425,8 +526,12 @@ def parse_model_output(text: str) -> tuple[dict[str, Any] | None, str]:
     return None, last or "no_json_found"
 
 
-def _row_decision(row: dict[str, Any], evidence: list[dict[str, Any]]) -> tuple[str, str]:
-    """구조만 보고 공통 판정을 정한다. 단서 문구로 바꾸지 않는다."""
+def _row_detail(row: dict[str, Any], evidence: list[dict[str, Any]]) -> tuple[str, str]:
+    """구조만 보고 `decision_detail`(6값)을 정한다. 단서 문구로 바꾸지 않는다.
+
+    외부 `decision`(3값 또는 null)은 **여기서 정하지 않는다** — A 모듈의
+    `DETAIL_TO_DECISION` 표가 `new_answer()` 안에서 계산한다. 표를 다시 쓰지 않는다.
+    """
     model_decision = row.get("decision")
     if model_decision == "hold":
         return "hold", "모델 decision=hold"
@@ -479,7 +584,12 @@ def to_common_document(
     company_answer_file: str,
     produced_at: str | None = None,
 ) -> tuple[dict[str, Any], dict[str, Any]]:
-    """저장한 응답 → A 공통 답안 형식 v1 문서. (문서, 집계) 를 돌려준다."""
+    """저장한 응답 → A 공통 답안 형식 v1.1 문서. (문서, 집계) 를 돌려준다.
+
+    v1.1: 행은 `decision_detail`(6값)만 정하고 외부 `decision`(3값/null)은 A 모듈의
+    `DETAIL_TO_DECISION` 표가 계산한다. **누락 qid 는 행을 만들지 않는다**
+    (v1.1 계약: "누락된 qid는 행을 만들지 않고 검증에서 누락으로 드러낸다").
+    """
     by_qid: dict[str, list[dict[str, Any]]] = {}
     if parsed:
         for row in parsed.get("answers") or []:
@@ -487,9 +597,10 @@ def to_common_document(
                 by_qid.setdefault(row["qid"], []).append(row)
 
     answers: list[dict[str, Any]] = []
-    stats = {
-        "rows": 0, "confirmed": 0, "unverified_submitted": 0, "hold": 0,
-        "not_applicable": 0, "unparsed": 0,
+    stats: dict[str, Any] = {
+        "rows": 0,
+        "detail_counts": {d: 0 for d in af.DECISION_DETAILS},
+        "decision_counts": {},
         "missing_qid": [], "duplicate_qid": [], "unknown_qid": [],
         "cited_company_answer": 0, "evidence_page_null": 0,
         "parse_error": parse_error,
@@ -499,21 +610,14 @@ def to_common_document(
         qid = case["qid"]
         rows = by_qid.get(qid, [])
         if not rows:
+            # v1.1 — 행을 만들지 않는다. 검증이 missing_qid·row_count 로 드러낸다.
             stats["missing_qid"].append(qid)
-            answers.append(af.new_answer(
-                qid=qid, decision="unparsed",
-                decision_basis="모델 출력에 이 qid 의 응답이 없다",
-                value=None, unit="", evidence=[],
-                source={"raw": None, "parse_error": parse_error or "missing_qid"},
-            ))
-            stats["unparsed"] += 1
-            stats["rows"] += 1
             continue
         if len(rows) > 1:
             stats["duplicate_qid"].append(qid)
         row = rows[0]                       # 중복은 첫 행만 쓰고 중복 사실을 남긴다
         evidence = _clean_evidence(row.get("evidence"), unrecovered)
-        decision, basis = _row_decision(row, evidence)
+        detail, basis = _row_detail(row, evidence)
         if len(rows) > 1:
             basis += f" (중복 응답 {len(rows)}건 — 첫 행 사용)"
         unit = row.get("unit")
@@ -531,15 +635,19 @@ def to_common_document(
             "completeness": None,
         }
         notes = row.get("note")
+        # `decision` 은 넘기지 않는다 — A 모듈이 DETAIL_TO_DECISION 으로 계산한다.
         answers.append(af.new_answer(
-            qid=qid, decision=decision, decision_basis=basis,
+            qid=qid, decision_detail=detail, decision_basis=basis,
             value=value, unit=unit if isinstance(unit, str) else "",
             value_text=row.get("answer_text") if isinstance(row.get("answer_text"), str) else None,
             boundary=boundary, evidence=evidence,
             source={"raw": json.dumps(row, ensure_ascii=False)},
             notes=notes if isinstance(notes, str) and notes.strip() else None,
         ))
-        stats[decision] = stats.get(decision, 0) + 1
+        stats["detail_counts"][detail] = stats["detail_counts"].get(detail, 0) + 1
+        decision = af.decision_for_detail(detail)    # 표를 다시 쓰지 않고 불러 쓴다
+        key = "null" if decision is None else str(decision)
+        stats["decision_counts"][key] = stats["decision_counts"].get(key, 0) + 1
         stats["rows"] += 1
         if any(e["file_name"] == company_answer_file for e in evidence):
             stats["cited_company_answer"] += 1
@@ -553,10 +661,12 @@ def to_common_document(
         run_id=run_id,
         stage=stage,
         framework=framework,
-        data_source=data_source,
+        dataset_tag=DATASET_TAG,          # v1.1 필수 (A 확인 대기)
+        material_kind=MATERIAL_KIND,      # dataset_tag 와 다른 축 (A 확인 대기)
+        data_source=data_source,          # v1.1 선택 — 사람이 읽는 설명
         model=model_id,
         produced_at=produced_at or now_kst(),
-        adapter={"name": "scripts/baseline_generic_llm.py", "version": "1"},
+        adapter={"name": "scripts/baseline_generic_llm.py", "version": "2"},
         source_ref=source_ref,
         notice=COMPANY_NOTICE,
         answers=answers,
@@ -565,13 +675,24 @@ def to_common_document(
 
 
 def count_decision_flips(docs: list[dict[str, Any]]) -> dict[str, Any]:
-    """반복 간 판정이 바뀐 행 수. 문서는 공통 형식 문서 목록이다."""
+    """반복 간 판정이 바뀐 행 수. 문서는 공통 형식 문서 목록이다.
+
+    v1.1 에서는 `decision_detail` 로 센다 — 외부 3값은 `confirmed` 와
+    `unverified_submitted` 를 모두 `answer` 로 묶어 변동을 가린다.
+    어느 반복에서 행 자체가 없으면(누락 qid) `__absent__` 로 세어 변동으로 잡는다.
+    """
     if len(docs) < 2:
         return {"repeats": len(docs), "changed_rows": 0, "changed_qids": []}
-    per_qid: dict[str, set[str]] = {}
+    qids: set[str] = set()
+    per_doc: list[dict[str, str]] = []
     for doc in docs:
-        for a in doc.get("answers") or []:
-            per_qid.setdefault(str(a.get("qid")), set()).add(str(a.get("decision")))
+        row_map = {str(a.get("qid")): str(a.get("decision_detail"))
+                   for a in (doc.get("answers") or [])}
+        per_doc.append(row_map)
+        qids |= set(row_map)
+    per_qid: dict[str, set[str]] = {}
+    for qid in qids:
+        per_qid[qid] = {m.get(qid, "__absent__") for m in per_doc}
     changed = sorted(q for q, vals in per_qid.items() if len(vals) > 1)
     return {"repeats": len(docs), "changed_rows": len(changed), "changed_qids": changed}
 
@@ -674,25 +795,55 @@ def build_inputs(args) -> dict[str, Any]:
     }
 
 
+def resolve_input_limit(model: str, explicit: int | None) -> tuple[int, str]:
+    """입력 토큰 한도를 정한다. 모르면 실행을 거부한다.
+
+    ① `--max-input-tokens` 를 주면 그 값(출처 `cli`)
+    ② `MODEL_CONTEXT_LIMITS` 표에 있으면 그 값(출처 `table:<README 확인 날짜>`)
+    ③ 둘 다 없으면 **거부한다.** 한도를 모르는 채로 호출하면 컨텍스트 초과를 알 수 없다.
+    """
+    if explicit is not None:
+        if explicit <= 0:
+            raise ValueError("--max-input-tokens 는 1 이상이어야 한다")
+        return explicit, "cli"
+    row = MODEL_CONTEXT_LIMITS.get(model)
+    if row:
+        return int(row["max_input_tokens"]), f"table:{row.get('checked_on', '미확인')}"
+    raise RuntimeError(
+        f"모델 '{model}' 의 컨텍스트 한도를 모른다. "
+        f"{CONTEXT_LIMIT_DOC} 표에 출처 URL·확인 날짜와 함께 적고 "
+        f"MODEL_CONTEXT_LIMITS 에 넣거나, --max-input-tokens 로 직접 준다. "
+        "한도를 모르는 채로 실행하지 않는다(자동 분할도 하지 않는다)")
+
+
 def run_live(args) -> int:
-    af = load_answer_format(args.answer_format)
+    af = load_answer_format(args.answer_format, git_ref=args.answer_format_ref)
+    # 한도를 모르면 **실호출은 거부**한다. `--dry-run` 은 호출이 없고, 표를 채우기 위한
+    # 입력 길이 측정 자체가 dry-run 의 목적이라 한도 없이도 진행한다(기록에 남긴다).
+    try:
+        limit, limit_source = resolve_input_limit(args.model, args.max_input_tokens)
+    except RuntimeError:
+        if not args.dry_run:
+            raise
+        limit, limit_source = None, "dry_run_unchecked"
     prep = build_inputs(args)
     stage = args.stage
     data_source = DATA_SOURCE[stage]
 
-    if args.max_input_tokens and prep["input_tokens_estimate"] > args.max_input_tokens:
+    if limit is not None and prep["input_tokens_estimate"] > limit:
         out = Path(args.out) / (args.run_id or "aborted")
         write_json(out / "run_log.json", {
             "status": "aborted_context_limit",
             "input_chars": prep["input_chars"],
             "input_tokens_estimate": prep["input_tokens_estimate"],
             "token_estimate_method": prep["token_estimate_method"],
-            "max_input_tokens": args.max_input_tokens,
+            "max_input_tokens": limit,
+            "max_input_tokens_source": limit_source,
             "detail": "모델 컨텍스트를 넘었다. 자동 분할하지 않고 중단했다.",
             "aborted_at": now_kst(),
         })
-        print("중단: 입력 추정 토큰 %d > 한도 %d (자동 분할하지 않는다)"
-              % (prep["input_tokens_estimate"], args.max_input_tokens), file=sys.stderr)
+        print("중단: 입력 추정 토큰 %d > 한도 %d (출처 %s, 자동 분할하지 않는다)"
+              % (prep["input_tokens_estimate"], limit, limit_source), file=sys.stderr)
         return 2
 
     base_run_id = args.run_id or f"BASE_{stage}_{_dt.datetime.now(KST):%Y%m%d%H%M%S}"
@@ -740,6 +891,12 @@ def run_live(args) -> int:
             "input_chars": prep["input_chars"],
             "input_tokens_estimate": prep["input_tokens_estimate"],
             "token_estimate_method": prep["token_estimate_method"],
+            "max_input_tokens": limit,
+            "max_input_tokens_source": limit_source,
+            "answer_format": answer_format_record(af),
+            "dataset_tag": DATASET_TAG,
+            "material_kind": MATERIAL_KIND,
+            "data_source": data_source,
             "blocks": prep["blocks"],
             "page_methods": prep["page_methods"],
             "unrecovered_files": prep["unrecovered_files"],
@@ -797,9 +954,7 @@ def run_live(args) -> int:
             "token_estimate_method": prep["token_estimate_method"],
             "parse": stats,
             "validate_issues": issues,
-            "answer_format": {"path": getattr(af, "__source_path__", None),
-                              "sha256": getattr(af, "__source_sha256__", None),
-                              "format_version": af.FORMAT_VERSION},
+            "answer_format": answer_format_record(af),
         })
         if issues:
             failures += 1
@@ -838,7 +993,7 @@ def _rescore_one(af, rep_dir: Path, cases, stage, framework, run_id, model_id,
 
 def run_rescore(args) -> int:
     """저장된 response_raw.json 만으로 공통 형식을 다시 만든다(호출 없음)."""
-    af = load_answer_format(args.answer_format)
+    af = load_answer_format(args.answer_format, git_ref=args.answer_format_ref)
     root = Path(args.rescore_only)
     reps = sorted(p for p in root.glob("rep_*") if (p / "response_raw.json").is_file())
     if not reps:
@@ -861,14 +1016,13 @@ def run_rescore(args) -> int:
         write_json(rep / "rescore_log.json", {
             "run_id": req["run_id"], "rescored_at_kst": now_kst(),
             "parse": stats, "validate_issues": issues,
-            "answer_format": {"path": getattr(af, "__source_path__", None),
-                              "sha256": getattr(af, "__source_sha256__", None),
-                              "format_version": af.FORMAT_VERSION},
+            "answer_format": answer_format_record(af),
         })
         if issues:
             failures += 1
-        print(f"{rep.name}: rows={stats['rows']} unparsed={stats['unparsed']} "
-              f"issues={len(issues)}")
+        print("%s: rows=%d missing=%d unparsed=%d issues=%d"
+              % (rep.name, stats["rows"], len(stats["missing_qid"]),
+                 stats["detail_counts"].get("unparsed", 0), len(issues)))
     write_json(root / "repeat_summary.json", {
         "rescored_at_kst": now_kst(), **count_decision_flips(docs)})
     return 1 if failures else 0
@@ -889,8 +1043,11 @@ def build_parser() -> argparse.ArgumentParser:
     p.add_argument("--answer-format", default=None,
                    help="A 의 answer_format.py 또는 패키지 루트 (환경변수 "
                         "ESGENIE_EVAL_ANSWER_FORMAT 도 쓴다)")
-    p.add_argument("--max-input-tokens", type=int, default=0,
-                   help="추정 입력 토큰이 이 값을 넘으면 중단한다(0=검사 안 함)")
+    p.add_argument("--answer-format-ref", default=ANSWER_FORMAT_GIT_REF,
+                   help="A 모듈을 꺼낼 git ref. 기본은 고정 SHA(v1.1)")
+    p.add_argument("--max-input-tokens", type=int, default=None,
+                   help="추정 입력 토큰이 이 값을 넘으면 중단한다. 주지 않으면 "
+                        "MODEL_CONTEXT_LIMITS 표에서 찾고, 표에 없으면 실행을 거부한다")
     p.add_argument("--dry-run", action="store_true", help="호출하지 않고 입력만 저장한다")
     p.add_argument("--rescore-only", default=None, help="<out>/<run_id> 폴더에서 재채점만")
     return p
@@ -909,7 +1066,11 @@ def main(argv: list[str] | None = None) -> int:
     if args.repeats < 1:
         print("--repeats 는 1 이상", file=sys.stderr)
         return 2
-    return run_live(args)
+    try:
+        return run_live(args)
+    except (RuntimeError, ValueError) as exc:
+        print("중단: %s" % exc, file=sys.stderr)
+        return 2
 
 
 if __name__ == "__main__":

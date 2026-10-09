@@ -1,6 +1,6 @@
 # 일반 문서 AI 대조군 — 실행기 (작업지시서 B §4.2)
 
-**상태: 실행기 구현 완료 · 실제 호출 0건 · 비교 결과 없음.**
+**상태: 실행기 구현 완료(공통 답안 형식 A v1.1-draft) · 실제 호출 0건 · 비교 결과 없음.**
 이 문서는 실행기의 조건과 기록 규칙을 적는다. 결과·비교표는 실제 실행 뒤에 §7 에 추가한다.
 
 - 실행기: `scripts/baseline_generic_llm.py`
@@ -29,28 +29,27 @@
 ## 2. 실행 방법
 
 ```bash
-# 입력만 만들고 호출하지 않는다(조립·쪽 복원 확인용)
+# 입력만 만들고 호출하지 않는다(조립·쪽 복원 확인용). 컨텍스트 한도를 몰라도 된다.
 python scripts/baseline_generic_llm.py \
   --pipeline-json <run>/initial/pipeline.json --stage initial \
   --framework rba42 --model <모델 식별자> --provider openai \
-  --repeats 1 --out outputs/eval/baseline/<run_id> \
-  --answer-format <A 패키지 루트> --dry-run
+  --repeats 1 --out outputs/eval/baseline/<run_id> --dry-run
 
-# 실제 실행
+# 실제 실행 — 컨텍스트 한도가 표에 없으면 --max-input-tokens 를 줘야 한다
 python scripts/baseline_generic_llm.py \
   --pipeline-json <run>/initial/pipeline.json --stage initial \
   --framework rba42 --model <모델 식별자> --provider openai \
   --repeats 5 --out outputs/eval/baseline/<run_id> \
-  --answer-format <A 패키지 루트>
+  --max-input-tokens <확인한 한도>
 
 # 저장한 응답만으로 공통 형식을 다시 만든다(호출 없음)
-python scripts/baseline_generic_llm.py --rescore-only outputs/eval/baseline/<run_id> \
-  --answer-format <A 패키지 루트>
+python scripts/baseline_generic_llm.py --rescore-only outputs/eval/baseline/<run_id>
 ```
 
-`--answer-format` 은 A 가 소유하는 `answer_format.py`(또는 패키지 루트)를 가리킨다.
-환경변수 `ESGENIE_EVAL_ANSWER_FORMAT` 로도 준다. 저장소에 `esgenie/eval/answer_format.py` 가
-들어오면(A 브랜치 병합) 인자 없이도 찾는다. **못 찾으면 검증을 건너뛰지 않고 실패한다.**
+공통 답안 형식 모듈은 인자 없이도 찾는다(§7 해석 순서). 다른 판으로 검증하려면
+`--answer-format <경로>` 또는 환경변수 `ESGENIE_EVAL_ANSWER_FORMAT`,
+다른 커밋으로 바꾸려면 `--answer-format-ref <git ref>` 를 쓴다.
+**못 찾으면 검증을 건너뛰지 않고 실패한다.**
 
 ## 3. 저장물
 
@@ -126,7 +125,31 @@ ESGenie 도 05 를 증빙 OCR 경로가 아니라 PDF 텍스트 직접 추출로
 | 입력 문자 수 | 정확값. `request.json`·`input_manifest.json` 의 `input_chars` |
 | 입력 토큰(호출 전) | **추정값.** `chars / 2.0`. `tiktoken` 은 `requirements.txt` 에 없어 쓰지 않는다(새 의존성 금지). `token_estimate_method` 에 방법을 함께 적는다 |
 | 입력·출력 토큰(호출 후) | **API 가 보고한 값.** `run_log.json` 의 `prompt_tokens`·`completion_tokens`·`total_tokens` |
-| 컨텍스트 초과 | `--max-input-tokens` 를 넘으면 **그 실행을 중단한다.** 자동 분할하지 않는다(`status: aborted_context_limit`) |
+| 컨텍스트 초과 | 한도를 넘으면 **그 실행을 중단한다.** 자동 분할하지 않는다(`status: aborted_context_limit`) |
+
+### 컨텍스트 한도 — 모르면 실행을 거부한다
+
+입력 토큰 한도는 아래 순서로 정한다.
+
+1. `--max-input-tokens <N>` 을 주면 그 값 (`max_input_tokens_source: cli`)
+2. 아래 표에 있으면 그 값 (`max_input_tokens_source: table:<확인 날짜>`)
+3. **둘 다 없으면 실호출을 거부한다** (종료 코드 2). 한도를 모르는 채로 호출하면 컨텍스트 초과를
+   알 수 없다. 추측해 넣지 않는다.
+
+예외는 `--dry-run` 뿐이다 — 호출이 없고, 이 표를 채울 입력 길이를 재는 것이 dry-run 의 목적이다.
+그때는 `max_input_tokens_source: dry_run_unchecked` 로 기록한다.
+
+표는 `scripts/baseline_generic_llm.py` 의 `MODEL_CONTEXT_LIMITS` 에 넣는다.
+**값은 공급자 공식 문서에서 확인해 출처 URL·확인 날짜와 함께 아래에 적는다.**
+
+| 모델 | 입력 토큰 한도 | 출처 URL | 확인 날짜 |
+|---|---|---|---|
+| (동일 모델 — `SETTINGS.openai_model`) | 미확인 | 미확인 | 미확인 |
+| (상위 모델) | 미확인 | 미확인 | 미확인 |
+| (타 공급자 — `SETTINGS.anthropic_model`) | 미확인 | 미확인 | 미확인 |
+
+**현재 `MODEL_CONTEXT_LIMITS` 는 비어 있다.** 확인한 값이 없으므로 모든 모델이
+`--max-input-tokens` 를 요구한다(fail closed). dry-run 측정값은 아래 §입력 길이 표에 있다.
 
 ### 비용 계산 규칙
 
@@ -155,35 +178,76 @@ ESGenie 도 05 를 증빙 OCR 경로가 아니라 PDF 텍스트 직접 추출로
 
 분할 규칙은 **쓰지 않는다** — 분할이 필요한 길이가 아니고, 필요해지면 중단 후 사람이 결정한다.
 
-## 7. 공통 답안 형식 변환
+## 7. 공통 답안 형식 변환 — A **v1.1-draft**
+
+쓰는 모듈: A 소유 `esgenie/eval/answer_format.py`. 저장소에 복사하지 않고 아래 순서로 찾는다.
+
+1. `--answer-format <경로>` 2. 환경변수 `ESGENIE_EVAL_ANSWER_FORMAT`
+3. 저장소 `esgenie.eval.answer_format`(A 브랜치 병합 후) 4. **고정 git ref**
+   `f6d2c576b691b4cda2d59df628772abfc751e578` (`origin/codex/eval-scoring-20261006`,
+   2026-10-09 확인)의 `esgenie/eval/answer_format.py` — `git cat-file` 로 꺼내 임시 로딩
+
+못 찾거나 `decision_for_detail`·`DETAIL_TO_DECISION`·`new_document`·`new_answer`·
+`validate_document` 중 하나라도 없으면 **검증을 건너뛰지 않고 실패한다.**
+어느 판으로 검증했는지는 `run_log.json`·`request.json` 의 `answer_format`
+(경로·sha256·origin·git commit·git blob·`format_version`)에 남는다.
 
 판정은 **구조로만** 한다. 모델이 단서를 덧붙여도 판정을 바꾸지 않는다.
+모델 출력은 그대로 3값(`answer`/`hold`/`not_applicable`)이고, 변환기는 `decision_detail`
+**만** 정한다. 외부 `decision` 은 A 모듈의 `DETAIL_TO_DECISION` 표가 계산한다
+(`new_answer(decision_detail=…)` 안에서). **표를 이 저장소에 다시 쓰지 않는다.**
 
-| 모델 출력 | 공통 판정 |
-|---|---|
-| `decision=answer` + `evidence` 1개 이상 | `confirmed` |
-| `decision=answer` + `evidence` 없음 | `unverified_submitted` |
-| `decision=hold` | `hold` |
-| `decision=not_applicable` | `not_applicable` |
-| 허용값 밖 / 해당 qid 누락 / JSON 파싱 실패 | `unparsed` |
+| 모델 출력 | `decision_detail` | `decision` (A 표 계산) |
+|---|---|---|
+| `decision=answer` + `evidence` 1개 이상 | `confirmed` | `answer` |
+| `decision=answer` + `evidence` 없음 | `unverified_submitted` | `answer` |
+| `decision=hold` | `hold` | `hold` |
+| `decision=not_applicable` | `not_applicable` | `na` |
+| 허용값 밖의 `decision` 값 | `unparsed` | `null` (필드를 **명시**한다) |
 
+- **`decision=answer` 라는 이유만으로 확정으로 세지 않는다.** 확정은 `decision_detail == "confirmed"` 뿐이다.
+- **누락 qid 는 행을 만들지 않는다**(v1.1 계약). 보류로 채우지 않고 `run_log.json` 의
+  `parse.missing_qid` 에 목록을 남긴다. 검증기가 `missing_qid`·`row_count` 로 드러내면
+  그 실패를 **고치지 않고** `validate_issues.json` 에 남긴다.
+- 중복 qid 는 첫 행만 쓰고 중복 사실을 `decision_basis` 와 `parse.duplicate_qid` 에 남긴다.
+- `meta.dataset_tag` = **필수**, 현재 `virtual` (상수 `DATASET_TAG`, **A 확인 대기**).
+- `meta.material_kind` = 현재 `photo_evidence` (상수 `MATERIAL_KIND`, **A 확인 대기**).
+  `dataset_tag` 와 다른 축이므로 섞어 적지 않는다.
+- `meta.data_source` = 단계별 설명 문자열. v1.1 에서 **선택** 필드이고 **집계에 쓰지 않는다**.
 - `boundary`: 모델 `period` → `boundary.period`, `scope` → `boundary.label`.
   `site`·`target`·`denominator`·`completeness` 는 **`null`**(쪼개서 추정하지 않는다).
+  v1.1 은 `boundary` 를 §4 원문 요구사항이 아닌 **A 확장**으로 정정했다(유지 여부는 B 합의 사항, A 의 C-4).
 - `meta.system` = `baseline_<실제 응답 model>`, `meta.model` = 실제 응답 model,
   `meta.source_ref` = 그 반복의 `response_raw.json` 저장소 기준 상대 경로 + sha256,
   `source.raw` = 그 문항의 모델 출력 원문 조각.
-- 파싱 실패를 보류로 바꾸지 않는다. 누락 qid 를 보류로 채우지 않는다.
-  중복 qid 는 첫 행만 쓰고 중복 사실을 `decision_basis` 와 집계에 남긴다.
-- 내보내기 전에 `validate_document(doc, expected_qids)` 를 통과시킨다.
-  실패하면 **고치지 않고** `validate_issues.json` 에 목록을 남긴다.
+- 반복 간 변동은 **`decision_detail` 로 센다** — 외부 3값은 `confirmed` 와
+  `unverified_submitted` 를 모두 `answer` 로 묶어 변동을 가린다.
 - 자동 재시도·프롬프트 수정·자동 분할을 하지 않는다.
+- 대조군에는 제품 고유 지표가 없으므로 `meta.product_metrics` 를 **넣지 않는다**(0 으로 적지 않는다).
+
+### 골격 검증 결과 (2026-10-09, 호출 없음)
+
+`LIVE_n5_d8a0de8` 두 단계로 문서를 만들어 A v1.1 `validate_document` 에 넣었다.
+
+| 경우 | 결과 |
+|---|---|
+| 응답 없는 골격(`answers: []`) | `meta`·`format_version` 문제 **0건**. `missing_qid` 48 + `row_count` 1 만 남는다(의도된 노출) |
+| 48행을 채운 **합성** 응답(다섯 상태 모두) | **문제 0건.** `decision` 이 전 행에서 `decision_detail` 의 표 값과 일치 |
+
+합성 응답의 분포(두 단계 동일): `confirmed` 10 / `unverified_submitted` 10 / `hold` 10 /
+`not_applicable` 9 / `unparsed` 9 → `answer` 20 / `hold` 10 / `na` 9 / `null` 9.
+**합성 자리값이고 실제 응답도 정답도 아니다.**
 
 ## 8. 한계
 
-1. **공통 답안 형식이 합의 전이다**(`1.0-draft`). A 브랜치에는 더 나아간 판이 있어 그대로 쓰면
-   검증이 깨진다 — 리뷰 기록 `outputs/eval/review/P3-2.md` 에 차이를 적었다.
-   형식이 확정되면 `DATA_SOURCE` 상수와 변환 표(§7) 한 곳만 고치면 된다.
-2. **`data_source` 값이 A 확인 대기**다. 두 시스템이 같은 문자열을 써야 비교가 선다.
-3. 입력 토큰은 호출 전에는 **추정값**이다(tiktoken 없음). 호출 후 API 값으로 대체 기록한다.
-4. 자료는 **가상 시연 세트**다. 결과를 실제 기업 자료의 성능으로 읽을 수 없다.
-5. 이 문서에는 **결과가 없다.** 실제 호출·채점·비교표는 라벨 확정과 형식 합의 뒤의 일이다.
+1. **공통 답안 형식이 `1.1-draft` 이고 A 가 B 확인을 기다린다.** B 는 v1.1 을 따르기로 했고
+   이 실행기는 v1.1 로 맞췄다. A 의 확인 사항 C-1~C-6 중 하나라도 미확정이면 `-draft` 가 유지된다.
+   갈아타기 지점은 `DATASET_TAG`·`MATERIAL_KIND`·`DATA_SOURCE` 상수와 `_row_detail` 함수다.
+2. **`dataset_tag`·`material_kind`·`data_source` 값이 A 확인 대기**다. 두 시스템이 같은 값을
+   써야 비교가 선다. 특히 A 의 어댑터 예시는 ESGenie 쪽에 `--material-kind mixed` 를 쓴다 —
+   대조군이 `photo_evidence` 면 두 축이 달라진다. 확인이 필요하다.
+3. **컨텍스트 한도 표가 비어 있다.** 확인한 값이 없어 모든 모델이 `--max-input-tokens` 를 요구한다.
+4. 입력 토큰은 호출 전에는 **추정값**이다(tiktoken 없음). 호출 후 API 값으로 대체 기록한다.
+5. 단가 표가 전부 `미확인` 이다. **현재 비용 0 USD**(호출 0건).
+6. 자료는 **가상 시연 세트**다. 결과를 실제 기업 자료의 성능으로 읽을 수 없다.
+7. 이 문서에는 **실제 응답 결과가 없다.** 호출·채점·비교표는 라벨 확정과 형식 확인 뒤의 일이다.
