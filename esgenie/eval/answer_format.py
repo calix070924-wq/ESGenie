@@ -50,10 +50,11 @@ import json
 from pathlib import Path
 from typing import Any
 
-#: 형식 버전. 합의 전이라 `-draft` 접미사를 붙인다.
+#: 형식 버전.
 #: 1.0-draft → 1.1-draft (2026-10-07): `decision`을 §4 원문의 3값으로 맞추고 상세 상태를
-#: `decision_detail`로 분리. `dataset_tag` 도입. **B 확인 전까지 `-draft`를 뗀다.**
-FORMAT_VERSION = "1.1-draft"
+#: `decision_detail`로 분리. `dataset_tag` 도입.
+#: 1.1-draft → 1.1 (2026-10-10): B가 C-1~C-6에 회신해 `-draft`를 뗐다. 정의는 바꾸지 않았다.
+FORMAT_VERSION = "1.1"
 #: 이 코드가 읽을 수 있는 버전(주 버전이 같아야 한다).
 SUPPORTED_MAJOR = "1"
 
