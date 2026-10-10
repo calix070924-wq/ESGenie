@@ -11,7 +11,7 @@ from dataclasses import dataclass, replace
 from collections import defaultdict
 
 from ..ssot.audit_trace import evidence_link
-from ..ssot.boundary import Boundary
+from ..ssot.boundary import Boundary, detect_site
 from ..survey import is_survey
 
 
@@ -26,6 +26,13 @@ class Requirement:
 
 def R(label, *patterns):
     return Requirement(label, patterns)
+
+
+# 실행 기록의 날짜·시간을 원문 표기 그대로 읽는다. 한글·하이픈·슬래시·
+# 마침표 표기를 지원하며 문서 번호나 숫자 열을 날짜로 간주하지 않는다.
+_RECORD_TIME = (r'(?<!\d)(?:20\d{2}\s*[년./-]\s*)?'
+                r'(?:1[0-2]|0?[1-9])\s*[월./-]\s*(?:3[01]|[12]\d|0?[1-9])\s*일?(?!\d)'
+                r'|(?<!\d)(?:2[0-3]|1?\d)\s*[:시]\s*[0-5]\d\s*분?(?!\d)')
 
 
 # RBA 정의의 요건을 분해한다. 이 표는 가상 세트의 정답/출처 목록이 아니다.
@@ -46,7 +53,7 @@ REQUIREMENTS = {
         R('근로자 언어로 안전보건 정보·교육 제공', r'근로자|근무자|직원|임직원|작업자', r'안전|보건', r'언어|한국어|모국어|번역'),
         R('안전보건 정보 게시', r'안전|보건', r'게시'),
         R('작업 전·정기 안전교육', r'안전|보건', r'교육', r'작업\s*전|정기'),
-        R('보복 없는 의견제기', r'보복', r'금지|없이|없는', r'의견|제기|신고'),
+        R('보복 없는 의견제기', r'보복', r'금지|없이|없는|하지\s*않', r'의견|제기|신고'),
     ),
     'C-7': (
         R('수원·용수 사용·배출 모니터링', r'수원|용수|물\s*사용|취수', r'배출|폐수', r'모니터링|측정|특성|추적'),
@@ -64,7 +71,7 @@ REQUIREMENTS = {
     'E-2': (
         R('책임·권한 지정', r'경영|대표이사|ESG|management', r'책임|담당|responsib', r'권한|자원\s*배정|승인권|authority'),
         R('경영진 정기 검토 절차', r'경영진|대표이사|management', r'정기|월\s*1회|분기|연\s*1회', r'검토|회의|review'),
-        R('경영진 검토 실시 기록', r'검토|회의|review', r'실시|완료|확정|held|completed', r'\d{2}-\d{2}|\d{1,2}:\d{2}'),
+        R('경영진 검토 실시 기록', r'검토|회의|review', r'실시|완료|확정|held|completed', _RECORD_TIME),
     ),
     'E-3': (
         R('법규·규정 식별', r'법규|법률|규제|legal', r'식별|목록|등록|identify'),
@@ -92,7 +99,7 @@ REQUIREMENTS = {
     'E-8': (
         R('양방향 참여', r'근로자|근무자|이해관계자|대표', r'양방향|간담회|의견.*(?:수렴|반영)|협의'),
         R('고충·구제 접근', r'고충|구제|익명\s*접수', r'접근|접수|처리|신고'),
-        R('보복 없는 참여', r'보복', r'금지|없는|없이'),
+        R('보복 없는 참여', r'보복', r'금지|없는|없이|하지\s*않'),
     ),
     'E-10': (
         R('발견·접수 절차', r'점검|평가|조사', r'발견|접수|등록', r'미흡|시정|조치'),
@@ -113,13 +120,14 @@ REQUIREMENTS = {
 # 보호/통제 요건의 긍정 근거이므로 여기서 제거하지 않는다.
 _UNSUPPORTED = re.compile(
     r'(?:아니[다며]|아님|없(?:다|음|으며|어)|미보유|미실시|미확인|대신하지|대체할\s*수\s*없|'
-    r'입증하지\s*못|확정하지|의미하지|계획이며|향후\s*일정|예정이다)', re.I)
+    r'지\s*(?:않|못)|입증하지\s*못|확정하지|의미하지|계획이며|향후\s*일정|예정이다)', re.I)
 _PROTECTIVE = re.compile(r'보복\s*(?:없|없는|없이)|이상.{0,12}없|누락.{0,12}없|고장.{0,12}없|'
-                         r'구서식.{0,12}없|접근권한.{0,12}없')
+                         r'구서식.{0,12}없|접근권한.{0,12}없|보복(?:을)?\s*하지\s*않\S*')
 
 
 def supported_parts(text):
-    parts = re.split(r'(?<=[.!?。;])\s+|(?<=이며)\s*|(?<=지만)\s*|\n(?=[^\n]*[|:])', text or '')
+    parts = re.split(r'(?<=[.!?。;])\s+|(?<=이며)\s*|(?<=지만)\s*|'
+                     r'(?<=않으며)\s*|(?<=않았으며)\s*|\n(?=[^\n]*[|:])', text or '')
     return '\n'.join(p for p in parts if not _UNSUPPORTED.search(_PROTECTIVE.sub('', p)))
 
 
@@ -165,8 +173,9 @@ def assess_requirements(answer, q, graph):
         return answer
     requirements = REQUIREMENTS[code]
     related, proofs, contexts = {}, defaultdict(list), defaultdict(list)
+    node_scopes = {}
     source_texts = getattr(graph, 'source_texts', {})
-    for node in graph.text_nodes.values():
+    for proof_id, node in _candidate_nodes(graph):
         if is_survey(node):
             continue
         contexts[node.source_file].append(f'{node.section}\n{node.text}')
@@ -192,32 +201,38 @@ def assess_requirements(answer, q, graph):
         # 태그만 일치한 부분 자료는 원문 참조로 남긴다.
         link = evidence_link(node)
         if hits:
-            related[node.id] = replace(link, quote=supported)
+            related[proof_id] = replace(link, quote=supported)
+            node_scopes[proof_id] = _node_scope(node, source_texts.get(node.source_file, ''))
             for req in hits:
-                proofs[req.label].append(node.id)
+                proofs[req.label].append(proof_id)
         elif code in link.kesg_codes:
-            related[node.id] = link
+            related[proof_id] = link
     # 한 문서가 전체 요건을 입증하면 그 문서의 운영 기록을 우선한다. 부수 문서의
     # 요약·안내 한 줄이 필수 운영 기록을 대체하거나 범위를 넓히지 않게 한다.
-    coverage = defaultdict(set)
+    # 파일이 같아도 조항의 적용 기간·사업장이 다를 수 있다. 요건을 동일한
+    # 범위별로 모으며, 한 범위에 전체 요건이 있어야 '예'를 만들 수 있다.
+    coverage, source_coverage = defaultdict(set), defaultdict(set)
     for label, ids in proofs.items():
         for nid in ids:
-            coverage[related[nid].file_name].add(label)
-    complete_sources = {source for source, labels in coverage.items()
-                        if len(labels) == len(requirements)}
-    if complete_sources:
-        proofs = {label: [nid for nid in ids if related[nid].file_name in complete_sources]
-                  for label, ids in proofs.items()}
+            source = related[nid].file_name
+            key = _scope_key(node_scopes[nid], source)
+            coverage[key].add(label)
+            source_coverage[(source, key)].add(label)
+    complete_source_scopes = {key for key, labels in source_coverage.items()
+                             if len(labels) == len(requirements)}
+    complete_scopes = {key for key, labels in coverage.items() if len(labels) == len(requirements)}
+    if complete_scopes:
+        def in_complete_scope(nid):
+            source = related[nid].file_name
+            key = _scope_key(node_scopes[nid], source)
+            return ((source, key) in complete_source_scopes if complete_source_scopes
+                    else key in complete_scopes)
+        proofs = {label: [nid for nid in ids if in_complete_scope(nid)] for label, ids in proofs.items()}
     missing = [r.label for r in requirements if not proofs.get(r.label)]
-    if not missing and not complete_sources and len(coverage) > 1:
-        # 서로 다른 기간/사업장의 부분 요건을 합쳐 어느 범위도 입증하지 못한
-        # '전체 예'를 만들지 않는다. 명시적으로 같은 경계일 때만 결합한다.
-        boundaries = [_source_scope(source_texts.get(source) or '\n'.join(contexts[source]))
-                      for source in coverage]
-        keys = {(b.period_text, b.site) for b in boundaries}
-        if len(keys) != 1 or any(not b.period_text or not b.site for b in boundaries):
-            missing.append('동일 기간·사업장에 대한 요건 연결')
+    if not missing and not complete_scopes:
+        missing.append('동일 기간·사업장에 대한 요건 연결')
     proof_ids = {nid for ids in proofs.values() for nid in ids}
+    complete_sources = {source for source, key in complete_source_scopes}
     answer.evidence_links = [related[nid] for nid in sorted(proof_ids)]
     answer.reference_links = [link for nid, link in related.items() if nid not in proof_ids
                               and (not complete_sources or link.file_name in complete_sources)]
@@ -235,7 +250,9 @@ def assess_requirements(answer, q, graph):
     answer.scope_notes.append('관련 자료 연결과 문항 전체 요건 충족은 별도로 판정함')
     contexts = {source: source_texts.get(source) or '\n'.join(parts)
                 for source, parts in contexts.items()}
-    _scope_from_sources(answer, contexts)
+    link_scopes = {(link.file_name, link.node_id, link.quote): node_scopes[nid]
+                   for nid, link in related.items() if nid in node_scopes}
+    _scope_from_sources(answer, contexts, link_scopes)
     return answer
 
 
@@ -247,7 +264,7 @@ def _source_scope(text):
     for line in lines[:12]:
         if re.search(r'가상|FICTIONAL|제작|개편|시연용', line, re.I):
             continue
-        if re.search(r'20\d{2}|제\d+공장|두\s*공장|양\s*공장', line):
+        if re.search(r'20\d{2}|제\d+공장|두\s*공장|양\s*공장', line) or _sites(line)[1] != 'unknown':
             if re.search(r'아니|확정하지|없|다른', line):
                 continue
             header.append(line)
@@ -261,9 +278,7 @@ def _source_scope(text):
         for part in re.split(r'[/|]', line):
             if re.search(r'20\d{2}[-.년]', part):
                 date_parts.append(part.strip())
-    sites = list(dict.fromkeys(re.findall(r'(?:[가-힣]+\s*)?제\d+공장', context)))
-    if not sites:
-        sites = list(dict.fromkeys(re.findall(r'두\s*공장(?:\s*전체)?|양\s*공장', context)))
+    sites, site_scope = _sites(context)
     for line in lines:
         if re.search(r'가상|FICTIONAL|제작|개편|아니|확정하지|다른', line, re.I):
             continue
@@ -273,16 +288,100 @@ def _source_scope(text):
     sites = [site for site in sites if not any(site != other and site in other for other in sites)]
     period = '; '.join(dict.fromkeys(date_parts))
     return Boundary(period_text=period, site=', '.join(sites),
-                    site_scope='site' if sites else 'unknown',
+                    site_scope=site_scope,
                     completeness='partial' if period or sites else 'unknown',
                     source_quote=context)
 
 
-def _scope_from_sources(answer, contexts):
+def _sites(text):
+    # 공용 파서의 사업장/전사 판정을 사용하고, 원문의 복수 공장은 모두 보존한다.
+    if detect_site(text)[1] == 'entity':
+        return ['전사'], 'entity'
+    sites = re.findall(r'(?:[가-힣]+\s*)?제\s*\d+\s*공장|두\s*공장(?:\s*전체)?|양\s*공장', text)
+    # 정성 문장에서 '노동', '이동'을 건물의 '동'으로 읽지 않는다.
+    for match in re.finditer(r'[가-힣A-Za-z0-9]{1,12}(?:공장|사업장)', text):
+        site, scope = detect_site(match[0])
+        if scope == 'site' and not re.search(r'제\s*\d+\s*공장', site):
+            sites.append(site)
+    sites = list(dict.fromkeys(sites))
+    sites = [site for site in sites if not any(site != other and site in other for other in sites)]
+    return sites, 'site' if sites else 'unknown'
+
+
+_LOCAL_PERIOD = re.compile(r'20\d{2}\s*년\s*\d{1,2}'
+                           r'(?:\s*[~–-]\s*\d{1,2})?\s*월(?:\s*\d{1,2}\s*일)?'
+                           r'|20\d{2}[./-]\d{1,2}(?:[./-]\d{1,2})?')
+_SCOPE_FIELD = re.compile(r'(?:대상|적용|보고|집계|운영)\s*(?:기간|범위)|사업장\s*[:：]')
+
+
+def _scope_prefix(line):
+    prefix = re.split(r'[:：]', line.strip(), maxsplit=1)[0]
+    return bool(_LOCAL_PERIOD.match(prefix) and _sites(prefix)[1] != 'unknown')
+
+
+def _candidate_nodes(graph):
+    # OCR가 여러 적용 범위를 한 조항으로 묶어도 각 범위의 요건을 따로 읽는다.
+    # 내부 후보 키만 나누며 공용 링크의 실제 node_id·페이지는 변경하지 않는다.
+    for node in graph.text_nodes.values():
+        chunks, lines = [], []
+        for line in re.split(r'\n|(?<=[.!?。;])\s+(?=20\d{2})', node.text):
+            if lines and _scope_prefix(line):
+                chunks.append('\n'.join(lines))
+                lines = []
+            lines.append(line)
+        chunks.append('\n'.join(lines))
+        for index, text in enumerate(chunks):
+            yield (node.id, index), replace(node, text=text)
+
+
+def _node_scope(node, source_text):
+    """조항에 명시된 적용 범위가 문서 머리말보다 우선한다. 실행일은 별도다."""
+    default = _source_scope(source_text)
+    period, sites, scope, quotes = '', [], 'unknown', []
+    for line in f'{node.section}\n{node.text}'.splitlines():
+        if re.search(r'가상|FICTIONAL|제작|개편|아니|확정하지|다른', line, re.I):
+            continue
+        # 월/기간·사업장을 함께 선언한 접두부 또는 명시적인 메타데이터만
+        # 적용 범위로 읽는다. 회의 실시일·정비일은 문서 적용 기간을 덮지 않는다.
+        prefix = re.split(r'[:：]', line.strip(), maxsplit=1)[0]
+        local_sites, local_scope = _sites(prefix)
+        if not _scope_prefix(line) and not _SCOPE_FIELD.search(line):
+            continue
+        match = _LOCAL_PERIOD.search(line)
+        if match:
+            period = match[0]
+        if local_scope != 'unknown':
+            sites, scope = local_sites, local_scope
+        elif _SCOPE_FIELD.search(line):
+            local_sites, local_scope = _sites(line)
+            if local_scope != 'unknown':
+                sites, scope = local_sites, local_scope
+        quotes.append(line)
+    return replace(default, period_text=period or default.period_text,
+                   site=', '.join(sites) if sites else default.site,
+                   site_scope=scope if sites else default.site_scope,
+                   source_quote='\n'.join(quotes) if quotes else default.source_quote)
+
+
+def _scope_key(boundary, source):
+    period = re.sub(r'\s+|기록|대장|실적', '', boundary.period_text)
+    period = re.sub(r'(?:대상|적용|보고|집계|운영)기간[:：]?', '', period)
+    period = re.sub(r'(20\d{2})년(\d{1,2})월(\d{1,2})일',
+                    lambda m: f'{m[1]}-{int(m[2]):02d}-{int(m[3]):02d}', period)
+    period = re.sub(r'(20\d{2})년(\d{1,2})월',
+                    lambda m: f'{m[1]}-{int(m[2]):02d}', period)
+    site = ','.join(sorted(re.sub(r'\s+', '', part) for part in boundary.site.split(',')))
+    # 미확인 경계를 서로 다른 문서의 동일 범위라고 간주하지 않는다.
+    return (period, boundary.site_scope, site,
+            source if not period or boundary.site_scope == 'unknown' else '')
+
+
+def _scope_from_sources(answer, contexts, link_scopes=None):
     boundaries = []
     links = answer.evidence_links or answer.reference_links
-    for source in dict.fromkeys(e.file_name for e in links):
-        boundary = _source_scope(contexts.get(source, ''))
+    for link in links:
+        boundary = ((link_scopes or {}).get((link.file_name, link.node_id, link.quote))
+                    or _source_scope(contexts.get(link.file_name, '')))
         if boundary.is_known and boundary.label() not in [b.label() for b in boundaries]:
             boundaries.append(boundary)
     labels = [b.label() for b in boundaries]

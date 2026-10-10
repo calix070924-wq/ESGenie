@@ -230,3 +230,96 @@ def test_relevant_umbrella_clause_failure_is_still_applied():
     assert any('기계 방호장치' in f for f in a.flags)
     assert all('안전보건위원회' not in f for f in a.flags)
     assert len(audit[0]['findings']) == 2
+
+
+@pytest.mark.parametrize('code,pages', [
+    ('C-8', [('온실가스 관리 현황', '온실가스 감축목표를 수립하지 않는다. '
+             'Scope 1, Scope 2, Scope 3 배출을 산정·추적하지 않는다. '
+             '온실가스 산정 결과를 보고서에 공개하지 않는다.')]),
+    ('E-2', [NORMAL['E-2'][0], ('경영진 검토 실시 기록',
+             '08-30 회의를 실시하지 않았다. 대표이사가 검토 완료를 승인하지 않았다.')]),
+    ('E-6', [('교육 실시 기록', '관리자와 근로자를 대상으로 안전 규정·절차 이행 '
+             '교육 프로그램을 실시하지 않았다.')]),
+])
+def test_negated_actions_do_not_prove_requirements(code, pages):
+    a = answer(graph_for(pages, tag=code), code)
+    assert a.value is None and a.status == 'insufficient'
+    assert a.reference_links
+
+
+@pytest.mark.parametrize('negative', ['실시하지 않는다', '실시하지 않았다',
+                                     '실시하지 않습니다', '실시하지 못했다', '실시되지 않았다'])
+def test_negative_action_inflections_keep_review_pending(negative):
+    pages = [NORMAL['E-2'][0], ('경영진 검토 실시 기록', f'08-30 회의를 {negative}.')]
+    assert answer(graph_for(pages), 'E-2').value is None
+
+
+def test_no_retaliation_action_remains_protective_evidence():
+    text = ('근로자와 이해관계자 양방향 간담회를 실시한다. 고충 접수·구제 접근을 보장한다. '
+            '의견제기 근로자에게 보복을 하지 않는다.')
+    assert answer(graph_for([('참여·구제', text)]), 'E-8').value is True
+
+
+@pytest.mark.parametrize('period,site', [('2025년 7월', '대전 제3공장'),
+                                      ('2024년 8월', '부산 제7공장'),
+                                      ('2025년 7월', '부산 제7공장')])
+@pytest.mark.parametrize('one_clause', [False, True])
+def test_different_applicability_scopes_in_one_document_stay_pending(period, site, one_clause):
+    pages = [('경영 책임', '2024년 8월 대전 제3공장: ' + NORMAL['E-2'][0][1]),
+             ('경영진 검토 실시 기록', f'{period} {site}: ' + NORMAL['E-2'][1][1])]
+    if one_clause:
+        pages = [('경영 책임 및 검토 기록', '\n'.join(text for _, text in pages))]
+    a = answer(graph_for(pages, header='경영책임 및 검토 기록 모음'), 'E-2')
+    assert a.value is None and '동일 기간·사업장' in a.rationale
+    assert all(e.node_id in graph_for(pages).text_nodes for e in a.evidence_links)
+
+
+def test_equal_declared_scope_keeps_all_pages_connected():
+    pages = [(s, '2024년 8월 대전 제3공장: ' + t) for s, t in NORMAL['E-2']]
+    a = answer(graph_for(pages, header='2024년 8월 기록 / 대전 제3공장'), 'E-2')
+    assert a.value is True and a.status == 'verified'
+    assert {e.page for e in a.evidence_links} == {0, 1}
+
+
+def test_equal_scope_can_combine_partial_requirements_from_separate_documents():
+    g = graph_for(NORMAL['E-2'][:1], name='assignment.pdf')
+    other = graph_for(NORMAL['E-2'][1:], name='review.pdf')
+    for node in other.text_nodes.values():
+        g.add_text_node(replace(node, id='other_' + node.id))
+    g.source_texts.update(other.source_texts)
+    a = answer(g, 'E-2')
+    assert a.value is True and len({e.file_name for e in a.evidence_links}) == 2
+
+
+@pytest.mark.parametrize('when', ['2024년 8월 30일', '8월 30일', '2024/08/30',
+                                '2024.08.30', '2024-08-30', '08/30', '8.30', '16시 30분', '16:30'])
+def test_review_record_accepts_equivalent_date_and_time_formats(when):
+    pages = [NORMAL['E-2'][0], ('경영진 검토 실시 기록',
+             f'{when} 회의를 실시하고 대표이사와 업무 담당자가 결정 사항을 확인했다.')]
+    a = answer(graph_for(pages), 'E-2')
+    assert a.value is True and {e.page for e in a.evidence_links} == {0, 1}
+
+
+@pytest.mark.parametrize('when', ['2024년', '관리번호 MGT-0130', '99-99'])
+def test_year_document_number_or_invalid_date_is_not_an_execution_timestamp(when):
+    pages = [NORMAL['E-2'][0], ('경영진 검토 실시 기록', f'{when} 회의를 실시하고 완료를 확인했다.')]
+    assert answer(graph_for(pages), 'E-2').value is None
+
+
+@pytest.mark.parametrize('header,site,scope', [
+    ('2024년 8월 기록 / 부산사업장', '부산사업장', 'site'),
+    ('2024년 8월 기록 / 부산공장', '부산공장', 'site'),
+    ('2024년 8월 기록 / 전사 모든 사업장', '전사', 'entity'),
+    ('전사 모든 사업장', '전사', 'entity'),
+    ('사업장: 부산사업장\n대상 기간: 2024년 8월', '부산사업장', 'site'),
+])
+def test_named_site_and_explicit_entity_scope_survive_in_shared_answer(header, site, scope):
+    a = answer(graph_for(NORMAL['E-7'], header=header), 'E-7')
+    assert a.value is True and a.boundary['site'] == site
+    assert a.boundary['site_scope'] == scope and site in a.boundary_label
+
+
+def test_labor_and_movement_words_are_not_sites():
+    a = answer(graph_for(NORMAL['E-7'], header='2024년 8월 기록\n노동·인권 및 자료 이동 관리'), 'E-7')
+    assert a.value is True and a.boundary['site'] == ''
+    assert a.boundary['site_scope'] == 'unknown'
