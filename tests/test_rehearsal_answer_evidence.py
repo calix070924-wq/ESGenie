@@ -323,3 +323,123 @@ def test_labor_and_movement_words_are_not_sites():
     a = answer(graph_for(NORMAL['E-7'], header='2024년 8월 기록\n노동·인권 및 자료 이동 관리'), 'E-7')
     assert a.value is True and a.boundary['site'] == ''
     assert a.boundary['site_scope'] == 'unknown'
+
+
+@pytest.mark.parametrize('tracked', [False, True])
+def test_scope_three_topic_in_heading_cannot_replace_negated_tracking(tracked):
+    text = ('온실가스 감축목표를 수립한다. Scope 1, Scope 2 배출을 산정·추적한다. '
+            + ('Scope 3 배출을 추적한다. ' if tracked else 'Scope 3 배출은 추적하지 않는다. ')
+            + '온실가스 산정 결과를 보고서에 공개한다.')
+    a = answer(graph_for([('온실가스 관리 및 Scope 3 배출 추적', text)]), 'C-8')
+    assert a.value is (True if tracked else None), a.to_dict()
+
+
+@pytest.mark.parametrize('same_scope', [False, True])
+def test_labeled_scope_fields_in_one_clause_are_separate_applicability_scopes(same_scope):
+    period, site = ('2024년 8월', '대전 제3공장') if same_scope else ('2025년 7월', '부산 제7공장')
+    text = ('적용 기간: 2024년 8월\n사업장: 대전 제3공장\n' + NORMAL['E-2'][0][1]
+            + f'\n적용 기간: {period}\n사업장: {site}\n' + NORMAL['E-2'][1][1])
+    a = answer(graph_for([('경영 책임 및 검토 기록', text)], header='기록 모음'), 'E-2')
+    assert a.value is (True if same_scope else None), a.to_dict()
+
+
+@pytest.mark.parametrize('same_scope', [False, True])
+def test_site_before_period_still_declares_an_applicability_scope(same_scope):
+    period, site = ('2024년 8월', '대전 제3공장') if same_scope else ('2025년 7월', '부산 제7공장')
+    pages = [('경영 책임', '대전 제3공장 / 2024년 8월: ' + NORMAL['E-2'][0][1]),
+             ('경영진 검토 실시 기록', f'{site} / {period}: ' + NORMAL['E-2'][1][1])]
+    a = answer(graph_for(pages, header='기록 모음'), 'E-2')
+    assert a.value is (True if same_scope else None), a.to_dict()
+
+
+@pytest.mark.parametrize('separator', ['-', '/'])
+def test_date_in_source_header_is_preserved_independently_of_separator(separator):
+    date = separator.join(['2024', '08', '30'])
+    a = answer(graph_for(NORMAL['E-7'], header=date + ' 기준 / 부산사업장'), 'E-7')
+    assert a.value is True and a.boundary['site'] == '부산사업장'
+    assert date in a.boundary['period_text'], a.to_dict()
+
+
+@pytest.mark.parametrize('scope_three', ['', 'Scope 3 배출은 추적하지 않는다. ',
+                                       'Scope 3 배출은 산정하지 않았다. '])
+def test_heading_cannot_fill_absent_or_partially_negated_scope_three(scope_three):
+    text = ('온실가스 감축목표를 수립한다. Scope 1, Scope 2 배출을 산정·추적한다. '
+            + scope_three + '온실가스 산정 결과를 보고서에 공개한다.')
+    a = answer(graph_for([('온실가스 관리 및 Scope 3 배출 추적', text)], tag='C-8'), 'C-8')
+    assert a.value is None and 'Scope 3 추적' in a.evidence_needed
+    assert all('Scope 3' not in e.quote for e in a.evidence_links)
+
+
+@pytest.mark.parametrize('site_first', [False, True])
+@pytest.mark.parametrize('period,site', [('2025년 7월', '대전 제3공장'),
+                                      ('2024년 8월', '부산 제7공장'),
+                                      ('2025년 7월', '부산 제7공장'),
+                                      ('2024년 8월', '대전 제3공장')])
+def test_scope_field_order_does_not_change_requirement_coverage(site_first, period, site):
+    def fields(period, site):
+        rows = [f'적용 기간: {period}', f'사업장: {site}']
+        return '\n'.join(reversed(rows) if site_first else rows)
+    text = (fields('2024년 8월', '대전 제3공장') + '\n' + NORMAL['E-2'][0][1]
+            + '\n' + fields(period, site) + '\n' + NORMAL['E-2'][1][1])
+    g = graph_for([('경영 책임 및 검토 기록', text)], header='기록 모음')
+    a = answer(g, 'E-2')
+    same = period == '2024년 8월' and site == '대전 제3공장'
+    assert a.value is (True if same else None)
+    assert a.status == ('verified' if same else 'insufficient')
+    assert all(e.node_id in g.text_nodes and e.page == 0 for e in a.evidence_links)
+    if not same:
+        assert '동일 기간·사업장' in a.rationale and not a.boundary
+
+
+@pytest.mark.parametrize('one_clause', [False, True])
+@pytest.mark.parametrize('same_scope', [False, True])
+def test_site_first_scope_prefix_preserves_real_links_across_inline_blocks(one_clause, same_scope):
+    prefix = '대전 제3공장 / 2024년 8월' if same_scope else '부산 제7공장 / 2025년 7월'
+    pages = [(NORMAL['E-2'][0][0], '대전 제3공장 / 2024년 8월: ' + NORMAL['E-2'][0][1]),
+             (NORMAL['E-2'][1][0], prefix + ': ' + NORMAL['E-2'][1][1])]
+    if one_clause:
+        pages = [('경영 책임 및 검토 기록', ' '.join(t for _, t in pages))]
+    g = graph_for(pages, header='기록 모음')
+    a = answer(g, 'E-2')
+    assert a.value is (True if same_scope else None)
+    assert all(e.node_id in g.text_nodes for e in a.evidence_links)
+    assert {e.page for e in a.evidence_links} == set(range(len(pages)))
+
+
+def test_execution_date_and_site_mentions_do_not_replace_document_scope():
+    pages = [NORMAL['E-2'][0], ('경영진 검토 실시 기록',
+             '2024년 8월 30일 대전 제3공장에서 회의를 실시하고 완료를 확인했다.')]
+    a = answer(graph_for(pages), 'E-2')
+    assert a.value is True
+    assert '아산 제4공장' in a.boundary['site']
+    assert '2024년 8월 기록' in a.boundary['period_text']
+
+
+@pytest.mark.parametrize('header', ['2024/08/30 기준 / 부산사업장',
+                                    '부산사업장 / 2024/08/30 기준',
+                                    '2024/08/01~2024/08/30 기준 | 부산사업장'])
+def test_date_slashes_survive_field_separators_and_ranges(header):
+    a = answer(graph_for(NORMAL['E-7'], header=header), 'E-7')
+    assert a.value is True and a.boundary['site'] == '부산사업장'
+    assert '2024/08/30' in a.boundary['period_text']
+    if '~' in header:
+        assert '2024/08/01~2024/08/30' in a.boundary['period_text']
+
+
+@pytest.mark.parametrize('completed', [False, True])
+def test_table_target_summary_requires_actual_delivery_records(completed):
+    pages = [NORMAL['E-7'][0], NORMAL['E-7'][2],
+             ('전달 기록', '공급사 6곳·고객 1곳이 전달 대상이다.')]
+    if completed:
+        pages.append(('전달 기록', '공급사와 고객의 안내 수령을 확인했다. 문의에 회신했다.'))
+    a = answer(graph_for(pages), 'E-7')
+    assert a.value is (True if completed else None)
+    if not completed:
+        assert '공급사·고객 전달 운영' in a.evidence_needed
+
+
+def test_unrelated_understanding_check_cannot_prove_supplier_customer_delivery():
+    pages = [NORMAL['E-7'][0], NORMAL['E-7'][2],
+             ('전달 절차', '4월 수령 확인에서는 한국어 본문의 이해 가능 여부를 확인했다.')]
+    a = answer(graph_for(pages), 'E-7')
+    assert a.value is None and '공급사·고객 전달 운영' in a.evidence_needed

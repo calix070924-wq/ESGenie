@@ -93,7 +93,9 @@ REQUIREMENTS = {
         R('공급사 전달·수령', r'공급사|공급자|협력사', r'전달|발송|수령|제공|배포'),
         R('고객 전달·수령', r'고객', r'전달|발송|수령|제공|배포'),
         R('개별 전달 확인 기록', r'근무자별|인원별|수신자별|전자 열람', r'수령|열람|이해', r'확인|완료|기록'),
-        R('공급사·고객 전달 운영', r'공급사|공급자|협력사', r'고객', r'수령|전달|배포', r'\d+\s*곳|확인했다|확인하였다|확인했습니다'),
+        R('공급사·고객 전달 운영', r'공급사|공급자|협력사', r'고객',
+          r'수령[^\n.!?。;]{0,30}확인|(?:전달|배포)[^\n.!?。;]{0,30}완료',
+          r'\d+\s*곳|(?:공급사|공급자|협력사)[^\n.!?。;]{0,60}고객[^\n.!?。;]{0,60}수령[^\n.!?。;]{0,30}확인(?:했다|하였다|했습니다)'),
         R('문의·정정 회신', r'문의|정정', r'회신|답변|전달'),
     ),
     'E-8': (
@@ -174,6 +176,7 @@ def assess_requirements(answer, q, graph):
     requirements = REQUIREMENTS[code]
     related, proofs, contexts = {}, defaultdict(list), defaultdict(list)
     node_scopes = {}
+    section_parts = defaultdict(list)
     source_texts = getattr(graph, 'source_texts', {})
     for proof_id, node in _candidate_nodes(graph):
         if is_survey(node):
@@ -196,17 +199,38 @@ def assess_requirements(answer, q, graph):
                 supported = ''
             elif education_document and node.page == 0 and supported.strip():
                 supported = supported_parts(header) + '\n' + supported
-        body = f'{node.section}\n{supported}' if supported.strip() else ''
+        # 제목은 후보 주제일 뿐 실행/규정의 근거가 아니다. 제거된 부정문의
+        # 주어를 제목에서 다시 가져와 다른 문장의 실행 동사와 결합하지 않는다.
+        body = supported
         hits = [r for r in requirements if body and r.matches(body)]
+        boundary = _node_scope(node, source_texts.get(node.source_file, ''))
+        if body.strip():
+            # 표의 대상/수량 설명과 실제 수령 행은 별도 OCR 조항일 수 있다.
+            # 동일 문서·절·적용 범위의 본문만 연결하며 제목은 입증에 사용하지 않는다.
+            section_parts[(node.source_file, node.section,
+                           _scope_key(boundary, node.source_file))].append(
+                               (proof_id, node, body, boundary))
         # 태그만 일치한 부분 자료는 원문 참조로 남긴다.
         link = evidence_link(node)
         if hits:
             related[proof_id] = replace(link, quote=supported)
-            node_scopes[proof_id] = _node_scope(node, source_texts.get(node.source_file, ''))
+            node_scopes[proof_id] = boundary
             for req in hits:
                 proofs[req.label].append(proof_id)
         elif code in link.kesg_codes:
             related[proof_id] = link
+    for parts in section_parts.values():
+        body = '\n'.join(part[2] for part in parts)
+        for req in requirements:
+            if not req.matches(body):
+                continue
+            for proof_id, node, supported, boundary in parts:
+                if not any(re.search(p, supported, re.I | re.S) for p in req.patterns):
+                    continue
+                related[proof_id] = replace(evidence_link(node), quote=supported)
+                node_scopes[proof_id] = boundary
+                if proof_id not in proofs[req.label]:
+                    proofs[req.label].append(proof_id)
     # 한 문서가 전체 요건을 입증하면 그 문서의 운영 기록을 우선한다. 부수 문서의
     # 요약·안내 한 줄이 필수 운영 기록을 대체하거나 범위를 넓히지 않게 한다.
     # 파일이 같아도 조항의 적용 기간·사업장이 다를 수 있다. 요건을 동일한
@@ -275,8 +299,8 @@ def _source_scope(text):
     context = '\n'.join(header)
     date_parts = []
     for line in header:
-        for part in re.split(r'[/|]', line):
-            if re.search(r'20\d{2}[-.년]', part):
+        for part in re.split(r'[|]|(?<!\d)/|/(?!\d)', line):
+            if re.search(r'20\d{2}\s*[-./년]', part):
                 date_parts.append(part.strip())
     sites, site_scope = _sites(context)
     for line in lines:
@@ -316,19 +340,40 @@ _SCOPE_FIELD = re.compile(r'(?:대상|적용|보고|집계|운영)\s*(?:기간|�
 
 def _scope_prefix(line):
     prefix = re.split(r'[:：]', line.strip(), maxsplit=1)[0]
-    return bool(_LOCAL_PERIOD.match(prefix) and _sites(prefix)[1] != 'unknown')
+    period = _LOCAL_PERIOD.search(prefix)
+    sites, scope = _sites(prefix)
+    if not period or scope == 'unknown':
+        return False
+    remainder = prefix[:period.start()] + prefix[period.end():]
+    for site in sorted(sites, key=len, reverse=True):
+        remainder = remainder.replace(site, '')
+    # 날짜·사업장을 언급한 실행 문장을 적용 범위 선언으로 읽지 않는다.
+    remainder = re.sub(r'기준|대상|적용|기간|범위|전체|모든|사업장|전사|[\s/|·,()\[\]-]', '', remainder)
+    return not remainder
+
+
+def _scope_declaration(line):
+    return _scope_prefix(line) or bool(_SCOPE_FIELD.search(line))
 
 
 def _candidate_nodes(graph):
     # OCR가 여러 적용 범위를 한 조항으로 묶어도 각 범위의 요건을 따로 읽는다.
     # 내부 후보 키만 나누며 공용 링크의 실제 node_id·페이지는 변경하지 않는다.
     for node in graph.text_nodes.values():
-        chunks, lines = [], []
-        for line in re.split(r'\n|(?<=[.!?。;])\s+(?=20\d{2})', node.text):
-            if lines and _scope_prefix(line):
+        chunks, lines, has_body = [], [], False
+        for line in re.split(r'\n|(?<=[.!?。;])\s+', node.text):
+            declaration = _scope_declaration(line)
+            # 연속된 기간/사업장 메타데이터는 하나의 범위다. 본문 뒤의 새
+            # 선언부터 별도 후보로 읽어 앞선 요건에 마지막 범위가 덮이지 않게 한다.
+            if has_body and declaration:
                 chunks.append('\n'.join(lines))
                 lines = []
+                has_body = False
             lines.append(line)
+            if line.strip() and not declaration:
+                has_body = True
+            elif _scope_prefix(line) and re.search(r'[:：]\s*\S', line):
+                has_body = True
         chunks.append('\n'.join(lines))
         for index, text in enumerate(chunks):
             yield (node.id, index), replace(node, text=text)
@@ -345,7 +390,7 @@ def _node_scope(node, source_text):
         # 적용 범위로 읽는다. 회의 실시일·정비일은 문서 적용 기간을 덮지 않는다.
         prefix = re.split(r'[:：]', line.strip(), maxsplit=1)[0]
         local_sites, local_scope = _sites(prefix)
-        if not _scope_prefix(line) and not _SCOPE_FIELD.search(line):
+        if not _scope_declaration(line):
             continue
         match = _LOCAL_PERIOD.search(line)
         if match:

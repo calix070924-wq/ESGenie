@@ -5,6 +5,7 @@ No OCR/LLM calls. Original PDFs, extraction records and labels are never written
 import argparse
 import json
 import re
+from dataclasses import replace
 from pathlib import Path
 
 from replay_rehearsal_answer_evidence import record
@@ -20,7 +21,7 @@ def main():
     args.output.mkdir(parents=True, exist_ok=True)
     checks = []
 
-    def check(path, name, code, transform, expected, scope=''):
+    def check(path, name, code, transform, expected, scope='', period=''):
         sheet, _, _ = record(path, transform)
         a = next(a for a in sheet.answers if a.qid == f'RBA-{code}')
         passed = a.value is expected and a.status == ('verified' if expected else 'insufficient')
@@ -28,6 +29,8 @@ def main():
             passed = passed and a.boundary.get('site') == scope
             if scope == '전사':
                 passed = passed and a.boundary.get('site_scope') == 'entity'
+        if period:
+            passed = passed and period in a.boundary.get('period_text', '')
         checks.append({'check': name, 'passed': bool(passed), 'answer': a.to_dict()})
 
     for stage, dirname in STAGES.items():
@@ -89,6 +92,60 @@ def main():
                         ext.raw_text = '2024년 8월 기록 / ' + site
             check(path, f'{stage}:E-7:site_{site}', 'E-7', named_site, True,
                   '전사' if site.startswith('전사') else site)
+
+        for form in ('labeled_block', 'site_first'):
+            for case, period, site in [('period', '2025년 7월', '대전 제3공장'),
+                                       ('site', '2024년 8월', '부산 제7공장'),
+                                       ('both', '2025년 7월', '부산 제7공장'),
+                                       ('equal', '2024년 8월', '대전 제3공장')]:
+                def declared_scopes(inputs, form=form, period=period, site=site):
+                    for ext in inputs:
+                        if not ext.source_file.startswith('15_'):
+                            continue
+                        ext.raw_text = '경영 책임 및 검토 기록 모음'
+                        if form == 'site_first':
+                            for clause in ext.clauses:
+                                p, s = ('2024년 8월', '대전 제3공장') if clause.page == 0 else (period, site)
+                                clause.text = f'{s} / {p}: ' + clause.text
+                        else:
+                            blocks = []
+                            for page, p, s in [(0, '2024년 8월', '대전 제3공장'), (1, period, site)]:
+                                # 책임·절차 본문과 실제 검토 행을 한 OCR 조항으로 묶는다.
+                                # 별도 의사결정/요약은 합치지 않아 서로 다른 범위의
+                                # 부분 요건을 연결하는 실패만 독립적으로 검사한다.
+                                text = '\n'.join(c.text for c in ext.clauses if c.page == page
+                                                 and (page == 0 or c.section == '경영진 정기 검토 실시 기록'))
+                                blocks.append(f'적용 기간: {p}\n사업장: {s}\n' + text)
+                            ext.clauses = [replace(ext.clauses[0], section='경영 책임 및 검토 기록',
+                                                   text='\n'.join(blocks))]
+                check(path, f'{stage}:E-2:{form}_{case}', 'E-2', declared_scopes,
+                      True if case == 'equal' else None)
+
+        for case, scope_three in [('absent', ''), ('negated', 'Scope 3 배출은 추적하지 않는다. '),
+                                  ('tracked', 'Scope 3 배출을 추적한다. ')]:
+            def heading_topic(inputs, scope_three=scope_three):
+                for ext in inputs:
+                    if ext.source_file.startswith('06_'):
+                        ext.clauses[0].section = '온실가스 관리 및 Scope 3 배출 추적'
+                        ext.clauses[0].text = ('온실가스 감축목표를 수립한다. '
+                                               'Scope 1, Scope 2 배출을 산정·추적한다. '
+                                               + scope_three + '온실가스 산정 결과를 보고서에 공개한다.')
+            check(path, f'{stage}:C-8:heading_topic_{case}', 'C-8', heading_topic,
+                  True if case == 'tracked' else None)
+
+        for case, header, period in [
+            ('hyphen', '2024-08-30 기준 / 부산사업장', '2024-08-30'),
+            ('slash', '2024/08/30 기준 / 부산사업장', '2024/08/30'),
+            ('dot', '2024.08.30 기준 / 부산사업장', '2024.08.30'),
+            ('site_first', '부산사업장 / 2024/08/30 기준', '2024/08/30'),
+            ('range', '2024/08/01~2024/08/30 기준 | 부산사업장', '2024/08/01~2024/08/30'),
+        ]:
+            def source_date(inputs, header=header):
+                for ext in inputs:
+                    if ext.source_file.startswith('16_'):
+                        ext.raw_text = header
+            check(path, f'{stage}:E-7:source_date_{case}', 'E-7', source_date, True,
+                  scope='부산사업장', period=period)
 
     payload = {'mode': 'saved_extraction_copies_review_controls', 'external_calls': 0,
                'passed': all(c['passed'] for c in checks), 'checks': checks,
