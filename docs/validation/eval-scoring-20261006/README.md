@@ -675,3 +675,33 @@ skip·xfail을 새로 넣지 않았다. 변경 전 전체는 5680 passed / 27 sk
 | 실행 ZIP | `ESGenie실행결과_LIVE_n5_d8a0de8_20261007.zip`, sha256 `78616b54c210304537fbaf330a1319dd00407b596050acafc59a305963d17fdf`. 받은 파일의 해시가 B의 값과 같고, 파일 65개가 B의 SHA256SUMS 목록과 빠짐없이 일치함을 확인했다 |
 | 응답 열람 | **라벨 커밋 전에는 응답 JSON·pipeline·exports를 열지 않았다.** 해시만 대조했다 |
 
+## 8. 2026-10-10 채점 결과 — `LIVE_n5_d8a0de8` (virtual / mixed)
+
+**순서 기록.** 라벨 커밋 `52f03f47787963f480b92cc3040ef5b685bef77e`(`data/eval/labels/hanwool_bm_rba42_v1.csv`, sha256 `a18a87a6cc388e1686fea1c2d35b8ede9820e83e5b7471e3198ebfec58116d17`) → 그 다음에 ZIP 압축 해제·채점. 응답 JSON은 라벨 커밋 뒤에 처음 열었다. 채점 뒤 라벨을 고치지 않았다.
+
+| 항목 | 값 |
+|---|---|
+| 채점기·형식 | 형식 `1.1`(확정 커밋 `c1bfa6730bb3f77bfeefd74405f293a1db8acbb0`), 이 브랜치 코드 |
+| 실행 | `LIVE_n5_d8a0de8`, 코드 `d8a0de8a434e4be97143f05d4694c9aa6b5ee14c`, 모델 `gpt-4.1-mini`, `--dataset-tag virtual --material-kind mixed` |
+| ZIP | sha256 `78616b54c210304537fbaf330a1319dd00407b596050acafc59a305963d17fdf`. 풀린 파일 65개가 B의 SHA256SUMS와 모두 일치(불일치·누락·초과 0) |
+| 채점 결과 파일 | `outputs/eval/2026-10-10_LIVE_n5_d8a0de8_채점/score_result.json`(gitignored), sha256 `b27849ccddb280fcc903b41c29d3275b88e0d996a946676da1c5614f74b6a85a` |
+| 구조 | 96행(48×2), 중복·누락·예상 외 0, 형식 문제 0, `unresolved` 0 → 공식 비율 산출 |
+
+단계별(initial·followup 값이 같다) / 합산(참고):
+
+| 지표 | 단계별 | 합산 |
+|---|---|---|
+| M1 답변·근거 동시 정답률 | 2/7 = 28.6% | 4/14 = 28.6% |
+| M2 잘못된 확정 수 | 11 | 22 |
+| M3 불필요한 보류 수 | 5 | 10 |
+| M4 확정 제출률 | 13/48 = 27.1% | 26/96 = 27.1% |
+| M5 자료 연결률 | 13/13 | 26/26 |
+| M6 값 제출률 | 13/48 = 27.1% | 26/96 = 27.1% |
+
+집계 위치(합산 96행): correct_hold 60, wrong_confirmation 22, unnecessary_hold 10, correct_answer 4. `hold_reason_unknown` 56건 — 공통 형식에 시스템 보류 사유 필드가 없어 사유 일치는 판단하지 않았다. 종합 점수는 만들지 않았다.
+
+- 잘못된 확정(단계마다 11): RBA-A-3, C-2, C-4, C-7, C-8, D-2, D-6, D-8, E-3, E-4, E-6.
+- 불필요한 보류(단계마다 5): RBA-B-6, C-4-E-6-1, C-4-E-6-2, E-7, E-11.
+- 정답 확정(단계마다 2): RBA-E-2, E-10.
+- initial과 followup의 결과가 문항별로 같다. 보완 1건이 이 문항들의 판정을 바꾸지 않았다(원인 분석은 이 기록의 범위 밖).
+
