@@ -1,0 +1,11 @@
+stage,qid,expected_decision,hold_reason,expected_value,expected_unit,tolerance,expected_sources,boundary_note,labeler,note
+initial,RBA-C-4-E-6-1,,,,,,,,,
+initial,RBA-C-4-E-6-2,,,,,,,,,
+initial,RBA-C-5-E-7-1,,,,,,,,,
+initial,RBA-C-8-E-4-1,,,,,,,,,
+initial,RBA-C-8-E-4-2,,,,,,,,,
+followup,RBA-C-4-E-6-1,,,,,,,,,
+followup,RBA-C-4-E-6-2,,,,,,,,,
+followup,RBA-C-5-E-7-1,,,,,,,,,
+followup,RBA-C-8-E-4-1,,,,,,,,,
+followup,RBA-C-8-E-4-2,,,,,,,,,
