@@ -279,7 +279,11 @@ def pipeline_record(output) -> dict:
             # 확인 목록과 원장 소비값(DataPoint) — 답변·내보내기와 같은 실행에서 대조한다.
             "review_findings": [f.to_dict() for f in getattr(output, "review_findings", [])],
             "data_points": getattr(output.v15_trace, "data_points", None) if output.v15_trace else None,
-            "report_export": getattr(output, "report_export", None)}
+            "report_export": getattr(output, "report_export", None),
+            # 단계별 소요 시간·캐시 적중(§3.1). 이 시점에는 파이프라인 단계까지만 들어 있다
+            # (pipeline.json은 후속 실패에도 남기려고 run() 직후에 쓴다).
+            # 응답서 생성·내보내기까지 포함한 전체는 timings.json을 본다.
+            "timings": list(getattr(output, "timings", []) or [])}
 
 
 # ---- core ------------------------------------------------------------------------
@@ -322,6 +326,7 @@ def cmd_core(args) -> None:
             else UpstageTape(target / "raw_upstage", "record") if args.record_upstage else None)
     from esgenie import llm_cache
     from esgenie.pipeline import run
+    from esgenie.run_timing import RunTiming
     from esgenie.ssot import ocr_cache
     from esgenie.supplychain import (copy_evidence_pack, export_response_sheet, export_response_sheet_pdf,
                                      parse_saq_claims, respond_from_pipeline)
@@ -342,30 +347,48 @@ def cmd_core(args) -> None:
     llm_cache.reset_stats()
     started, output = time.monotonic(), None
     settings.strict_llm = not replay or live_llm
+    # 호출 쪽 계측(§3.1). run() 전에 시작해 실행 전체 경과를 `_run_total`로 잡는다.
+    # 파이프라인이 기록한 단계 뒤에 응답서 생성·내보내기를 **같은 모양**으로 덧붙인다.
+    timing = RunTiming()
     try:
-        claims = parse_saq_claims(company)
+        with timing.stage("saq_claims_parse", files=len(company)):
+            claims = parse_saq_claims(company)
         output = run(f"hanwool-core-{args.stage}", areas=["E", "S", "G"], corp_name=args.company,
                      industry=args.industry, report_year=args.year, use_dart=False,
                      evidence_files=evidence, demo_greenwash=False, save_traces=False,
                      export_outputs=args.export, export_report=args.export, export_root=str(exports),
                      profile="sme")
         dump(target / "pipeline.json", pipeline_record(output))
-        sheet = respond_from_pipeline(output, args.framework, supplier_claims=claims, enable_drafts=False)
-        sheet.corp_name = args.company
-        dump(target / "result.json", {"sheet": sheet.to_dict(), "generated_at": now()})
+        # 파이프라인 기록 리스트를 이어받아 뒤에 덧붙인다(두 벌로 나누지 않는다).
+        timing.records = ([r for r in timing.records] + list(output.timings))
+        output.timings = timing.records
+        with timing.stage("respond_sheet", framework=args.framework):
+            sheet = respond_from_pipeline(output, args.framework, supplier_claims=claims, enable_drafts=False)
+            sheet.corp_name = args.company
+        with timing.stage("result_json_write"):
+            dump(target / "result.json", {"sheet": sheet.to_dict(), "generated_at": now()})
         if args.export:
             sheet_dir = exports / "response_sheet"
-            copy_evidence_pack(sheet, sheet_dir, evidence)
-            paths = {"xlsx": export_response_sheet(sheet, sheet_dir),
-                     "pdf": export_response_sheet_pdf(sheet, sheet_dir, evidence_base_dir=sheet_dir)}
+            paths = {}
+            with timing.stage("evidence_pack_copy", framework=args.framework):
+                copy_evidence_pack(sheet, sheet_dir, evidence)
+            with timing.stage("export_xlsx", framework=args.framework):
+                paths["xlsx"] = export_response_sheet(sheet, sheet_dir)
+            with timing.stage("export_pdf", framework=args.framework):
+                paths["pdf"] = export_response_sheet_pdf(sheet, sheet_dir, evidence_base_dir=sheet_dir)
             for framework in args.also_framework or []:
-                other = respond_from_pipeline(output, framework, supplier_claims=claims, enable_drafts=False)
-                other.corp_name = args.company
+                with timing.stage("respond_sheet", framework=framework):
+                    other = respond_from_pipeline(output, framework, supplier_claims=claims, enable_drafts=False)
+                    other.corp_name = args.company
                 other_dir = exports / f"response_sheet_{framework}"
-                copy_evidence_pack(other, other_dir, evidence)
+                with timing.stage("evidence_pack_copy", framework=framework):
+                    copy_evidence_pack(other, other_dir, evidence)
                 dump(target / f"result_{framework}.json", {"sheet": other.to_dict(), "generated_at": now()})
-                paths[framework] = {"xlsx": export_response_sheet(other, other_dir),
-                                    "pdf": export_response_sheet_pdf(other, other_dir, evidence_base_dir=other_dir)}
+                with timing.stage("export_xlsx", framework=framework):
+                    _xlsx = export_response_sheet(other, other_dir)
+                with timing.stage("export_pdf", framework=framework):
+                    _pdf = export_response_sheet_pdf(other, other_dir, evidence_base_dir=other_dir)
+                paths[framework] = {"xlsx": _xlsx, "pdf": _pdf}
             sections = {area: {"final_text": v.final_text, "used_mock_llm": getattr(v, "used_mock_llm", None),
                                "final_score": v.final_score, "converged": v.converged,
                                "hitl_required": v.hitl_required}
@@ -377,6 +400,27 @@ def cmd_core(args) -> None:
         (target / "failure.txt").write_text(traceback.format_exc(), encoding="utf-8")
         raise
     finally:
+        # 캐시 재생 실행과 신규 실행을 섞어 보지 않도록 실행 모드를 **실제 플래그**에서
+        # 적는다(추정하지 않는다). 단계별 llm_cache_delta·L0_ocr_extract의 ocr_cache와
+        # 함께 보면 어느 단계가 캐시를 탔는지 바로 나뉜다.
+        timing.finish("_run_total")
+        _hits, _misses, _mode = ocr_cache.summarize(getattr(output, "ocr_extractions", []) or [])
+        dump(target / "timings.json", {
+            "stage": args.stage,
+            "run_id": args.run_id or target.parent.name,
+            "cache_profile": {
+                "mode": ("upstage_replay_live_llm" if live_llm
+                         else "upstage_replay" if replay else "direct_live"),
+                "upstage_replay": replay,
+                "llm_live_calls_allowed": (not replay) or live_llm,
+                "ocr_cache": {"hits": _hits, "misses": _misses, "mode": _mode},
+                "llm_cache": llm_cache.stats(),
+            },
+            "note": "seconds는 time.perf_counter() 기준이다. `_`로 시작하는 행은 합계 행이며 "
+                    "staged_sum에 포함하지 않는다. 이 시간은 전부 기계 시간이고 "
+                    "사람 작업시간(worklog)과 **합산하지 않는다**.",
+            "stages": timing.records,
+        })
         dump(target / "run_stats.json", run_stats(started, llm_cache, ocr_cache, upstage, output, {
             "stage": args.stage, "document_count": len(files), "evidence_count": len(evidence),
             "company_answer_count": len(company), "cache_files_at_end": count_cache(cache_dir),

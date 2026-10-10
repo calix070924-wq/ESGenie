@@ -1,0 +1,81 @@
+{
+  "pass": "replay",
+  "evidence_kind": "live_api",
+  "input": {
+    "file": "data/test_docs/safety_policy_2025.pdf",
+    "doc_type": "safety_minutes",
+    "channel": "unstructured",
+    "note": "저장소의 공개 테스트 문서다. BM 원본·실제 응답이 아니다"
+  },
+  "cache_profile": {
+    "ocr_cache": {
+      "hits": 1,
+      "misses": 0,
+      "state": "hit",
+      "mode": "hit"
+    },
+    "llm_cache": {
+      "mode": "on",
+      "hits": 0,
+      "misses": 0,
+      "live_calls": 0,
+      "successes": 0,
+      "failures": 0
+    }
+  },
+  "calls": {
+    "live_calls": 0,
+    "successes": 0,
+    "failures": 0,
+    "model": "gpt-4.1-mini-text",
+    "chunks": 1
+  },
+  "tokens": {
+    "prompt_tokens": null,
+    "completion_tokens": null,
+    "total_tokens": null
+  },
+  "extraction": {
+    "status": "complete",
+    "mock": false,
+    "raw_text_len": 379,
+    "metric_count": 5,
+    "clause_count": 5
+  },
+  "invariant": {
+    "total_seconds": 0.015556,
+    "staged_sum": 0.015529,
+    "unstaged_seconds": 2.7e-05
+  },
+  "stages": [
+    {
+      "stage": "ocr_route_document",
+      "seconds": 0.005078,
+      "llm_cache_delta": {
+        "failures": 0,
+        "hits": 0,
+        "live_calls": 0,
+        "misses": 0,
+        "successes": 0
+      }
+    },
+    {
+      "stage": "ocr_extract_document",
+      "engine": "gpt-4.1-mini-text",
+      "seconds": 0.010451,
+      "llm_cache_delta": {
+        "failures": 0,
+        "hits": 0,
+        "live_calls": 0,
+        "misses": 0,
+        "successes": 0
+      }
+    },
+    {
+      "stage": "_ocr_total",
+      "seconds": 0.015556,
+      "staged_sum": 0.015529,
+      "unstaged_seconds": 2.7e-05
+    }
+  ]
+}
