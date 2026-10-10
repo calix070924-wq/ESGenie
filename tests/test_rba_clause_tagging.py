@@ -67,7 +67,7 @@ def _sheet_from_clauses(clauses):
 
 def test_rba_unique_item_filled_by_clause():
     sheet = _sheet_from_clauses([
-        ExtractedClause(section="근로시간", text="주 52시간 근로시간 상한 준수, 연장근로 동의 하 운영."),
+        ExtractedClause(section="근로시간", text="주 52시간 근로시간 상한과 법정 근로시간 한도 준수, 연장근로 동의 하 운영. 7일당 1일 휴무 보장."),
         ExtractedClause(section="분쟁광물", text="분쟁광물 3TG 책임광물 실사를 CMRT로 수행."),
     ])
     by_qid = {a.qid: a for a in sheet.answers}
