@@ -1,0 +1,154 @@
+{
+  "bm_rba42_v1": {
+    "raw": {
+      "rows": 20,
+      "decision_match": {
+        "n": 20,
+        "d": 20,
+        "text": "20/20"
+      },
+      "hold_reason_match": {
+        "n": 6,
+        "d": 16,
+        "text": "6/16"
+      },
+      "value_match_b_20261009": {
+        "n": 0,
+        "d": 4,
+        "text": "0/4"
+      },
+      "value_match_b_20261010": {
+        "n": 4,
+        "d": 4,
+        "text": "4/4"
+      }
+    },
+    "b_independent": {
+      "rows": 20,
+      "decision_match": {
+        "n": 20,
+        "d": 20,
+        "text": "20/20"
+      },
+      "hold_reason_match": {
+        "n": 6,
+        "d": 16,
+        "text": "6/16"
+      },
+      "value_match_b_20261009": {
+        "n": 0,
+        "d": 4,
+        "text": "0/4"
+      },
+      "value_match_b_20261010": {
+        "n": 4,
+        "d": 4,
+        "text": "4/4"
+      }
+    },
+    "b_independent_a_not_reported": {
+      "rows": 18,
+      "decision_match": {
+        "n": 18,
+        "d": 18,
+        "text": "18/18"
+      },
+      "hold_reason_match": {
+        "n": 4,
+        "d": 14,
+        "text": "4/14"
+      },
+      "value_match_b_20261009": {
+        "n": 0,
+        "d": 4,
+        "text": "0/4"
+      },
+      "value_match_b_20261010": {
+        "n": 4,
+        "d": 4,
+        "text": "4/4"
+      }
+    },
+    "b_status_counts": {
+      "independent": 20,
+      "excluded": 0,
+      "pending": 0
+    }
+  },
+  "bm_rba42_numeric_census": {
+    "raw": {
+      "rows": 12,
+      "decision_match": {
+        "n": 12,
+        "d": 12,
+        "text": "12/12"
+      },
+      "hold_reason_match": {
+        "n": 8,
+        "d": 8,
+        "text": "8/8"
+      },
+      "value_match_b_20261009": {
+        "n": 2,
+        "d": 4,
+        "text": "2/4"
+      },
+      "value_match_b_20261010": {
+        "n": 2,
+        "d": 4,
+        "text": "2/4"
+      }
+    },
+    "b_independent": {
+      "rows": 6,
+      "decision_match": {
+        "n": 6,
+        "d": 6,
+        "text": "6/6"
+      },
+      "hold_reason_match": {
+        "n": 6,
+        "d": 6,
+        "text": "6/6"
+      },
+      "value_match_b_20261009": {
+        "n": 0,
+        "d": 0,
+        "text": "산출 불가(분모 0)"
+      },
+      "value_match_b_20261010": {
+        "n": 0,
+        "d": 0,
+        "text": "산출 불가(분모 0)"
+      }
+    },
+    "b_independent_a_not_reported": {
+      "rows": 4,
+      "decision_match": {
+        "n": 4,
+        "d": 4,
+        "text": "4/4"
+      },
+      "hold_reason_match": {
+        "n": 4,
+        "d": 4,
+        "text": "4/4"
+      },
+      "value_match_b_20261009": {
+        "n": 0,
+        "d": 0,
+        "text": "산출 불가(분모 0)"
+      },
+      "value_match_b_20261010": {
+        "n": 0,
+        "d": 0,
+        "text": "산출 불가(분모 0)"
+      }
+    },
+    "b_status_counts": {
+      "independent": 6,
+      "excluded": 2,
+      "pending": 4
+    }
+  }
+}

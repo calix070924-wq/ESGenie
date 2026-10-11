@@ -174,273 +174,271 @@
       "set_id": "bm_rba42_v1",
       "labeler": "B",
       "sample_rows": 20,
-      "independent_rows": 0,
+      "independent_rows": 20,
       "excluded_rows": 0,
-      "pending_rows": 20,
+      "pending_rows": 0,
       "excluded_qids": [],
-      "pending_reasons": {
-        "회신은 있으나 확정되지 않음 — 사람 B: 문항별 ESGenie 결과·기대값을 본 기억 없음(보지 않았다는 확인 아님). 초안 AI: ESGenie 답은 보지 않았다고 신고. 초안 AI가 2026-10-06 노출 신고된 B-1 세션과 같은지 미확인": 20
-      },
-      "agreement_denominator": 0,
-      "agreement_blocked_reason": "독립 일치율을 산출하지 않는다: 확인 대기 20행, 독립 확인 0행. 열람 확인 회신과 라벨이 모두 있어야 한다. 산출 불가를 0%로 적지 않는다.",
+      "pending_reasons": {},
+      "agreement_denominator": 20,
+      "agreement_blocked_reason": "",
       "rows": [
         {
           "stage": "initial",
           "qid": "RBA-A-6",
-          "status": "pending",
-          "reason": "회신은 있으나 확정되지 않음 — 사람 B: 문항별 ESGenie 결과·기대값을 본 기억 없음(보지 않았다는 확인 아님). 초안 AI: ESGenie 답은 보지 않았다고 신고. 초안 AI가 2026-10-06 노출 신고된 B-1 세션과 같은지 미확인",
+          "status": "independent",
+          "reason": "보지 않았다고 확인됨",
           "exposures": [
             {
-              "exposure": "unconfirmed",
-              "source": "B 회신 2026-10-09 열람확인(가이드 §5) — 지민이 전달한 원문, 이 저장소에 원문 없음",
-              "confirmed_by": "B 신고(2026-10-09)"
+              "exposure": "none",
+              "source": "B 회신 2026-10-11 열람확인 보완(작업 대화 기록을 15개 문항 ID로 검색) — 지민이 전달한 원문, 이 저장소에 원문 없음",
+              "confirmed_by": "B 신고(2026-10-11)"
             }
           ]
         },
         {
           "stage": "initial",
           "qid": "RBA-B-7",
-          "status": "pending",
-          "reason": "회신은 있으나 확정되지 않음 — 사람 B: 문항별 ESGenie 결과·기대값을 본 기억 없음(보지 않았다는 확인 아님). 초안 AI: ESGenie 답은 보지 않았다고 신고. 초안 AI가 2026-10-06 노출 신고된 B-1 세션과 같은지 미확인",
+          "status": "independent",
+          "reason": "보지 않았다고 확인됨",
           "exposures": [
             {
-              "exposure": "unconfirmed",
-              "source": "B 회신 2026-10-09 열람확인(가이드 §5) — 지민이 전달한 원문, 이 저장소에 원문 없음",
-              "confirmed_by": "B 신고(2026-10-09)"
+              "exposure": "none",
+              "source": "B 회신 2026-10-11 열람확인 보완(작업 대화 기록을 15개 문항 ID로 검색) — 지민이 전달한 원문, 이 저장소에 원문 없음",
+              "confirmed_by": "B 신고(2026-10-11)"
             }
           ]
         },
         {
           "stage": "initial",
           "qid": "RBA-C-1",
-          "status": "pending",
-          "reason": "회신은 있으나 확정되지 않음 — 사람 B: 문항별 ESGenie 결과·기대값을 본 기억 없음(보지 않았다는 확인 아님). 초안 AI: ESGenie 답은 보지 않았다고 신고. 초안 AI가 2026-10-06 노출 신고된 B-1 세션과 같은지 미확인",
+          "status": "independent",
+          "reason": "보지 않았다고 확인됨",
           "exposures": [
             {
-              "exposure": "unconfirmed",
-              "source": "B 회신 2026-10-09 열람확인(가이드 §5) — 지민이 전달한 원문, 이 저장소에 원문 없음",
-              "confirmed_by": "B 신고(2026-10-09)"
+              "exposure": "none",
+              "source": "B 회신 2026-10-11 열람확인 보완(작업 대화 기록을 15개 문항 ID로 검색) — 지민이 전달한 원문, 이 저장소에 원문 없음",
+              "confirmed_by": "B 신고(2026-10-11)"
             }
           ]
         },
         {
           "stage": "initial",
           "qid": "RBA-C-5",
-          "status": "pending",
-          "reason": "회신은 있으나 확정되지 않음 — 사람 B: 문항별 ESGenie 결과·기대값을 본 기억 없음(보지 않았다는 확인 아님). 초안 AI: ESGenie 답은 보지 않았다고 신고. 초안 AI가 2026-10-06 노출 신고된 B-1 세션과 같은지 미확인",
+          "status": "independent",
+          "reason": "보지 않았다고 확인됨",
           "exposures": [
             {
-              "exposure": "unconfirmed",
-              "source": "B 회신 2026-10-09 열람확인(가이드 §5) — 지민이 전달한 원문, 이 저장소에 원문 없음",
-              "confirmed_by": "B 신고(2026-10-09)"
+              "exposure": "none",
+              "source": "B 회신 2026-10-11 열람확인 보완(작업 대화 기록을 15개 문항 ID로 검색) — 지민이 전달한 원문, 이 저장소에 원문 없음",
+              "confirmed_by": "B 신고(2026-10-11)"
             }
           ]
         },
         {
           "stage": "initial",
           "qid": "RBA-C-8-E-3-1",
-          "status": "pending",
-          "reason": "회신은 있으나 확정되지 않음 — 사람 B: 문항별 ESGenie 결과·기대값을 본 기억 없음(보지 않았다는 확인 아님). 초안 AI: ESGenie 답은 보지 않았다고 신고. 초안 AI가 2026-10-06 노출 신고된 B-1 세션과 같은지 미확인",
+          "status": "independent",
+          "reason": "보지 않았다고 확인됨",
           "exposures": [
             {
-              "exposure": "unconfirmed",
-              "source": "B 회신 2026-10-09 열람확인(가이드 §5) — 지민이 전달한 원문, 이 저장소에 원문 없음",
-              "confirmed_by": "B 신고(2026-10-09)"
+              "exposure": "none",
+              "source": "B 회신 2026-10-11 열람확인 보완(작업 대화 기록을 15개 문항 ID로 검색) — 지민이 전달한 원문, 이 저장소에 원문 없음",
+              "confirmed_by": "B 신고(2026-10-11)"
             }
           ]
         },
         {
           "stage": "initial",
           "qid": "RBA-E-11",
-          "status": "pending",
-          "reason": "회신은 있으나 확정되지 않음 — 사람 B: 문항별 ESGenie 결과·기대값을 본 기억 없음(보지 않았다는 확인 아님). 초안 AI: ESGenie 답은 보지 않았다고 신고. 초안 AI가 2026-10-06 노출 신고된 B-1 세션과 같은지 미확인",
+          "status": "independent",
+          "reason": "보지 않았다고 확인됨",
           "exposures": [
             {
-              "exposure": "unconfirmed",
-              "source": "B 회신 2026-10-09 열람확인(가이드 §5) — 지민이 전달한 원문, 이 저장소에 원문 없음",
-              "confirmed_by": "B 신고(2026-10-09)"
+              "exposure": "none",
+              "source": "B 회신 2026-10-11 열람확인 보완(작업 대화 기록을 15개 문항 ID로 검색) — 지민이 전달한 원문, 이 저장소에 원문 없음",
+              "confirmed_by": "B 신고(2026-10-11)"
             }
           ]
         },
         {
           "stage": "initial",
           "qid": "RBA-E-12",
-          "status": "pending",
-          "reason": "회신은 있으나 확정되지 않음 — 사람 B: 문항별 ESGenie 결과·기대값을 본 기억 없음(보지 않았다는 확인 아님). 초안 AI: ESGenie 답은 보지 않았다고 신고. 초안 AI가 2026-10-06 노출 신고된 B-1 세션과 같은지 미확인",
+          "status": "independent",
+          "reason": "보지 않았다고 확인됨",
           "exposures": [
             {
-              "exposure": "unconfirmed",
-              "source": "B 회신 2026-10-09 열람확인(가이드 §5) — 지민이 전달한 원문, 이 저장소에 원문 없음",
-              "confirmed_by": "B 신고(2026-10-09)"
+              "exposure": "none",
+              "source": "B 회신 2026-10-11 열람확인 보완(작업 대화 기록을 15개 문항 ID로 검색) — 지민이 전달한 원문, 이 저장소에 원문 없음",
+              "confirmed_by": "B 신고(2026-10-11)"
             }
           ]
         },
         {
           "stage": "initial",
           "qid": "RBA-E-2",
-          "status": "pending",
-          "reason": "회신은 있으나 확정되지 않음 — 사람 B: 문항별 ESGenie 결과·기대값을 본 기억 없음(보지 않았다는 확인 아님). 초안 AI: ESGenie 답은 보지 않았다고 신고. 초안 AI가 2026-10-06 노출 신고된 B-1 세션과 같은지 미확인",
+          "status": "independent",
+          "reason": "보지 않았다고 확인됨",
           "exposures": [
             {
-              "exposure": "unconfirmed",
-              "source": "B 회신 2026-10-09 열람확인(가이드 §5) — 지민이 전달한 원문, 이 저장소에 원문 없음",
-              "confirmed_by": "B 신고(2026-10-09)"
+              "exposure": "none",
+              "source": "B 회신 2026-10-11 열람확인 보완(작업 대화 기록을 15개 문항 ID로 검색) — 지민이 전달한 원문, 이 저장소에 원문 없음",
+              "confirmed_by": "B 신고(2026-10-11)"
             }
           ]
         },
         {
           "stage": "initial",
           "qid": "RBA-E-3",
-          "status": "pending",
-          "reason": "회신은 있으나 확정되지 않음 — 사람 B: 문항별 ESGenie 결과·기대값을 본 기억 없음(보지 않았다는 확인 아님). 초안 AI: ESGenie 답은 보지 않았다고 신고. 초안 AI가 2026-10-06 노출 신고된 B-1 세션과 같은지 미확인",
+          "status": "independent",
+          "reason": "보지 않았다고 확인됨",
           "exposures": [
             {
-              "exposure": "unconfirmed",
-              "source": "B 회신 2026-10-09 열람확인(가이드 §5) — 지민이 전달한 원문, 이 저장소에 원문 없음",
-              "confirmed_by": "B 신고(2026-10-09)"
+              "exposure": "none",
+              "source": "B 회신 2026-10-11 열람확인 보완(작업 대화 기록을 15개 문항 ID로 검색) — 지민이 전달한 원문, 이 저장소에 원문 없음",
+              "confirmed_by": "B 신고(2026-10-11)"
             }
           ]
         },
         {
           "stage": "initial",
           "qid": "RBA-E-8",
-          "status": "pending",
-          "reason": "회신은 있으나 확정되지 않음 — 사람 B: 문항별 ESGenie 결과·기대값을 본 기억 없음(보지 않았다는 확인 아님). 초안 AI: ESGenie 답은 보지 않았다고 신고. 초안 AI가 2026-10-06 노출 신고된 B-1 세션과 같은지 미확인",
+          "status": "independent",
+          "reason": "보지 않았다고 확인됨",
           "exposures": [
             {
-              "exposure": "unconfirmed",
-              "source": "B 회신 2026-10-09 열람확인(가이드 §5) — 지민이 전달한 원문, 이 저장소에 원문 없음",
-              "confirmed_by": "B 신고(2026-10-09)"
+              "exposure": "none",
+              "source": "B 회신 2026-10-11 열람확인 보완(작업 대화 기록을 15개 문항 ID로 검색) — 지민이 전달한 원문, 이 저장소에 원문 없음",
+              "confirmed_by": "B 신고(2026-10-11)"
             }
           ]
         },
         {
           "stage": "followup",
           "qid": "RBA-A-6",
-          "status": "pending",
-          "reason": "회신은 있으나 확정되지 않음 — 사람 B: 문항별 ESGenie 결과·기대값을 본 기억 없음(보지 않았다는 확인 아님). 초안 AI: ESGenie 답은 보지 않았다고 신고. 초안 AI가 2026-10-06 노출 신고된 B-1 세션과 같은지 미확인",
+          "status": "independent",
+          "reason": "보지 않았다고 확인됨",
           "exposures": [
             {
-              "exposure": "unconfirmed",
-              "source": "B 회신 2026-10-09 열람확인(가이드 §5) — 지민이 전달한 원문, 이 저장소에 원문 없음",
-              "confirmed_by": "B 신고(2026-10-09)"
+              "exposure": "none",
+              "source": "B 회신 2026-10-11 열람확인 보완(작업 대화 기록을 15개 문항 ID로 검색) — 지민이 전달한 원문, 이 저장소에 원문 없음",
+              "confirmed_by": "B 신고(2026-10-11)"
             }
           ]
         },
         {
           "stage": "followup",
           "qid": "RBA-B-7",
-          "status": "pending",
-          "reason": "회신은 있으나 확정되지 않음 — 사람 B: 문항별 ESGenie 결과·기대값을 본 기억 없음(보지 않았다는 확인 아님). 초안 AI: ESGenie 답은 보지 않았다고 신고. 초안 AI가 2026-10-06 노출 신고된 B-1 세션과 같은지 미확인",
+          "status": "independent",
+          "reason": "보지 않았다고 확인됨",
           "exposures": [
             {
-              "exposure": "unconfirmed",
-              "source": "B 회신 2026-10-09 열람확인(가이드 §5) — 지민이 전달한 원문, 이 저장소에 원문 없음",
-              "confirmed_by": "B 신고(2026-10-09)"
+              "exposure": "none",
+              "source": "B 회신 2026-10-11 열람확인 보완(작업 대화 기록을 15개 문항 ID로 검색) — 지민이 전달한 원문, 이 저장소에 원문 없음",
+              "confirmed_by": "B 신고(2026-10-11)"
             }
           ]
         },
         {
           "stage": "followup",
           "qid": "RBA-C-1",
-          "status": "pending",
-          "reason": "회신은 있으나 확정되지 않음 — 사람 B: 문항별 ESGenie 결과·기대값을 본 기억 없음(보지 않았다는 확인 아님). 초안 AI: ESGenie 답은 보지 않았다고 신고. 초안 AI가 2026-10-06 노출 신고된 B-1 세션과 같은지 미확인",
+          "status": "independent",
+          "reason": "보지 않았다고 확인됨",
           "exposures": [
             {
-              "exposure": "unconfirmed",
-              "source": "B 회신 2026-10-09 열람확인(가이드 §5) — 지민이 전달한 원문, 이 저장소에 원문 없음",
-              "confirmed_by": "B 신고(2026-10-09)"
+              "exposure": "none",
+              "source": "B 회신 2026-10-11 열람확인 보완(작업 대화 기록을 15개 문항 ID로 검색) — 지민이 전달한 원문, 이 저장소에 원문 없음",
+              "confirmed_by": "B 신고(2026-10-11)"
             }
           ]
         },
         {
           "stage": "followup",
           "qid": "RBA-C-5",
-          "status": "pending",
-          "reason": "회신은 있으나 확정되지 않음 — 사람 B: 문항별 ESGenie 결과·기대값을 본 기억 없음(보지 않았다는 확인 아님). 초안 AI: ESGenie 답은 보지 않았다고 신고. 초안 AI가 2026-10-06 노출 신고된 B-1 세션과 같은지 미확인",
+          "status": "independent",
+          "reason": "보지 않았다고 확인됨",
           "exposures": [
             {
-              "exposure": "unconfirmed",
-              "source": "B 회신 2026-10-09 열람확인(가이드 §5) — 지민이 전달한 원문, 이 저장소에 원문 없음",
-              "confirmed_by": "B 신고(2026-10-09)"
+              "exposure": "none",
+              "source": "B 회신 2026-10-11 열람확인 보완(작업 대화 기록을 15개 문항 ID로 검색) — 지민이 전달한 원문, 이 저장소에 원문 없음",
+              "confirmed_by": "B 신고(2026-10-11)"
             }
           ]
         },
         {
           "stage": "followup",
           "qid": "RBA-C-8-E-3-1",
-          "status": "pending",
-          "reason": "회신은 있으나 확정되지 않음 — 사람 B: 문항별 ESGenie 결과·기대값을 본 기억 없음(보지 않았다는 확인 아님). 초안 AI: ESGenie 답은 보지 않았다고 신고. 초안 AI가 2026-10-06 노출 신고된 B-1 세션과 같은지 미확인",
+          "status": "independent",
+          "reason": "보지 않았다고 확인됨",
           "exposures": [
             {
-              "exposure": "unconfirmed",
-              "source": "B 회신 2026-10-09 열람확인(가이드 §5) — 지민이 전달한 원문, 이 저장소에 원문 없음",
-              "confirmed_by": "B 신고(2026-10-09)"
+              "exposure": "none",
+              "source": "B 회신 2026-10-11 열람확인 보완(작업 대화 기록을 15개 문항 ID로 검색) — 지민이 전달한 원문, 이 저장소에 원문 없음",
+              "confirmed_by": "B 신고(2026-10-11)"
             }
           ]
         },
         {
           "stage": "followup",
           "qid": "RBA-E-11",
-          "status": "pending",
-          "reason": "회신은 있으나 확정되지 않음 — 사람 B: 문항별 ESGenie 결과·기대값을 본 기억 없음(보지 않았다는 확인 아님). 초안 AI: ESGenie 답은 보지 않았다고 신고. 초안 AI가 2026-10-06 노출 신고된 B-1 세션과 같은지 미확인",
+          "status": "independent",
+          "reason": "보지 않았다고 확인됨",
           "exposures": [
             {
-              "exposure": "unconfirmed",
-              "source": "B 회신 2026-10-09 열람확인(가이드 §5) — 지민이 전달한 원문, 이 저장소에 원문 없음",
-              "confirmed_by": "B 신고(2026-10-09)"
+              "exposure": "none",
+              "source": "B 회신 2026-10-11 열람확인 보완(작업 대화 기록을 15개 문항 ID로 검색) — 지민이 전달한 원문, 이 저장소에 원문 없음",
+              "confirmed_by": "B 신고(2026-10-11)"
             }
           ]
         },
         {
           "stage": "followup",
           "qid": "RBA-E-12",
-          "status": "pending",
-          "reason": "회신은 있으나 확정되지 않음 — 사람 B: 문항별 ESGenie 결과·기대값을 본 기억 없음(보지 않았다는 확인 아님). 초안 AI: ESGenie 답은 보지 않았다고 신고. 초안 AI가 2026-10-06 노출 신고된 B-1 세션과 같은지 미확인",
+          "status": "independent",
+          "reason": "보지 않았다고 확인됨",
           "exposures": [
             {
-              "exposure": "unconfirmed",
-              "source": "B 회신 2026-10-09 열람확인(가이드 §5) — 지민이 전달한 원문, 이 저장소에 원문 없음",
-              "confirmed_by": "B 신고(2026-10-09)"
+              "exposure": "none",
+              "source": "B 회신 2026-10-11 열람확인 보완(작업 대화 기록을 15개 문항 ID로 검색) — 지민이 전달한 원문, 이 저장소에 원문 없음",
+              "confirmed_by": "B 신고(2026-10-11)"
             }
           ]
         },
         {
           "stage": "followup",
           "qid": "RBA-E-2",
-          "status": "pending",
-          "reason": "회신은 있으나 확정되지 않음 — 사람 B: 문항별 ESGenie 결과·기대값을 본 기억 없음(보지 않았다는 확인 아님). 초안 AI: ESGenie 답은 보지 않았다고 신고. 초안 AI가 2026-10-06 노출 신고된 B-1 세션과 같은지 미확인",
+          "status": "independent",
+          "reason": "보지 않았다고 확인됨",
           "exposures": [
             {
-              "exposure": "unconfirmed",
-              "source": "B 회신 2026-10-09 열람확인(가이드 §5) — 지민이 전달한 원문, 이 저장소에 원문 없음",
-              "confirmed_by": "B 신고(2026-10-09)"
+              "exposure": "none",
+              "source": "B 회신 2026-10-11 열람확인 보완(작업 대화 기록을 15개 문항 ID로 검색) — 지민이 전달한 원문, 이 저장소에 원문 없음",
+              "confirmed_by": "B 신고(2026-10-11)"
             }
           ]
         },
         {
           "stage": "followup",
           "qid": "RBA-E-3",
-          "status": "pending",
-          "reason": "회신은 있으나 확정되지 않음 — 사람 B: 문항별 ESGenie 결과·기대값을 본 기억 없음(보지 않았다는 확인 아님). 초안 AI: ESGenie 답은 보지 않았다고 신고. 초안 AI가 2026-10-06 노출 신고된 B-1 세션과 같은지 미확인",
+          "status": "independent",
+          "reason": "보지 않았다고 확인됨",
           "exposures": [
             {
-              "exposure": "unconfirmed",
-              "source": "B 회신 2026-10-09 열람확인(가이드 §5) — 지민이 전달한 원문, 이 저장소에 원문 없음",
-              "confirmed_by": "B 신고(2026-10-09)"
+              "exposure": "none",
+              "source": "B 회신 2026-10-11 열람확인 보완(작업 대화 기록을 15개 문항 ID로 검색) — 지민이 전달한 원문, 이 저장소에 원문 없음",
+              "confirmed_by": "B 신고(2026-10-11)"
             }
           ]
         },
         {
           "stage": "followup",
           "qid": "RBA-E-8",
-          "status": "pending",
-          "reason": "회신은 있으나 확정되지 않음 — 사람 B: 문항별 ESGenie 결과·기대값을 본 기억 없음(보지 않았다는 확인 아님). 초안 AI: ESGenie 답은 보지 않았다고 신고. 초안 AI가 2026-10-06 노출 신고된 B-1 세션과 같은지 미확인",
+          "status": "independent",
+          "reason": "보지 않았다고 확인됨",
           "exposures": [
             {
-              "exposure": "unconfirmed",
-              "source": "B 회신 2026-10-09 열람확인(가이드 §5) — 지민이 전달한 원문, 이 저장소에 원문 없음",
-              "confirmed_by": "B 신고(2026-10-09)"
+              "exposure": "none",
+              "source": "B 회신 2026-10-11 열람확인 보완(작업 대화 기록을 15개 문항 ID로 검색) — 지민이 전달한 원문, 이 저장소에 원문 없음",
+              "confirmed_by": "B 신고(2026-10-11)"
             }
           ]
         }
@@ -888,28 +886,29 @@
       "set_id": "bm_rba42_numeric_census",
       "labeler": "B",
       "sample_rows": 12,
-      "independent_rows": 0,
+      "independent_rows": 6,
       "excluded_rows": 2,
-      "pending_rows": 10,
+      "pending_rows": 4,
       "excluded_qids": [
         "RBA-C-4-E-6-2"
       ],
       "pending_reasons": {
-        "회신은 있으나 확정되지 않음 — 사람 B: 문항별 ESGenie 결과·기대값을 본 기억 없음(보지 않았다는 확인 아님). 초안 AI: ESGenie 답은 보지 않았다고 신고. 초안 AI가 2026-10-06 노출 신고된 B-1 세션과 같은지 미확인": 10
+        "회신은 있으나 확정되지 않음 — ESGenie 응답·기대값·A 라벨 초안은 보지 않았다고 확인됨. 다만 작업지시서_B §4.1 '부분 범위' 함정 설명(폐기물: 4월·제1공장)을 읽었다. 이 함정 설명을 기대 판정 노출로 셀지는 정민 판단 대기": 2,
+        "회신은 있으나 확정되지 않음 — ESGenie 응답·기대값·A 라벨 초안은 보지 않았다고 확인됨. 다만 작업지시서_B §4.1 '부분 범위' 함정 설명(에너지: 전력만·가스 미포함)을 읽었다. 이 함정 설명을 기대 판정 노출로 셀지는 정민 판단 대기": 2
       },
-      "agreement_denominator": 0,
-      "agreement_blocked_reason": "독립 일치율을 산출하지 않는다: 확인 대기 10행, 독립 확인 0행. 열람 확인 회신과 라벨이 모두 있어야 한다. 산출 불가를 0%로 적지 않는다.",
+      "agreement_denominator": 6,
+      "agreement_blocked_reason": "독립 일치율을 산출하지 않는다: 확인 대기 4행, 독립 확인 6행. 열람 확인 회신과 라벨이 모두 있어야 한다. 산출 불가를 0%로 적지 않는다.",
       "rows": [
         {
           "stage": "initial",
           "qid": "RBA-C-4-E-6-1",
           "status": "pending",
-          "reason": "회신은 있으나 확정되지 않음 — 사람 B: 문항별 ESGenie 결과·기대값을 본 기억 없음(보지 않았다는 확인 아님). 초안 AI: ESGenie 답은 보지 않았다고 신고. 초안 AI가 2026-10-06 노출 신고된 B-1 세션과 같은지 미확인",
+          "reason": "회신은 있으나 확정되지 않음 — ESGenie 응답·기대값·A 라벨 초안은 보지 않았다고 확인됨. 다만 작업지시서_B §4.1 '부분 범위' 함정 설명(폐기물: 4월·제1공장)을 읽었다. 이 함정 설명을 기대 판정 노출로 셀지는 정민 판단 대기",
           "exposures": [
             {
               "exposure": "unconfirmed",
-              "source": "B 회신 2026-10-09 열람확인(가이드 §5) — 지민이 전달한 원문, 이 저장소에 원문 없음",
-              "confirmed_by": "B 신고(2026-10-09)"
+              "source": "B 회신 2026-10-11 열람확인 보완(작업 대화 기록을 15개 문항 ID로 검색) — 지민이 전달한 원문, 이 저장소에 원문 없음",
+              "confirmed_by": "B 신고(2026-10-11)"
             }
           ]
         },
@@ -917,38 +916,43 @@
           "stage": "initial",
           "qid": "RBA-C-4-E-6-2",
           "status": "excluded",
-          "reason": "노출 확인됨(expected_value) — 일치·불일치와 무관하게 분자·분모에서 제외",
+          "reason": "노출 확인됨(expected_value,system_answer) — 일치·불일치와 무관하게 분자·분모에서 제외",
           "exposures": [
             {
               "exposure": "expected_value",
               "source": "B 회신 2026-10-09 열람확인(가이드 §5) — 지민이 전달한 원문, 이 저장소에 원문 없음",
               "confirmed_by": "B 신고(2026-10-09)"
+            },
+            {
+              "exposure": "system_answer",
+              "source": "B 회신 2026-10-11 열람확인 보완(작업 대화 기록을 15개 문항 ID로 검색) — 지민이 전달한 원문, 이 저장소에 원문 없음",
+              "confirmed_by": "B 신고(2026-10-11)"
             }
           ]
         },
         {
           "stage": "initial",
           "qid": "RBA-C-5-E-7-1",
-          "status": "pending",
-          "reason": "회신은 있으나 확정되지 않음 — 사람 B: 문항별 ESGenie 결과·기대값을 본 기억 없음(보지 않았다는 확인 아님). 초안 AI: ESGenie 답은 보지 않았다고 신고. 초안 AI가 2026-10-06 노출 신고된 B-1 세션과 같은지 미확인",
+          "status": "independent",
+          "reason": "보지 않았다고 확인됨",
           "exposures": [
             {
-              "exposure": "unconfirmed",
-              "source": "B 회신 2026-10-09 열람확인(가이드 §5) — 지민이 전달한 원문, 이 저장소에 원문 없음",
-              "confirmed_by": "B 신고(2026-10-09)"
+              "exposure": "none",
+              "source": "B 회신 2026-10-11 열람확인 보완(작업 대화 기록을 15개 문항 ID로 검색) — 지민이 전달한 원문, 이 저장소에 원문 없음",
+              "confirmed_by": "B 신고(2026-10-11)"
             }
           ]
         },
         {
           "stage": "initial",
           "qid": "RBA-C-8-E-3-1",
-          "status": "pending",
-          "reason": "회신은 있으나 확정되지 않음 — 사람 B: 문항별 ESGenie 결과·기대값을 본 기억 없음(보지 않았다는 확인 아님). 초안 AI: ESGenie 답은 보지 않았다고 신고. 초안 AI가 2026-10-06 노출 신고된 B-1 세션과 같은지 미확인",
+          "status": "independent",
+          "reason": "보지 않았다고 확인됨",
           "exposures": [
             {
-              "exposure": "unconfirmed",
-              "source": "B 회신 2026-10-09 열람확인(가이드 §5) — 지민이 전달한 원문, 이 저장소에 원문 없음",
-              "confirmed_by": "B 신고(2026-10-09)"
+              "exposure": "none",
+              "source": "B 회신 2026-10-11 열람확인 보완(작업 대화 기록을 15개 문항 ID로 검색) — 지민이 전달한 원문, 이 저장소에 원문 없음",
+              "confirmed_by": "B 신고(2026-10-11)"
             }
           ]
         },
@@ -956,25 +960,25 @@
           "stage": "initial",
           "qid": "RBA-C-8-E-4-1",
           "status": "pending",
-          "reason": "회신은 있으나 확정되지 않음 — 사람 B: 문항별 ESGenie 결과·기대값을 본 기억 없음(보지 않았다는 확인 아님). 초안 AI: ESGenie 답은 보지 않았다고 신고. 초안 AI가 2026-10-06 노출 신고된 B-1 세션과 같은지 미확인",
+          "reason": "회신은 있으나 확정되지 않음 — ESGenie 응답·기대값·A 라벨 초안은 보지 않았다고 확인됨. 다만 작업지시서_B §4.1 '부분 범위' 함정 설명(에너지: 전력만·가스 미포함)을 읽었다. 이 함정 설명을 기대 판정 노출로 셀지는 정민 판단 대기",
           "exposures": [
             {
               "exposure": "unconfirmed",
-              "source": "B 회신 2026-10-09 열람확인(가이드 §5) — 지민이 전달한 원문, 이 저장소에 원문 없음",
-              "confirmed_by": "B 신고(2026-10-09)"
+              "source": "B 회신 2026-10-11 열람확인 보완(작업 대화 기록을 15개 문항 ID로 검색) — 지민이 전달한 원문, 이 저장소에 원문 없음",
+              "confirmed_by": "B 신고(2026-10-11)"
             }
           ]
         },
         {
           "stage": "initial",
           "qid": "RBA-C-8-E-4-2",
-          "status": "pending",
-          "reason": "회신은 있으나 확정되지 않음 — 사람 B: 문항별 ESGenie 결과·기대값을 본 기억 없음(보지 않았다는 확인 아님). 초안 AI: ESGenie 답은 보지 않았다고 신고. 초안 AI가 2026-10-06 노출 신고된 B-1 세션과 같은지 미확인",
+          "status": "independent",
+          "reason": "보지 않았다고 확인됨",
           "exposures": [
             {
-              "exposure": "unconfirmed",
-              "source": "B 회신 2026-10-09 열람확인(가이드 §5) — 지민이 전달한 원문, 이 저장소에 원문 없음",
-              "confirmed_by": "B 신고(2026-10-09)"
+              "exposure": "none",
+              "source": "B 회신 2026-10-11 열람확인 보완(작업 대화 기록을 15개 문항 ID로 검색) — 지민이 전달한 원문, 이 저장소에 원문 없음",
+              "confirmed_by": "B 신고(2026-10-11)"
             }
           ]
         },
@@ -982,12 +986,12 @@
           "stage": "followup",
           "qid": "RBA-C-4-E-6-1",
           "status": "pending",
-          "reason": "회신은 있으나 확정되지 않음 — 사람 B: 문항별 ESGenie 결과·기대값을 본 기억 없음(보지 않았다는 확인 아님). 초안 AI: ESGenie 답은 보지 않았다고 신고. 초안 AI가 2026-10-06 노출 신고된 B-1 세션과 같은지 미확인",
+          "reason": "회신은 있으나 확정되지 않음 — ESGenie 응답·기대값·A 라벨 초안은 보지 않았다고 확인됨. 다만 작업지시서_B §4.1 '부분 범위' 함정 설명(폐기물: 4월·제1공장)을 읽었다. 이 함정 설명을 기대 판정 노출로 셀지는 정민 판단 대기",
           "exposures": [
             {
               "exposure": "unconfirmed",
-              "source": "B 회신 2026-10-09 열람확인(가이드 §5) — 지민이 전달한 원문, 이 저장소에 원문 없음",
-              "confirmed_by": "B 신고(2026-10-09)"
+              "source": "B 회신 2026-10-11 열람확인 보완(작업 대화 기록을 15개 문항 ID로 검색) — 지민이 전달한 원문, 이 저장소에 원문 없음",
+              "confirmed_by": "B 신고(2026-10-11)"
             }
           ]
         },
@@ -995,38 +999,43 @@
           "stage": "followup",
           "qid": "RBA-C-4-E-6-2",
           "status": "excluded",
-          "reason": "노출 확인됨(expected_value) — 일치·불일치와 무관하게 분자·분모에서 제외",
+          "reason": "노출 확인됨(expected_value,system_answer) — 일치·불일치와 무관하게 분자·분모에서 제외",
           "exposures": [
             {
               "exposure": "expected_value",
               "source": "B 회신 2026-10-09 열람확인(가이드 §5) — 지민이 전달한 원문, 이 저장소에 원문 없음",
               "confirmed_by": "B 신고(2026-10-09)"
+            },
+            {
+              "exposure": "system_answer",
+              "source": "B 회신 2026-10-11 열람확인 보완(작업 대화 기록을 15개 문항 ID로 검색) — 지민이 전달한 원문, 이 저장소에 원문 없음",
+              "confirmed_by": "B 신고(2026-10-11)"
             }
           ]
         },
         {
           "stage": "followup",
           "qid": "RBA-C-5-E-7-1",
-          "status": "pending",
-          "reason": "회신은 있으나 확정되지 않음 — 사람 B: 문항별 ESGenie 결과·기대값을 본 기억 없음(보지 않았다는 확인 아님). 초안 AI: ESGenie 답은 보지 않았다고 신고. 초안 AI가 2026-10-06 노출 신고된 B-1 세션과 같은지 미확인",
+          "status": "independent",
+          "reason": "보지 않았다고 확인됨",
           "exposures": [
             {
-              "exposure": "unconfirmed",
-              "source": "B 회신 2026-10-09 열람확인(가이드 §5) — 지민이 전달한 원문, 이 저장소에 원문 없음",
-              "confirmed_by": "B 신고(2026-10-09)"
+              "exposure": "none",
+              "source": "B 회신 2026-10-11 열람확인 보완(작업 대화 기록을 15개 문항 ID로 검색) — 지민이 전달한 원문, 이 저장소에 원문 없음",
+              "confirmed_by": "B 신고(2026-10-11)"
             }
           ]
         },
         {
           "stage": "followup",
           "qid": "RBA-C-8-E-3-1",
-          "status": "pending",
-          "reason": "회신은 있으나 확정되지 않음 — 사람 B: 문항별 ESGenie 결과·기대값을 본 기억 없음(보지 않았다는 확인 아님). 초안 AI: ESGenie 답은 보지 않았다고 신고. 초안 AI가 2026-10-06 노출 신고된 B-1 세션과 같은지 미확인",
+          "status": "independent",
+          "reason": "보지 않았다고 확인됨",
           "exposures": [
             {
-              "exposure": "unconfirmed",
-              "source": "B 회신 2026-10-09 열람확인(가이드 §5) — 지민이 전달한 원문, 이 저장소에 원문 없음",
-              "confirmed_by": "B 신고(2026-10-09)"
+              "exposure": "none",
+              "source": "B 회신 2026-10-11 열람확인 보완(작업 대화 기록을 15개 문항 ID로 검색) — 지민이 전달한 원문, 이 저장소에 원문 없음",
+              "confirmed_by": "B 신고(2026-10-11)"
             }
           ]
         },
@@ -1034,25 +1043,25 @@
           "stage": "followup",
           "qid": "RBA-C-8-E-4-1",
           "status": "pending",
-          "reason": "회신은 있으나 확정되지 않음 — 사람 B: 문항별 ESGenie 결과·기대값을 본 기억 없음(보지 않았다는 확인 아님). 초안 AI: ESGenie 답은 보지 않았다고 신고. 초안 AI가 2026-10-06 노출 신고된 B-1 세션과 같은지 미확인",
+          "reason": "회신은 있으나 확정되지 않음 — ESGenie 응답·기대값·A 라벨 초안은 보지 않았다고 확인됨. 다만 작업지시서_B §4.1 '부분 범위' 함정 설명(에너지: 전력만·가스 미포함)을 읽었다. 이 함정 설명을 기대 판정 노출로 셀지는 정민 판단 대기",
           "exposures": [
             {
               "exposure": "unconfirmed",
-              "source": "B 회신 2026-10-09 열람확인(가이드 §5) — 지민이 전달한 원문, 이 저장소에 원문 없음",
-              "confirmed_by": "B 신고(2026-10-09)"
+              "source": "B 회신 2026-10-11 열람확인 보완(작업 대화 기록을 15개 문항 ID로 검색) — 지민이 전달한 원문, 이 저장소에 원문 없음",
+              "confirmed_by": "B 신고(2026-10-11)"
             }
           ]
         },
         {
           "stage": "followup",
           "qid": "RBA-C-8-E-4-2",
-          "status": "pending",
-          "reason": "회신은 있으나 확정되지 않음 — 사람 B: 문항별 ESGenie 결과·기대값을 본 기억 없음(보지 않았다는 확인 아님). 초안 AI: ESGenie 답은 보지 않았다고 신고. 초안 AI가 2026-10-06 노출 신고된 B-1 세션과 같은지 미확인",
+          "status": "independent",
+          "reason": "보지 않았다고 확인됨",
           "exposures": [
             {
-              "exposure": "unconfirmed",
-              "source": "B 회신 2026-10-09 열람확인(가이드 §5) — 지민이 전달한 원문, 이 저장소에 원문 없음",
-              "confirmed_by": "B 신고(2026-10-09)"
+              "exposure": "none",
+              "source": "B 회신 2026-10-11 열람확인 보완(작업 대화 기록을 15개 문항 ID로 검색) — 지민이 전달한 원문, 이 저장소에 원문 없음",
+              "confirmed_by": "B 신고(2026-10-11)"
             }
           ]
         }
