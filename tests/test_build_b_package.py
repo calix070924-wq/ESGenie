@@ -108,24 +108,114 @@ def test_readme_records_hashes_of_every_file(tmp_path):
         assert item["sha256"] in readme
 
 
-def test_readme_separates_done_from_undone(tmp_path):
-    out = tmp_path / "b.zip"
-    result = pkg.build("pre_review", out)
-    with zipfile.ZipFile(out) as zf:
-        readme = zf.read(f"{result['root']}/README.md").decode("utf-8")
-    assert "구현 검증 완료" in readme
-    for undone in ("합의 대기", "원본 증빙 미확보", "미실행", "미정"):
-        assert undone in readme
-    assert "채점기 납품 전체 완료" in readme  # 그렇게 쓰지 않는다는 경고로 들어 있다
+# ── 최종본: 실제 저장소의 현재 완료 상태에 기대지 않는 임시 저장소 ──────────
+# 라벨·형식이 실제로 준비되면 "미완료라 거부" 테스트가 깨진다(2026-10-11 검토).
+# 실패 기대값을 성공으로 뒤집지 않고, 준비 상태를 fixture로 만들어 양쪽을 다 본다.
+
+SYN_LABEL = (
+    "stage,qid,expected_decision,hold_reason,expected_value,expected_unit,tolerance,"
+    "expected_sources,boundary_note,labeler,note\n"
+    "initial,SYN-1,hold,no_evidence,,,,,,SYN,합성 라벨(테스트 전용)\n"
+)
 
 
-def test_final_package_is_refused_while_anything_is_missing(tmp_path, capsys):
-    """미완료 상태에서 최종본을 만들지 않는다 — 빈 파일로 채우지도 않는다."""
-    assert pkg.main(["--stage", "final", "--out", str(tmp_path / "f.zip")]) == 2
+@pytest.fixture
+def fake_repo(tmp_path, monkeypatch):
+    """도구 파일만 복사한 임시 저장소. 라벨·형식 상태는 각 테스트가 정한다."""
+    root = tmp_path / "repo"
+    for rel in pkg._dedupe(pkg.PRE_REVIEW_FILES, pkg.FINAL_EXTRA_FILES):
+        dst = root / rel
+        dst.parent.mkdir(parents=True, exist_ok=True)
+        dst.write_bytes((REPO / rel).read_bytes())
+    monkeypatch.setattr(pkg, "REPO", root)
+    monkeypatch.setattr(pkg, "commit_sha", lambda: "f" * 40)
+    return root
+
+
+def _add_label(root):
+    label = root / pkg.FINAL_LABEL_DIR / "syn_labels.csv"
+    label.parent.mkdir(parents=True, exist_ok=True)
+    label.write_text(SYN_LABEL, encoding="utf-8")
+    return label
+
+
+def test_final_refused_without_confirmed_labels(fake_repo, monkeypatch, tmp_path, capsys):
+    monkeypatch.setattr(af, "FORMAT_VERSION", "1.1")
+    out = tmp_path / "f.zip"
+    assert pkg.main(["--stage", "final", "--out", str(out)]) == 2
     err = capsys.readouterr().err
     assert "최종본을 만들 수 없다" in err
-    assert "확정 정답 라벨이 없다" in err or "초안이다" in err
-    assert not (tmp_path / "f.zip").exists()
+    assert "확정 정답 라벨이 없다" in err
+    assert "초안이다" not in err          # 사유를 섞어 적지 않는다
+    assert not out.exists()
+
+
+def test_final_refused_while_format_is_draft(fake_repo, monkeypatch, tmp_path, capsys):
+    _add_label(fake_repo)
+    monkeypatch.setattr(af, "FORMAT_VERSION", "1.1-draft")
+    out = tmp_path / "f.zip"
+    assert pkg.main(["--stage", "final", "--out", str(out)]) == 2
+    err = capsys.readouterr().err
+    assert "초안이다" in err and "format_version=1.1-draft" in err
+    assert "확정 정답 라벨이 없다" not in err
+    assert not out.exists()
+
+
+def test_final_refused_when_a_tool_file_is_missing(fake_repo, monkeypatch, tmp_path, capsys):
+    _add_label(fake_repo)
+    monkeypatch.setattr(af, "FORMAT_VERSION", "1.1")
+    gone = pkg.FINAL_EXTRA_FILES[-1]
+    (fake_repo / gone).unlink()
+    out = tmp_path / "f.zip"
+    assert pkg.main(["--stage", "final", "--out", str(out)]) == 2
+    assert f"없는 파일: {gone}" in capsys.readouterr().err
+    assert not out.exists()
+
+
+def test_final_builds_when_everything_is_ready(fake_repo, monkeypatch, tmp_path):
+    label = _add_label(fake_repo)
+    monkeypatch.setattr(af, "FORMAT_VERSION", "1.1")
+    out = tmp_path / "f.zip"
+    result = pkg.build("final", out)
+    rel_label = str(label.relative_to(fake_repo))
+
+    expected = pkg._dedupe(pkg.PRE_REVIEW_FILES, pkg.FINAL_EXTRA_FILES, [rel_label])
+    assert [f["path"] for f in result["files"]] == expected
+    assert result["format_version"] == "1.1"
+    with zipfile.ZipFile(out) as zf:
+        names = set(zf.namelist())
+        readme = zf.read(f"{result['root']}/README.md").decode("utf-8")
+        packed_label = zf.read(f"{result['root']}/{rel_label}")
+    assert names == {f"{result['root']}/README.md"} | {
+        f"{result['root']}/{rel}" for rel in expected}
+    assert packed_label == label.read_bytes()
+    for item in result["files"]:
+        assert item["sha256"] in readme
+    assert "확정 (`1.1`)" in readme
+    assert "확정 라벨 1개 파일 — 이 패키지에 포함" in readme
+    assert "합의 대기" not in readme
+    assert "원본 증빙 미확보" not in readme
+
+
+def test_readme_separates_done_from_undone_by_actual_state(fake_repo, monkeypatch):
+    """README의 완료/미완료는 빌드 시점 저장소에서 읽는다. 고정 문구로 단정하지 않는다."""
+    files = list(pkg.PRE_REVIEW_FILES)
+
+    monkeypatch.setattr(af, "FORMAT_VERSION", "1.1-draft")
+    undone = pkg.build_readme("pre_review", files, "deadbeef")
+    assert "구현 검증 완료" in undone
+    assert "합의 대기" in undone
+    assert "확정 라벨 없음" in undone
+    assert "빌더가 판단하지 않는다" in undone     # 측정 상태를 단정하지 않는다
+    assert "채점기 납품 전체 완료" in undone      # 그렇게 쓰지 않는다는 경고
+    assert "원본 증빙 미확보" not in undone       # 시점에 묶인 단정은 없앴다
+
+    _add_label(fake_repo)
+    monkeypatch.setattr(af, "FORMAT_VERSION", "1.1")
+    done = pkg.build_readme("pre_review", files, "deadbeef")
+    assert "확정 (`1.1`)" in done
+    assert "합의 대기" not in done
+    assert "이 단계 패키지에는 넣지 않는다" in done   # 라벨이 있어도 정답 없는 단계다
 
 
 def test_existing_zip_is_not_overwritten_silently(tmp_path, capsys):
@@ -249,8 +339,18 @@ def test_tools_readme_separates_usable_from_blocked(tmp_path):
     assert "행별 대조" in readme          # 쓸 수 있는 입력 검증·행별 비교
     assert "미정" in readme               # 산식 미정
     assert "0%로 적지 않는다" in readme    # 산출 불가를 0으로 적지 않는다
-    assert "합의 대기" in readme          # 형식은 합의 전
     assert "평가가 아니다" in readme      # 합성 실행 성공 ≠ 평가 완료
+
+
+@pytest.mark.parametrize("version, shown, hidden", [
+    ("1.1-draft", "초안 / 합의 대기", "` 확정.**"),
+    ("1.1", "`1.1` 확정.", "합의 대기"),
+])
+def test_tools_readme_format_row_follows_the_actual_version(monkeypatch, version, shown, hidden):
+    monkeypatch.setattr(af, "FORMAT_VERSION", version)
+    readme = pkg.build_readme("tools", list(pkg.TOOLS_FILES), "deadbeef")
+    assert shown in readme
+    assert hidden not in readme
 
 
 def test_tools_readme_states_dependencies_and_checkout(tmp_path):

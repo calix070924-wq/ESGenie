@@ -252,8 +252,7 @@ def collect(stage: str) -> list[str]:
         return list(TOOLS_FILES)
 
     missing: list[str] = []
-    label_dir = REPO / FINAL_LABEL_DIR
-    labels = sorted(p for p in label_dir.glob("*.csv")) if label_dir.is_dir() else []
+    labels = _label_files()
     if not labels:
         missing.append(f"확정 정답 라벨이 없다 ({FINAL_LABEL_DIR}/*.csv)")
     for rel in FINAL_EXTRA_FILES:
@@ -261,7 +260,7 @@ def collect(stage: str) -> list[str]:
             missing.append(f"없는 파일: {rel}")
 
     # 형식이 합의되어 확정 버전이 적혔는지 — 초안 상태로 최종본을 만들지 않는다.
-    if af.FORMAT_VERSION.endswith("-draft"):
+    if not _format_confirmed():
         missing.append(f"공통 답안 형식이 아직 초안이다 (format_version={af.FORMAT_VERSION}). "
                        "B 합의 후 확정 버전을 적어야 최종본을 만들 수 있다")
     if missing:
@@ -269,21 +268,50 @@ def collect(stage: str) -> list[str]:
             "최종본을 만들 수 없다. 미완료 항목을 빈 파일로 채우지 않는다:\n  - "
             + "\n  - ".join(missing))
 
-    return _dedupe(PRE_REVIEW_FILES, FINAL_EXTRA_FILES,
-                   [str(p.relative_to(REPO)) for p in labels])
+    return _dedupe(PRE_REVIEW_FILES, FINAL_EXTRA_FILES, labels)
+
+
+def _label_files() -> list[str]:
+    """확정 라벨 디렉터리의 CSV 목록(저장소 상대 경로)."""
+    label_dir = REPO / FINAL_LABEL_DIR
+    if not label_dir.is_dir():
+        return []
+    return [str(p.relative_to(REPO)) for p in sorted(label_dir.glob("*.csv"))]
+
+
+def _format_confirmed() -> bool:
+    return not af.FORMAT_VERSION.endswith("-draft")
 
 
 def _verification_state(stage: str) -> list[tuple[str, str]]:
-    """검증 상태 — 완료와 미완료를 구분해 적는다. 추정치를 적지 않는다."""
+    """검증 상태 — 완료와 미완료를 구분해 적는다. 추정치를 적지 않는다.
+
+    형식·라벨은 **빌드 시점의 저장소에서 읽는다**(고정 문구로 단정하지 않는다).
+    실제 측정 상태는 빌더가 알 수 없으므로 판단하지 않고 검증 기록을 가리킨다.
+    """
+    labels = _label_files()
+    if not labels:
+        label_state = "**미완료 — 확정 라벨 없음**"
+    elif stage == "final":
+        label_state = f"확정 라벨 {len(labels)}개 파일 — 이 패키지에 포함"
+    else:
+        label_state = (f"확정 라벨 {len(labels)}개 파일이 저장소에 있다 — "
+                       "이 단계 패키지에는 넣지 않는다(단계 성격)")
     rows = [
         ("공통 답안 형식 정의·검증기", "구현 검증 완료 (합성 입력)"),
         ("ESGenie 어댑터 (페이지 0→1 변환 1회)", "구현 검증 완료 (합성 입력)"),
         ("채점 로직 (확정 규칙만)", "구현 검증 완료 (합성 입력)"),
         ("표본 추출 (고정 씨값·전수 집합)", "구현 검증 완료"),
-        ("공통 답안 형식 B 합의", "**미완료 — 합의 대기**"),
-        ("정답 라벨", "**미완료 — 원본 증빙 미확보, 사람 검토 전**"),
-        ("실제 채점·지표 산출", "**미실행**"),
-        ("지표 분자·분모 산식", "**미정 — 임의 구현하지 않았다**"),
+        ("공통 답안 형식 B 합의",
+         f"확정 (`{af.FORMAT_VERSION}`)" if _format_confirmed()
+         else "**미완료 — 합의 대기**"),
+        ("정답 라벨", label_state),
+        ("실제 채점·지표 산출",
+         "이 패키지에는 실행 결과가 없다 — 실제 측정 상태는 저장소 검증 기록"
+         "(`docs/validation/eval-scoring-20261006/`)이 기준이다(빌더가 판단하지 않는다)"),
+        ("지표 분자·분모 산식",
+         "확정 2026-10-06 — `docs/지표결정요청표_2026-10-06.md` §6. "
+         "판정표 이전 단계의 미정은 같은 문서 §6.3"),
     ]
     if stage in ("pre_review", "tools", "format_review"):
         rows.append(("이 패키지의 정답 포함 여부", "없음 — 금지 검사를 통과했다"))
@@ -333,15 +361,14 @@ def build_readme(stage: str, files: list[str], sha: str) -> str:
             "",
             "1. `docs/공통답안형식_v1초안_2026-10-06.md` 검토 → §9의 인터페이스 5개 항목 회신",
             "2. `data/eval/sample/*/labels_blank.csv` 작성 (가이드 §3의 열 설명 참고)",
-            "   - 원본 증빙이 확보된 뒤에 작성한다. 현재 A도 원본을 받지 못했다.",
+            "   - 원본 증빙을 받은 뒤 원본만 보고 작성한다.",
             "3. 열람 확인 3문항과 함께 제출",
             "",
             "## 들어 있지 않은 것 (의도적)",
             "",
             "| 빠진 것 | 이유 |",
             "|---|---|",
-            "| 정답 라벨 | 아직 아무도 매기지 못했다(원본 증빙 미확보). 독립 라벨링 전에는",
-            "전달하지 않는다 |",
+            "| 정답 라벨 | 독립 라벨링 전에는 전달하지 않는다 |",
             "| ESGenie 실제 응답 | 독립 라벨링 전에는 전달하지 않는다 |",
             "| 검증 문서·출력계약 문서 | ESGenie 기대값이 인용되어 있다 |",
             "| 채점기 코드·사용법·지표 정의 | 라벨링에 필요하지 않다. 최종본에서 전달한다 |",
@@ -491,8 +518,11 @@ def build_readme(stage: str, files: list[str], sha: str) -> str:
             "공식 비율은 보류되고 M2·M3 건수가 실제보다 적을 수 있다 |",
             "| 해당 없음 | 종합 점수. **지표를 하나로 합치지 않는 것이 확정 요구사항**이다. "
             "미완료 기능이 아니다 |",
-            "| **아직 못 한다** | 실제 평가. 원본 증빙과 정답 라벨이 없다 |",
-            "| 형식 | **v1 초안 / 합의 대기.** B 회신 전까지 합의 완료가 아니다 |",
+            "| 이 패키지 밖 | 실제 평가. 이 패키지에는 정답 라벨과 실제 응답이 없다(단계 "
+            "성격). 실제 측정 상태는 저장소 검증 기록이 기준이다 |",
+            ("| 형식 | **`" + af.FORMAT_VERSION + "` 확정.** |") if _format_confirmed()
+            else ("| 형식 | **`" + af.FORMAT_VERSION + "` 초안 / 합의 대기.** "
+                  "B 회신 전까지 합의 완료가 아니다 |"),
             "",
             "지표는 결과 JSON의 `metric_scopes[]`에 시스템·실행·단계별로 들어간다. 각",
             "지표에 `status`(`산출`/`보류`/`산출_불가`)와 분자·분모 건수가 함께 적힌다.",
