@@ -17,6 +17,15 @@
 | ④ 공개 샘플 리허설02 | **실시 — 기록 일부 누락.** 아래 표 | `rehearsal02_20261011/` |
 | BM 세트 실제 시간 비교 | **시작 전.** 참가자·일정·요청 범위·기록 방법을 10/12까지 정민과 확정해야 한다. 사람 측정이 불가능하면 자동 처리시간만 측정했다고 쓰고 가치성 성과 수치는 미측정으로 남긴다 | — |
 
+### 0.0 회귀 (2026-10-11, 이 브랜치 최종 head)
+
+| 검사 | 결과 |
+|---|---|
+| `pytest -q -k 'pipeline or timing or worktime'` | **148 passed, 1 skipped** (10-07 기록 114 passed — T1·T3 테스트 추가) |
+| 전체 회귀 `pytest -q` | **5514 passed, 0 failed, 28 skipped** |
+| 환경 | Python 3.10.12, Linux aarch64(지민 맥의 작업 VM). `requirements.txt`에서 `sentence-transformers`(torch)만 설치하지 않았다. API 키 변수 제거. 정민 검토(Python 3.13, 5495 passed / 12 skipped)와 환경이 달라 따로 적는다 |
+| skip 28건 사유 | BM 원본 PDF 없음 14 · 실보고서 PDF 없음 12 · 이전 시연 증빙 없음 1 · 임베딩 모델 없음 1. **새 skip·xfail 없음** |
+
 ### 0.1 공개 샘플 리허설02 재집계 (2026-10-11)
 
 공개 테스트 PDF 3건·4문항의 **절차 점검 기록**이다. 새 BM 보강 세트의 실제 시간 비교가 아니다.
