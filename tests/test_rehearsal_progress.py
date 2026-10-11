@@ -2,6 +2,7 @@
 from concurrent.futures import ThreadPoolExecutor
 from copy import deepcopy
 import json
+from pathlib import Path
 from threading import Event
 from types import SimpleNamespace
 
@@ -50,23 +51,51 @@ def test_sequential_file_boundaries_do_not_count_chunks_and_preserve_pipeline_ex
     assert events[-1]['phase'] == 'analyzing'
 
 
-def test_company_parser_cross_file_claims_are_identical(tmp_path):
+@pytest.mark.parametrize('texts, expected_value, expected_period, status, candidates, rejected', [
+    (['2026년 재활용률 20%', '2026년 재활용률 20%'], 20, 2026, 'reported', [(20, 2026), (20, 2026)], []),
+    (['2026년 재활용률 20%', '2026년 재활용률 30%'], None, None, 'ambiguous', [(20, 2026), (30, 2026)], []),
+    (['2025년 재활용률 20%', '2026년 재활용률 20%'], None, None, 'ambiguous', [(20, 2025), (20, 2026)], []),
+    (['2026년 재활용률 20%', '2027년 재활용률 60% 목표\n2026년 재활용률 120%'],
+     20, 2026, 'reported', [(20, 2026)], ['target_not_actual', 'invalid_rate']),
+    (['2027년 재활용률 60% 목표\n2026년 재활용률 120%', '2026년 재활용률 20%인가?'],
+     None, None, None, [], ['target_not_actual', 'invalid_rate', 'question_not_answer']),
+])
+def test_company_parser_cross_file_claims_are_identical(tmp_path, texts, expected_value, expected_period,
+                                                        status, candidates, rejected):
     from esgenie.supplychain import parse_saq_claims
     import fitz
     paths = []
-    for name, value in [('one.pdf', 20), ('two.pdf', 30)]:
-        path = tmp_path / name
+    font = Path(__file__).resolve().parents[1] / 'esgenie/assets/fonts/NotoSansKR-Regular.ttf'
+    for i, text in enumerate(texts):
+        path = tmp_path / f'answer-{i}.pdf'
         with fitz.open() as doc:
-            doc.new_page().insert_text((40, 60), f'2026 recycling rate {value}%')
-            doc.save(path)
+            page = doc.new_page()
+            page.insert_text((40, 60), text, fontname='korean', fontfile=str(font), fontsize=12)
+            doc.subset_fonts()
+            doc.save(path, deflate=True)
+        with fitz.open(path) as doc:
+            assert text in doc[0].get_text().replace('\xa0', ' ')  # Exercise real PDF extraction with readable Korean.
         paths.append(str(path))
-    docs = {p: {'id': str(i), 'name': p.split('/')[-1]} for i, p in enumerate(paths)}
+    docs = {p: {'id': str(i), 'name': Path(p).name} for i, p in enumerate(paths)}
     baseline = parse_saq_claims(paths)
     events = []
     with observe('run', events.append):
         actual = parse_saq_claims(CompanyFiles(paths, docs))
     assert actual == baseline and actual.diagnostics == baseline.diagnostics
-    assert len([e for e in events if e['kind'] == 'file_finished']) == 2
+    assert [d['reason'] for d in actual.diagnostics] == rejected
+    assert all(d['source'].startswith('saq:answer-') and '재활용률' in d['raw'] for d in actual.diagnostics)
+    if status is None:
+        assert not actual
+    else:
+        assert set(actual) == {'E-6-2'}  # Empty ClaimSets cannot pass the equality check.
+        claim = actual['E-6-2']
+        assert (claim.value, claim.period, claim.status, claim.unit) == (expected_value, expected_period, status, '%')
+        assert [(c['value'], c['period']) for c in claim.candidates] == candidates
+        assert [c['source'] for c in claim.candidates] == [f'saq:answer-{i}.pdf' for i in range(len(candidates))]
+        assert all(c['page'] == 0 and c['position'] >= 0 and '재활용률' in c['raw'] for c in claim.candidates)
+        assert claim.source == ' / '.join(dict.fromkeys(c['source'] for c in claim.candidates))
+        assert claim.diagnostics == (['여러 실적 주장값/연도가 상충하여 확정 불가'] if status == 'ambiguous' else [])
+    assert len([e for e in events if e['kind'] == 'file_finished']) == len(paths)
     assert all(e['file_role'] == 'company_answer' for e in events)
 
 
@@ -290,3 +319,110 @@ def test_reusing_file_mapping_does_not_replay_extraction_events():
     with observe('run', events.append):
         assert list(files.items()) == list(files.items()) == [('a.pdf', 'a')]
     assert [e['kind'] for e in events] == ['file_started', 'file_finished', 'stage']
+
+
+@pytest.mark.parametrize('snapshots', [False, True])
+def test_retry_reason_survives_the_next_attempt_and_is_scoped_to_request(snapshots):
+    job = {'run_id': 'run', 'status': 'running'}
+    def observer(event):
+        if not snapshots:
+            event = {k: v for k, v in event.items() if k != 'snapshot'}
+        apply_event(job, event)
+    with observe('run', observer):
+        emit('request_started', request_id='r', provider='openai', attempt=1, max_attempts=3)
+        emit('request_retry', request_id='r', provider='openai', attempt=2, max_attempts=3,
+             delay_seconds=1, reason='시간 초과')
+        emit('request_started', request_id='r', provider='openai', attempt=2, max_attempts=3)
+        # A poll that entirely missed backoff still sees the actual retry and its cause.
+        request = json.loads(json.dumps(job))['requests'][0]
+        assert request['state'] == 'waiting' and request['attempt'] == 2
+        assert request['last_retry']['reason'] == '시간 초과'
+        assert request['last_retry']['attempt'] == 2 and request['last_retry']['delay_seconds'] == 1
+        emit('request_retry', request_id='r', provider='openai', attempt=3, max_attempts=3,
+             delay_seconds=2, reason='요청 한도')
+        emit('request_started', request_id='r', provider='openai', attempt=3, max_attempts=3)
+        assert job['requests'][0]['last_retry']['reason'] == '요청 한도'
+        emit('request_finished', request_id='r')
+        emit('request_started', request_id='next', provider='openai', attempt=1, max_attempts=3)
+        assert job['requests'][0]['last_retry'] is None
+
+
+def test_missed_file_completion_is_recovered_before_next_file_finishes(tmp_path, monkeypatch):
+    started, release = Event(), Event()
+    def runner(p, directory):
+        emit('targets', total_files=2)
+        emit('file_started', file_id='a', file_name='a.pdf', file_role='evidence')
+        emit('file_finished', file_id='a')
+        emit('file_started', file_id='b', file_name='b.pdf', file_role='company_answer')
+        started.set()
+        assert release.wait(5)
+        emit('file_finished', file_id='b')
+        return result()
+    store = ProjectStore(tmp_path, runner)
+    save = store.save
+    failures = []
+    def flaky_save(p):
+        if p['job']['status'] == 'running' and p['job'].get('sequence') == 3 and not failures:
+            failures.append(3)
+            raise OSError('injected lost file completion')
+        save(p)
+    monkeypatch.setattr(store, 'save', flaky_save)
+    try:
+        p = create(store)
+        store.start(p['id'])
+        assert started.wait(5)
+        job = store.read(p['id'])['job']
+        assert failures == [3]
+        assert job['completed_files'] == 1 and job['total_files'] == 2
+        assert [f['id'] for f in job['active_files']] == ['b']
+        assert [e['sequence'] for e in job['events']] == [1, 2, 3, 4]
+        release.set()
+        drain(store)
+        job = store.read(p['id'])['job']
+        assert job['status'] == 'complete' and job['completed_files'] == 2
+    finally:
+        release.set()
+        store.close()
+
+
+@pytest.mark.parametrize('fail_analysis', [False, True])
+def test_terminal_save_uses_snapshot_even_when_all_progress_writes_fail(tmp_path, monkeypatch, fail_analysis):
+    failures = []
+    def runner(p, directory):
+        emit('targets', total_files=2)
+        for fid in ('a', 'b'):
+            emit('file_started', file_id=fid, file_name=fid+'.pdf', file_role='evidence')
+            emit('file_finished', file_id=fid)
+        for _ in range(110):
+            emit('stage', phase='organizing', stage='정리 중', secret='not part of public contract')
+        if fail_analysis:
+            raise TimeoutError('injected final failure')
+        return result()
+    store = ProjectStore(tmp_path, runner)
+    save = store.save
+    def unavailable_progress(p):
+        if p['job']['status'] == 'running' and p['job'].get('sequence', 0) > 0:
+            failures.append(p['job']['sequence'])
+            raise OSError('progress unavailable')
+        save(p)
+    monkeypatch.setattr(store, 'save', unavailable_progress)
+    try:
+        p = create(store)
+        p['result'] = result()
+        store.save(p)
+        store.start(p['id'])
+        drain(store)
+        job = store.read(p['id'])['job']
+        assert len(failures) == 115
+        assert job['status'] == ('failed' if fail_analysis else 'complete')
+        assert job['total_files'] == job['completed_files'] == 2
+        assert job['completed_file_ids'] == ['a', 'b']
+        assert job['active_files'] == job['requests'] == []
+        assert len(job['events']) == 100 and job['sequence'] == 115
+        assert 'snapshot' not in json.dumps(job) and 'secret' not in json.dumps(job)
+        if fail_analysis:
+            assert store.read(p['id'])['result'] == p['result']
+        else:
+            assert store.read(p['id'])['result'] is not None
+    finally:
+        store.close()

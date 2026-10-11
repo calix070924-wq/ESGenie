@@ -18,13 +18,14 @@ def progress_fixture(project, directory):
     emit('targets', total_files=len(documents))
     emit('stage', phase='reading', stage='회사 작성 답변과 증빙 자료를 읽고 있어요')
     fail = '실패' in project['company_name'] and bool(project.get('result'))
+    missed_poll = '폴링 간격' in project['company_name']
     for document in documents:
         emit('file_started', file_id=document['id'], file_name=document['name'], file_role=document['role'])
         calls = 0
         def request(**kwargs):
             nonlocal calls
             calls += 1
-            time.sleep(2)  # Give Chrome time to observe the actual injected attempt.
+            time.sleep((0.1 if calls == 1 else 5) if missed_poll else 2)
             if calls == 1 or fail:
                 raise TimeoutError('injected timeout, no external request')
             return SimpleNamespace(choices=[SimpleNamespace(message=SimpleNamespace(content='fixture response'))])

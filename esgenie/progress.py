@@ -7,17 +7,22 @@ from __future__ import annotations
 
 from contextlib import contextmanager
 from contextvars import ContextVar
+from copy import deepcopy
 from datetime import datetime, timezone
 from threading import RLock
+
+from .progress_state import apply_event, progress_snapshot
 
 _session = ContextVar("analysis_progress", default=None)
 
 
 @contextmanager
-def observe(run_id, observer):
-    token = _session.set({"run_id": run_id, "observer": observer, "sequence": 0, "lock": RLock()})
+def observe(run_id, observer, *, initial_state=None):
+    state = {"completed_files": 0, "completed_file_ids": [], "active_files": [], "requests": [], "events": [],
+             **deepcopy(initial_state or {}), "status": "running", "run_id": run_id, "sequence": 0}
+    token = _session.set({"run_id": run_id, "observer": observer, "sequence": 0, "lock": RLock(), "state": state})
     try:
-        yield
+        yield state
     finally:
         _session.reset(token)
 
@@ -31,8 +36,11 @@ def emit(kind, **fields):
         session["sequence"] += 1
         event = {**fields, "kind": kind, "run_id": session["run_id"],
                  "sequence": session["sequence"], "at": datetime.now(timezone.utc).isoformat()}
+        # A cumulative snapshot repairs missed writes without an unbounded replay queue.
+        # Both sides use the same reducer; history is capped at 100 observations.
         try:
-            session["observer"](event)
+            apply_event(session["state"], event)
+            session["observer"]({**event, "snapshot": progress_snapshot(session["state"])})
         except Exception:
             pass  # An unavailable UI or disk must not turn a successful AI call into failure.
 

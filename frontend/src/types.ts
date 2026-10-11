@@ -124,6 +124,12 @@ export type Project = {
       started_at: string;
       delay_seconds?: number | null;
       reason: string;
+      last_retry?: {
+        attempt: number;
+        at: string;
+        reason: string;
+        delay_seconds?: number;
+      } | null;
     }[];
   };
 };

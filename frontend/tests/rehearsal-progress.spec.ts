@@ -81,6 +81,40 @@ test('final injected failure stops spinner, keeps previous results and offers re
   });
 });
 
+test('retry cause survives when polling skips backoff and after refresh', async ({
+  page,
+}, info) => {
+  await setup(page, '폴링 간격 검증 회사', true);
+  // Deliver only actual server responses outside backoff, reproducing a missed short retry.
+  await page.route('**/api/projects/*', async (route) => {
+    if (route.request().method() !== 'GET') return route.continue();
+    let response = await route.fetch();
+    let data = await response.json();
+    const deadline = Date.now() + 10000;
+    while (data.job.requests?.some((request: any) => request.state === 'retrying')) {
+      if (Date.now() >= deadline) throw new Error('Injected backoff did not end');
+      await new Promise((resolve) => setTimeout(resolve, 100));
+      response = await route.fetch();
+      data = await response.json();
+    }
+    await route.fulfill({ response });
+  });
+  await page.getByRole('button', { name: '분석 시작', exact: true }).click();
+  await expect(progress(page)).toContainText('AI 재시도 응답 대기 중');
+  await expect(progress(page)).toContainText('시도 2 / 3');
+  await expect(progress(page)).toContainText('최근 재시도 사유: AI 응답 대기 시간이 초과');
+  await page.screenshot({
+    path: info.outputPath('retry-after-missed-backoff.png'),
+    fullPage: true,
+  });
+  await page.reload();
+  await expect(progress(page)).toContainText('AI 재시도 응답 대기 중');
+  await expect(progress(page)).toContainText('최근 재시도 사유: AI 응답 대기 시간이 초과');
+  await expect(page.getByRole('table', { name: '실사 응답 목록' })).toBeVisible({ timeout: 30000 });
+  await expect(progress(page)).toContainText('파일 처리 완료 2 / 2개');
+  await expect(progress(page)).not.toContainText('최근 재시도 사유');
+});
+
 test('polling disconnect removes indefinite spinner and reconnects to server status', async ({
   page,
 }, info) => {

@@ -13,7 +13,7 @@ from uuid import uuid4
 from .demo import populate_example
 from .presenter import timestamp
 from .review import affected_by_document, invalidate, reconcile
-from .progress_state import apply_event, finish
+from .progress_state import apply_event, finish, restore_progress
 from esgenie.progress import observe, failure_reason
 
 logger = logging.getLogger(__name__)
@@ -226,8 +226,9 @@ class ProjectStore:
             project["job"].update(status="running", phase="analyzing", started_at=at, stage_started_at=at,
                                   stage="서류를 읽고 질문에 맞는 답변과 근거를 찾고 있어요", event_at=at)
             self.save(project)
+        progress = deepcopy(project["job"])
         try:
-            with observe(run_id, lambda event: self._progress(project_id, event)):
+            with observe(run_id, lambda event: self._progress(project_id, event), initial_state=progress) as progress:
                 result = self.runner(snapshot, self.directory(project_id))
             with self.lock:
                 project = self.read(project_id)
@@ -254,6 +255,7 @@ class ProjectStore:
                 result["documents"] = deepcopy(snapshot["documents"])
                 project["result"] = result
                 project["result_revision"] = snapshot["input_revision"]
+                restore_progress(project["job"], progress)
                 finish(project["job"], "complete", "확인할 내용을 정리했어요", timestamp())
                 self.save(project)
         except Exception as exc:
@@ -262,6 +264,7 @@ class ProjectStore:
                 project = self.read(project_id)
                 if project["job"].get("run_id") != run_id or project["job"]["status"] != "running":
                     return
+                restore_progress(project["job"], progress)
                 finish(project["job"], "failed", "자료 읽기를 마치지 못했어요", timestamp(),
                        failure_reason(exc) + " 이전 결과는 보관되어 있어요.")
                 self.save(project)

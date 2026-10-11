@@ -43,13 +43,21 @@ export function AnalysisProgress({ job, connected }: { job: Project['job']; conn
         {active && job.active_files?.length === 0 && <p>현재 처리 파일 없음 · {job.stage}</p>}
         {job.requests?.map((request) => (
           <p key={request.id}>
-            {request.state === 'retrying' ? 'AI 재시도 중' : 'AI 응답 대기 중'} · 시도{' '}
-            {request.attempt} / {request.max_attempts} · 경과 {elapsed(request.started_at, now)}
+            {request.state === 'retrying'
+              ? 'AI 재시도 중'
+              : request.last_retry
+                ? 'AI 재시도 응답 대기 중'
+                : 'AI 응답 대기 중'}{' '}
+            · 시도 {request.attempt} / {request.max_attempts} · 경과{' '}
+            {elapsed(request.started_at, now)}
             {request.state === 'retrying' && (
               <>
                 {' '}
                 · 재요청 전 대기 {Math.ceil(request.delay_seconds ?? 0)}초 · {request.reason}
               </>
+            )}
+            {request.state === 'waiting' && request.last_retry && (
+              <> · 최근 재시도 사유: {request.last_retry.reason}</>
             )}
           </p>
         ))}
