@@ -83,7 +83,8 @@ def _ocr_continuation(before, after):
     predicate = re.split(r'[.!?。;|]', after.lstrip(), maxsplit=1)[0]
     unfinished_action = re.search(
         r'(추적|산정|집계|측정|관리|실시|확인|복구|전달|배포|수령)'
-        r'(?:하|은|는|을|를)?(?:\s+[가-힣]+)*\s*$', before)
+        # 주어가 별도 OCR 줄에 놓여도 숫자·영문 부서명을 지나 부정 술어까지 잇는다.
+        r'(?:하|은|는|을|를)?(?:\s+[가-힣A-Za-z0-9_-]+)*\s*$', before)
     independent = (re.search(r'scope\s*\d|SUP-|CUS-|(?m:^\s*20\d{2}(?:\s*년|\b))', predicate, re.I)
                    or _SCOPE_FIELD.search(predicate)
                    or _LOCAL_PERIOD.match(next_line) or re.match(_RECORD_TIME, next_line))

@@ -991,3 +991,51 @@ def test_multi_site_list_stops_at_numbered_recipient_after_last_metadata_site(de
     a = answer(graph_for(pages, header='기록 모음'), 'E-2')
     assert a.value is True, a.to_dict()
     assert a.boundary['site'] == '대전 제3공장, 아산 제4공장', a.to_dict()
+
+
+# Eighth review: combine numbered actors with a second OCR line break.
+def multiline_actor_rows(code, actor, multiline, negative):
+    prefix = 'Scope 3 배출 산정은' if code == 'C-8' else '08-30 경영진 검토 회의 실시는'
+    text = prefix + '\n' + actor + ('\n' if multiline else ' ')
+    text += '아직 하지 않았다.' if negative else '실제로 했다.'
+    if code == 'C-8':
+        return [('온실가스 배출 현황', expanded_carbon(text))]
+    return [NORMAL['E-2'][0], ('경영진 검토 기록', text)]
+
+
+@pytest.mark.parametrize('code', ['C-8', 'E-2'])
+@pytest.mark.parametrize('actor', ['담당자가', '품질1팀이', 'QA-1팀이', 'HR_2팀이'])
+@pytest.mark.parametrize('multiline', [False, True])
+@pytest.mark.parametrize('negative', [False, True])
+def test_numbered_actor_and_second_wrap_preserve_execution_polarity(code, actor, multiline, negative):
+    a = answer(graph_for(multiline_actor_rows(code, actor, multiline, negative)), code)
+    assert a.value is (None if negative else True), a.to_dict()
+    assert a.status == ('insufficient' if negative else 'verified'), a.to_dict()
+
+
+@pytest.mark.parametrize('stage', ['initial', 'followup'])
+@pytest.mark.parametrize('code', ['C-8', 'E-2'])
+@pytest.mark.parametrize('actor', ['품질1팀이', 'QA-1팀이'])
+def test_serialized_extraction_context_keeps_multiline_actor_negative(stage, code, actor):
+    """Portable counterparts to the eight private saved-copy review failures."""
+    import json
+    from esgenie.ssot.evidence_graph import build_unified_graph
+
+    pages = multiline_actor_rows(code, actor, True, True)
+    clauses = [ExtractedClause(section=s, text=t, page=i) for i, (s, t) in enumerate(pages)]
+    header = '2024년 8월 기록 / 대전 제3공장'
+    ext = OcrExtraction('negative_execution.pdf', DocChannel.UNSTRUCTURED, 'policy_manual',
+                        clauses=clauses, raw_text=header + '\n' + '\n'.join(t for _, t in pages))
+    # The followup contains an additional unrelated education record; it cannot
+    # prove Scope 3 calculation or a management review that explicitly did not occur.
+    extractions = [ext]
+    if stage == 'followup':
+        extractions.append(OcrExtraction('education_followup.pdf', DocChannel.UNSTRUCTURED,
+                                        'policy_manual', raw_text=header,
+                                        clauses=[ExtractedClause(section='추가 교육 실시', page=0,
+                                                  text='관리자와 근로자에게 방침·절차 교육을 실시했다.')]))
+    saved = json.loads(json.dumps([e.to_dict() for e in extractions]))
+    restored = [OcrExtraction.from_dict(e) for e in saved]
+    graph = build_unified_graph(None, restored, corp_code='SYN', corp_name='합성기업', report_year=2026)
+    a = answer(graph, code)
+    assert a.value is None and a.status == 'insufficient', a.to_dict()
