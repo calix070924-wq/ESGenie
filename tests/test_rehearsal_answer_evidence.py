@@ -596,3 +596,88 @@ def test_metadata_punctuation_is_not_a_record_body(punctuation, same_scope):
             + f'\n사업장: {site}' + punctuation + '\n' + NORMAL['E-2'][1][1])
     a = answer(graph_for([('경영 책임 및 검토 기록', text)], header='기록 모음'), 'E-2')
     assert a.value is (True if same_scope else None)
+
+
+def carbon_record_text(separator='. ', tracked=False, date='2024.08.30'):
+    parts = ['온실가스 감축목표를 수립한다',
+             'Scope 1, Scope 2 배출을 산정·추적한다',
+             f'Scope 3 배출을 {date}에 산정했다' if tracked else 'Scope 3 적용 범위는 가치사슬 전체다',
+             '온실가스 산정 결과를 보고서에 공개한다']
+    return separator.join(parts)
+
+
+@pytest.mark.parametrize('separator', ['. ', '.', ';', '。'])
+@pytest.mark.parametrize('tracked', [False, True])
+def test_punctuation_without_whitespace_still_separates_scope_topic_and_action(separator, tracked):
+    a = answer(graph_for([('온실가스 배출 현황', carbon_record_text(separator, tracked))]), 'C-8')
+    assert a.value is (True if tracked else None), a.to_dict()
+
+
+@pytest.mark.parametrize('date', ['2024/08/30', '2024 / 08 / 30', '2024.08.30', '2024 . 08 . 30'])
+def test_numeric_date_inside_positive_scope_record_is_not_sentence_boundary(date):
+    a = answer(graph_for([('온실가스 배출 현황', carbon_record_text(tracked=True, date=date))]), 'C-8')
+    assert a.value is True, a.to_dict()
+
+
+@pytest.mark.parametrize('separator', [' | ', ' / ', ': ', ' '])
+def test_explicit_site_field_does_not_include_body_recipient_site(separator):
+    pages = [(NORMAL['E-2'][0][0], '적용 기간: 2024년 8월 | 사업장: 대전 제3공장 | ' + NORMAL['E-2'][0][1]),
+             (NORMAL['E-2'][1][0], '적용 기간: 2024년 8월 | 사업장: 대전 제3공장' + separator
+              + '08-30 회의를 실시하고 부산 제7공장 담당자에게 결정 사항을 전달했다.')]
+    a = answer(graph_for(pages, header='기록 모음'), 'E-2')
+    assert a.value is True and a.boundary['site'] == '대전 제3공장', a.to_dict()
+
+
+@pytest.mark.parametrize('separator', ['. ', '.', ';', '。', '!', '?'])
+def test_compact_negative_statement_preserves_other_positive_scope_records(separator):
+    text = separator.join(['온실가스 감축목표를 수립한다',
+                           'Scope 1, Scope 2 배출을 산정·추적한다',
+                           'Scope 3 배출은 추적하지 않는다',
+                           '온실가스 결과를 보고서에 공개한다'])
+    a = answer(graph_for([('온실가스 배출 현황', text)]), 'C-8')
+    assert a.value is None and a.evidence_needed == ['Scope 3 추적']
+    assert all('추적하지 않는다' not in link.quote for link in a.evidence_links)
+
+
+@pytest.mark.parametrize('date', ['2024.08.30', '2024 . 08 . 30', '08.30', '08 . 30'])
+@pytest.mark.parametrize('completed', [False, True])
+def test_execution_date_dots_preserve_record_polarity(date, completed):
+    text = f'{date} 경영진 검토 회의를 ' + ('실시했다.' if completed else '실시하지 않았다.')
+    a = answer(graph_for([NORMAL['E-2'][0], ('경영진 검토 실시 기록', text)]), 'E-2')
+    assert a.value is (True if completed else None)
+    assert '2024년 8월 기록' in a.boundary_label
+
+
+@pytest.mark.parametrize('separator', [' | ', ' / ', ': ', ' '])
+@pytest.mark.parametrize('site_first', [False, True])
+@pytest.mark.parametrize('same_scope', [False, True])
+def test_scope_field_axes_ignore_body_event_date_and_recipient_sites(separator, site_first, same_scope):
+    def fields(period, site):
+        values = [f'적용 기간: {period}', f'사업장: {site}']
+        return ' | '.join(reversed(values) if site_first else values)
+    period, site = ('2024년 8월', '대전 제3공장 / 아산 제4공장')
+    other_period = period if same_scope else '2025년 7월'
+    pages = [(NORMAL['E-2'][0][0], fields(period, site) + separator + NORMAL['E-2'][0][1]),
+             (NORMAL['E-2'][1][0], fields(other_period, site) + separator
+              + '2024 . 08 . 30 경영진 검토 회의를 실시하고 부산 제7공장 담당자에게 결정 사항을 전달했다.')]
+    a = answer(graph_for(pages, header='기록 모음'), 'E-2')
+    assert a.value is (True if same_scope else None), a.to_dict()
+    assert '부산' not in a.boundary_label and '2024 . 08 . 30' not in a.boundary_label
+    assert '대전 제3공장' in a.boundary_label and '아산 제4공장' in a.boundary_label
+    if same_scope:
+        assert a.boundary['period_text'] == period
+    else:
+        assert '2025년 7월' in a.boundary_label and not a.boundary
+
+
+@pytest.mark.parametrize('supplied,customer', [(False, False), (True, False), (False, True), (True, True)])
+def test_spaced_dot_dates_in_delivery_rows_preserve_each_recipient_record(supplied, customer):
+    pages = [NORMAL['E-7'][0], NORMAL['E-7'][2],
+             ('전달 기록', '공급사 6곳·고객 1곳이 전달 대상이다.'),
+             ('문의 회신', '문의를 접수하고 담당자가 회신했다.')]
+    if supplied:
+        pages.append(('전달 기록', 'SUP-01 | 2024 . 08 . 30 11:00 발송 / 13:00 수령 확인.'))
+    if customer:
+        pages.append(('전달 기록', 'CUS-01 | 2024 . 08 . 30 11:00 발송 / 14:00 수령 확인.'))
+    a = answer(graph_for(pages), 'E-7')
+    assert a.value is (True if supplied and customer else None)

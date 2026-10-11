@@ -231,6 +231,52 @@ def main():
                                        if not re.match(recipient + r'-\d+', c.text)]
             check(path, f'{stage}:E-7:remove_{recipient}_receipts', 'E-7', remove_receipts, None)
 
+        for separator in ('. ', '.', ';', '。'):
+            for tracked in (False, True):
+                def compact_carbon(inputs, separator=separator, tracked=tracked):
+                    text = separator.join([
+                        '온실가스 감축목표를 수립한다',
+                        'Scope 1, Scope 2 배출을 산정·추적한다',
+                        'Scope 3 배출을 2024.08.30에 산정했다' if tracked
+                        else 'Scope 3 적용 범위는 가치사슬 전체다',
+                        '온실가스 산정 결과를 보고서에 공개한다'])
+                    for ext in inputs:
+                        if ext.source_file.startswith('06_'):
+                            for clause in ext.clauses:
+                                clause.section, clause.text = '온실가스 배출 현황', text
+                check(path, f'{stage}:C-8:compact_{separator!r}_{tracked}', 'C-8',
+                      compact_carbon, True if tracked else None)
+
+        for date in ('2024/08/30', '2024 / 08 / 30', '2024.08.30', '2024 . 08 . 30'):
+            def dated_carbon(inputs, date=date):
+                for ext in inputs:
+                    if ext.source_file.startswith('06_'):
+                        for clause in ext.clauses:
+                            clause.section = '온실가스 배출 현황'
+                            clause.text = ('온실가스 감축목표를 수립한다. '
+                                           'Scope 1, Scope 2 배출을 산정·추적한다. '
+                                           f'Scope 3 배출을 {date}에 산정했다. '
+                                           '온실가스 산정 결과를 보고서에 공개한다.')
+            check(path, f'{stage}:C-8:execution_date_{date}', 'C-8', dated_carbon, True)
+
+        for separator in (' | ', ' / ', ': ', ' '):
+            def field_body(inputs, separator=separator):
+                for ext in inputs:
+                    if not ext.source_file.startswith('15_'):
+                        continue
+                    # 경계 필드와 본문의 관계만 통제한다. 원본 추출은 보존한다.
+                    ext.raw_text = '경영 책임 및 검토 기록 모음'
+                    rows = [
+                        ('경영 책임', '적용 기간: 2024년 8월 | 사업장: 대전 제3공장 | '
+                         '대표이사의 경영 책임과 권한을 지정한다. '
+                         '대표이사는 월 1회 경영진 검토 회의를 주재한다.'),
+                        ('경영진 검토 실시 기록', '적용 기간: 2024년 8월 | 사업장: 대전 제3공장'
+                         + separator + '08-30 회의를 실시하고 부산 제7공장 담당자에게 결정 사항을 전달했다.')]
+                    ext.clauses = [replace(ext.clauses[0], section=section, text=text, page=page)
+                                   for page, (section, text) in enumerate(rows)]
+            check(path, f'{stage}:E-2:field_body_{separator!r}', 'E-2', field_body, True,
+                  scope='대전 제3공장', period='2024년 8월')
+
     payload = {'mode': 'saved_extraction_copies_review_controls', 'external_calls': 0,
                'passed': all(c['passed'] for c in checks), 'checks': checks,
                'note': 'No new AI/OCR run or independent A/B labels/scores.'}

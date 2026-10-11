@@ -25,7 +25,7 @@ class Requirement:
     def matches(self, text: str) -> bool:
         def matches_patterns(patterns, body):
             return all(re.search(p, body, re.I | re.S) for p in patterns)
-        units = re.split(r'(?<=[.!?。;])\s+|\n', text)
+        units = _statement_units(text)
         if self.same_unit:
             return any(matches_patterns(self.patterns, unit) for unit in units)
         return (matches_patterns(self.patterns, text)
@@ -43,6 +43,23 @@ _RECORD_TIME = (r'(?<!\d)(?:20\d{2}\s*[년./-]\s*)?'
                 r'(?:1[0-2]|0?[1-9])\s*[월./-]\s*(?:3[01]|[12]\d|0?[1-9])\s*일?(?!\d)'
                 r'|(?<!\d)(?:2[0-3]|1?\d)\s*[:시]\s*[0-5]\d\s*분?(?!\d)')
 _DELIVERY_RECORD = r'수령[^\n.!?。;]{0,30}확인|(?:전달|배포)[^\n.!?。;]{0,30}완료'
+
+
+def _statement_units(text):
+    """공백 없는 문장도 나누되 숫자 사이의 점은 날짜/수치로 보존한다."""
+    numeric_dots = {match.start() + match[0].index('.')
+                    for match in re.finditer(r'(?<=\d)[ \t]*\.[ \t]*(?=\d)', text)}
+    parts, start = [], 0
+    for match in re.finditer(r'[.!?。;]\s*|\n', text):
+        if match.start() in numeric_dots:
+            continue
+        end = match.start() + (match[0][0] != '\n')
+        if text[start:end].strip():
+            parts.append(text[start:end])
+        start = match.end()
+    if text[start:].strip():
+        parts.append(text[start:])
+    return parts
 
 
 # RBA 정의의 요건을 분해한다. 이 표는 가상 세트의 정답/출처 목록이 아니다.
@@ -140,8 +157,9 @@ _PROTECTIVE = re.compile(r'보복\s*(?:없|없는|없이)|이상.{0,12}없|누�
 
 
 def supported_parts(text):
-    parts = re.split(r'(?<=[.!?。;])\s+|(?<=이며)\s*|(?<=지만)\s*|'
-                     r'(?<=않으며)\s*|(?<=않았으며)\s*|\n(?=[^\n]*[|:])', text or '')
+    parts = [part for unit in _statement_units(text or '')
+             for part in re.split(r'(?<=이며)\s*|(?<=지만)\s*|'
+                                  r'(?<=않으며)\s*|(?<=않았으며)\s*', unit)]
     return '\n'.join(p for p in parts if not _UNSUPPORTED.search(_PROTECTIVE.sub('', p)))
 
 
@@ -351,6 +369,35 @@ _LOCAL_PERIOD = re.compile(r'20\d{2}\s*년\s*\d{1,2}'
                            r'(?:\s*[~–-]\s*\d{1,2})?\s*월(?:\s*\d{1,2}\s*일)?'
                            r'|20\d{2}\s*[./-]\s*\d{1,2}(?:\s*[./-]\s*\d{1,2})?')
 _SCOPE_FIELD = re.compile(r'(?:(?:대상|적용|보고|집계|운영)\s*(?:기간|범위)|사업장)\s*[:：|]')
+_SCOPE_SITE_TOKEN = re.compile(
+    r'전사(?:\s*모든\s*사업장)?|모든\s*사업장|'
+    r'(?:[가-힣]+\s*)?제\s*\d+\s*공장|두\s*공장(?:\s*전체)?|양\s*공장|'
+    r'[가-힣A-Za-z0-9]{1,12}(?:공장|사업장)')
+_SCOPE_VALUE_WORD = re.compile(r'기준|대상|전체|모든|및|과|와')
+
+
+def _scope_field_value(field, value):
+    """명시적 필드의 선두 값만 읽고 뒤의 실행/전달 본문은 제외한다."""
+    period_field = '기간' in field
+    site_field = '사업장' in field
+    offset, end = 0, 0
+    while offset < len(value):
+        separator = re.match(r'[\s/|·,:：;()\[\]~–-]*', value[offset:])
+        offset += separator.end()
+        match = None
+        if not site_field:
+            match = _LOCAL_PERIOD.match(value, offset)
+        if match is None and not period_field:
+            match = _SCOPE_SITE_TOKEN.match(value, offset)
+        if match is None:
+            # 접두/접미 메타데이터와 복수 사업장 접속 표현만 허용한다.
+            match = _SCOPE_VALUE_WORD.match(value, offset)
+            if match is None:
+                break
+            offset = match.end()
+            continue
+        offset = end = match.end()
+    return value[:end].strip()
 
 
 def _scope_parts(line):
@@ -399,7 +446,9 @@ def _candidate_nodes(graph):
     # 내부 후보 키만 나누며 공용 링크의 실제 node_id·페이지는 변경하지 않는다.
     for node in graph.text_nodes.values():
         chunks, lines, has_body = [], [], False
-        for line in re.split(r'\n|(?<=[.!?。;])\s+|(?=(?:' + _SCOPE_FIELD.pattern + r'))', node.text):
+        lines_to_read = [line for unit in _statement_units(node.text)
+                         for line in re.split(r'(?=(?:' + _SCOPE_FIELD.pattern + r'))', unit)]
+        for line in lines_to_read:
             declaration = _scope_declaration(line)
             # 연속된 기간/사업장 메타데이터는 하나의 범위다. 본문 뒤의 새
             # 선언부터 별도 후보로 읽어 앞선 요건에 마지막 범위가 덮이지 않게 한다.
@@ -429,8 +478,9 @@ def _node_scope(node, source_text):
             values = [prefix]
         else:
             fields = list(_SCOPE_FIELD.finditer(line))
-            values = [line[field.end():fields[i + 1].start() if i + 1 < len(fields) else len(line)]
-                      .split('|', 1)[0].strip() for i, field in enumerate(fields)]
+            values = [_scope_field_value(field[0], line[field.end():
+                       fields[i + 1].start() if i + 1 < len(fields) else len(line)])
+                      for i, field in enumerate(fields)]
         if not values:
             continue
         # 표 행의 명시적인 필드 값만 읽는다. 같은 행 본문이 언급하는
