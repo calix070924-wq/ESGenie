@@ -277,6 +277,55 @@ def main():
             check(path, f'{stage}:E-2:field_body_{separator!r}', 'E-2', field_body, True,
                   scope='대전 제3공장', period='2024년 8월')
 
+        for case in ('field_entity_role', 'negative_wrap', 'ordinal_next_year'):
+            for positive in (False, True):
+                def semantic_boundaries(inputs, case=case, positive=positive):
+                    for ext in inputs:
+                        if case == 'field_entity_role' and ext.source_file.startswith('15_'):
+                            ext.raw_text = '기록 모음'
+                            site = '대전 제3공장' if positive else '부산 제7공장'
+                            rows = [
+                                ('경영 책임', '적용 기간: 2024년 8월 | 사업장: 대전 제3공장 | '
+                                 '전사 경영지원 담당자가 대표이사의 경영 책임과 권한을 지정한다. '
+                                 '대표이사는 월 1회 경영진 검토 회의를 주재한다.'),
+                                ('경영진 검토 기록', f'적용 기간: 2024년 8월 | 사업장: {site} | '
+                                 '전사 경영지원 담당자가 08-30 경영진 검토 회의를 실시하고 완료를 확인했다.')]
+                            ext.clauses = [replace(ext.clauses[0], section=section, text=text, page=page)
+                                           for page, (section, text) in enumerate(rows)]
+                        elif case != 'field_entity_role' and ext.source_file.startswith('06_'):
+                            text = '온실가스 감축목표를 수립한다. '
+                            if case == 'ordinal_next_year':
+                                text += '배출 분류는 Scope 3. 2024년 Scope 1, Scope 2 배출을 산정·추적했다. '
+                                if positive:
+                                    text += 'Scope 3 배출을 산정했다. '
+                            else:
+                                text += 'Scope 1, Scope 2 배출을 산정·추적한다. '
+                                text += ('Scope 3 배출은 산정한다. ' if positive
+                                         else 'Scope 3 배출은 산정\n하지 않는다. ')
+                            text += '온실가스 산정 결과를 보고서에 공개한다.'
+                            for clause in ext.clauses:
+                                clause.section, clause.text = '온실가스 배출 현황', text
+                code = 'E-2' if case == 'field_entity_role' else 'C-8'
+                check(path, f'{stage}:{code}:{case}_{positive}', code, semantic_boundaries,
+                      True if positive else None,
+                      scope='대전 제3공장' if case == 'field_entity_role' and positive else '')
+
+        for separator in (' | ', ' / '):
+            def recipient_first(inputs, separator=separator):
+                for ext in inputs:
+                    if ext.source_file.startswith('15_'):
+                        ext.raw_text = '기록 모음'
+                        rows = [
+                            ('경영 책임', '적용 기간: 2024년 8월 | 사업장: 대전 제3공장 | '
+                             '대표이사의 경영 책임과 권한을 지정한다. '
+                             '대표이사는 월 1회 경영진 검토 회의를 주재한다.'),
+                            ('경영진 검토 기록', '적용 기간: 2024년 8월 | 사업장: 대전 제3공장'
+                             + separator + '부산 제7공장 담당자에게 08-30 경영진 검토 회의 실시 결과를 전달했다.')]
+                        ext.clauses = [replace(ext.clauses[0], section=section, text=text, page=page)
+                                       for page, (section, text) in enumerate(rows)]
+            check(path, f'{stage}:E-2:recipient_first_{separator!r}', 'E-2', recipient_first, True,
+                  scope='대전 제3공장')
+
     payload = {'mode': 'saved_extraction_copies_review_controls', 'external_calls': 0,
                'passed': all(c['passed'] for c in checks), 'checks': checks,
                'note': 'No new AI/OCR run or independent A/B labels/scores.'}

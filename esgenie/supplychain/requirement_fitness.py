@@ -46,12 +46,21 @@ _DELIVERY_RECORD = r'수령[^\n.!?。;]{0,30}확인|(?:전달|배포)[^\n.!?。;
 
 
 def _statement_units(text):
-    """공백 없는 문장도 나누되 숫자 사이의 점은 날짜/수치로 보존한다."""
-    numeric_dots = {match.start() + match[0].index('.')
-                    for match in re.finditer(r'(?<=\d)[ \t]*\.[ \t]*(?=\d)', text)}
+    """문장/표 행을 나누고 날짜 내부 기호와 OCR 문장 연속은 보존한다."""
+    numeric_dots = set()
+    # Scope 번호는 수치가 아니다. 문장 끝 번호와 다음 연도/날짜를
+    # 하나의 숫자로 묶지 않고, 인식된 날짜·소수 내부의 점만 보호한다.
+    for pattern in (_LOCAL_PERIOD, re.compile(_RECORD_TIME),
+                    re.compile(r'(?<![\w.])\d+[ \t]*\.[ \t]*\d+(?!\d)(?![ \t]*[년월])')):
+        for match in pattern.finditer(text):
+            if re.search(r'scope\s*$', text[:match.start()], re.I):
+                continue
+            numeric_dots.update(match.start() + m.start() for m in re.finditer(r'\.', match[0]))
     parts, start = [], 0
     for match in re.finditer(r'[.!?。;]\s*|\n', text):
         if match.start() in numeric_dots:
+            continue
+        if match[0][0] == '\n' and _ocr_continuation(text[start:match.start()], text[match.end():]):
             continue
         end = match.start() + (match[0][0] != '\n')
         if text[start:end].strip():
@@ -60,6 +69,19 @@ def _statement_units(text):
     if text[start:].strip():
         parts.append(text[start:])
     return parts
+
+
+def _ocr_continuation(before, after):
+    """줄바꿈된 동사·부정 보어를 이전 문장에 붙이고 새 표 행은 분리한다."""
+    next_line = after.split('\n', 1)[0].lstrip()
+    if not next_line or _SCOPE_FIELD.match(next_line):
+        return False
+    if re.match(r'(?:하지|되지|않|못|지\s*(?:않|못)|했다|하였다|한다|했습니다)', next_line):
+        return True
+    if '|' in next_line:
+        return False
+    return bool(re.search(r'(?:을|를|은|는|이|가|의)\s*$', before)
+                and re.match(r'(?:추적|산정|집계|측정|관리|실시|확인|복구|전달|배포|수령)', next_line))
 
 
 # RBA 정의의 요건을 분해한다. 이 표는 가상 세트의 정답/출처 목록이 아니다.
@@ -378,17 +400,29 @@ _SCOPE_VALUE_WORD = re.compile(r'기준|대상|전체|모든|및|과|와')
 
 def _scope_field_value(field, value):
     """명시적 필드의 선두 값만 읽고 뒤의 실행/전달 본문은 제외한다."""
+    # 파이프/콜론 뒤는 다른 셀/본문이다. 필드 라벨의 구분자는 호출자가
+    # 이미 제거했으므로 여기서 셀 경계를 넘어서 메타데이터를 찾지 않는다.
+    value = re.split(r'[|:：;]', value, maxsplit=1)[0]
     period_field = '기간' in field
     site_field = '사업장' in field
-    offset, end = 0, 0
+    offset, end, seen_site = 0, 0, False
     while offset < len(value):
-        separator = re.match(r'[\s/|·,:：;()\[\]~–-]*', value[offset:])
+        separator = re.match(r'[\s/·,()\[\]~–-]*', value[offset:])
         offset += separator.end()
         match = None
         if not site_field:
             match = _LOCAL_PERIOD.match(value, offset)
         if match is None and not period_field:
             match = _SCOPE_SITE_TOKEN.match(value, offset)
+            if match is not None:
+                # 명시한 복수 공장은 유지하되 뒤 본문의 '전사 담당자'나
+                # '다른 공장 담당자에게/공장에서'를 추가 적용 범위로 읽지 않는다.
+                if seen_site and (detect_site(match[0])[1] == 'entity'
+                                  or re.match(r'(?:에서|에게|으로|의|[이가은는])|'
+                                              r'\s+(?:담당자|담당|수신자)(?:에게|가|는|를|와|과)',
+                                              value[match.end():])):
+                    break
+                seen_site = True
         if match is None:
             # 접두/접미 메타데이터와 복수 사업장 접속 표현만 허용한다.
             match = _SCOPE_VALUE_WORD.match(value, offset)

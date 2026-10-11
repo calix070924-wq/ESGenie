@@ -681,3 +681,137 @@ def test_spaced_dot_dates_in_delivery_rows_preserve_each_recipient_record(suppli
         pages.append(('전달 기록', 'CUS-01 | 2024 . 08 . 30 11:00 발송 / 14:00 수령 확인.'))
     a = answer(graph_for(pages), 'E-7')
     assert a.value is (True if supplied and customer else None)
+
+
+def scope_rows_with_entity_role(same_scope):
+    site = '대전 제3공장' if same_scope else '부산 제7공장'
+    return [('경영 책임', '적용 기간: 2024년 8월 | 사업장: 대전 제3공장 | '
+             '전사 경영지원 담당자가 대표이사의 경영 책임과 권한을 지정한다. '
+             '대표이사는 월 1회 경영진 검토 회의를 주재한다.'),
+            ('경영진 검토 기록', f'적용 기간: 2024년 8월 | 사업장: {site} | '
+             '전사 경영지원 담당자가 08-30 경영진 검토 회의를 실시하고 완료를 확인했다.')]
+
+
+@pytest.mark.parametrize('same_scope', [False, True])
+def test_pipe_cell_with_entity_role_cannot_override_explicit_site(same_scope):
+    a = answer(graph_for(scope_rows_with_entity_role(same_scope), header='기록 모음'), 'E-2')
+    assert a.value is (True if same_scope else None), a.to_dict()
+    assert '전사' not in a.boundary_label
+    if same_scope:
+        assert a.boundary['site'] == '대전 제3공장'
+
+
+@pytest.mark.parametrize('separator', [' | ', ' / '])
+def test_recipient_first_body_cell_cannot_expand_explicit_site(separator):
+    pages = [('경영 책임', '적용 기간: 2024년 8월 | 사업장: 대전 제3공장 | ' + NORMAL['E-2'][0][1]),
+             ('경영진 검토 기록', '적용 기간: 2024년 8월 | 사업장: 대전 제3공장' + separator
+              + '부산 제7공장 담당자에게 08-30 경영진 검토 회의 실시 결과를 전달했다.')]
+    a = answer(graph_for(pages, header='기록 모음'), 'E-2')
+    assert a.value is True and a.boundary['site'] == '대전 제3공장', a.to_dict()
+
+
+@pytest.mark.parametrize('wrap', [False, True])
+@pytest.mark.parametrize('ending', ['하지 않는다.', '하지 않았다.', '했다.'])
+def test_line_wrapped_negative_remains_connected_to_its_action(wrap, ending):
+    sep = '\n' if wrap else ''
+    body = ('온실가스 감축목표를 수립한다. Scope 1, Scope 2 배출을 산정·추적한다. '
+            + 'Scope 3 배출은 산정' + sep + ending + ' 온실가스 산정 결과를 보고서에 공개한다.')
+    a = answer(graph_for([('온실가스 배출 현황', body)]), 'C-8')
+    assert a.value is (True if ending == '했다.' else None), a.to_dict()
+
+
+@pytest.mark.parametrize('separator', ['. ', '; ', '\n'])
+@pytest.mark.parametrize('positive', [False, True])
+def test_scope_number_and_next_sentence_year_are_not_one_numeric_token(separator, positive):
+    body = ('온실가스 감축목표를 수립한다. 배출 분류는 Scope 3' + separator
+            + '2024년 Scope 1, Scope 2 배출을 산정·추적했다. '
+            + ('Scope 3 배출을 산정했다. ' if positive else '')
+            + '온실가스 산정 결과를 보고서에 공개한다.')
+    a = answer(graph_for([('온실가스 배출 현황', body)]), 'C-8')
+    assert a.value is (True if positive else None), a.to_dict()
+
+
+@pytest.mark.parametrize('separator', [' | ', ' / ', ': ', '：', ' '])
+@pytest.mark.parametrize('site_first', [False, True])
+@pytest.mark.parametrize('same_scope', [False, True])
+def test_local_scope_remains_local_when_body_starts_with_entity_role(separator, site_first, same_scope):
+    def row(site, body):
+        fields = ['적용 기간: 2024년 8월', f'사업장: {site}']
+        return ' | '.join(reversed(fields) if site_first else fields) + separator + body
+    pages = [(NORMAL['E-2'][0][0], row('대전 제3공장', '전사 경영지원 담당자가 ' + NORMAL['E-2'][0][1])),
+             (NORMAL['E-2'][1][0], row('대전 제3공장' if same_scope else '부산 제7공장',
+                                     '전사 경영지원 담당자가 ' + NORMAL['E-2'][1][1]))]
+    a = answer(graph_for(pages, header='기록 모음'), 'E-2')
+    assert a.value is (True if same_scope else None), a.to_dict()
+    assert '전사' not in a.boundary_label and '대전 제3공장' in a.boundary_label
+    if same_scope:
+        assert a.boundary['site'] == '대전 제3공장'
+    else:
+        assert '부산 제7공장' in a.boundary_label and not a.boundary
+
+
+@pytest.mark.parametrize('record,positive', [
+    ('Scope 3 배출은 산정\n하지 않는다.', False),
+    ('Scope 3 배출은 산정하\n지 않는다.', False),
+    ('Scope 3 배출은 산정하지\n않았다.', False),
+    ('Scope 3 배출은 산정하지\n못했다.', False),
+    ('Scope 3 배출을\n산정\n하지 않았다.', False),
+    ('Scope 3 배출은\n산정했다.', True),
+    ('Scope 3 배출을\n산정\n했다.', True),
+])
+def test_ocr_line_breaks_preserve_scope_action_polarity(record, positive):
+    body = ('온실가스 감축목표를 수립한다. Scope 1, Scope 2 배출을 산정·추적한다. '
+            + record + ' 온실가스 결과를 공개한다.')
+    a = answer(graph_for([('온실가스 배출 현황', body)]), 'C-8')
+    assert a.value is (True if positive else None), a.to_dict()
+
+
+@pytest.mark.parametrize('record,positive', [
+    ('회의를 실시\n하지 않았다.', False),
+    ('회의를 실시하\n지 않았다.', False),
+    ('회의를\n실시\n하지 않았다.', False),
+    ('회의를\n실시했다.', True),
+])
+def test_ocr_line_breaks_preserve_review_execution_polarity(record, positive):
+    pages = [NORMAL['E-2'][0], ('경영진 검토 기록', '08-30 경영진 검토 ' + record)]
+    a = answer(graph_for(pages), 'E-2')
+    assert a.value is (True if positive else None), a.to_dict()
+
+
+@pytest.mark.parametrize('prefix', ['2024년', '2025년', '2024.08.30에',
+                                  '2024 . 08 . 30에', '08.30에', '3.14톤을'])
+@pytest.mark.parametrize('positive', [False, True])
+def test_scope_ordinal_before_next_sentence_numeric_record_is_not_a_measure(prefix, positive):
+    body = ('온실가스 감축목표를 수립한다. 배출 분류는 Scope 3. ' + prefix
+            + ' Scope 1, Scope 2 배출을 산정·추적했다. '
+            + ('Scope 3 배출을 산정했다. ' if positive else '')
+            + '온실가스 결과를 공개한다.')
+    a = answer(graph_for([('온실가스 배출 현황', body)]), 'C-8')
+    assert a.value is (True if positive else None), a.to_dict()
+
+
+@pytest.mark.parametrize('positive', [False, True])
+def test_wrapped_table_action_keeps_its_polarity_before_another_cell(positive):
+    body = ('온실가스 감축목표를 수립한다. Scope 1, Scope 2 배출을 산정·추적한다. '
+            'Scope 3 | 산정\n' + ('했다' if positive else '하지 않는다')
+            + ' | 2024.08.30. 온실가스 결과를 공개한다.')
+    a = answer(graph_for([('온실가스 배출 현황', body)]), 'C-8')
+    assert a.value is (True if positive else None), a.to_dict()
+
+
+@pytest.mark.parametrize('protection', ['보복을 하지\n않는다.', '보복을 하지\n않았다.',
+                                      '보복 없는\n참여를 보장한다.'])
+def test_line_wrapped_no_retaliation_remains_positive_protection(protection):
+    body = '근로자와 대표가 양방향 간담회에 참여한다. 고충 접수·구제 접근을 보장한다. ' + protection
+    assert answer(graph_for([('참여·구제', body)]), 'E-8').value is True
+
+
+@pytest.mark.parametrize('label', ['Scope', '범위Scope'])
+@pytest.mark.parametrize('positive', [False, True])
+def test_scope_ordinal_after_korean_text_is_not_part_of_next_numeric_date(label, positive):
+    body = (f'온실가스 감축목표를 수립한다. 배출 분류는 {label} 3. 2024.08.30에 '
+            'Scope 1, Scope 2 배출을 산정·추적했다. '
+            + ('Scope 3 배출을 산정했다. ' if positive else '')
+            + '온실가스 결과를 공개한다.')
+    a = answer(graph_for([('온실가스 배출 현황', body)]), 'C-8')
+    assert a.value is (True if positive else None), a.to_dict()
