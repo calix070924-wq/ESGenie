@@ -86,10 +86,25 @@ def invalidate(project, questions):
             review["status"] = "again"
 
 
+def _comparison_value(value):
+    """Copy JSON-shaped data with equivalent sequence containers, preserving order."""
+    if isinstance(value, dict):
+        # Dict equality already ignores field insertion order.
+        return {key: _comparison_value(item) for key, item in value.items()}
+    if isinstance(value, (list, tuple)):
+        # JSON restores tuples (site paths, bboxes, etc.) as lists. Do not sort:
+        # paths, coordinates, choices and displayed evidence can carry order.
+        return [_comparison_value(item) for item in value]
+    return value
+
+
 def reconcile(project, previous, result):
     """Only changed questions lose completion; human values remain untouched."""
     old = {a["qid"]: a for a in (previous or {}).get("sheet", {}).get("answers", [])}
-    fields = ("value", "unit", "boundary_label", "evidence_links", "reference_links", "status", "scope_notes", "comparison_reason", "self_reports", "confidence_flags")
+    fields = ("value", "unit", "period", "boundary_label", "boundary", "completeness",
+              "evidence_links", "reference_links", "status", "flags", "rationale", "evidence_needed",
+              "scope_notes", "comparison", "comparison_reason", "comparisons", "self_reports",
+              "confidence_flags", "option_evidence", "draft_text", "draft_citations", "draft_grounding")
     changed = {a["qid"] for a in result["sheet"]["answers"] if a["qid"] in old and
-               any(a.get(k) != old[a["qid"]].get(k) for k in fields)}
+               any(_comparison_value(a.get(k)) != _comparison_value(old[a["qid"]].get(k)) for k in fields)}
     invalidate(project, changed)
