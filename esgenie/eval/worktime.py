@@ -61,12 +61,33 @@ def is_batch_qid(qid: str) -> bool:
     return q in BATCH_MARKERS or q.endswith(BATCH_SUFFIX)
 
 
+def _tokens(qid: str) -> list[str]:
+    return [part.strip() for part in (qid or "").split(";") if part.strip()]
+
+
+def has_batch_token(qid: str) -> bool:
+    """`;`로 나눈 항목 중 하나라도 일괄 표시(`전체`·`…일괄`)인가 (2026-10-11 재검토 R2)."""
+    return any(is_batch_qid(t) for t in _tokens(qid))
+
+
 def split_qids(qid: str) -> list[str]:
-    """`A;B`처럼 나열한 qid를 나눈다. 일괄 표시·빈 값은 빈 목록이다."""
-    q = (qid or "").strip()
-    if not q or is_batch_qid(q):
-        return []
-    return [part.strip() for part in q.split(";") if part.strip()]
+    """`A;B`처럼 나열한 qid를 나눈다. **항목마다** 일괄 표시를 걸러 낸다 — 일괄 표시는
+    문항이 아니다. 빈 값은 빈 목록이다."""
+    return [t for t in _tokens(qid) if not is_batch_qid(t)]
+
+
+def question_tokens(raw: str, where: str) -> list[str]:
+    """전체 대상 목록(답안 파일·세션 메타데이터)의 qid 항목을 검증한다.
+
+    한 항목 = 한 문항이다. 일괄 표시가 **어느 위치에든** 섞여 있으면 문항 목록으로 받지 않고
+    오류를 낸다(순서 무관: `전체;SYN-1`, `SYN-1;전체`, `SYN-1;4문항일괄;SYN-2`). 같은 문항은
+    호출하는 쪽에서 집합으로 한 번만 센다.
+    """
+    tokens = _tokens(raw)
+    bad = [t for t in tokens if is_batch_qid(t)]
+    if bad:
+        raise ValueError(f"{where}: 일괄 표시 {bad}는 문항 ID가 아니다 — 전체 대상 목록에 넣을 수 없다")
+    return tokens
 
 
 def read_answer_targets(paths: Sequence[Path]) -> dict[tuple[str, str, str, str], dict[str, Any]]:
@@ -81,11 +102,16 @@ def read_answer_targets(paths: Sequence[Path]) -> dict[tuple[str, str, str, str]
             missing = [c for c in ANSWER_KEY_COLUMNS if c not in (reader.fieldnames or ())]
             if missing:
                 raise ValueError(f"답안 파일에 열이 없다 {missing}: {path}")
-            for row in reader:
+            for line, row in enumerate(reader, start=2):
                 key = tuple((row.get(c) or "").strip() for c in ANSWER_KEY_COLUMNS[:4])
                 qid = (row.get("qid") or "").strip()
                 if not qid:
                     continue
+                # 답안 파일 한 행 = 한 문항(2026-10-11 재검토 R2). 일괄 표시·`;` 나열은 받지 않는다.
+                tokens = question_tokens(qid, f"답안 파일 {path}:{line}")
+                if len(tokens) != 1:
+                    raise ValueError(f"답안 파일 {path}:{line}: qid '{qid}'는 한 문항이 아니다 — "
+                                     "답안 파일은 한 행에 문항 하나만 적는다")
                 slot = targets.setdefault(key, {"qids": set(), "sources": set()})
                 slot["qids"].add(qid)
                 slot["sources"].add(str(path))
@@ -136,9 +162,11 @@ def read_session_meta(paths: Sequence[Path]) -> dict[str, dict[str, Any]]:
                 if not set_id or not ver:
                     raise SessionMetaError(f"{path}:{line} set_id·set_version은 비울 수 없다")
                 raw_targets = (row.get("target_qids") or "").strip()
-                if raw_targets and is_batch_qid(raw_targets):
-                    raise SessionMetaError(f"{path}:{line} target_qids에 일괄 표시('{raw_targets}')만 있다 — 목록이 아니다")
-                targets = frozenset(split_qids(raw_targets)) if raw_targets else None
+                try:
+                    tokens = question_tokens(raw_targets, f"{path}:{line} target_qids")
+                except ValueError as exc:
+                    raise SessionMetaError(str(exc)) from None
+                targets = frozenset(tokens) if tokens else None
                 item = {"data_kind": kind, "set_id": set_id, "set_version": ver,
                         "condition": cond, "target_qids": targets}
                 prev = meta.get(sid)
@@ -404,9 +432,9 @@ def aggregate(entries: Sequence[WorkEntry], *, read_run_dirs: bool = False,
             bucket["qids"].add(raw_qid)
         listed = split_qids(raw_qid)
         bucket["_listed"].update(listed)
-        if is_batch_qid(raw_qid) or len(listed) > 1:
+        if has_batch_token(raw_qid) or len(listed) > 1:
             bucket["_batch_rows"] += 1
-        if is_batch_qid(raw_qid):
+        if has_batch_token(raw_qid):
             bucket["_marker_rows"] += 1     # 목록 없이 '전체'·'…일괄'로만 적은 행
         reused = (entry.row.get("reused_from") or "").strip()
         if reused:
@@ -430,7 +458,7 @@ def aggregate(entries: Sequence[WorkEntry], *, read_run_dirs: bool = False,
         span = (entry.start, entry.end)
         bucket["_wait" if entry.is_wait else "_human"].append(span)
         bucket["_by_step"].setdefault(entry.step, []).append(span)
-        if not entry.is_wait and len(listed) == 1:
+        if not entry.is_wait and len(listed) == 1 and not has_batch_token(raw_qid):
             # 문항 하나에 대한 관측 구간만 문항별 시간에 쓴다. 일괄 구간은 나누지 않는다.
             bucket["_by_qid"].setdefault(listed[0], []).append(span)
 

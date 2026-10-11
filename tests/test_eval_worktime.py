@@ -614,3 +614,57 @@ def test_t3_3_batch_only_time_gives_no_per_question_median(tmp_path):
     med = s["per_qid_median"]
     assert med["value_seconds"] is None and med["valid_n"] == 0
     assert med["unobserved_qids"] == ["SYN-1", "SYN-2", "SYN-3", "SYN-4"]
+
+
+# --- 2026-10-11 재검토 R2: 일괄 표시가 전체 대상 목록에 섞인 입력 --------------------
+
+
+@pytest.mark.parametrize("targets", ["전체;SYN-1", "SYN-1;전체", "SYN-1;4문항일괄;SYN-2", "전체"])
+def test_r2_meta_target_list_with_batch_marker_anywhere_is_rejected(tmp_path, targets):
+    meta = _meta(tmp_path, f"S1,합성,SYN,1,절차리허설,{targets}")
+    with pytest.raises(SessionMetaError):
+        aggregate_files([_batch(tmp_path)], session_meta_paths=[meta])
+
+
+@pytest.mark.parametrize("qid", ["전체", "4문항일괄", "SYN-1;전체", "SYN-1;SYN-2"])
+def test_r2_answer_file_qid_must_be_one_question(tmp_path, qid):
+    ans = tmp_path / "answers.csv"
+    ans.write_text(ANSWER_HEADER + "\n" + f"S1,P1,esgenie,2,{qid},합성,,,,,,\n", encoding="utf-8")
+    with pytest.raises(ValueError):
+        aggregate_files([_batch(tmp_path)], answer_paths=[ans])
+
+
+@pytest.mark.parametrize("bad", ["meta", "answers"])
+def test_r2_cli_rejects_batch_marker_in_full_list_with_exit_2(tmp_path, bad):
+    repo = Path(__file__).resolve().parents[1]
+    wl = _batch(tmp_path)
+    if bad == "meta":
+        extra = ["--sessions", str(_meta(tmp_path, "S1,합성,SYN,1,절차리허설,SYN-1;전체"))]
+    else:
+        ans = tmp_path / "answers.csv"
+        ans.write_text(ANSWER_HEADER + "\nS1,P1,esgenie,2,전체,합성,,,,,,\n", encoding="utf-8")
+        extra = ["--answers", str(ans)]
+    out = tmp_path / "out.json"
+    env = {k: v for k, v in os.environ.items() if k != "PYTHONPATH"}
+    proc = subprocess.run([sys.executable, str(repo / "scripts" / "aggregate_worktime.py"),
+                           str(wl), *extra, "--out", str(out)],
+                          cwd=tmp_path, env=env, capture_output=True, text=True, timeout=120)
+    assert proc.returncode == 2
+    assert "일괄 표시" in proc.stderr
+    assert not out.exists() and not (tmp_path / "out.json.tmp").exists()
+
+
+def test_r2_worklog_mixed_batch_row_is_batch_not_a_single_question_span(tmp_path):
+    wl = _csv(tmp_path, _row("값입력", "2026-10-10T09:00:00", "2026-10-10T09:10:00",
+                             method="esgenie", rnd="2", qid="SYN-1;전체"))
+    s, _ = _only(wl)
+    assert "전체" not in s["target_qids"]
+    assert s["target_qid_count"] is None
+    assert s["per_qid_human_seconds"] == {}       # 일괄 섞인 구간을 SYN-1 한 문항 시간으로 쓰지 않는다
+    assert s["observation_unit"] == "일괄 포함"
+
+
+def test_r2_valid_lists_still_work_with_duplicates_removed(tmp_path):
+    meta = _meta(tmp_path, "S1,합성,SYN,1,절차리허설,SYN-1;SYN-2;SYN-1")
+    s, _ = _only(_batch(tmp_path), session_meta_paths=[meta])
+    assert s["target_qid_count"] == 2
