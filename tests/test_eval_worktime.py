@@ -165,8 +165,12 @@ def test_machine_time_is_reported_separately_and_never_added(tmp_path):
     assert any(w.startswith("pipeline_exceeds_wait") for w in session["warnings"])
 
 
-def test_machine_seconds_returns_none_when_timings_missing(tmp_path):
-    assert machine_seconds(tmp_path) is None
+def test_machine_seconds_reports_missing_file_with_reason_not_zero(tmp_path):
+    # 2026-10-11 T3-1: None 대신 사유가 있는 기록을 돌려준다. 합계는 여전히 없다(0이 아니다).
+    rec = machine_seconds(tmp_path)
+    assert rec["file_status"] == "없음"
+    assert rec["total_seconds"] is None
+    assert rec["total_status"] == "미측정"
 
 
 # --- 양식 검사 ------------------------------------------------------------------
@@ -244,11 +248,15 @@ def test_batch_row_without_target_list_is_unconfirmed_not_one(tmp_path):
     assert report["by_method_round"][0]["target_qid_count"] is None
 
 
-def test_semicolon_listed_qids_count_as_targets(tmp_path):
+def test_semicolon_listed_qids_alone_are_a_partial_list(tmp_path):
+    # 2026-10-11 T3-3: worklog 행의 qid 나열은 그 구간의 목록이다. 세션 전체 목록으로
+    # 인정하지 않는다(이전에는 2로 셌다). 알려진 qid는 보존한다.
     wl = _csv(tmp_path, _row("값입력", "2026-10-10T09:00:00", "2026-10-10T09:10:00",
                              qid="SYN-A;SYN-B"))
     s, _ = _only(wl)
-    assert s["target_qid_count"] == 2
+    assert s["target_qid_count"] is None
+    assert s["target_status"].startswith("부분 목록")
+    assert s["target_qids"] == ["SYN-A", "SYN-B"]
     assert s["per_qid_human_seconds"] == {}       # 두 문항 구간도 나누지 않는다
 
 
@@ -322,7 +330,8 @@ def test_machine_time_missing_is_unmeasured_not_zero(tmp_path):
     s, _ = _only(wl, read_run_dirs=True)
     assert s["machine_seconds_observed"] is None
     assert s["machine_status"].startswith("미측정")
-    assert "machine_total_seconds" not in s
+    # 2026-10-11 T3-1: 키는 항상 있고 값은 null이다(0.0이 아니다).
+    assert s["machine_total_seconds"] is None
 
 
 @pytest.mark.parametrize("script, args", [
@@ -345,3 +354,263 @@ def test_cli_runs_without_pythonpath_from_another_directory(tmp_path, script, ar
     assert "ModuleNotFoundError" not in proc.stderr
     if script == "aggregate_worktime.py":
         assert json.loads(out.read_text(encoding="utf-8"))["countable_rows"] == 1
+
+
+# --- 2026-10-11 추가 지시 T3-1: 합계 없는 기계 시간과 부분 관측 ----------------------
+# 모든 timings.json은 이 테스트가 만든 합성 파일이다.
+
+from esgenie.eval.worktime import SessionMetaError  # noqa: E402
+
+
+def _timings(run_dir, stages):
+    run_dir.mkdir(parents=True, exist_ok=True)
+    (run_dir / "timings.json").write_text(json.dumps({"stages": stages}), encoding="utf-8")
+    return run_dir
+
+
+def _wait_session(tmp_path, *run_dirs):
+    rows = [_row("처리대기", f"2026-10-09T09:0{i}:00", f"2026-10-09T09:0{i + 1}:00",
+                 method="esgenie", run_dir=str(d)) for i, d in enumerate(run_dirs)]
+    rows.append(_row("값입력", "2026-10-09T09:10:00", "2026-10-09T09:20:00", method="esgenie"))
+    return _csv(tmp_path, *rows)
+
+
+def _human_relation_holds(s):
+    assert s["human_seconds"] + s["wait_seconds"] + s["idle_seconds"] == s["elapsed_seconds"]
+
+
+def test_t3_1_no_timings_file_is_unmeasured_not_zero(tmp_path):
+    s, _ = _only(_wait_session(tmp_path, tmp_path / "r1"), read_run_dirs=True)
+    assert s["machine_total_seconds"] is None
+    assert s["machine_status"].startswith("미측정")
+    assert "timings.json 없음" in s["machine_status"]
+    _human_relation_holds(s)
+
+
+def test_t3_1_stage_rows_without_total_are_not_observed_zero(tmp_path):
+    d = _timings(tmp_path / "r1", [{"stage": "L0_ocr_extract", "seconds": 12.5}])
+    s, _ = _only(_wait_session(tmp_path, d), read_run_dirs=True)
+    assert s["machine_total_seconds"] is None
+    assert not s["machine_status"].startswith("완전 관측")
+    assert s["machine_runs"][0]["total_status"] == "합계 없음"
+    assert "단계 합으로 전체를 만들지 않는다" in s["machine_runs"][0]["reason"]
+
+
+@pytest.mark.parametrize("seconds", [None, "abc", -1, float("nan"), True])
+def test_t3_1_invalid_or_missing_total_seconds_is_flagged_not_zero(tmp_path, seconds):
+    row = {"stage": "_run_total"}
+    if seconds is not None:
+        row["seconds"] = seconds
+    d = _timings(tmp_path / "r1", [row])
+    (d / "timings.json").write_text(json.dumps({"stages": [row]}, allow_nan=True), encoding="utf-8")
+    rec = machine_seconds(d)
+    assert rec["total_status"] == "합계 무효"
+    assert rec["total_seconds"] is None
+
+
+@pytest.mark.parametrize("value", [0, 500])
+def test_t3_1_valid_total_zero_and_500_are_kept(tmp_path, value):
+    d = _timings(tmp_path / "r1", [{"stage": "_run_total", "seconds": value}])
+    s, _ = _only(_wait_session(tmp_path, d), read_run_dirs=True)
+    assert s["machine_total_seconds"] == float(value)
+    assert s["machine_status"].startswith("완전 관측")
+
+
+def test_t3_1_one_of_two_runs_missing_is_partial_with_null_total(tmp_path):
+    d1 = _timings(tmp_path / "r1", [{"stage": "_run_total", "seconds": 500}])
+    d2 = tmp_path / "r2"
+    s, _ = _only(_wait_session(tmp_path, d1, d2), read_run_dirs=True)
+    assert s["machine_total_seconds"] is None
+    assert s["machine_status"].startswith("부분 관측")
+    part = s["machine_partial"]
+    assert part["observed_seconds"] == 500.0
+    assert (part["observed_runs"], part["total_runs"]) == (1, 2)
+    assert part["missing_runs"][0]["run_dir"].endswith("r2")
+    _human_relation_holds(s)
+
+
+def test_t3_1_pipeline_and_run_totals_are_not_summed(tmp_path):
+    d = _timings(tmp_path / "r1", [{"stage": "L1", "seconds": 100},
+                                    {"stage": "_pipeline_total", "seconds": 300},
+                                    {"stage": "_run_total", "seconds": 450}])
+    rec = machine_seconds(d)
+    assert rec["total_seconds"] == 450.0
+    assert rec["pipeline_total_seconds"] == 300.0
+    assert "_run_total" in rec["total_scope"]
+
+
+def test_t3_1_pipeline_total_alone_is_not_promoted_to_run_total(tmp_path):
+    d = _timings(tmp_path / "r1", [{"stage": "_pipeline_total", "seconds": 300}])
+    rec = machine_seconds(d)
+    assert rec["total_seconds"] is None
+    assert rec["pipeline_total_seconds"] == 300.0
+    assert "승격하지 않는다" in rec["reason"]
+
+
+def test_t3_1_same_run_dir_repeated_counts_once(tmp_path):
+    d = _timings(tmp_path / "r1", [{"stage": "_run_total", "seconds": 500}])
+    s, _ = _only(_wait_session(tmp_path, d, d, str(d) + "/"), read_run_dirs=True)
+    assert s["machine_total_seconds"] == 500.0
+    assert len(s["machine_runs"]) == 1
+
+
+# --- T3-2: 자료 구분·세트·조건이 다른 집계를 분리 ------------------------------------
+
+META_HEADER = "session_id,data_kind,set_id,set_version,condition,target_qids"
+
+
+def _meta(tmp_path, *rows, name="meta.csv"):
+    path = tmp_path / name
+    path.write_text("\n".join((META_HEADER, *rows)) + "\n", encoding="utf-8")
+    return path
+
+
+def _two_sessions(tmp_path, s2="S2", p2="P1", q2="SYN-2"):
+    return _csv(tmp_path,
+                _row("원문확인", "2026-10-09T09:00:00", "2026-10-09T09:10:00", session="S1",
+                     method="esgenie", qid="SYN-1"),
+                _row("원문확인", "2026-10-09T10:00:00", "2026-10-09T10:20:00", session=s2,
+                     participant=p2, method="esgenie", qid=q2))
+
+
+def test_t3_2_public_and_bm_sessions_are_not_merged(tmp_path):
+    wl = _two_sessions(tmp_path)
+    meta = _meta(tmp_path, "S1,공개샘플,PUB,1,절차리허설,SYN-1", "S2,가상BM,BM,1,신규처리,SYN-2")
+    report = aggregate_files([wl], session_meta_paths=[meta])
+    groups = report["by_method_round"]
+    assert len(groups) == 2
+    assert all(g["participant_count"] == 1 and g["target_qid_count"] == 1 for g in groups)
+    assert {g["data_kind"] for g in groups} == {"공개샘플", "가상BM"}
+
+
+def test_t3_2_without_metadata_sessions_stay_separate(tmp_path):
+    report = aggregate_files([_two_sessions(tmp_path)])
+    groups = report["by_method_round"]
+    assert len(groups) == 2                       # 1명·2문항의 단일 요약을 만들지 않는다
+    assert all(g["identity_status"].startswith("미확인") for g in groups)
+
+
+def test_t3_2_same_set_different_version_or_condition_are_split(tmp_path):
+    wl = _two_sessions(tmp_path)
+    for rows in (("S1,가상BM,BM,1,신규처리,SYN-1", "S2,가상BM,BM,2,신규처리,SYN-2"),
+                 ("S1,가상BM,BM,1,신규처리,SYN-1", "S2,가상BM,BM,1,캐시재생,SYN-2")):
+        report = aggregate_files([wl], session_meta_paths=[_meta(tmp_path, *rows)])
+        assert len(report["by_method_round"]) == 2
+
+
+def test_t3_2_two_participants_same_qid_one_group(tmp_path):
+    wl = _two_sessions(tmp_path, s2="S2", p2="P2", q2="SYN-1")
+    meta = _meta(tmp_path, "S1,가상BM,BM,1,신규처리,SYN-1", "S2,가상BM,BM,1,신규처리,SYN-1")
+    report = aggregate_files([wl], session_meta_paths=[meta])
+    (g,) = report["by_method_round"]
+    assert g["participant_count"] == 2
+    assert g["target_qid_count"] == 1
+    assert sorted(p["human_seconds"] for p in g["per_participant"]) == [600.0, 1200.0]
+
+
+def test_t3_2_conflicting_metadata_is_an_error(tmp_path):
+    meta = _meta(tmp_path, "S1,가상BM,BM,1,신규처리,", "S1,공개샘플,PUB,1,신규처리,")
+    with pytest.raises(SessionMetaError):
+        aggregate_files([_two_sessions(tmp_path)], session_meta_paths=[meta])
+
+
+@pytest.mark.parametrize("row", ["S1,모름,BM,1,신규처리,", "S1,가상BM,BM,1,모름,",
+                                 "S1,가상BM,,1,신규처리,", "S1,가상BM,BM,1,신규처리,전체"])
+def test_t3_2_bad_metadata_values_are_errors(tmp_path, row):
+    with pytest.raises(SessionMetaError):
+        aggregate_files([_two_sessions(tmp_path)], session_meta_paths=[_meta(tmp_path, row)])
+
+
+def test_t3_2_cli_rejects_conflict_with_exit_2_and_writes_nothing(tmp_path):
+    repo = Path(__file__).resolve().parents[1]
+    wl = _two_sessions(tmp_path)
+    meta = _meta(tmp_path, "S1,가상BM,BM,1,신규처리,", "S1,공개샘플,PUB,1,신규처리,")
+    out = tmp_path / "out.json"
+    env = {k: v for k, v in os.environ.items() if k != "PYTHONPATH"}
+    proc = subprocess.run([sys.executable, str(repo / "scripts" / "aggregate_worktime.py"),
+                           str(wl), "--sessions", str(meta), "--out", str(out)],
+                          cwd=tmp_path, env=env, capture_output=True, text=True, timeout=120)
+    assert proc.returncode == 2
+    assert "충돌" in proc.stderr
+    assert not out.exists() and not (tmp_path / "out.json.tmp").exists()
+
+
+def test_t3_2_cli_accepts_metadata_with_exit_0(tmp_path):
+    repo = Path(__file__).resolve().parents[1]
+    wl = _two_sessions(tmp_path)
+    meta = _meta(tmp_path, "S1,공개샘플,PUB,1,절차리허설,SYN-1", "S2,가상BM,BM,1,신규처리,SYN-2")
+    out = tmp_path / "out.json"
+    env = {k: v for k, v in os.environ.items() if k != "PYTHONPATH"}
+    proc = subprocess.run([sys.executable, str(repo / "scripts" / "aggregate_worktime.py"),
+                           str(wl), "--sessions", str(meta), "--out", str(out)],
+                          cwd=tmp_path, env=env, capture_output=True, text=True, timeout=120)
+    assert proc.returncode == 0, proc.stderr
+    assert len(json.loads(out.read_text(encoding="utf-8"))["by_method_round"]) == 2
+
+
+# --- T3-3: 일괄 표시와 명시 대상 목록 -------------------------------------------------
+
+SYN4 = "SYN-1;SYN-2;SYN-3;SYN-4"
+
+
+def _batch(tmp_path, *extra):
+    return _csv(tmp_path, _row("값입력", "2026-10-10T09:00:00", "2026-10-10T09:10:00",
+                               method="esgenie", rnd="2", qid="전체"), *extra)
+
+
+def test_t3_3_marker_only_is_unknown_not_one(tmp_path):
+    s, _ = _only(_batch(tmp_path))
+    assert s["target_qid_count"] is None and s["target_status"].startswith("미확인")
+
+
+def test_t3_3_marker_plus_session_list_counts_four(tmp_path):
+    meta = _meta(tmp_path, f"S1,합성,SYN,1,절차리허설,{SYN4}")
+    s, _ = _only(_batch(tmp_path), session_meta_paths=[meta])
+    assert s["target_qid_count"] == 4
+    assert s["target_status"].startswith("확인")
+    assert "목록 없음" not in s["target_status"] and "목록이 없다" not in s["target_status"]
+    assert any("세션 메타데이터" in src for src in s["target_sources"])
+
+
+def test_t3_3_partial_interval_list_keeps_known_qids(tmp_path):
+    wl = _batch(tmp_path, _row("원문확인", "2026-10-10T09:10:00", "2026-10-10T09:20:00",
+                               method="esgenie", rnd="2", qid="SYN-1;SYN-2"))
+    s, _ = _only(wl)
+    assert s["target_qid_count"] is None
+    assert s["target_status"].startswith("부분 목록")
+    assert s["target_qids"] == ["SYN-1", "SYN-2"]
+
+
+@pytest.mark.parametrize("use_answers, use_meta", [(True, False), (False, True), (True, True)])
+def test_t3_3_same_four_from_any_source_count_four_not_eight(tmp_path, use_answers, use_meta):
+    kw = {}
+    if use_answers:
+        kw["answer_paths"] = [_answers(tmp_path, "SYN-1", "SYN-2", "SYN-3", "SYN-4")]
+    if use_meta:
+        kw["session_meta_paths"] = [_meta(tmp_path, f"S1,합성,SYN,1,절차리허설,{SYN4}")]
+    s, _ = _only(_batch(tmp_path), **kw)
+    assert s["target_qid_count"] == 4
+
+
+def test_t3_3_answer_and_session_list_disagree_is_conflict(tmp_path):
+    s, _ = _only(_batch(tmp_path),
+                 answer_paths=[_answers(tmp_path, "SYN-1", "SYN-2", "SYN-3")],
+                 session_meta_paths=[_meta(tmp_path, f"S1,합성,SYN,1,절차리허설,{SYN4}")])
+    assert s["target_qid_count"] is None
+    assert s["target_status"].startswith("충돌")
+
+
+def test_t3_3_worklog_qid_outside_full_list_is_conflict(tmp_path):
+    wl = _batch(tmp_path, _row("원문확인", "2026-10-10T09:10:00", "2026-10-10T09:20:00",
+                               method="esgenie", rnd="2", qid="SYN-9"))
+    s, _ = _only(wl, session_meta_paths=[_meta(tmp_path, f"S1,합성,SYN,1,절차리허설,{SYN4}")])
+    assert s["target_qid_count"] is None
+    assert "SYN-9" in s["target_status"]
+
+
+def test_t3_3_batch_only_time_gives_no_per_question_median(tmp_path):
+    meta = _meta(tmp_path, f"S1,합성,SYN,1,절차리허설,{SYN4}")
+    s, _ = _only(_batch(tmp_path), session_meta_paths=[meta])
+    med = s["per_qid_median"]
+    assert med["value_seconds"] is None and med["valid_n"] == 0
+    assert med["unobserved_qids"] == ["SYN-1", "SYN-2", "SYN-3", "SYN-4"]

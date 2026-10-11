@@ -27,6 +27,8 @@ from __future__ import annotations
 
 import csv
 import json
+import math
+import os
 from dataclasses import dataclass, field
 from datetime import datetime
 from pathlib import Path
@@ -88,6 +90,68 @@ def read_answer_targets(paths: Sequence[Path]) -> dict[tuple[str, str, str, str]
                 slot["qids"].add(qid)
                 slot["sources"].add(str(path))
     return targets
+
+
+#: 세션 메타데이터(2026-10-11 T3-2·T3-3). 자료 구분·세트·조건과 **세션 전체 대상 목록**을
+#: raw worklog를 고치지 않고 따로 연결한다. 서식 버전 1.
+SESSION_META_VERSION = "1"
+SESSION_META_COLUMNS: tuple[str, ...] = (
+    "session_id", "data_kind", "set_id", "set_version", "condition", "target_qids",
+)
+DATA_KINDS: tuple[str, ...] = ("공개샘플", "가상BM", "합성")
+CONDITIONS: tuple[str, ...] = ("신규처리", "캐시재생", "절차리허설")
+
+
+class SessionMetaError(ValueError):
+    """세션 메타데이터를 믿을 수 없을 때. 같은 자료로 추정하지 않고 멈춘다."""
+
+
+def read_session_meta(paths: Sequence[Path]) -> dict[str, dict[str, Any]]:
+    """세션 메타데이터 CSV를 읽는다.
+
+    - `data_kind`·`condition`은 정한 값만 받는다. 빈 값·모르는 값은 오류다.
+    - 같은 `session_id`가 다른 내용으로 두 번 나오면 **충돌 오류**다(조용히 덮어쓰지 않는다).
+    - `target_qids`는 그 세션의 **전체 대상 목록**이다(`;` 나열). 비워 두면 목록을 주지
+      않은 것이다. `전체`·`…일괄` 같은 일괄 표시는 목록으로 받지 않는다.
+    """
+    meta: dict[str, dict[str, Any]] = {}
+    for path in paths:
+        with Path(path).open(encoding="utf-8-sig", newline="") as fh:
+            reader = csv.DictReader(fh)
+            missing = [c for c in SESSION_META_COLUMNS if c not in (reader.fieldnames or ())]
+            if missing:
+                raise SessionMetaError(f"세션 메타데이터에 열이 없다 {missing}: {path}")
+            for line, row in enumerate(reader, start=2):
+                sid = (row.get("session_id") or "").strip()
+                if not sid:
+                    raise SessionMetaError(f"{path}:{line} session_id가 비었다")
+                kind = (row.get("data_kind") or "").strip()
+                cond = (row.get("condition") or "").strip()
+                set_id = (row.get("set_id") or "").strip()
+                ver = (row.get("set_version") or "").strip()
+                if kind not in DATA_KINDS:
+                    raise SessionMetaError(f"{path}:{line} data_kind '{kind}'는 {DATA_KINDS} 중 하나가 아니다")
+                if cond not in CONDITIONS:
+                    raise SessionMetaError(f"{path}:{line} condition '{cond}'는 {CONDITIONS} 중 하나가 아니다")
+                if not set_id or not ver:
+                    raise SessionMetaError(f"{path}:{line} set_id·set_version은 비울 수 없다")
+                raw_targets = (row.get("target_qids") or "").strip()
+                if raw_targets and is_batch_qid(raw_targets):
+                    raise SessionMetaError(f"{path}:{line} target_qids에 일괄 표시('{raw_targets}')만 있다 — 목록이 아니다")
+                targets = frozenset(split_qids(raw_targets)) if raw_targets else None
+                item = {"data_kind": kind, "set_id": set_id, "set_version": ver,
+                        "condition": cond, "target_qids": targets}
+                prev = meta.get(sid)
+                if prev is not None:
+                    if {k: prev[k] for k in item} != item:
+                        raise SessionMetaError(
+                            f"세션 메타데이터 충돌: session_id '{sid}'가 {prev['source']}와 "
+                            f"{path}:{line}에서 다르게 적혔다 — 같은 자료로 추정하지 않는다")
+                    continue
+                item["source"] = f"{path}:{line}"
+                meta[sid] = item
+    return meta
+
 
 
 def parse_time(raw: str) -> datetime:
@@ -211,27 +275,114 @@ def _subtract(base: Sequence[tuple[datetime, datetime]],
     return result
 
 
-def machine_seconds(run_dir: str | Path) -> dict[str, Any] | None:
-    """`run_dir`의 `timings.json`에서 기계 시간을 읽는다. 없으면 None(0이 아니다)."""
+RUN_TOTAL_ROW = "_run_total"
+PIPELINE_TOTAL_ROW = "_pipeline_total"
+
+
+def _valid_seconds(value: Any) -> bool:
+    return (isinstance(value, (int, float)) and not isinstance(value, bool)
+            and math.isfinite(value) and value >= 0)
+
+
+def machine_seconds(run_dir: str | Path) -> dict[str, Any]:
+    """`run_dir`의 `timings.json`에서 **실행 전체 기계 시간**을 읽는다 (2026-10-11 T3-1).
+
+    읽기 계약:
+
+    - 실행 전체 = `_run_total` 행의 `seconds` 하나. 호출 스크립트가 실행 끝에 붙인다.
+    - `_pipeline_total`은 **코어 파이프라인 부분 시간**이다. `pipeline_total_seconds`로 따로
+      적고 실행 전체로 승격하지 않는다. 두 합계 행을 더하지 않는다.
+    - 단계 행(`_`로 시작하지 않는 행)을 더해 합계를 만들지 않는다.
+    - 파일 없음·파싱 오류·합계 없음·합계 무효는 각각 사유와 함께 돌려준다. **0초로 바꾸지
+      않는다.** 실제로 기록된 유효 합계 0초는 0초다.
+    """
+    rec: dict[str, Any] = {
+        "run_dir": str(run_dir), "file_status": "읽음", "total_status": "미측정",
+        "total_seconds": None, "total_scope": None, "pipeline_total_seconds": None,
+        "stage_rows": 0, "reason": "", "cache_profile": None,
+    }
     path = Path(run_dir) / "timings.json"
     if not path.is_file():
-        return None
+        rec.update(file_status="없음", reason="timings.json 없음")
+        return rec
     try:
         payload = json.loads(path.read_text(encoding="utf-8"))
-    except (OSError, json.JSONDecodeError):
-        return None
-    stages = payload.get("stages") or []
-    totals = [r for r in stages if str(r.get("stage", "")).startswith("_")]
-    return {
-        "run_dir": str(run_dir),
-        "total_seconds": totals[-1].get("seconds") if totals else None,
-        "staged_sum": totals[-1].get("staged_sum") if totals else None,
-        "cache_profile": payload.get("cache_profile"),
-    }
+    except (OSError, UnicodeDecodeError, json.JSONDecodeError) as exc:
+        rec.update(file_status="파싱 오류", reason=f"timings.json을 읽지 못했다: {exc}")
+        return rec
+    stages = payload.get("stages") if isinstance(payload, dict) else None
+    if not isinstance(stages, list):
+        rec.update(file_status="파싱 오류", reason="timings.json에 stages 목록이 없다")
+        return rec
+    rec["cache_profile"] = payload.get("cache_profile")
+    rows = [r for r in stages if isinstance(r, dict)]
+    rec["stage_rows"] = sum(1 for r in rows if not str(r.get("stage", "")).startswith("_"))
+
+    pipe = [r for r in rows if r.get("stage") == PIPELINE_TOTAL_ROW]
+    if len(pipe) == 1 and _valid_seconds(pipe[0].get("seconds")):
+        rec["pipeline_total_seconds"] = float(pipe[0]["seconds"])
+
+    run = [r for r in rows if r.get("stage") == RUN_TOTAL_ROW]
+    if len(run) > 1:
+        rec.update(total_status="합계 무효", reason=f"{RUN_TOTAL_ROW} 행이 {len(run)}개다 — 어느 것도 고르지 않는다")
+    elif run:
+        value = run[0].get("seconds")
+        if _valid_seconds(value):
+            rec.update(total_status="확인", total_seconds=float(value),
+                       total_scope=f"실행 전체({RUN_TOTAL_ROW})")
+        else:
+            rec.update(total_status="합계 무효",
+                       reason=f"{RUN_TOTAL_ROW}.seconds가 없거나 유효하지 않다: {value!r}")
+    else:
+        why = f"{RUN_TOTAL_ROW} 행이 없다"
+        if pipe:
+            why += f" — {PIPELINE_TOTAL_ROW}(코어 파이프라인 부분 시간)만 있다. 실행 전체로 승격하지 않는다"
+        elif rec["stage_rows"]:
+            why += " — 단계 행만 있다. 단계 합으로 전체를 만들지 않는다"
+        rec.update(total_status="합계 없음", reason=why)
+    return rec
+
+
+def _machine_block(run_dirs: Sequence[str], wait_seconds: float | None) -> dict[str, Any]:
+    """세션의 기계 시간 — 완전 관측·부분 관측·미측정을 가른다. 사람 시간에 더하지 않는다."""
+    unique = sorted({os.path.normpath(d) for d in run_dirs if d})
+    block: dict[str, Any] = {"machine_total_seconds": None, "machine_partial": None,
+                             "machine_runs": [], "machine_seconds_observed": None,
+                             "machine_warnings": []}
+    if not unique:
+        block["machine_status"] = "미측정 — run_dir 기록 없음"
+        return block
+    recs = [machine_seconds(d) for d in unique]
+    ok = [r for r in recs if r["total_status"] == "확인"]
+    block["machine_runs"] = recs
+    block["machine_seconds_observed"] = ok or None
+    observed = round(sum(r["total_seconds"] for r in ok), 3)
+    missing = [{"run_dir": r["run_dir"], "status": r["total_status"],
+                "file_status": r["file_status"], "reason": r["reason"]}
+               for r in recs if r["total_status"] != "확인"]
+    if len(ok) == len(recs):
+        block["machine_total_seconds"] = observed
+        block["machine_status"] = f"완전 관측 — 실행 {len(recs)}건 모두 {RUN_TOTAL_ROW} 확인"
+        if wait_seconds is not None and observed > wait_seconds + 1.0:
+            block["machine_warnings"].append(
+                "pipeline_exceeds_wait: 기계 시간이 사람이 적은 처리대기보다 길다. "
+                "기록 누락일 수 있다 — 두 값을 더하지 말고 기록을 확인한다")
+    elif ok:
+        block["machine_status"] = f"부분 관측 — 실행 {len(recs)}건 중 {len(ok)}건만 합계 확인"
+        block["machine_partial"] = {"observed_seconds": observed, "observed_runs": len(ok),
+                                    "total_runs": len(recs), "missing_runs": missing,
+                                    "note": "관측된 실행만의 합이다. 전체 기계 시간이 아니다"}
+    else:
+        block["machine_status"] = "미측정 — " + "; ".join(
+            f"{m['run_dir']}: {m['reason']}" for m in missing)
+        block["machine_partial"] = {"observed_seconds": None, "observed_runs": 0,
+                                    "total_runs": len(recs), "missing_runs": missing}
+    return block
 
 
 def aggregate(entries: Sequence[WorkEntry], *, read_run_dirs: bool = False,
               answer_targets: dict[tuple[str, str, str, str], dict[str, Any]] | None = None,
+              session_meta: dict[str, dict[str, Any]] | None = None,
               ) -> dict[str, Any]:
     """세션·참가자·방식·회차별 집계.
 
@@ -286,15 +437,19 @@ def aggregate(entries: Sequence[WorkEntry], *, read_run_dirs: bool = False,
     out: list[dict[str, Any]] = []
     for bucket in sessions.values():
         human_raw, wait_raw = bucket.pop("_human"), bucket.pop("_wait")
-        _finish_extras(bucket, answer_targets or {})
+        _attach_identity(bucket, session_meta or {})
+        _finish_extras(bucket, answer_targets or {}, session_meta or {})
         bucket["qids"] = sorted(bucket["qids"])
         bucket["run_dirs"] = sorted(bucket["run_dirs"])
         if not human_raw and not wait_raw:
             # 합산 가능한 행이 없다 — 0초가 아니라 "산출 불가"다.
             bucket.update({"elapsed_seconds": None, "human_seconds": None,
                            "wait_seconds": None, "idle_seconds": None,
-                           "overlap_removed_seconds": None,
-                           "machine_seconds_observed": None, "warnings": []})
+                           "overlap_removed_seconds": None, "warnings": []})
+            if read_run_dirs:
+                block = _machine_block(bucket["run_dirs"], None)
+                bucket["warnings"].extend(block.pop("machine_warnings"))
+                bucket.update(block)
             out.append(bucket)
             continue
         human = _merge(human_raw)
@@ -309,22 +464,10 @@ def aggregate(entries: Sequence[WorkEntry], *, read_run_dirs: bool = False,
         bucket["overlap_removed_seconds"] = round(_length(human_raw) + _length(wait_raw) - human_s - wait_s, 3)
 
         warnings: list[str] = []
-        machine = None
         if read_run_dirs:
-            found = [m for m in (machine_seconds(d) for d in bucket["run_dirs"]) if m]
-            machine = found or None
-            total = sum(m["total_seconds"] or 0.0 for m in found) if found else None
-            if total is not None:
-                bucket["machine_total_seconds"] = round(total, 3)
-                if total > wait_s + 1.0:
-                    warnings.append(
-                        "pipeline_exceeds_wait: 기계 시간이 사람이 적은 처리대기보다 길다. "
-                        "기록 누락일 수 있다 — 두 값을 더하지 말고 기록을 확인한다")
-        bucket["machine_seconds_observed"] = machine
-        if read_run_dirs:
-            bucket["machine_status"] = ("관측" if machine else
-                                        "미측정 — run_dir에 timings.json이 없다(0초로 적지 않는다)"
-                                        if bucket["run_dirs"] else "미측정 — run_dir 기록 없음")
+            block = _machine_block(bucket["run_dirs"], wait_s)
+            warnings.extend(block.pop("machine_warnings"))
+            bucket.update(block)
         if bucket["idle_seconds"] < -1.0:
             warnings.append("negative_idle: 구간 합이 경과시간을 넘는다 — 기록을 확인한다")
         bucket["warnings"] = warnings
@@ -346,9 +489,18 @@ def aggregate(entries: Sequence[WorkEntry], *, read_run_dirs: bool = False,
         "completeness_note":
             "유효 구간의 합은 관측된 구간의 합이다. 시각 누락·기억 기반·미완결 행이 있으면 "
             "완전한 전체 작업시간으로 읽지 않는다.",
+        "machine_note":
+            "machine_total_seconds는 모든 run_dir의 _run_total이 확인될 때만 낸다. 일부만 확인되면 "
+            "machine_partial에 관측분·관측 실행 수·누락 실행을 적고 전체는 null이다. 0초로 메우지 않는다.",
+        "grouping_rule":
+            "요약은 자료 구분·세트 ID·버전·조건·방식·회차가 같은 세션끼리만 묶는다. 세션 메타데이터가 "
+            "없는 세션은 같은 자료로 추정하지 않고 세션별로 따로 둔다.",
+        "target_rule":
+            "세션 전체 대상 목록은 답안 파일 또는 세션 메타데이터 target_qids에서만 인정한다. worklog 각 행의 "
+            "qid는 그 구간의 목록(부분 목록)이다. 둘이 어긋나면 충돌로 표시한다.",
         "batch_note":
             "일괄 구간(qid가 '전체'이거나 '…일괄')의 시간은 문항별로 나누지 않는다. "
-            "대상 문항 수는 답안 파일이나 ';'로 나열한 qid에서만 읽고, 없으면 미확인이다.",
+            "일괄 표시만으로 대상 수를 만들지 않는다.",
     }
 
 
@@ -360,31 +512,70 @@ def _median(values: list[float]) -> float | None:
     return s[mid] if len(s) % 2 else (s[mid - 1] + s[mid]) / 2
 
 
+def _attach_identity(bucket: dict[str, Any], session_meta: dict[str, dict[str, Any]]) -> None:
+    """자료 구분·세트·조건을 세션에 붙인다 (2026-10-11 T3-2). 없으면 추정하지 않는다."""
+    meta = session_meta.get(bucket["session_id"])
+    if meta is None:
+        bucket["identity"] = {"status": "미확인 — 세션 메타데이터 없음", "data_kind": None,
+                              "set_id": None, "set_version": None, "condition": None,
+                              "source": None}
+    else:
+        bucket["identity"] = {"status": "확인", "data_kind": meta["data_kind"],
+                              "set_id": meta["set_id"], "set_version": meta["set_version"],
+                              "condition": meta["condition"], "source": meta["source"]}
+
+
 def _finish_extras(bucket: dict[str, Any],
-                   answer_targets: dict[tuple[str, str, str, str], dict[str, Any]]) -> None:
-    """대상 문항·단계별 합계·문항별 중앙값·재사용·기록 완전성 (2026-10-11 T3)."""
+                   answer_targets: dict[tuple[str, str, str, str], dict[str, Any]],
+                   session_meta: dict[str, dict[str, Any]] | None = None) -> None:
+    """대상 문항·단계별 합계·문항별 중앙값·재사용·기록 완전성 (2026-10-11 T3, T3-3)."""
     key = (bucket["session_id"], bucket["participant"], bucket["method"], bucket["request_round"])
     listed: set[str] = bucket.pop("_listed")
     batch_rows: int = bucket.pop("_batch_rows")
     marker_rows: int = bucket.pop("_marker_rows")
     from_answers = answer_targets.get(key)
+    meta = (session_meta or {}).get(bucket["session_id"])
 
-    target = set(listed)
-    sources: list[str] = []
-    if listed:
-        sources.append("worklog qid")
+    # 세션 전체 대상 목록: 답안 파일 / 세션 메타데이터 target_qids. worklog 행의 qid는 부분 목록.
+    full_lists: list[tuple[str, frozenset[str]]] = []
     if from_answers:
-        target |= set(from_answers["qids"])
-        sources.extend(sorted(from_answers["sources"]))
-    if marker_rows and not from_answers:
-        bucket["target_qids"] = sorted(target)
+        full_lists.append(("답안 파일: " + ", ".join(sorted(from_answers["sources"])),
+                           frozenset(from_answers["qids"])))
+    if meta and meta.get("target_qids"):
+        full_lists.append(("세션 메타데이터: " + meta["source"], meta["target_qids"]))
+    sources = [label for label, _ in full_lists]
+    if listed:
+        sources.append("worklog 구간 qid(부분 목록)")
+    conflict: list[str] = []
+    distinct = {q for _, q in full_lists}
+    if len(distinct) > 1:
+        conflict.append("전체 대상 목록끼리 다르다: " + " / ".join(
+            f"{label} → {sorted(q)}" for label, q in full_lists))
+    if len(distinct) == 1:
+        full = next(iter(distinct))
+        outside = sorted(listed - full)
+        if outside:
+            conflict.append(f"worklog 구간 qid {outside}가 전체 대상 목록 밖에 있다")
+    if conflict:
+        bucket["target_qids"] = sorted(set().union(listed, *distinct))
         bucket["target_qid_count"] = None
-        bucket["target_status"] = ("미확인 — 일괄 구간이 있으나 대상 문항 목록(답안 파일·"
-                                   "';' 나열)이 없다")
+        bucket["target_status"] = "충돌 — " + " / ".join(conflict)
+    elif full_lists:
+        full = next(iter(distinct))
+        bucket["target_qids"] = sorted(full)
+        bucket["target_qid_count"] = len(full)
+        bucket["target_status"] = "확인 — 전체 대상 목록(" + ", ".join(
+            label.split(":")[0] for label, _ in full_lists) + ")"
+    elif listed:
+        bucket["target_qids"] = sorted(listed)
+        bucket["target_qid_count"] = None
+        bucket["target_status"] = ("부분 목록 — worklog 구간 qid만 있다. 전체 대상 수 미확인"
+                                   + (" (일괄 표시 행도 있다)" if marker_rows else ""))
     else:
-        bucket["target_qids"] = sorted(target)
-        bucket["target_qid_count"] = len(target)
-        bucket["target_status"] = "확인"
+        bucket["target_qids"] = []
+        bucket["target_qid_count"] = None
+        bucket["target_status"] = ("미확인 — 일괄 표시만 있고 대상 문항 목록이 없다" if marker_rows
+                                   else "미확인 — 대상 문항 목록이 없다")
     bucket["target_sources"] = sources
     bucket["observation_unit"] = "일괄 포함" if batch_rows else "문항별"
 
@@ -436,17 +627,37 @@ def _finish_extras(bucket: dict[str, Any],
     }
 
 
+def _group_key(s: dict[str, Any]) -> tuple:
+    ident = s.get("identity") or {}
+    if ident.get("status") != "확인":
+        # 메타데이터가 없으면 같은 자료로 추정하지 않는다 — 세션마다 따로 둔다.
+        return ("미확인", s["session_id"], "", "", s["method"], s["request_round"])
+    return (ident["data_kind"], ident["set_id"], ident["set_version"], ident["condition"],
+            s["method"], s["request_round"])
+
+
 def _by_method_round(sessions: list[dict[str, Any]]) -> list[dict[str, Any]]:
-    """방식·회차별 요약. 서로 다른 참가자의 시간을 하나의 벽시계 경과로 합치지 않는다."""
-    groups: dict[tuple[str, str], list[dict[str, Any]]] = {}
+    """자료 구분·세트·버전·조건·방식·회차별 요약 (2026-10-11 T3-2).
+
+    서로 다른 참가자의 시간을 하나의 벽시계 경과로 합치지 않는다. 자료나 조건이 다른 세션은
+    같은 요약에 넣지 않는다.
+    """
+    groups: dict[tuple, list[dict[str, Any]]] = {}
     for s in sessions:
-        groups.setdefault((s["method"], s["request_round"]), []).append(s)
+        groups.setdefault(_group_key(s), []).append(s)
     out = []
-    for (method, rnd), items in sorted(groups.items()):
+    for key, items in sorted(groups.items()):
         unknown = any(s["target_qid_count"] is None for s in items)
         targets = sorted(set().union(*(set(s["target_qids"]) for s in items)))
+        identified = key[0] != "미확인"
         out.append({
-            "method": method, "request_round": rnd,
+            "identity_status": "확인" if identified else "미확인 — 세션 메타데이터 없음(세션별로만 집계)",
+            "data_kind": key[0] if identified else None,
+            "set_id": key[1] if identified else None,
+            "set_version": key[2] if identified else None,
+            "condition": key[3] if identified else None,
+            "session_ids": sorted({s["session_id"] for s in items}),
+            "method": key[4], "request_round": key[5],
             "participants": sorted({s["participant"] for s in items}),
             "participant_count": len({s["participant"] for s in items}),
             "target_qid_count": None if unknown else len(targets),
@@ -460,12 +671,17 @@ def _by_method_round(sessions: list[dict[str, Any]]) -> list[dict[str, Any]]:
 
 
 def aggregate_files(paths: Sequence[Path], *, read_run_dirs: bool = False,
-                    answer_paths: Sequence[Path] = ()) -> dict[str, Any]:
+                    answer_paths: Sequence[Path] = (),
+                    session_meta_paths: Sequence[Path] = ()) -> dict[str, Any]:
     entries: list[WorkEntry] = []
     for path in paths:
         entries.extend(read_worklog(Path(path)))
     targets = read_answer_targets([Path(p) for p in answer_paths]) if answer_paths else {}
-    report = aggregate(entries, read_run_dirs=read_run_dirs, answer_targets=targets)
+    meta = read_session_meta([Path(p) for p in session_meta_paths]) if session_meta_paths else {}
+    report = aggregate(entries, read_run_dirs=read_run_dirs, answer_targets=targets,
+                       session_meta=meta)
     report["sources"] = [str(p) for p in paths]
     report["answer_sources"] = [str(p) for p in answer_paths]
+    report["session_meta_sources"] = [str(p) for p in session_meta_paths]
+    report["session_meta_version"] = SESSION_META_VERSION if session_meta_paths else None
     return report
