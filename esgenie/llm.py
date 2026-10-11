@@ -16,6 +16,9 @@ import re
 import time
 from dataclasses import dataclass
 from typing import Any
+from uuid import uuid4
+
+from .progress import emit, failure_reason
 
 from .config import SETTINGS
 from .openai_client import create_openai_client, configured_connection, connection_identity
@@ -43,8 +46,13 @@ def _is_retryable(exc: Exception) -> bool:
     안전하게 동작해야 하므로 status_code 속성과 예외 클래스명만으로 판별한다.
     """
     status = getattr(exc, "status_code", None) or getattr(exc, "status", None)
-    if isinstance(status, int) and (status == 429 or 500 <= status <= 599):
-        return True
+    body = getattr(exc, "body", None)
+    detail = body.get("error", body) if isinstance(body, dict) else {}
+    code = getattr(exc, "code", None) or (detail.get("code") if isinstance(detail, dict) else None)
+    if code in {"insufficient_quota", "billing_hard_limit_reached", "organization_usage_limit_exceeded"}:
+        return False
+    if isinstance(status, int):
+        return status in (408, 409, 429) or 500 <= status <= 599
     name = type(exc).__name__
     return any(kw in name for kw in ("Timeout", "Connection", "RateLimit", "InternalServer"))
 
@@ -169,11 +177,15 @@ class LLMClient:
                 kwargs["response_format"] = {"type": "json_object"}
             exc: Exception | None = None
             attempt = 0
+            request_id = uuid4().hex
             for attempt in range(1, LLM_MAX_ATTEMPTS + 1):
                 try:
                     llm_cache.record_live_call()
+                    emit("request_started", request_id=request_id, provider="openai",
+                         attempt=attempt, max_attempts=LLM_MAX_ATTEMPTS)
                     resp = self._openai_client.chat.completions.create(**kwargs)
                     text = resp.choices[0].message.content or ""
+                    emit("request_finished", request_id=request_id)
                     meta = _response_meta(resp, "openai", SETTINGS.openai_model)
                     llm_cache.record_success(meta)
                     llm_cache.store(cache_key, text, provider="openai", model=SETTINGS.openai_model,
@@ -184,11 +196,15 @@ class LLMClient:
                     exc = call_exc
                     if attempt < LLM_MAX_ATTEMPTS and _is_retryable(exc):
                         delay = _retry_delay(exc, attempt)
+                        emit("request_retry", request_id=request_id, provider="openai",
+                             attempt=attempt + 1, max_attempts=LLM_MAX_ATTEMPTS,
+                             delay_seconds=delay, reason=failure_reason(exc))
                         logger.warning(
                             "OpenAI 호출 일시 오류, 재시도 %d/%d: %s", attempt, LLM_MAX_ATTEMPTS, exc,
                         )
                         time.sleep(delay)
                         continue
+                    emit("request_finished", request_id=request_id)
                     break
             if SETTINGS.strict_llm:
                 logger.warning("OpenAI 호출 실패 (strict, attempts=%d): %s", attempt, exc)
@@ -220,9 +236,12 @@ class LLMClient:
                 sys_prompt += "\n\n응답은 반드시 유효한 JSON 객체 하나로만 출력하라. 코드블록·설명 금지."
             exc: Exception | None = None
             attempt = 0
+            request_id = uuid4().hex
             for attempt in range(1, LLM_MAX_ATTEMPTS + 1):
                 try:
                     llm_cache.record_live_call()
+                    emit("request_started", request_id=request_id, provider="anthropic",
+                         attempt=attempt, max_attempts=LLM_MAX_ATTEMPTS)
                     resp = self._anthropic_client.messages.create(
                         model=SETTINGS.anthropic_model,
                         max_tokens=2048,
@@ -233,6 +252,7 @@ class LLMClient:
                     text = "".join(
                         block.text for block in resp.content if getattr(block, "type", "") == "text"
                     )
+                    emit("request_finished", request_id=request_id)
                     meta = _response_meta(resp, "anthropic", SETTINGS.anthropic_model)
                     llm_cache.record_success(meta)
                     llm_cache.store(cache_key, text, provider="anthropic", model=SETTINGS.anthropic_model,
@@ -243,11 +263,15 @@ class LLMClient:
                     exc = call_exc
                     if attempt < LLM_MAX_ATTEMPTS and _is_retryable(exc):
                         delay = _retry_delay(exc, attempt)
+                        emit("request_retry", request_id=request_id, provider="anthropic",
+                             attempt=attempt + 1, max_attempts=LLM_MAX_ATTEMPTS,
+                             delay_seconds=delay, reason=failure_reason(exc))
                         logger.warning(
                             "Anthropic 호출 일시 오류, 재시도 %d/%d: %s", attempt, LLM_MAX_ATTEMPTS, exc,
                         )
                         time.sleep(delay)
                         continue
+                    emit("request_finished", request_id=request_id)
                     break
             if SETTINGS.strict_llm:
                 logger.warning("Anthropic 호출 실패 (strict, attempts=%d): %s", attempt, exc)
