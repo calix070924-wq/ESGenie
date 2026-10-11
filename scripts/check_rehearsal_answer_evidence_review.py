@@ -363,6 +363,46 @@ def main():
                       expanded_boundary, None if case in ('negative_continuation', 'cross_scope') else True,
                       scope='대전 제3공장' if case == 'recipient_role' else '')
 
+        for code in ('C-8', 'E-2'):
+            for wrap in (False, True):
+                def negative_actor(inputs, code=code, wrap=wrap):
+                    prefix = 'Scope 3 배출 산정은' if code == 'C-8' else '08-30 경영진 검토 회의 실시는'
+                    text = prefix + ('\n' if wrap else ' ') + '담당자가 아직 하지 않았다.'
+                    for ext in inputs:
+                        if code == 'E-2' and ext.source_file.startswith('15_'):
+                            ext.raw_text = '2024년 8월 기록 / 대전 제3공장'
+                            policy = ('대표이사의 경영 책임과 권한을 지정한다. '
+                                      '대표이사는 월 1회 경영진 검토 회의를 주재한다.')
+                            ext.clauses = [replace(ext.clauses[0], section=s, text=t, page=p)
+                                           for p, (s, t) in enumerate([('경영 책임', policy), ('경영진 검토 기록', text)])]
+                        if code == 'C-8' and ext.source_file.startswith('06_'):
+                            body = ('온실가스 감축목표를 수립한다. Scope 1, Scope 2 배출을 산정·추적한다. '
+                                    + text + ' 온실가스 결과를 공개한다.')
+                            for clause in ext.clauses:
+                                clause.section = '온실가스 배출 현황'
+                                clause.text = body
+                check(path, f'{stage}:{code}:negative_actor_wrap_{wrap}', code, negative_actor, None)
+
+        for department in ('품질1팀에게', 'QA-1팀에게'):
+            for sep in (' | ', ' / '):
+                def numbered_recipient(inputs, department=department, sep=sep):
+                    for ext in inputs:
+                        if not ext.source_file.startswith('15_'):
+                            continue
+                        ext.raw_text = '경영 책임 및 검토 기록 모음'
+                        policy = ('대표이사의 경영 책임과 권한을 지정한다. '
+                                  '대표이사는 월 1회 경영진 검토 회의를 주재한다.')
+                        rows = [
+                            ('경영 책임', '적용 기간: 2024년 8월 | 사업장: 대전 제3공장' + sep
+                             + '부산 제7공장 ' + department + ' 규정을 전달한다. ' + policy),
+                            ('경영진 검토 기록', '적용 기간: 2024년 8월 | 사업장: 부산 제7공장' + sep
+                             + '대전 제3공장 ' + department + ' 08-30 경영진 검토 회의 실시 결과를 전달했다.'),
+                        ]
+                        ext.clauses = [replace(ext.clauses[0], section=s, text=t, page=p)
+                                       for p, (s, t) in enumerate(rows)]
+                check(path, f'{stage}:E-2:numbered_recipient_{department}_{sep!r}',
+                      'E-2', numbered_recipient, None)
+
     payload = {'mode': 'saved_extraction_copies_review_controls', 'external_calls': 0,
                'passed': all(c['passed'] for c in checks), 'checks': checks,
                'note': 'No new AI/OCR run or independent A/B labels/scores.'}

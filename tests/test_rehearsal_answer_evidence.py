@@ -922,3 +922,72 @@ def test_real_multi_site_field_is_preserved_before_record_body(separator, sites)
     assert '대전 제3공장' in a.boundary['site'] and '아산 제4공장' in a.boundary['site']
     if '이천공장' in sites:
         assert '이천공장' in a.boundary['site']
+
+
+# Seventh review: embedded negative subjects and department identifiers.
+def actor_negative_rows(code, actor, wrap):
+    prefix = 'Scope 3 배출 산정은' if code == 'C-8' else '08-30 경영진 검토 회의 실시는'
+    text = prefix + ('\n' if wrap else ' ') + actor + ' 아직 하지 않았다.'
+    if code == 'C-8':
+        return [('온실가스 배출 현황', expanded_carbon(text))]
+    return [NORMAL['E-2'][0], ('경영진 검토 기록', text)]
+
+
+def named_department_rows(name, separator, same_scope=False):
+    return [(s, t.replace('품질 담당자에게', name))
+            for s, t in expanded_cross_scope_rows(same_scope, separator)]
+
+
+@pytest.mark.parametrize('code', ['C-8', 'E-2'])
+@pytest.mark.parametrize('actor', ['담당자가', '외부 검증기관이', '담당 부서에서는'])
+@pytest.mark.parametrize('wrap', [False, True])
+def test_subject_in_same_negative_sentence_does_not_make_action_positive(code, actor, wrap):
+    a = answer(graph_for(actor_negative_rows(code, actor, wrap)), code)
+    assert a.value is None and a.status == 'insufficient', a.to_dict()
+
+
+@pytest.mark.parametrize('name', ['품질 담당자에게', '품질1팀에게', 'QA-1팀에게'])
+@pytest.mark.parametrize('separator', [' | ', ' / '])
+@pytest.mark.parametrize('same_scope', [False, True])
+def test_numeric_and_hyphenated_department_names_are_body(name, separator, same_scope):
+    a = answer(graph_for(named_department_rows(name, separator, same_scope), header='기록 모음'), 'E-2')
+    assert a.value is (True if same_scope else None), a.to_dict()
+    if same_scope:
+        assert a.boundary.get('site') == '대전 제3공장', a.to_dict()
+
+
+@pytest.mark.parametrize('code', ['C-8', 'E-2'])
+@pytest.mark.parametrize('actor', ['품질1팀이', 'QA-1팀이'])
+@pytest.mark.parametrize('completed', [False, True])
+def test_numbered_actor_is_part_of_the_same_execution_predicate(code, actor, completed):
+    pages = actor_negative_rows(code, actor, True)
+    if completed:
+        pages = [(s, t.replace('아직 하지 않았다', '실제로 했다')) for s, t in pages]
+    a = answer(graph_for(pages), code)
+    assert a.value is (True if completed else None), a.to_dict()
+
+
+@pytest.mark.parametrize('code', ['C-8', 'E-2'])
+@pytest.mark.parametrize('actor', ['담당자가\n아직', '외부\n검증기관이 아직'])
+def test_negative_actor_across_multiple_ocr_lines_remains_negative(code, actor):
+    a = answer(graph_for(actor_negative_rows(code, actor, True)), code)
+    assert a.value is None, a.to_dict()
+
+
+@pytest.mark.parametrize('prefix', ['Scope 1 배출은', 'SUP-01', 'CUS-01', '2024년',
+                                  '2024.08.30', '08-30', '08.30', '11:00'])
+def test_other_dated_or_identified_record_does_not_negate_scope3(prefix):
+    text = expanded_carbon('Scope 3 배출을 산정\n' + prefix + ' 교육을 실시하지 않았다.')
+    assert answer(graph_for([('온실가스 배출 현황', text)]), 'C-8').value is True
+
+
+@pytest.mark.parametrize('department', ['품질1팀에게', 'QA-1팀에게', 'HR_2팀에게', 'QA2파트에게'])
+@pytest.mark.parametrize('separator', [' / ', ' '])
+def test_multi_site_list_stops_at_numbered_recipient_after_last_metadata_site(department, separator):
+    fields = '적용 기간: 2024년 8월 | 사업장: 대전 제3공장' + separator + '아산 제4공장'
+    recipient = separator + '부산 제7공장 ' + department
+    pages = [('경영 책임', fields + recipient + ' 규정을 전달한다. ' + NORMAL['E-2'][0][1]),
+             ('경영진 검토 기록', fields + recipient + ' 08-30 경영진 검토 회의 실시 결과를 전달했다.')]
+    a = answer(graph_for(pages, header='기록 모음'), 'E-2')
+    assert a.value is True, a.to_dict()
+    assert a.boundary['site'] == '대전 제3공장, 아산 제4공장', a.to_dict()
