@@ -326,6 +326,43 @@ def main():
             check(path, f'{stage}:E-2:recipient_first_{separator!r}', 'E-2', recipient_first, True,
                   scope='대전 제3공장')
 
+        for case in ('negative_continuation', 'recipient_role', 'cross_scope', 'decimal_quantity'):
+            for control in (False, True):
+                code = 'E-2' if case in ('recipient_role', 'cross_scope') else 'C-8'
+
+                def expanded_boundary(inputs, case=case, control=control, code=code):
+                    for ext in inputs:
+                        if code == 'E-2' and ext.source_file.startswith('15_'):
+                            ext.raw_text = '경영 책임 및 검토 기록 모음'
+                            sep = ' | ' if control else ' / '
+                            policy = ('대표이사의 경영 책임과 권한을 지정한다. '
+                                      '대표이사는 월 1회 경영진 검토 회의를 주재한다.')
+                            site = '부산 제7공장' if case == 'cross_scope' else '대전 제3공장'
+                            recipient = '대전 제3공장' if case == 'cross_scope' else '부산 제7공장'
+                            rows = [
+                                ('경영 책임', '적용 기간: 2024년 8월 | 사업장: 대전 제3공장'
+                                 + (sep + '부산 제7공장 품질 담당자에게 규정을 전달한다. '
+                                    if case == 'cross_scope' else ' | ') + policy),
+                                ('경영진 검토 기록', f'적용 기간: 2024년 8월 | 사업장: {site}' + sep
+                                 + f'{recipient} 품질 담당자에게 08-30 경영진 검토 회의 실시 결과를 전달했다.'),
+                            ]
+                            ext.clauses = [replace(ext.clauses[0], section=s, text=t, page=p)
+                                           for p, (s, t) in enumerate(rows)]
+                        if code == 'C-8' and ext.source_file.startswith('06_'):
+                            if case == 'negative_continuation':
+                                middle = 'Scope 3 배출 산정은' + (' ' if control else '\n') + '아직 하지 않았다.'
+                            else:
+                                middle = 'Scope 3 배출량을 ' + ('총 ' if control else '총') + '123.45톤으로 산정했다.'
+                            body = ('온실가스 감축목표를 수립한다. Scope 1, Scope 2 배출을 산정·추적한다. '
+                                    + middle + ' 온실가스 결과를 공개한다.')
+                            for clause in ext.clauses:
+                                clause.section = '온실가스 배출 현황'
+                                clause.text = body
+
+                check(path, f'{stage}:{code}:expanded_{case}_control_{control}', code,
+                      expanded_boundary, None if case in ('negative_continuation', 'cross_scope') else True,
+                      scope='대전 제3공장' if case == 'recipient_role' else '')
+
     payload = {'mode': 'saved_extraction_copies_review_controls', 'external_calls': 0,
                'passed': all(c['passed'] for c in checks), 'checks': checks,
                'note': 'No new AI/OCR run or independent A/B labels/scores.'}

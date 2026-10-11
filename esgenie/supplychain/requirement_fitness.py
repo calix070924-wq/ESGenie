@@ -51,7 +51,7 @@ def _statement_units(text):
     # Scope 번호는 수치가 아니다. 문장 끝 번호와 다음 연도/날짜를
     # 하나의 숫자로 묶지 않고, 인식된 날짜·소수 내부의 점만 보호한다.
     for pattern in (_LOCAL_PERIOD, re.compile(_RECORD_TIME),
-                    re.compile(r'(?<![\w.])\d+[ \t]*\.[ \t]*\d+(?!\d)(?![ \t]*[년월])')):
+                    re.compile(r'(?<![\d.])\d+[ \t]*\.[ \t]*\d+(?!\d)(?![ \t]*[년월])')):
         for match in pattern.finditer(text):
             if re.search(r'scope\s*$', text[:match.start()], re.I):
                 continue
@@ -77,6 +77,16 @@ def _ocr_continuation(before, after):
     if not next_line or _SCOPE_FIELD.match(next_line):
         return False
     if re.match(r'(?:하지|되지|않|못|지\s*(?:않|못)|했다|하였다|한다|했습니다)', next_line):
+        return True
+    # 행의 부정 술어가 미완성 실행 표현을 이어받으면 부사/보조동사와
+    # 함께 보존한다. 새 주어·Scope·날짜가 있는 독립 행은 합치지 않는다.
+    predicate = re.split(r'[.!?。;|]', after.lstrip(), maxsplit=1)[0]
+    unfinished_action = re.search(
+        r'(?:추적|산정|집계|측정|관리|실시|확인|복구|전달|배포|수령)'
+        r'(?:하|은|는|을|를)?(?:\s+[가-힣]+)*\s*$', before)
+    independent = re.search(r'scope\s*\d|SUP-|CUS-|\d|\S+(?:은|는|이|가)(?=\s)',
+                            predicate, re.I)
+    if unfinished_action and not independent and _UNSUPPORTED.search(predicate):
         return True
     if '|' in next_line:
         return False
@@ -398,6 +408,17 @@ _SCOPE_SITE_TOKEN = re.compile(
 _SCOPE_VALUE_WORD = re.compile(r'기준|대상|전체|모든|및|과|와')
 
 
+def _site_body_role(tail):
+    """사업장 다음의 수신자/수행자 명사구는 적용 사업장 목록이 아니다."""
+    return re.match(
+        r'(?:에서|에게|으로)|(?:의|[이가은는])(?=\s|\d|$)|'
+        # 직무 이름을 열거하지 않고 명사구의 수신/장소 조사로 본문을 읽는다.
+        r'[ \t]*(?:[가-힣A-Za-z]+[ \t]+){0,4}[가-힣A-Za-z]+(?:에게|에서|으로|에)(?=\s|\d|$)|'
+        # 부서·담당 인원의 주어 및 조사 없는 표 셀도 같은 본문 경계다.
+        r'[ \t]*(?:[가-힣A-Za-z]+[ \t]+){0,4}[가-힣A-Za-z]*'
+        r'(?:자|팀|부|실|직원|인력|조직|수신인)(?:[이가은는를와과]|(?=\s+\d))', tail)
+
+
 def _scope_field_value(field, value):
     """명시적 필드의 선두 값만 읽고 뒤의 실행/전달 본문은 제외한다."""
     # 파이프/콜론 뒤는 다른 셀/본문이다. 필드 라벨의 구분자는 호출자가
@@ -418,9 +439,7 @@ def _scope_field_value(field, value):
                 # 명시한 복수 공장은 유지하되 뒤 본문의 '전사 담당자'나
                 # '다른 공장 담당자에게/공장에서'를 추가 적용 범위로 읽지 않는다.
                 if seen_site and (detect_site(match[0])[1] == 'entity'
-                                  or re.match(r'(?:에서|에게|으로|의|[이가은는])|'
-                                              r'\s+(?:담당자|담당|수신자)(?:에게|가|는|를|와|과)',
-                                              value[match.end():])):
+                                  or _site_body_role(value[match.end():])):
                     break
                 seen_site = True
         if match is None:
