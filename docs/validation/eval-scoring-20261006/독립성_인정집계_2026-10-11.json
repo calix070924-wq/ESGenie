@@ -174,13 +174,17 @@
       "set_id": "bm_rba42_v1",
       "labeler": "B",
       "sample_rows": 20,
-      "independent_rows": 20,
+      "independent_rows": 14,
       "excluded_rows": 0,
-      "pending_rows": 0,
+      "pending_rows": 6,
       "excluded_qids": [],
-      "pending_reasons": {},
-      "agreement_denominator": 20,
-      "agreement_blocked_reason": "",
+      "pending_reasons": {
+        "회신은 있으나 확정되지 않음 — ESGenie 응답·기대값·A 라벨 초안은 보지 않았다고 B가 회신(작업 대화 기록 검색 기준). 다만 라벨 작성 전 대화에서 B-3 사례 분류 '함정 후보 추가'를 봤다. 그 분류의 작성자·원문·전달 경로가 확인되지 않아 타인의 기대 판정 힌트인지 B 자신의 원본 판단인지 구별할 수 없다 — 출처 확인 대기(정민 재검토 R1, 2026-10-11)": 2,
+        "회신은 있으나 확정되지 않음 — ESGenie 응답·기대값·A 라벨 초안은 보지 않았다고 B가 회신(작업 대화 기록 검색 기준). 다만 라벨 작성 전 대화에서 B-3 사례 분류 'normal'를 봤다. 그 분류의 작성자·원문·전달 경로가 확인되지 않아 타인의 기대 판정 힌트인지 B 자신의 원본 판단인지 구별할 수 없다 — 출처 확인 대기(정민 재검토 R1, 2026-10-11)": 2,
+        "회신은 있으나 확정되지 않음 — ESGenie 응답·기대값·A 라벨 초안은 보지 않았다고 B가 회신(작업 대화 기록 검색 기준). 다만 라벨 작성 전 대화에서 B-3 사례 분류 'partial_scope'를 봤다. 그 분류의 작성자·원문·전달 경로가 확인되지 않아 타인의 기대 판정 힌트인지 B 자신의 원본 판단인지 구별할 수 없다 — 출처 확인 대기(정민 재검토 R1, 2026-10-11)": 2
+      },
+      "agreement_denominator": 14,
+      "agreement_blocked_reason": "독립 일치율을 산출하지 않는다: 확인 대기 6행, 독립 확인 14행. 열람 확인 회신과 라벨이 모두 있어야 한다. 산출 불가를 0%로 적지 않는다.",
       "rows": [
         {
           "stage": "initial",
@@ -237,11 +241,11 @@
         {
           "stage": "initial",
           "qid": "RBA-C-8-E-3-1",
-          "status": "independent",
-          "reason": "보지 않았다고 확인됨",
+          "status": "pending",
+          "reason": "회신은 있으나 확정되지 않음 — ESGenie 응답·기대값·A 라벨 초안은 보지 않았다고 B가 회신(작업 대화 기록 검색 기준). 다만 라벨 작성 전 대화에서 B-3 사례 분류 '함정 후보 추가'를 봤다. 그 분류의 작성자·원문·전달 경로가 확인되지 않아 타인의 기대 판정 힌트인지 B 자신의 원본 판단인지 구별할 수 없다 — 출처 확인 대기(정민 재검토 R1, 2026-10-11)",
           "exposures": [
             {
-              "exposure": "none",
+              "exposure": "unconfirmed",
               "source": "B 회신 2026-10-11 열람확인 보완(작업 대화 기록을 15개 문항 ID로 검색) — 지민이 전달한 원문, 이 저장소에 원문 없음",
               "confirmed_by": "B 신고(2026-10-11)"
             }
@@ -250,11 +254,11 @@
         {
           "stage": "initial",
           "qid": "RBA-E-11",
-          "status": "independent",
-          "reason": "보지 않았다고 확인됨",
+          "status": "pending",
+          "reason": "회신은 있으나 확정되지 않음 — ESGenie 응답·기대값·A 라벨 초안은 보지 않았다고 B가 회신(작업 대화 기록 검색 기준). 다만 라벨 작성 전 대화에서 B-3 사례 분류 'normal'를 봤다. 그 분류의 작성자·원문·전달 경로가 확인되지 않아 타인의 기대 판정 힌트인지 B 자신의 원본 판단인지 구별할 수 없다 — 출처 확인 대기(정민 재검토 R1, 2026-10-11)",
           "exposures": [
             {
-              "exposure": "none",
+              "exposure": "unconfirmed",
               "source": "B 회신 2026-10-11 열람확인 보완(작업 대화 기록을 15개 문항 ID로 검색) — 지민이 전달한 원문, 이 저장소에 원문 없음",
               "confirmed_by": "B 신고(2026-10-11)"
             }
@@ -263,11 +267,11 @@
         {
           "stage": "initial",
           "qid": "RBA-E-12",
-          "status": "independent",
-          "reason": "보지 않았다고 확인됨",
+          "status": "pending",
+          "reason": "회신은 있으나 확정되지 않음 — ESGenie 응답·기대값·A 라벨 초안은 보지 않았다고 B가 회신(작업 대화 기록 검색 기준). 다만 라벨 작성 전 대화에서 B-3 사례 분류 'partial_scope'를 봤다. 그 분류의 작성자·원문·전달 경로가 확인되지 않아 타인의 기대 판정 힌트인지 B 자신의 원본 판단인지 구별할 수 없다 — 출처 확인 대기(정민 재검토 R1, 2026-10-11)",
           "exposures": [
             {
-              "exposure": "none",
+              "exposure": "unconfirmed",
               "source": "B 회신 2026-10-11 열람확인 보완(작업 대화 기록을 15개 문항 ID로 검색) — 지민이 전달한 원문, 이 저장소에 원문 없음",
               "confirmed_by": "B 신고(2026-10-11)"
             }
@@ -367,11 +371,11 @@
         {
           "stage": "followup",
           "qid": "RBA-C-8-E-3-1",
-          "status": "independent",
-          "reason": "보지 않았다고 확인됨",
+          "status": "pending",
+          "reason": "회신은 있으나 확정되지 않음 — ESGenie 응답·기대값·A 라벨 초안은 보지 않았다고 B가 회신(작업 대화 기록 검색 기준). 다만 라벨 작성 전 대화에서 B-3 사례 분류 '함정 후보 추가'를 봤다. 그 분류의 작성자·원문·전달 경로가 확인되지 않아 타인의 기대 판정 힌트인지 B 자신의 원본 판단인지 구별할 수 없다 — 출처 확인 대기(정민 재검토 R1, 2026-10-11)",
           "exposures": [
             {
-              "exposure": "none",
+              "exposure": "unconfirmed",
               "source": "B 회신 2026-10-11 열람확인 보완(작업 대화 기록을 15개 문항 ID로 검색) — 지민이 전달한 원문, 이 저장소에 원문 없음",
               "confirmed_by": "B 신고(2026-10-11)"
             }
@@ -380,11 +384,11 @@
         {
           "stage": "followup",
           "qid": "RBA-E-11",
-          "status": "independent",
-          "reason": "보지 않았다고 확인됨",
+          "status": "pending",
+          "reason": "회신은 있으나 확정되지 않음 — ESGenie 응답·기대값·A 라벨 초안은 보지 않았다고 B가 회신(작업 대화 기록 검색 기준). 다만 라벨 작성 전 대화에서 B-3 사례 분류 'normal'를 봤다. 그 분류의 작성자·원문·전달 경로가 확인되지 않아 타인의 기대 판정 힌트인지 B 자신의 원본 판단인지 구별할 수 없다 — 출처 확인 대기(정민 재검토 R1, 2026-10-11)",
           "exposures": [
             {
-              "exposure": "none",
+              "exposure": "unconfirmed",
               "source": "B 회신 2026-10-11 열람확인 보완(작업 대화 기록을 15개 문항 ID로 검색) — 지민이 전달한 원문, 이 저장소에 원문 없음",
               "confirmed_by": "B 신고(2026-10-11)"
             }
@@ -393,11 +397,11 @@
         {
           "stage": "followup",
           "qid": "RBA-E-12",
-          "status": "independent",
-          "reason": "보지 않았다고 확인됨",
+          "status": "pending",
+          "reason": "회신은 있으나 확정되지 않음 — ESGenie 응답·기대값·A 라벨 초안은 보지 않았다고 B가 회신(작업 대화 기록 검색 기준). 다만 라벨 작성 전 대화에서 B-3 사례 분류 'partial_scope'를 봤다. 그 분류의 작성자·원문·전달 경로가 확인되지 않아 타인의 기대 판정 힌트인지 B 자신의 원본 판단인지 구별할 수 없다 — 출처 확인 대기(정민 재검토 R1, 2026-10-11)",
           "exposures": [
             {
-              "exposure": "none",
+              "exposure": "unconfirmed",
               "source": "B 회신 2026-10-11 열람확인 보완(작업 대화 기록을 15개 문항 ID로 검색) — 지민이 전달한 원문, 이 저장소에 원문 없음",
               "confirmed_by": "B 신고(2026-10-11)"
             }
@@ -886,27 +890,29 @@
       "set_id": "bm_rba42_numeric_census",
       "labeler": "B",
       "sample_rows": 12,
-      "independent_rows": 6,
-      "excluded_rows": 2,
-      "pending_rows": 4,
+      "independent_rows": 0,
+      "excluded_rows": 6,
+      "pending_rows": 6,
       "excluded_qids": [
-        "RBA-C-4-E-6-2"
+        "RBA-C-4-E-6-1",
+        "RBA-C-4-E-6-2",
+        "RBA-C-8-E-4-1"
       ],
       "pending_reasons": {
-        "회신은 있으나 확정되지 않음 — ESGenie 응답·기대값·A 라벨 초안은 보지 않았다고 확인됨. 다만 작업지시서_B §4.1 '부분 범위' 함정 설명(폐기물: 4월·제1공장)을 읽었다. 이 함정 설명을 기대 판정 노출로 셀지는 정민 판단 대기": 2,
-        "회신은 있으나 확정되지 않음 — ESGenie 응답·기대값·A 라벨 초안은 보지 않았다고 확인됨. 다만 작업지시서_B §4.1 '부분 범위' 함정 설명(에너지: 전력만·가스 미포함)을 읽었다. 이 함정 설명을 기대 판정 노출로 셀지는 정민 판단 대기": 2
+        "회신은 있으나 확정되지 않음 — ESGenie 응답·기대값·A 라벨 초안은 보지 않았다고 B가 회신(작업 대화 기록 검색 기준). 다만 라벨 작성 전 대화에서 B-3 사례 분류 '증빙 부재 확인'를 봤다. 그 분류의 작성자·원문·전달 경로가 확인되지 않아 타인의 기대 판정 힌트인지 B 자신의 원본 판단인지 구별할 수 없다 — 출처 확인 대기(정민 재검토 R1, 2026-10-11)": 4,
+        "회신은 있으나 확정되지 않음 — ESGenie 응답·기대값·A 라벨 초안은 보지 않았다고 B가 회신(작업 대화 기록 검색 기준). 다만 라벨 작성 전 대화에서 B-3 사례 분류 '함정 후보 추가'를 봤다. 그 분류의 작성자·원문·전달 경로가 확인되지 않아 타인의 기대 판정 힌트인지 B 자신의 원본 판단인지 구별할 수 없다 — 출처 확인 대기(정민 재검토 R1, 2026-10-11)": 2
       },
-      "agreement_denominator": 6,
-      "agreement_blocked_reason": "독립 일치율을 산출하지 않는다: 확인 대기 4행, 독립 확인 6행. 열람 확인 회신과 라벨이 모두 있어야 한다. 산출 불가를 0%로 적지 않는다.",
+      "agreement_denominator": 0,
+      "agreement_blocked_reason": "독립 일치율을 산출하지 않는다: 확인 대기 6행, 독립 확인 0행. 열람 확인 회신과 라벨이 모두 있어야 한다. 산출 불가를 0%로 적지 않는다.",
       "rows": [
         {
           "stage": "initial",
           "qid": "RBA-C-4-E-6-1",
-          "status": "pending",
-          "reason": "회신은 있으나 확정되지 않음 — ESGenie 응답·기대값·A 라벨 초안은 보지 않았다고 확인됨. 다만 작업지시서_B §4.1 '부분 범위' 함정 설명(폐기물: 4월·제1공장)을 읽었다. 이 함정 설명을 기대 판정 노출로 셀지는 정민 판단 대기",
+          "status": "excluded",
+          "reason": "노출 확인됨(expected_value) — 일치·불일치와 무관하게 분자·분모에서 제외",
           "exposures": [
             {
-              "exposure": "unconfirmed",
+              "exposure": "expected_value",
               "source": "B 회신 2026-10-11 열람확인 보완(작업 대화 기록을 15개 문항 ID로 검색) — 지민이 전달한 원문, 이 저장소에 원문 없음",
               "confirmed_by": "B 신고(2026-10-11)"
             }
@@ -933,34 +939,8 @@
         {
           "stage": "initial",
           "qid": "RBA-C-5-E-7-1",
-          "status": "independent",
-          "reason": "보지 않았다고 확인됨",
-          "exposures": [
-            {
-              "exposure": "none",
-              "source": "B 회신 2026-10-11 열람확인 보완(작업 대화 기록을 15개 문항 ID로 검색) — 지민이 전달한 원문, 이 저장소에 원문 없음",
-              "confirmed_by": "B 신고(2026-10-11)"
-            }
-          ]
-        },
-        {
-          "stage": "initial",
-          "qid": "RBA-C-8-E-3-1",
-          "status": "independent",
-          "reason": "보지 않았다고 확인됨",
-          "exposures": [
-            {
-              "exposure": "none",
-              "source": "B 회신 2026-10-11 열람확인 보완(작업 대화 기록을 15개 문항 ID로 검색) — 지민이 전달한 원문, 이 저장소에 원문 없음",
-              "confirmed_by": "B 신고(2026-10-11)"
-            }
-          ]
-        },
-        {
-          "stage": "initial",
-          "qid": "RBA-C-8-E-4-1",
           "status": "pending",
-          "reason": "회신은 있으나 확정되지 않음 — ESGenie 응답·기대값·A 라벨 초안은 보지 않았다고 확인됨. 다만 작업지시서_B §4.1 '부분 범위' 함정 설명(에너지: 전력만·가스 미포함)을 읽었다. 이 함정 설명을 기대 판정 노출로 셀지는 정민 판단 대기",
+          "reason": "회신은 있으나 확정되지 않음 — ESGenie 응답·기대값·A 라벨 초안은 보지 않았다고 B가 회신(작업 대화 기록 검색 기준). 다만 라벨 작성 전 대화에서 B-3 사례 분류 '증빙 부재 확인'를 봤다. 그 분류의 작성자·원문·전달 경로가 확인되지 않아 타인의 기대 판정 힌트인지 B 자신의 원본 판단인지 구별할 수 없다 — 출처 확인 대기(정민 재검토 R1, 2026-10-11)",
           "exposures": [
             {
               "exposure": "unconfirmed",
@@ -971,12 +951,38 @@
         },
         {
           "stage": "initial",
-          "qid": "RBA-C-8-E-4-2",
-          "status": "independent",
-          "reason": "보지 않았다고 확인됨",
+          "qid": "RBA-C-8-E-3-1",
+          "status": "pending",
+          "reason": "회신은 있으나 확정되지 않음 — ESGenie 응답·기대값·A 라벨 초안은 보지 않았다고 B가 회신(작업 대화 기록 검색 기준). 다만 라벨 작성 전 대화에서 B-3 사례 분류 '함정 후보 추가'를 봤다. 그 분류의 작성자·원문·전달 경로가 확인되지 않아 타인의 기대 판정 힌트인지 B 자신의 원본 판단인지 구별할 수 없다 — 출처 확인 대기(정민 재검토 R1, 2026-10-11)",
           "exposures": [
             {
-              "exposure": "none",
+              "exposure": "unconfirmed",
+              "source": "B 회신 2026-10-11 열람확인 보완(작업 대화 기록을 15개 문항 ID로 검색) — 지민이 전달한 원문, 이 저장소에 원문 없음",
+              "confirmed_by": "B 신고(2026-10-11)"
+            }
+          ]
+        },
+        {
+          "stage": "initial",
+          "qid": "RBA-C-8-E-4-1",
+          "status": "excluded",
+          "reason": "노출 확인됨(expected_value) — 일치·불일치와 무관하게 분자·분모에서 제외",
+          "exposures": [
+            {
+              "exposure": "expected_value",
+              "source": "B 회신 2026-10-11 열람확인 보완(작업 대화 기록을 15개 문항 ID로 검색) — 지민이 전달한 원문, 이 저장소에 원문 없음",
+              "confirmed_by": "B 신고(2026-10-11)"
+            }
+          ]
+        },
+        {
+          "stage": "initial",
+          "qid": "RBA-C-8-E-4-2",
+          "status": "pending",
+          "reason": "회신은 있으나 확정되지 않음 — ESGenie 응답·기대값·A 라벨 초안은 보지 않았다고 B가 회신(작업 대화 기록 검색 기준). 다만 라벨 작성 전 대화에서 B-3 사례 분류 '증빙 부재 확인'를 봤다. 그 분류의 작성자·원문·전달 경로가 확인되지 않아 타인의 기대 판정 힌트인지 B 자신의 원본 판단인지 구별할 수 없다 — 출처 확인 대기(정민 재검토 R1, 2026-10-11)",
+          "exposures": [
+            {
+              "exposure": "unconfirmed",
               "source": "B 회신 2026-10-11 열람확인 보완(작업 대화 기록을 15개 문항 ID로 검색) — 지민이 전달한 원문, 이 저장소에 원문 없음",
               "confirmed_by": "B 신고(2026-10-11)"
             }
@@ -985,11 +991,11 @@
         {
           "stage": "followup",
           "qid": "RBA-C-4-E-6-1",
-          "status": "pending",
-          "reason": "회신은 있으나 확정되지 않음 — ESGenie 응답·기대값·A 라벨 초안은 보지 않았다고 확인됨. 다만 작업지시서_B §4.1 '부분 범위' 함정 설명(폐기물: 4월·제1공장)을 읽었다. 이 함정 설명을 기대 판정 노출로 셀지는 정민 판단 대기",
+          "status": "excluded",
+          "reason": "노출 확인됨(expected_value) — 일치·불일치와 무관하게 분자·분모에서 제외",
           "exposures": [
             {
-              "exposure": "unconfirmed",
+              "exposure": "expected_value",
               "source": "B 회신 2026-10-11 열람확인 보완(작업 대화 기록을 15개 문항 ID로 검색) — 지민이 전달한 원문, 이 저장소에 원문 없음",
               "confirmed_by": "B 신고(2026-10-11)"
             }
@@ -1016,34 +1022,8 @@
         {
           "stage": "followup",
           "qid": "RBA-C-5-E-7-1",
-          "status": "independent",
-          "reason": "보지 않았다고 확인됨",
-          "exposures": [
-            {
-              "exposure": "none",
-              "source": "B 회신 2026-10-11 열람확인 보완(작업 대화 기록을 15개 문항 ID로 검색) — 지민이 전달한 원문, 이 저장소에 원문 없음",
-              "confirmed_by": "B 신고(2026-10-11)"
-            }
-          ]
-        },
-        {
-          "stage": "followup",
-          "qid": "RBA-C-8-E-3-1",
-          "status": "independent",
-          "reason": "보지 않았다고 확인됨",
-          "exposures": [
-            {
-              "exposure": "none",
-              "source": "B 회신 2026-10-11 열람확인 보완(작업 대화 기록을 15개 문항 ID로 검색) — 지민이 전달한 원문, 이 저장소에 원문 없음",
-              "confirmed_by": "B 신고(2026-10-11)"
-            }
-          ]
-        },
-        {
-          "stage": "followup",
-          "qid": "RBA-C-8-E-4-1",
           "status": "pending",
-          "reason": "회신은 있으나 확정되지 않음 — ESGenie 응답·기대값·A 라벨 초안은 보지 않았다고 확인됨. 다만 작업지시서_B §4.1 '부분 범위' 함정 설명(에너지: 전력만·가스 미포함)을 읽었다. 이 함정 설명을 기대 판정 노출로 셀지는 정민 판단 대기",
+          "reason": "회신은 있으나 확정되지 않음 — ESGenie 응답·기대값·A 라벨 초안은 보지 않았다고 B가 회신(작업 대화 기록 검색 기준). 다만 라벨 작성 전 대화에서 B-3 사례 분류 '증빙 부재 확인'를 봤다. 그 분류의 작성자·원문·전달 경로가 확인되지 않아 타인의 기대 판정 힌트인지 B 자신의 원본 판단인지 구별할 수 없다 — 출처 확인 대기(정민 재검토 R1, 2026-10-11)",
           "exposures": [
             {
               "exposure": "unconfirmed",
@@ -1054,12 +1034,38 @@
         },
         {
           "stage": "followup",
-          "qid": "RBA-C-8-E-4-2",
-          "status": "independent",
-          "reason": "보지 않았다고 확인됨",
+          "qid": "RBA-C-8-E-3-1",
+          "status": "pending",
+          "reason": "회신은 있으나 확정되지 않음 — ESGenie 응답·기대값·A 라벨 초안은 보지 않았다고 B가 회신(작업 대화 기록 검색 기준). 다만 라벨 작성 전 대화에서 B-3 사례 분류 '함정 후보 추가'를 봤다. 그 분류의 작성자·원문·전달 경로가 확인되지 않아 타인의 기대 판정 힌트인지 B 자신의 원본 판단인지 구별할 수 없다 — 출처 확인 대기(정민 재검토 R1, 2026-10-11)",
           "exposures": [
             {
-              "exposure": "none",
+              "exposure": "unconfirmed",
+              "source": "B 회신 2026-10-11 열람확인 보완(작업 대화 기록을 15개 문항 ID로 검색) — 지민이 전달한 원문, 이 저장소에 원문 없음",
+              "confirmed_by": "B 신고(2026-10-11)"
+            }
+          ]
+        },
+        {
+          "stage": "followup",
+          "qid": "RBA-C-8-E-4-1",
+          "status": "excluded",
+          "reason": "노출 확인됨(expected_value) — 일치·불일치와 무관하게 분자·분모에서 제외",
+          "exposures": [
+            {
+              "exposure": "expected_value",
+              "source": "B 회신 2026-10-11 열람확인 보완(작업 대화 기록을 15개 문항 ID로 검색) — 지민이 전달한 원문, 이 저장소에 원문 없음",
+              "confirmed_by": "B 신고(2026-10-11)"
+            }
+          ]
+        },
+        {
+          "stage": "followup",
+          "qid": "RBA-C-8-E-4-2",
+          "status": "pending",
+          "reason": "회신은 있으나 확정되지 않음 — ESGenie 응답·기대값·A 라벨 초안은 보지 않았다고 B가 회신(작업 대화 기록 검색 기준). 다만 라벨 작성 전 대화에서 B-3 사례 분류 '증빙 부재 확인'를 봤다. 그 분류의 작성자·원문·전달 경로가 확인되지 않아 타인의 기대 판정 힌트인지 B 자신의 원본 판단인지 구별할 수 없다 — 출처 확인 대기(정민 재검토 R1, 2026-10-11)",
+          "exposures": [
+            {
+              "exposure": "unconfirmed",
               "source": "B 회신 2026-10-11 열람확인 보완(작업 대화 기록을 15개 문항 ID로 검색) — 지민이 전달한 원문, 이 저장소에 원문 없음",
               "confirmed_by": "B 신고(2026-10-11)"
             }

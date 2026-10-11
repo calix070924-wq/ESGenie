@@ -24,55 +24,55 @@
       }
     },
     "b_independent": {
-      "rows": 20,
+      "rows": 14,
       "decision_match": {
-        "n": 20,
-        "d": 20,
-        "text": "20/20"
+        "n": 14,
+        "d": 14,
+        "text": "14/14"
       },
       "hold_reason_match": {
-        "n": 6,
-        "d": 16,
-        "text": "6/16"
+        "n": 4,
+        "d": 12,
+        "text": "4/12"
       },
       "value_match_b_20261009": {
         "n": 0,
-        "d": 4,
-        "text": "0/4"
+        "d": 2,
+        "text": "0/2"
       },
       "value_match_b_20261010": {
-        "n": 4,
-        "d": 4,
-        "text": "4/4"
+        "n": 2,
+        "d": 2,
+        "text": "2/2"
       }
     },
     "b_independent_a_not_reported": {
-      "rows": 18,
+      "rows": 14,
       "decision_match": {
-        "n": 18,
-        "d": 18,
-        "text": "18/18"
+        "n": 14,
+        "d": 14,
+        "text": "14/14"
       },
       "hold_reason_match": {
         "n": 4,
-        "d": 14,
-        "text": "4/14"
+        "d": 12,
+        "text": "4/12"
       },
       "value_match_b_20261009": {
         "n": 0,
-        "d": 4,
-        "text": "0/4"
+        "d": 2,
+        "text": "0/2"
       },
       "value_match_b_20261010": {
-        "n": 4,
-        "d": 4,
-        "text": "4/4"
+        "n": 2,
+        "d": 2,
+        "text": "2/2"
       }
     },
     "b_status_counts": {
-      "independent": 20,
+      "independent": 14,
       "excluded": 0,
-      "pending": 0
+      "pending": 6
     }
   },
   "bm_rba42_numeric_census": {
@@ -100,16 +100,16 @@
       }
     },
     "b_independent": {
-      "rows": 6,
+      "rows": 0,
       "decision_match": {
-        "n": 6,
-        "d": 6,
-        "text": "6/6"
+        "n": 0,
+        "d": 0,
+        "text": "산출 불가(분모 0)"
       },
       "hold_reason_match": {
-        "n": 6,
-        "d": 6,
-        "text": "6/6"
+        "n": 0,
+        "d": 0,
+        "text": "산출 불가(분모 0)"
       },
       "value_match_b_20261009": {
         "n": 0,
@@ -123,16 +123,16 @@
       }
     },
     "b_independent_a_not_reported": {
-      "rows": 4,
+      "rows": 0,
       "decision_match": {
-        "n": 4,
-        "d": 4,
-        "text": "4/4"
+        "n": 0,
+        "d": 0,
+        "text": "산출 불가(분모 0)"
       },
       "hold_reason_match": {
-        "n": 4,
-        "d": 4,
-        "text": "4/4"
+        "n": 0,
+        "d": 0,
+        "text": "산출 불가(분모 0)"
       },
       "value_match_b_20261009": {
         "n": 0,
@@ -146,9 +146,9 @@
       }
     },
     "b_status_counts": {
-      "independent": 6,
-      "excluded": 2,
-      "pending": 4
+      "independent": 0,
+      "excluded": 6,
+      "pending": 6
     }
   }
 }
