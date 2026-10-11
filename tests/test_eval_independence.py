@@ -133,3 +133,34 @@ def test_excluded_labels_are_kept_not_discarded():
     note = ind.label_usability_note()
     assert "폐기하지 않는다" in note
     assert "별개 판단" in note
+
+
+def test_unconfirmed_reply_stays_pending_with_its_own_reason():
+    """회신은 왔지만 '보지 않았다'고 확정되지 않은 행 — 독립으로 세지 않는다."""
+    rows = [("initial", "SYN-1"), ("initial", "SYN-2")]
+    exps = [_exp(exposure="unconfirmed", stage=ind.ALL_STAGES, qid="SYN-1",
+                 note="본 기억 없음(확정 아님)")]
+    rep = ind.classify(rows, exps, labeler="B")
+    assert rep.independent_rows == 0 and rep.excluded_rows == 0 and rep.pending_rows == 2
+    reasons = {r.qid: r.reason for r in rep.rows}
+    assert reasons["SYN-1"].startswith("회신은 있으나 확정되지 않음")
+    assert "본 기억 없음" in reasons["SYN-1"]
+    assert reasons["SYN-2"].startswith("열람 확인 회신이 없다")
+    assert rep.agreement_denominator == 0 and rep.agreement_blocked_reason
+
+
+def test_unconfirmed_does_not_turn_into_independent_even_with_none():
+    rows = [("initial", "SYN-1")]
+    exps = [_exp(exposure="none", stage=ind.ALL_STAGES, qid="SYN-1"),
+            _exp(exposure="unconfirmed", stage=ind.ALL_STAGES, qid="SYN-1")]
+    rep = ind.classify(rows, exps, labeler="B")
+    assert rep.pending_rows == 1 and rep.independent_rows == 0
+
+
+def test_seen_wins_over_unconfirmed():
+    rows = [("initial", "SYN-1")]
+    exps = [_exp(exposure="unconfirmed", stage=ind.ALL_STAGES, qid="SYN-1"),
+            _exp(exposure="expected_value", stage=ind.ALL_STAGES, qid="SYN-1")]
+    rep = ind.classify(rows, exps, labeler="B")
+    assert rep.excluded_rows == 1 and rep.pending_rows == 0
+

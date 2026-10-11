@@ -36,12 +36,19 @@ EXPOSURE_COLUMNS = (
 )
 
 #: 노출 종류. `none`은 "보지 않았다고 확인됨"이다 — 기록이 없는 것과 다르다.
+#: `unconfirmed`는 "회신은 받았으나 보지 않았다고 확정되지 않음"이다(2026-10-11 추가).
+#: 집계는 기록이 없는 행과 같이 **확인 대기**다. 독립으로도 노출로도 세지 않고,
+#: 대기 이유만 "회신 없음"과 구분해 남긴다.
 EXPOSURE_KINDS = (
     "expected_value",    # 기대 정답(수치·판정)을 보았다
     "system_answer",     # 시스템 답변을 보았다
     "both",
     "none",
+    "unconfirmed",
 )
+
+#: 노출로 세는 종류. `none`·`unconfirmed`는 노출이 아니다.
+SEEN_KINDS = ("expected_value", "system_answer", "both")
 
 #: `stage`에 이 값을 쓰면 그 문항의 모든 단계에 적용한다. 문항 단위는 유지된다.
 ALL_STAGES = "all"
@@ -157,14 +164,21 @@ def classify(sample_rows: list[tuple[str, str]], exposures: list[Exposure],
 
     for stage, qid in sample_rows:
         hits = [e for e in mine if e.covers(stage, qid)]
-        seen = [e for e in hits if e.exposure != "none"]
+        seen = [e for e in hits if e.exposure in SEEN_KINDS]
         cleared = [e for e in hits if e.exposure == "none"]
+        unsure = [e for e in hits if e.exposure == "unconfirmed"]
 
         if seen:
             kinds = sorted({e.exposure for e in seen})
             status, reason = EXCLUDED, (
                 f"노출 확인됨({','.join(kinds)}) — 일치·불일치와 무관하게 분자·분모에서 제외")
             excluded_qids.add(qid)
+        elif unsure:
+            # 회신이 있어도 확정되지 않았으면 독립으로 세지 않는다. `none`이 함께 있어도
+            # 미확정 기록이 남아 있으면 대기다(확인되지 않은 쪽을 앞세운다).
+            status, reason = PENDING, ("회신은 있으나 확정되지 않음 — "
+                                       + " / ".join(sorted({e.note for e in unsure if e.note}))
+                                       ).rstrip(" —")
         elif cleared:
             status, reason = INDEPENDENT, "보지 않았다고 확인됨"
         else:
