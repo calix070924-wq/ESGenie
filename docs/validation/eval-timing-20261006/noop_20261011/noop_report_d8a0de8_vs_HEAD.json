@@ -1,0 +1,19 @@
+{
+  "identical_except_allowed": true,
+  "a": {
+    "path": "dump_before_d8a0de8.json",
+    "sha256": "5e4e96aa980c280a7cd5d8b7bfab6f9bc22a7e768acb0f4dd9f7cf0322483d6b"
+  },
+  "b": {
+    "path": "dump_after_HEAD.json",
+    "sha256": "5e4e96aa980c280a7cd5d8b7bfab6f9bc22a7e768acb0f4dd9f7cf0322483d6b"
+  },
+  "allowed_paths": {
+    "generated_at": "result.json 최상위 생성 시각(실행 메타데이터)",
+    "timings": "계측으로 새로 생긴 최상위 필드 — 계측 전 코드에는 없다"
+  },
+  "skipped_paths": [],
+  "diff_count": 0,
+  "diffs": [],
+  "normalization": "없음 — 실수 반올림·문자열 시각/경로 치환을 하지 않는다"
+}
