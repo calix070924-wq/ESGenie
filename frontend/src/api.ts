@@ -1,9 +1,15 @@
-export async function api<T>(path: string, method = 'GET', body?: unknown): Promise<T> {
+export async function api<T>(
+  path: string,
+  method = 'GET',
+  body?: unknown,
+  signal?: AbortSignal,
+): Promise<T> {
   const form = body instanceof FormData;
   let response: Response;
   try {
     response = await fetch(`/api${path}`, {
       method,
+      signal,
       headers: {
         'X-ESGenie-Client': 'workspace',
         ...(!form && body !== undefined ? { 'Content-Type': 'application/json' } : {}),

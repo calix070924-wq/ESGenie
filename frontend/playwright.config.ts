@@ -3,6 +3,7 @@ import path from 'node:path';
 
 export default defineConfig({
   testDir: './tests',
+  testIgnore: ['**/rehearsal-progress.spec.ts'],
   fullyParallel: false,
   workers: 1,
   timeout: 40000,

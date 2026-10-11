@@ -21,6 +21,7 @@ import type { Company, Config, ListState, Project, ProjectSummary, ReviewValues 
 import { Review, AnswerList, Submission } from './Review';
 import { WorkspaceNav } from './WorkspaceNav';
 import { Documents } from './Documents';
+import { AnalysisProgress } from './AnalysisProgress';
 
 export default function App() {
   const [config, setConfig] = useState<Config | null>(null);
@@ -33,6 +34,7 @@ export default function App() {
   const [booting, setBooting] = useState(true);
   const [error, setError] = useState('');
   const [message, setMessage] = useState('');
+  const [progressConnected, setProgressConnected] = useState(true);
   const [listState, setListState] = useState<ListState>({
     filter: 'all',
     search: '',
@@ -121,12 +123,19 @@ export default function App() {
   }, []);
   useEffect(() => {
     if (!processing || !project) return;
+    setProgressConnected(true);
     let active = true;
     let timer: ReturnType<typeof setTimeout>;
     const poll = async () => {
       try {
-        const current = await api<Project>(`/projects/${project.id}`);
+        const current = await api<Project>(
+          `/projects/${project.id}`,
+          'GET',
+          undefined,
+          AbortSignal.timeout(10000),
+        );
         if (!active) return;
+        setProgressConnected(true);
         setProject(current);
         if (current.job.status === 'complete') {
           setStep(2);
@@ -135,8 +144,8 @@ export default function App() {
           return;
         }
         if (current.job.status === 'failed') return;
-      } catch (err) {
-        if (active) setError((err as Error).message);
+      } catch {
+        if (active) setProgressConnected(false);
       }
       if (active) timer = setTimeout(poll, 1800);
     };
@@ -145,7 +154,7 @@ export default function App() {
       active = false;
       clearTimeout(timer);
     };
-  }, [project?.id, processing]);
+  }, [project?.id, project?.job.run_id, processing]);
 
   useEffect(() => {
     window.scrollTo({ top: 0, behavior: 'instant' });
@@ -378,14 +387,8 @@ export default function App() {
                   </button>
                 </div>
               )}
-              {processing && (
-                <div className="feedback processing" role="status">
-                  <LoaderCircle className="spin" />
-                  <div>
-                    <strong>{project.job.stage}</strong>
-                    <p>파일에 따라 시간이 걸릴 수 있어요. 결과가 준비되면 알려드릴게요.</p>
-                  </div>
-                </div>
+              {project.job.status !== 'idle' && (
+                <AnalysisProgress job={project.job} connected={progressConnected} />
               )}
               {project.job.status === 'failed' && (
                 <div className="feedback error" role="alert">

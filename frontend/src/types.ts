@@ -105,6 +105,32 @@ export type Project = {
     status: 'idle' | 'queued' | 'running' | 'complete' | 'failed';
     stage: string;
     error: string;
+    run_id?: string;
+    phase?: 'queued' | 'reading' | 'analyzing' | 'organizing' | 'complete' | 'failed';
+    queued_at?: string;
+    started_at?: string | null;
+    stage_started_at?: string;
+    ended_at?: string | null;
+    event_at?: string;
+    total_files?: number | null;
+    completed_files?: number;
+    active_files?: { id: string; name: string; role: 'evidence' | 'company_answer' }[];
+    requests?: {
+      id: string;
+      provider: string;
+      state: 'waiting' | 'retrying';
+      attempt: number;
+      max_attempts: number;
+      started_at: string;
+      delay_seconds?: number | null;
+      reason: string;
+      last_retry?: {
+        attempt: number;
+        at: string;
+        reason: string;
+        delay_seconds?: number;
+      } | null;
+    }[];
   };
 };
 export type ProjectSummary = Pick<Project, 'id' | 'company_name' | 'year' | 'mode' | 'updated_at'>;

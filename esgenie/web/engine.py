@@ -4,6 +4,7 @@ from __future__ import annotations
 from pathlib import Path
 
 from .presenter import present_sheet, timestamp
+from esgenie.progress import CompanyFiles, EvidenceFiles, emit
 
 
 def analysis_available() -> bool:
@@ -17,25 +18,33 @@ def run_analysis(project: dict, directory: Path) -> dict:
     from esgenie.config import SETTINGS
 
     evidence, company_files = {}, []
+    evidence_documents, company_documents = {}, {}
     for document in project["documents"]:
         if not document.get("included", True) or document.get("error"):
             continue
         path = directory / (document.get("path") or str(Path("uploads") / document["id"] / document["name"]))
         if document["role"] == "company_answer":
             company_files.append(str(path))
+            company_documents[str(path)] = document
         else:
             evidence[document["name"]] = str(path)
-    claims = parse_saq_claims(company_files)
+            evidence_documents[document["name"]] = document
+    emit("targets", total_files=len(evidence) + len(company_files))
+    emit("stage", phase="reading", stage="회사 작성 답변과 증빙 자료를 읽고 있어요")
+    claims = parse_saq_claims(CompanyFiles(company_files, company_documents))
     # One worker owns the process-wide engine. Failure must not become a mock success.
     previous_strict = SETTINGS.strict_llm
     SETTINGS.strict_llm = True
     try:
+        if not evidence:
+            emit("stage", phase="analyzing", stage="읽은 자료를 분석하고 있어요")
         output = run(
             project["id"], areas=["E", "S", "G"], corp_name=project["company_name"],
             industry=project["industry"], report_year=project["year"], use_dart=False,
-            evidence_files=evidence, demo_greenwash=False, save_traces=False,
+            evidence_files=EvidenceFiles(evidence, evidence_documents), demo_greenwash=False, save_traces=False,
             export_outputs=False, export_report=False, profile="sme",
         )
+        emit("stage", phase="organizing", stage="문항별 답변과 근거를 정리하고 있어요")
         sheet = respond_from_pipeline(output, project["framework"], supplier_claims=claims, enable_drafts=False)
         sheet.corp_name = project["company_name"]
     finally:

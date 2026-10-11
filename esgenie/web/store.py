@@ -13,6 +13,8 @@ from uuid import uuid4
 from .demo import populate_example
 from .presenter import timestamp
 from .review import affected_by_document, invalidate, reconcile
+from .progress_state import apply_event, finish, restore_progress
+from esgenie.progress import observe, failure_reason
 
 logger = logging.getLogger(__name__)
 ID = re.compile(r"^[a-f0-9]{32}$")
@@ -34,7 +36,8 @@ class ProjectStore:
             try:
                 project = json.loads(path.read_text())
                 if project.get("job", {}).get("status") in {"queued", "running"}:
-                    project["job"] = {"status": "failed", "stage": "중단된 작업", "error": "화면을 실행하는 중 분석이 중단됐어요. 다시 시작해 주세요."}
+                    finish(project["job"], "failed", "중단된 작업", timestamp(),
+                           "서버가 중단되어 분석을 마치지 못했어요. 이전 결과는 보관되어 있어요. 다시 시도해 주세요.")
                     self.save(project)
             except (ValueError, OSError):
                 logger.warning("Unreadable project record: %s", path.name)
@@ -47,7 +50,9 @@ class ProjectStore:
     def read(self, project_id: str) -> dict:
         with self.lock:
             try:
-                return json.loads((self.directory(project_id) / "project.json").read_text())
+                project = json.loads((self.directory(project_id) / "project.json").read_text())
+                project.setdefault("job", {"status": "idle", "stage": "자료 준비", "error": ""})
+                return project
             except (FileNotFoundError, ValueError):
                 raise WorkspaceError("작업을 찾지 못했어요.", 404) from None
 
@@ -201,21 +206,34 @@ class ProjectStore:
             self.editable(project)
             if not any(d.get("included", True) and not d.get("error") for d in project["documents"]):
                 raise WorkspaceError("가지고 있는 서류를 한 개 이상 올려 주세요.")
-            project["job"] = {"status": "queued", "stage": "자료 읽기를 준비하고 있어요", "error": ""}
+            at = timestamp()
+            project["job"] = {"status": "queued", "phase": "queued", "stage": "자료 읽기를 준비하고 있어요", "error": "",
+                              "run_id": uuid4().hex, "queued_at": at, "stage_started_at": at, "event_at": at,
+                              "started_at": None, "ended_at": None, "sequence": 0, "total_files": None,
+                              "completed_files": 0, "completed_file_ids": [], "active_files": [], "requests": [], "events": []}
             self.save(project)
             self.worker.submit(self._run, deepcopy(project))
             return project
 
     def _run(self, snapshot: dict):
         project_id = snapshot["id"]
+        run_id = snapshot["job"]["run_id"]
         with self.lock:
             project = self.read(project_id)
-            project["job"] = {"status": "running", "stage": "서류를 읽고 질문에 맞는 답변과 근거를 찾고 있어요", "error": ""}
+            if project["job"].get("run_id") != run_id or project["job"]["status"] != "queued":
+                return
+            at = timestamp()
+            project["job"].update(status="running", phase="analyzing", started_at=at, stage_started_at=at,
+                                  stage="서류를 읽고 질문에 맞는 답변과 근거를 찾고 있어요", event_at=at)
             self.save(project)
+        progress = deepcopy(project["job"])
         try:
-            result = self.runner(snapshot, self.directory(project_id))
+            with observe(run_id, lambda event: self._progress(project_id, event), initial_state=progress) as progress:
+                result = self.runner(snapshot, self.directory(project_id))
             with self.lock:
                 project = self.read(project_id)
+                if project["job"].get("run_id") != run_id or project["job"]["status"] != "running":
+                    return
                 previous = project.get("result")
                 from .presenter import presented_answers
                 if previous:
@@ -237,13 +255,24 @@ class ProjectStore:
                 result["documents"] = deepcopy(snapshot["documents"])
                 project["result"] = result
                 project["result_revision"] = snapshot["input_revision"]
-                project["job"] = {"status": "complete", "stage": "확인할 내용을 정리했어요", "error": ""}
+                restore_progress(project["job"], progress)
+                finish(project["job"], "complete", "확인할 내용을 정리했어요", timestamp())
                 self.save(project)
-        except Exception:
+        except Exception as exc:
             logger.exception("Analysis failed for project %s", project_id)
             with self.lock:
                 project = self.read(project_id)
-                project["job"] = {"status": "failed", "stage": "자료 읽기를 마치지 못했어요", "error": "자료 읽기를 마치지 못했어요. 연결 상태와 파일이 잘 열리는지 확인한 뒤 다시 시도해 주세요. 이전 결과는 보관되어 있어요."}
+                if project["job"].get("run_id") != run_id or project["job"]["status"] != "running":
+                    return
+                restore_progress(project["job"], progress)
+                finish(project["job"], "failed", "자료 읽기를 마치지 못했어요", timestamp(),
+                       failure_reason(exc) + " 이전 결과는 보관되어 있어요.")
+                self.save(project)
+
+    def _progress(self, project_id, event):
+        with self.lock:
+            project = self.read(project_id)
+            if apply_event(project["job"], event):
                 self.save(project)
 
     def close(self):
