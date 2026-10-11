@@ -154,28 +154,60 @@ def canonical_pdf(project, rows, out):
     from reportlab.lib import colors
     from reportlab.lib.pagesizes import A4, landscape
     from reportlab.lib.styles import ParagraphStyle
-    from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, LongTable, TableStyle
+    from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, LongTable, TableStyle, PageBreak
     from esgenie.supplychain.exporters._fonts import resolve_korean_font, pdf_safe_text
     font = resolve_korean_font()
     style = ParagraphStyle("response", fontName=font.regular, fontSize=8, leading=12, wordWrap="CJK")
     title = ParagraphStyle("title", parent=style, fontName=font.bold, fontSize=16, leading=23)
-    def para(text):
-        return Paragraph(escape(pdf_safe_text(str(text))).replace("\n", "<br/>"), style)
+    def para(text, text_style=style):
+        return Paragraph(escape(pdf_safe_text(str(text))).replace("\n", "<br/>"), text_style)
+
+    class ResponseTable(LongTable):
+        """Keep a split question identifiable, with one table header per page."""
+
+        def split(self, availWidth, availHeight):
+            parts = super().split(availWidth, availHeight)
+            if len(parts) != 2:
+                return parts
+            first, rest = parts
+            # ReportLab adds one body row when it splits inside a row; a
+            # between-row split only adds the repeated header. Carry IDs
+            # separately because a split Paragraph can leave its cell empty.
+            inside_row = len(first._cellvalues) + len(rest._cellvalues) - 1 > len(self._cellvalues)
+            offset = len(first._cellvalues) - int(inside_row)
+            first.question_ids = self.question_ids[:len(first._cellvalues)]
+            rest.question_ids = [None] + self.question_ids[offset:]
+            context = f"{rest.question_ids[1]} (계속)" if inside_row else "번호 / 질문"
+            # Always reserve two header lines, including on the first page.
+            # Recalculate its height for unusually long question identifiers.
+            rest._cellvalues[0] = [para(f"문항\n{context}"), *rest._cellvalues[0][1:]]
+            rest._argH[0] = rest._rowHeights[0] = None
+            # An in-row split can leave spare room. Explicitly end the page
+            # so the remainder cannot repeat its header in the middle of it.
+            return [first, PageBreak(), rest]
+
+    def source_text(source):
+        page = str(source['page'] + 1) + '쪽' if source['page'] is not None else '페이지 미확인'
+        return f"{source['name']} · {page} · 버전 {source.get('version') or 1}\n{source['quote']}"
     path = out / "응답서.pdf"
     doc = SimpleDocTemplate(str(path), pagesize=landscape(A4), rightMargin=24, leftMargin=24, topMargin=28, bottomMargin=28)
     remaining = sum(r["review_status"] != "complete" for r in rows)
     label = "사용법 예시" if project["mode"] == "example" else "검토용" if remaining else "담당자 검토 완료"
-    story = [Paragraph(escape(f"{project['company_name']} ESG 응답서 · {label}"), title), Spacer(1, 8),
+    story = [para(f"{project['company_name']} ESG 응답서 · {label}", title), Spacer(1, 8),
              para(f"보고 연도 {project['year']} · 양식 {project['framework']} · 전체 {len(rows)}문항 · 남은 검토 {remaining}문항"),
              para("담당자 검토 완료는 검토 작업의 완료 표시입니다. 자료의 사실성·충분성에 대한 판단은 아래 근거 판단과 확인 사유에 유지됩니다."), Spacer(1, 12)]
-    data = [[para(h) for h in ["문항", "저장된 답변", "측정 범위 / 기준", "담당자 검토", "근거", "근거 판단 / 확인 사유"]]]
+    data = [[para(h) for h in ["문항\n번호 / 질문", "저장된 답변", "측정 범위 / 기준", "담당자 검토", "근거", "근거 판단 / 확인 사유"]]]
     for row in rows:
-        sources = "\n\n".join(f"{s['name']} · {str(s['page'] + 1) + '쪽' if s['page'] is not None else '페이지 미확인'} · 버전 {s.get('version') or 1}\n{s['quote']}" for s in row["sources"]) or "연결된 근거 없음"
-        sources += "".join(f"\n보완 대상(값 산정 미사용): {s['name']}" for s in row["reference_sources"])
+        sources = "\n\n".join(source_text(s) for s in row["sources"]) or "연결된 근거 없음"
+        sources += "".join(f"\n\n보완 대상(값 산정 미사용): {source_text(s)}" for s in row["reference_sources"])
         notes = "\n".join(dict.fromkeys([row["status_label"], row["why"], row["next_step"], *row["notices"],
                                          "메모 / 자료 부족 사유: " + row["saved"]["memo"], "수정 이유: " + row["saved"]["reason"]]))
         data.append([para(t) for t in [f"{row['id']}\n{row['question']}", f"{row['value_text']}\n{row['method']}", row["scope_label"] or "범위 미확인", row["review_label"], sources, notes]])
-    table = LongTable(data, colWidths=[125, 85, 110, 75, 195, 203], repeatRows=1, hAlign="LEFT", splitInRow=1)
+    # SimpleDocTemplate's frame has 6pt padding on either side of doc.width.
+    widths = [125, 85, 110, 75, 195, 203]
+    table = ResponseTable(data, colWidths=[w * (doc.width - 12) / sum(widths) for w in widths],
+                          repeatRows=1, hAlign="LEFT", splitInRow=1)
+    table.question_ids = [None] + [row["id"] for row in rows]
     table.setStyle(TableStyle([("BACKGROUND", (0, 0), (-1, 0), colors.HexColor("#E4EDE6")),
                                ("VALIGN", (0, 0), (-1, -1), "TOP"), ("LINEBELOW", (0, 0), (-1, -1), .4, colors.HexColor("#D8DFD9")),
                                ("LEFTPADDING", (0, 0), (-1, -1), 7), ("RIGHTPADDING", (0, 0), (-1, -1), 7),
@@ -189,6 +221,7 @@ def canonical_pdf(project, rows, out):
         story += [Spacer(1, 8), para(limitation)]
     def footer(canvas, document):
         canvas.setFont(font.regular, 8)
-        canvas.drawRightString(815, 14, f"ESGenie · {document.page}")
+        canvas.drawRightString(document.pagesize[0] - document.rightMargin, 14,
+                               pdf_safe_text(f"ESGenie · {document.page}"))
     doc.build(story, onFirstPage=footer, onLaterPages=footer)
     return path
