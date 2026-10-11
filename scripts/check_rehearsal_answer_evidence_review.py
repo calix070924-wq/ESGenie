@@ -147,6 +147,90 @@ def main():
             check(path, f'{stage}:E-7:source_date_{case}', 'E-7', source_date, True,
                   scope='부산사업장', period=period)
 
+        for layout in ('rows', 'one_line', 'site_first'):
+            for case, period, site in [('period', '2025년 7월', '대전 제3공장'),
+                                       ('site', '2024년 8월', '부산 제7공장'),
+                                       ('both', '2025년 7월', '부산 제7공장'),
+                                       ('equal', '2024년 8월', '대전 제3공장')]:
+                def inline_fields(inputs, layout=layout, period=period, site=site):
+                    for ext in inputs:
+                        if not ext.source_file.startswith('15_'):
+                            continue
+                        ext.raw_text = '경영 책임 및 검토 기록 모음'
+                        rows = []
+                        for page, p, s in [(0, '2024년 8월', '대전 제3공장'), (1, period, site)]:
+                            if page == 0:
+                                # 긍정 책임 분장과 정기 검토 절차의 실제 원문을
+                                # 선택한다. 문장 경계를 제거할 때 별도 부정/한계
+                                # 문장을 같은 의미 단위로 붙이지 않는다.
+                                parts = []
+                                for clause in ext.clauses:
+                                    if clause.page != 0:
+                                        continue
+                                    if '책임자별 업무 및 권한' in clause.section:
+                                        parts.append(re.split(r'경영지원\s*담당자', clause.text, maxsplit=1)[0])
+                                    elif clause.section == '경영진 정기 검토 방식':
+                                        parts.extend(re.split(r'(?<=[.!?。;])\s+', clause.text)[:3])
+                                text = '\n'.join(parts)
+                            else:
+                                text = '\n'.join(c.text for c in ext.clauses if c.page == page
+                                                 and c.section == '경영진 정기 검토 실시 기록')
+                            # OCR 표 행처럼 필드와 본문을 한 줄에 놓는다.
+                            text = re.sub(r'[.!?。;]|\n', ' ', text)
+                            fields = [f'적용 기간: {p}', f'사업장: {s}']
+                            if layout == 'site_first':
+                                fields.reverse()
+                            rows.append(' | '.join(fields + [text]))
+                        separator = ' | ' if layout == 'one_line' else '\n'
+                        ext.clauses = [replace(ext.clauses[0], section='경영 책임 및 검토 기록',
+                                               text=separator.join(rows))]
+                check(path, f'{stage}:E-2:inline_fields_{layout}_{case}', 'E-2', inline_fields,
+                      True if case == 'equal' else None,
+                      scope='대전 제3공장' if case == 'equal' else '',
+                      period='2024년 8월' if case == 'equal' else '')
+
+        for layout in ('separate_nodes', 'one_clause'):
+            for case, scope_three in [('absent', ''), ('negated', 'Scope 3 배출은 추적하지 않는다. '),
+                                      ('tracked', 'Scope 3 배출을 추적한다. ')]:
+                def topic_only_context(inputs, layout=layout, scope_three=scope_three):
+                    for ext in inputs:
+                        if not ext.source_file.startswith('06_'):
+                            continue
+                        text = ('온실가스 감축목표를 수립한다. Scope 1, Scope 2 배출을 산정·추적한다. '
+                                + scope_three + '온실가스 산정 결과를 보고서에 공개한다.')
+                        context = 'Scope 3 적용 범위는 가치사슬 전체다.'
+                        clause = replace(ext.clauses[0], section='온실가스 배출 현황', text=text)
+                        if layout == 'one_clause':
+                            clause.text += '\n' + context
+                            ext.clauses[0] = clause
+                        else:
+                            ext.clauses[0] = clause
+                            ext.clauses.append(replace(clause, text=context))
+                check(path, f'{stage}:C-8:topic_only_{layout}_{case}', 'C-8', topic_only_context,
+                      True if case == 'tracked' else None)
+
+        for case, date, site_first in [
+            ('spaces', '2024 / 08 / 30', False),
+            ('asymmetric', '2024/ 08 /30', False),
+            ('site_first', '2024 / 08 / 30', True),
+            ('range', '2024 / 08 / 01~2024 / 08 / 30', False),
+        ]:
+            def spaced_date(inputs, date=date, site_first=site_first):
+                for ext in inputs:
+                    if ext.source_file.startswith('16_'):
+                        ext.raw_text = (f'부산사업장 / {date} 기준' if site_first
+                                        else f'{date} 기준 / 부산사업장')
+            check(path, f'{stage}:E-7:source_date_{case}_ocr_spacing', 'E-7', spaced_date, True,
+                  scope='부산사업장', period=date)
+
+        for recipient in ('SUP', 'CUS'):
+            def remove_receipts(inputs, recipient=recipient):
+                for ext in inputs:
+                    if ext.source_file.startswith('16_'):
+                        ext.clauses = [c for c in ext.clauses
+                                       if not re.match(recipient + r'-\d+', c.text)]
+            check(path, f'{stage}:E-7:remove_{recipient}_receipts', 'E-7', remove_receipts, None)
+
     payload = {'mode': 'saved_extraction_copies_review_controls', 'external_calls': 0,
                'passed': all(c['passed'] for c in checks), 'checks': checks,
                'note': 'No new AI/OCR run or independent A/B labels/scores.'}

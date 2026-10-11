@@ -19,13 +19,22 @@ from ..survey import is_survey
 class Requirement:
     label: str
     patterns: tuple[str, ...]
+    same_unit: bool = False
+    records: tuple[tuple[str, ...], ...] = ()
 
     def matches(self, text: str) -> bool:
-        return all(re.search(p, text, re.I | re.S) for p in self.patterns)
+        def matches_patterns(patterns, body):
+            return all(re.search(p, body, re.I | re.S) for p in patterns)
+        units = re.split(r'(?<=[.!?。;])\s+|\n', text)
+        if self.same_unit:
+            return any(matches_patterns(self.patterns, unit) for unit in units)
+        return (matches_patterns(self.patterns, text)
+                and all(any(matches_patterns(record, unit) for unit in units)
+                        for record in self.records))
 
 
-def R(label, *patterns):
-    return Requirement(label, patterns)
+def R(label, *patterns, same_unit=False, records=()):
+    return Requirement(label, patterns, same_unit, records)
 
 
 # 실행 기록의 날짜·시간을 원문 표기 그대로 읽는다. 한글·하이픈·슬래시·
@@ -33,6 +42,7 @@ def R(label, *patterns):
 _RECORD_TIME = (r'(?<!\d)(?:20\d{2}\s*[년./-]\s*)?'
                 r'(?:1[0-2]|0?[1-9])\s*[월./-]\s*(?:3[01]|[12]\d|0?[1-9])\s*일?(?!\d)'
                 r'|(?<!\d)(?:2[0-3]|1?\d)\s*[:시]\s*[0-5]\d\s*분?(?!\d)')
+_DELIVERY_RECORD = r'수령[^\n.!?。;]{0,30}확인|(?:전달|배포)[^\n.!?。;]{0,30}완료'
 
 
 # RBA 정의의 요건을 분해한다. 이 표는 가상 세트의 정답/출처 목록이 아니다.
@@ -63,9 +73,9 @@ REQUIREMENTS = {
     ),
     'C-8': (
         R('온실가스 감축목표', r'온실가스|탄소|GHG', r'감축', r'목표'),
-        R('Scope 1 추적', r'scope\s*1|직접배출', r'추적|산정|집계|측정|관리'),
-        R('Scope 2 추적', r'scope\s*2|간접배출', r'추적|산정|집계|측정|관리'),
-        R('Scope 3 추적', r'scope\s*3|가치사슬', r'추적|산정|집계|측정|관리'),
+        R('Scope 1 추적', r'scope\s*1|직접배출', r'추적|산정|집계|측정|관리', same_unit=True),
+        R('Scope 2 추적', r'scope\s*2|간접배출', r'추적|산정|집계|측정|관리', same_unit=True),
+        R('Scope 3 추적', r'scope\s*3|가치사슬', r'추적|산정|집계|측정|관리', same_unit=True),
         R('온실가스 공개', r'온실가스|탄소|GHG', r'공개|공시|보고서'),
     ),
     'E-2': (
@@ -94,8 +104,10 @@ REQUIREMENTS = {
         R('고객 전달·수령', r'고객', r'전달|발송|수령|제공|배포'),
         R('개별 전달 확인 기록', r'근무자별|인원별|수신자별|전자 열람', r'수령|열람|이해', r'확인|완료|기록'),
         R('공급사·고객 전달 운영', r'공급사|공급자|협력사', r'고객',
-          r'수령[^\n.!?。;]{0,30}확인|(?:전달|배포)[^\n.!?。;]{0,30}완료',
-          r'\d+\s*곳|(?:공급사|공급자|협력사)[^\n.!?。;]{0,60}고객[^\n.!?。;]{0,60}수령[^\n.!?。;]{0,30}확인(?:했다|하였다|했습니다)'),
+          _DELIVERY_RECORD,
+          r'\d+\s*곳|(?:공급사|공급자|협력사)[^\n.!?。;]{0,60}고객[^\n.!?。;]{0,60}수령[^\n.!?。;]{0,30}확인(?:했다|하였다|했습니다)',
+          records=((r'공급사|공급자|협력사|\bSUP-\d+', _DELIVERY_RECORD),
+                   (r'고객|\bCUS-\d+', _DELIVERY_RECORD))),
         R('문의·정정 회신', r'문의|정정', r'회신|답변|전달'),
     ),
     'E-8': (
@@ -222,7 +234,10 @@ def assess_requirements(answer, q, graph):
     for parts in section_parts.values():
         body = '\n'.join(part[2] for part in parts)
         for req in requirements:
-            if not req.matches(body):
+            # 대상 설명과 실제 표 행을 함께 읽도록 선언한 요건만 결합한다.
+            # 각 대상의 실행 동사는 해당 행에 있어야 하며, 일반 요건의
+            # 주제와 동사를 절 전체에서 모아 새로운 충족 근거를 만들지 않는다.
+            if not req.records or not req.matches(body):
                 continue
             for proof_id, node, supported, boundary in parts:
                 if not any(re.search(p, supported, re.I | re.S) for p in req.patterns):
@@ -299,7 +314,7 @@ def _source_scope(text):
     context = '\n'.join(header)
     date_parts = []
     for line in header:
-        for part in re.split(r'[|]|(?<!\d)/|/(?!\d)', line):
+        for part in _scope_parts(line):
             if re.search(r'20\d{2}\s*[-./년]', part):
                 date_parts.append(part.strip())
     sites, site_scope = _sites(context)
@@ -334,8 +349,20 @@ def _sites(text):
 
 _LOCAL_PERIOD = re.compile(r'20\d{2}\s*년\s*\d{1,2}'
                            r'(?:\s*[~–-]\s*\d{1,2})?\s*월(?:\s*\d{1,2}\s*일)?'
-                           r'|20\d{2}[./-]\d{1,2}(?:[./-]\d{1,2})?')
-_SCOPE_FIELD = re.compile(r'(?:대상|적용|보고|집계|운영)\s*(?:기간|범위)|사업장\s*[:：]')
+                           r'|20\d{2}\s*[./-]\s*\d{1,2}(?:\s*[./-]\s*\d{1,2})?')
+_SCOPE_FIELD = re.compile(r'(?:(?:대상|적용|보고|집계|운영)\s*(?:기간|범위)|사업장)\s*[:：|]')
+
+
+def _scope_parts(line):
+    """인식한 원문 날짜 내부의 슬래시는 공백 유무와 관계없이 보존한다."""
+    dates = [match.span() for match in _LOCAL_PERIOD.finditer(line)]
+    start = 0
+    for match in re.finditer(r'[/|]', line):
+        if any(left <= match.start() < right for left, right in dates):
+            continue
+        yield line[start:match.start()]
+        start = match.end()
+    yield line[start:]
 
 
 def _scope_prefix(line):
@@ -356,12 +383,23 @@ def _scope_declaration(line):
     return _scope_prefix(line) or bool(_SCOPE_FIELD.search(line))
 
 
+def _scope_has_body(line):
+    # 표 행의 메타데이터 값만 제거한다. 필드 뒤에 실행/규정 본문이 붙어
+    # 있으면 다음 선언에서 후보를 나눠 마지막 범위가 앞선 요건을 덮지 않게 한다.
+    remaining = _SCOPE_FIELD.sub('', line)
+    remaining = _LOCAL_PERIOD.sub('', remaining)
+    for site in sorted(_sites(remaining)[0], key=len, reverse=True):
+        remaining = remaining.replace(site, '')
+    remaining = re.sub(r'기준|대상|적용|기간|범위|전체|모든|사업장|전사|[\s/|·,:：.!?。;()\[\]-]', '', remaining)
+    return bool(remaining)
+
+
 def _candidate_nodes(graph):
     # OCR가 여러 적용 범위를 한 조항으로 묶어도 각 범위의 요건을 따로 읽는다.
     # 내부 후보 키만 나누며 공용 링크의 실제 node_id·페이지는 변경하지 않는다.
     for node in graph.text_nodes.values():
         chunks, lines, has_body = [], [], False
-        for line in re.split(r'\n|(?<=[.!?。;])\s+', node.text):
+        for line in re.split(r'\n|(?<=[.!?。;])\s+|(?=(?:' + _SCOPE_FIELD.pattern + r'))', node.text):
             declaration = _scope_declaration(line)
             # 연속된 기간/사업장 메타데이터는 하나의 범위다. 본문 뒤의 새
             # 선언부터 별도 후보로 읽어 앞선 요건에 마지막 범위가 덮이지 않게 한다.
@@ -370,9 +408,7 @@ def _candidate_nodes(graph):
                 lines = []
                 has_body = False
             lines.append(line)
-            if line.strip() and not declaration:
-                has_body = True
-            elif _scope_prefix(line) and re.search(r'[:：]\s*\S', line):
+            if line.strip() and (not declaration or _scope_has_body(line)):
                 has_body = True
         chunks.append('\n'.join(lines))
         for index, text in enumerate(chunks):
@@ -389,22 +425,28 @@ def _node_scope(node, source_text):
         # 월/기간·사업장을 함께 선언한 접두부 또는 명시적인 메타데이터만
         # 적용 범위로 읽는다. 회의 실시일·정비일은 문서 적용 기간을 덮지 않는다.
         prefix = re.split(r'[:：]', line.strip(), maxsplit=1)[0]
-        local_sites, local_scope = _sites(prefix)
-        if not _scope_declaration(line):
+        if _scope_prefix(line):
+            values = [prefix]
+        else:
+            fields = list(_SCOPE_FIELD.finditer(line))
+            values = [line[field.end():fields[i + 1].start() if i + 1 < len(fields) else len(line)]
+                      .split('|', 1)[0].strip() for i, field in enumerate(fields)]
+        if not values:
             continue
-        match = _LOCAL_PERIOD.search(line)
-        if match:
-            period = match[0]
-        if local_scope != 'unknown':
-            sites, scope = local_sites, local_scope
-        elif _SCOPE_FIELD.search(line):
-            local_sites, local_scope = _sites(line)
+        # 표 행의 명시적인 필드 값만 읽는다. 같은 행 본문이 언급하는
+        # 다른 사업장·실행일은 그 행의 적용 범위를 넓히거나 덮지 않는다.
+        for value in values:
+            match = _LOCAL_PERIOD.search(value)
+            if match:
+                period = match[0]
+            local_sites, local_scope = _sites(value)
             if local_scope != 'unknown':
                 sites, scope = local_sites, local_scope
         quotes.append(line)
     return replace(default, period_text=period or default.period_text,
                    site=', '.join(sites) if sites else default.site,
                    site_scope=scope if sites else default.site_scope,
+                   completeness='partial' if period or sites else default.completeness,
                    source_quote='\n'.join(quotes) if quotes else default.source_quote)
 
 
@@ -415,6 +457,11 @@ def _scope_key(boundary, source):
                     lambda m: f'{m[1]}-{int(m[2]):02d}-{int(m[3]):02d}', period)
     period = re.sub(r'(20\d{2})년(\d{1,2})월',
                     lambda m: f'{m[1]}-{int(m[2]):02d}', period)
+    period = re.sub(r'(20\d{2})[./-](\d{1,2})(?:[./-](\d{1,2}))?',
+                    lambda m: f'{m[1]}-{int(m[2]):02d}' + (f'-{int(m[3]):02d}' if m[3] else ''), period)
+    # 머리말과 반복된 범위 필드가 같은 기간을 다시 적어도 동일 범위다.
+    # 원문 표기는 보존하고 내부 비교 키에서만 중복을 제거한다.
+    period = ';'.join(dict.fromkeys(part.strip() for part in period.split(';') if part.strip()))
     site = ','.join(sorted(re.sub(r'\s+', '', part) for part in boundary.site.split(',')))
     # 미확인 경계를 서로 다른 문서의 동일 범위라고 간주하지 않는다.
     return (period, boundary.site_scope, site,
