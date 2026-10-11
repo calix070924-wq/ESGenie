@@ -54,7 +54,7 @@
 실행:
 
 ```bash
-PYTHONPATH=. python scripts/verify_timing_ocr_live.py \
+python scripts/verify_timing_ocr_live.py \
   --env-file <키가 든 .env 경로> \
   --cache-dir /tmp/ocr_live_cache_20261007 \
   --out-dir docs/validation/eval-timing-20261006/ocr_live

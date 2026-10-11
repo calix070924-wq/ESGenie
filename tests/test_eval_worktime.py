@@ -201,3 +201,147 @@ def test_template_header_matches_contract():
 def test_empty_entry_list_aggregates_to_nothing():
     report = aggregate([])
     assert report["sessions"] == [] and report["rows"] == 0
+
+
+# --- 2026-10-11 T2·T3: CLI import, 대상 문항 수와 지시서 집계 항목 ------------------
+# 시각은 모두 이 테스트가 만든 합성 값이다.
+
+import os
+import subprocess
+import sys
+from pathlib import Path
+
+ANSWER_HEADER = ("session_id,participant,method,request_round,qid,measure,unit,value,"
+                 "evidence_doc,evidence_locator,needs_more_data,note")
+
+
+def _answers(tmp_path, *qids, method="esgenie", rnd="2", session="S1", participant="P1"):
+    path = tmp_path / "answers.csv"
+    rows = [f"{session},{participant},{method},{rnd},{q},합성,,,,,," for q in qids]
+    path.write_text("\n".join((ANSWER_HEADER, *rows)) + "\n", encoding="utf-8")
+    return path
+
+
+def test_batch_row_is_one_row_but_targets_come_from_answer_file(tmp_path):
+    wl = _csv(tmp_path, _row("값입력", "2026-10-10T09:00:00", "2026-10-10T09:10:00",
+                             method="esgenie", rnd="2", qid="4문항일괄"))
+    ans = _answers(tmp_path, "SYN-A", "SYN-B", "SYN-C", "SYN-D")
+    s, _ = _only(wl, answer_paths=[ans])
+    assert s["target_qid_count"] == 4
+    assert s["observation_unit"] == "일괄 포함"
+    # 일괄 구간을 4로 나눠 문항별 시간을 만들지 않는다
+    assert s["per_qid_human_seconds"] == {}
+    assert s["per_qid_median"]["value_seconds"] is None
+    assert s["per_qid_median"]["unobserved_qids"] == ["SYN-A", "SYN-B", "SYN-C", "SYN-D"]
+
+
+def test_batch_row_without_target_list_is_unconfirmed_not_one(tmp_path):
+    wl = _csv(tmp_path, _row("값입력", "2026-10-10T09:00:00", "2026-10-10T09:10:00",
+                             method="esgenie", rnd="2", qid="전체"))
+    s, report = _only(wl)
+    assert s["target_qid_count"] is None
+    assert s["target_status"].startswith("미확인")
+    assert report["by_method_round"][0]["target_qid_count"] is None
+
+
+def test_semicolon_listed_qids_count_as_targets(tmp_path):
+    wl = _csv(tmp_path, _row("값입력", "2026-10-10T09:00:00", "2026-10-10T09:10:00",
+                             qid="SYN-A;SYN-B"))
+    s, _ = _only(wl)
+    assert s["target_qid_count"] == 2
+    assert s["per_qid_human_seconds"] == {}       # 두 문항 구간도 나누지 않는다
+
+
+def test_per_qid_median_uses_only_single_question_spans(tmp_path):
+    wl = _csv(tmp_path,
+              _row("원문확인", "2026-10-09T09:00:00", "2026-10-09T09:10:00", qid="SYN-A"),
+              _row("값입력", "2026-10-09T09:10:00", "2026-10-09T09:20:00", qid="SYN-A"),
+              _row("원문확인", "2026-10-09T09:20:00", "2026-10-09T09:25:00", qid="SYN-B"),
+              _row("원문확인", "2026-10-09T09:25:00", "2026-10-09T09:55:00", qid="SYN-C"))
+    s, _ = _only(wl)
+    assert s["per_qid_human_seconds"] == {"SYN-A": 1200.0, "SYN-B": 300.0, "SYN-C": 1800.0}
+    assert s["per_qid_median"]["value_seconds"] == 1200.0
+    assert s["per_qid_median"]["valid_n"] == 3
+
+
+def test_step_totals_and_cross_step_overlap_flag(tmp_path):
+    wl = _csv(tmp_path,
+              _row("원문확인", "2026-10-09T09:00:00", "2026-10-09T09:30:00"),
+              _row("값입력", "2026-10-09T09:20:00", "2026-10-09T09:40:00"))
+    s, _ = _only(wl)
+    assert s["step_seconds"] == {"원문확인": 1800.0, "값입력": 1200.0}
+    assert s["steps_overlap"] is True
+    assert s["human_seconds"] == 2400.0              # 합집합 — 단계 합(3000)과 다르다
+
+
+def test_reuse_counts_unique_source_target_pairs(tmp_path):
+    wl = _csv(tmp_path,
+              _row("값입력", "", "", rnd="2", qid="SYN-A", reused="S0:SYN-A"),
+              _row("값입력", "", "", rnd="2", qid="SYN-A", reused="S0:SYN-A"),
+              _row("값입력", "", "", rnd="2", qid="SYN-B", reused="S0:SYN-B"),
+              _row("원문확인", "2026-10-09T09:00:00", "2026-10-09T09:05:00", rnd="2", qid="SYN-C"))
+    s, _ = _only(wl)
+    assert s["reuse"]["rows"] == 3 and s["reuse"]["unique"] == 2 and s["reuse"]["duplicates"] == 1
+
+
+def test_second_round_alone_is_not_reuse(tmp_path):
+    wl = _csv(tmp_path, _row("값입력", "2026-10-09T09:00:00", "2026-10-09T09:05:00", rnd="2"))
+    s, _ = _only(wl)
+    assert s["reuse"]["rows"] == 0
+
+
+def test_completeness_flags_missing_memory_and_unfinished(tmp_path):
+    wl = _csv(tmp_path,
+              _row("원문확인", "2026-10-09T09:00:00", "2026-10-09T09:05:00", note="start는 기억 기반"),
+              _row("값입력", "2026-10-09T09:05:00", ""),
+              _row("수정", "", ""))
+    s, _ = _only(wl)
+    c = s["completeness"]
+    assert c["memory_based_rows"] == 1
+    assert c["unfinished_rows"] == 1                 # 시작만 있는 행
+    assert c["missing_time_rows"] == 2               # 끝 없음 1 + 둘 다 없음 1
+    assert c["complete"] is False
+
+
+def test_participants_are_not_merged_into_one_wall_clock(tmp_path):
+    wl = _csv(tmp_path,
+              _row("원문확인", "2026-10-09T09:00:00", "2026-10-09T09:10:00", participant="P1"),
+              _row("원문확인", "2026-10-09T13:00:00", "2026-10-09T13:10:00", participant="P2"))
+    report = aggregate_files([wl])
+    g = report["by_method_round"][0]
+    assert g["participant_count"] == 2
+    assert "elapsed_seconds" not in g                 # 합친 벽시계 경과를 만들지 않는다
+    assert sorted(p["elapsed_seconds"] for p in g["per_participant"]) == [600.0, 600.0]
+
+
+def test_machine_time_missing_is_unmeasured_not_zero(tmp_path):
+    run_dir = tmp_path / "run"
+    run_dir.mkdir()
+    wl = _csv(tmp_path, _row("처리대기", "2026-10-09T09:00:00", "2026-10-09T09:01:00",
+                             method="esgenie", run_dir=str(run_dir)))
+    s, _ = _only(wl, read_run_dirs=True)
+    assert s["machine_seconds_observed"] is None
+    assert s["machine_status"].startswith("미측정")
+    assert "machine_total_seconds" not in s
+
+
+@pytest.mark.parametrize("script, args", [
+    ("aggregate_worktime.py", ["{wl}", "--out", "{out}"]),
+    ("verify_timing_cache_modes.py", ["--help"]),
+    ("verify_timing_ocr_live.py", ["--help"]),
+    ("verify_timing_noop.py", ["compare", "--help"]),
+])
+def test_cli_runs_without_pythonpath_from_another_directory(tmp_path, script, args):
+    """문서의 명령이 PYTHONPATH 없이, 저장소 밖 작업 디렉터리에서 그대로 돈다."""
+    repo = Path(__file__).resolve().parents[1]
+    wl = _csv(tmp_path, _row("원문확인", "2026-10-09T09:00:00", "2026-10-09T09:05:00"))
+    out = tmp_path / "out.json"
+    env = {k: v for k, v in os.environ.items() if k != "PYTHONPATH"}
+    proc = subprocess.run(
+        [sys.executable, str(repo / "scripts" / script),
+         *[a.format(wl=wl, out=out) for a in args]],
+        cwd=tmp_path, env=env, capture_output=True, text=True, timeout=120)
+    assert proc.returncode == 0, proc.stderr[-2000:]
+    assert "ModuleNotFoundError" not in proc.stderr
+    if script == "aggregate_worktime.py":
+        assert json.loads(out.read_text(encoding="utf-8"))["countable_rows"] == 1

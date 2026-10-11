@@ -1,0 +1,16 @@
+행 11건 (합산 가능 10건, 문제 있는 행 1건)
+관계: elapsed_seconds = human_seconds + wait_seconds + idle_seconds
+session               참가자       방식       회차           경과       사람작업        대기       빈시간  문항
+-------------------------------------------------------------------------------------------
+세션_리허설02_2026-10-09   P1        esgenie  2       0:22:33    0:13:37   0:01:00   0:07:56  4
+    기록 불완전: 시각 누락 1 · 기억 기반 0 · 미완결 0
+    ! missing_start (step=값입력 qid=4문항일괄)
+    ! missing_end (step=값입력 qid=4문항일괄)
+세션_리허설02_2026-10-09   P1        manual   1       1:25:54    0:59:53   0:00:00   0:26:01  4
+    기록 불완전: 시각 누락 0 · 기억 기반 1 · 미완결 0
+[esgenie / 회차 2] 참가자 1명 · 대상 문항 4
+[manual / 회차 1] 참가자 1명 · 대상 문항 4
+파이프라인 기계 시간(run_timing/timings.json)은 사람이 적은 `처리대기` 구간 안에서 흐른다. machine_* 값은 비교용으로만 적고 human/wait에 더하지 않는다.
+절감률·단일 점수는 계산하지 않는다. manual/esgenie는 나란히 보고한다.
+wrote docs/validation/eval-timing-20261006/rehearsal02_20261011/rehearsal02_집계.json
+rc=0

@@ -42,6 +42,53 @@ STEPS: tuple[str, ...] = ("원문확인", "값입력", "수정", "보완자료�
 WAIT_STEPS: tuple[str, ...] = ("처리대기",)
 REQUEST_ROUNDS: tuple[str, ...] = ("1", "2")
 
+#: 일괄 구간 표시. `qid`가 이 값이거나 이 말로 끝나면 여러 문항을 한 구간에 적은 것이다.
+#: 일괄 구간의 시간은 **문항별로 나누지 않는다**(2026-10-11 T3). 대상 문항 목록은
+#: 답안 파일이나 `;`로 나열한 qid 같은 **추적 가능한 입력**에서만 읽는다.
+BATCH_MARKERS: tuple[str, ...] = ("전체",)
+BATCH_SUFFIX = "일괄"
+#: 사람이 시각을 기억으로 적었다고 note에 남긴 행. note 문구에 이 말이 있으면 표시한다.
+MEMORY_MARKER = "기억"
+
+ANSWER_KEY_COLUMNS: tuple[str, ...] = ("session_id", "participant", "method",
+                                       "request_round", "qid")
+
+
+def is_batch_qid(qid: str) -> bool:
+    q = (qid or "").strip()
+    return q in BATCH_MARKERS or q.endswith(BATCH_SUFFIX)
+
+
+def split_qids(qid: str) -> list[str]:
+    """`A;B`처럼 나열한 qid를 나눈다. 일괄 표시·빈 값은 빈 목록이다."""
+    q = (qid or "").strip()
+    if not q or is_batch_qid(q):
+        return []
+    return [part.strip() for part in q.split(";") if part.strip()]
+
+
+def read_answer_targets(paths: Sequence[Path]) -> dict[tuple[str, str, str, str], dict[str, Any]]:
+    """답안 파일(리허설 답안 양식)에서 세션별 실제 대상 qid를 읽는다.
+
+    값을 채웠는지와 무관하게 **행이 있는 qid**를 대상으로 본다(값 없음도 대상이다).
+    """
+    targets: dict[tuple[str, str, str, str], dict[str, Any]] = {}
+    for path in paths:
+        with Path(path).open(encoding="utf-8-sig", newline="") as fh:
+            reader = csv.DictReader(fh)
+            missing = [c for c in ANSWER_KEY_COLUMNS if c not in (reader.fieldnames or ())]
+            if missing:
+                raise ValueError(f"답안 파일에 열이 없다 {missing}: {path}")
+            for row in reader:
+                key = tuple((row.get(c) or "").strip() for c in ANSWER_KEY_COLUMNS[:4])
+                qid = (row.get("qid") or "").strip()
+                if not qid:
+                    continue
+                slot = targets.setdefault(key, {"qids": set(), "sources": set()})
+                slot["qids"].add(qid)
+                slot["sources"].add(str(path))
+    return targets
+
 
 def parse_time(raw: str) -> datetime:
     """ISO 8601 날짜+시각만 받는다.
@@ -183,7 +230,9 @@ def machine_seconds(run_dir: str | Path) -> dict[str, Any] | None:
     }
 
 
-def aggregate(entries: Sequence[WorkEntry], *, read_run_dirs: bool = False) -> dict[str, Any]:
+def aggregate(entries: Sequence[WorkEntry], *, read_run_dirs: bool = False,
+              answer_targets: dict[tuple[str, str, str, str], dict[str, Any]] | None = None,
+              ) -> dict[str, Any]:
     """세션·참가자·방식·회차별 집계.
 
     산출할 수 없는 값은 `None`으로 둔다. **0으로 적지 않는다.**
@@ -195,10 +244,28 @@ def aggregate(entries: Sequence[WorkEntry], *, read_run_dirs: bool = False) -> d
             "method": entry.key[2], "request_round": entry.key[3],
             "rows": 0, "countable_rows": 0, "qids": set(), "run_dirs": set(),
             "_human": [], "_wait": [], "issues": [],
+            "_listed": set(), "_batch_rows": 0, "_marker_rows": 0, "_by_step": {}, "_by_qid": {},
+            "_reuse": [], "_memory_rows": 0, "_missing_time_rows": 0, "_unfinished_rows": 0,
         })
         bucket["rows"] += 1
-        if entry.row.get("qid"):
-            bucket["qids"].add(entry.row["qid"])
+        raw_qid = (entry.row.get("qid") or "").strip()
+        if raw_qid:
+            bucket["qids"].add(raw_qid)
+        listed = split_qids(raw_qid)
+        bucket["_listed"].update(listed)
+        if is_batch_qid(raw_qid) or len(listed) > 1:
+            bucket["_batch_rows"] += 1
+        if is_batch_qid(raw_qid):
+            bucket["_marker_rows"] += 1     # 목록 없이 '전체'·'…일괄'로만 적은 행
+        reused = (entry.row.get("reused_from") or "").strip()
+        if reused:
+            bucket["_reuse"].append((reused, raw_qid))
+        if MEMORY_MARKER in (entry.row.get("note") or ""):
+            bucket["_memory_rows"] += 1
+        if any(i.startswith("missing_start") or i.startswith("missing_end") for i in entry.issues):
+            bucket["_missing_time_rows"] += 1
+        if entry.start is not None and "missing_end" in entry.issues:
+            bucket["_unfinished_rows"] += 1     # 시작은 적었고 끝을 적지 않았다
         if entry.row.get("run_dir"):
             bucket["run_dirs"].add(entry.row["run_dir"])
         for issue in entry.issues:
@@ -211,10 +278,15 @@ def aggregate(entries: Sequence[WorkEntry], *, read_run_dirs: bool = False) -> d
         bucket["countable_rows"] += 1
         span = (entry.start, entry.end)
         bucket["_wait" if entry.is_wait else "_human"].append(span)
+        bucket["_by_step"].setdefault(entry.step, []).append(span)
+        if not entry.is_wait and len(listed) == 1:
+            # 문항 하나에 대한 관측 구간만 문항별 시간에 쓴다. 일괄 구간은 나누지 않는다.
+            bucket["_by_qid"].setdefault(listed[0], []).append(span)
 
     out: list[dict[str, Any]] = []
     for bucket in sessions.values():
         human_raw, wait_raw = bucket.pop("_human"), bucket.pop("_wait")
+        _finish_extras(bucket, answer_targets or {})
         bucket["qids"] = sorted(bucket["qids"])
         bucket["run_dirs"] = sorted(bucket["run_dirs"])
         if not human_raw and not wait_raw:
@@ -249,6 +321,10 @@ def aggregate(entries: Sequence[WorkEntry], *, read_run_dirs: bool = False) -> d
                         "pipeline_exceeds_wait: 기계 시간이 사람이 적은 처리대기보다 길다. "
                         "기록 누락일 수 있다 — 두 값을 더하지 말고 기록을 확인한다")
         bucket["machine_seconds_observed"] = machine
+        if read_run_dirs:
+            bucket["machine_status"] = ("관측" if machine else
+                                        "미측정 — run_dir에 timings.json이 없다(0초로 적지 않는다)"
+                                        if bucket["run_dirs"] else "미측정 — run_dir 기록 없음")
         if bucket["idle_seconds"] < -1.0:
             warnings.append("negative_idle: 구간 합이 경과시간을 넘는다 — 기록을 확인한다")
         bucket["warnings"] = warnings
@@ -257,6 +333,7 @@ def aggregate(entries: Sequence[WorkEntry], *, read_run_dirs: bool = False) -> d
     out.sort(key=lambda b: (b["session_id"], b["participant"], b["method"], b["request_round"]))
     return {
         "sessions": out,
+        "by_method_round": _by_method_round(out),
         "rows": len(entries),
         "countable_rows": sum(1 for e in entries if e.countable),
         "rows_with_issues": sum(1 for e in entries if e.issues),
@@ -266,13 +343,129 @@ def aggregate(entries: Sequence[WorkEntry], *, read_run_dirs: bool = False) -> d
             "안에서 흐른다. machine_* 값은 비교용으로만 적고 human/wait에 더하지 않는다.",
         "savings_note":
             "절감률·단일 점수는 계산하지 않는다. manual/esgenie는 나란히 보고한다.",
+        "completeness_note":
+            "유효 구간의 합은 관측된 구간의 합이다. 시각 누락·기억 기반·미완결 행이 있으면 "
+            "완전한 전체 작업시간으로 읽지 않는다.",
+        "batch_note":
+            "일괄 구간(qid가 '전체'이거나 '…일괄')의 시간은 문항별로 나누지 않는다. "
+            "대상 문항 수는 답안 파일이나 ';'로 나열한 qid에서만 읽고, 없으면 미확인이다.",
     }
 
 
-def aggregate_files(paths: Sequence[Path], *, read_run_dirs: bool = False) -> dict[str, Any]:
+def _median(values: list[float]) -> float | None:
+    if not values:
+        return None
+    s = sorted(values)
+    mid = len(s) // 2
+    return s[mid] if len(s) % 2 else (s[mid - 1] + s[mid]) / 2
+
+
+def _finish_extras(bucket: dict[str, Any],
+                   answer_targets: dict[tuple[str, str, str, str], dict[str, Any]]) -> None:
+    """대상 문항·단계별 합계·문항별 중앙값·재사용·기록 완전성 (2026-10-11 T3)."""
+    key = (bucket["session_id"], bucket["participant"], bucket["method"], bucket["request_round"])
+    listed: set[str] = bucket.pop("_listed")
+    batch_rows: int = bucket.pop("_batch_rows")
+    marker_rows: int = bucket.pop("_marker_rows")
+    from_answers = answer_targets.get(key)
+
+    target = set(listed)
+    sources: list[str] = []
+    if listed:
+        sources.append("worklog qid")
+    if from_answers:
+        target |= set(from_answers["qids"])
+        sources.extend(sorted(from_answers["sources"]))
+    if marker_rows and not from_answers:
+        bucket["target_qids"] = sorted(target)
+        bucket["target_qid_count"] = None
+        bucket["target_status"] = ("미확인 — 일괄 구간이 있으나 대상 문항 목록(답안 파일·"
+                                   "';' 나열)이 없다")
+    else:
+        bucket["target_qids"] = sorted(target)
+        bucket["target_qid_count"] = len(target)
+        bucket["target_status"] = "확인"
+    bucket["target_sources"] = sources
+    bucket["observation_unit"] = "일괄 포함" if batch_rows else "문항별"
+
+    # 단계별 — 같은 단계 안의 겹침은 합집합. 단계끼리 겹치면 표시한다.
+    by_step: dict[str, list] = bucket.pop("_by_step")
+    step_seconds = {step: round(_length(_merge(spans)), 3) for step, spans in by_step.items()}
+    merged_steps = [(s, _merge(sp)) for s, sp in by_step.items()]
+    overlap = False
+    for i, (_, a_spans) in enumerate(merged_steps):
+        for _, b_spans in merged_steps[i + 1:]:
+            if any(a0 < b1 and b0 < a1 for a0, a1 in a_spans for b0, b1 in b_spans):
+                overlap = True
+    bucket["step_seconds"] = step_seconds
+    bucket["steps_overlap"] = overlap
+    if overlap:
+        bucket["step_note"] = "단계끼리 겹치는 구간이 있다 — 단계별 합의 단순 합은 사람작업+대기와 다를 수 있다"
+
+    # 문항별 — 문항 하나에 대한 관측 구간만. 일괄 구간은 배분하지 않는다.
+    by_qid: dict[str, list] = bucket.pop("_by_qid")
+    per_qid = {q: round(_length(_merge(spans)), 3) for q, spans in by_qid.items()}
+    unobserved = sorted(set(bucket["target_qids"]) - set(per_qid)) \
+        if bucket["target_qid_count"] is not None else None
+    bucket["per_qid_human_seconds"] = per_qid
+    bucket["per_qid_median"] = {
+        "value_seconds": None if not per_qid else round(_median(list(per_qid.values())), 3),
+        "valid_n": len(per_qid),
+        "unobserved_qids": unobserved,
+        "status": "산출" if per_qid else "산출 불가 — 문항별로 관측한 구간이 없다",
+    }
+
+    # 재사용 — reused_from의 출처·대상 기준. 같은 (출처, 대상)은 한 번만 센다.
+    reuse = bucket.pop("_reuse")
+    unique = sorted(set(reuse))
+    bucket["reuse"] = {"rows": len(reuse), "unique": len(unique),
+                       "duplicates": len(reuse) - len(unique),
+                       "items": [{"reused_from": r, "qid": q} for r, q in unique],
+                       "rule": "reused_from가 적힌 행만 센다. 방식을 두 번째로 수행한 것만으로 "
+                               "재사용으로 보지 않는다"}
+
+    # 기록 완전성
+    memory_rows = bucket.pop("_memory_rows")
+    missing_rows = bucket.pop("_missing_time_rows")
+    open_rows = bucket.pop("_unfinished_rows")
+    bucket["completeness"] = {
+        "missing_time_rows": missing_rows,
+        "memory_based_rows": memory_rows,
+        "unfinished_rows": open_rows,
+        "complete": not (missing_rows or memory_rows or open_rows or bucket["issues"]),
+    }
+
+
+def _by_method_round(sessions: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    """방식·회차별 요약. 서로 다른 참가자의 시간을 하나의 벽시계 경과로 합치지 않는다."""
+    groups: dict[tuple[str, str], list[dict[str, Any]]] = {}
+    for s in sessions:
+        groups.setdefault((s["method"], s["request_round"]), []).append(s)
+    out = []
+    for (method, rnd), items in sorted(groups.items()):
+        unknown = any(s["target_qid_count"] is None for s in items)
+        targets = sorted(set().union(*(set(s["target_qids"]) for s in items)))
+        out.append({
+            "method": method, "request_round": rnd,
+            "participants": sorted({s["participant"] for s in items}),
+            "participant_count": len({s["participant"] for s in items}),
+            "target_qid_count": None if unknown else len(targets),
+            "target_qids": targets,
+            "per_participant": [{k: s[k] for k in ("session_id", "participant", "elapsed_seconds",
+                                                   "human_seconds", "wait_seconds", "idle_seconds")}
+                                for s in items],
+            "note": "참가자별로 따로 적는다. 서로 다른 참가자의 경과시간을 합치지 않는다",
+        })
+    return out
+
+
+def aggregate_files(paths: Sequence[Path], *, read_run_dirs: bool = False,
+                    answer_paths: Sequence[Path] = ()) -> dict[str, Any]:
     entries: list[WorkEntry] = []
     for path in paths:
         entries.extend(read_worklog(Path(path)))
-    report = aggregate(entries, read_run_dirs=read_run_dirs)
+    targets = read_answer_targets([Path(p) for p in answer_paths]) if answer_paths else {}
+    report = aggregate(entries, read_run_dirs=read_run_dirs, answer_targets=targets)
     report["sources"] = [str(p) for p in paths]
+    report["answer_sources"] = [str(p) for p in answer_paths]
     return report

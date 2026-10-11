@@ -22,7 +22,7 @@
 - 키 값은 읽기만 하고 화면·파일·로그에 적지 않는다. 적는 것은 모델명과 호출 수·토큰뿐이다.
 
 사용법:
-    PYTHONPATH=. python scripts/verify_timing_ocr_live.py \
+    python scripts/verify_timing_ocr_live.py \
       --env-file /path/to/.env \
       --cache-dir /tmp/ocr_live_cache_20261007 \
       --out-dir docs/validation/eval-timing-20261006/ocr_live

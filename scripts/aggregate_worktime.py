@@ -4,6 +4,12 @@
 사람이 적은 CSV만 읽는다. **이 스크립트는 시간을 만들어 내지 않는다.**
 
     python scripts/aggregate_worktime.py data/eval/worklog/*.csv --out /tmp/worktime.json
+    # 일괄 구간의 대상 문항 수는 답안 파일에서 읽는다
+    python scripts/aggregate_worktime.py data/eval/worklog/세션_리허설02_2026-10-09.csv \
+        --answers data/eval/rehearsal_answers/세션_리허설02_2026-10-09.csv --out /tmp/r02.json
+
+저장소 루트를 import 경로에 스스로 넣는다. `PYTHONPATH`나 다른 checkout의 설치에
+기대지 않는다(2026-10-11 T2).
 
 출력에서 꼭 같이 읽을 것:
 
@@ -22,6 +28,10 @@ import json
 import sys
 from pathlib import Path
 
+REPO = Path(__file__).resolve().parents[1]
+if str(REPO) not in sys.path:
+    sys.path.insert(0, str(REPO))
+
 
 def _fmt(seconds: float | None) -> str:
     if seconds is None:
@@ -35,13 +45,16 @@ def main(argv: list[str] | None = None) -> int:
     ap = argparse.ArgumentParser(description="사람 작업시간 기록 집계 (§3.2)")
     ap.add_argument("worklog", nargs="+", type=Path, help="worklog CSV 경로")
     ap.add_argument("--out", type=Path, default=None, help="집계 JSON 저장 경로")
+    ap.add_argument("--answers", nargs="*", type=Path, default=[],
+                    help="답안 파일(리허설 답안 양식). 일괄 구간의 실제 대상 qid를 여기서 읽는다")
     ap.add_argument("--read-run-dirs", action="store_true",
                     help="run_dir의 timings.json에서 기계 시간을 읽어 **비교용으로** 함께 적는다")
     args = ap.parse_args(argv)
 
     from esgenie.eval.worktime import aggregate_files
 
-    report = aggregate_files(args.worklog, read_run_dirs=args.read_run_dirs)
+    report = aggregate_files(args.worklog, read_run_dirs=args.read_run_dirs,
+                             answer_paths=args.answers)
 
     print(f"행 {report['rows']}건 (합산 가능 {report['countable_rows']}건, "
           f"문제 있는 행 {report['rows_with_issues']}건)")
@@ -53,7 +66,12 @@ def main(argv: list[str] | None = None) -> int:
     for s in report["sessions"]:
         print(f"{s['session_id']:<22}{s['participant']:<10}{s['method']:<9}{s['request_round']:<5}"
               f"{_fmt(s['elapsed_seconds']):>10}{_fmt(s['human_seconds']):>11}"
-              f"{_fmt(s['wait_seconds']):>10}{_fmt(s['idle_seconds']):>10}  {len(s['qids'])}")
+              f"{_fmt(s['wait_seconds']):>10}{_fmt(s['idle_seconds']):>10}  "
+              f"{s['target_qid_count'] if s['target_qid_count'] is not None else '미확인'}")
+        c = s["completeness"]
+        if not c["complete"]:
+            print(f"    기록 불완전: 시각 누락 {c['missing_time_rows']} · 기억 기반 "
+                  f"{c['memory_based_rows']} · 미완결 {c['unfinished_rows']}")
         for issue in s["issues"]:
             print(f"    ! {issue['issue']} (step={issue['step']} qid={issue['qid']})")
         for warning in s["warnings"]:
@@ -61,6 +79,9 @@ def main(argv: list[str] | None = None) -> int:
         if s.get("machine_total_seconds") is not None:
             print(f"    기계 시간 {_fmt(s['machine_total_seconds'])} — 비교용이다. "
                   f"사람작업·대기에 더하지 않는다")
+    for g in report["by_method_round"]:
+        print(f"[{g['method']} / 회차 {g['request_round']}] 참가자 {g['participant_count']}명 · "
+              f"대상 문항 {g['target_qid_count'] if g['target_qid_count'] is not None else '미확인'}")
     print(report["double_counting_note"])
     print(report["savings_note"])
 

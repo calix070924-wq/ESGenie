@@ -23,7 +23,7 @@
     `_`로 시작하는 합계 행은 staged_sum에 들어가지 않는다
 
 사용법:
-    PYTHONPATH=. python scripts/verify_timing_cache_modes.py --out-dir /tmp/timing_examples
+    python scripts/verify_timing_cache_modes.py --out-dir /tmp/timing_examples
 """
 
 from __future__ import annotations
@@ -31,9 +31,14 @@ from __future__ import annotations
 import argparse
 import json
 import os
+import sys
 import tempfile
 from pathlib import Path
 from typing import Any
+
+REPO = Path(__file__).resolve().parents[1]
+if str(REPO) not in sys.path:
+    sys.path.insert(0, str(REPO))   # PYTHONPATH 없이 실행되게 한다(2026-10-11 T2)
 
 
 def _check(records: list[dict[str, Any]], total_stage: str) -> dict[str, Any]:
