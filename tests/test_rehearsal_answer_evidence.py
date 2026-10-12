@@ -316,6 +316,59 @@ def test_receipt_assertion_binds_completed_fact_and_preserves_ocr_complements(re
     assert a.value is expected and a.status == ('verified' if expected else 'insufficient'), (description, a.rationale)
 
 
+@pytest.mark.parametrize('recipient,section', [
+    ('CUS-01 고객', '고객 안내문 전달·수령'),
+    ('SUP-01 공급사', '공급사 안내문 전달·수령 및 확인'),
+])
+@pytest.mark.parametrize('description,expected', [
+    ('에게 안내문을 발송하고 “수령 확인했습니다.”라는 회신을 요청했고 요청을 접수했다는 회신을 받았다.', None),
+    ('에게 안내문을 발송하고 수령 확인했다고 회신해 주기를 요청한 사실에 대해 담당자로부터 회신을 받았다.', None),
+    ('에게 안내문을 발송하고 수령 확인했다고 답변해 주기를 요청했고 별도 문의에 대한 답변을 받았다.', None),
+    ('에게 안내문을 발송하고 “수령 확인했습니다.”라는 회신을 요청했고 별도 문의에 대한 답변을 받았다.', None),
+    ('에게 안내문을 발송하고 수령 확인했다고 담당자가\n대장에 기록했다.', True),
+    ('에게 안내문을 발송하고 “수령 확인했습니다.”라고 담당자가\n대장에 기록했다.', True),
+    ('에게 안내문을 발송하고 “수령 확인했습니다.”라는 회신을\n받았다.', True),
+    ('에게 안내문을 발송하고 수령 확인했다고 회신을\n받았다.', True),
+    ('에게 안내문을 발송하고 수령 확인했다고 담당자가 대장에 기록했다.', True),
+    ('에게 안내문을 발송하고 “수령 확인했습니다.”라고 담당자가 대장에 기록했다.', True),
+    ('에게 안내문을 발송하고 “수령 확인했습니다.”라는 회신을 받았다.', True),
+    ('에게 안내문을 발송하고 수령 확인했다고 회신을 받았다.', True),
+    ('에게 안내문을 발송하고 “수령 확인했습니다.”라는 회신을 요청했고 요청을 접수했다.', None),
+    ('에게 안내문을 발송하고 수령 확인했다고 회신해 주기를 요청한 사실을 담당자가 대조했다.', None),
+    ('에게 안내문을 발송하고 “수령 확인했습니다.”라는 회신을 요청했다.', None),
+    ('에게 안내문을 발송하고 수령 확인했다는 사실을\n담당자가 대조했다.', True),
+    ('에게 안내문을 발송하고 수령 확인했다고 담당자로부터 회신을 받았다.', True),
+    ('에게 안내문을 발송하고 수령 확인했다고 고객에게서 회신을 받았다.', True),
+    ('에게 안내문을 발송하고 수령 확인했다고 담당자가 회신을 받았다.', True),
+    ('에게 안내문을 발송하고 수령 확인했다고 담당자가\n대장에\n기록했다.', True),
+    ('에게 안내문을 발송하고 수령 확인했다고 담당자로부터 회신을\n받았다.', True),
+    ('에게 안내문을 발송하고 수령 확인했다고 담당자가\n회신을 받았다.', True),
+    ('에게 안내문을 발송하고 수령 확인했다고 회신을\n받았다면 대장에 기록한다.', None),
+    ('에게 안내문을 발송하고 수령 확인했다고 회신을\n받았다고 답변해 주기를 요청했다.', None),
+    ('에게 안내문을 발송하고 수령 확인했다고 담당자가\n대장에 기록했다는 답변을 기다린다.', None),
+    ('에게 안내문을 발송하고 수령 확인했다고 담당자가\n대장에 기록했다면 회신한다.', None),
+    ('에게 안내문을 발송하고 수령 확인했다고 담당자가\n다른 문의에 대한 회신을 받았다.', None),
+    ('에게 안내문을 발송하고 수령 확인했다고 회신을 요청했고\n별도 문의에 대한 답변을 받았다.', None),
+    ('에게 안내문을 발송하고 수령 확인했다고 담당자가\nCUS-02 고객의 별도 대장에 기록했다.', None),
+    ('에게 안내문을 발송하고 수령 확인했다고 회신을\n2026-05-01 별도 문의의 답변을 받았다.', None),
+    ('에게 안내문을 발송하고 수령 확인했다고 회신을\n사업장: 부산\n받았다.', None),
+    ('에게 안내문을 발송하고 수령 확인했다고 담당자가\n대장에 기록해 주기를 요청했다.', None),
+    ('에게 안내문을 발송하고 수령 확인했다고 이메일로\n회신받았다.', True),
+    ('에게 안내문을 발송하고 수령 확인했다고 담당자로부터 이메일로 회신을\n받았다.', True),
+    ('에게 안내문을 발송하고 수령 확인했다고 이메일로 담당자가\n회신을 받았다.', True),
+    ('에게 안내문을 발송하고 수령 확인했다고 서면으로 답변을\n받았다.', True),
+    ('에게 안내문을 발송하고 수령 확인했다고 이메일로 회신해 주기를 요청했고 별도 답변을 받았다.', None),
+    ('에게 안내문을 발송하고 수령 확인했다고 이메일로\n회신을 요청했고 요청 접수에 대한 답변을 받았다.', None),
+])
+def test_receipt_reply_binds_claim_and_keeps_complete_ocr_complement(recipient, section, description, expected):
+    graph = live_split_delivery_graph()
+    next(n for n in graph.text_nodes.values() if n.section == section).text = recipient + description
+    graph.source_texts = {name: '한울정밀공업(주) / 절차 시행 2026-04-01 / 김해 제1공장·양산 제2공장\n'
+                          for name in graph.source_texts}
+    a = answer(graph, 'E-7')
+    assert a.value is expected and a.status == ('verified' if expected else 'insufficient'), (description, a.rationale)
+
+
 def answer(graph, code, **kw):
     sheet = build_response_sheet('rba42', evidence_graph=graph, **kw)
     return next(a for a in sheet.answers if a.qid == f'RBA-{code}')
