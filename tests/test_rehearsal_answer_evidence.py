@@ -242,6 +242,43 @@ def test_completed_reply_needs_an_actual_assertion_and_unambiguous_table_status(
     assert a.value is expected and a.status == ('verified' if expected else 'insufficient'), a.rationale
 
 
+@pytest.mark.parametrize('recipient,section', [
+    ('CUS-01 고객', '고객 안내문 전달·수령'),
+    ('SUP-01 공급사', '공급사 안내문 전달·수령 및 확인'),
+])
+@pytest.mark.parametrize('description,expected', [
+    ('에게 안내문을 발송하고 “수령 확인했습니다.”라고 회신해 주기를 요청했다.', None),
+    ('에게 안내문을 발송하고 “수령 확인했습니다.”라고 회신받았다.', True),
+    ('에게 안내문을 발송하고 “수령 확인했습니다?”라고 회신해 주기를 요청했다.', None),
+    ('에게 안내문을 발송하고 “수령 확인했습니다”\n라고 회신해 주기를 요청했다.', None),
+    ('에게 안내문을 발송하고 “수령 확인했습니다”\n라고회신해 주기를 요청했다.', None),
+    ('에게 안내문을 발송하고 수령 확인했다는\n회신을 접수했다.', True),
+    ('에게 안내문을 발송하고 수령 확인했다고 회신해 주기를\n요청했다.', None),
+    (' | 안내문 발송 | 수령 확인 완료 | 확인자: 담당자', True),
+    (' | 안내문 발송 | 수령 확인 완료 | 상태: 대기(회신 요청)', None),
+    (' | 안내문 전달 완료 | 확인자: 담당자', True),
+    (' | 안내문 전달 완료 | 상태: 대기 중', None),
+    ('에게 안내문을 발송하고 수령 확인했다고 이메일로 회신받았다.', True),
+    ('에게 안내문을 발송하고 수령 확인했다고 대장에 기록했다.', True),
+    ('에게 안내문을 발송하고 수령 확인했다는 사실을 담당자가 대조했다.', True),
+    ('에게 안내문을 발송하고 수령 확인했다고 대장에 기록해 주기를 요청했다.', None),
+    ('에게 안내문을 발송하고 수령 확인했다고 대장에 기록했다는 답변을 기다린다.', None),
+    ('에게 안내문을 발송하고 수령 확인했다는 사실을 담당자가 대조했다면 대장을 갱신한다.', None),
+    ('에게 안내문을 발송하고 수령 확인했다는 사실을 담당자가 대조해 주기를 요청했다.', None),
+    ('에게 안내문을 발송하고 “수령 확인했습니다.”\n라고회신해 주기를 요청했다.', None),
+    ('에게 안내문을 발송하고 수령 확인했다고\n대장에 기록했다.', True),
+    ('에게 안내문을 발송하고 “수령 확인했습니다.”라는 사실을 담당자가 대조했다.', True),
+    (' | 안내문 발송 | 수령 확인 완료 | 상태: 대기/회신 요청', None),
+])
+def test_receipt_quotes_ocr_status_and_completed_audit_context(recipient, section, description, expected):
+    graph = live_split_delivery_graph()
+    next(n for n in graph.text_nodes.values() if n.section == section).text = recipient + description
+    graph.source_texts = {name: '한울정밀공업(주) / 절차 시행 2026-04-01 / 김해 제1공장·양산 제2공장\n'
+                          for name in graph.source_texts}
+    a = answer(graph, 'E-7')
+    assert a.value is expected and a.status == ('verified' if expected else 'insufficient'), (description, a.rationale)
+
+
 def answer(graph, code, **kw):
     sheet = build_response_sheet('rba42', evidence_graph=graph, **kw)
     return next(a for a in sheet.answers if a.qid == f'RBA-{code}')

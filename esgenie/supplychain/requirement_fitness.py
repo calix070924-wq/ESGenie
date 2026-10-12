@@ -72,26 +72,34 @@ _NOTICE_DELIVERY = r'안내|발송|전달|배포'
 _REPLY_EVENT = re.compile(
     rf'(?:회신|답변|응답)(?:을|이)?\s*'
     rf'(?:받았(?:다|습니다|음)|(?:접수|도착)?{_PAST_COMPLETION})')
+_ASSERTION_EVENT = re.compile(
+    rf'(?:{_REPLY_EVENT.pattern}'
+    rf'|(?:대장|일지|기록부)(?:에|에서)\s*(?:기록|기재|등록){_PAST_COMPLETION}'
+    rf'|(?:사실|내용)(?:을|이)?(?:(?!요청|계획|예정|대기)[^\n.!?。;]){{0,30}}'
+    rf'(?:대조|검증|확인){_PAST_COMPLETION})')
+_QUOTED_TEXT = re.compile(r'“[^”]*”|‘[^’]*’|"[^"]*"|(?<![A-Za-z0-9])\'[^\']*\'')
+_REPORTING_START = re.compile(r'(?:라고|이라고|이라는|는|고)(?=\s|$|회신|답변|응답|대장|사실)')
 
 
 def _asserted_completion(unit, end):
     """회신에 들어갈 완료 문구와 실제 완료/회신 수령의 술어를 구별한다."""
-    end += re.match(r'[\s\"\'”’]*', unit[end:]).end()
+    # 인용문 안의 문장 기호와 닫는 따옴표를 지나 실제 주장 술어까지 읽는다.
+    end += re.match(r'[\s.!?。;\"\'”’]*', unit[end:]).end()
     tail = unit[end:]
     if re.match(r'(?:면|다면|라면)', tail):
         return False
     if re.match(r'(?:는|고|라고|이라고|이라는)', tail):
-        # 인용·전언 속 과거형은 요청/대기의 목적어일 수 있다. 실제 회신을
-        # 받거나 접수한 술어가 있어야 하며, 그 술어도 다시 요청에 인용된
-        # 경우는 재귀적으로 구별한다. 안내문 내용의 미래 계획은 제한하지 않는다.
-        reply = _REPLY_EVENT.search(tail)
-        return bool(reply and _asserted_completion(unit, end + reply.end()))
+        # 인용·전언의 실제 회신 수령뿐 아니라 완료 사실의 기록·대조도
+        # 인정한다. 그 주장 자체가 다시 요청/대기/조건 안에 있는 경우는
+        # 같은 문맥 검사를 적용해 완료 사실로 확정하지 않는다.
+        assertion = _ASSERTION_EVENT.search(tail)
+        return bool(assertion and _asserted_completion(unit, end + assertion.end()))
     if tail.startswith('|'):
         # '완료 | 확인자'는 완료 상태와 메타데이터다. 반면 같은 행의
         # 명시적 대기/예정 상태와 충돌하면 완료로 확정하지 않는다.
         for cell in tail.split('|')[1:]:
             if re.match(r'\s*(?:(?:상태|결과|진행)\s*[:：]\s*)?'
-                        r'(?:대기|예정|요청|미완료|미확인|계획|필요)(?=\s|중|$)', cell):
+                        r'(?:대기|예정|요청|미완료|미확인|계획|필요)(?=\W|중|$)', cell):
                 return False
     return True
 
@@ -115,9 +123,14 @@ def _statement_units(text):
             if re.search(r'scope\s*$', text[:match.start()], re.I):
                 continue
             numeric_dots.update(match.start() + m.start() for m in re.finditer(r'\.', match[0]))
+    # 짝이 맞는 인용문 안의 문장 기호는 전언/요청의 문장 끝이 아니다.
+    # 닫는 따옴표 뒤 술어까지 같은 단위에 두어 과거형만 독립시키지 않는다.
+    quoted_boundaries = {match.start() + marker.start()
+                         for match in _QUOTED_TEXT.finditer(text)
+                         for marker in re.finditer(r'[.!?。;\n]', match[0])}
     parts, start = [], 0
     for match in re.finditer(r'[.!?。;]\s*|\n', text):
-        if match.start() in numeric_dots:
+        if match.start() in numeric_dots or match.start() in quoted_boundaries:
             continue
         if match[0][0] == '\n' and _ocr_continuation(text[start:match.start()], text[match.end():]):
             continue
@@ -161,12 +174,12 @@ def _ocr_continuation(before, after):
     # 행은 계속 분리하고, 실제 회신 수령의 정상 줄바꿈도 함께 보존한다.
     if not independent:
         for record in re.finditer(_DELIVERY_RECORD, before):
-            tail = re.sub(r'^[\s\"\'”’]*', '', before[record.end():])
-            if (not tail and (re.match(r'[\"\'”’]*\s*(?:는|고|라고|이라고|이라는)(?=\s|$)', next_line)
+            tail = re.sub(r'^[\s.!?。;\"\'”’]*', '', before[record.end():])
+            if (not tail and (_REPORTING_START.match(re.sub(r'^[\"\'”’]*\s*', '', next_line))
                               or re.match(_PAST_COMPLETION, next_line))):
                 return True
             if (re.fullmatch(r'(?:는|고|라고|이라고|이라는)\s*', tail)
-                    and re.match(r'회신|답변|응답', next_line)):
+                    and re.match(r'회신|답변|응답|대장|일지|기록부|사실|내용', next_line)):
                 return True
     # OCR가 완료 여부의 보어를 다음 줄로 나눠도 '확인'만 독립 완료
     # 행으로 만들지 않는다. 새로운 수신자/범위 행은 위에서 구별한다.
