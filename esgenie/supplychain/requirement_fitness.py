@@ -53,22 +53,55 @@ _RECORD_TIME = (r'(?<!\d)(?:20\d{2}\s*[년./-]\s*)?'
 # 술어 또는 문장/표 셀 끝의 상태를 요구하며, 안내문 자체의 미래 계획은
 # 제한하지 않는다. 날짜와 시간 뒤의 '수령 확인.' 같은 대장 표기도 보존한다.
 _RECORD_END = r'(?=[ \t]*(?:[.!?。;]|$))'
+_COMPLETED_CELL_END = r'(?=[ \t]*(?:[.!?。;|]|$))'
 _PAST_COMPLETION = r'(?:했(?:다|습니다|음)|하였(?:다|습니다|음)|되었(?:다|습니다|음)|됐(?:다|습니다|음))'
-_COMPLETED_SUFFIX = (
-    rf'(?:{_RECORD_END}|\s*{_PAST_COMPLETION}'
+_FINISHED_PREDICATE = (
+    rf'(?:\s*{_PAST_COMPLETION}'
     rf'|\s*(?:을|를)?\s*(?:마쳤(?:다|습니다|음)|끝냈(?:다|습니다|음))'
-    rf'|\s*(?:을|를)\s*(?:대조|검증|확인){_PAST_COMPLETION}'
-    rf'|\s*(?:을|를)?\s*완료(?:{_RECORD_END}|\s*{_PAST_COMPLETION}'
-    rf'|\s*(?:을|를)\s*(?:대조|검증|확인){_PAST_COMPLETION}))')
-_DELIVERY_RECORD = (r'(?:수령[^\n.!?。;]{0,30}확인|(?:전달|배포)[^\n.!?。;]{0,30}완료)'
-                    + _COMPLETED_SUFFIX)
+    rf'|\s*(?:을|를)\s*(?:대조|검증|확인){_PAST_COMPLETION})')
+_COMPLETED_SUFFIX = (
+    rf'(?:{_RECORD_END}|{_FINISHED_PREDICATE}'
+    rf'|\s*(?:을|를)?\s*완료(?:{_COMPLETED_CELL_END}|{_FINISHED_PREDICATE}))')
+_DELIVERY_RECORD = (
+    # 첫 수령 확인의 술어를 읽는다. '수령 확인 요청을 확인했다'의
+    # 두 번째 확인이나 '전달 요청 검토 완료'의 다른 작업을 빌리지 않는다.
+    rf'수령(?:(?!확인)[^\n.!?。;]){{0,30}}확인{_COMPLETED_SUFFIX}'
+    rf'|(?:전달|배포)(?:(?!요청|검토|준비|계획|예정|작성|수립|양식|대기)[^\n.!?。;]){{0,30}}'
+    rf'완료(?:{_COMPLETED_CELL_END}|{_FINISHED_PREDICATE})')
 _NOTICE_DELIVERY = r'안내|발송|전달|배포'
+_REPLY_EVENT = re.compile(
+    rf'(?:회신|답변|응답)(?:을|이)?\s*'
+    rf'(?:받았(?:다|습니다|음)|(?:접수|도착)?{_PAST_COMPLETION})')
+
+
+def _asserted_completion(unit, end):
+    """회신에 들어갈 완료 문구와 실제 완료/회신 수령의 술어를 구별한다."""
+    end += re.match(r'[\s\"\'”’]*', unit[end:]).end()
+    tail = unit[end:]
+    if re.match(r'(?:면|다면|라면)', tail):
+        return False
+    if re.match(r'(?:는|고|라고|이라고|이라는)', tail):
+        # 인용·전언 속 과거형은 요청/대기의 목적어일 수 있다. 실제 회신을
+        # 받거나 접수한 술어가 있어야 하며, 그 술어도 다시 요청에 인용된
+        # 경우는 재귀적으로 구별한다. 안내문 내용의 미래 계획은 제한하지 않는다.
+        reply = _REPLY_EVENT.search(tail)
+        return bool(reply and _asserted_completion(unit, end + reply.end()))
+    if tail.startswith('|'):
+        # '완료 | 확인자'는 완료 상태와 메타데이터다. 반면 같은 행의
+        # 명시적 대기/예정 상태와 충돌하면 완료로 확정하지 않는다.
+        for cell in tail.split('|')[1:]:
+            if re.match(r'\s*(?:(?:상태|결과|진행)\s*[:：]\s*)?'
+                        r'(?:대기|예정|요청|미완료|미확인|계획|필요)(?=\s|중|$)', cell):
+                return False
+    return True
 
 
 def _completed_record_units(text):
     # records 요건의 원래 문장/표 행 안에서 완료를 입증한다. 미래·요청
     # 표현의 일부 목록을 제외하는 대신 실제 완료 표현이 있는 행만 사용한다.
-    return [unit for unit in _statement_units(text) if re.search(_DELIVERY_RECORD, unit)]
+    return [unit for unit in _statement_units(text)
+            if any(_asserted_completion(unit, match.end())
+                   for match in re.finditer(_DELIVERY_RECORD, unit))]
 
 
 def _statement_units(text):

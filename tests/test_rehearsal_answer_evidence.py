@@ -199,6 +199,46 @@ def test_receipt_completion_keeps_wrapped_predicates_and_table_status(descriptio
     assert a.value is expected and a.status == ('verified' if expected else 'insufficient')
 
 
+@pytest.mark.parametrize('recipient,section', [
+    ('CUS-01 고객', '고객 안내문 전달·수령'),
+    ('SUP-01 공급사', '공급사 안내문 전달·수령 및 확인'),
+])
+@pytest.mark.parametrize('description,expected', [
+    ('에게 안내문을 발송하고 수령 확인했다는 회신을 기다리고 있다.', None),
+    ('에게 안내문을 발송하고 수령 확인했다고 회신해 주기를 요청했다.', None),
+    ('에게 안내문을 발송하고 “수령 확인했습니다”라고 회신해 주기를 요청했다.', None),
+    (' | 안내문 발송 | 수령 확인 완료 | 확인자: 담당자', True),
+    (' | 안내문 전달 완료 | 확인자: 담당자', True),
+    ('에게 안내문을 발송하고 수령 확인했다고 회신받았다.', True),
+    (' | 안내문 발송 | 수령 확인 완료', True),
+    ('에게 안내문 발송 후 수령 확인했다 | 확인자: 담당자', True),
+])
+def test_split_receipt_distinguishes_requested_replies_and_completed_table_cells(recipient, section, description, expected):
+    graph = live_split_delivery_graph()
+    node = next(n for n in graph.text_nodes.values() if n.section == section)
+    node.text = recipient + description
+    graph.source_texts = {name: '한울정밀공업(주) / 절차 시행 2026-04-01 / 김해 제1공장·양산 제2공장\n'
+                          for name in graph.source_texts}
+    a = answer(graph, 'E-7')
+    assert a.value is expected and a.status == ('verified' if expected else 'insufficient'), (node.text, a.rationale)
+
+
+@pytest.mark.parametrize('description,expected', [
+    ('CUS-01 고객 | 안내문 발송 | 수령 확인 완료 | 대기 중', None),
+    ('CUS-01 고객 | 안내문 발송 | 수령 확인 완료 | 상태: 대기', None),
+    ('CUS-01 고객에게 안내문을 발송하고 수령 확인했다고 회신받았다는 답변을 기다린다.', None),
+    ('CUS-01 고객에게 안내문을 발송하고 “수령 확인했습니다”라고 회신받았다.', True),
+    ('CUS-01 고객에게 안내문을 발송하고 수령 확인했다면 대장을 갱신한다.', None),
+    ('CUS-01 고객에게 안내문을 발송하고 수령 확인 요청을 확인했다.', None),
+    ('CUS-01 고객에게 안내문 전달 요청 검토 완료.', None),
+])
+def test_completed_reply_needs_an_actual_assertion_and_unambiguous_table_status(description, expected):
+    graph = live_split_delivery_graph()
+    next(n for n in graph.text_nodes.values() if n.section == '고객 안내문 전달·수령').text = description
+    a = answer(graph, 'E-7')
+    assert a.value is expected and a.status == ('verified' if expected else 'insufficient'), a.rationale
+
+
 def answer(graph, code, **kw):
     sheet = build_response_sheet('rba42', evidence_graph=graph, **kw)
     return next(a for a in sheet.answers if a.qid == f'RBA-{code}')
