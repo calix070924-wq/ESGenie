@@ -71,27 +71,115 @@ _DELIVERY_RECORD = (
 _NOTICE_DELIVERY = r'안내|발송|전달|배포'
 _REPORTING_PARTICLE = r'(?:이라고|이라는|라고|라는|는|고)'
 _ASSERTION_ACTOR = r'(?:(?!요청|계획|예정|대기|기다)[가-힣A-Za-z0-9_-]){1,30}(?:가|는|이)'
-_ASSERTION_SOURCE = r'(?:(?!요청|계획|예정|대기|기다)[가-힣A-Za-z0-9_-]){1,30}(?:으로부터|로부터|에게서)'
-_REPLY_AGENT = rf'(?:{_ASSERTION_ACTOR}|{_ASSERTION_SOURCE})'
-_REPLY_CHANNEL = r'(?:이메일|메일|전자우편|서면|문서|구두|전화|팩스|메신저)(?:으로|로)'
-_REPLY_MODIFIER = rf'(?:{_REPLY_AGENT}|{_REPLY_CHANNEL})'
-_REPLY_OPENING = rf'(?:{_REPLY_MODIFIER}\s+){{0,2}}'
-_REPLY_OBJECT = r'(?:회신|답변|응답)(?:을|이)?'
-_REPLY_EVENT = re.compile(
-    rf'\s*{_REPLY_OPENING}{_REPLY_OBJECT}\s*'
+_REPLY_OBJECT = re.compile(r'(?:회신|답변|응답)(?:을|이)?'
+                           r'(?=\s|받|접수|도착|했|하였|되었|됐|$)')
+_REPLY_RECEIVED = re.compile(
     rf'(?:받았(?:다|습니다|음)|(?:접수|도착)?{_PAST_COMPLETION})')
+_REPLY_DATE = re.compile(rf'(?:오전\s*|오후\s*)?(?:{_RECORD_TIME})(?:에|자로)?'
+                         r'(?=\s|[,\)\]]|$)')
+_REPLY_DATE_PREFIX = re.compile(r'(?:20\d{2}\s*[년./-]\s*)?'
+                                r'(?:1[0-2]|0?[1-9])\s*[월./-]\s*'
+                                r'|20\d{2}\s*[년./-]\s*'
+                                r'|(?:오전|오후)\s*'
+                                r'|(?:2[0-3]|1?\d)\s*[:시]\s*')
+_REPLY_WORD = re.compile(r'[가-힣A-Za-z0-9_-]+')
+_REPLY_NOUN_CASE = re.compile(r'(으로부터|로부터|에게서|에게|한테|께서|으로|로|가|는|이)$')
+_REPLY_BRACKETS = {'(': ')', '[': ']', '（': '）', '【': '】'}
+# 직책에 든 '계획/요청'은 과거·미완료 술어가 아니다. 문맥을 바꾸는
+# 실제 행동/연결형만 제외해 요청 구간이나 다른 회신을 넘어가지 않는다.
+_REPLY_CLAUSE = re.compile(
+    r'^(?:요청|요구|부탁|계획|예정|대기|기다림)(?:은|는|이|가|으로|로|이다|이라는|이라고|이면|인)?$'
+    r'|(?:했|하였|됐|되었|받았|기다렸|기다린)(?:다(?:는|고|면|며)?|고|지만)$'
+    r'|^(?:요청|요구|부탁|대기|기다리|회신|답변|응답)(?:한|하는|할|해|하기|하길|하고|하며|하면|는|던|기|고|면)$'
+    r'|(?:한다|된다)(?:는|고|면|며)?$|(?:하는|되는|라는|다는|하기로|되기로|받기로)$'
+    r'|(?:했|하였|됐|되었|받았|기다렸|기다린|한다|된다)(?:다는|다고|다면|다며|는|고|지만)'
+    r'|(?:요청|요구|부탁|대기|계획|예정|회신|답변|응답)(?:한|하는|할|해|하기|하길|하고|하며|하면|이라는|이라고)'
+    r'|기다리(?:는|던|기|고|면)')
 _RECORDED_ASSERTION = re.compile(
     rf'\s*(?:(?:{_ASSERTION_ACTOR}\s+)?(?:대장|일지|기록부)(?:에|에서)\s*'
     rf'(?:기록|기재|등록){_PAST_COMPLETION}'
     rf'|(?:사실|내용)(?:을|이)?(?:(?!요청|계획|예정|대기)[^.!?。;]){{0,30}}'
     rf'(?:대조|검증|확인){_PAST_COMPLETION})')
 _ASSERTION_PREFIX = re.compile(
-    rf'\s*(?:{_REPLY_MODIFIER}(?:\s+{_REPLY_MODIFIER})?'
+    rf'\s*(?:{_ASSERTION_ACTOR}'
     rf'|(?:{_ASSERTION_ACTOR}\s+)?(?:대장|일지|기록부)(?:에|에서)'
-    rf'|{_REPLY_OPENING}{_REPLY_OBJECT}'
     rf'|(?:사실|내용)(?:을|이)?(?:\s+{_ASSERTION_ACTOR})?)\s*')
 _QUOTED_TEXT = re.compile(r'“[^”]*”|‘[^’]*’|"[^"]*"|(?<![A-Za-z0-9])\'[^\']*\'')
 _REPORTING_START = re.compile(_REPORTING_PARTICLE + r'(?=\s|$|회신|답변|응답|대장|사실|내용)')
+
+
+def _reply_metadata_item(text, start, allow_open=False):
+    """날짜 또는 조사로 닫힌 명사구 한 개; 술어·요청 구간은 넘지 않는다."""
+    date = _REPLY_DATE.match(text, start)
+    if date:
+        return date.end(), 0
+    if text[start:start + 1] in _REPLY_BRACKETS:
+        closing = _REPLY_BRACKETS[text[start]]
+        end = text.find(closing, start + 1)
+        inner = text[start + 1:end] if end >= 0 else text[start + 1:]
+        if (inner.strip() or allow_open) and not re.search(r'[()\[\]（）【】]', inner):
+            position, actors = _reply_metadata(inner, allow_open=allow_open and end < 0)
+            if position == len(inner):
+                if end >= 0:
+                    return end + 1, actors
+                if allow_open:
+                    return len(text), actors
+        return None
+    position = start
+    while position < len(text):
+        if _REPLY_OBJECT.match(text, position):
+            return None
+        word = _REPLY_WORD.match(text, position)
+        if not word or _REPLY_CLAUSE.search(word[0]):
+            break
+        noun_case = _REPLY_NOUN_CASE.search(word[0])
+        if noun_case:
+            return word.end(), int(noun_case[1] in ('가', '는', '이', '께서'))
+        position = word.end()
+        space = re.match(r'\s+', text[position:])
+        if not space:
+            break
+        position += space.end()
+    if allow_open and (position == len(text)
+                       or _REPLY_DATE_PREFIX.fullmatch(text[start:])):
+        return len(text), 0
+    return None
+
+
+def _reply_metadata(text, start=0, actors=0, allow_open=False):
+    """메타데이터 개수 대신 명사구·시각의 끝을 순차적으로 읽는다."""
+    position = start
+    while True:
+        position += re.match(r'\s*', text[position:]).end()
+        if position == len(text):
+            return position, actors
+        item = _reply_metadata_item(text, position, allow_open)
+        if not item or actors + item[1] > 1:
+            return position, actors
+        position, count = item
+        actors += count
+        comma = re.match(r'\s*,\s*', text[position:])
+        if comma:
+            position += comma.end()
+
+
+def _reply_assertion_end(text):
+    """같은 회신의 메타데이터·목적어·실제 수령 술어 끝을 반환한다."""
+    position, actors = _reply_metadata(text)
+    reply = _REPLY_OBJECT.match(text, position)
+    if not reply:
+        return None
+    position, _ = _reply_metadata(text, reply.end(), actors)
+    received = _REPLY_RECEIVED.match(text, position)
+    return received.end() if received else None
+
+
+def _reply_open_prefix(text):
+    position, actors = _reply_metadata(text, allow_open=True)
+    reply = _REPLY_OBJECT.match(text, position)
+    if reply:
+        position, _ = _reply_metadata(text, reply.end(), actors, allow_open=True)
+    return position == len(text)
 
 
 def _asserted_completion(unit, end):
@@ -109,9 +197,10 @@ def _asserted_completion(unit, end):
         # 회신·기록·대조의 보어는 바로 앞 완료 주장이어야 한다.
         # 요청 구간 뒤의 요청 접수/별도 문의 회신까지 찾아 빌리지 않는다.
         body = tail[reporting.end():]
-        events = [event for event in (_REPLY_EVENT.match(body), _RECORDED_ASSERTION.match(body)) if event]
-        assertion = min(events, key=lambda event: event.start()) if events else None
-        return bool(assertion and _asserted_completion(unit, end + reporting.end() + assertion.end()))
+        recorded = _RECORDED_ASSERTION.match(body)
+        assertions = [position for position in (_reply_assertion_end(body), recorded.end() if recorded else None)
+                      if position is not None]
+        return bool(assertions and _asserted_completion(unit, end + reporting.end() + min(assertions)))
     if tail.startswith('|'):
         # '완료 | 확인자'는 완료 상태와 메타데이터다. 반면 같은 행의
         # 명시적 대기/예정 상태와 충돌하면 완료로 확정하지 않는다.
@@ -190,13 +279,15 @@ def _ocr_continuation(before, after):
     # 인용·전언의 연결 조사나 실제 회신 술어가 다음 OCR 줄에 있어도
     # 그 앞의 과거형만 별도 완료 사실로 만들지 않는다. 새로운 대상/범위
     # 행은 계속 분리하고, 실제 회신 수령의 정상 줄바꿈도 함께 보존한다.
-    if not independent:
+    row_boundary = (re.search(r'scope\s*\d|SUP-|CUS-', predicate, re.I)
+                    or _SCOPE_FIELD.search(predicate))
+    if not independent or not row_boundary:
         for record in re.finditer(_DELIVERY_RECORD, before):
             tail = re.sub(r'^[\s.!?。;\"\'”’]*', '', before[record.end():])
-            if (not tail and (_REPORTING_START.match(re.sub(r'^[\"\'”’]*\s*', '', next_line))
+            if (not independent and not tail and (_REPORTING_START.match(re.sub(r'^[\"\'”’]*\s*', '', next_line))
                               or re.match(_PAST_COMPLETION, next_line))):
                 return True
-            if (re.fullmatch(_REPORTING_PARTICLE + r'\s*', tail)
+            if (not independent and re.fullmatch(_REPORTING_PARTICLE + r'\s*', tail)
                     and re.match(r'회신|답변|응답|대장|일지|기록부|사실|내용', next_line)):
                 return True
             reporting = re.match(_REPORTING_PARTICLE, tail)
@@ -206,9 +297,11 @@ def _ocr_continuation(before, after):
                 # 않았다. 실제 주장 검사와 같은 문법으로 회신/기록의
                 # 연속만 잇고, 요청 뒤 별도 회신이나 새 대상은 잇지 않는다.
                 continuation = body + '\n' + next_line
-                if ((not body.strip() or _ASSERTION_PREFIX.fullmatch(body))
-                        and (_REPLY_EVENT.match(continuation)
-                             or _RECORDED_ASSERTION.match(continuation)
+                if (not row_boundary and _reply_open_prefix(body)
+                        and (_reply_assertion_end(continuation) is not None or _reply_open_prefix(continuation))):
+                    return True
+                if (not independent and (not body.strip() or _ASSERTION_PREFIX.fullmatch(body))
+                        and (_RECORDED_ASSERTION.match(continuation)
                              or _ASSERTION_PREFIX.fullmatch(continuation))):
                     return True
     # OCR가 완료 여부의 보어를 다음 줄로 나눠도 '확인'만 독립 완료

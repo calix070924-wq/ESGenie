@@ -369,6 +369,96 @@ def test_receipt_reply_binds_claim_and_keeps_complete_ocr_complement(recipient, 
     assert a.value is expected and a.status == ('verified' if expected else 'insufficient'), (description, a.rationale)
 
 
+RECEIPT_METADATA_CASES = [
+    ('에게 안내문을 발송하고 수령 확인했다고 2026-04-30 회신을 받았다.', True),
+    ('에게 안내문을 발송하고 수령 확인했다고 4월 30일 회신을 받았다.', True),
+    ('에게 안내문을 발송하고 수령 확인했다고 14:00 회신을 받았다.', True),
+    ('에게 안내문을 발송하고 수령 확인했다고 상대에게서 2026-04-30 회신받았다.', True),
+    ('에게 안내문을 발송하고 수령 확인했다고 생산계획담당자가 회신을 받았다.', True),
+    ('에게 안내문을 발송하고 수령 확인했다고 총무팀 담당자가 회신을 받았다.', True),
+    ('에게 안내문을 발송하고 수령 확인했다고 상대에게서 이메일로 담당자가 회신받았다.', True),
+    ('에게 안내문을 발송하고 수령 확인했다고 담당자로부터 이메일로 회신을 받았다.', True),
+    ('에게 안내문을 발송하고 수령 확인했다고 회신받았다.', True),
+    ('에게 안내문을 발송하고 수령 확인했다고 이메일로 담당자가\n회신을 받았다.', True),
+    ('에게 안내문을 발송하고 수령 확인했다고 회신해 주기를 요청했고 2026-04-30 별도 문의에 대한 답변을 받았다.', None),
+    ('에게 안내문을 발송하고 수령 확인했다고 생산계획담당자가 회신해 주기를 요청했다.', None),
+    ('에게 안내문을 발송하고 수령 확인했다고 상대에게서 이메일로 담당자가 회신을 받았다고 답변해 주기를 요청했다.', None),
+    ('에게 안내문을 발송하고 수령 확인했다고 2026-04-30 회신받았다면 대장에 기록한다.', None),
+    ('에게 안내문을 발송하고 수령 확인했다고 담당자가\nCUS-02 고객의 별도 문의에 대한 회신을 받았다.', None),
+    ('에게 안내문을 발송하고 수령 확인했다고 담당자로부터 회신을\n받았다.', True),
+    ('에게 안내문을 발송하고 수령 확인했다고 2026/04/30 회신을 받았다.', True),
+    ('에게 안내문을 발송하고 수령 확인했다고 2026.04.30 14:00에 회신을 받았다.', True),
+    ('에게 안내문을 발송하고 수령 확인했다고 4월 30일 오후 2시 30분에 회신을 받았다.', True),
+    ('에게 안내문을 발송하고 수령 확인했다고 (2026-04-30) 회신을 받았다.', True),
+    ('에게 안내문을 발송하고 수령 확인했다고 총무팀 생산계획담당자에게서 문자로 회신을 받았다.', True),
+    ('에게 안내문을 발송하고 수령 확인했다고 문서관리 담당자가 우편으로 회신을 받았다.', True),
+    ('에게 안내문을 발송하고 수령 확인했다고 회신을 2026-04-30 받았다.', True),
+    ('에게 안내문을 발송하고 수령 확인했다고 회신을 총무팀 담당자가 받았다.', True),
+    ('에게 안내문을 발송하고 수령 확인했다고 2026-04-30\n회신을 받았다.', True),
+    ('에게 안내문을 발송하고 수령 확인했다고 회신을\n2026-04-30 받았다.', True),
+    ('에게 안내문을 발송하고 수령 확인했다고 4월\n30일 회신을 받았다.', True),
+    ('에게 안내문을 발송하고 수령 확인했다고 총무팀\n담당자가 2026-04-30 회신을 받았다.', True),
+    ('에게 안내문을 발송하고 “수령 확인했습니다.”라는 2026-04-30 회신을 받았다.', True),
+    ('에게 안내문을 발송하고 “수령 확인했습니다.”라는 회신을 14:00에 받았다.', True),
+    ('에게 안내문을 발송하고 수령 확인했다고 14:00 회신을 요청했고 요청 접수 답변을 받았다.', None),
+    ('에게 안내문을 발송하고 수령 확인했다고 총무팀 담당자가 회신을 기다린다는 답변을 받았다.', None),
+    ('에게 안내문을 발송하고 수령 확인했다고 생산계획담당자가 회신받았다고 답변해 주기를 요청했다.', None),
+    ('에게 안내문을 발송하고 수령 확인했다고 요청으로 회신을 받았다.', None),
+    ('에게 안내문을 발송하고 수령 확인했다고 요청했다는 총무팀 담당자가 별도 회신을 받았다.', None),
+    ('에게 안내문을 발송하고 수령 확인했다고 회신을\nCUS-02 고객이 받았다.', None),
+    ('에게 안내문을 발송하고 수령 확인했다고 회신을\n사업장: 부산\n2026-04-30 받았다.', None),
+    ('에게 안내문을 발송하고 수령 확인했다고 회신을\n2026-05-01 별도 문의의 답변을 받았다.', None),
+    ('에게 안내문을 발송하고 수령 확인했다고 2026-04-30 회신을 받았다면 기록한다.', None),
+    ('에게 안내문을 발송하고 수령 확인했다고 (회신 요청) 담당자가 답변을 받았다.', None),
+    ('에게 안내문을 발송하고 수령 확인했다고 (2026-04-\n30) 회신을 받았다.', True),
+    ('에게 안내문을 발송하고 수령 확인했다고 (총무팀\n담당자가) 회신을 받았다.', True),
+    ('에게 안내문을 발송하고 수령 확인했다고 (\n2026-04-30 14:00) 회신을 받았다.', True),
+    ('에게 안내문을 발송하고 수령 확인했다고 （2026-04-30 14:00） 회신을 받았다.', True),
+    ('에게 안내문을 발송하고 수령 확인했다고 (회신\n요청) 담당자가 답변을 받았다.', None),
+    ('에게 안내문을 발송하고 수령 확인했다고 （요청했다는 총무팀 담당자가） 별도 회신을 받았다.', None),
+]
+for _stamp in ('2026-04-30', '2026.04.30', '4월 30일 14:00'):
+    for _parts in ((_stamp, '상대에게서', '문자로', '생산계획담당자가'),
+                   ('총무팀 담당자가', _stamp, '상대에게서', '이메일로'),
+                   ('상대에게서', '이메일로', _stamp, '총무팀 담당자가'),
+                   ('문자로', '상대에게서', '생산계획담당자가', _stamp)):
+        _metadata = ' '.join(_parts)
+        for _before, _after in ((' ', ' '), ('\n', ' '), (' ', '\n')):
+            for _reply, _expected in (('회신을'+_after+'받았다.', True),
+                                      ('회신해 주기를 요청했고 별도 문의의 답변을 받았다.', None),
+                                      ('회신을'+_after+'받았다면 대장에 기록한다.', None)):
+                RECEIPT_METADATA_CASES.append(('에게 안내문을 발송하고 수령 확인했다고 '+_metadata+_before+_reply, _expected))
+
+
+RECEIPT_METADATA_CASES.extend(
+    ('에게 안내문을 발송하고 수령 확인했다고 '+stamp+predicate+actor_suffix+' 회신을 받았다.', None)
+    for predicate in ('기다린다는', '예정이라는', '계획이라는', '기다리는',
+                      '대기한다는', '요청한다는', '회신하기로 계획한다는', '요청했다는')
+    for stamp in ('', '2026-04-30 ')
+    for actor_suffix in ('', '담당자가')
+)
+RECEIPT_METADATA_CASES.extend(
+    ('에게 안내문을 발송하고 수령 확인했다고 '+phrase+' 회신을 받았다.', None)
+    for words in ('회신해 주기를 요청한 담당자가', '회신해 주기를 요청한 사실을 담당자가',
+                  '회신을 기다린다는 담당자가', '회신을 받을 예정이라는 담당자가')
+    for phrase in (words, words.replace(' ', ''))
+)
+
+
+@pytest.mark.parametrize('recipient,section', [
+    ('CUS-01 고객', '고객 안내문 전달·수령'),
+    ('SUP-01 공급사', '공급사 안내문 전달·수령 및 확인'),
+])
+@pytest.mark.parametrize('description,expected', RECEIPT_METADATA_CASES)
+def test_receipt_metadata_preserves_bound_claim_and_ocr(recipient, section, description, expected):
+    graph = live_split_delivery_graph()
+    next(n for n in graph.text_nodes.values() if n.section == section).text = recipient + description
+    graph.source_texts = {name: '한울정밀공업(주) / 절차 시행 2026-04-01 / 김해 제1공장·양산 제2공장\n'
+                          for name in graph.source_texts}
+    a = answer(graph, 'E-7')
+    assert a.value is expected and a.status == ('verified' if expected else 'insufficient'), (description, a.rationale)
+
+
 def answer(graph, code, **kw):
     sheet = build_response_sheet('rba42', evidence_graph=graph, **kw)
     return next(a for a in sheet.answers if a.qid == f'RBA-{code}')
