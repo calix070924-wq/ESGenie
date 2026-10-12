@@ -459,6 +459,59 @@ def test_receipt_metadata_preserves_bound_claim_and_ocr(recipient, section, desc
     assert a.value is expected and a.status == ('verified' if expected else 'insufficient'), (description, a.rationale)
 
 
+RECEIPT_NOMINAL_REQUEST_CASES = [
+    ('에게 안내문을 발송하고 수령 확인했다고 적어 달라고 요청받은 담당자가 회신을 받았다.', None),
+    ('에게 안내문을 발송하고 수령 확인했다고 적어 달라고 요청받은 담당자로부터 회신을 받았다.', None),
+    ('에게 안내문을 발송하고 수령 확인했다고 기재하도록 지시받은 담당자가 회신을 받았다.', None),
+    ('에게 안내문을 발송하고 수령 확인했다고 쓰도록 부탁받은 담당자가 회신을 받았다.', None),
+    ('에게 안내문을 발송하고 “수령 확인했다”고 적어 달라고 요청받은 담당자가 회신을 받았다.', None),
+    ('에게 안내문을 발송하고 수령 확인했다고 적어 달라고 요청받은\n담당자가 회신을 받았다.', None),
+    ('에게 안내문을 발송하고 수령 확인했다고 적어달라고요청받은담당자가 회신을 받았다.', None),
+    ('에게 안내문을 발송하고 수령 확인했다고 2026-04-30 적어 달라고 요청받은 담당자가 회신을 받았다.', None),
+]
+RECEIPT_NOMINAL_REQUEST_CASES.extend(
+    ('에게 안내문을 발송하고 수령 확인했다고 '+stamp+phrase+separator+actor+' 회신을 받았다.', None)
+    for words in ('적어 달라고 요청받은', '기재하도록 지시받은',
+                  '쓰도록 부탁받은', '기록하라고 요구받은')
+    for stamp in ('', '2026-04-30 ')
+    for actor in ('담당자가', '담당자로부터')
+    for phrase, separator in ((words, '\n'), (words.replace(' ', ''), ''))
+)
+RECEIPT_NOMINAL_REQUEST_CASES.extend(
+    ('에게 안내문을 발송하고 수령 확인했다고 '+stamp+phrase+' '+actor+' 회신을 받았다.', None)
+    for request in ('요청', '요구', '지시', '부탁')
+    for phrase in (request+'받은', request+'을 받은')
+    for stamp in ('', '2026-04-30 ')
+    for actor in ('담당자가', '담당자로부터')
+)
+RECEIPT_NOMINAL_REQUEST_CASES.extend(
+    ('에게 안내문을 발송하고 수령 확인했다고 '+stamp+role+' 회신을 받았다.', True)
+    for role in ('요청접수 담당자가', '지시관리 담당자가', '계획지원 담당자가',
+                 '생산계획담당자가', '문서관리 담당자가', '총무팀 담당자가')
+    for stamp in ('', '2026-04-30 ')
+)
+RECEIPT_NOMINAL_REQUEST_CASES.extend(
+    ('에게 안내문을 발송하고 수령 확인했다고 '+stamp+qualification+' '+actor+' 회신을 받았다.', True)
+    for qualification in ('자료를 받은', '교육을 받은', '고객교육을 받은')
+    for actor in ('담당자가', '담당자로부터')
+    for stamp in ('', '2026-04-30 ')
+)
+
+
+@pytest.mark.parametrize('recipient,section', [
+    ('CUS-01 고객', '고객 안내문 전달·수령'),
+    ('SUP-01 공급사', '공급사 안내문 전달·수령 및 확인'),
+])
+@pytest.mark.parametrize('description,expected', RECEIPT_NOMINAL_REQUEST_CASES)
+def test_receipt_metadata_does_not_consume_requested_actor_clause(recipient, section, description, expected):
+    graph = live_split_delivery_graph()
+    next(n for n in graph.text_nodes.values() if n.section == section).text = recipient + description
+    graph.source_texts = {name: '한울정밀공업(주) / 절차 시행 2026-04-01 / 김해 제1공장·양산 제2공장\n'
+                          for name in graph.source_texts}
+    a = answer(graph, 'E-7')
+    assert a.value is expected and a.status == ('verified' if expected else 'insufficient'), (description, a.rationale)
+
+
 def answer(graph, code, **kw):
     sheet = build_response_sheet('rba42', evidence_graph=graph, **kw)
     return next(a for a in sheet.answers if a.qid == f'RBA-{code}')
