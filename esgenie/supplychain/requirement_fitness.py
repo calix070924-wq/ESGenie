@@ -29,7 +29,14 @@ class Requirement:
         if self.same_unit:
             return any(matches_patterns(self.patterns, unit) for unit in units)
         return (matches_patterns(self.patterns, text)
-                and all(any(matches_patterns(record, unit) for unit in units)
+                and all(any(matches_patterns(record, unit) for unit in _completed_record_units(text))
+                        for record in self.records))
+
+    def matches_parts(self, parts: list[str]) -> bool:
+        """대상 설명을 연결해도 대상별 실행은 원래 조항 안에서 입증한다."""
+        return (self.matches('\n'.join(parts))
+                and all(any(all(re.search(p, unit, re.I | re.S) for p in record)
+                            for part in parts for unit in _completed_record_units(part))
                         for record in self.records))
 
 
@@ -43,6 +50,16 @@ _RECORD_TIME = (r'(?<!\d)(?:20\d{2}\s*[년./-]\s*)?'
                 r'(?:1[0-2]|0?[1-9])\s*[월./-]\s*(?:3[01]|[12]\d|0?[1-9])\s*일?(?!\d)'
                 r'|(?<!\d)(?:2[0-3]|1?\d)\s*[:시]\s*[0-5]\d\s*분?(?!\d)')
 _DELIVERY_RECORD = r'수령[^\n.!?。;]{0,30}확인|(?:전달|배포)[^\n.!?。;]{0,30}완료'
+_NOTICE_DELIVERY = r'안내|발송|전달|배포'
+
+
+def _completed_record_units(text):
+    # 전달 계획/필요를 실제 수령 기록으로 결합하지 않는다. 절차 요건에는
+    # 적용하지 않으며, records로 선언한 실행 기록에만 적용한다.
+    pending_action = (r'(?:수령[^\n.!?。;]{0,30}확인|(?:전달|배포)\s*완료)'
+                      r'\s*(?:은|는|을|이|가|할)?\s*(?:향후\s*)?'
+                      r'(?:해야|예정|필요|계획)')
+    return [unit for unit in _statement_units(text) if not re.search(pending_action, unit)]
 
 
 def _statement_units(text):
@@ -164,8 +181,8 @@ REQUIREMENTS = {
         R('공급사·고객 전달 운영', r'공급사|공급자|협력사', r'고객',
           _DELIVERY_RECORD,
           r'\d+\s*곳|(?:공급사|공급자|협력사)[^\n.!?。;]{0,60}고객[^\n.!?。;]{0,60}수령[^\n.!?。;]{0,30}확인(?:했다|하였다|했습니다)',
-          records=((r'공급사|공급자|협력사|\bSUP-\d+', _DELIVERY_RECORD),
-                   (r'고객|\bCUS-\d+', _DELIVERY_RECORD))),
+          records=((r'공급사|공급자|협력사|\bSUP-\d+', _DELIVERY_RECORD, _NOTICE_DELIVERY),
+                   (r'고객|\bCUS-\d+', _DELIVERY_RECORD, _NOTICE_DELIVERY))),
         R('문의·정정 회신', r'문의|정정', r'회신|답변|전달'),
     ),
     'E-8': (
@@ -248,6 +265,7 @@ def assess_requirements(answer, q, graph):
     related, proofs, contexts = {}, defaultdict(list), defaultdict(list)
     node_scopes = {}
     section_parts = defaultdict(list)
+    page_parts = defaultdict(list)
     source_texts = getattr(graph, 'source_texts', {})
     for proof_id, node in _candidate_nodes(graph):
         if is_survey(node):
@@ -281,6 +299,13 @@ def assess_requirements(answer, q, graph):
             section_parts[(node.source_file, node.section,
                            _scope_key(boundary, node.source_file))].append(
                                (proof_id, node, body, boundary))
+            # OCR 절 제목은 추출마다 달라질 수 있다. 실제 페이지가 확인된
+            # 같은 문서·페이지·범위 안에서는 대상 표와 수령 행을 연결한다.
+            # 일반 요건은 연결하지 않고 records를 선언한 요건만 아래에서 읽는다.
+            if node.page is not None and node.page >= 0:
+                page_parts[(node.source_file, node.page,
+                            _scope_key(boundary, node.source_file))].append(
+                                (proof_id, node, body, boundary))
         # 태그만 일치한 부분 자료는 원문 참조로 남긴다.
         link = evidence_link(node)
         if hits:
@@ -290,13 +315,12 @@ def assess_requirements(answer, q, graph):
                 proofs[req.label].append(proof_id)
         elif code in link.kesg_codes:
             related[proof_id] = link
-    for parts in section_parts.values():
-        body = '\n'.join(part[2] for part in parts)
+    for parts in [*section_parts.values(), *page_parts.values()]:
         for req in requirements:
             # 대상 설명과 실제 표 행을 함께 읽도록 선언한 요건만 결합한다.
             # 각 대상의 실행 동사는 해당 행에 있어야 하며, 일반 요건의
             # 주제와 동사를 절 전체에서 모아 새로운 충족 근거를 만들지 않는다.
-            if not req.records or not req.matches(body):
+            if not req.records or not req.matches_parts([part[2] for part in parts]):
                 continue
             for proof_id, node, supported, boundary in parts:
                 if not any(re.search(p, supported, re.I | re.S) for p in req.patterns):

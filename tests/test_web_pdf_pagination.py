@@ -1,6 +1,7 @@
 """The saved web PDF retains text and identifies questions across page breaks."""
 from copy import deepcopy
 import re
+import unicodedata
 
 import fitz
 import pytest
@@ -48,6 +49,22 @@ def test_title_body_and_supplement_use_the_same_safe_text(tmp_path):
             assert compact(expected) in text
         assert "㈜" not in text and "\ufffd" not in text
     assert (data, rows) == original
+
+
+def test_macos_decomposed_source_and_reference_names_are_readable_in_downloaded_pdf(tmp_path):
+    rows = [row()]
+    names = ['16_ESG의사소통절차및전달확인기록_2026-04.pdf',
+             '13_안전보건추가교육실시기록_2026-04-27.pdf']
+    for source, name in zip([rows[0]['sources'][0], rows[0]['reference_sources'][0]], names):
+        source['name'] = unicodedata.normalize('NFD', name)
+    original = deepcopy(rows)
+    with fitz.open(canonical_pdf(project(), rows, tmp_path)) as pdf:
+        text = compact('\n'.join(page.get_text() for page in pdf))
+        for name in names:
+            assert compact(name) in text
+        assert not any('\u1100' <= c <= '\u11ff' for c in text)
+    # Presentation normalizes only what is drawn, never archived file identities.
+    assert rows == original
 
 
 @pytest.mark.parametrize("field", ["quote", "memo", "value_text", "scope_label", "question"])

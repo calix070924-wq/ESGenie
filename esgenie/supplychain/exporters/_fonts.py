@@ -15,6 +15,7 @@ reportlab은 CFF(OTF) 임베드가 불가하므로 **TrueType(glyf)** 한글 폰
 from __future__ import annotations
 
 import os
+import unicodedata
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Optional
@@ -172,6 +173,7 @@ def unsupported_chars(text: str, font_name: str) -> set[str]:
 def pdf_safe_text(text: str) -> str:
     """PDF에 실을 문자열을 번들 폰트가 그릴 수 있는 형태로 바꾼다.
 
+    0) macOS 파일명의 분해된 한글 자모는 결합한다. 원본 파일명은 변경하지 않는다.
     1) 알려진 기호는 읽을 수 있는 ASCII 표기로 치환한다.
     2) 상태 배지 이모지는 지운다 — 상태는 글자로도 적혀 있다.
     3) 그래도 남은 미지원 문자는 지운다 — 새 기호가 들어와도 빈 네모로 나가지 않게.
@@ -179,7 +181,7 @@ def pdf_safe_text(text: str) -> str:
        미지원 문자가 남지 않는지 확인한다(tests/test_pdf_glyph_coverage.py).
     """
     import re
-    text = "".join(_SUBSTITUTES.get(c, c) for c in str(text))
+    text = "".join(_SUBSTITUTES.get(c, c) for c in unicodedata.normalize("NFC", str(text)))
     text = re.sub(r"[\U0001F000-\U0001FAFF\u2600-\u27BF\uFE0F\u258C]", "", text)
     leftover = unsupported_chars(text, REGULAR_NAME)
     if leftover:

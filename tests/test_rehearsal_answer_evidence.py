@@ -4,6 +4,8 @@ No OCR/LLM calls or rehearsal labels. Saved real extraction checks live in the r
 script; these fixtures deliberately use different names, periods and expressions.
 """
 from dataclasses import replace
+import json
+from pathlib import Path
 from types import SimpleNamespace
 
 import pytest
@@ -49,6 +51,91 @@ def graph_for(pages, *, name='운영기록.pdf', header=HEADER, tag=None, origin
                         raw_text=header + '\n' + '\n'.join(s + '\n' + t for s, t in pages))
     merge_ocr_extraction(graph, ext, report_year=2099)
     return graph
+
+
+def live_split_delivery_graph():
+    fixture = json.loads((Path(__file__).parent / 'fixtures' /
+                          'rehearsal_e7_live_20261012.json').read_text())
+    graph = EvidenceGraph('LIVE_SPLIT', '가상기업')
+    ext = OcrExtraction(fixture['source_file'], DocChannel.UNSTRUCTURED, 'policy_manual',
+                        clauses=[ExtractedClause(**c) for c in fixture['clauses']],
+                        raw_text=fixture['raw_text'])
+    merge_ocr_extraction(graph, ext, report_year=2099)
+    return graph
+
+
+def test_live_e7_delivery_records_split_into_different_sections_remain_verified():
+    graph = live_split_delivery_graph()
+    a = answer(graph, 'E-7')
+    assert a.value is True and a.status == 'verified', a.rationale
+    assert {e.page for e in a.evidence_links} == {0, 1, 2}
+    for text in ('6곳', 'SUP-01', 'CUS-01'):
+        assert any(text in e.quote for e in a.evidence_links)
+
+
+@pytest.mark.parametrize('case', ['missing_supplier', 'missing_customer', 'negative_customer',
+                                 'future_customer', 'other_period', 'other_site', 'other_file',
+                                 'other_page', 'unknown_page', 'title_only'])
+def test_live_split_delivery_does_not_borrow_missing_or_foreign_receipts(case):
+    graph = live_split_delivery_graph()
+    supplier = next(n for n in graph.text_nodes.values() if n.section == '공급사 안내문 전달·수령 및 확인')
+    customer = next(n for n in graph.text_nodes.values() if n.section == '고객 안내문 전달·수령')
+    if case.startswith('missing_'):
+        del graph.text_nodes[(supplier if case == 'missing_supplier' else customer).id]
+    elif case == 'negative_customer':
+        customer.text = 'CUS-01 고객에게 안내문을 발송했으나 수령 확인을 하지 않았다.'
+    elif case == 'future_customer':
+        customer.text = 'CUS-01 고객의 안내문 수령 확인은 향후 해야 한다.'
+    elif case == 'other_period':
+        customer.text = '적용 기간: 2025년 7월 | 사업장: 김해 제1공장, 양산 제2공장 | ' + customer.text
+    elif case == 'other_site':
+        customer.text = '적용 기간: 2026-04-01 | 사업장: 울산 제9공장 | ' + customer.text
+    elif case == 'other_file':
+        customer.source_file = '다른_전달기록.pdf'
+        graph.source_texts[customer.source_file] = graph.source_texts[supplier.source_file]
+    elif case == 'other_page':
+        customer.page = 4
+    elif case == 'unknown_page':
+        customer.page = None
+    else:
+        customer.section = '고객 CUS-01 수령 확인 완료'
+        customer.text = '고객 연락처와 전달 예정일을 보관한다.'
+    a = answer(graph, 'E-7')
+    assert a.value is None and a.status == 'insufficient', (case, a.rationale)
+    assert '공급사·고객 전달 운영' in a.evidence_needed
+
+
+@pytest.mark.parametrize('receipt', ['수령 확인', '수령 확인을 향후 해야 한다', '안내 전달 완료'])
+def test_split_page_does_not_combine_recipient_names_with_an_unowned_receipt(receipt):
+    graph = live_split_delivery_graph()
+    for node in graph.text_nodes.values():
+        if node.section == '공급사 안내문 전달·수령 및 확인':
+            node.text = 'SUP-01 거래 공급사의 안내문 발송 주소를 기록했다.'
+        elif node.section == '고객 안내문 전달·수령':
+            node.text = 'CUS-01 고객의 안내문 발송 주소를 기록했다.'
+    from esgenie.ssot.evidence_graph import TextNode
+    graph.add_text_node(TextNode('unowned', '별도 확인', receipt, None,
+                                next(iter(graph.source_texts)), page=1))
+    assert answer(graph, 'E-7').value is None
+
+
+def test_split_page_receipts_work_with_independent_section_names_and_filename():
+    graph = live_split_delivery_graph()
+    original = next(iter(graph.source_texts))
+    graph.source_texts = {'다른_가상기업_전달대장.pdf': graph.source_texts[original]}
+    for index, node in enumerate(graph.text_nodes.values()):
+        node.source_file = '다른_가상기업_전달대장.pdf'
+        node.section = f'OCR 단락 {index}'
+    a = answer(graph, 'E-7')
+    assert a.value is True and a.status == 'verified'
+    assert {e.file_name for e in a.evidence_links} == {'다른_가상기업_전달대장.pdf'}
+
+
+def test_delivered_notice_about_future_plans_is_still_an_actual_receipt():
+    graph = live_split_delivery_graph()
+    customer = next(n for n in graph.text_nodes.values() if n.section == '고객 안내문 전달·수령')
+    customer.text = 'CUS-01 고객에게 향후 사업 계획 안내문을 04-30 11:20 발송한 후 14:00 수령 확인했다.'
+    assert answer(graph, 'E-7').value is True
 
 
 def answer(graph, code, **kw):

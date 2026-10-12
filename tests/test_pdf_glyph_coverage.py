@@ -17,6 +17,7 @@ Answer를 만들고, 그 Answer가 PDF에 실을 문자열을 검사한다. OCR/
 from __future__ import annotations
 
 import pytest
+import unicodedata
 
 from esgenie.ssot.audit_trace import DataPoint, EvidenceLink
 from esgenie.supplychain.claims import SupplierClaim
@@ -119,3 +120,16 @@ class TestTheGuardDoesNotFireWithoutAFont:
 
     def test_ascii_is_never_flagged(self, font):
         assert unsupported_chars("plain ASCII 123 %p", REGULAR_NAME) == set()
+
+
+@pytest.mark.parametrize('name', [
+    '09_안전보건교육실시기록_2026-04-22.pdf',
+    '16_ESG의사소통절차및전달확인기록_2026-04.pdf',
+    '한울정밀공업㈜_근거_<원문>&보관.pdf',
+])
+def test_decomposed_macos_filename_keeps_readable_composed_hangul(name, font):
+    decomposed = unicodedata.normalize('NFD', name)
+    safe = pdf_safe_text(decomposed)
+    assert safe == pdf_safe_text(name)
+    assert not any('\u1100' <= c <= '\u11ff' for c in safe)
+    assert not unsupported_chars(safe, REGULAR_NAME)
