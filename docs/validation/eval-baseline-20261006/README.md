@@ -1,6 +1,6 @@
 # 일반 문서 AI 대조군 — 실행기 (작업지시서 B §4.2)
 
-**상태: 실행기 구현 완료(공통 답안 형식 A v1.1-draft) · 실제 호출 0건 · 비교 결과 없음.**
+**상태: 실행기 구현 완료(공통 답안 형식 A v1.1 확정, c1bfa67, 2026-10-10) · 실제 호출 0건 · 비교 결과 없음.**
 이 문서는 실행기의 조건과 기록 규칙을 적는다. 결과·비교표는 실제 실행 뒤에 §7 에 추가한다.
 
 - 실행기: `scripts/baseline_generic_llm.py`
@@ -21,7 +21,9 @@
 | 입력 텍스트 원천 | **ESGenie 가 같은 실행에서 쓴 OCR 결과** — `pipeline.json` 의 `ocr_extractions[].raw_text` |
 | 회사 답변(05) | `esgenie/supplychain/claims.py::_extract_text` 로 추출한 PDF 원문 (증빙 OCR 경로 아님) |
 | temperature | 0 |
-| 단계별 `data_source` | initial `촬영증빙_17건` / followup `촬영증빙_17건+보완_1건` (**A 확인 대기**) |
+| `dataset_tag` | `virtual` (확정, A c1bfa67, 2026-10-10) |
+| `material_kind` | `mixed` (확정, A c1bfa67, 2026-10-10 — B 제시값을 A 가 그대로 받음) |
+| 단계별 `data_source` | initial `촬영증빙_17건` / followup `촬영증빙_17건+보완_1건` (확정, A c1bfa67) |
 
 **표현 규칙:** 결과를 쓸 때 "팀이 만든 가상 세트, 특정 프롬프트 기준"을 함께 적는다.
 "일반 AI 대비 N배" 같은 일반화는 쓰지 않는다.
@@ -144,12 +146,26 @@ ESGenie 도 05 를 증빙 OCR 경로가 아니라 PDF 텍스트 직접 추출로
 
 | 모델 | 입력 토큰 한도 | 출처 URL | 확인 날짜 |
 |---|---|---|---|
-| (동일 모델 — `SETTINGS.openai_model`) | 미확인 | 미확인 | 미확인 |
-| (상위 모델) | 미확인 | 미확인 | 미확인 |
-| (타 공급자 — `SETTINGS.anthropic_model`) | 미확인 | 미확인 | 미확인 |
+| `gpt-4.1-mini` (동일 모델 — `SETTINGS.openai_model`, Azure 배포) | **267,232** | [Microsoft Learn — Foundry Models sold by Azure, GPT-4.1 series 표](https://learn.microsoft.com/en-us/azure/ai-services/openai/concepts/models) | 2026-10-12 |
+| `gpt-4.1` (상위 모델, 같은 계열) | **267,232** | 위와 동일 | 2026-10-12 |
+| (타 공급자 — `SETTINGS.anthropic_model`) | 미확인 | 미확인 | 미확인(이번 단계 범위 밖 — `ANTHROPIC_API_KEY` 없음) |
 
-**현재 `MODEL_CONTEXT_LIMITS` 는 비어 있다.** 확인한 값이 없으므로 모든 모델이
-`--max-input-tokens` 를 요구한다(fail closed). dry-run 측정값은 아래 §입력 길이 표에 있다.
+**값 계산:** 공식 문서의 "Context window" 는 입력+출력 합계로 세 단계다 — `1,047,576`
+(절대 최대) / **`300,000`**(표준·Global Standard 배포) / `128,000`(provisioned·batch).
+ESGenie 의 LIVE 실행은 표준(pay-per-token) 배포다(`environment.json` 의
+`llm_provider=azure_openai`, 실제 응답 모델 `gpt-4.1-mini-2025-04-14` — 문서의
+`gpt-4.1-mini (2025-04-14)` 행과 일치). "Max output tokens" 는 두 모델 모두 `32,768`.
+**입력 한도는 가장 보수적으로 "총 한도 − 최대 출력" = 300,000 − 32,768 = 267,232** 로 둔다
+(실제 출력은 48행 JSON 한 개라 훨씬 작겠지만, 확인되지 않은 수치를 가정하지 않는다).
+
+단가(USD/1M 토큰)는 **찾지 못했다.** Azure 공식 가격 페이지
+(`azure.microsoft.com/…/openai-service/`)가 클라이언트 쪽에서 가격표를 동적으로 그려
+정적 HTML·공개 Retail Prices API(`prices.azure.com`, `serviceName=Cognitive Services` 질의
+결과 0건)에는 값이 없다. 시도한 방법: ① WebFetch 로 그 페이지를 5회 시도 — 매번 사용한
+요약 모델 오류로 실패 ② Azure Retail Prices API 를 두 가지 필터로 curl 직접 조회 — 0건
+(Azure OpenAI 토큰 단가는 이 API 에 공개되지 않는 것으로 보인다) ③ 페이지 원본 HTML 을
+curl 로 받아 확인 — `gpt-4.1` 문자열이 0건(가격표가 자바스크립트로 실행 후 채워진다).
+**이 단계의 범위(조사, 호출 없음)에서는 브라우저 자동화 도구를 쓰지 않았다.**
 
 ### 비용 계산 규칙
 
@@ -163,11 +179,28 @@ ESGenie 도 05 를 증빙 OCR 경로가 아니라 PDF 텍스트 직접 추출로
 
 | 모델 | 입력단가(USD/1M) | 출력단가(USD/1M) | 출처 URL | 확인 날짜 |
 |---|---|---|---|---|
-| (동일 모델 — `SETTINGS.openai_model`) | 미확인 | 미확인 | 미확인 | 미확인 |
-| (상위 모델) | 미확인 | 미확인 | 미확인 | 미확인 |
-| (타 공급자 — `SETTINGS.anthropic_model`) | 미확인 | 미확인 | 미확인 | 미확인 |
+| `gpt-4.1-mini` (동일 모델) | **미확인** | **미확인** | 시도함, 위 사유로 실패 | 2026-10-12 (시도일) |
+| `gpt-4.1` (상위 모델) | **미확인** | **미확인** | 시도함, 위 사유로 실패 | 2026-10-12 (시도일) |
+| (타 공급자) | 미확인 | 미확인 | 미확인 | 미확인 |
 
 **현재 비용: 0 USD.** 이 단계에서 유료 호출을 하지 않았다(호출 0건, 토큰 0).
+
+### P3-3 예상 호출량 (16호출 계획, 호출 전 추정치 — 비용 계산 불가)
+
+작업지시서 §4.2 표 그대로: 두 단계(initial·followup) × (동일 모델 5회 + 상위 모델 3회) = **16호출**.
+
+| 항목 | 값 |
+|---|---:|
+| 단계당 호출 수(5+3) | 8 |
+| 총 호출 수(2단계) | **16** |
+| initial 1회 입력 추정 토큰 | 18,864 |
+| followup 1회 입력 추정 토큰 | 19,320 |
+| **총 입력 토큰(추정, 16호출 합)** | **305,472** (= 18,864×8 + 19,320×8) |
+
+**예상 비용은 계산하지 못한다 — 단가가 미확인이다.** 위 수치는 입력 토큰 **총량**(추정값,
+`chars/2.0` 방법, 실제 호출 후에는 API 값으로 대체됨)만 담고 있고, 출력 토큰 총량은 호출
+전에는 알 수 없어(모델이 48행 JSON 을 얼마나 길게 쓰는지는 실행해야 안다) 포함하지 않았다.
+단가가 확인되면 위 비용 계산 규칙 + 이 표의 입력 토큰 + 실제 호출 후의 출력 토큰으로 계산한다.
 
 ### `LIVE_n5_d8a0de8` 입력 길이 측정값 (dry-run, 호출 없음)
 
@@ -178,14 +211,16 @@ ESGenie 도 05 를 증빙 OCR 경로가 아니라 PDF 텍스트 직접 추출로
 
 분할 규칙은 **쓰지 않는다** — 분할이 필요한 길이가 아니고, 필요해지면 중단 후 사람이 결정한다.
 
-## 7. 공통 답안 형식 변환 — A **v1.1-draft**
+## 7. 공통 답안 형식 변환 — A **v1.1**(확정, c1bfa67, 2026-10-10)
 
 쓰는 모듈: A 소유 `esgenie/eval/answer_format.py`. 저장소에 복사하지 않고 아래 순서로 찾는다.
 
 1. `--answer-format <경로>` 2. 환경변수 `ESGENIE_EVAL_ANSWER_FORMAT`
 3. 저장소 `esgenie.eval.answer_format`(A 브랜치 병합 후) 4. **고정 git ref**
-   `f6d2c576b691b4cda2d59df628772abfc751e578` (`origin/codex/eval-scoring-20261006`,
-   2026-10-09 확인)의 `esgenie/eval/answer_format.py` — `git cat-file` 로 꺼내 임시 로딩
+   `c1bfa6730bb3f77bfeefd74405f293a1db8acbb0` (`origin/codex/eval-scoring-20261006`,
+   2026-10-12 확인 — `FORMAT_VERSION = "1.1"`, B 회신 C-1~C-6 반영. 이전 핀
+   `f6d2c576…`(`1.1-draft`) 과의 diff는 `FORMAT_VERSION` 문자열과 주석뿐이고 정의는
+   바뀌지 않았다)의 `esgenie/eval/answer_format.py` — `git cat-file` 로 꺼내 임시 로딩
 
 못 찾거나 `decision_for_detail`·`DETAIL_TO_DECISION`·`new_document`·`new_answer`·
 `validate_document` 중 하나라도 없으면 **검증을 건너뛰지 않고 실패한다.**
@@ -210,13 +245,16 @@ ESGenie 도 05 를 증빙 OCR 경로가 아니라 PDF 텍스트 직접 추출로
   `parse.missing_qid` 에 목록을 남긴다. 검증기가 `missing_qid`·`row_count` 로 드러내면
   그 실패를 **고치지 않고** `validate_issues.json` 에 남긴다.
 - 중복 qid 는 첫 행만 쓰고 중복 사실을 `decision_basis` 와 `parse.duplicate_qid` 에 남긴다.
-- `meta.dataset_tag` = **필수**, 현재 `virtual` (상수 `DATASET_TAG`, **A 확인 대기**).
-- `meta.material_kind` = 현재 `photo_evidence` (상수 `MATERIAL_KIND`, **A 확인 대기**).
-  `dataset_tag` 와 다른 축이므로 섞어 적지 않는다.
+- `meta.dataset_tag` = **필수**, **확정** `virtual` (상수 `DATASET_TAG`, A c1bfa67 2026-10-10).
+- `meta.material_kind` = **확정** `mixed` (상수 `MATERIAL_KIND`, A c1bfa67 2026-10-10 —
+  B 가 제시한 값을 A 가 그대로 받았다. 형식 문서 §9.1: "A 가 원본 구성을 따로 확인한 값은
+  아니다"). 이전 `photo_evidence`에서 변경. `dataset_tag` 와 다른 축이므로 섞어 적지 않는다.
 - `meta.data_source` = 단계별 설명 문자열. v1.1 에서 **선택** 필드이고 **집계에 쓰지 않는다**.
+  B 제시값을 A 가 그대로 받아 확정됐다.
 - `boundary`: 모델 `period` → `boundary.period`, `scope` → `boundary.label`.
   `site`·`target`·`denominator`·`completeness` 는 **`null`**(쪼개서 추정하지 않는다).
-  v1.1 은 `boundary` 를 §4 원문 요구사항이 아닌 **A 확장**으로 정정했다(유지 여부는 B 합의 사항, A 의 C-4).
+  v1.1 은 `boundary` 를 §4 원문 요구사항이 아닌 **A 확장**으로 정정했다. B 회신 C-4 로
+  **유지**가 확정됐다(모르는 칸은 `null` 보존이라는 조건 그대로).
 - `meta.system` = `baseline_<실제 응답 model>`, `meta.model` = 실제 응답 model,
   `meta.source_ref` = 그 반복의 `response_raw.json` 저장소 기준 상대 경로 + sha256,
   `source.raw` = 그 문항의 모델 출력 원문 조각.
@@ -225,9 +263,11 @@ ESGenie 도 05 를 증빙 OCR 경로가 아니라 PDF 텍스트 직접 추출로
 - 자동 재시도·프롬프트 수정·자동 분할을 하지 않는다.
 - 대조군에는 제품 고유 지표가 없으므로 `meta.product_metrics` 를 **넣지 않는다**(0 으로 적지 않는다).
 
-### 골격 검증 결과 (2026-10-09, 호출 없음)
+### 골격 검증 결과 (2026-10-12, c1bfa67 확정판, 호출 없음)
 
-`LIVE_n5_d8a0de8` 두 단계로 문서를 만들어 A v1.1 `validate_document` 에 넣었다.
+`LIVE_n5_d8a0de8` 두 단계로 문서를 만들어 A v1.1 확정판(c1bfa67) `validate_document` 에 넣었다.
+(2026-10-09 에 `f6d2c57` 의 `1.1-draft` 판으로도 같은 결과를 확인했다 — 정의가 바뀌지
+않았으므로 당연한 결과다.)
 
 | 경우 | 결과 |
 |---|---|
@@ -240,14 +280,20 @@ ESGenie 도 05 를 증빙 OCR 경로가 아니라 PDF 텍스트 직접 추출로
 
 ## 8. 한계
 
-1. **공통 답안 형식이 `1.1-draft` 이고 A 가 B 확인을 기다린다.** B 는 v1.1 을 따르기로 했고
-   이 실행기는 v1.1 로 맞췄다. A 의 확인 사항 C-1~C-6 중 하나라도 미확정이면 `-draft` 가 유지된다.
-   갈아타기 지점은 `DATASET_TAG`·`MATERIAL_KIND`·`DATA_SOURCE` 상수와 `_row_detail` 함수다.
-2. **`dataset_tag`·`material_kind`·`data_source` 값이 A 확인 대기**다. 두 시스템이 같은 값을
-   써야 비교가 선다. 특히 A 의 어댑터 예시는 ESGenie 쪽에 `--material-kind mixed` 를 쓴다 —
-   대조군이 `photo_evidence` 면 두 축이 달라진다. 확인이 필요하다.
-3. **컨텍스트 한도 표가 비어 있다.** 확인한 값이 없어 모든 모델이 `--max-input-tokens` 를 요구한다.
-4. 입력 토큰은 호출 전에는 **추정값**이다(tiktoken 없음). 호출 후 API 값으로 대체 기록한다.
-5. 단가 표가 전부 `미확인` 이다. **현재 비용 0 USD**(호출 0건).
-6. 자료는 **가상 시연 세트**다. 결과를 실제 기업 자료의 성능으로 읽을 수 없다.
-7. 이 문서에는 **실제 응답 결과가 없다.** 호출·채점·비교표는 라벨 확정과 형식 확인 뒤의 일이다.
+1. **공통 답안 형식이 v1.1 로 확정됐다**(A c1bfa67, 2026-10-10 — B 회신 C-1~C-6 반영, `-draft`
+   를 뗐다). `dataset_tag=virtual`·`material_kind=mixed`·`data_source` 값도 함께 확정됐다.
+   남은 것은 §6 의 `boundary` 유지(C-4, 확정: 유지) 외에 추가 변경이 없다는 점을 A 커밋
+   diff 로 직접 확인했다(`FORMAT_VERSION` 문자열 외 변경 없음).
+2. **컨텍스트 한도는 공식 문서로 확인했지만(§6), 단가는 확인하지 못했다.** Azure 가격 페이지가
+   클라이언트 쪽에서 동적으로 그려져 이번 조사 도구(WebFetch·curl·Retail Prices API)로는
+   값을 얻지 못했다(§6에 시도 내역 기록). `--max-input-tokens` 가 필요한 모델은
+   `gpt-4.1-mini`·`gpt-4.1` 둘 다 더 이상 없다(표에 있음). 그 밖의 모델은 여전히
+   `--max-input-tokens` 를 요구한다.
+3. 입력 토큰은 호출 전에는 **추정값**이다(tiktoken 없음). 호출 후 API 값으로 대체 기록한다.
+4. 단가 표가 전부 `미확인` 이다. **현재 비용 0 USD**(호출 0건). P3-3 16호출 계획의 총 입력
+   토큰(추정) `305,472` 는 계산했지만 달러 비용은 단가가 없어 계산할 수 없다(§6).
+5. 자료는 **가상 시연 세트**다. 결과를 실제 기업 자료의 성능으로 읽을 수 없다.
+6. 이 문서에는 **실제 응답 결과가 없다.** 호출·채점·비교표는 라벨 확정 뒤의 일이다(형식은
+   이제 확정됐다).
+7. `ANTHROPIC_API_KEY` 가 없어 타 공급자(`SETTINGS.anthropic_model`) 의 컨텍스트 한도·단가는
+   조사하지 않았다(이번 단계 지시 범위 — 동일 모델·상위 모델 2개만).

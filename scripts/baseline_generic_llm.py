@@ -16,7 +16,7 @@ ESGenie 가 같은 실행에서 쓴 OCR 결과를 그대로 일반 LLM 에 넣�
 * 회사 답변(05)은 증빙 OCR 경로가 아니라 `esgenie.supplychain.claims._extract_text` 를 **불러서**
   추출한다(다시 구현하지 않는다). `\f` 를 쪽 경계로 본다.
 * 자동 재시도·자동 분할·프롬프트 수정을 하지 않는다. 실패는 그대로 기록한다.
-* 공통 답안 형식은 **A 의 v1.1-draft** 를 따른다. 행은 `decision_detail`(6값)만 정하고
+* 공통 답안 형식은 **A 의 v1.1 확정판**(c1bfa67, 2026-10-10)을 따른다. 행은 `decision_detail`(6값)만 정하고
   외부 `decision`(3값/null)은 A 모듈의 `DETAIL_TO_DECISION` 표가 계산한다 — 표를 여기 다시
   쓰지 않는다. 누락 qid 는 **행을 만들지 않고** 검증이 누락으로 드러낸다.
   내보내기 전에 A 의 `validate_document` 로 검증하고, 실패하면 고치지 않고 기록한다.
@@ -63,24 +63,25 @@ DEFAULT_CASES = "data/eval/cases/baseline_cases_v1.csv"
 DEFAULT_PROMPT = "data/eval/prompts/baseline_prompt_v1.md"
 
 #: 단계별 `meta.data_source` — v1.1 에서 **선택 필드**(사람이 읽는 설명, 집계에 쓰지 않는다).
-#: A 확인 대기 — 바뀌면 이 상수만 고친다.
+#: 확정(A c1bfa67, 2026-10-10) — B 제시값을 A가 그대로 받았다. 바뀌면 이 상수만 고친다.
 DATA_SOURCE = {
     "initial": "촬영증빙_17건",
     "followup": "촬영증빙_17건+보완_1건",
 }
 
 #: `meta.dataset_tag` — v1.1 **필수**. 허용값 `virtual`/`public_report`/`real_pilot`.
-#: 이 비교는 팀이 만든 가상 세트다. **A 확인 대기.** 바뀌면 이 상수만 고친다.
+#: 확정(A c1bfa67, 2026-10-10) — 이 비교는 팀이 만든 가상 세트라 `virtual`.
 DATASET_TAG = "virtual"
 
 #: `meta.material_kind` — v1.1 선택. `dataset_tag` 와 다른 축(입력 자료 구성)이다.
-#: 입력이 촬영 증빙이라 `photo_evidence`. **A 확인 대기**
-#: (A 어댑터 예시는 ESGenie 쪽에 `mixed` 를 쓴다 — 회신 목록에 올렸다).
-MATERIAL_KIND = "photo_evidence"
+#: 확정(A c1bfa67, 2026-10-10) — `mixed`(B 제시값을 A가 그대로 받음. 형식 문서 §9.1:
+#: "B 제시값을 받았다. A가 원본 구성을 따로 확인한 값은 아니다"). 이전 `photo_evidence`에서 변경.
+MATERIAL_KIND = "mixed"
 
 #: A 공통 답안 형식 모듈을 꺼낼 기준 ref. **고정 SHA**로 둔다(브랜치 이름은 움직인다).
-#: `origin/codex/eval-scoring-20261006` 의 2026-10-09 확인 시점 커밋.
-ANSWER_FORMAT_GIT_REF = "f6d2c576b691b4cda2d59df628772abfc751e578"
+#: `origin/codex/eval-scoring-20261006` 의 2026-10-10 확정 커밋(`FORMAT_VERSION = "1.1"`,
+#: B 회신 C-1~C-6 반영. f6d2c57 → c1bfa67 diff는 FORMAT_VERSION 문자열과 주석뿐 — 정의 불변).
+ANSWER_FORMAT_GIT_REF = "c1bfa6730bb3f77bfeefd74405f293a1db8acbb0"
 ANSWER_FORMAT_GIT_PATH = "esgenie/eval/answer_format.py"
 
 #: 회사 답변 구획의 제목·표지. 증빙 블록과 표지를 다르게 둔다.
@@ -107,7 +108,23 @@ TOKEN_ESTIMATE_METHOD = (
 #: 표가 비어 있으면 모든 모델이 `--max-input-tokens` 를 요구한다(fail closed).
 #: 출처 URL·확인 날짜는 `docs/validation/eval-baseline-20261006/README.md` §6 표에 함께 적는다.
 CONTEXT_LIMIT_DOC = "docs/validation/eval-baseline-20261006/README.md §6"
+#: 출처: Microsoft Learn "Foundry Models sold by Azure" — GPT-4.1 series 표, 2026-10-12 확인.
+#: 공식 "Context window" 값(입력+출력 합계, 표준(Standard/Global Standard) 배포)은
+#: 1,047,576 / 300,000(표준 배포) / 128,000(provisioned·batch) 세 단계다. ESGenie LIVE 실행은
+#: 표준 배포(pay-per-token, environment.json 의 llm_provider=azure_openai, 실제 응답 모델
+#: gpt-4.1-mini-2025-04-14)라 300,000 을 쓴다. "Max output tokens" 는 두 모델 모두 32,768 —
+#: 입력 한도는 가장 보수적으로 "총 한도 − 최대 출력"으로 계산한다
+#: (300,000 − 32,768 = 267,232). 단가는 동적 렌더링 페이지(azure.microsoft.com/…/openai-service/)
+#: 라 조사 도구로 확인하지 못했다 — README §6·리뷰 기록에 미확인으로 남긴다.
+_AZURE_GPT41_SOURCE = (
+    "https://learn.microsoft.com/en-us/azure/ai-services/openai/concepts/models"
+    " (GPT-4.1 series 표)"
+)
 MODEL_CONTEXT_LIMITS: dict[str, dict[str, Any]] = {
+    "gpt-4.1-mini": {"max_input_tokens": 267232, "source": _AZURE_GPT41_SOURCE,
+                     "checked_on": "2026-10-12"},
+    "gpt-4.1": {"max_input_tokens": 267232, "source": _AZURE_GPT41_SOURCE,
+                "checked_on": "2026-10-12"},
     # "<model-id>": {"max_input_tokens": <int>, "source": "<URL>", "checked_on": "YYYY-MM-DD"},
 }
 

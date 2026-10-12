@@ -192,11 +192,11 @@ def test_convert_not_applicable_and_meta(af):
     assert doc["meta"]["model"] == "mock-model-1"
     assert doc["meta"]["stage"] == "initial"
     assert doc["meta"]["dataset_tag"] == "virtual" == bg.DATASET_TAG
-    assert doc["meta"]["material_kind"] == "photo_evidence" == bg.MATERIAL_KIND
+    assert doc["meta"]["material_kind"] == "mixed" == bg.MATERIAL_KIND
     assert doc["meta"]["data_source"] == "촬영증빙_17건"
     assert doc["meta"]["notice"] == bg.COMPANY_NOTICE
     assert doc["meta"]["source_ref"]["sha256"] == "0" * 64
-    assert doc["format_version"] == af.FORMAT_VERSION == "1.1-draft"
+    assert doc["format_version"] == af.FORMAT_VERSION == "1.1"
 
 
 def test_hedging_text_does_not_change_decision(af):
@@ -661,8 +661,9 @@ def test_answer_format_loader_fails_when_required_names_absent(tmp_path):
 
 
 def test_answer_format_default_is_a_v11_from_pinned_ref(af):
+    """확정판(c1bfa67, 2026-10-10)을 쓴다. FORMAT_VERSION 에 -draft 접미사가 없다."""
     rec = bg.answer_format_record(af)
-    assert rec["format_version"] == "1.1-draft"
+    assert rec["format_version"] == "1.1"
     assert rec["origin"].startswith("git:") or rec["origin"].startswith("repo:")
     assert len(rec["sha256"]) == 64
     if rec["origin"].startswith("git:"):
@@ -670,11 +671,30 @@ def test_answer_format_default_is_a_v11_from_pinned_ref(af):
         assert len(rec["git_blob"]) == 40
 
 
+def test_format_version_is_1_1_not_draft(af):
+    """P3-2c: A가 2026-10-10에 -draft를 뗐다(c1bfa67). SUPPORTED_MAJOR는 그대로 '1'이다."""
+    assert af.FORMAT_VERSION == "1.1"
+    assert "draft" not in af.FORMAT_VERSION
+    assert af.SUPPORTED_MAJOR == "1"
+    assert af.FORMAT_VERSION.split(".")[0] == af.SUPPORTED_MAJOR
+
+
 # ── 11. 컨텍스트 한도를 모르면 실호출을 거부한다 ──────────────────────────
 def test_resolve_input_limit_refuses_unknown_model():
-    assert bg.MODEL_CONTEXT_LIMITS == {}, "표에 추측값을 넣지 않는다"
+    """P3-2c: gpt-4.1-mini·gpt-4.1 은 공식 문서로 확인해 표에 넣었다(README §6).
+    표에 없는 모델은 여전히 거부해야 한다 — 추측해 넣지 않는다."""
+    assert "모르는-모델" not in bg.MODEL_CONTEXT_LIMITS
     with pytest.raises(RuntimeError, match="컨텍스트 한도를 모른다"):
         bg.resolve_input_limit("모르는-모델", None)
+
+
+def test_model_context_limits_has_confirmed_azure_gpt41_family():
+    """P3-2c: 같은 모델(gpt-4.1-mini)·상위 모델(gpt-4.1)의 한도가 출처·확인 날짜와 함께 있다."""
+    for model in ("gpt-4.1-mini", "gpt-4.1"):
+        row = bg.MODEL_CONTEXT_LIMITS[model]
+        assert row["max_input_tokens"] > 0
+        assert row["source"]
+        assert row["checked_on"]
 
 
 def test_resolve_input_limit_uses_cli_then_table(monkeypatch):
@@ -724,7 +744,7 @@ def test_dry_run_allowed_without_limit(tmp_path, monkeypatch, af):
     assert req["max_input_tokens_source"] == "dry_run_unchecked"
     assert req["dataset_tag"] == bg.DATASET_TAG
     assert req["material_kind"] == bg.MATERIAL_KIND
-    assert req["answer_format"]["format_version"] == "1.1-draft"
+    assert req["answer_format"]["format_version"] == "1.1"
 
 
 def test_company_answer_sha_mismatch_aborts(tmp_path, monkeypatch, af):
