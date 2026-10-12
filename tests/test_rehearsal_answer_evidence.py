@@ -479,14 +479,14 @@ RECEIPT_NOMINAL_REQUEST_CASES.extend(
 )
 RECEIPT_NOMINAL_REQUEST_CASES.extend(
     ('에게 안내문을 발송하고 수령 확인했다고 '+stamp+phrase+' '+actor+' 회신을 받았다.', None)
-    for request in ('요청', '요구', '지시', '부탁')
-    for phrase in (request+'받은', request+'을 받은')
+    for request, particle in (('요청', '을'), ('요구', '를'), ('지시', '를'), ('부탁', '을'))
+    for phrase in (request+'받은', request+' 받은', request+particle+' 받은')
     for stamp in ('', '2026-04-30 ')
     for actor in ('담당자가', '담당자로부터')
 )
 RECEIPT_NOMINAL_REQUEST_CASES.extend(
     ('에게 안내문을 발송하고 수령 확인했다고 '+stamp+role+' 회신을 받았다.', True)
-    for role in ('요청접수 담당자가', '지시관리 담당자가', '계획지원 담당자가',
+    for role in ('요청접수 담당자가', '지시관리 담당자가', '지시 담당자가', '계획지원 담당자가',
                  '생산계획담당자가', '문서관리 담당자가', '총무팀 담당자가')
     for stamp in ('', '2026-04-30 ')
 )

@@ -90,7 +90,7 @@ _REPLY_BRACKETS = {'(': ')', '[': ']', '（': '）', '【': '】'}
 # 직접 인용·목적 연결형 및 요청을 받는 술어는 앞 주장을 요청 내용으로
 # 바꾸는 경계다. 자료/교육을 받은 담당자 같은 정상 수식은 유지한다.
 _REPLY_CLAUSE = re.compile(
-    r'^(?:요청|요구|부탁|지시|계획|예정|대기|기다림)(?:은|는|이|가|으로|로|이다|이라는|이라고|이면|인)?$'
+    r'^(?:요청|요구|부탁|계획|예정|대기|기다림)(?:은|는|이|가|으로|로|이다|이라는|이라고|이면|인)?$'
     r'|(?:했|하였|됐|되었|받았|기다렸|기다린)(?:다(?:는|고|면|며)?|고|지만)$'
     r'|^(?:요청|요구|부탁|대기|기다리|회신|답변|응답)(?:한|하는|할|해|하기|하길|하고|하며|하면|는|던|기|고|면)$'
     r'|(?:한다|된다)(?:는|고|면|며)?$|(?:하는|되는|라는|다는|하기로|되기로|받기로)$'
@@ -98,7 +98,7 @@ _REPLY_CLAUSE = re.compile(
     r'|(?:요청|요구|부탁|대기|계획|예정|회신|답변|응답)(?:한|하는|할|해|하기|하길|하고|하며|하면|이라는|이라고)'
     r'|기다리(?:는|던|기|고|면)'
     r'|(?:으?라고|도록)'
-    r'|(?:요청|요구|부탁|지시)(?:(?:을|를)$|(?:을|를)?받(?:은|는|고|을))')
+    r'|(?:요청|요구|부탁|지시)(?:(?:을|를)$|(?:을|를)?\s*받(?:은|는|고|을))')
 _RECORDED_ASSERTION = re.compile(
     rf'\s*(?:(?:{_ASSERTION_ACTOR}\s+)?(?:대장|일지|기록부)(?:에|에서)\s*'
     rf'(?:기록|기재|등록){_PAST_COMPLETION}'
@@ -134,7 +134,10 @@ def _reply_metadata_item(text, start, allow_open=False):
         if _REPLY_OBJECT.match(text, position):
             return None
         word = _REPLY_WORD.match(text, position)
-        if not word or _REPLY_CLAUSE.search(word[0]):
+        # 요청과 '받은' 사이의 OCR 공백도 읽되, 뒤쪽 다른 문장을
+        # 검색하지 않는다. '지시 담당자'는 동작이 없는 정상 직무 수식이다.
+        if (not word or _REPLY_CLAUSE.search(word[0])
+                or _REPLY_CLAUSE.match(text[position:])):
             break
         noun_case = _REPLY_NOUN_CASE.search(word[0])
         if noun_case:
