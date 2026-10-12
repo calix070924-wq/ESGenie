@@ -72,13 +72,18 @@ _NOTICE_DELIVERY = r'안내|발송|전달|배포'
 _REPLY_EVENT = re.compile(
     rf'(?:회신|답변|응답)(?:을|이)?\s*'
     rf'(?:받았(?:다|습니다|음)|(?:접수|도착)?{_PAST_COMPLETION})')
-_ASSERTION_EVENT = re.compile(
-    rf'(?:{_REPLY_EVENT.pattern}'
-    rf'|(?:대장|일지|기록부)(?:에|에서)\s*(?:기록|기재|등록){_PAST_COMPLETION}'
-    rf'|(?:사실|내용)(?:을|이)?(?:(?!요청|계획|예정|대기)[^\n.!?。;]){{0,30}}'
+_REPORTING_PARTICLE = r'(?:이라고|이라는|라고|라는|는|고)'
+_ASSERTION_ACTOR = r'(?:(?!요청|계획|예정|대기|기다)[가-힣A-Za-z0-9_-]){1,30}(?:가|는|이)'
+_RECORDED_ASSERTION = re.compile(
+    rf'\s*(?:(?:{_ASSERTION_ACTOR}\s+)?(?:대장|일지|기록부)(?:에|에서)\s*'
+    rf'(?:기록|기재|등록){_PAST_COMPLETION}'
+    rf'|(?:사실|내용)(?:을|이)?(?:(?!요청|계획|예정|대기)[^.!?。;]){{0,30}}'
     rf'(?:대조|검증|확인){_PAST_COMPLETION})')
+_ASSERTION_PREFIX = re.compile(
+    rf'\s*(?:(?:{_ASSERTION_ACTOR}\s+)?(?:대장|일지|기록부)(?:에|에서)'
+    rf'|(?:사실|내용)(?:을|이)?(?:\s+{_ASSERTION_ACTOR})?)\s*')
 _QUOTED_TEXT = re.compile(r'“[^”]*”|‘[^’]*’|"[^"]*"|(?<![A-Za-z0-9])\'[^\']*\'')
-_REPORTING_START = re.compile(r'(?:라고|이라고|이라는|는|고)(?=\s|$|회신|답변|응답|대장|사실)')
+_REPORTING_START = re.compile(_REPORTING_PARTICLE + r'(?=\s|$|회신|답변|응답|대장|사실|내용)')
 
 
 def _asserted_completion(unit, end):
@@ -88,12 +93,17 @@ def _asserted_completion(unit, end):
     tail = unit[end:]
     if re.match(r'(?:면|다면|라면)', tail):
         return False
-    if re.match(r'(?:는|고|라고|이라고|이라는)', tail):
+    reporting = re.match(_REPORTING_PARTICLE, tail)
+    if reporting:
         # 인용·전언의 실제 회신 수령뿐 아니라 완료 사실의 기록·대조도
         # 인정한다. 그 주장 자체가 다시 요청/대기/조건 안에 있는 경우는
         # 같은 문맥 검사를 적용해 완료 사실로 확정하지 않는다.
-        assertion = _ASSERTION_EVENT.search(tail)
-        return bool(assertion and _asserted_completion(unit, end + assertion.end()))
+        # 기록·대조의 목적어는 바로 앞 완료 주장이어야 한다. 뒤에서
+        # '회신을 요청한 사실'의 대조/기록을 찾아 완료 근거로 빌리지 않는다.
+        body = tail[reporting.end():]
+        events = [event for event in (_REPLY_EVENT.search(body), _RECORDED_ASSERTION.match(body)) if event]
+        assertion = min(events, key=lambda event: event.start()) if events else None
+        return bool(assertion and _asserted_completion(unit, end + reporting.end() + assertion.end()))
     if tail.startswith('|'):
         # '완료 | 확인자'는 완료 상태와 메타데이터다. 반면 같은 행의
         # 명시적 대기/예정 상태와 충돌하면 완료로 확정하지 않는다.
@@ -178,9 +188,19 @@ def _ocr_continuation(before, after):
             if (not tail and (_REPORTING_START.match(re.sub(r'^[\"\'”’]*\s*', '', next_line))
                               or re.match(_PAST_COMPLETION, next_line))):
                 return True
-            if (re.fullmatch(r'(?:는|고|라고|이라고|이라는)\s*', tail)
+            if (re.fullmatch(_REPORTING_PARTICLE + r'\s*', tail)
                     and re.match(r'회신|답변|응답|대장|일지|기록부|사실|내용', next_line)):
                 return True
+            reporting = re.match(_REPORTING_PARTICLE, tail)
+            if reporting:
+                body = tail[reporting.end():]
+                # 전언 조사 뒤 목적어/담당자까지만 읽은 OCR 줄은 아직
+                # 기록·대조 술어가 끝나지 않았다. 같은 보어의 연속만 잇는다.
+                continuation = body + '\n' + next_line
+                if (_ASSERTION_PREFIX.fullmatch(body)
+                        and (_RECORDED_ASSERTION.match(continuation)
+                             or _ASSERTION_PREFIX.fullmatch(continuation))):
+                    return True
     # OCR가 완료 여부의 보어를 다음 줄로 나눠도 '확인'만 독립 완료
     # 행으로 만들지 않는다. 새로운 수신자/범위 행은 위에서 구별한다.
     if (unfinished_action and not independent
