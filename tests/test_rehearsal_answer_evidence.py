@@ -138,6 +138,67 @@ def test_delivered_notice_about_future_plans_is_still_an_actual_receipt():
     assert answer(graph, 'E-7').value is True
 
 
+@pytest.mark.parametrize('recipient,section', [
+    ('CUS-01 고객', '고객 안내문 전달·수령'),
+    ('SUP-01 공급사', '공급사 안내문 전달·수령 및 확인'),
+])
+@pytest.mark.parametrize('description', [
+    '에게 안내문을 발송하고 수령 확인 요청을 보냈다.',
+    '에게 안내문을 발송했으며 수령 확인 대기 중이다.',
+    '에게 안내문을 전달하고 수령 확인을 내일 진행할 계획이다.',
+    '에게 안내문과 수령 확인 양식을 발송했다.',
+    '에게 안내문을 발송하고 수령 확인 요청을 보냈다. 아직 회신은 없다.',
+])
+def test_split_delivery_requires_completed_receipts_not_requests_or_pending_actions(recipient, section, description):
+    graph = live_split_delivery_graph()
+    node = next(n for n in graph.text_nodes.values() if n.section == section)
+    node.text = recipient + description
+    # No old completed receipt remains in raw text; only the original scope header.
+    graph.source_texts = {name: '한울정밀공업(주) / 절차 시행 2026-04-01 / 김해 제1공장·양산 제2공장\n'
+                          for name in graph.source_texts}
+    a = answer(graph, 'E-7')
+    assert a.value is None and a.status == 'insufficient', (node.text, a.rationale)
+    assert '공급사·고객 전달 운영' in a.evidence_needed
+
+
+@pytest.mark.parametrize('recipient,section', [
+    ('CUS-01 고객', '고객 안내문 전달·수령'),
+    ('SUP-01 공급사', '공급사 안내문 전달·수령 및 확인'),
+])
+@pytest.mark.parametrize('description', [
+    '에게 안내문을 발송하고 수령 확인을 마쳤다.',
+    '에게 향후 사업 계획 안내문을 발송한 후 수령 확인했다.',
+])
+def test_split_delivery_keeps_actual_completed_receipts(recipient, section, description):
+    graph = live_split_delivery_graph()
+    next(n for n in graph.text_nodes.values() if n.section == section).text = recipient + description
+    a = answer(graph, 'E-7')
+    assert a.value is True and a.status == 'verified', a.rationale
+
+
+@pytest.mark.parametrize('description', [
+    'CUS-01 고객에게 안내문을 발송하고 수령 확인 완료를 요청했다.',
+    'CUS-01 고객에게 안내문을 발송했으며 수령 확인 완료 예정이다.',
+])
+def test_completion_word_in_requested_or_future_receipt_is_not_a_completed_record(description):
+    graph = live_split_delivery_graph()
+    next(n for n in graph.text_nodes.values() if n.section == '고객 안내문 전달·수령').text = description
+    assert answer(graph, 'E-7').value is None
+
+
+@pytest.mark.parametrize('description,expected', [
+    ('CUS-01 고객 | 안내문 발송 | 수령 확인 | 대기 중', None),
+    ('CUS-01 고객에게 안내문 발송 후 수령 확인\n대기 중이다.', None),
+    ('CUS-01 고객에게 안내문 발송 후 수령 확인\n을 내일 진행할 계획이다.', None),
+    ('CUS-01 고객에게 안내문 발송 후 수령 확인\n했다.', True),
+])
+def test_receipt_completion_keeps_wrapped_predicates_and_table_status(description, expected):
+    graph = live_split_delivery_graph()
+    next(n for n in graph.text_nodes.values() if n.section == '고객 안내문 전달·수령').text = description
+    a = answer(graph, 'E-7')
+    assert a.value is expected and a.status == ('verified' if expected else 'insufficient')
+
+
 def answer(graph, code, **kw):
     sheet = build_response_sheet('rba42', evidence_graph=graph, **kw)
     return next(a for a in sheet.answers if a.qid == f'RBA-{code}')

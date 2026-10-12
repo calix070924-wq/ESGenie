@@ -49,17 +49,26 @@ def R(label, *patterns, same_unit=False, records=()):
 _RECORD_TIME = (r'(?<!\d)(?:20\d{2}\s*[년./-]\s*)?'
                 r'(?:1[0-2]|0?[1-9])\s*[월./-]\s*(?:3[01]|[12]\d|0?[1-9])\s*일?(?!\d)'
                 r'|(?<!\d)(?:2[0-3]|1?\d)\s*[:시]\s*[0-5]\d\s*분?(?!\d)')
-_DELIVERY_RECORD = r'수령[^\n.!?。;]{0,30}확인|(?:전달|배포)[^\n.!?。;]{0,30}완료'
+# '수령 확인 요청/대기/양식'은 확인을 마친 기록이 아니다. 완료된
+# 술어 또는 문장/표 셀 끝의 상태를 요구하며, 안내문 자체의 미래 계획은
+# 제한하지 않는다. 날짜와 시간 뒤의 '수령 확인.' 같은 대장 표기도 보존한다.
+_RECORD_END = r'(?=[ \t]*(?:[.!?。;]|$))'
+_PAST_COMPLETION = r'(?:했(?:다|습니다|음)|하였(?:다|습니다|음)|되었(?:다|습니다|음)|됐(?:다|습니다|음))'
+_COMPLETED_SUFFIX = (
+    rf'(?:{_RECORD_END}|\s*{_PAST_COMPLETION}'
+    rf'|\s*(?:을|를)?\s*(?:마쳤(?:다|습니다|음)|끝냈(?:다|습니다|음))'
+    rf'|\s*(?:을|를)\s*(?:대조|검증|확인){_PAST_COMPLETION}'
+    rf'|\s*(?:을|를)?\s*완료(?:{_RECORD_END}|\s*{_PAST_COMPLETION}'
+    rf'|\s*(?:을|를)\s*(?:대조|검증|확인){_PAST_COMPLETION}))')
+_DELIVERY_RECORD = (r'(?:수령[^\n.!?。;]{0,30}확인|(?:전달|배포)[^\n.!?。;]{0,30}완료)'
+                    + _COMPLETED_SUFFIX)
 _NOTICE_DELIVERY = r'안내|발송|전달|배포'
 
 
 def _completed_record_units(text):
-    # 전달 계획/필요를 실제 수령 기록으로 결합하지 않는다. 절차 요건에는
-    # 적용하지 않으며, records로 선언한 실행 기록에만 적용한다.
-    pending_action = (r'(?:수령[^\n.!?。;]{0,30}확인|(?:전달|배포)\s*완료)'
-                      r'\s*(?:은|는|을|이|가|할)?\s*(?:향후\s*)?'
-                      r'(?:해야|예정|필요|계획)')
-    return [unit for unit in _statement_units(text) if not re.search(pending_action, unit)]
+    # records 요건의 원래 문장/표 행 안에서 완료를 입증한다. 미래·요청
+    # 표현의 일부 목록을 제외하는 대신 실제 완료 표현이 있는 행만 사용한다.
+    return [unit for unit in _statement_units(text) if re.search(_DELIVERY_RECORD, unit)]
 
 
 def _statement_units(text):
@@ -113,6 +122,11 @@ def _ocr_continuation(before, after):
             and re.search(r'\S+(?:은|는|이|가)(?=\s)', predicate)):
         independent = True
     if unfinished_action and not independent and _UNSUPPORTED.search(predicate):
+        return True
+    # OCR가 완료 여부의 보어를 다음 줄로 나눠도 '확인'만 독립 완료
+    # 행으로 만들지 않는다. 새로운 수신자/범위 행은 위에서 구별한다.
+    if (unfinished_action and not independent
+            and re.match(r'(?:요청|대기|양식|예정|계획|필요|[을를은는](?=\s))', next_line)):
         return True
     if '|' in next_line:
         return False
