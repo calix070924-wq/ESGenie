@@ -156,6 +156,18 @@ def _ocr_continuation(before, after):
         independent = True
     if unfinished_action and not independent and _UNSUPPORTED.search(predicate):
         return True
+    # 인용·전언의 연결 조사나 실제 회신 술어가 다음 OCR 줄에 있어도
+    # 그 앞의 과거형만 별도 완료 사실로 만들지 않는다. 새로운 대상/범위
+    # 행은 계속 분리하고, 실제 회신 수령의 정상 줄바꿈도 함께 보존한다.
+    if not independent:
+        for record in re.finditer(_DELIVERY_RECORD, before):
+            tail = re.sub(r'^[\s\"\'”’]*', '', before[record.end():])
+            if (not tail and (re.match(r'[\"\'”’]*\s*(?:는|고|라고|이라고|이라는)(?=\s|$)', next_line)
+                              or re.match(_PAST_COMPLETION, next_line))):
+                return True
+            if (re.fullmatch(r'(?:는|고|라고|이라고|이라는)\s*', tail)
+                    and re.match(r'회신|답변|응답', next_line)):
+                return True
     # OCR가 완료 여부의 보어를 다음 줄로 나눠도 '확인'만 독립 완료
     # 행으로 만들지 않는다. 새로운 수신자/범위 행은 위에서 구별한다.
     if (unfinished_action and not independent

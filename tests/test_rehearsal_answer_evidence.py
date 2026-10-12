@@ -231,6 +231,9 @@ def test_split_receipt_distinguishes_requested_replies_and_completed_table_cells
     ('CUS-01 고객에게 안내문을 발송하고 수령 확인했다면 대장을 갱신한다.', None),
     ('CUS-01 고객에게 안내문을 발송하고 수령 확인 요청을 확인했다.', None),
     ('CUS-01 고객에게 안내문 전달 요청 검토 완료.', None),
+    ('CUS-01 고객에게 안내문을 발송하고 “수령 확인했습니다”\n라고 회신해 주기를 요청했다.', None),
+    ('CUS-01 고객에게 안내문을 발송하고 수령 확인했다고\n회신받았다.', True),
+    ('CUS-01 고객에게 안내문을 발송하고 수령 확인\n했음이라고 회신해 주기를 요청했다.', None),
 ])
 def test_completed_reply_needs_an_actual_assertion_and_unambiguous_table_status(description, expected):
     graph = live_split_delivery_graph()
