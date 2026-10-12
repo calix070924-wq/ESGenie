@@ -11,6 +11,7 @@ from typing import Any
 from .frameworks import get_framework
 from .gating import apply_gating
 from .mapping import derive_answer
+from .requirement_fitness import assess_requirements, scoped_policy_failures
 from .schema import Answer, Framework, ResponseSheet
 
 
@@ -54,18 +55,22 @@ def build_response_sheet(
             evidence_index=evidence_index if evidence_graph is not None else None,
             claims=supplier_claims if supplier_claims is not None else {},
         )
+        ans = assess_requirements(ans, q, evidence_graph)
         # A relevant document proves presence, not satisfaction of failed clauses.
+        # 우산 K-ESG 검사는 보존하되 더 좁은 RBA 문항에는 그 문항의 요건 검사를
+        # 적용한다. 명시적인 해당 RBA 검사 실패는 여전히 반영한다.
+        question_failures = scoped_policy_failures(q, policy_failures) if evidence_graph is not None else policy_failures
         codes = set(q.kesg_codes)
         for option, option_codes in q.option_map:
             if option in (ans.value if isinstance(ans.value, list) else []):
                 codes.update(option_codes)
-                if set(option_codes) & policy_failures.keys():
+                if set(option_codes) & question_failures.keys():
                     ans.option_evidence.setdefault(option, {})["verified"] = False
-        failed = sorted(codes & policy_failures.keys())
+        failed = sorted(codes & question_failures.keys())
         if failed and ans.answered and ans.value is not False:
             ans.status = "flagged"
             for code in failed:
-                findings = policy_failures[code].get("findings", [])
+                findings = question_failures[code].get("findings", [])
                 missing_clauses = [str(f.get("description") or f.get("clause_id") or f.get("status"))
                                    for f in findings if f.get("status") != "met"]
                 ans.flags.append(f"조항 검사 미충족: {code}" +
