@@ -19,12 +19,12 @@ import os
 import re
 import logging
 import math
-from dataclasses import dataclass, field, fields, asdict
+from dataclasses import dataclass, field, fields, asdict, replace
 from enum import Enum
 from html.parser import HTMLParser
 from pathlib import Path
 from typing import Any
-from .receipt_status import row_unresolved, STATUS_LINE
+from .receipt_status import row_unresolved, receipt_table_lines, STATUS_LINE
 
 # Upstage Document Parse 모델.
 # document-parse-260630 명시 pin은 2026-11-02(KST) 지원 종료 — Upstage 권고에 따라 alias로 전환.
@@ -4807,7 +4807,8 @@ def _augment_unstructured_clauses(
     page: int | None = None,
 ) -> list[ExtractedClause]:
     """LLM이 놓친 존재형 조항을 원문 키워드로 보강한다."""
-    lines = [line.strip() for line in raw_text.splitlines() if line.strip()]
+    table_lines = [entry for entry in receipt_table_lines(raw_text) if entry.raw.strip()]
+    lines = [entry.raw.strip() for entry in table_lines]
     if not lines:
         return clauses
 
@@ -4828,6 +4829,23 @@ def _augment_unstructured_clauses(
         }
 
     augmented = list(clauses)
+    # 이미 추출된 동일 페이지의 원문 행도 같은 열 연결을 적용한다.
+    # 보강 행만 고치면 기존 조항의 상태 값이 별도 완료 근거로 남는다.
+    for entry in table_lines:
+        if not entry.header:
+            continue
+        for i, clause in enumerate(augmented):
+            if page is None or clause.page != page:
+                continue
+            body_lines = clause.text.splitlines()
+            if clause.quote.strip() == entry.raw.strip():
+                # 대상이 절 제목으로 옮겨진 조항도 정확히 같은 원문 행일 때만 복원한다.
+                augmented[i] = replace(clause, text=entry.text)
+            elif entry.header.strip() in [line.strip() for line in body_lines]:
+                continue  # 전체 표는 판단 단계에서 원래 열 순서로 한 번만 해석한다.
+            elif any(line.strip() == entry.raw.strip() for line in body_lines):
+                augmented[i] = replace(clause, text='\n'.join(
+                    entry.text if line.strip() == entry.raw.strip() else line for line in body_lines))
     # LLM이 표의 대상 열을 절 제목으로 옮겨도 실제 원문 행은 보존한다.
     # 대상과 전달·수령 내용이 같은 파이프 행에 있어야 하며, 페이지가
     # 확인된 원문에만 적용한다. 제목/다음 행에서 대상을 빌리지 않는다.
@@ -4839,18 +4857,22 @@ def _augment_unstructured_clauses(
         quotes = {(c.section, re.sub(r'\s+', '', c.text))
                   for c in augmented if c.page == page}
         for index, line in enumerate(lines):
+            mapped = table_lines[index]
+            line = mapped.text.strip()
             target = recipient.match(line)
             body = line.split('|', 1)[1] if '|' in line else ''
             if (not target or not re.search(r'안내|발송|전달|배포', body)
                     or not re.search(r'수령|전달|배포', body)):
                 continue
             row = [line]
+            raw_row = [mapped.raw.strip()]
             # 미완성 원문 문장/술어의 OCR 연속만 보존한다. 완결한 행 뒤
             # 다른 문장/대상/범위는 붙이지 않아 독립 확인을 빌리지 않는다.
             for following in lines[index + 1:]:
                 if (pending_state.match(following)
                         or STATUS_LINE.match(following)):
                     row.append(following)
+                    raw_row.append(following)
                     break
                 if (recipient.match(following) or '|' in following
                         or re.search(r'(?:기간|범위|사업장)\s*[:：]', following)
@@ -4858,17 +4880,19 @@ def _augment_unstructured_clauses(
                             and not re.match(r'요청|대기|예정|계획|하지|되지|않|못', following))):
                     break
                 row.append(following)
-            quote = '\n'.join(row)
+                raw_row.append(following)
+            record = '\n'.join(row)
+            quote = '\n'.join(([mapped.header] if mapped.header else []) + raw_row)
             # 대상 칸의 명시적 상태 필드도 오른쪽 셀과 같은 규칙으로 읽는다.
-            if row_unresolved(quote, pending_state):
+            if row_unresolved(record, pending_state):
                 continue  # 명시적 미완료 셀과 충돌하는 행을 완료 근거로 보강하지 않는다.
             # 대상 열에서는 식별자/역할만 연결한다. 제목에 들어간 완료
             # 문구를 술어로 쓰지 않으며, 실제 완료는 오른쪽 본문에서 읽는다.
-            text = target[0] + ' | ' + quote.split('|', 1)[1].lstrip()
+            text = target[0] + ' | ' + record.split('|', 1)[1].lstrip()
             # 범위 판정은 section도 읽는다. 대상 칸을 보존하되 명시적
             # 범위 필드는 별도 줄로 두어 회사명의 가상 표시 등과 분리한다.
             section = re.sub(r'(?=(?:(?:대상|적용|보고|집계|운영)\s*(?:기간|범위)'
-                             r'|사업장)\s*[:：|])', '\n', quote.split('|', 1)[0])
+                             r'|사업장)\s*[:：|])', '\n', record.split('|', 1)[0])
             key = (section, re.sub(r'\s+', '', text))
             if key not in quotes:
                 augmented.append(ExtractedClause(section=section, text=text,

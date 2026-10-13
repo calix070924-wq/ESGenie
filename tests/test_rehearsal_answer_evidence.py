@@ -1871,3 +1871,114 @@ def test_serialized_extraction_context_keeps_multiline_actor_negative(stage, cod
     graph = build_unified_graph(None, restored, corp_code='SYN', corp_name='합성기업', report_year=2026)
     a = answer(graph, code)
     assert a.value is None and a.status == 'insufficient', a.to_dict()
+
+
+# Header-only status columns: the eight failed review rows and structural controls.
+def receipt_table_answer(recipient, section, raw, path='augment'):
+    _, _, augment = heading_split_extraction()
+    graph = live_split_delivery_graph()
+    node = next(n for n in graph.text_nodes.values() if n.section == section)
+    node.text = '전달 대상 주소를 보관한다.'
+    if path == 'full_table':
+        node.text = node.quote = raw
+    else:
+        existing = []
+        if path == 'full_extracted_table':
+            existing = [ExtractedClause(section=section, text=raw, quote=raw, page=1)]
+        elif path in ('extracted_row', 'split_extracted'):
+            existing = [ExtractedClause(section=section, text=raw.splitlines()[-1],
+                                        quote=raw.splitlines()[-1], page=1)]
+            if path == 'split_extracted':
+                existing[0].section = recipient
+                existing[0].text = existing[0].text.replace(recipient, '').strip('| ')
+        from esgenie.ssot.evidence_graph import TextNode
+        for i, c in enumerate(augment(existing, raw_text=raw, doc_type='policy_manual', page=1)):
+            assert c.page == 1
+            graph.add_text_node(TextNode('table_status_'+str(i), c.section, c.text, None,
+                                        node.source_file, page=c.page, quote=c.quote, page_source=c.page_source))
+    graph.source_texts = {name: '한울정밀공업(주) / 2026년 4월 기록 / 김해 제1공장·양산 제2공장\n'
+                          + (raw if name == node.source_file else '') for name in graph.source_texts}
+    return answer(graph, 'E-7')
+
+
+@pytest.mark.parametrize('recipient,section', [
+    ('CUS-99 고객', '고객 안내문 전달·수령'),
+    ('SUP-99 공급사', '공급사 안내문 전달·수령 및 확인'),
+])
+@pytest.mark.parametrize('status_header', ['수령 상태', '수령 확인 상태'])
+@pytest.mark.parametrize('body', ['수령 확인 예정', '수령 확인'])
+@pytest.mark.parametrize('state', ['확인 완료', '수령 확인 완료', '미확인'])
+@pytest.mark.parametrize('repeated_inline_label', [False, True])
+def test_header_receipt_status_original_review_cases(recipient, section, status_header, body, state,
+                                                     repeated_inline_label):
+    status_cell = (status_header + ': ' if repeated_inline_label else '') + state
+    raw = '대상 | 전달 기록 | ' + status_header + '\n' + recipient + ' | 04-30 안내문 발송 / ' + body + ' | ' + status_cell
+    a = receipt_table_answer(recipient, section, raw)
+    expected = True if body == '수령 확인' and state != '미확인' else None
+    assert a.value is expected and a.status == ('verified' if expected else 'insufficient'), (raw, a.rationale)
+
+
+@pytest.mark.parametrize('recipient,section', [
+    ('CUS-99 고객', '고객 안내문 전달·수령'),
+    ('SUP-99 공급사', '공급사 안내문 전달·수령 및 확인'),
+])
+@pytest.mark.parametrize('path', ['augment', 'full_table', 'extracted_row', 'full_extracted_table', 'split_extracted'])
+@pytest.mark.parametrize('status_position', [0, 1, 2])
+@pytest.mark.parametrize('markdown', [False, True])
+@pytest.mark.parametrize('body,state,expected', [
+    ('수령 확인 예정', '수령 확인 완료', None),
+    ('수령 확인', '확인 완료', True),
+    ('수령 확인', '확인 안됨', None),
+])
+def test_header_receipt_status_follows_column_and_extraction(recipient, section, path, status_position,
+                                                           markdown, body, state, expected):
+    headers, cells = ['대상', '전달 기록'], [recipient, '04-30 안내문 발송 / ' + body]
+    headers.insert(status_position, '수령 확인 상태')
+    cells.insert(status_position, state)
+    rows = [headers, cells]
+    if markdown:
+        rows.insert(1, ['---'] * 3)
+    raw = '\n'.join(('| ' if markdown else '') + ' | '.join(row) + (' |' if markdown else '') for row in rows)
+    a = receipt_table_answer(recipient, section, raw, path)
+    assert a.value is expected and a.status == ('verified' if expected else 'insufficient'), (raw, a.rationale)
+
+
+@pytest.mark.parametrize('boundary', ['\n\n', '\n다음 기록\n', '\n대상 | 전달 기록 | 비고\n'])
+def test_receipt_header_cannot_cross_table_boundary(boundary):
+    from esgenie.ssot.receipt_status import receipt_rows, receipt_body
+    # 다른 표의 비고에는 본문을 수정하는 조건이 있을 수 있다. 이전 상태 열로 지우지 않는다.
+    text = ('대상 | 전달 기록 | 수령 상태\nSUP-01 | 발송 / 수령 확인 | 확인 완료'
+            + boundary + 'CUS-01 | 발송 / 수령 확인 | 수령 확인 예정')
+    row = receipt_rows(text)[-1]
+    assert row == 'CUS-01 | 발송 / 수령 확인 | 수령 확인 예정'
+    assert '예정' in receipt_body(row)
+
+
+def test_receipt_header_requires_matching_width_and_preserves_source_quote():
+    _, _, augment = heading_split_extraction()
+    header = '대상 | 전달 기록 | 수령 상태'
+    raw = header + '\nCUS-01 | 발송 / 수령 확인 | 확인 완료'
+    rows = augment([], raw_text=raw, doc_type='policy_manual', page=1)
+    assert len(rows) == 1 and rows[0].quote == raw and rows[0].page == 1
+    assert '수령 상태: 확인 완료' in rows[0].text
+    malformed = header + '\nCUS-01 | 발송 / 수령 확인 | 확인 완료 | 미확인'
+    assert not augment([], raw_text=malformed, doc_type='policy_manual', page=1)
+    assert not augment([], raw_text=raw, doc_type='policy_manual', page=None)
+
+
+@pytest.mark.parametrize('markdown', [False, True])
+@pytest.mark.parametrize('path', ['augment', 'full_table', 'extracted_row', 'full_extracted_table'])
+def test_empty_receipt_status_does_not_remove_completed_body(markdown, path):
+    header = '대상 | 전달 기록 | 수령 상태'
+    row = 'CUS-99 고객 | 04-30 안내문 발송 / 수령 확인 | '
+    raw = '\n'.join('| ' + line + ' |' if markdown else line for line in [header, row])
+    a = receipt_table_answer('CUS-99 고객', '고객 안내문 전달·수령', raw, path)
+    assert a.value is True and a.status == 'verified', a.rationale
+
+
+@pytest.mark.parametrize('state', ['수령 확인 완료', '미확인'])
+def test_repeated_receipt_header_changes_column_positions_without_changing_other_rows(state):
+    raw = ('대상 | 전달 기록 | 수령 상태\nSUP-98 공급사 | 04-30 안내문 발송 / 수령 확인 | 확인 완료\n'
+           '대상 | 수령 확인 상태 | 전달 기록\nCUS-99 고객 | ' + state + ' | 04-30 안내문 발송 / 수령 확인 예정')
+    a = receipt_table_answer('CUS-99 고객', '고객 안내문 전달·수령', raw)
+    assert a.value is None and a.status == 'insufficient', a.rationale
