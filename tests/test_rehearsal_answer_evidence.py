@@ -640,6 +640,54 @@ def test_raw_receipt_target_title_does_not_supply_completion(recipient, section)
     assert answer(graph, 'E-7').value is None
 
 
+@pytest.mark.parametrize('recipient,section', [
+    ('SUP-99 공급사', '공급사 안내문 전달·수령 및 확인'),
+    ('CUS-99 고객', '고객 안내문 전달·수령'),
+])
+@pytest.mark.parametrize('metadata,expected', [
+    ('', True),
+    (' (적용 기간: 2025년 7월)', None),
+    (' (사업장: 울산 제9공장)', None),
+    (' (수령 상태: 미확인)', None),
+    (' (적용 기간: 2026년 4월)', True),
+    (' (사업장: 김해 제1공장·양산 제2공장)', True),
+    (' (수령 상태: 확인 완료)', True),
+    (' (수령 상태：대기)', None),
+    (' (전달 결과: 미완료)', None),
+    (' (진행: 예정)', None),
+    (' 시험기업(가상) (적용 기간: 2025년 7월)', None),
+    (' 시험기업(가상) (사업장: 울산 제9공장)', None),
+    (' 시험기업(가상) (사업장: 김해 제1공장·양산 제2공장)', True),
+    (' (적용 기간: 2025년 7월 / 사업장: 울산 제9공장)', None),
+])
+def test_raw_receipt_target_column_preserves_scope_and_pending_state(recipient, section, metadata, expected):
+    _, _, augment = heading_split_extraction()
+    graph = live_split_delivery_graph()
+    node = next(n for n in graph.text_nodes.values() if n.section == section)
+    node.text = '전달 대상 주소를 보관한다.'
+    raw = recipient + metadata + ' | 04-30 안내문 발송 / 14:00 수령 확인.'
+    rows = augment([], raw_text=raw, doc_type='policy_manual', page=1)
+    from esgenie.ssot.evidence_graph import TextNode
+    for index, c in enumerate(rows):
+        assert c.quote == raw and c.page == 1
+        graph.add_text_node(TextNode('target_column_'+str(index), c.section, c.text, None,
+                                    node.source_file, page=c.page, quote=c.quote, page_source=c.page_source))
+    graph.source_texts = {name: '한울정밀공업(주) / 2026년 4월 기록 / 김해 제1공장·양산 제2공장\n'
+                          for name in graph.source_texts}
+    a = answer(graph, 'E-7')
+    assert a.value is expected and a.status == ('verified' if expected else 'insufficient'), a.rationale
+
+
+def test_raw_receipt_deduplication_keeps_distinct_target_column_scopes():
+    _, _, augment = heading_split_extraction()
+    body = ' | 04-30 안내문 발송 / 14:00 수령 확인.'
+    raw = 'CUS-99 고객 (적용 기간: 2025년 7월)' + body + '\n' + 'CUS-99 고객 (사업장: 김해 제1공장·양산 제2공장)' + body
+    rows = augment([], raw_text=raw, doc_type='other', page=1)
+    assert len(rows) == 2 and rows[0].section != rows[1].section
+    assert rows[0].text == rows[1].text
+    assert augment(rows, raw_text=raw, doc_type='other', page=1) == rows
+
+
 @pytest.mark.parametrize('code', NORMAL)
 def test_complete_independent_requirements_include_every_page(code):
     a = answer(graph_for(NORMAL[code]), code)

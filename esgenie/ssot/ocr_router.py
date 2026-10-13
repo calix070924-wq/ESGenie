@@ -4835,7 +4835,8 @@ def _augment_unstructured_clauses(
         pending_state = re.compile(r'\s*(?:(?:상태|결과|진행)\s*[:：]\s*)?'
                                    r'(?:대기|예정|요청|미완료|미확인|계획|필요)(?=\W|중|$)')
         # 인용에 원문 행이 있어도 text에서 대상이 빠졌다면 보완해야 한다.
-        quotes = {re.sub(r'\s+', '', c.text) for c in augmented if c.page == page}
+        quotes = {(c.section, re.sub(r'\s+', '', c.text))
+                  for c in augmented if c.page == page}
         for index, line in enumerate(lines):
             target = recipient.match(line)
             body = line.split('|', 1)[1] if '|' in line else ''
@@ -4856,14 +4857,20 @@ def _augment_unstructured_clauses(
                     break
                 row.append(following)
             quote = '\n'.join(row)
-            if any(pending_state.match(cell) for cell in re.split(r'[|\n]', quote)[1:]):
+            # 대상 칸의 명시적 상태 필드도 오른쪽 셀과 같은 규칙으로 읽는다.
+            cells = re.split(r'[|\n]|(?:상태|결과|진행)\s*[:：]', quote)
+            if any(pending_state.match(cell) for cell in cells):
                 continue  # 명시적 미완료 셀과 충돌하는 행을 완료 근거로 보강하지 않는다.
             # 대상 열에서는 식별자/역할만 연결한다. 제목에 들어간 완료
             # 문구를 술어로 쓰지 않으며, 실제 완료는 오른쪽 본문에서 읽는다.
             text = target[0] + ' | ' + quote.split('|', 1)[1].lstrip()
-            key = re.sub(r'\s+', '', text)
+            # 범위 판정은 section도 읽는다. 대상 칸을 보존하되 명시적
+            # 범위 필드는 별도 줄로 두어 회사명의 가상 표시 등과 분리한다.
+            section = re.sub(r'(?=(?:(?:대상|적용|보고|집계|운영)\s*(?:기간|범위)'
+                             r'|사업장)\s*[:：|])', '\n', quote.split('|', 1)[0])
+            key = (section, re.sub(r'\s+', '', text))
             if key not in quotes:
-                augmented.append(ExtractedClause(section=target[0], text=text,
+                augmented.append(ExtractedClause(section=section, text=text,
                                                  quote=quote, page=page, page_source='chunk'))
                 quotes.add(key)
     for code, (keywords, section) in heuristics.items():
