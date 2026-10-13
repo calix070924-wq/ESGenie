@@ -517,6 +517,129 @@ def answer(graph, code, **kw):
     return next(a for a in sheet.answers if a.qid == f'RBA-{code}')
 
 
+def heading_split_extraction():
+    from esgenie.ssot.ocr_router import _augment_unstructured_clauses
+    fixture = json.loads((Path(__file__).parent / 'fixtures' /
+                          'rehearsal_e7_heading_split_20261012.json').read_text())
+    ext = OcrExtraction.from_dict(fixture['extraction'])
+    return fixture, ext, _augment_unstructured_clauses
+
+
+def test_actual_heading_split_restores_only_page_bound_raw_receipt_rows():
+    fixture, ext, augment = heading_split_extraction()
+    graph = EvidenceGraph('heading', '가상기업')
+    merge_ocr_extraction(graph, ext, report_year=2099)
+    assert answer(graph, 'E-7').value is None
+    for page, text in enumerate(fixture['pages']):
+        ext.clauses = augment(ext.clauses, raw_text=text, doc_type=ext.doc_type, page=page)
+    graph = EvidenceGraph('heading', '가상기업')
+    merge_ocr_extraction(graph, ext, report_year=2099)
+    a = answer(graph, 'E-7')
+    assert a.value is True and a.status == 'verified', a.rationale
+    assert {link.page for link in a.evidence_links} == {0, 1, 2}
+    for target in ('SUP-01', 'CUS-01'):
+        assert any(target in link.quote and link.page == 1 for link in a.evidence_links)
+
+
+@pytest.mark.parametrize('raw,page,expected', [
+    ('SUP-99 거래 공급사 | 08-30 안내문 발송 / 14:00 수령 확인.', 1, True),
+    ('CUS-99 거래 고객 | 08-30 안내문 발송 / 14:00 수령 확인.', 1, True),
+    ('공급사 시험기업 | 안내문을 발송하고 수령 확인했다.', 1, True),
+    ('고객 시험기업 | 안내문을 발송하고 수령 확인했다.', 1, True),
+    ('SUP-99 거래 공급사\n08-30 안내문 발송 / 수령 확인.', 1, False),
+    ('SUP-99 거래 공급사 | 안내문 주소 기록\n별도 문의 수령 확인.', 1, False),
+    ('CUS-99 거래 고객 | 수령 확인 완료\n다른 대상에게 안내문 발송.', 1, False),
+    ('SUP-99 공급사 안내 전달 완료 | 주소를 보관한다.', 1, False),
+    ('SUP-99 거래 공급사 | 안내문 발송 / 수령 확인.', None, False),
+    ('SUP-99 거래 공급사 | 안내문 발송 / 수령 확인.', -1, False),
+])
+def test_raw_receipt_rows_require_original_same_row_and_known_page(raw, page, expected):
+    _, _, augment = heading_split_extraction()
+    rows = [c for c in augment([], raw_text=raw, doc_type='policy_manual', page=page)
+            if c.page_source == 'chunk']
+    assert bool(rows) is expected
+    if rows:
+        assert rows[0].quote in raw and rows[0].page == page
+        assert augment(rows, raw_text=raw, doc_type='policy_manual', page=page) == rows
+
+
+@pytest.mark.parametrize('recipient,section', [
+    ('SUP-99 거래 공급사', '공급사 안내문 전달·수령 및 확인'),
+    ('CUS-99 거래 고객', '고객 안내문 전달·수령'),
+])
+@pytest.mark.parametrize('receipt,expected', [
+    ('08-30 안내문 발송 / 14:00 수령 확인.', True),
+    ('08-30 안내문 발송 / 수령 확인\n요청', None),
+    ('08-30 안내문 발송 / 수령 확인\n대기', None),
+    ('08-30 안내문 발송 / 수령 확인 예정.', None),
+    ('08-30 안내문 발송 / 수령 확인. | 상태: 대기', None),
+    ('08-30 안내문 발송 / 수령 확인.\n상태: 미확인', None),
+    ('08-30 안내문 발송 / 수령 확인.\n예정', None),
+    ('안내문을 발송하고 수령 확인했다고 적어 달라고 요청받은 담당자가 회신을 받았다.', None),
+    ('안내문을 발송하고 수령 확인했다고 08-30 회신을 받았다.', True),
+])
+def test_raw_receipt_rows_keep_request_boundaries_in_full_answer(recipient, section, receipt, expected):
+    _, _, augment = heading_split_extraction()
+    graph = live_split_delivery_graph()
+    node = next(n for n in graph.text_nodes.values() if n.section == section)
+    node.text = '전달 대상 주소를 보관한다.'
+    raw = recipient + ' | ' + receipt
+    rows = augment([], raw_text=raw, doc_type='policy_manual', page=1)
+    from esgenie.ssot.evidence_graph import TextNode
+    for index, c in enumerate(rows):
+        graph.add_text_node(TextNode('raw_row_'+str(index), c.section, c.text, None,
+                                    node.source_file, page=1, quote=c.quote, page_source=c.page_source))
+    graph.source_texts = {name: '한울정밀공업(주) / 절차 시행 2026-04-01 / 김해 제1공장·양산 제2공장\n'
+                          for name in graph.source_texts}
+    a = answer(graph, 'E-7')
+    assert a.value is expected and a.status == ('verified' if expected else 'insufficient'), a.rationale
+
+
+@pytest.mark.parametrize('foreign', ['page', 'file', 'period', 'site', 'unknown_page'])
+def test_raw_receipt_rows_do_not_borrow_foreign_customer(foreign):
+    _, _, augment = heading_split_extraction()
+    graph = live_split_delivery_graph()
+    supplier = next(n for n in graph.text_nodes.values() if n.section == '공급사 안내문 전달·수령 및 확인')
+    customer = next(n for n in graph.text_nodes.values() if n.section == '고객 안내문 전달·수령')
+    supplier.text = customer.text = '전달 대상 주소를 보관한다.'
+    from esgenie.ssot.evidence_graph import TextNode
+    for index, target in enumerate(('SUP-99 공급사', 'CUS-99 고객')):
+        page = (4 if foreign == 'page' else None if foreign == 'unknown_page' else 1) if index else 1
+        prefix = ('적용 기간: 2025년 7월 | ' if foreign == 'period' else
+                  '사업장: 울산 제9공장 | ' if foreign == 'site' else '') if index else ''
+        rows = augment([], raw_text=target+' | 04-30 안내문 발송 / 수령 확인.',
+                       doc_type='policy_manual', page=page)
+        for c in rows:
+            source = '다른_전달기록.pdf' if index and foreign == 'file' else customer.source_file
+            graph.add_text_node(TextNode('raw_'+str(index), c.section, prefix+c.text, None,
+                                        source, page=c.page, quote=c.quote, page_source=c.page_source))
+    graph.source_texts = {name: '한울정밀공업(주) / 절차 시행 2026-04-01 / 김해 제1공장·양산 제2공장\n'
+                          for name in graph.source_texts}
+    a = answer(graph, 'E-7')
+    assert a.value is None and a.status == 'insufficient', (foreign, a.rationale)
+
+
+@pytest.mark.parametrize('recipient,section', [
+    ('SUP-99 공급사', '공급사 안내문 전달·수령 및 확인'),
+    ('CUS-99 고객', '고객 안내문 전달·수령'),
+])
+def test_raw_receipt_target_title_does_not_supply_completion(recipient, section):
+    _, _, augment = heading_split_extraction()
+    graph = live_split_delivery_graph()
+    node = next(n for n in graph.text_nodes.values() if n.section == section)
+    node.text = '전달 대상 주소를 보관한다.'
+    rows = augment([], raw_text=recipient+' 안내 전달 완료 | 안내문 발송 / 수령 확인 예정.',
+                   doc_type='policy_manual', page=1)
+    from esgenie.ssot.evidence_graph import TextNode
+    for c in rows:
+        graph.add_text_node(TextNode('raw_title', c.section, c.text, None,
+                                    node.source_file, page=c.page, quote=c.quote, page_source=c.page_source))
+        assert '안내 전달 완료' not in c.text and '안내 전달 완료' in c.quote
+    graph.source_texts = {name: '한울정밀공업(주) / 절차 시행 2026-04-01 / 김해 제1공장·양산 제2공장\n'
+                          for name in graph.source_texts}
+    assert answer(graph, 'E-7').value is None
+
+
 @pytest.mark.parametrize('code', NORMAL)
 def test_complete_independent_requirements_include_every_page(code):
     a = answer(graph_for(NORMAL[code]), code)

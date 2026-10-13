@@ -2122,7 +2122,7 @@ def _extract_unstructured_text(
     else:
         for page, text in page_texts:
             before = len(clauses)
-            clauses = _augment_unstructured_clauses(clauses, raw_text=text, doc_type=doc_type)
+            clauses = _augment_unstructured_clauses(clauses, raw_text=text, doc_type=doc_type, page=page)
             for clause in clauses[before:]:
                 clause.page, clause.page_source = page, "chunk"
     # 반복되는 머리글은 추출 대상이 아니다. 동일 페이지·인용의 완전 중복만 제거한다.
@@ -4803,6 +4803,7 @@ def _augment_unstructured_clauses(
     *,
     raw_text: str,
     doc_type: str,
+    page: int | None = None,
 ) -> list[ExtractedClause]:
     """LLM이 놓친 존재형 조항을 원문 키워드로 보강한다."""
     lines = [line.strip() for line in raw_text.splitlines() if line.strip()]
@@ -4826,6 +4827,45 @@ def _augment_unstructured_clauses(
         }
 
     augmented = list(clauses)
+    # LLM이 표의 대상 열을 절 제목으로 옮겨도 실제 원문 행은 보존한다.
+    # 대상과 전달·수령 내용이 같은 파이프 행에 있어야 하며, 페이지가
+    # 확인된 원문에만 적용한다. 제목/다음 행에서 대상을 빌리지 않는다.
+    if page is not None and page >= 0:
+        recipient = re.compile(r'^(?:(?:SUP|CUS)-\d+\b|(?:공급사|공급자|협력사|고객)(?=\s|[:：|]))')
+        pending_state = re.compile(r'\s*(?:(?:상태|결과|진행)\s*[:：]\s*)?'
+                                   r'(?:대기|예정|요청|미완료|미확인|계획|필요)(?=\W|중|$)')
+        # 인용에 원문 행이 있어도 text에서 대상이 빠졌다면 보완해야 한다.
+        quotes = {re.sub(r'\s+', '', c.text) for c in augmented if c.page == page}
+        for index, line in enumerate(lines):
+            target = recipient.match(line)
+            body = line.split('|', 1)[1] if '|' in line else ''
+            if (not target or not re.search(r'안내|발송|전달|배포', body)
+                    or not re.search(r'수령|전달|배포', body)):
+                continue
+            row = [line]
+            # 미완성 원문 문장/술어의 OCR 연속만 보존한다. 완결한 행 뒤
+            # 다른 문장/대상/범위는 붙이지 않아 독립 확인을 빌리지 않는다.
+            for following in lines[index + 1:]:
+                if pending_state.match(following):
+                    row.append(following)
+                    break
+                if (recipient.match(following) or '|' in following
+                        or re.search(r'(?:기간|범위|사업장)\s*[:：]', following)
+                        or (re.search(r'[.!?。;]$', row[-1])
+                            and not re.match(r'요청|대기|예정|계획|하지|되지|않|못', following))):
+                    break
+                row.append(following)
+            quote = '\n'.join(row)
+            if any(pending_state.match(cell) for cell in re.split(r'[|\n]', quote)[1:]):
+                continue  # 명시적 미완료 셀과 충돌하는 행을 완료 근거로 보강하지 않는다.
+            # 대상 열에서는 식별자/역할만 연결한다. 제목에 들어간 완료
+            # 문구를 술어로 쓰지 않으며, 실제 완료는 오른쪽 본문에서 읽는다.
+            text = target[0] + ' | ' + quote.split('|', 1)[1].lstrip()
+            key = re.sub(r'\s+', '', text)
+            if key not in quotes:
+                augmented.append(ExtractedClause(section=target[0], text=text,
+                                                 quote=quote, page=page, page_source='chunk'))
+                quotes.add(key)
     for code, (keywords, section) in heuristics.items():
         if code in existing_codes:
             continue
