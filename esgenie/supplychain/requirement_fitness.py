@@ -13,7 +13,7 @@ from collections import defaultdict
 from ..ssot.audit_trace import evidence_link
 from ..ssot.boundary import Boundary, detect_site
 from ..survey import is_survey
-from ..ssot.receipt_status import row_unresolved, receipt_rows, STATUS_FIELD
+from ..ssot.receipt_status import row_unresolved, receipt_rows, receipt_body, STATUS_FIELD
 
 
 @dataclass(frozen=True)
@@ -218,9 +218,12 @@ def _asserted_completion(unit, end):
 
 
 def _completed_record_units(text):
-    # records 요건의 원래 문장/표 행 안에서 완료를 입증한다. 미래·요청
-    # 표현의 일부 목록을 제외하는 대신 실제 완료 표현이 있는 행만 사용한다.
-    return [unit for unit in _statement_units(text)
+    # 상태는 같은 원문 행의 충돌 여부에만 사용한다. 상태 칸의 완료
+    # 표현이 예정/요청 본문의 완료 술어가 되지 않도록 먼저 분리한다.
+    body = '\n'.join(receipt_body(row) for row in receipt_rows(text)
+                     if not row_unresolved(row))
+    # 본문 안의 OCR 동사·부정 보어 줄바꿈은 기존 문장 연결 규칙을 유지한다.
+    return [unit for unit in _statement_units(body)
             if any(_asserted_completion(unit, match.end())
                    for match in re.finditer(_DELIVERY_RECORD, unit))]
 

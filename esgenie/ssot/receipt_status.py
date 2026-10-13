@@ -4,7 +4,8 @@ import re
 PENDING_CELL = re.compile(r'\s*(?:(?:상태|결과|진행)\s*[:：]\s*)?'
                           r'(?:대기|예정|요청|미완료|미확인|계획|필요)(?=\W|중|$)')
 STATUS_FIELD = re.compile(r'(?:상태|결과|진행)\s*[:：]\s*([^|\n)）\]】;]*)')
-STATUS_LINE = re.compile(r'(?:(?:수령|전달|배포)\s*)?(?:상태|결과|진행)\s*[:：]')
+STATUS_LINE = re.compile(r'(?:(?:수령(?:\s*확인)?|전달|배포)\s*)?(?:상태|결과|진행)\s*[:：]')
+BODY_STATUS_FIELD = re.compile(r'(?:(?:수령(?:\s*확인)?|전달|배포)\s*)?' + STATUS_FIELD.pattern)
 
 
 def status_unresolved(value: str) -> bool:
@@ -43,3 +44,9 @@ def receipt_rows(text: str) -> list[str]:
         else:
             rows.append(line)
     return rows
+
+
+def receipt_body(row: str) -> str:
+    """상태의 라벨·값·빈 칸을 분리하고 실제 본문 칸 사이의 경계는 유지한다."""
+    cells = [BODY_STATUS_FIELD.sub('', cell) for cell in row.split('|')]
+    return '|'.join(cell for cell in cells if cell.strip())

@@ -801,6 +801,93 @@ def test_positive_receipt_status_does_not_supply_missing_completion(position):
     assert answer(graph, 'E-7').value is None
 
 
+@pytest.mark.parametrize('recipient,section', [
+    ('SUP-99 공급사', '공급사 안내문 전달·수령 및 확인'),
+    ('CUS-99 고객', '고객 안내문 전달·수령'),
+])
+@pytest.mark.parametrize('path', ['target', 'cell', 'continuation', 'full_row', 'heading'])
+@pytest.mark.parametrize('state', ['확인 완료', '수령 확인 완료', '대기 없이 수령 확인 완료'])
+@pytest.mark.parametrize('ending', ['', '.'])
+@pytest.mark.parametrize('receipt,expected', [
+    ('수령 확인 예정', None), ('수령 확인 요청', None),
+    ('수령 확인하지 않음', None), ('수령 여부 안내', None),
+    ('수령 확인', True),
+])
+def test_receipt_status_cannot_change_body_completion(recipient, section, path, state, ending, receipt, expected):
+    """상태 값·칸 위치·마침표·추출 형태를 바꿔도 본문의 완료 여부를 유지한다.
+
+    Includes the six original failed rows: cell + unpunctuated pending body,
+    three positive state values, and the customer/supplier recipient groups.
+    """
+    _, _, augment = heading_split_extraction()
+    graph = live_split_delivery_graph()
+    node = next(n for n in graph.text_nodes.values() if n.section == section)
+    node.text = '전달 대상 주소를 보관한다.'
+    body = ' | 04-30 안내문 발송 / ' + receipt + ending
+    if path in ('target', 'heading'):
+        raw = recipient + ' (수령 상태: ' + state + ')' + body
+    else:
+        raw = recipient + body + ('\n' if path == 'continuation' else ' | ') + '수령 상태: ' + state
+    if path == 'heading':
+        node.section = recipient + ' (수령 상태: ' + state + ')'
+        node.text = recipient + body
+        node.quote = raw
+    elif path == 'full_row':
+        node.text = node.quote = raw
+    else:
+        from esgenie.ssot.evidence_graph import TextNode
+        for i, c in enumerate(augment([], raw_text=raw, doc_type='policy_manual', page=1)):
+            assert c.page == 1 and c.quote == raw
+            graph.add_text_node(TextNode('body_status_'+str(i), c.section, c.text, None,
+                                        node.source_file, page=c.page, quote=c.quote, page_source=c.page_source))
+    graph.source_texts = {name: '한울정밀공업(주) / 2026년 4월 기록 / 김해 제1공장·양산 제2공장\n'
+                          for name in graph.source_texts}
+    a = answer(graph, 'E-7')
+    assert a.value is expected and a.status == ('verified' if expected else 'insufficient'), (raw, a.rationale)
+
+
+@pytest.mark.parametrize('recipient,section', [
+    ('SUP-99 공급사', '공급사 안내문 전달·수령 및 확인'),
+    ('CUS-99 고객', '고객 안내문 전달·수령'),
+])
+@pytest.mark.parametrize('field', ['수령 상태', '수령 결과', '수령 확인 상태'])
+@pytest.mark.parametrize('receipt,expected', [('수령 확인 예정', None), ('수령 확인', True)])
+def test_receipt_status_label_is_not_a_body_predicate(recipient, section, field, receipt, expected):
+    graph = live_split_delivery_graph()
+    node = next(n for n in graph.text_nodes.values() if n.section == section)
+    node.text = node.quote = recipient + ' | 04-30 안내문 발송 / 14:00 ' + receipt + ' | ' + field + ': 확인 완료'
+    graph.source_texts = {name: '한울정밀공업(주) / 2026년 4월 기록 / 김해 제1공장·양산 제2공장\n'
+                          for name in graph.source_texts}
+    a = answer(graph, 'E-7')
+    assert a.value is expected and a.status == ('verified' if expected else 'insufficient'), a.rationale
+
+
+@pytest.mark.parametrize('recipient,section', [
+    ('SUP-99 공급사', '공급사 안내문 전달·수령 및 확인'),
+    ('CUS-99 고객', '고객 안내문 전달·수령'),
+])
+@pytest.mark.parametrize('path', ['augmentation', 'full_row'])
+@pytest.mark.parametrize('state,expected', [('수령 확인 안 됨', None), ('미확인', None), ('확인 완료', True)])
+def test_wrapped_receipt_confirmation_status_stays_with_its_row(recipient, section, path, state, expected):
+    _, _, augment = heading_split_extraction()
+    graph = live_split_delivery_graph()
+    node = next(n for n in graph.text_nodes.values() if n.section == section)
+    raw = recipient + ' | 04-30 안내문 발송 / 14:00 수령 확인.\n수령 확인 상태: ' + state
+    if path == 'full_row':
+        node.text = node.quote = raw
+    else:
+        node.text = '전달 대상 주소를 보관한다.'
+        from esgenie.ssot.evidence_graph import TextNode
+        for i, c in enumerate(augment([], raw_text=raw, doc_type='policy_manual', page=1)):
+            assert c.quote == raw
+            graph.add_text_node(TextNode('wrapped_status_'+str(i), c.section, c.text, None,
+                                        node.source_file, page=c.page, quote=c.quote, page_source=c.page_source))
+    graph.source_texts = {name: '한울정밀공업(주) / 2026년 4월 기록 / 김해 제1공장·양산 제2공장\n'
+                          for name in graph.source_texts}
+    a = answer(graph, 'E-7')
+    assert a.value is expected and a.status == ('verified' if expected else 'insufficient'), a.rationale
+
+
 @pytest.mark.parametrize('code', NORMAL)
 def test_complete_independent_requirements_include_every_page(code):
     a = answer(graph_for(NORMAL[code]), code)

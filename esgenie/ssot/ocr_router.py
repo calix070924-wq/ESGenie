@@ -24,7 +24,7 @@ from enum import Enum
 from html.parser import HTMLParser
 from pathlib import Path
 from typing import Any
-from .receipt_status import row_unresolved
+from .receipt_status import row_unresolved, STATUS_LINE
 
 # Upstage Document Parse 모델.
 # document-parse-260630 명시 pin은 2026-11-02(KST) 지원 종료 — Upstage 권고에 따라 alias로 전환.
@@ -4849,7 +4849,7 @@ def _augment_unstructured_clauses(
             # 다른 문장/대상/범위는 붙이지 않아 독립 확인을 빌리지 않는다.
             for following in lines[index + 1:]:
                 if (pending_state.match(following)
-                        or re.match(r'(?:(?:수령|전달|배포)\s*)?(?:상태|결과|진행)\s*[:：]', following)):
+                        or STATUS_LINE.match(following)):
                     row.append(following)
                     break
                 if (recipient.match(following) or '|' in following
