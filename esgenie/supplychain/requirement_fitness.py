@@ -13,6 +13,7 @@ from collections import defaultdict
 from ..ssot.audit_trace import evidence_link
 from ..ssot.boundary import Boundary, detect_site
 from ..survey import is_survey
+from ..ssot.receipt_status import row_unresolved, receipt_rows, STATUS_FIELD
 
 
 @dataclass(frozen=True)
@@ -211,10 +212,8 @@ def _asserted_completion(unit, end):
     if tail.startswith('|'):
         # '완료 | 확인자'는 완료 상태와 메타데이터다. 반면 같은 행의
         # 명시적 대기/예정 상태와 충돌하면 완료로 확정하지 않는다.
-        for cell in tail.split('|')[1:]:
-            if re.match(r'\s*(?:(?:상태|결과|진행)\s*[:：]\s*)?'
-                        r'(?:대기|예정|요청|미완료|미확인|계획|필요)(?=\W|중|$)', cell):
-                return False
+        if row_unresolved(tail):
+            return False
     return True
 
 
@@ -416,11 +415,16 @@ _PROTECTIVE = re.compile(r'보복\s*(?:없|없는|없이)|이상.{0,12}없|누�
                          r'구서식.{0,12}없|접근권한.{0,12}없|보복(?:을)?\s*하지\s*않\S*')
 
 
-def supported_parts(text):
+def supported_parts(text, *, receipt_status=False):
+    if receipt_status:
+        # 같은 수령 행의 상태를 문장 분리 전에 읽는다. 완료 문장 뒤의
+        # 상태 셀/다음 OCR 줄이 따로 떨어져 긍정 근거로 남지 않게 한다.
+        text = '\n'.join(row for row in receipt_rows(text or '') if not row_unresolved(row))
     parts = [part for unit in _statement_units(text or '')
              for part in re.split(r'(?<=이며)\s*|(?<=지만)\s*|'
                                   r'(?<=않으며)\s*|(?<=않았으며)\s*', unit)]
-    return '\n'.join(p for p in parts if not _UNSUPPORTED.search(_PROTECTIVE.sub('', p)))
+    return '\n'.join(p for p in parts if not _UNSUPPORTED.search(
+        _PROTECTIVE.sub('', STATUS_FIELD.sub('', p) if receipt_status else p)))
 
 
 def requirement_code(q):
@@ -473,7 +477,10 @@ def assess_requirements(answer, q, graph):
         if is_survey(node):
             continue
         contexts[node.source_file].append(f'{node.section}\n{node.text}')
-        supported = supported_parts(node.text)
+        supported = supported_parts(node.text, receipt_status=(code == 'E-7'))
+        # 대상 열이 절 제목으로 이동해도 같은 행의 미완료 상태는 남긴다.
+        if code == 'E-7' and row_unresolved(node.section):
+            supported = ''
         # 교육 프로그램의 대상·주제는 같은 페이지의 원문 머리말과 함께 읽는다.
         # 문서 등록표가 교육 실적을 열거한 것은 교육 실시 기록으로 재해석하지 않는다.
         header = '\n'.join(line for line in source_texts.get(node.source_file, '').splitlines()[:12]

@@ -692,6 +692,10 @@ RECEIPT_STATUS_VALUE_CASES = [
     ('미확인', None),
     ('수령 미확인', None),
     ('수령미확인', None),
+    ('수령 확인 안 됨', None),
+    ('수령 확인 못함', None),
+    ('수령 확인 불가능', None),
+    ('수령 확인 완료 아님', None),
     ('확인되지 않음', None),
     ('확인되지않았음', None),
     ('확인 완료', True),
@@ -726,6 +730,53 @@ def test_raw_receipt_status_value_preserves_negation_context(recipient, section,
         assert c.page == 1 and c.quote == raw
         graph.add_text_node(TextNode('status_context_'+str(index), c.section, c.text, None,
                                     node.source_file, page=c.page, quote=c.quote, page_source=c.page_source))
+    graph.source_texts = {name: '한울정밀공업(주) / 2026년 4월 기록 / 김해 제1공장·양산 제2공장\n'
+                          for name in graph.source_texts}
+    a = answer(graph, 'E-7')
+    assert a.value is expected and a.status == ('verified' if expected else 'insufficient'), a.rationale
+
+
+# The same states must constrain the answer when OCR retains the entire row
+# or moves the target/status column into the clause heading.
+@pytest.mark.parametrize('recipient,section', [
+    ('SUP-99 공급사', '공급사 안내문 전달·수령 및 확인'),
+    ('CUS-99 고객', '고객 안내문 전달·수령'),
+])
+@pytest.mark.parametrize('state,expected', [
+    ('수령 확인 안 됨', None), ('수령 확인 못함', None),
+    ('수령 확인 불가능', None), ('수령 확인 완료 아님', None),
+    ('확인되지 않은 상태', None), ('수령 미완료', None),
+    ('확인 필요 없이 수령 확인 완료', True),
+    ('대기하지 않았고 수령 확인 완료', True),
+    ('확인 완료; 수령 상태: 미확인', None),
+    ('확인 완료 (수령 상태: 미확인)', None),
+])
+def test_full_receipt_row_keeps_explicit_status_context(recipient, section, state, expected):
+    graph = live_split_delivery_graph()
+    node = next(n for n in graph.text_nodes.values() if n.section == section)
+    raw = recipient + ' (수령 상태: ' + state + ') | 04-30 안내문 발송 / 14:00 수령 확인.'
+    node.text = node.quote = raw
+    graph.source_texts = {name: '한울정밀공업(주) / 2026년 4월 기록 / 김해 제1공장·양산 제2공장\n'
+                          for name in graph.source_texts}
+    a = answer(graph, 'E-7')
+    assert a.value is expected and a.status == ('verified' if expected else 'insufficient'), a.rationale
+
+
+@pytest.mark.parametrize('recipient,section', [
+    ('SUP-99 공급사', '공급사 안내문 전달·수령 및 확인'),
+    ('CUS-99 고객', '고객 안내문 전달·수령'),
+])
+@pytest.mark.parametrize('state,expected', [
+    ('수령 확인 안 됨', None), ('수령 확인 못함', None),
+    ('수령 확인 불가능', None), ('수령 확인 완료 아님', None),
+    ('미확인이 아님', True), ('대기하지 않았고 수령 확인 완료', True),
+])
+def test_receipt_status_in_extracted_heading_constrains_same_row(recipient, section, state, expected):
+    graph = live_split_delivery_graph()
+    node = next(n for n in graph.text_nodes.values() if n.section == section)
+    node.section = recipient + ' (수령 상태: ' + state + ')'
+    node.text = recipient + ' | 04-30 안내문 발송 / 14:00 수령 확인.'
+    node.quote = node.section + ' | 04-30 안내문 발송 / 14:00 수령 확인.'
     graph.source_texts = {name: '한울정밀공업(주) / 2026년 4월 기록 / 김해 제1공장·양산 제2공장\n'
                           for name in graph.source_texts}
     a = answer(graph, 'E-7')
