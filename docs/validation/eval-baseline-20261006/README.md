@@ -1,7 +1,9 @@
 # 일반 문서 AI 대조군 — 실행기 (작업지시서 B §4.2)
 
-**상태: 실행기 구현 완료(공통 답안 형식 A v1.1 확정, c1bfa67, 2026-10-10) · 실제 호출 0건 · 비교 결과 없음.**
-이 문서는 실행기의 조건과 기록 규칙을 적는다. 결과·비교표는 실제 실행 뒤에 §7 에 추가한다.
+**상태: 실행기 구현 완료(공통 답안 형식 A v1.1 확정, c1bfa67, 2026-10-10) · 유료 API 호출 0건 · 비교 결과 없음.**
+**2026-10-13 결정: API 대조군(gpt-4.1-mini·gpt-4.1)은 Azure 크레딧 소진으로 실행하지 않는다.
+대신 타 공급자 대조군을 사람이 claude.ai 채팅에서 수동으로 실행한다(§9).**
+이 문서는 실행기의 조건과 기록 규칙을 적는다. 결과·비교표는 실제 실행 뒤에 추가한다.
 
 - 실행기: `scripts/baseline_generic_llm.py`
 - 테스트: `tests/test_baseline_generic_llm.py` (LLM 은 mock, 네트워크 호출 없음)
@@ -21,7 +23,10 @@
 | ESGenie 기준 실행 | `LIVE_n5_d8a0de8` (initial·followup 둘 다) |
 | 입력 텍스트 원천 | **ESGenie 가 같은 실행에서 쓴 OCR 결과** — `pipeline.json` 의 `ocr_extractions[].raw_text` |
 | 회사 답변(05) | `esgenie/supplychain/claims.py::_extract_text` 로 추출한 PDF 원문 (증빙 OCR 경로 아님) |
-| temperature | 0 |
+| temperature | API 경로 0 / **수동 채팅 경로는 `null`**(채팅 기본값, 사람이 제어 못 함) |
+| **실행할 대조군** | **타 공급자 1종 — claude.ai 채팅 수동 실행, 단계당 3회(총 6회)**(§9) |
+| 실행하지 않는 대조군 | 동일 모델(`gpt-4.1-mini` 5회)·상위 모델(`gpt-4.1` 3회) — **예산 소진**(Azure 크레딧, 2026-10-13 결정) |
+| 사전 등록 | 사례 `e49e69a`·프롬프트 `2717880` **그대로** 쓴다(수정하지 않는다) |
 | `dataset_tag` | `virtual` (확정, A c1bfa67, 2026-10-10) |
 | `material_kind` | `mixed` (확정, A c1bfa67, 2026-10-10 — B 제시값을 A 가 그대로 받음) |
 | 단계별 `data_source` | initial `촬영증빙_17건` / followup `촬영증빙_17건+보완_1건` (확정, A c1bfa67) |
@@ -47,6 +52,13 @@ python scripts/baseline_generic_llm.py \
 
 # 저장한 응답만으로 공통 형식을 다시 만든다(호출 없음)
 python scripts/baseline_generic_llm.py --rescore-only outputs/eval/baseline/<run_id>
+
+# 수동 채팅 실행(§9) — API 호출 없음
+python scripts/baseline_generic_llm.py --provider manual \
+  --pipeline-json <run>/initial/pipeline.json --stage initial \
+  --repeats 3 --out outputs/eval/baseline                  # 붙여넣기 입력 내보내기
+python scripts/baseline_generic_llm.py --provider manual \
+  --import outputs/eval/baseline/MANUAL_claude_initial_rep1  # 사람이 넣은 답 가져오기
 ```
 
 공통 답안 형식 모듈은 인자 없이도 찾는다(§7 해석 순서). 다른 판으로 검증하려면
@@ -317,11 +329,85 @@ API 가 보고한 토큰과 확인된 청구 단가로 다시 계산한다.
    `gpt-4.1-mini`·`gpt-4.1` 둘 다 더 이상 없다(표에 있음). 그 밖의 모델은 여전히
    `--max-input-tokens` 를 요구한다.
 3. 입력 토큰은 호출 전에는 **추정값**이다(tiktoken 없음). 호출 후 API 값으로 대체 기록한다.
-4. **예상 비용 ≈ $0.82 는 참고값이다**(§6 (나)). 단가는 사람이 확인한 OpenAI 공개 단가를 Azure
-   표준 배포와 같다고 **가정**한 값이고, 출력 토큰은 호출당 8,000 으로 **가정**했다. Azure 실제
-   청구 단가(§6 (가))는 여전히 미확인이다. **현재 비용 0 USD**(호출 0건).
+4. **예상 비용 ≈ $0.82 는 실행하지 않은 API 대조군의 참고값이다**(§6 (나)). 2026-10-13 결정으로
+   API 대조군을 실행하지 않으므로 이 비용은 발생하지 않는다. **현재 유료 API 비용 0 USD**(호출 0건).
 5. 자료는 **가상 시연 세트**다. 결과를 실제 기업 자료의 성능으로 읽을 수 없다.
-6. 이 문서에는 **실제 응답 결과가 없다.** 호출·채점·비교표는 라벨 확정 뒤의 일이다(형식은
-   이제 확정됐다).
-7. `ANTHROPIC_API_KEY` 가 없어 타 공급자(`SETTINGS.anthropic_model`) 의 컨텍스트 한도·단가는
-   조사하지 않았다(이번 단계 지시 범위 — 동일 모델·상위 모델 2개만).
+6. 이 문서에는 **실제 응답 결과가 없다.** 채점·비교표는 수동 실행·라벨 확정 뒤의 일이다.
+7. **동일 모델 대조군을 실행하지 않는다(예산 소진).** 작업지시서 §4.2 표의 세 대조군 중 "동일
+   모델(ESGenie 와 같은 `gpt-4.1-mini`) — 차이가 구조에서 나오는지"와 "상위 모델(`gpt-4.1`) —
+   더 강한 모델이면 함정을 피하는지"가 빠진다. 그래서 **ESGenie 와 대조군의 차이가 검증 구조에서
+   왔는지, 모델이 달라서 왔는지를 이 비교만으로는 가를 수 없다.** 남는 것은 타 공급자 1종이다.
+8. **수동 채팅 실행이라 통제하지 못하는 것이 있다**(§9).
+   - **temperature**: 채팅 기본값이고 사람이 제어하지 못한다(기록값 `null`). 작업지시서 §4.2 의
+     temperature 0 조건을 만족하지 않는다.
+   - **토큰 수**: 채팅 화면이 알려 주지 않는다(기록값 `null`). 입력은 `chars/2.0` 추정값만 있다.
+   - **숨은 시스템 지시**: claude.ai 채팅 서비스가 붙이는 자체 시스템 지시를 볼 수도 끌 수도 없다.
+     우리 §1 시스템 지시는 `[시스템 지시]` 머리글을 단 **사용자 메시지 안의 글**로 들어간다(채팅에
+     system 역할이 없다) — API 의 system 메시지와 같은 무게로 읽힌다는 보장이 없다.
+   - **모델 식별자**: API 응답의 정확한 `model` 대신 사람이 화면에서 읽은 이름이다.
+   - **입력 길이**: 약 3만 8천 자를 붙여 넣는다. 채팅 화면이 긴 글을 "붙여넣은 텍스트" 상자로
+     바꿔 보일 수 있다(같은 글이다).
+   - **출력 끊김**: 답이 끊기면 `계속` 을 한 번 보내 이어 받는다. 이어 붙인 자리에서 JSON 이 깨지면
+     파싱 실패로 남는다(고치지 않는다). 이어받음 여부는 `meta.txt`·`response_raw.json`·`run_log.json`
+     에 남는다.
+9. **사전 등록한 사례(`e49e69a`)·프롬프트(`2717880`)는 그대로다.** 수동 실행이 더하는 글자는
+   §9 의 이어 붙이기 머리글(`[시스템 지시]`·`[사용자 입력]`)뿐이고, 프롬프트 파일 내용은 바뀌지 않았다.
+
+## 9. 수동 채팅 실행 (타 공급자 대조군, 2026-10-13~)
+
+API 를 부르지 않는다. 실행기가 **API 경로에서 보낼 system·user 문자열을 한 글자도 바꾸지 않고**
+파일로 쓰고, 사람이 그것을 claude.ai 새 채팅에 붙여 넣어 실행한 뒤, 답을 파일로 돌려준다.
+사람용 순서는 `outputs/eval/baseline/수동실행_안내.md` 에 있다.
+
+### 9.1 붙여넣기 입력 형식
+
+채팅에는 system 역할이 없으므로 둘을 한 덩어리로 붙인다. **이 형식이 수동 실행에서 유일하게 더해지는
+글자다.**
+
+```
+[시스템 지시]\n<system>\n\n[사용자 입력]\n<user>
+```
+
+- `<system>` = 프롬프트 §1(시스템 프롬프트) 그대로, `<user>` = §2 템플릿을 같은 실행 입력으로 채운 것
+  그대로 — API 경로의 `call_model(…, system, user)` 에 넘기는 문자열과 같다(테스트가 바이트 단위로
+  확인한다).
+- 파일은 UTF-8, 줄바꿈 변환 없이 쓴다(`\n` 그대로, Windows `\r\n` 변환 안 함).
+
+### 9.2 폴더와 파일
+
+`outputs/eval/baseline/MANUAL_claude_<stage>_rep<k>/` (stage = initial·followup, k = 1~3, 모두 6개).
+**폴더 이름이 그대로 `run_id` 다.**
+
+| 파일 | 누가 | 내용 |
+|---|---|---|
+| `paste_input.txt` | 실행기(내보내기) | 붙여 넣을 글 전체 |
+| `request.json` | 실행기(내보내기) | 프롬프트·사례 sha256, system·user·paste sha256, 문자 수, 추정 토큰, `temperature: null` + 사유 |
+| `response.txt` | **사람** | 채팅 답 원문 그대로. `계속` 으로 이어 받았으면 두 조각을 이어 붙인 것 |
+| `meta.txt` | **사람** | `모델: …` / `실행 시각: …` / `이어받음: 예\|아니오` (세 줄 필수) |
+| `response_raw.json` | 실행기(가져오기) | 답 원문 + meta + `temperature: null` + 토큰 `null` |
+| `common_v1_<stage>.json` | 실행기(가져오기) | A 공통 답안 형식 v1.1 문서 |
+| `run_log.json`·`validate_issues.json` | 실행기(가져오기) | 파싱 집계·검증 결과(실패 시) |
+
+### 9.3 가져오기 규칙
+
+- `meta.system` = `baseline_<meta.txt 모델 이름을 소문자·하이픈으로>`
+  (예: `Claude Opus 4.1` → `baseline_claude-opus-4-1`), `meta.model` = `meta.txt` 값 **그대로**,
+  `meta.run_id` = 폴더 이름.
+- 토큰 수 `null`(채팅이라 모름). temperature `null`, 사유 "채팅 기본값, 사람이 제어 못 함".
+- `meta.notice` 에 수동 채팅 실행이라는 사실과 통제하지 못하는 항목을 적는다.
+  `meta.adapter.provider = "manual"`.
+- `meta.txt` 가 없거나 세 줄 중 하나라도 빠지거나 `이어받음` 값이 `예`·`아니오` 가 아니면
+  **아무 파일도 쓰지 않고 거부한다.** `response.txt` 가 없어도 거부한다.
+- `response.txt` 는 BOM 만 벗기고(메모장 저장 흔적) 내용은 고치지 않는다. 파싱 실패·누락 qid 는
+  API 경로와 같은 규칙이다 — 행을 만들지 않고 기록하며, 검증 실패를 고치지 않는다.
+- 내보내기는 사람이 넣은 `response.txt`·`meta.txt`·`response_raw.json` 이 있는 폴더를 **덮어쓰지 않는다.**
+
+### 9.4 내보낸 입력 (2026-10-13, `LIVE_n5_d8a0de8`)
+
+| 단계 | paste_input.txt sha256 | 바이트 | 문자 | 추정 토큰 |
+|---|---|---:|---:|---:|
+| initial (rep1~3 동일) | `1f189c6ca4e233e9fd413f6456c2aa86b20d37ecce4126481689ccea9b01c839` | 70,145 | 37,746 | 18,864 |
+| followup (rep1~3 동일) | `5f7b9185dce80de02d0a8c367cb17c22399aeacd76a5216ed57414b1ab8c5668` | 71,765 | 38,659 | 19,320 |
+
+같은 단계의 rep1~3 은 sha256 이 같다. 각 파일은 `build_inputs()` 로 따로 다시 만든 API 경로
+메시지와 바이트 단위로 같다. system 부분은 사전 등록한 §1 의 sha256(`6f184caf…`)과 같다.

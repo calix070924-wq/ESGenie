@@ -37,6 +37,13 @@ ESGenie 가 같은 실행에서 쓴 OCR 결과를 그대로 일반 LLM 에 넣�
 
     # 저장한 응답만으로 공통 형식을 다시 만든다(호출 없음)
     python scripts/baseline_generic_llm.py --rescore-only outputs/eval/baseline/<run_id>
+
+    # 수동 채팅 실행(API 호출 없음) — 붙여넣기 입력 내보내기 → 사람이 채팅 실행 → 가져오기
+    python scripts/baseline_generic_llm.py --provider manual \
+        --pipeline-json <run>/initial/pipeline.json --stage initial \
+        --repeats 3 --out outputs/eval/baseline
+    python scripts/baseline_generic_llm.py --provider manual \
+        --import outputs/eval/baseline/MANUAL_claude_initial_rep1
 """
 from __future__ import annotations
 
@@ -87,6 +94,23 @@ ANSWER_FORMAT_GIT_PATH = "esgenie/eval/answer_format.py"
 #: 회사 답변 구획의 제목·표지. 증빙 블록과 표지를 다르게 둔다.
 COMPANY_SECTION_TITLE = "회사 자가 답변 초안 — 검증된 증빙 아님"
 COMPANY_NOTICE = "05는 회사 자가 답변 원문, 증빙 아님"
+
+# ── 수동 채팅 실행(--provider manual) ────────────────────────────────────────
+#: 채팅 화면에는 system 역할이 없어서 system·user 를 한 덩어리로 붙인다. 이 이어 붙이기
+#: 형식이 수동 실행에서 **유일하게** 더해지는 글자다(프롬프트 파일 내용은 그대로).
+MANUAL_SYSTEM_HEADER = "[시스템 지시]"
+MANUAL_USER_HEADER = "[사용자 입력]"
+#: 폴더 이름: MANUAL_<label>_<stage>_rep<k> — 폴더 이름이 그대로 run_id 다.
+MANUAL_DIR_FMT = "MANUAL_{label}_{stage}_rep{k}"
+MANUAL_PASTE_FILE = "paste_input.txt"
+MANUAL_RESPONSE_FILE = "response.txt"
+MANUAL_META_FILE = "meta.txt"
+#: meta.txt 에 반드시 있어야 하는 줄(`키: 값`). 하나라도 없으면 import 를 거부한다.
+MANUAL_META_KEYS = ("모델", "실행 시각", "이어받음")
+MANUAL_CONTINUED_VALUES = {"예": True, "아니오": False}
+MANUAL_TEMPERATURE_NOTE = "채팅 기본값, 사람이 제어 못 함"
+MANUAL_NOTICE = (COMPANY_NOTICE + " / 수동 채팅 실행(claude.ai) — temperature·토큰·"
+                 "채팅 서비스의 숨은 시스템 지시를 통제하지 못함")
 DOC_OPEN, DOC_CLOSE = "[문서 시작]", "[문서 끝]"
 CA_OPEN, CA_CLOSE = "[회사 답변 시작]", "[회사 답변 끝]"
 PAGE_UNKNOWN = "미상"
@@ -600,6 +624,9 @@ def to_common_document(
     unrecovered: set[str],
     company_answer_file: str,
     produced_at: str | None = None,
+    adapter_extra: dict[str, Any] | None = None,
+    notice: str | None = None,
+    system: str | None = None,
 ) -> tuple[dict[str, Any], dict[str, Any]]:
     """저장한 응답 → A 공통 답안 형식 v1.1 문서. (문서, 집계) 를 돌려준다.
 
@@ -674,18 +701,19 @@ def to_common_document(
     stats["unknown_qid"] = sorted(set(by_qid) - known)
 
     doc = af.new_document(
-        system=f"baseline_{model_id}",
+        system=system or f"baseline_{model_id}",
         run_id=run_id,
         stage=stage,
         framework=framework,
-        dataset_tag=DATASET_TAG,          # v1.1 필수 (A 확인 대기)
-        material_kind=MATERIAL_KIND,      # dataset_tag 와 다른 축 (A 확인 대기)
+        dataset_tag=DATASET_TAG,          # v1.1 필수 (확정, A c1bfa67)
+        material_kind=MATERIAL_KIND,      # dataset_tag 와 다른 축 (확정, A c1bfa67)
         data_source=data_source,          # v1.1 선택 — 사람이 읽는 설명
         model=model_id,
         produced_at=produced_at or now_kst(),
-        adapter={"name": "scripts/baseline_generic_llm.py", "version": "2"},
+        adapter={"name": "scripts/baseline_generic_llm.py", "version": "2",
+                 **(adapter_extra or {})},
         source_ref=source_ref,
-        notice=COMPANY_NOTICE,
+        notice=notice or COMPANY_NOTICE,
         answers=answers,
     )
     return doc, stats
@@ -986,7 +1014,10 @@ def run_live(args) -> int:
 
 
 def _rescore_one(af, rep_dir: Path, cases, stage, framework, run_id, model_id,
-                 data_source, unrecovered, company_answer_file):
+                 data_source, unrecovered, company_answer_file, *,
+                 adapter_extra: dict[str, Any] | None = None,
+                 notice: str | None = None,
+                 system: str | None = None):
     """한 반복의 저장된 응답 → 공통 형식 문서. 검증 결과까지 돌려준다."""
     saved = read_json(rep_dir / "response_raw.json")
     res = saved.get("response") or {}
@@ -999,6 +1030,7 @@ def _rescore_one(af, rep_dir: Path, cases, stage, framework, run_id, model_id,
         data_source=data_source,
         source_ref={"path": raw_rel, "sha256": sha256_file(rep_dir / "response_raw.json")},
         unrecovered=unrecovered, company_answer_file=company_answer_file,
+        adapter_extra=adapter_extra, notice=notice, system=system,
     )
     expected = tuple(c["qid"] for c in cases)
     issues = af.validate_document(doc, expected)
@@ -1045,13 +1077,206 @@ def run_rescore(args) -> int:
     return 1 if failures else 0
 
 
+# ── 수동 채팅 실행: 내보내기·가져오기 ──────────────────────────────────────
+def build_paste_input(system: str, user: str) -> str:
+    """채팅 창에 붙일 한 덩어리. system·user 는 API 경로와 **같은 문자열**이다."""
+    return f"{MANUAL_SYSTEM_HEADER}\n{system}\n\n{MANUAL_USER_HEADER}\n{user}"
+
+
+def write_text_exact(path: Path, text: str) -> None:
+    """줄바꿈을 바꾸지 않고 UTF-8 로 쓴다(Windows 의 \\n→\\r\\n 변환을 막는다)."""
+    path.parent.mkdir(parents=True, exist_ok=True)
+    with open(path, "w", encoding="utf-8", newline="") as fh:
+        fh.write(text)
+
+
+def model_slug(name: str) -> str:
+    """meta.txt 의 모델 이름 → 소문자·하이픈 (예: 'Claude Opus 4.1' → 'claude-opus-4-1')."""
+    out, prev_dash = [], False
+    for ch in name.strip().lower():
+        if ch.isalnum():
+            out.append(ch)
+            prev_dash = False
+        elif not prev_dash:
+            out.append("-")
+            prev_dash = True
+    slug = "".join(out).strip("-")
+    if not slug:
+        raise ValueError(f"모델 이름에서 식별자를 만들 수 없다: {name!r}")
+    return slug
+
+
+def parse_manual_meta(path: Path) -> dict[str, Any]:
+    """meta.txt(`키: 값` 줄)를 읽는다. 필수 키가 없거나 값이 틀리면 실패한다."""
+    if not path.is_file():
+        raise ValueError(f"{path.name} 이 없다 — 모델 이름·실행 시각·이어받음을 적어야 한다")
+    raw = path.read_text(encoding="utf-8-sig")
+    values: dict[str, str] = {}
+    for line in raw.splitlines():
+        if not line.strip():
+            continue
+        sep = ":" if ":" in line else ("：" if "：" in line else None)
+        if sep is None:
+            continue
+        key, value = line.split(sep, 1)
+        values[key.strip()] = value.strip()
+    missing = [k for k in MANUAL_META_KEYS if not values.get(k)]
+    if missing:
+        raise ValueError(f"{path.name} 에 빠진 줄: {', '.join(missing)}")
+    cont = values["이어받음"]
+    if cont not in MANUAL_CONTINUED_VALUES:
+        raise ValueError(f"{path.name} 의 '이어받음' 은 '예' 또는 '아니오' 여야 한다: {cont!r}")
+    return {
+        "model": values["모델"],
+        "run_at": values["실행 시각"],
+        "continued": MANUAL_CONTINUED_VALUES[cont],
+        "raw": raw,
+        "sha256": sha256_file(path),
+    }
+
+
+def run_manual_export(args) -> int:
+    """API 를 부르지 않고, API 경로에서 보낼 system·user 를 그대로 붙여넣기 파일로 쓴다."""
+    af = load_answer_format(args.answer_format, git_ref=args.answer_format_ref)
+    prep = build_inputs(args)
+    stage = args.stage
+    out_root = Path(args.out)
+    paste = build_paste_input(prep["system"], prep["user"])
+    paste_bytes = paste.encode("utf-8")
+
+    targets = [out_root / MANUAL_DIR_FMT.format(label=args.manual_label, stage=stage, k=k)
+               for k in range(1, args.repeats + 1)]
+    for d in targets:                       # 사람이 넣은 응답을 덮어쓰지 않는다
+        for name in (MANUAL_RESPONSE_FILE, MANUAL_META_FILE, "response_raw.json"):
+            if (d / name).exists():
+                raise RuntimeError(f"{d / name} 이 이미 있다 — 수동 실행 결과를 덮어쓰지 않는다")
+
+    written = []
+    for k, d in enumerate(targets, start=1):
+        write_text_exact(d / MANUAL_PASTE_FILE, paste)
+        write_json(d / "request.json", {
+            "run_id": d.name, "stage": stage, "framework": args.framework,
+            "provider": "manual", "model_requested": None,
+            "temperature": None, "temperature_note": MANUAL_TEMPERATURE_NOTE,
+            "prompt_file": prep["prompt"]["path"],
+            "prompt_sha256": prep["prompt"]["sha256"],
+            "cases_file": repo_relpath(args.cases),
+            "cases_sha256": sha256_file(args.cases),
+            "pipeline_json": str(Path(args.pipeline_json).resolve()),
+            "question_count": len(prep["cases"]),
+            "system_sha256": sha256_bytes(prep["system"].encode("utf-8")),
+            "user_sha256": sha256_bytes(prep["user"].encode("utf-8")),
+            "paste_input_file": MANUAL_PASTE_FILE,
+            "paste_input_sha256": sha256_bytes(paste_bytes),
+            "paste_input_chars": len(paste),
+            "paste_format": (f"{MANUAL_SYSTEM_HEADER}\\n<system>\\n\\n"
+                             f"{MANUAL_USER_HEADER}\\n<user>"),
+            "input_chars": prep["input_chars"],
+            "input_tokens_estimate": prep["input_tokens_estimate"],
+            "token_estimate_method": prep["token_estimate_method"],
+            "answer_format": answer_format_record(af),
+            "dataset_tag": DATASET_TAG,
+            "material_kind": MATERIAL_KIND,
+            "data_source": DATA_SOURCE[stage],
+            "blocks": prep["blocks"],
+            "page_methods": prep["page_methods"],
+            "unrecovered_files": prep["unrecovered_files"],
+            "company_answer": {k2: v for k2, v in prep["company_answer"].items()
+                               if k2 not in ("pages", "text")},
+            "exported_at_kst": now_kst(),
+            "note": "API 를 부르지 않았다. 사람이 claude.ai 채팅에 붙여 넣어 실행한다",
+        })
+        written.append({"run_id": d.name, "dir": str(d),
+                        "paste_input_sha256": sha256_file(d / MANUAL_PASTE_FILE)})
+        print(f"[manual export] {d}")
+
+    shas = {w["paste_input_sha256"] for w in written}
+    if len(shas) != 1:                      # 같은 단계의 반복은 같은 입력이어야 한다
+        raise RuntimeError(f"같은 단계의 paste_input.txt 가 서로 다르다: {sorted(shas)}")
+    return 0
+
+
+def run_manual_import(args) -> int:
+    """사람이 넣은 response.txt·meta.txt → response_raw.json → common_v1_<stage>.json."""
+    af = load_answer_format(args.answer_format, git_ref=args.answer_format_ref)
+    d = Path(args.import_dir)
+    req_path = d / "request.json"
+    if not req_path.is_file():
+        raise ValueError(f"{req_path} 가 없다 — 먼저 --provider manual 로 내보내야 한다")
+    req = read_json(req_path)
+    if req.get("provider") != "manual":
+        raise ValueError(f"{req_path} 는 수동 실행 폴더가 아니다(provider={req.get('provider')!r})")
+    meta = parse_manual_meta(d / MANUAL_META_FILE)
+    system_name = f"baseline_{model_slug(meta['model'])}"   # 실패하면 아무것도 쓰기 전에 멈춘다
+    resp_path = d / MANUAL_RESPONSE_FILE
+    if not resp_path.is_file():
+        raise ValueError(f"{resp_path.name} 이 없다")
+    # BOM 만 벗긴다(메모장 저장 흔적). 응답 내용은 고치지 않는다.
+    text = resp_path.read_text(encoding="utf-8-sig")
+
+    stage = req["stage"]
+    run_id = d.name
+    write_json(d / "response_raw.json", {
+        "run_id": run_id, "provider": "manual",
+        "model_requested": None, "called_at_kst": meta["run_at"],
+        "finished_at_kst": None,
+        "temperature": None, "temperature_note": MANUAL_TEMPERATURE_NOTE,
+        "continued": meta["continued"],
+        "response_txt_sha256": sha256_file(resp_path),
+        "meta_txt_sha256": meta["sha256"], "meta_txt": meta["raw"],
+        "error": None,
+        "response": {
+            "text": text, "model": meta["model"],
+            "prompt_tokens": None, "completion_tokens": None, "total_tokens": None,
+            "response_id": None, "raw": None,
+        },
+        "imported_at_kst": now_kst(),
+    })
+    cases = load_cases(args.cases)
+    adapter_extra = {"provider": "manual", "entry": "claude.ai chat",
+                     "paste_input_sha256": req.get("paste_input_sha256")}
+    # meta.system 은 baseline_<슬러그>, meta.model 은 meta.txt 값 그대로.
+    stale = d / "validate_issues.json"      # 다시 가져올 때 이전 실패 목록이 남지 않게
+    if stale.exists():
+        stale.unlink()
+    doc, stats, issues = _rescore_one(
+        af, d, cases, stage, req.get("framework", "rba42"), run_id,
+        meta["model"], DATA_SOURCE[stage], set(req.get("unrecovered_files") or []),
+        (req.get("company_answer") or {}).get("file_name", ""),
+        adapter_extra=adapter_extra, notice=MANUAL_NOTICE, system=system_name,
+    )
+    write_json(d / "run_log.json", {
+        "run_id": run_id, "status": "imported", "stage": stage, "provider": "manual",
+        "model_returned": meta["model"], "system": doc["meta"]["system"],
+        "run_at": meta["run_at"], "continued": meta["continued"],
+        "prompt_tokens": None, "completion_tokens": None, "total_tokens": None,
+        "token_note": "채팅이라 토큰 수를 알 수 없다",
+        "temperature": None, "temperature_note": MANUAL_TEMPERATURE_NOTE,
+        "input_chars": req.get("input_chars"),
+        "input_tokens_estimate": req.get("input_tokens_estimate"),
+        "paste_input_sha256": req.get("paste_input_sha256"),
+        "parse": stats, "validate_issues": issues,
+        "answer_format": answer_format_record(af),
+        "imported_at_kst": now_kst(),
+    })
+    print("%s: rows=%d missing=%d unparsed=%d issues=%d continued=%s"
+          % (run_id, stats["rows"], len(stats["missing_qid"]),
+             stats["detail_counts"].get("unparsed", 0), len(issues), meta["continued"]))
+    return 1 if issues else 0
+
+
 def build_parser() -> argparse.ArgumentParser:
     p = argparse.ArgumentParser(description="일반 문서 AI 대조군 실행기 (작업지시서 B §4.2)")
     p.add_argument("--pipeline-json", help="단계 pipeline.json 경로")
     p.add_argument("--stage", choices=sorted(DATA_SOURCE), help="initial | followup")
     p.add_argument("--framework", default="rba42")
     p.add_argument("--model", help="모델 식별자")
-    p.add_argument("--provider", default="openai", choices=("openai", "anthropic"))
+    p.add_argument("--provider", default="openai", choices=("openai", "anthropic", "manual"),
+                   help="manual: API 를 부르지 않고 채팅에 붙여 넣을 입력 파일만 쓴다")
+    p.add_argument("--import", dest="import_dir", default=None,
+                   help="(--provider manual) 사람이 response.txt·meta.txt 를 넣은 폴더를 가져온다")
+    p.add_argument("--manual-label", default="claude",
+                   help="수동 실행 폴더 이름의 라벨: MANUAL_<label>_<stage>_rep<k>")
     p.add_argument("--repeats", type=int, default=1)
     p.add_argument("--out", help="출력 루트")
     p.add_argument("--run-id", default=None)
@@ -1074,8 +1299,18 @@ def main(argv: list[str] | None = None) -> int:
     args = build_parser().parse_args(argv)
     if args.rescore_only:
         return run_rescore(args)
-    missing = [n for n in ("pipeline_json", "stage", "model", "out")
-               if not getattr(args, n)]
+    if args.import_dir:
+        if args.provider != "manual":
+            print("--import 는 --provider manual 과 함께만 쓴다", file=sys.stderr)
+            return 2
+        try:
+            return run_manual_import(args)
+        except (RuntimeError, ValueError, UnicodeDecodeError) as exc:
+            print("가져오기 중단: %s" % exc, file=sys.stderr)
+            return 2
+    required = ("pipeline_json", "stage", "out") if args.provider == "manual" \
+        else ("pipeline_json", "stage", "model", "out")
+    missing = [n for n in required if not getattr(args, n)]
     if missing:
         print("필수 인자 누락: " + ", ".join("--" + m.replace("_", "-") for m in missing),
               file=sys.stderr)
@@ -1084,6 +1319,8 @@ def main(argv: list[str] | None = None) -> int:
         print("--repeats 는 1 이상", file=sys.stderr)
         return 2
     try:
+        if args.provider == "manual":
+            return run_manual_export(args)
         return run_live(args)
     except (RuntimeError, ValueError) as exc:
         print("중단: %s" % exc, file=sys.stderr)

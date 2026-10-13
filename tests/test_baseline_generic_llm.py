@@ -7,6 +7,7 @@
 from __future__ import annotations
 
 import csv
+import hashlib
 import importlib.util
 import json
 import sys
@@ -763,3 +764,191 @@ def test_company_answer_sha_mismatch_aborts(tmp_path, monkeypatch, af):
 
     with pytest.raises(RuntimeError, match="sha256"):
         bg.build_inputs(_Args())
+
+
+# ── 12. 수동 채팅 실행(--provider manual) — API 호출 없음 ─────────────────
+def _manual_export(pipeline, cases, out, repeats=3):
+    return bg.main([
+        "--provider", "manual", "--pipeline-json", str(pipeline), "--stage", "initial",
+        "--repeats", str(repeats), "--out", str(out), "--cases", str(cases),
+        "--prompt", str(REPO_ROOT / bg.DEFAULT_PROMPT),
+    ])
+
+
+def _no_call(*a, **k):
+    raise AssertionError("수동 실행이 API 를 불렀다")
+
+
+def test_manual_export_matches_api_path_messages(tmp_path, monkeypatch, af):
+    """붙여넣기 파일의 system·user 가 API 경로에서 보낼 문자열과 한 글자도 다르지 않다."""
+    monkeypatch.setattr(bg, "extract_company_answer", _fake_ca)
+    pipeline, cases = _fake_pipeline(tmp_path), _cases_file(tmp_path)
+
+    sent = {}
+
+    def capture(provider, model, system, user):
+        sent["system"], sent["user"] = system, user
+        return {"text": '{"answers": []}', "model": "mock-model-1", "prompt_tokens": 1,
+                "completion_tokens": 1, "total_tokens": 2, "response_id": "r", "raw": None}
+    monkeypatch.setattr(bg, "call_model", capture)
+    rc = bg.main([
+        "--pipeline-json", str(pipeline), "--stage", "initial", "--model", "mock-model-1",
+        "--out", str(tmp_path / "api"), "--run-id", "API", "--cases", str(cases),
+        "--prompt", str(REPO_ROOT / bg.DEFAULT_PROMPT), "--max-input-tokens", "100000",
+    ])
+    assert rc == 1                       # 빈 answers → 누락 검증 실패(정상), 메시지는 잡혔다
+    assert sent["system"] and sent["user"]
+
+    monkeypatch.setattr(bg, "call_model", _no_call)
+    out = tmp_path / "manual"
+    assert _manual_export(pipeline, cases, out) == 0
+
+    expected = (bg.MANUAL_SYSTEM_HEADER + "\n" + sent["system"] + "\n\n"
+                + bg.MANUAL_USER_HEADER + "\n" + sent["user"])
+    shas = set()
+    for k in (1, 2, 3):
+        d = out / f"MANUAL_claude_initial_rep{k}"
+        raw = (d / "paste_input.txt").read_bytes()
+        assert raw == expected.encode("utf-8")        # 바이트까지 같다(줄바꿈 변환 없음)
+        sha = hashlib.sha256(raw).hexdigest()
+        shas.add(sha)
+        req = json.loads((d / "request.json").read_text(encoding="utf-8"))
+        assert req["provider"] == "manual" and req["run_id"] == d.name
+        assert req["temperature"] is None
+        assert req["temperature_note"] == bg.MANUAL_TEMPERATURE_NOTE
+        assert req["paste_input_sha256"] == sha
+        assert req["system_sha256"] == hashlib.sha256(sent["system"].encode()).hexdigest()
+        assert req["user_sha256"] == hashlib.sha256(sent["user"].encode()).hexdigest()
+        assert req["input_tokens_estimate"] > 0 and len(req["prompt_sha256"]) == 64
+    assert len(shas) == 1                             # 같은 단계 rep1~3 은 같은 입력
+
+
+def test_manual_export_refuses_to_overwrite_human_response(tmp_path, monkeypatch, af):
+    monkeypatch.setattr(bg, "extract_company_answer", _fake_ca)
+    monkeypatch.setattr(bg, "call_model", _no_call)
+    pipeline, cases = _fake_pipeline(tmp_path), _cases_file(tmp_path)
+    out = tmp_path / "manual"
+    assert _manual_export(pipeline, cases, out, repeats=1) == 0
+    d = out / "MANUAL_claude_initial_rep1"
+    (d / "response.txt").write_text("사람이 넣은 답", encoding="utf-8")
+    assert _manual_export(pipeline, cases, out, repeats=1) == 2
+    assert (d / "response.txt").read_text(encoding="utf-8") == "사람이 넣은 답"
+
+
+def _exported_dir(tmp_path, monkeypatch):
+    monkeypatch.setattr(bg, "extract_company_answer", _fake_ca)
+    monkeypatch.setattr(bg, "call_model", _no_call)
+    pipeline, cases = _fake_pipeline(tmp_path), _cases_file(tmp_path)
+    out = tmp_path / "manual"
+    assert _manual_export(pipeline, cases, out, repeats=1) == 0
+    return out / "MANUAL_claude_initial_rep1", cases
+
+
+def _write_meta(d, model="Claude Opus 4.1", run_at="2026-10-13 15:00", cont="아니오"):
+    (d / "meta.txt").write_text(f"모델: {model}\n실행 시각: {run_at}\n이어받음: {cont}\n",
+                                encoding="utf-8")
+
+
+def _import(d, cases):
+    return bg.main(["--provider", "manual", "--import", str(d), "--cases", str(cases)])
+
+
+_GOOD_RESPONSE = json.dumps({"answers": [
+    {"qid": "Q-1", "decision": "answer", "value": 1, "unit": "",
+     "evidence": [{"file_name": "01.pdf", "page": 1, "quote": "가"}]},
+    {"qid": "Q-2", "decision": "hold", "evidence": []},
+    {"qid": "Q-3", "decision": "not_applicable", "evidence": []},
+]}, ensure_ascii=False)
+
+
+def test_manual_import_builds_valid_common_doc(tmp_path, monkeypatch, af):
+    d, cases = _exported_dir(tmp_path, monkeypatch)
+    (d / "response.txt").write_text("```json\n" + _GOOD_RESPONSE + "\n```", encoding="utf-8")
+    _write_meta(d)
+    assert _import(d, cases) == 0
+
+    doc = json.loads((d / "common_v1_initial.json").read_text(encoding="utf-8"))
+    assert af.FORMAT_VERSION == "1.1"
+    assert af.validate_document(doc, EXPECTED) == []
+    assert doc["meta"]["system"] == "baseline_claude-opus-4-1"
+    assert doc["meta"]["model"] == "Claude Opus 4.1"          # meta.txt 값 그대로
+    assert doc["meta"]["run_id"] == "MANUAL_claude_initial_rep1"
+    assert doc["meta"]["adapter"]["provider"] == "manual"
+    assert doc["meta"]["notice"] == bg.MANUAL_NOTICE
+    assert {a["qid"]: a["decision_detail"] for a in doc["answers"]} == {
+        "Q-1": "confirmed", "Q-2": "hold", "Q-3": "not_applicable"}
+
+    raw = json.loads((d / "response_raw.json").read_text(encoding="utf-8"))
+    assert raw["response"]["prompt_tokens"] is None
+    assert raw["response"]["completion_tokens"] is None
+    assert raw["temperature"] is None
+    assert raw["temperature_note"] == bg.MANUAL_TEMPERATURE_NOTE
+    assert raw["called_at_kst"] == "2026-10-13 15:00"
+    assert raw["continued"] is False
+    log = json.loads((d / "run_log.json").read_text(encoding="utf-8"))
+    assert log["prompt_tokens"] is None and log["temperature"] is None
+    assert log["validate_issues"] == []
+    assert not (d / "validate_issues.json").exists()
+
+
+def test_manual_import_parse_failure_is_recorded_not_fixed(tmp_path, monkeypatch, af):
+    d, cases = _exported_dir(tmp_path, monkeypatch)
+    broken = '응답이 중간에 끊겼습니다 {"answers": [{"qid": "Q-1", "decis'
+    (d / "response.txt").write_text(broken, encoding="utf-8")
+    _write_meta(d)
+    assert _import(d, cases) == 1                     # 검증 실패를 그대로 드러낸다
+
+    doc = json.loads((d / "common_v1_initial.json").read_text(encoding="utf-8"))
+    assert doc["answers"] == []                       # 보류로 채우지 않는다
+    issues = json.loads((d / "validate_issues.json").read_text(encoding="utf-8"))
+    assert sorted({i["code"] for i in issues}) == ["missing_qid", "row_count"]
+    log = json.loads((d / "run_log.json").read_text(encoding="utf-8"))
+    assert log["parse"]["parse_error"]
+    assert sorted(log["parse"]["missing_qid"]) == ["Q-1", "Q-2", "Q-3"]
+    raw = json.loads((d / "response_raw.json").read_text(encoding="utf-8"))
+    assert raw["response"]["text"] == broken          # 원문을 고치지 않는다
+
+
+def test_manual_import_continued_response(tmp_path, monkeypatch, af):
+    """'계속'으로 이어 받은 두 조각을 사람이 이어 붙인 응답. 이어받음 표시가 기록에 남는다."""
+    d, cases = _exported_dir(tmp_path, monkeypatch)
+    half = len(_GOOD_RESPONSE) // 2
+    (d / "response.txt").write_text(_GOOD_RESPONSE[:half] + _GOOD_RESPONSE[half:],
+                                    encoding="utf-8")
+    _write_meta(d, cont="예")
+    assert _import(d, cases) == 0
+    raw = json.loads((d / "response_raw.json").read_text(encoding="utf-8"))
+    log = json.loads((d / "run_log.json").read_text(encoding="utf-8"))
+    assert raw["continued"] is True and log["continued"] is True
+    assert "이어받음: 예" in raw["meta_txt"]
+
+
+@pytest.mark.parametrize("meta_text", [
+    None,                                                           # meta.txt 없음
+    "모델: Claude Opus 4.1\n이어받음: 아니오\n",                        # 실행 시각 없음
+    "실행 시각: 2026-10-13 15:00\n이어받음: 아니오\n",                   # 모델 없음
+    "모델: Claude Opus 4.1\n실행 시각: 2026-10-13\n",                   # 이어받음 없음
+    "모델: Claude Opus 4.1\n실행 시각: 2026-10-13\n이어받음: 아마\n",     # 값 틀림
+])
+def test_manual_import_fails_without_complete_meta(tmp_path, monkeypatch, af, meta_text):
+    d, cases = _exported_dir(tmp_path, monkeypatch)
+    (d / "response.txt").write_text(_GOOD_RESPONSE, encoding="utf-8")
+    if meta_text is not None:
+        (d / "meta.txt").write_text(meta_text, encoding="utf-8")
+    assert _import(d, cases) == 2
+    for name in ("response_raw.json", "common_v1_initial.json", "run_log.json"):
+        assert not (d / name).exists(), name           # 아무것도 쓰기 전에 멈춘다
+
+
+def test_manual_import_requires_response_file(tmp_path, monkeypatch, af):
+    d, cases = _exported_dir(tmp_path, monkeypatch)
+    _write_meta(d)
+    assert _import(d, cases) == 2
+    assert not (d / "common_v1_initial.json").exists()
+
+
+def test_model_slug():
+    assert bg.model_slug("Claude Opus 4.1") == "claude-opus-4-1"
+    assert bg.model_slug("  Claude   Sonnet 4.5 ") == "claude-sonnet-4-5"
+    with pytest.raises(ValueError):
+        bg.model_slug("  ---  ")
