@@ -4798,6 +4798,31 @@ def _map_vlm_json(
     return metrics, clauses
 
 
+def _receipt_status_unresolved(value: str) -> bool:
+    """명시적 상태 값의 부정·미완료를 읽는다. 완료 입증에는 쓰지 않는다."""
+    states = r'(?:미\s*(?:확인|완료|수령)|대기|예정|요청|계획|필요|불가|불능|불확실|불명확)'
+    # ‘대기 없이’, ‘요청하지 않음’, ‘미확인이 아님’은 그 상태의 부정이다.
+    # 이 관계를 먼저 제거해 뒤의 완료를 막는 부정 술어로 뒤집지 않는다.
+    cancelled = re.compile(states + r'\s*(?:[이가은는을를]\s*)?'
+                           r'(?:상태\s*)?(?:없이|없(?:다|음|습니다)?|아니(?:다|며|라|라는)?|아님|아닌'
+                           r'|하지\s*(?:않|못)(?:다|음|았(?:다|음))?)')
+    remaining = cancelled.sub('', value)
+    return bool(re.search(states + r'(?=\W|중|상태|[이가은는을를]|$)', remaining)
+                or re.search(r'지\s*(?:않|못)|(?:확인|수령|완료)\s*없(?:다|음|습니다)?', remaining))
+
+
+def _receipt_row_unresolved(quote: str, pending_state: re.Pattern) -> bool:
+    """표의 명시적 상태 값과 독립 상태 셀만 읽고 다른 설명은 섞지 않는다."""
+    for cell in re.split(r'[|\n]', quote):
+        fields = list(re.finditer(r'(?:상태|결과|진행)\s*[:：]\s*([^|\n)）\]】;]*)', cell))
+        if fields:
+            if any(_receipt_status_unresolved(field[1]) for field in fields):
+                return True
+        elif pending_state.match(cell) and _receipt_status_unresolved(cell):
+            return True
+    return False
+
+
 def _augment_unstructured_clauses(
     clauses: list[ExtractedClause],
     *,
@@ -4847,7 +4872,8 @@ def _augment_unstructured_clauses(
             # 미완성 원문 문장/술어의 OCR 연속만 보존한다. 완결한 행 뒤
             # 다른 문장/대상/범위는 붙이지 않아 독립 확인을 빌리지 않는다.
             for following in lines[index + 1:]:
-                if pending_state.match(following):
+                if (pending_state.match(following)
+                        or re.match(r'(?:(?:수령|전달|배포)\s*)?(?:상태|결과|진행)\s*[:：]', following)):
                     row.append(following)
                     break
                 if (recipient.match(following) or '|' in following
@@ -4858,8 +4884,7 @@ def _augment_unstructured_clauses(
                 row.append(following)
             quote = '\n'.join(row)
             # 대상 칸의 명시적 상태 필드도 오른쪽 셀과 같은 규칙으로 읽는다.
-            cells = re.split(r'[|\n]|(?:상태|결과|진행)\s*[:：]', quote)
-            if any(pending_state.match(cell) for cell in cells):
+            if _receipt_row_unresolved(quote, pending_state):
                 continue  # 명시적 미완료 셀과 충돌하는 행을 완료 근거로 보강하지 않는다.
             # 대상 열에서는 식별자/역할만 연결한다. 제목에 들어간 완료
             # 문구를 술어로 쓰지 않으며, 실제 완료는 오른쪽 본문에서 읽는다.

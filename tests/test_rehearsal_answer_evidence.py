@@ -688,6 +688,68 @@ def test_raw_receipt_deduplication_keeps_distinct_target_column_scopes():
     assert augment(rows, raw_text=raw, doc_type='other', page=1) == rows
 
 
+RECEIPT_STATUS_VALUE_CASES = [
+    ('미확인', None),
+    ('수령 미확인', None),
+    ('수령미확인', None),
+    ('확인되지 않음', None),
+    ('확인되지않았음', None),
+    ('확인 완료', True),
+    ('대기 없이 수령 확인 완료', True),
+    ('대기하지 않고 수령 확인 완료', True),
+    ('미확인이 아님', True),
+    ('요청 없이 확인 완료', True),
+    ('필요 없음', True),
+    ('대기 없이 처리했지만 수령 확인되지 않음', None),
+]
+
+
+@pytest.mark.parametrize('recipient,section', [
+    ('SUP-99 공급사', '공급사 안내문 전달·수령 및 확인'),
+    ('CUS-99 고객', '고객 안내문 전달·수령'),
+])
+@pytest.mark.parametrize('position', ['target', 'cell', 'continuation'])
+@pytest.mark.parametrize('state,expected', RECEIPT_STATUS_VALUE_CASES)
+def test_raw_receipt_status_value_preserves_negation_context(recipient, section, position, state, expected):
+    _, _, augment = heading_split_extraction()
+    graph = live_split_delivery_graph()
+    node = next(n for n in graph.text_nodes.values() if n.section == section)
+    node.text = '전달 대상 주소를 보관한다.'
+    body = ' | 04-30 안내문 발송 / 14:00 수령 확인.'
+    if position == 'target':
+        raw = recipient + ' (수령 상태: ' + state + ')' + body
+    else:
+        raw = recipient + body + (' | ' if position == 'cell' else '\n') + '수령 상태: ' + state
+    rows = augment([], raw_text=raw, doc_type='policy_manual', page=1)
+    from esgenie.ssot.evidence_graph import TextNode
+    for index, c in enumerate(rows):
+        assert c.page == 1 and c.quote == raw
+        graph.add_text_node(TextNode('status_context_'+str(index), c.section, c.text, None,
+                                    node.source_file, page=c.page, quote=c.quote, page_source=c.page_source))
+    graph.source_texts = {name: '한울정밀공업(주) / 2026년 4월 기록 / 김해 제1공장·양산 제2공장\n'
+                          for name in graph.source_texts}
+    a = answer(graph, 'E-7')
+    assert a.value is expected and a.status == ('verified' if expected else 'insufficient'), a.rationale
+
+
+@pytest.mark.parametrize('position', ['target', 'cell', 'continuation'])
+def test_positive_receipt_status_does_not_supply_missing_completion(position):
+    _, _, augment = heading_split_extraction()
+    graph = live_split_delivery_graph()
+    customer = next(n for n in graph.text_nodes.values() if n.section == '고객 안내문 전달·수령')
+    customer.text = '전달 대상 주소를 보관한다.'
+    body = ' | 안내문 발송 / 수령 확인 예정.'
+    raw = ('CUS-99 고객 (수령 상태: 확인 완료)' + body if position == 'target' else
+           'CUS-99 고객' + body + (' | ' if position == 'cell' else '\n') + '수령 상태: 확인 완료')
+    from esgenie.ssot.evidence_graph import TextNode
+    for c in augment([], raw_text=raw, doc_type='policy_manual', page=1):
+        graph.add_text_node(TextNode('status_only', c.section, c.text, None,
+                                    customer.source_file, page=c.page, quote=c.quote, page_source=c.page_source))
+    graph.source_texts = {name: '한울정밀공업(주) / 2026년 4월 기록 / 김해 제1공장·양산 제2공장\n'
+                          for name in graph.source_texts}
+    assert answer(graph, 'E-7').value is None
+
+
 @pytest.mark.parametrize('code', NORMAL)
 def test_complete_independent_requirements_include_every_page(code):
     a = answer(graph_for(NORMAL[code]), code)
