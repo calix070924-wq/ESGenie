@@ -1,9 +1,10 @@
 # 일반 문서 AI 대조군 — 실행기 (작업지시서 B §4.2)
 
-**상태: 실행기 구현 완료(공통 답안 형식 A v1.1 확정, c1bfa67, 2026-10-10) · 유료 API 호출 0건 · 비교 결과 없음.**
+**상태: 실행기 구현 완료(공통 답안 형식 A v1.1 확정, c1bfa67, 2026-10-10) · 유료 API 호출 0건 ·
+수동 채팅 대조군 6회 채점 완료(2026-10-13, §10).**
 **2026-10-13 결정: API 대조군(gpt-4.1-mini·gpt-4.1)은 Azure 크레딧 소진으로 실행하지 않는다.
 대신 타 공급자 대조군을 사람이 claude.ai 채팅에서 수동으로 실행한다(§9).**
-이 문서는 실행기의 조건과 기록 규칙을 적는다. 결과·비교표는 실제 실행 뒤에 추가한다.
+§1~§9 는 실행기의 조건과 기록 규칙, §10 은 결과다.
 
 - 실행기: `scripts/baseline_generic_llm.py`
 - 테스트: `tests/test_baseline_generic_llm.py` (LLM 은 mock, 네트워크 호출 없음)
@@ -332,7 +333,7 @@ API 가 보고한 토큰과 확인된 청구 단가로 다시 계산한다.
 4. **예상 비용 ≈ $0.82 는 실행하지 않은 API 대조군의 참고값이다**(§6 (나)). 2026-10-13 결정으로
    API 대조군을 실행하지 않으므로 이 비용은 발생하지 않는다. **현재 유료 API 비용 0 USD**(호출 0건).
 5. 자료는 **가상 시연 세트**다. 결과를 실제 기업 자료의 성능으로 읽을 수 없다.
-6. 이 문서에는 **실제 응답 결과가 없다.** 채점·비교표는 수동 실행·라벨 확정 뒤의 일이다.
+6. ~~이 문서에는 실제 응답 결과가 없다.~~ **[2026-10-13 갱신] 수동 채팅 6회의 채점 결과를 §10 에 적었다.**
 7. **동일 모델 대조군을 실행하지 않는다(예산 소진).** 작업지시서 §4.2 표의 세 대조군 중 "동일
    모델(ESGenie 와 같은 `gpt-4.1-mini`) — 차이가 구조에서 나오는지"와 "상위 모델(`gpt-4.1`) —
    더 강한 모델이면 함정을 피하는지"가 빠진다. 그래서 **ESGenie 와 대조군의 차이가 검증 구조에서
@@ -411,3 +412,233 @@ API 를 부르지 않는다. 실행기가 **API 경로에서 보낼 system·user
 
 같은 단계의 rep1~3 은 sha256 이 같다. 각 파일은 `build_inputs()` 로 따로 다시 만든 API 경로
 메시지와 바이트 단위로 같다. system 부분은 사전 등록한 §1 의 sha256(`6f184caf…`)과 같다.
+
+## 10. 결과 (2026-10-13) — 팀이 만든 가상 세트, 특정 프롬프트·수동 채팅 기준
+
+**같은 모델 비교가 아니다.** ESGenie 쪽은 `gpt-4.1-mini`, 대조군은 claude.ai 채팅의 Sonnet 이다.
+아래 차이에는 검증 구조의 차이와 모델의 차이가 섞여 있다. 둘을 가를 대조군(동일 모델·상위 모델)은
+예산 소진으로 실행하지 않았다(§8 의 7). 이 결과로 "일반 AI 대비 몇 배" 같은 일반화를 하지 않는다.
+
+요약 JSON: `results_summary_20261013.json` (이 폴더). 라벨 원문·응답 원문은 들어 있지 않다.
+
+### 10.1 조건
+
+| 항목 | 값 |
+|---|---|
+| 자료 | 팀이 만든 **가상** 세트 `한울정밀_촬영세트_정상5건보강_20261007` — initial 17건(증빙 16 + 회사 자가답변 05) / followup 18건(+ 보완 1건) |
+| 문항 | `rba42` 48문항 × 2단계 |
+| 대조군 입력 | ESGenie **같은 실행**(`LIVE_n5_d8a0de8`)의 OCR 텍스트(`pipeline.json` `ocr_extractions[].raw_text`) + 05 원문(증빙과 분리된 구획) |
+| 프롬프트 | `data/eval/prompts/baseline_prompt_v1.md` — 커밋 `2717880`, sha256 `5b6cd37e…` |
+| 사례 | `data/eval/cases/baseline_cases_v1.csv` — 커밋 `e49e69a` |
+| ESGenie | `LIVE_n5_d8a0de8`, 코드 `d8a0de8`, 모델 `gpt-4.1-mini`. A 어댑터(`esgenie_adapter`)로 공통 형식 변환. followup 은 initial 캐시를 이어 쓴 실행이다(A 기록) |
+| 대조군 | **claude.ai 채팅 수동 실행**, 화면 표기 `Sonnet`(세부 버전 미기록), 단계당 3회 × 2단계 = 6회. 메모리 끔, 확장 사고 단추 없음(기본값), `계속` 0회, 매번 새 채팅 |
+| 대조군이 통제 못 한 것 | temperature·토큰 수·채팅 서비스의 숨은 시스템 지시(§8 의 8). API 대조군을 대신한 것이며 같은 조건이 아니다 |
+| 유료 API 호출 | **0건** |
+
+### 10.2 사전 등록 증거 — 사례·프롬프트 커밋이 첫 채팅보다 앞선다
+
+| 사건 | 시각 (KST) | 근거 |
+|---|---|---|
+| 사례 v1 사전 등록 | 2026-10-07 16:28:13 | 커밋 `e49e69a` |
+| 정답 라벨 커밋(A) | 2026-10-10 20:07:46 | 커밋 `52f03f4` (A 기록: 응답 열람 전) |
+| 프롬프트 v1 사전 등록 | 2026-10-13 10:35:14 | 커밋 `2717880` |
+| 붙여넣기 입력 내보내기 | 2026-10-13 11:29:02~11:29:04 | 각 폴더 `request.json` 의 `exported_at_kst` |
+| 수동 경로 커밋 | 2026-10-13 13:10:42 | 커밋 `bb5f0c6` |
+| **첫 채팅 실행** | **2026-10-13 13:52 (근사)** | `MANUAL_claude_initial_rep1/meta.txt`(사람 기록, 저장 시각 기준 근사). 첫 저장 파일의 수정 시각 13:55:04 |
+| 마지막 채팅 실행 | 2026-10-13 14:27 (근사) | `MANUAL_claude_followup_rep3/meta.txt` |
+
+- 커밋 시각은 작성자 컴퓨터 시계 값이다. 사람 결정 메시지(2026-10-13)에 적힌 대로, 원격에는
+  채팅 실행 전에 이미 `f75c887`(프롬프트 커밋 포함)이 올라가 있었다.
+- 실행 뒤 사례·프롬프트·라벨을 고치지 않았다. `git diff e49e69a HEAD -- data/eval/cases/`와
+  `git diff 2717880 HEAD -- data/eval/prompts/`의 출력은 비어 있다. 라벨은 A 브랜치의 고정 SHA에서 읽었다.
+
+### 10.3 불러오기 결과 (`--provider manual --import`)
+
+| 폴더 | 행 | 누락 | 파싱 실패 | 검증 문제 | 05 인용 행 | `confirmed` / `hold` / `not_applicable` |
+|---|---:|---:|---:|---:|---:|---|
+| `MANUAL_claude_initial_rep1` | 48 | 0 | 0 | 0 | 0 | 16 / 32 / 0 |
+| `MANUAL_claude_initial_rep2` | 48 | 0 | 0 | 0 | 0 | 14 / 34 / 0 |
+| `MANUAL_claude_initial_rep3` | 48 | 0 | 0 | 0 | 0 | 14 / 34 / 0 |
+| `MANUAL_claude_followup_rep1` | 48 | 0 | 0 | 0 | 0 | 13 / 35 / 0 |
+| `MANUAL_claude_followup_rep2` | 48 | 0 | 0 | 0 | 0 | 14 / 34 / 0 |
+| `MANUAL_claude_followup_rep3` | 48 | 0 | 0 | 0 | **1** | 8 / 39 / 1 |
+
+- `unverified_submitted`(근거 없이 answer)는 6회 모두 0건이다.
+- 응답 파일은 고치지 않았다. 불러오기 전후 `response.txt`·`meta.txt`의 sha256이 같다.
+- `MANUAL_claude_initial_rep1/_첫복사_따옴표변환됨.txt` 는 첫 복사 때 화면 드래그로 따옴표가 바뀐
+  사본이다(검사 담당 기록). 같은 답을 복사 단추로 다시 받은 것이 `response.txt` 이고, 사본은
+  **채점에 쓰지 않았다.**
+
+### 10.4 채점 기준 고정
+
+| 항목 | 값 |
+|---|---|
+| 채점기 | `origin/codex/eval-scoring-20261006` **`51e0bf47e3efa62b5c1664adc72d289cb8d23531`** (2026-10-13 fetch). `git archive`(`core.autocrlf=false`)로 저장소 밖에 꺼내 실행했다. 이 저장소에는 복사하지 않았다 |
+| 채점기 파일 sha256 (blob 그대로) | `scripts/eval_response_quality.py` `715029e3…` · `esgenie/eval/response_scoring.py` `af5a86a0…` · `esgenie/eval/esgenie_adapter.py` `7452cf61…` · `esgenie/eval/answer_format.py` `cfa37e80…`(c1bfa67 판과 같음) |
+| 정답 라벨 | `data/eval/labels/hanwool_bm_rba42_v1.csv` — A 확정, 96행, 커밋 `52f03f4`, sha256 `a18a87a6cc388e1686fea1c2d35b8ede9820e83e5b7471e3198ebfec58116d17`. **B 독립 라벨은 쓰지 않았다** |
+| 명령 | ESGenie: `--esgenie-result initial=… --esgenie-result followup=… --run-id LIVE_n5_d8a0de8 --dataset-tag virtual --material-kind mixed --model gpt-4.1-mini` / 대조군: 실행마다 `--answers <common_v1_<stage>.json>` 1개(실행을 합치지 않는다 — A 사용법 §6) |
+| 문항 구성 | `--framework rba42`(기본값) |
+| 결과 | 결과 파일 7개 모두 종료 코드 0, 형식 문제 0, `unresolved` 0 → 공식 비율 산출 |
+
+### 10.5 지표 (A 채점기가 낸 값 그대로, 단계별)
+
+대조군 칸은 3회의 최소~최대이고, 괄호 안은 rep1 / rep2 / rep3 이다.
+
+**initial**
+
+| 지표 | ESGenie | 대조군 (최소~최대) |
+|---|---|---|
+| M1 답변·근거 동시 정답률 | 2/7 (28.6%) | 2/7~6/7 (28.6%~85.7%) (2 / 6 / 6) |
+| M2 잘못된 확정 수 | 11 | 8~14 (14 / 8 / 8) |
+| M3 불필요한 보류 수 | 5 | 0~0 |
+| M4 확정 제출률 | 13/48 (27.1%) | 14/48~16/48 (29.2%~33.3%) (16 / 14 / 14) |
+| M5 자료 연결률 | 13/13 | 3/3 · 14/14 · 13/13 (모두 100%) |
+| M6 값 제출률 | 13/48 (27.1%) | 3/48~14/48 (6.3%~29.2%) (3 / 14 / 13) |
+| 올바른 보류 수(A4) | 30 | 32~34 (32 / 34 / 34) |
+| 올바른 답변 수 | 2 | 2~6 (2 / 6 / 6) |
+| 판정 불일치 | 0 | 0 |
+
+**followup**
+
+| 지표 | ESGenie | 대조군 (최소~최대) |
+|---|---|---|
+| M1 답변·근거 동시 정답률 | 2/7 (28.6%) | 1/7~6/7 (14.3%~85.7%) (1 / 1 / 6) |
+| M2 잘못된 확정 수 | 11 | 2~13 (12 / 13 / 2) |
+| M3 불필요한 보류 수 | 5 | 0~0 |
+| M4 확정 제출률 | 13/48 (27.1%) | 8/48~14/48 (16.7%~29.2%) (13 / 14 / 8) |
+| M5 자료 연결률 | 13/13 | 2/2 · 2/2 · 8/8 (모두 100%) |
+| M6 값 제출률 | 13/48 (27.1%) | 2/48~8/48 (4.2%~16.7%) (2 / 2 / 8) |
+| 올바른 보류 수(A4) | 30 | 34~39 (35 / 34 / 39) |
+| 올바른 답변 수 | 2 | 1~6 (1 / 1 / 6) |
+| 판정 불일치 | 0 | 0~1 (0 / 0 / 1) |
+
+M2(잘못된 확정)의 내역 — 채점기 `detail_counts` 그대로:
+
+| 실행 | 보류가 맞는 문항을 확정(`missed_mismatch`) | answer 문항을 확정했으나 값 오류(`value_error`) |
+|---|---:|---:|
+| ESGenie initial / followup | 11 / 11 | 0 / 0 |
+| 대조군 initial rep1 / rep2 / rep3 | 9 / 7 / 7 | 5 / 1 / 1 |
+| 대조군 followup rep1 / rep2 / rep3 | 6 / 7 / 1 | 6 / 6 / 1 |
+
+- 대조군의 `value_error` 는 두 가지다.
+  ① 6회 모두, 같은 수치 문항 1건을 단위 `kg` 로 답해 라벨 단위 `톤` 과 달랐다. 채점기는 배율 환산을 하지 않는다(A README §9.4).
+  ② initial rep1 의 4건과 followup rep1·rep2 의 각 5건은 예/아니오 문항을 answer 로 확정하면서 `value` 를
+  `null` 로 냈다. 프롬프트는 `true`/`false` 를 요구한다. 채점기는 이를 "시스템 값이 비어 있다"로 보고 값
+  불일치로 처리한다. **채점 규칙을 바꾸지 않고 그대로 둔다.**
+- M5 는 "근거를 연결했는가"를 보는 지표이고, 근거가 정답인 비율이 아니다. M5 분모는 실행마다 다르다.
+  M6과 같은 이유로, 값이 채워진 행만 분모에 들어가기 때문이다.
+- 종합 점수는 만들지 않는다(A 정책).
+
+### 10.6 함정 유형별 결과 (`baseline_cases_v1.csv` 의 `trap_types`)
+
+"맞음" = 채점기 집계 위치가 `correct_answer`·`correct_hold`·`correct_na` 인 행이다. 한 문항이 여러 유형에
+들어갈 수 있어서 합이 48보다 크다. 대조군 칸은 3회 중 최소~최대다.
+
+| 함정 유형 | 문항 | initial ESGenie 맞음 | initial 대조군 맞음 | followup ESGenie 맞음 | followup 대조군 맞음 |
+|---|---:|---:|---:|---:|---:|
+| `no_evidence` | 20 | 20 | 20~20 | 20 | 19~20 |
+| `single_policy_multi_yes` | 14 | 5 | 7~8 | 5 | 8~13 |
+| `partial_scope` | 9 | 5 | 7~8 | 5 | 8~8 |
+| `normal` | 5 | 2 | 1~5 | 2 | 0~5 |
+| `period_mismatch` | 3 | 2 | 3~3 | 2 | 3~3 |
+| `conducted_vs_completed` | 2 | 1 | 1~2 | 1 | 1~2 |
+| `denominator_meaning` | 1 | 0 | 1~1 | 0 | 1~1 |
+
+ESGenie 의 틀린 행은 유형별로 다음과 같다(단계마다 같다).
+- `single_policy_multi_yes` 9건: 잘못된 확정
+- `normal` 3건: 불필요한 보류
+- `partial_scope` 4건: 잘못된 확정 2, 불필요한 보류 2
+
+행별 집계 위치는 요약 JSON 의 `trap_types.by_stage` 에 있다.
+
+### 10.7 ESGenie 가 대조군보다 못한 행 — 전부
+
+규칙: ESGenie 행이 "맞음"이 아니고, 같은 단계 대조군 3회 중 1회 이상이 "맞음"인 행이다.
+**initial 11행, followup 14행.** "대조군 맞음"은 3회 중 맞은 횟수다.
+
+| 단계 | 문항 | 함정 유형 | ESGenie | 대조군 rep1 / rep2 / rep3 | 대조군 맞음 |
+|---|---|---|---|---|---:|
+| initial | RBA-A-3 | period_mismatch; partial_scope | 잘못된 확정 | 보류 / 보류 / 보류 | 3 |
+| initial | RBA-B-6 | normal | 불필요한 보류 | 정답 / 정답 / 정답 | 3 |
+| initial | RBA-C-4-E-6-2 | denominator_meaning; partial_scope | 불필요한 보류 | 정답 / 정답 / 정답 | 3 |
+| initial | RBA-C-7 | single_policy_multi_yes | 잘못된 확정 | 보류 / 보류 / 보류 | 3 |
+| initial | RBA-C-8 | single_policy_multi_yes | 잘못된 확정 | 보류 / 보류 / 보류 | 3 |
+| initial | RBA-D-2 | single_policy_multi_yes | 잘못된 확정 | 보류 / 보류 / 보류 | 3 |
+| initial | RBA-E-3 | single_policy_multi_yes | 잘못된 확정 | 보류 / 보류 / 보류 | 3 |
+| initial | RBA-E-4 | single_policy_multi_yes; partial_scope | 잘못된 확정 | 보류 / 보류 / 보류 | 3 |
+| initial | RBA-E-6 | conducted_vs_completed | 잘못된 확정 | 보류 / 보류 / 보류 | 3 |
+| initial | RBA-E-7 | normal | 불필요한 보류 | 잘못된 확정 / 정답 / 정답 | 2 |
+| initial | RBA-E-11 | normal | 불필요한 보류 | 잘못된 확정 / 정답 / 정답 | 2 |
+| followup | RBA-A-3 | period_mismatch; partial_scope | 잘못된 확정 | 보류 / 보류 / 보류 | 3 |
+| followup | RBA-B-6 | normal | 불필요한 보류 | 잘못된 확정 / 잘못된 확정 / 정답 | 1 |
+| followup | RBA-C-2 | single_policy_multi_yes | 잘못된 확정 | 잘못된 확정 / 잘못된 확정 / 보류 | 1 |
+| followup | RBA-C-4 | single_policy_multi_yes | 잘못된 확정 | 잘못된 확정 / 잘못된 확정 / 보류 | 1 |
+| followup | RBA-C-4-E-6-2 | denominator_meaning; partial_scope | 불필요한 보류 | 정답 / 정답 / 정답 | 3 |
+| followup | RBA-C-7 | single_policy_multi_yes | 잘못된 확정 | 보류 / 보류 / 보류 | 3 |
+| followup | RBA-C-8 | single_policy_multi_yes | 잘못된 확정 | 보류 / 보류 / 보류 | 3 |
+| followup | RBA-D-2 | single_policy_multi_yes | 잘못된 확정 | 보류 / 보류 / 보류 | 3 |
+| followup | RBA-D-8 | single_policy_multi_yes | 잘못된 확정 | 잘못된 확정 / 잘못된 확정 / 보류 | 1 |
+| followup | RBA-E-3 | single_policy_multi_yes | 잘못된 확정 | 보류 / 보류 / 보류 | 3 |
+| followup | RBA-E-4 | single_policy_multi_yes; partial_scope | 잘못된 확정 | 보류 / 보류 / 보류 | 3 |
+| followup | RBA-E-6 | conducted_vs_completed | 잘못된 확정 | 보류 / 보류 / 보류 | 3 |
+| followup | RBA-E-7 | normal | 불필요한 보류 | 잘못된 확정 / 잘못된 확정 / 정답 | 1 |
+| followup | RBA-E-11 | normal | 불필요한 보류 | 잘못된 확정 / 잘못된 확정 / 정답 | 1 |
+
+"보류"는 올바른 보류, "정답"은 올바른 답변이다.
+- 대조군이 3회 모두 맞은 행: initial 9행, followup 9행.
+- ESGenie 가 틀린 행은 단계마다 16개다. 그중 이 표에 없는 행은 대조군 3회도 모두 틀렸다.
+  - initial 5행: RBA-C-2·C-4·C-4-E-6-1·D-6·D-8
+  - followup 2행: RBA-C-4-E-6-1·D-6
+
+반대 방향(ESGenie 가 맞고 대조군 3회 중 1회 이상이 틀린 행)은 initial 7행, followup 6행이다.
+- initial: RBA-B-8·D-1·E-1·E-2·E-8·E-10·E-12. 그중 RBA-E-1·E-8 은 대조군 3회 모두 잘못된 확정이다.
+- followup: RBA-B-8·D-7·E-1·E-2·E-8·E-10.
+
+### 10.8 대조군이 05(회사 자가답변)를 근거로 쓴 행
+
+| 실행 | 문항 | 판정 상세 | 집계 위치 | 근거가 05 뿐인가 |
+|---|---|---|---|---|
+| followup rep3 | RBA-C-4-E-6-2 | `confirmed` | 올바른 답변 | 아니오(증빙 문서도 함께 인용) |
+
+나머지 5회는 0건이다. 출력은 고치지 않았다.
+
+### 10.9 반복 간 변동 (대조군, `decision_detail` 기준)
+
+| 단계 | 3회 사이에 `decision_detail` 이 바뀐 행 | 집계 위치가 바뀐 행 |
+|---|---:|---:|
+| initial | **3** (RBA-B-8·D-1·E-12) | 7 |
+| followup | **7** (RBA-B-8·C-2·C-4·D-7·D-8·E-1·E-8) | 12 |
+
+집계 위치가 바뀐 행이 더 많은 이유는, 판정은 같아도 예/아니오 `value` 를 낸 회와 안 낸 회가 있는 행이
+있어서다(§10.5). temperature 를 통제하지 못한 수동 실행에서 생긴 변동이다(§8 의 8).
+
+### 10.10 A 기록과의 대조 (ESGenie)
+
+이번 채점은 A 가 같은 실행을 채점한 기록과 같다. A 기록은 `origin/codex/eval-scoring-20261006` `51e0bf4` 의
+`docs/validation/eval-scoring-20261006/README.md` §8 이다.
+
+| 항목 | A 기록 | 이번 | 결과 |
+|---|---|---|---|
+| 96행 집계 위치 | 올바른 보류 60 · 잘못된 확정 22 · 불필요한 보류 10 · 올바른 답변 4 | 같음 | 일치 |
+| 단계별 M1~M6 | 2/7 · 11 · 5 · 13/48 · 13/13 · 13/48 | 같음 | 일치 |
+| 잘못된 확정 문항(단계마다 11) | A-3, C-2, C-4, C-7, C-8, D-2, D-6, D-8, E-3, E-4, E-6 | 같음 | 일치 |
+| 불필요한 보류 문항(단계마다 5) | B-6, C-4-E-6-1, C-4-E-6-2, E-7, E-11 | 같음 | 일치 |
+| 올바른 답변 문항(단계마다 2) | E-2, E-10 | 같음 | 일치 |
+
+A 의 채점 결과 파일(`score_result.json`)은 저장소 밖에 있어 파일 단위로는 대조하지 않았다. 위 대조는
+A README 에 적힌 값과의 대조다.
+
+### 10.11 한계
+
+1. **같은 모델 비교가 아니다.** ESGenie(`gpt-4.1-mini`)와 대조군(Sonnet)의 차이에는 검증 구조의 차이와
+   모델의 차이가 섞여 있다. 이 비교만으로는 어느 쪽 때문인지 가를 수 없다.
+2. **팀이 만든 가상 세트 1개, 특정 프롬프트(v1) 1개, 수동 채팅 기준이다.** 실제 기업 자료·다른 프롬프트·
+   API 실행으로 일반화하지 않는다. "N배" 표현을 쓰지 않는다.
+3. 대조군은 단계당 3회뿐이고, temperature·숨은 시스템 지시를 통제하지 못했다. 3회 사이에 M2 가 initial 은
+   8~14, followup 은 2~13 으로 크게 흔들렸다. 최소~최대를 평균으로 바꾸지 않았다.
+4. ESGenie 는 1회 실행이고 followup 은 캐시를 재사용한 실행이다(A 기록). 반복 분포가 없다.
+5. 정답 라벨은 A 확정 라벨이다. A 기록상 B 독립 검토 요건은 아직 충족되지 않았다(A README §0).
+6. 대조군 모델 이름은 화면 표기 `Sonnet` 뿐이고 세부 버전이 기록되지 않았다. 실행 시각도 사람이 적은 근사값이다.
+7. 대조군의 예/아니오 `value` 누락과 `kg`/`톤` 단위 차이는 A 채점 규칙대로 잘못된 확정으로 세었다.
+   규칙을 바꾸면 수치가 달라지지만, 바꾸지 않았다.
+8. 보류 사유는 공통 형식에 시스템 쪽 필드가 없어 채점하지 않았다(`hold_reason_unknown`).
