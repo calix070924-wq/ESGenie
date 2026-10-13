@@ -1,0 +1,14 @@
+.feedback.analysis-progress {
+  align-items: flex-start;
+  justify-content: flex-start;
+  flex-wrap: nowrap;
+}
+.analysis-progress > svg {
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+.analysis-progress > div {
+  flex: 1;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}

@@ -38,6 +38,10 @@ ESGenie_도전제안서_*.pdf
 
 # pytest cache
 .pytest_cache/
+node_modules/
+playwright-report/
+test-results/
+*.tsbuildinfo
 
 # 시연 증빙 세트 (실제 문서/PDF — 저장소 미포함)
 시연증빙세트_*/
