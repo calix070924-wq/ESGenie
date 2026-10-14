@@ -11,6 +11,7 @@ from typing import Any
 from .frameworks import get_framework
 from .gating import apply_gating
 from .mapping import derive_answer
+from .qualitative_review import require_qualitative_review
 from .requirement_fitness import assess_requirements, scoped_policy_failures
 from .schema import Answer, Framework, ResponseSheet
 
@@ -76,6 +77,7 @@ def build_response_sheet(
                 ans.flags.append(f"조항 검사 미충족: {code}" +
                                  (" · " + ", ".join(missing_clauses) if missing_clauses else ""))
         ans = apply_gating(ans, q, disclosure=disclosure, issb_gap=issb_gap)
+        ans = require_qualitative_review(ans, q)
         answers.append(ans)
 
     sheet = ResponseSheet(
