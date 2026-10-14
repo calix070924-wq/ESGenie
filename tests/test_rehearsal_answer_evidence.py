@@ -1045,12 +1045,14 @@ def test_complete_risk_assessment_can_be_confirmed():
     assert answer(graph_for([('위험 관리', text)]), 'E-4').value is True
 
 
-def test_legacy_graph_can_still_prove_an_explicit_training_program():
+def test_legacy_graph_keeps_training_proof_for_whole_question_review():
     text = '관리자와 근로자를 대상으로 안전 규정·절차 이행 교육 프로그램을 실시하였다.'
     g = graph_for([('교육 실시', text)])
     del g.source_texts
     a = answer(g, 'E-6')
-    assert a.value is True
+    assert a.value is None and a.status == 'flagged'
+    assert any(text in link.quote for link in a.evidence_links)
+    assert '담당자 확인 필요' in a.review_note
 
 
 def test_relevant_umbrella_clause_failure_is_still_applied():

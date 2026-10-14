@@ -12,7 +12,7 @@ from uuid import uuid4
 
 from .demo import populate_example
 from .presenter import timestamp
-from .review import affected_by_document, invalidate, reconcile
+from .review import affected_by_document, invalidate, pending_review_state, reconcile
 from .progress_state import apply_event, finish, restore_progress
 from esgenie.progress import observe, failure_reason
 
@@ -179,7 +179,8 @@ class ProjectStore:
             history = deepcopy(previous.get("history", []) if previous else [])
             history.append({"at": timestamp(), "action": "검토 완료" if complete else "저장", "reason": values["reason"],
                             "before": deepcopy(previous["values"] if previous else row["automatic"]), "after": deepcopy(values)})
-            status = "complete" if complete else ("missing" if not values["answer"].strip() else "pending")
+            item = next(a for a in project["result"]["sheet"]["answers"] if a["qid"] == question_id)
+            status = "complete" if complete else pending_review_state(item, values["answer"])
             project["reviews"][question_id] = {"values": values, "status": status, "revision": project["result_revision"],
                                                "framework": project["framework"], "history": history, "updated_at": timestamp(),
                                                "method": "담당자 수정" if any(values[k] != row["automatic"][k] for k in ("answer", "unit", "scope", "sources")) else "자동 입력"}

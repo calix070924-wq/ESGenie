@@ -3,7 +3,14 @@ from __future__ import annotations
 
 from copy import deepcopy
 
+from ..supplychain.qualitative_review import needs_qualitative_review
+
 REVIEW_LABELS = {"pending": "확인 필요", "complete": "담당자 검토 완료", "missing": "자료 필요", "again": "자료 변경 · 재검토"}
+
+
+def pending_review_state(item, answer):
+    """An unset whole-question conclusion can require review without more evidence."""
+    return "pending" if answer.strip() or needs_qualitative_review(item) else "missing"
 
 
 def document_version(document):
@@ -44,7 +51,11 @@ def review_rows(project, shown):
                 effective["answer"] = legacy["answer"]
                 effective["unit"] = ""
             effective["memo"] = legacy.get("text", "")
-        state = saved.get("status", "pending") if saved else ("missing" if not automatic["answer"] else "pending")
+        state = saved.get("status", "pending") if saved else pending_review_state(item, automatic["answer"])
+        # Older saves inferred 'missing' from the empty automatic answer. Correct
+        # that derived label without changing human values, history or completion.
+        if state == "missing" and needs_qualitative_review(item):
+            state = "pending"
         if row["id"] in project.get("affected_questions", []):
             state = "again"
         row.update(saved=effective, automatic=automatic, method=saved.get("method", "담당자 수정") if saved else "담당자 수정" if legacy and legacy.get("answer") else "자동 입력",
