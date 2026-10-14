@@ -1,0 +1,2033 @@
+{
+ "files": {
+  "run1_initial": {
+   "run_id": "B3v2_gpt41mini_initial_k1_rep1",
+   "model_returned": "gpt-4.1-mini-2025-04-14",
+   "response_raw_sha256": "17800858f38a3e024550b51af38ec9d996bfb2f6829f30d43a839364901f4c8e",
+   "common_v1_sha256": "17f60bd9f0686d9149eea23c6343325a12d9f3082879f619b3d6f9e12860bc30",
+   "cited_company_answer_rows": 0
+  },
+  "run1_followup": {
+   "run_id": "B3v2_gpt41mini_followup_k1_rep1",
+   "model_returned": "gpt-4.1-mini-2025-04-14",
+   "response_raw_sha256": "b77a8da916cb9e1b44adb194a84c07152f5cdf35140effa1dd9126bde704ff15",
+   "common_v1_sha256": "b558a51af7141d04007df2ab7a12dc5fe8c839c6cdf8de439e97bcfa3c1b1760",
+   "cited_company_answer_rows": 0
+  },
+  "run1_score_sha256": "ef2b7965f5b786773a1a51159f8f6561153c6cfc89245474a39738f9c1d8a43b",
+  "run2_initial": {
+   "run_id": "B3v2_gpt41mini_initial_k2_rep1",
+   "model_returned": "gpt-4.1-mini-2025-04-14",
+   "response_raw_sha256": "9a7eb5bdb9d85c4502cf68bf39a4ad1acedc1eb7c5804cacc460504cb19a78c9",
+   "common_v1_sha256": "ce403d165c23bdc2f3d78c1166f09891a8e26441def294a26184bd4d956f75b4",
+   "cited_company_answer_rows": 0
+  },
+  "run2_followup": {
+   "run_id": "B3v2_gpt41mini_followup_k2_rep1",
+   "model_returned": "gpt-4.1-mini-2025-04-14",
+   "response_raw_sha256": "b57a4d609fef3fe48360c8ac172e73cd3548b4f965220c7266f5fe14ed1afe1d",
+   "common_v1_sha256": "e43b88b78b8f9ef108c2973d8f42e6076e5573b3abd72ea570386dbe6012d113",
+   "cited_company_answer_rows": 0
+  },
+  "run2_score_sha256": "b397b3fc6b21687c341b86455042df9b9228e6fc8616b3fdb33e2ad320da4930",
+  "run3_initial": {
+   "run_id": "B3v2_gpt41mini_initial_k3_rep1",
+   "model_returned": "gpt-4.1-mini-2025-04-14",
+   "response_raw_sha256": "6bf9e8f987759ed2aae00e7fae26493ef263a782934661d9d9f20c899cc0224d",
+   "common_v1_sha256": "e81683b7193f4d14736d6e45c9ca1639d0ba1ed0a50d1cd069c8c8e296b44335",
+   "cited_company_answer_rows": 0
+  },
+  "run3_followup": {
+   "run_id": "B3v2_gpt41mini_followup_k3_rep1",
+   "model_returned": "gpt-4.1-mini-2025-04-14",
+   "response_raw_sha256": "127a3419fd1fd61933a8ca9bda80ab922815b6fb7efa8157d57a087aaad6b657",
+   "common_v1_sha256": "888810b9f5047e0b9f1c1f32aba9920d5c2cc4d0e6f94221153824cd35c1fb7f",
+   "cited_company_answer_rows": 0
+  },
+  "run3_score_sha256": "b286585ebe775d6090159e453a39e58215f24b50a3a67ce758c4f5427fbf6bc9",
+  "run4_initial": {
+   "run_id": "B3v2_gpt41mini_initial_k4_rep1",
+   "model_returned": "gpt-4.1-mini-2025-04-14",
+   "response_raw_sha256": "690068371a4ebe9e6064a9dfd187919574eb5219ec7640b233a774757c288df3",
+   "common_v1_sha256": "571877ef1e330b115662cca275bc7d175811065bc75a85f29bfa67d8fcbcb5be",
+   "cited_company_answer_rows": 0
+  },
+  "run4_followup": {
+   "run_id": "B3v2_gpt41mini_followup_k4_rep1",
+   "model_returned": "gpt-4.1-mini-2025-04-14",
+   "response_raw_sha256": "ac6a6c3084299973ac4496fc9212c50979233d6d63bb392036a3d7b7952d4394",
+   "common_v1_sha256": "c21c0a8df9d275aebc151924d33a117f75641723eb7fda5cb1cd16bbe561c2b0",
+   "cited_company_answer_rows": 0
+  },
+  "run4_score_sha256": "eee0d7480879ef1d6d00d0b8e9962d8aed73e7ceaa4cf7a175fdc56ab621939b",
+  "run5_initial": {
+   "run_id": "B3v2_gpt41mini_initial_k5_rep1",
+   "model_returned": "gpt-4.1-mini-2025-04-14",
+   "response_raw_sha256": "32be66937a9bb0895d936f1f18e7045d069f8568195844d0429d5ab540f8b093",
+   "common_v1_sha256": "9959b10ddc2919d7fc4709c65541fab630251b1b152e1574c766e57ae4e67cff",
+   "cited_company_answer_rows": 0
+  },
+  "run5_followup": {
+   "run_id": "B3v2_gpt41mini_followup_k5_rep1",
+   "model_returned": "gpt-4.1-mini-2025-04-14",
+   "response_raw_sha256": "c8550fda34e41b3bbc77e68564cce2ba78e3d3b2f634ed003dd331f64ffe08af",
+   "common_v1_sha256": "01e86415333327b269460ec6c2f1057edcc30dbd28236e6a926e220b327a50c7",
+   "cited_company_answer_rows": 0
+  },
+  "run5_score_sha256": "74060de99bffc25a7ca186b405dd9eabd756133061ed369db3847c1eac3845d1",
+  "esgenie_ref_score_sha256": "a93f856e6efb78db1b69ea8923b423202e0266c8b59f1ca5bb977fb0d2a6d4c3"
+ },
+ "label_file_in_score": "data/eval/labels/hanwool_bm_rba42_v1.csv",
+ "expected_qids_source": "file:data/eval/framework/rba42_qids.txt",
+ "structure_ok": {
+  "run1": true,
+  "run2": true,
+  "run3": true,
+  "run4": true,
+  "run5": true,
+  "esgenie": true
+ },
+ "format_issues": {
+  "run1": 0,
+  "run2": 0,
+  "run3": 0,
+  "run4": 0,
+  "run5": 0,
+  "esgenie": 0
+ },
+ "unresolved": {
+  "run1": {},
+  "run2": {},
+  "run3": {},
+  "run4": {},
+  "run5": {},
+  "esgenie": {}
+ },
+ "metrics": {
+  "control_gpt41mini": {
+   "initial": {
+    "per_run": {
+     "run1": {
+      "M1_답변근거_동시정답률": {
+       "status": "산출",
+       "numerator": 5,
+       "denominator": 7,
+       "value": 0.7142857142857143
+      },
+      "M2_잘못된_확정_수": {
+       "status": "산출",
+       "numerator": 14,
+       "denominator": null,
+       "value": null
+      },
+      "M3_불필요한_보류_수": {
+       "status": "산출",
+       "numerator": 0,
+       "denominator": null,
+       "value": null
+      },
+      "M4_확정_제출률": {
+       "status": "산출",
+       "numerator": 19,
+       "denominator": 48,
+       "value": 0.3958333333333333
+      },
+      "M5_자료_연결률": {
+       "status": "산출",
+       "numerator": 14,
+       "denominator": 14,
+       "value": 1.0
+      },
+      "M6_값_제출률": {
+       "status": "산출",
+       "numerator": 14,
+       "denominator": 48,
+       "value": 0.2916666666666667
+      },
+      "A4_올바른_보류_수": 29,
+      "올바른_답변_수": 5,
+      "판정_불일치_건수": 0,
+      "A6_미해결_행": 0
+     },
+     "run2": {
+      "M1_답변근거_동시정답률": {
+       "status": "산출",
+       "numerator": 1,
+       "denominator": 7,
+       "value": 0.14285714285714285
+      },
+      "M2_잘못된_확정_수": {
+       "status": "산출",
+       "numerator": 18,
+       "denominator": null,
+       "value": null
+      },
+      "M3_불필요한_보류_수": {
+       "status": "산출",
+       "numerator": 0,
+       "denominator": null,
+       "value": null
+      },
+      "M4_확정_제출률": {
+       "status": "산출",
+       "numerator": 19,
+       "denominator": 48,
+       "value": 0.3958333333333333
+      },
+      "M5_자료_연결률": {
+       "status": "산출",
+       "numerator": 5,
+       "denominator": 5,
+       "value": 1.0
+      },
+      "M6_값_제출률": {
+       "status": "산출",
+       "numerator": 5,
+       "denominator": 48,
+       "value": 0.10416666666666667
+      },
+      "A4_올바른_보류_수": 29,
+      "올바른_답변_수": 1,
+      "판정_불일치_건수": 0,
+      "A6_미해결_행": 0
+     },
+     "run3": {
+      "M1_답변근거_동시정답률": {
+       "status": "산출",
+       "numerator": 4,
+       "denominator": 7,
+       "value": 0.5714285714285714
+      },
+      "M2_잘못된_확정_수": {
+       "status": "산출",
+       "numerator": 14,
+       "denominator": null,
+       "value": null
+      },
+      "M3_불필요한_보류_수": {
+       "status": "산출",
+       "numerator": 0,
+       "denominator": null,
+       "value": null
+      },
+      "M4_확정_제출률": {
+       "status": "산출",
+       "numerator": 18,
+       "denominator": 48,
+       "value": 0.375
+      },
+      "M5_자료_연결률": {
+       "status": "산출",
+       "numerator": 14,
+       "denominator": 14,
+       "value": 1.0
+      },
+      "M6_값_제출률": {
+       "status": "산출",
+       "numerator": 14,
+       "denominator": 48,
+       "value": 0.2916666666666667
+      },
+      "A4_올바른_보류_수": 30,
+      "올바른_답변_수": 4,
+      "판정_불일치_건수": 0,
+      "A6_미해결_행": 0
+     },
+     "run4": {
+      "M1_답변근거_동시정답률": {
+       "status": "산출",
+       "numerator": 4,
+       "denominator": 7,
+       "value": 0.5714285714285714
+      },
+      "M2_잘못된_확정_수": {
+       "status": "산출",
+       "numerator": 15,
+       "denominator": null,
+       "value": null
+      },
+      "M3_불필요한_보류_수": {
+       "status": "산출",
+       "numerator": 0,
+       "denominator": null,
+       "value": null
+      },
+      "M4_확정_제출률": {
+       "status": "산출",
+       "numerator": 19,
+       "denominator": 48,
+       "value": 0.3958333333333333
+      },
+      "M5_자료_연결률": {
+       "status": "산출",
+       "numerator": 15,
+       "denominator": 15,
+       "value": 1.0
+      },
+      "M6_값_제출률": {
+       "status": "산출",
+       "numerator": 15,
+       "denominator": 48,
+       "value": 0.3125
+      },
+      "A4_올바른_보류_수": 29,
+      "올바른_답변_수": 4,
+      "판정_불일치_건수": 0,
+      "A6_미해결_행": 0
+     },
+     "run5": {
+      "M1_답변근거_동시정답률": {
+       "status": "산출",
+       "numerator": 3,
+       "denominator": 7,
+       "value": 0.42857142857142855
+      },
+      "M2_잘못된_확정_수": {
+       "status": "산출",
+       "numerator": 15,
+       "denominator": null,
+       "value": null
+      },
+      "M3_불필요한_보류_수": {
+       "status": "산출",
+       "numerator": 0,
+       "denominator": null,
+       "value": null
+      },
+      "M4_확정_제출률": {
+       "status": "산출",
+       "numerator": 18,
+       "denominator": 48,
+       "value": 0.375
+      },
+      "M5_자료_연결률": {
+       "status": "산출",
+       "numerator": 11,
+       "denominator": 11,
+       "value": 1.0
+      },
+      "M6_값_제출률": {
+       "status": "산출",
+       "numerator": 11,
+       "denominator": 48,
+       "value": 0.22916666666666666
+      },
+      "A4_올바른_보류_수": 30,
+      "올바른_답변_수": 3,
+      "판정_불일치_건수": 0,
+      "A6_미해결_행": 0
+     }
+    },
+    "range": {
+     "M1_답변근거_동시정답률": {
+      "numerator_min": 1,
+      "numerator_max": 5,
+      "denominators": [
+       7
+      ]
+     },
+     "M2_잘못된_확정_수": {
+      "numerator_min": 14,
+      "numerator_max": 18,
+      "denominators": [
+       null
+      ]
+     },
+     "M3_불필요한_보류_수": {
+      "numerator_min": 0,
+      "numerator_max": 0,
+      "denominators": [
+       null
+      ]
+     },
+     "M4_확정_제출률": {
+      "numerator_min": 18,
+      "numerator_max": 19,
+      "denominators": [
+       48
+      ]
+     },
+     "M5_자료_연결률": {
+      "numerator_min": 5,
+      "numerator_max": 15,
+      "denominators": [
+       5,
+       11,
+       14,
+       15
+      ]
+     },
+     "M6_값_제출률": {
+      "numerator_min": 5,
+      "numerator_max": 15,
+      "denominators": [
+       48
+      ]
+     },
+     "A4_올바른_보류_수": {
+      "min": 29,
+      "max": 30
+     },
+     "올바른_답변_수": {
+      "min": 1,
+      "max": 5
+     },
+     "판정_불일치_건수": {
+      "min": 0,
+      "max": 0
+     },
+     "A6_미해결_행": {
+      "min": 0,
+      "max": 0
+     }
+    }
+   },
+   "followup": {
+    "per_run": {
+     "run1": {
+      "M1_답변근거_동시정답률": {
+       "status": "산출",
+       "numerator": 5,
+       "denominator": 7,
+       "value": 0.7142857142857143
+      },
+      "M2_잘못된_확정_수": {
+       "status": "산출",
+       "numerator": 14,
+       "denominator": null,
+       "value": null
+      },
+      "M3_불필요한_보류_수": {
+       "status": "산출",
+       "numerator": 0,
+       "denominator": null,
+       "value": null
+      },
+      "M4_확정_제출률": {
+       "status": "산출",
+       "numerator": 19,
+       "denominator": 48,
+       "value": 0.3958333333333333
+      },
+      "M5_자료_연결률": {
+       "status": "산출",
+       "numerator": 14,
+       "denominator": 14,
+       "value": 1.0
+      },
+      "M6_값_제출률": {
+       "status": "산출",
+       "numerator": 14,
+       "denominator": 48,
+       "value": 0.2916666666666667
+      },
+      "A4_올바른_보류_수": 29,
+      "올바른_답변_수": 5,
+      "판정_불일치_건수": 0,
+      "A6_미해결_행": 0
+     },
+     "run2": {
+      "M1_답변근거_동시정답률": {
+       "status": "산출",
+       "numerator": 5,
+       "denominator": 7,
+       "value": 0.7142857142857143
+      },
+      "M2_잘못된_확정_수": {
+       "status": "산출",
+       "numerator": 13,
+       "denominator": null,
+       "value": null
+      },
+      "M3_불필요한_보류_수": {
+       "status": "산출",
+       "numerator": 0,
+       "denominator": null,
+       "value": null
+      },
+      "M4_확정_제출률": {
+       "status": "산출",
+       "numerator": 18,
+       "denominator": 48,
+       "value": 0.375
+      },
+      "M5_자료_연결률": {
+       "status": "산출",
+       "numerator": 10,
+       "denominator": 10,
+       "value": 1.0
+      },
+      "M6_값_제출률": {
+       "status": "산출",
+       "numerator": 10,
+       "denominator": 48,
+       "value": 0.20833333333333334
+      },
+      "A4_올바른_보류_수": 30,
+      "올바른_답변_수": 5,
+      "판정_불일치_건수": 0,
+      "A6_미해결_행": 0
+     },
+     "run3": {
+      "M1_답변근거_동시정답률": {
+       "status": "산출",
+       "numerator": 5,
+       "denominator": 7,
+       "value": 0.7142857142857143
+      },
+      "M2_잘못된_확정_수": {
+       "status": "산출",
+       "numerator": 13,
+       "denominator": null,
+       "value": null
+      },
+      "M3_불필요한_보류_수": {
+       "status": "산출",
+       "numerator": 0,
+       "denominator": null,
+       "value": null
+      },
+      "M4_확정_제출률": {
+       "status": "산출",
+       "numerator": 18,
+       "denominator": 48,
+       "value": 0.375
+      },
+      "M5_자료_연결률": {
+       "status": "산출",
+       "numerator": 12,
+       "denominator": 12,
+       "value": 1.0
+      },
+      "M6_값_제출률": {
+       "status": "산출",
+       "numerator": 12,
+       "denominator": 48,
+       "value": 0.25
+      },
+      "A4_올바른_보류_수": 30,
+      "올바른_답변_수": 5,
+      "판정_불일치_건수": 0,
+      "A6_미해결_행": 0
+     },
+     "run4": {
+      "M1_답변근거_동시정답률": {
+       "status": "산출",
+       "numerator": 5,
+       "denominator": 7,
+       "value": 0.7142857142857143
+      },
+      "M2_잘못된_확정_수": {
+       "status": "산출",
+       "numerator": 14,
+       "denominator": null,
+       "value": null
+      },
+      "M3_불필요한_보류_수": {
+       "status": "산출",
+       "numerator": 0,
+       "denominator": null,
+       "value": null
+      },
+      "M4_확정_제출률": {
+       "status": "산출",
+       "numerator": 19,
+       "denominator": 48,
+       "value": 0.3958333333333333
+      },
+      "M5_자료_연결률": {
+       "status": "산출",
+       "numerator": 13,
+       "denominator": 13,
+       "value": 1.0
+      },
+      "M6_값_제출률": {
+       "status": "산출",
+       "numerator": 13,
+       "denominator": 48,
+       "value": 0.2708333333333333
+      },
+      "A4_올바른_보류_수": 29,
+      "올바른_답변_수": 5,
+      "판정_불일치_건수": 0,
+      "A6_미해결_행": 0
+     },
+     "run5": {
+      "M1_답변근거_동시정답률": {
+       "status": "산출",
+       "numerator": 5,
+       "denominator": 7,
+       "value": 0.7142857142857143
+      },
+      "M2_잘못된_확정_수": {
+       "status": "산출",
+       "numerator": 13,
+       "denominator": null,
+       "value": null
+      },
+      "M3_불필요한_보류_수": {
+       "status": "산출",
+       "numerator": 0,
+       "denominator": null,
+       "value": null
+      },
+      "M4_확정_제출률": {
+       "status": "산출",
+       "numerator": 18,
+       "denominator": 48,
+       "value": 0.375
+      },
+      "M5_자료_연결률": {
+       "status": "산출",
+       "numerator": 13,
+       "denominator": 13,
+       "value": 1.0
+      },
+      "M6_값_제출률": {
+       "status": "산출",
+       "numerator": 13,
+       "denominator": 48,
+       "value": 0.2708333333333333
+      },
+      "A4_올바른_보류_수": 30,
+      "올바른_답변_수": 5,
+      "판정_불일치_건수": 0,
+      "A6_미해결_행": 0
+     }
+    },
+    "range": {
+     "M1_답변근거_동시정답률": {
+      "numerator_min": 5,
+      "numerator_max": 5,
+      "denominators": [
+       7
+      ]
+     },
+     "M2_잘못된_확정_수": {
+      "numerator_min": 13,
+      "numerator_max": 14,
+      "denominators": [
+       null
+      ]
+     },
+     "M3_불필요한_보류_수": {
+      "numerator_min": 0,
+      "numerator_max": 0,
+      "denominators": [
+       null
+      ]
+     },
+     "M4_확정_제출률": {
+      "numerator_min": 18,
+      "numerator_max": 19,
+      "denominators": [
+       48
+      ]
+     },
+     "M5_자료_연결률": {
+      "numerator_min": 10,
+      "numerator_max": 14,
+      "denominators": [
+       10,
+       12,
+       13,
+       14
+      ]
+     },
+     "M6_값_제출률": {
+      "numerator_min": 10,
+      "numerator_max": 14,
+      "denominators": [
+       48
+      ]
+     },
+     "A4_올바른_보류_수": {
+      "min": 29,
+      "max": 30
+     },
+     "올바른_답변_수": {
+      "min": 5,
+      "max": 5
+     },
+     "판정_불일치_건수": {
+      "min": 0,
+      "max": 0
+     },
+     "A6_미해결_행": {
+      "min": 0,
+      "max": 0
+     }
+    }
+   }
+  },
+  "esgenie_LIVE_n5_d8a0de8_ref": {
+   "initial": {
+    "M1_답변근거_동시정답률": {
+     "status": "산출",
+     "numerator": 2,
+     "denominator": 7,
+     "value": 0.2857142857142857
+    },
+    "M2_잘못된_확정_수": {
+     "status": "산출",
+     "numerator": 11,
+     "denominator": null,
+     "value": null
+    },
+    "M3_불필요한_보류_수": {
+     "status": "산출",
+     "numerator": 5,
+     "denominator": null,
+     "value": null
+    },
+    "M4_확정_제출률": {
+     "status": "산출",
+     "numerator": 13,
+     "denominator": 48,
+     "value": 0.2708333333333333
+    },
+    "M5_자료_연결률": {
+     "status": "산출",
+     "numerator": 13,
+     "denominator": 13,
+     "value": 1.0
+    },
+    "M6_값_제출률": {
+     "status": "산출",
+     "numerator": 13,
+     "denominator": 48,
+     "value": 0.2708333333333333
+    },
+    "A4_올바른_보류_수": 30,
+    "올바른_답변_수": 2,
+    "판정_불일치_건수": 0,
+    "A6_미해결_행": 0
+   },
+   "followup": {
+    "M1_답변근거_동시정답률": {
+     "status": "산출",
+     "numerator": 2,
+     "denominator": 7,
+     "value": 0.2857142857142857
+    },
+    "M2_잘못된_확정_수": {
+     "status": "산출",
+     "numerator": 11,
+     "denominator": null,
+     "value": null
+    },
+    "M3_불필요한_보류_수": {
+     "status": "산출",
+     "numerator": 5,
+     "denominator": null,
+     "value": null
+    },
+    "M4_확정_제출률": {
+     "status": "산출",
+     "numerator": 13,
+     "denominator": 48,
+     "value": 0.2708333333333333
+    },
+    "M5_자료_연결률": {
+     "status": "산출",
+     "numerator": 13,
+     "denominator": 13,
+     "value": 1.0
+    },
+    "M6_값_제출률": {
+     "status": "산출",
+     "numerator": 13,
+     "denominator": 48,
+     "value": 0.2708333333333333
+    },
+    "A4_올바른_보류_수": 30,
+    "올바른_답변_수": 2,
+    "판정_불일치_건수": 0,
+    "A6_미해결_행": 0
+   },
+   "합산(참고)": {
+    "M1_답변근거_동시정답률": {
+     "status": "산출",
+     "numerator": 4,
+     "denominator": 14,
+     "value": 0.2857142857142857
+    },
+    "M2_잘못된_확정_수": {
+     "status": "산출",
+     "numerator": 22,
+     "denominator": null,
+     "value": null
+    },
+    "M3_불필요한_보류_수": {
+     "status": "산출",
+     "numerator": 10,
+     "denominator": null,
+     "value": null
+    },
+    "M4_확정_제출률": {
+     "status": "산출",
+     "numerator": 26,
+     "denominator": 96,
+     "value": 0.2708333333333333
+    },
+    "M5_자료_연결률": {
+     "status": "산출",
+     "numerator": 26,
+     "denominator": 26,
+     "value": 1.0
+    },
+    "M6_값_제출률": {
+     "status": "산출",
+     "numerator": 26,
+     "denominator": 96,
+     "value": 0.2708333333333333
+    },
+    "A4_올바른_보류_수": 60,
+    "올바른_답변_수": 4,
+    "판정_불일치_건수": 0,
+    "A6_미해결_행": 0
+   }
+  },
+  "manual_claude_ref": {
+   "run1": {
+    "initial": {
+     "M1_답변근거_동시정답률": {
+      "status": "산출",
+      "numerator": 2,
+      "denominator": 7,
+      "value": 0.2857142857142857
+     },
+     "M2_잘못된_확정_수": {
+      "status": "산출",
+      "numerator": 14,
+      "denominator": null,
+      "value": null
+     },
+     "M3_불필요한_보류_수": {
+      "status": "산출",
+      "numerator": 0,
+      "denominator": null,
+      "value": null
+     },
+     "M4_확정_제출률": {
+      "status": "산출",
+      "numerator": 16,
+      "denominator": 48,
+      "value": 0.3333333333333333
+     },
+     "M5_자료_연결률": {
+      "status": "산출",
+      "numerator": 3,
+      "denominator": 3,
+      "value": 1.0
+     },
+     "M6_값_제출률": {
+      "status": "산출",
+      "numerator": 3,
+      "denominator": 48,
+      "value": 0.0625
+     },
+     "A4_올바른_보류_수": 32,
+     "올바른_답변_수": 2,
+     "판정_불일치_건수": 0,
+     "A6_미해결_행": 0
+    },
+    "followup": {
+     "M1_답변근거_동시정답률": {
+      "status": "산출",
+      "numerator": 1,
+      "denominator": 7,
+      "value": 0.14285714285714285
+     },
+     "M2_잘못된_확정_수": {
+      "status": "산출",
+      "numerator": 12,
+      "denominator": null,
+      "value": null
+     },
+     "M3_불필요한_보류_수": {
+      "status": "산출",
+      "numerator": 0,
+      "denominator": null,
+      "value": null
+     },
+     "M4_확정_제출률": {
+      "status": "산출",
+      "numerator": 13,
+      "denominator": 48,
+      "value": 0.2708333333333333
+     },
+     "M5_자료_연결률": {
+      "status": "산출",
+      "numerator": 2,
+      "denominator": 2,
+      "value": 1.0
+     },
+     "M6_값_제출률": {
+      "status": "산출",
+      "numerator": 2,
+      "denominator": 48,
+      "value": 0.041666666666666664
+     },
+     "A4_올바른_보류_수": 35,
+     "올바른_답변_수": 1,
+     "판정_불일치_건수": 0,
+     "A6_미해결_행": 0
+    },
+    "합산(참고)": {
+     "M1_답변근거_동시정답률": {
+      "status": "산출",
+      "numerator": 3,
+      "denominator": 14,
+      "value": 0.21428571428571427
+     },
+     "M2_잘못된_확정_수": {
+      "status": "산출",
+      "numerator": 26,
+      "denominator": null,
+      "value": null
+     },
+     "M3_불필요한_보류_수": {
+      "status": "산출",
+      "numerator": 0,
+      "denominator": null,
+      "value": null
+     },
+     "M4_확정_제출률": {
+      "status": "산출",
+      "numerator": 29,
+      "denominator": 96,
+      "value": 0.3020833333333333
+     },
+     "M5_자료_연결률": {
+      "status": "산출",
+      "numerator": 5,
+      "denominator": 5,
+      "value": 1.0
+     },
+     "M6_값_제출률": {
+      "status": "산출",
+      "numerator": 5,
+      "denominator": 96,
+      "value": 0.052083333333333336
+     },
+     "A4_올바른_보류_수": 67,
+     "올바른_답변_수": 3,
+     "판정_불일치_건수": 0,
+     "A6_미해결_행": 0
+    }
+   },
+   "run2": {
+    "initial": {
+     "M1_답변근거_동시정답률": {
+      "status": "산출",
+      "numerator": 6,
+      "denominator": 7,
+      "value": 0.8571428571428571
+     },
+     "M2_잘못된_확정_수": {
+      "status": "산출",
+      "numerator": 8,
+      "denominator": null,
+      "value": null
+     },
+     "M3_불필요한_보류_수": {
+      "status": "산출",
+      "numerator": 0,
+      "denominator": null,
+      "value": null
+     },
+     "M4_확정_제출률": {
+      "status": "산출",
+      "numerator": 14,
+      "denominator": 48,
+      "value": 0.2916666666666667
+     },
+     "M5_자료_연결률": {
+      "status": "산출",
+      "numerator": 14,
+      "denominator": 14,
+      "value": 1.0
+     },
+     "M6_값_제출률": {
+      "status": "산출",
+      "numerator": 14,
+      "denominator": 48,
+      "value": 0.2916666666666667
+     },
+     "A4_올바른_보류_수": 34,
+     "올바른_답변_수": 6,
+     "판정_불일치_건수": 0,
+     "A6_미해결_행": 0
+    },
+    "followup": {
+     "M1_답변근거_동시정답률": {
+      "status": "산출",
+      "numerator": 1,
+      "denominator": 7,
+      "value": 0.14285714285714285
+     },
+     "M2_잘못된_확정_수": {
+      "status": "산출",
+      "numerator": 13,
+      "denominator": null,
+      "value": null
+     },
+     "M3_불필요한_보류_수": {
+      "status": "산출",
+      "numerator": 0,
+      "denominator": null,
+      "value": null
+     },
+     "M4_확정_제출률": {
+      "status": "산출",
+      "numerator": 14,
+      "denominator": 48,
+      "value": 0.2916666666666667
+     },
+     "M5_자료_연결률": {
+      "status": "산출",
+      "numerator": 2,
+      "denominator": 2,
+      "value": 1.0
+     },
+     "M6_값_제출률": {
+      "status": "산출",
+      "numerator": 2,
+      "denominator": 48,
+      "value": 0.041666666666666664
+     },
+     "A4_올바른_보류_수": 34,
+     "올바른_답변_수": 1,
+     "판정_불일치_건수": 0,
+     "A6_미해결_행": 0
+    },
+    "합산(참고)": {
+     "M1_답변근거_동시정답률": {
+      "status": "산출",
+      "numerator": 7,
+      "denominator": 14,
+      "value": 0.5
+     },
+     "M2_잘못된_확정_수": {
+      "status": "산출",
+      "numerator": 21,
+      "denominator": null,
+      "value": null
+     },
+     "M3_불필요한_보류_수": {
+      "status": "산출",
+      "numerator": 0,
+      "denominator": null,
+      "value": null
+     },
+     "M4_확정_제출률": {
+      "status": "산출",
+      "numerator": 28,
+      "denominator": 96,
+      "value": 0.2916666666666667
+     },
+     "M5_자료_연결률": {
+      "status": "산출",
+      "numerator": 16,
+      "denominator": 16,
+      "value": 1.0
+     },
+     "M6_값_제출률": {
+      "status": "산출",
+      "numerator": 16,
+      "denominator": 96,
+      "value": 0.16666666666666666
+     },
+     "A4_올바른_보류_수": 68,
+     "올바른_답변_수": 7,
+     "판정_불일치_건수": 0,
+     "A6_미해결_행": 0
+    }
+   },
+   "run3": {
+    "initial": {
+     "M1_답변근거_동시정답률": {
+      "status": "산출",
+      "numerator": 6,
+      "denominator": 7,
+      "value": 0.8571428571428571
+     },
+     "M2_잘못된_확정_수": {
+      "status": "산출",
+      "numerator": 8,
+      "denominator": null,
+      "value": null
+     },
+     "M3_불필요한_보류_수": {
+      "status": "산출",
+      "numerator": 0,
+      "denominator": null,
+      "value": null
+     },
+     "M4_확정_제출률": {
+      "status": "산출",
+      "numerator": 14,
+      "denominator": 48,
+      "value": 0.2916666666666667
+     },
+     "M5_자료_연결률": {
+      "status": "산출",
+      "numerator": 13,
+      "denominator": 13,
+      "value": 1.0
+     },
+     "M6_값_제출률": {
+      "status": "산출",
+      "numerator": 13,
+      "denominator": 48,
+      "value": 0.2708333333333333
+     },
+     "A4_올바른_보류_수": 34,
+     "올바른_답변_수": 6,
+     "판정_불일치_건수": 0,
+     "A6_미해결_행": 0
+    },
+    "followup": {
+     "M1_답변근거_동시정답률": {
+      "status": "산출",
+      "numerator": 6,
+      "denominator": 7,
+      "value": 0.8571428571428571
+     },
+     "M2_잘못된_확정_수": {
+      "status": "산출",
+      "numerator": 2,
+      "denominator": null,
+      "value": null
+     },
+     "M3_불필요한_보류_수": {
+      "status": "산출",
+      "numerator": 0,
+      "denominator": null,
+      "value": null
+     },
+     "M4_확정_제출률": {
+      "status": "산출",
+      "numerator": 8,
+      "denominator": 48,
+      "value": 0.16666666666666666
+     },
+     "M5_자료_연결률": {
+      "status": "산출",
+      "numerator": 8,
+      "denominator": 8,
+      "value": 1.0
+     },
+     "M6_값_제출률": {
+      "status": "산출",
+      "numerator": 8,
+      "denominator": 48,
+      "value": 0.16666666666666666
+     },
+     "A4_올바른_보류_수": 39,
+     "올바른_답변_수": 6,
+     "판정_불일치_건수": 1,
+     "A6_미해결_행": 0
+    },
+    "합산(참고)": {
+     "M1_답변근거_동시정답률": {
+      "status": "산출",
+      "numerator": 12,
+      "denominator": 14,
+      "value": 0.8571428571428571
+     },
+     "M2_잘못된_확정_수": {
+      "status": "산출",
+      "numerator": 10,
+      "denominator": null,
+      "value": null
+     },
+     "M3_불필요한_보류_수": {
+      "status": "산출",
+      "numerator": 0,
+      "denominator": null,
+      "value": null
+     },
+     "M4_확정_제출률": {
+      "status": "산출",
+      "numerator": 22,
+      "denominator": 96,
+      "value": 0.22916666666666666
+     },
+     "M5_자료_연결률": {
+      "status": "산출",
+      "numerator": 21,
+      "denominator": 21,
+      "value": 1.0
+     },
+     "M6_값_제출률": {
+      "status": "산출",
+      "numerator": 21,
+      "denominator": 96,
+      "value": 0.21875
+     },
+     "A4_올바른_보류_수": 73,
+     "올바른_답변_수": 12,
+     "판정_불일치_건수": 1,
+     "A6_미해결_행": 0
+    }
+   }
+  }
+ },
+ "bucket_counts": {
+  "run1": {
+   "correct_hold": 58,
+   "wrong_confirmation": 28,
+   "correct_answer": 10
+  },
+  "run2": {
+   "correct_hold": 59,
+   "wrong_confirmation": 31,
+   "correct_answer": 6
+  },
+  "run3": {
+   "correct_hold": 60,
+   "wrong_confirmation": 27,
+   "correct_answer": 9
+  },
+  "run4": {
+   "correct_hold": 58,
+   "wrong_confirmation": 29,
+   "correct_answer": 9
+  },
+  "run5": {
+   "correct_hold": 60,
+   "wrong_confirmation": 28,
+   "correct_answer": 8
+  },
+  "esgenie_ref": {
+   "correct_hold": 60,
+   "wrong_confirmation": 22,
+   "unnecessary_hold": 10,
+   "correct_answer": 4
+  }
+ },
+ "esgenie_worse_rows": {
+  "rule": "ESGenie 행이 correct_* 가 아니고 같은 단계 대조군 5회 중 1회 이상 correct_* (P3-4 규칙, 3회→5회)",
+  "count_by_stage": {
+   "initial": 7,
+   "followup": 8
+  },
+  "rows": [
+   {
+    "stage": "initial",
+    "qid": "RBA-C-4-E-6-2",
+    "trap_types": [
+     "denominator_meaning",
+     "partial_scope"
+    ],
+    "esgenie_bucket": "unnecessary_hold",
+    "esgenie_detail": "",
+    "control_buckets": [
+     "correct_answer",
+     "correct_answer",
+     "wrong_confirmation",
+     "wrong_confirmation",
+     "correct_answer"
+    ],
+    "control_good_runs": 3
+   },
+   {
+    "stage": "initial",
+    "qid": "RBA-C-8",
+    "trap_types": [
+     "single_policy_multi_yes"
+    ],
+    "esgenie_bucket": "wrong_confirmation",
+    "esgenie_detail": "missed_mismatch",
+    "control_buckets": [
+     "correct_hold",
+     "correct_hold",
+     "correct_hold",
+     "correct_hold",
+     "correct_hold"
+    ],
+    "control_good_runs": 5
+   },
+   {
+    "stage": "initial",
+    "qid": "RBA-D-2",
+    "trap_types": [
+     "single_policy_multi_yes"
+    ],
+    "esgenie_bucket": "wrong_confirmation",
+    "esgenie_detail": "missed_mismatch",
+    "control_buckets": [
+     "correct_hold",
+     "correct_hold",
+     "correct_hold",
+     "wrong_confirmation",
+     "correct_hold"
+    ],
+    "control_good_runs": 4
+   },
+   {
+    "stage": "initial",
+    "qid": "RBA-E-3",
+    "trap_types": [
+     "single_policy_multi_yes"
+    ],
+    "esgenie_bucket": "wrong_confirmation",
+    "esgenie_detail": "missed_mismatch",
+    "control_buckets": [
+     "correct_hold",
+     "correct_hold",
+     "correct_hold",
+     "correct_hold",
+     "correct_hold"
+    ],
+    "control_good_runs": 5
+   },
+   {
+    "stage": "initial",
+    "qid": "RBA-E-4",
+    "trap_types": [
+     "single_policy_multi_yes",
+     "partial_scope"
+    ],
+    "esgenie_bucket": "wrong_confirmation",
+    "esgenie_detail": "missed_mismatch",
+    "control_buckets": [
+     "correct_hold",
+     "correct_hold",
+     "correct_hold",
+     "correct_hold",
+     "correct_hold"
+    ],
+    "control_good_runs": 5
+   },
+   {
+    "stage": "initial",
+    "qid": "RBA-E-7",
+    "trap_types": [
+     "normal"
+    ],
+    "esgenie_bucket": "unnecessary_hold",
+    "esgenie_detail": "",
+    "control_buckets": [
+     "correct_answer",
+     "wrong_confirmation",
+     "correct_answer",
+     "correct_answer",
+     "wrong_confirmation"
+    ],
+    "control_good_runs": 3
+   },
+   {
+    "stage": "initial",
+    "qid": "RBA-E-11",
+    "trap_types": [
+     "normal"
+    ],
+    "esgenie_bucket": "unnecessary_hold",
+    "esgenie_detail": "",
+    "control_buckets": [
+     "correct_answer",
+     "wrong_confirmation",
+     "correct_answer",
+     "correct_answer",
+     "correct_answer"
+    ],
+    "control_good_runs": 4
+   },
+   {
+    "stage": "followup",
+    "qid": "RBA-C-4-E-6-2",
+    "trap_types": [
+     "denominator_meaning",
+     "partial_scope"
+    ],
+    "esgenie_bucket": "unnecessary_hold",
+    "esgenie_detail": "",
+    "control_buckets": [
+     "correct_answer",
+     "correct_answer",
+     "correct_answer",
+     "correct_answer",
+     "correct_answer"
+    ],
+    "control_good_runs": 5
+   },
+   {
+    "stage": "followup",
+    "qid": "RBA-C-7",
+    "trap_types": [
+     "single_policy_multi_yes"
+    ],
+    "esgenie_bucket": "wrong_confirmation",
+    "esgenie_detail": "missed_mismatch",
+    "control_buckets": [
+     "wrong_confirmation",
+     "correct_hold",
+     "wrong_confirmation",
+     "wrong_confirmation",
+     "wrong_confirmation"
+    ],
+    "control_good_runs": 1
+   },
+   {
+    "stage": "followup",
+    "qid": "RBA-C-8",
+    "trap_types": [
+     "single_policy_multi_yes"
+    ],
+    "esgenie_bucket": "wrong_confirmation",
+    "esgenie_detail": "missed_mismatch",
+    "control_buckets": [
+     "correct_hold",
+     "correct_hold",
+     "correct_hold",
+     "correct_hold",
+     "correct_hold"
+    ],
+    "control_good_runs": 5
+   },
+   {
+    "stage": "followup",
+    "qid": "RBA-D-2",
+    "trap_types": [
+     "single_policy_multi_yes"
+    ],
+    "esgenie_bucket": "wrong_confirmation",
+    "esgenie_detail": "missed_mismatch",
+    "control_buckets": [
+     "correct_hold",
+     "correct_hold",
+     "correct_hold",
+     "correct_hold",
+     "correct_hold"
+    ],
+    "control_good_runs": 5
+   },
+   {
+    "stage": "followup",
+    "qid": "RBA-E-3",
+    "trap_types": [
+     "single_policy_multi_yes"
+    ],
+    "esgenie_bucket": "wrong_confirmation",
+    "esgenie_detail": "missed_mismatch",
+    "control_buckets": [
+     "correct_hold",
+     "correct_hold",
+     "correct_hold",
+     "correct_hold",
+     "correct_hold"
+    ],
+    "control_good_runs": 5
+   },
+   {
+    "stage": "followup",
+    "qid": "RBA-E-4",
+    "trap_types": [
+     "single_policy_multi_yes",
+     "partial_scope"
+    ],
+    "esgenie_bucket": "wrong_confirmation",
+    "esgenie_detail": "missed_mismatch",
+    "control_buckets": [
+     "correct_hold",
+     "correct_hold",
+     "correct_hold",
+     "correct_hold",
+     "correct_hold"
+    ],
+    "control_good_runs": 5
+   },
+   {
+    "stage": "followup",
+    "qid": "RBA-E-7",
+    "trap_types": [
+     "normal"
+    ],
+    "esgenie_bucket": "unnecessary_hold",
+    "esgenie_detail": "",
+    "control_buckets": [
+     "correct_answer",
+     "correct_answer",
+     "correct_answer",
+     "correct_answer",
+     "correct_answer"
+    ],
+    "control_good_runs": 5
+   },
+   {
+    "stage": "followup",
+    "qid": "RBA-E-11",
+    "trap_types": [
+     "normal"
+    ],
+    "esgenie_bucket": "unnecessary_hold",
+    "esgenie_detail": "",
+    "control_buckets": [
+     "correct_answer",
+     "correct_answer",
+     "correct_answer",
+     "correct_answer",
+     "correct_answer"
+    ],
+    "control_good_runs": 5
+   }
+  ]
+ },
+ "esgenie_better_rows": {
+  "rule": "ESGenie 가 correct_* 이고 대조군 5회 중 1회 이상 correct_* 가 아님",
+  "count_by_stage": {
+   "initial": 7,
+   "followup": 5
+  },
+  "rows": [
+   {
+    "stage": "initial",
+    "qid": "RBA-B-1",
+    "trap_types": [
+     "single_policy_multi_yes",
+     "partial_scope"
+    ],
+    "esgenie_bucket": "correct_hold",
+    "esgenie_detail": "hold_reason_unknown",
+    "control_buckets": [
+     "wrong_confirmation",
+     "wrong_confirmation",
+     "wrong_confirmation",
+     "wrong_confirmation",
+     "wrong_confirmation"
+    ],
+    "control_good_runs": 0
+   },
+   {
+    "stage": "initial",
+    "qid": "RBA-B-8",
+    "trap_types": [
+     "conducted_vs_completed"
+    ],
+    "esgenie_bucket": "correct_hold",
+    "esgenie_detail": "hold_reason_unknown",
+    "control_buckets": [
+     "wrong_confirmation",
+     "wrong_confirmation",
+     "wrong_confirmation",
+     "wrong_confirmation",
+     "wrong_confirmation"
+    ],
+    "control_good_runs": 0
+   },
+   {
+    "stage": "initial",
+    "qid": "RBA-C-8-E-4-1",
+    "trap_types": [
+     "partial_scope",
+     "period_mismatch"
+    ],
+    "esgenie_bucket": "correct_hold",
+    "esgenie_detail": "hold_reason_mismatch",
+    "control_buckets": [
+     "wrong_confirmation",
+     "wrong_confirmation",
+     "wrong_confirmation",
+     "wrong_confirmation",
+     "wrong_confirmation"
+    ],
+    "control_good_runs": 0
+   },
+   {
+    "stage": "initial",
+    "qid": "RBA-E-1",
+    "trap_types": [
+     "single_policy_multi_yes"
+    ],
+    "esgenie_bucket": "correct_hold",
+    "esgenie_detail": "hold_reason_unknown",
+    "control_buckets": [
+     "wrong_confirmation",
+     "wrong_confirmation",
+     "wrong_confirmation",
+     "wrong_confirmation",
+     "wrong_confirmation"
+    ],
+    "control_good_runs": 0
+   },
+   {
+    "stage": "initial",
+    "qid": "RBA-E-2",
+    "trap_types": [
+     "normal"
+    ],
+    "esgenie_bucket": "correct_answer",
+    "esgenie_detail": "",
+    "control_buckets": [
+     "correct_answer",
+     "wrong_confirmation",
+     "correct_answer",
+     "correct_answer",
+     "correct_answer"
+    ],
+    "control_good_runs": 4
+   },
+   {
+    "stage": "initial",
+    "qid": "RBA-E-8",
+    "trap_types": [
+     "single_policy_multi_yes"
+    ],
+    "esgenie_bucket": "correct_hold",
+    "esgenie_detail": "hold_reason_unknown",
+    "control_buckets": [
+     "wrong_confirmation",
+     "wrong_confirmation",
+     "correct_hold",
+     "correct_hold",
+     "correct_hold"
+    ],
+    "control_good_runs": 3
+   },
+   {
+    "stage": "initial",
+    "qid": "RBA-E-10",
+    "trap_types": [
+     "normal"
+    ],
+    "esgenie_bucket": "correct_answer",
+    "esgenie_detail": "",
+    "control_buckets": [
+     "correct_answer",
+     "wrong_confirmation",
+     "correct_answer",
+     "correct_answer",
+     "wrong_confirmation"
+    ],
+    "control_good_runs": 3
+   },
+   {
+    "stage": "followup",
+    "qid": "RBA-B-1",
+    "trap_types": [
+     "single_policy_multi_yes",
+     "partial_scope"
+    ],
+    "esgenie_bucket": "correct_hold",
+    "esgenie_detail": "hold_reason_unknown",
+    "control_buckets": [
+     "wrong_confirmation",
+     "wrong_confirmation",
+     "wrong_confirmation",
+     "wrong_confirmation",
+     "wrong_confirmation"
+    ],
+    "control_good_runs": 0
+   },
+   {
+    "stage": "followup",
+    "qid": "RBA-B-8",
+    "trap_types": [
+     "conducted_vs_completed"
+    ],
+    "esgenie_bucket": "correct_hold",
+    "esgenie_detail": "hold_reason_unknown",
+    "control_buckets": [
+     "wrong_confirmation",
+     "wrong_confirmation",
+     "wrong_confirmation",
+     "wrong_confirmation",
+     "wrong_confirmation"
+    ],
+    "control_good_runs": 0
+   },
+   {
+    "stage": "followup",
+    "qid": "RBA-C-8-E-4-1",
+    "trap_types": [
+     "partial_scope",
+     "period_mismatch"
+    ],
+    "esgenie_bucket": "correct_hold",
+    "esgenie_detail": "hold_reason_mismatch",
+    "control_buckets": [
+     "wrong_confirmation",
+     "wrong_confirmation",
+     "wrong_confirmation",
+     "wrong_confirmation",
+     "wrong_confirmation"
+    ],
+    "control_good_runs": 0
+   },
+   {
+    "stage": "followup",
+    "qid": "RBA-E-1",
+    "trap_types": [
+     "single_policy_multi_yes"
+    ],
+    "esgenie_bucket": "correct_hold",
+    "esgenie_detail": "hold_reason_unknown",
+    "control_buckets": [
+     "wrong_confirmation",
+     "wrong_confirmation",
+     "wrong_confirmation",
+     "wrong_confirmation",
+     "wrong_confirmation"
+    ],
+    "control_good_runs": 0
+   },
+   {
+    "stage": "followup",
+    "qid": "RBA-E-8",
+    "trap_types": [
+     "single_policy_multi_yes"
+    ],
+    "esgenie_bucket": "correct_hold",
+    "esgenie_detail": "hold_reason_unknown",
+    "control_buckets": [
+     "wrong_confirmation",
+     "wrong_confirmation",
+     "correct_hold",
+     "wrong_confirmation",
+     "correct_hold"
+    ],
+    "control_good_runs": 2
+   }
+  ]
+ },
+ "both_not_good_rows": {
+  "rule": "ESGenie·대조군 5회 모두 correct_* 아님(남은 불일치)",
+  "count_by_stage": {
+   "initial": 9,
+   "followup": 8
+  },
+  "rows": [
+   {
+    "stage": "initial",
+    "qid": "RBA-A-3",
+    "esgenie_bucket": "wrong_confirmation",
+    "control_buckets": [
+     "wrong_confirmation",
+     "wrong_confirmation",
+     "wrong_confirmation",
+     "wrong_confirmation",
+     "wrong_confirmation"
+    ]
+   },
+   {
+    "stage": "initial",
+    "qid": "RBA-B-6",
+    "esgenie_bucket": "unnecessary_hold",
+    "control_buckets": [
+     "wrong_confirmation",
+     "wrong_confirmation",
+     "wrong_confirmation",
+     "wrong_confirmation",
+     "wrong_confirmation"
+    ]
+   },
+   {
+    "stage": "initial",
+    "qid": "RBA-C-2",
+    "esgenie_bucket": "wrong_confirmation",
+    "control_buckets": [
+     "wrong_confirmation",
+     "wrong_confirmation",
+     "wrong_confirmation",
+     "wrong_confirmation",
+     "wrong_confirmation"
+    ]
+   },
+   {
+    "stage": "initial",
+    "qid": "RBA-C-4",
+    "esgenie_bucket": "wrong_confirmation",
+    "control_buckets": [
+     "wrong_confirmation",
+     "wrong_confirmation",
+     "wrong_confirmation",
+     "wrong_confirmation",
+     "wrong_confirmation"
+    ]
+   },
+   {
+    "stage": "initial",
+    "qid": "RBA-C-4-E-6-1",
+    "esgenie_bucket": "unnecessary_hold",
+    "control_buckets": [
+     "wrong_confirmation",
+     "wrong_confirmation",
+     "wrong_confirmation",
+     "wrong_confirmation",
+     "wrong_confirmation"
+    ]
+   },
+   {
+    "stage": "initial",
+    "qid": "RBA-C-7",
+    "esgenie_bucket": "wrong_confirmation",
+    "control_buckets": [
+     "wrong_confirmation",
+     "wrong_confirmation",
+     "wrong_confirmation",
+     "wrong_confirmation",
+     "wrong_confirmation"
+    ]
+   },
+   {
+    "stage": "initial",
+    "qid": "RBA-D-6",
+    "esgenie_bucket": "wrong_confirmation",
+    "control_buckets": [
+     "wrong_confirmation",
+     "wrong_confirmation",
+     "wrong_confirmation",
+     "wrong_confirmation",
+     "wrong_confirmation"
+    ]
+   },
+   {
+    "stage": "initial",
+    "qid": "RBA-D-8",
+    "esgenie_bucket": "wrong_confirmation",
+    "control_buckets": [
+     "wrong_confirmation",
+     "wrong_confirmation",
+     "wrong_confirmation",
+     "wrong_confirmation",
+     "wrong_confirmation"
+    ]
+   },
+   {
+    "stage": "initial",
+    "qid": "RBA-E-6",
+    "esgenie_bucket": "wrong_confirmation",
+    "control_buckets": [
+     "wrong_confirmation",
+     "wrong_confirmation",
+     "wrong_confirmation",
+     "wrong_confirmation",
+     "wrong_confirmation"
+    ]
+   },
+   {
+    "stage": "followup",
+    "qid": "RBA-A-3",
+    "esgenie_bucket": "wrong_confirmation",
+    "control_buckets": [
+     "wrong_confirmation",
+     "wrong_confirmation",
+     "wrong_confirmation",
+     "wrong_confirmation",
+     "wrong_confirmation"
+    ]
+   },
+   {
+    "stage": "followup",
+    "qid": "RBA-B-6",
+    "esgenie_bucket": "unnecessary_hold",
+    "control_buckets": [
+     "wrong_confirmation",
+     "wrong_confirmation",
+     "wrong_confirmation",
+     "wrong_confirmation",
+     "wrong_confirmation"
+    ]
+   },
+   {
+    "stage": "followup",
+    "qid": "RBA-C-2",
+    "esgenie_bucket": "wrong_confirmation",
+    "control_buckets": [
+     "wrong_confirmation",
+     "wrong_confirmation",
+     "wrong_confirmation",
+     "wrong_confirmation",
+     "wrong_confirmation"
+    ]
+   },
+   {
+    "stage": "followup",
+    "qid": "RBA-C-4",
+    "esgenie_bucket": "wrong_confirmation",
+    "control_buckets": [
+     "wrong_confirmation",
+     "wrong_confirmation",
+     "wrong_confirmation",
+     "wrong_confirmation",
+     "wrong_confirmation"
+    ]
+   },
+   {
+    "stage": "followup",
+    "qid": "RBA-C-4-E-6-1",
+    "esgenie_bucket": "unnecessary_hold",
+    "control_buckets": [
+     "wrong_confirmation",
+     "wrong_confirmation",
+     "wrong_confirmation",
+     "wrong_confirmation",
+     "wrong_confirmation"
+    ]
+   },
+   {
+    "stage": "followup",
+    "qid": "RBA-D-6",
+    "esgenie_bucket": "wrong_confirmation",
+    "control_buckets": [
+     "wrong_confirmation",
+     "wrong_confirmation",
+     "wrong_confirmation",
+     "wrong_confirmation",
+     "wrong_confirmation"
+    ]
+   },
+   {
+    "stage": "followup",
+    "qid": "RBA-D-8",
+    "esgenie_bucket": "wrong_confirmation",
+    "control_buckets": [
+     "wrong_confirmation",
+     "wrong_confirmation",
+     "wrong_confirmation",
+     "wrong_confirmation",
+     "wrong_confirmation"
+    ]
+   },
+   {
+    "stage": "followup",
+    "qid": "RBA-E-6",
+    "esgenie_bucket": "wrong_confirmation",
+    "control_buckets": [
+     "wrong_confirmation",
+     "wrong_confirmation",
+     "wrong_confirmation",
+     "wrong_confirmation",
+     "wrong_confirmation"
+    ]
+   }
+  ]
+ },
+ "control_cited_company_answer": {
+  "rows": [],
+  "count": 0
+ },
+ "control_bucket_variation": {
+  "initial": {
+   "bucket_changed": 7,
+   "rows": [
+    {
+     "qid": "RBA-C-4-E-6-2",
+     "buckets": [
+      "correct_answer",
+      "correct_answer",
+      "wrong_confirmation",
+      "wrong_confirmation",
+      "correct_answer"
+     ]
+    },
+    {
+     "qid": "RBA-D-2",
+     "buckets": [
+      "correct_hold",
+      "correct_hold",
+      "correct_hold",
+      "wrong_confirmation",
+      "correct_hold"
+     ]
+    },
+    {
+     "qid": "RBA-E-2",
+     "buckets": [
+      "correct_answer",
+      "wrong_confirmation",
+      "correct_answer",
+      "correct_answer",
+      "correct_answer"
+     ]
+    },
+    {
+     "qid": "RBA-E-7",
+     "buckets": [
+      "correct_answer",
+      "wrong_confirmation",
+      "correct_answer",
+      "correct_answer",
+      "wrong_confirmation"
+     ]
+    },
+    {
+     "qid": "RBA-E-8",
+     "buckets": [
+      "wrong_confirmation",
+      "wrong_confirmation",
+      "correct_hold",
+      "correct_hold",
+      "correct_hold"
+     ]
+    },
+    {
+     "qid": "RBA-E-10",
+     "buckets": [
+      "correct_answer",
+      "wrong_confirmation",
+      "correct_answer",
+      "correct_answer",
+      "wrong_confirmation"
+     ]
+    },
+    {
+     "qid": "RBA-E-11",
+     "buckets": [
+      "correct_answer",
+      "wrong_confirmation",
+      "correct_answer",
+      "correct_answer",
+      "correct_answer"
+     ]
+    }
+   ]
+  },
+  "followup": {
+   "bucket_changed": 2,
+   "rows": [
+    {
+     "qid": "RBA-C-7",
+     "buckets": [
+      "wrong_confirmation",
+      "correct_hold",
+      "wrong_confirmation",
+      "wrong_confirmation",
+      "wrong_confirmation"
+     ]
+    },
+    {
+     "qid": "RBA-E-8",
+     "buckets": [
+      "wrong_confirmation",
+      "wrong_confirmation",
+      "correct_hold",
+      "wrong_confirmation",
+      "correct_hold"
+     ]
+    }
+   ]
+  }
+ },
+ "diff_vs_P3-4_scoring": {
+  "manual_claude_run1": {
+   "changed_rows": 0,
+   "rows": []
+  },
+  "manual_claude_run2": {
+   "changed_rows": 0,
+   "rows": []
+  },
+  "manual_claude_run3": {
+   "changed_rows": 0,
+   "rows": []
+  },
+  "esgenie_LIVE_n5_d8a0de8": {
+   "changed_rows": 0,
+   "rows": []
+  }
+ }
+}
