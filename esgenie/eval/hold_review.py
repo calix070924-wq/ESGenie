@@ -46,6 +46,8 @@ REVIEW_COLUMNS = (
     "system", "run_id", "stage", "qid", "verdict", "criterion", "system_hold_basis",
     "assessment", "reviewer", "approval", "approved_by", "decided_at",
 )
+#: 선택 열 — 보류 판정과 별개로 시스템 설명의 오류를 기록한다(판정에 영향 없음).
+OPTIONAL_COLUMNS = ("explanation_error",)
 
 
 class ReviewError(ValueError):
@@ -76,7 +78,7 @@ def load_reviews(path: str | Path) -> dict[tuple[str, str, str, str], dict[str, 
                 raise ReviewError(f"{i}행: 승인된 판정에는 approved_by가 필요하다")
             if not row["assessment"].strip():
                 raise ReviewError(f"{i}행: 판단 근거(assessment)를 비울 수 없다")
-            out[key] = {k: (row.get(k) or "").strip() for k in REVIEW_COLUMNS}
+            out[key] = {k: (v or "").strip() for k, v in row.items() if k}
         return out
 
 
@@ -124,6 +126,12 @@ def apply_v2(score: dict[str, Any], reviews: dict[tuple[str, str, str, str], dic
         "rule_version": RULE_VERSION, "rule_decided": RULE_DECIDED, "criteria": CRITERIA,
         "v1_label_file": score.get("label_file"), "documents": score.get("documents", []),
         "v1_unresolved": score.get("bucket_counts", {}).get("unresolved", 0),
+        "interpretation": [
+            "v2는 제품 성능 향상이 아니라 기존 출력의 평가 기준을 보완한 재분류다.",
+            "규칙은 평가 결과를 본 뒤 정했다(2026-10-15). v1 결과는 그대로 보존한다.",
+            "판단 대기가 남은 보고 단위에서 '불필요한 보류 N건'은 판단 대기 건수와 함께만 읽는다.",
+            "시스템 간 판단 대기 차이가 해소되지 않으면 정당한 보류 건수만으로 시스템 우열을 판단하지 않는다.",
+        ],
         "rows": rows_out, "unused_reviews": [list(k) for k in unmatched],
         "scopes": _scopes(rows_out),
     }
@@ -138,6 +146,10 @@ def _scope(rows: list[dict[str, Any]]) -> dict[str, Any]:
     answer_rows = [r for r in rows if r["label_decision"] == "answer"]
     accurate = [r for r in answer_rows if r["value_match"] is True and r["source_match"] is True]
     c2 = Counter(r["bucket_v2"] for r in rows)
+    reviewed = [r for r in rows if r["bucket_v1"] == B_UNNECESSARY]
+    pending = c2.get(B_PENDING, 0)
+    expl = [f"{r['stage']}/{r['qid']}: {r['review']['explanation_error']}" for r in rows
+            if r.get("review") and r["review"].get("explanation_error")]
     return {
         "A1_값근거_정확률": _ratio(len(accurate), len(answer_rows)) | {
             "note": "답변 가능 라벨 중 시스템 출력의 값·근거가 모두 정답인 비율. 확정 여부와 무관"},
@@ -151,6 +163,10 @@ def _scope(rows: list[dict[str, Any]]) -> dict[str, Any]:
             "잘못된_확정": c2.get("wrong_confirmation", 0),
             "올바른_보류(보류 라벨)": c2.get("correct_hold", 0),
         },
+        "보류_검토대상": len(reviewed),
+        "판단_대기_비율": _ratio(pending, len(reviewed)) | {
+            "note": "v1에서 불필요한 보류로 집계돼 v2 판정 대상이 된 행 중 판단 대기 비율"},
+        "설명_오류": expl,
         "bucket_v2_counts": dict(sorted(c2.items())),
         "rows": len(rows),
     }

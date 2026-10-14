@@ -114,3 +114,22 @@ def test_aggregate_scope_only_with_two_stages(tmp_path):
     assert [s["aggregated"] for s in rep["scopes"]] == [False, False, True]
     rep1 = hr.apply_v2(_score(rows[:1]), hr.load_reviews(_write(tmp_path, [])))
     assert [s["aggregated"] for s in rep1["scopes"]] == [False]
+
+
+def test_pending_ratio_and_explanation_error_reported(tmp_path):
+    rows = [_row("S1", "unnecessary_hold"), _row("S2", "unnecessary_hold"), _row("S3", "correct_answer")]
+    r1 = _rev("S1", "justified", "J2") | {"explanation_error": "총량 문항에 '분모 미확인'"}
+    p = tmp_path / "rev.csv"
+    with open(p, "w", encoding="utf-8", newline="") as fh:
+        w = csv.DictWriter(fh, fieldnames=hr.REVIEW_COLUMNS + hr.OPTIONAL_COLUMNS)
+        w.writeheader(); w.writerow(r1)
+    sc = hr.apply_v2(_score(rows), hr.load_reviews(p))["scopes"][0]
+    assert sc["보류_검토대상"] == 2
+    assert (sc["판단_대기_비율"]["numerator"], sc["판단_대기_비율"]["denominator"]) == (1, 2)
+    assert sc["설명_오류"] == ["initial/S1: 총량 문항에 '분모 미확인'"]
+    assert sc["판단_적절성"]["정당한_검토_보류"] == 1  # 설명 오류는 판정을 바꾸지 않는다
+
+
+def test_pending_ratio_not_computed_without_review_rows(tmp_path):
+    sc = hr.apply_v2(_score([_row("S1", "correct_answer")]), hr.load_reviews(_write(tmp_path, [])))["scopes"][0]
+    assert sc["판단_대기_비율"]["value"] is None

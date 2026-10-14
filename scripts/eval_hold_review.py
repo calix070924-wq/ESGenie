@@ -38,7 +38,7 @@ def main(argv: list[str] | None = None) -> int:
         print(f"{sc['run_id']} {sc['stage']}: 값·근거 {sc['A1_값근거_정확률']['numerator']}/{sc['A1_값근거_정확률']['denominator']}"
               f" · 확정 정답 {sc['M1_확정정답률']['numerator']}/{sc['M1_확정정답률']['denominator']}"
               f" · 정당 보류 {j['정당한_검토_보류']} · 불필요 보류 {j['불필요한_보류']} · 판단 대기 {j['판단_대기']}"
-              f" · 잘못된 확정 {j['잘못된_확정']}")
+              f" · 잘못된 확정 {j['잘못된_확정']} · 판단 대기 비율 {sc['판단_대기_비율']['numerator']}/{sc['판단_대기_비율']['denominator']}")
     print(f"wrote {a.out}")
     return 0
 
