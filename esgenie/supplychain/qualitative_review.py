@@ -17,6 +17,20 @@ REVIEW_TOPICS = {
     "RBA-D-8": "개인정보 보호 대상의 적용 범위와 관련 법규 준수",
     "RBA-E-6": "관리자·근로자 교육의 대상·내용과 문항 요건의 연결",
 }
+REVIEW_REQUIRED_FLAG = "qualitative_review_required"
+
+
+def _review_reason(topic: str) -> str:
+    return ("관련 자료·회사 응답의 연결만으로 문항 전체 충족을 자동 확정하지 않습니다. "
+            f"담당자 확인 필요: {topic}.")
+
+
+def needs_qualitative_review(answer: dict) -> bool:
+    """Recognize this guard, including saved results from before its marker existed."""
+    topic = REVIEW_TOPICS.get(answer.get("qid"))
+    return bool(topic and answer.get("value") is None and answer.get("status") == "flagged"
+                and (REVIEW_REQUIRED_FLAG in (answer.get("confidence_flags") or [])
+                     or answer.get("rationale") == _review_reason(topic)))
 
 
 def require_qualitative_review(answer: Answer, question: Question) -> Answer:
@@ -25,10 +39,11 @@ def require_qualitative_review(answer: Answer, question: Question) -> Answer:
     if (not topic or question.qtype not in ("yes_no", "yes_no_evidence")
             or answer.value is not True or answer.status == "not_applicable"):
         return answer
-    reason = ("관련 자료·회사 응답의 연결만으로 문항 전체 충족을 자동 확정하지 않습니다. "
-              f"담당자 확인 필요: {topic}.")
+    reason = _review_reason(topic)
     answer.value = None
     answer.status = "flagged"
+    if REVIEW_REQUIRED_FLAG not in answer.confidence_flags:
+        answer.confidence_flags.append(REVIEW_REQUIRED_FLAG)
     # The previous rationale may say '응답: 예' or '문항 요건 확인'. The actual
     # quotations, self-reports, scope and comparison diagnostics stay intact.
     answer.rationale = reason

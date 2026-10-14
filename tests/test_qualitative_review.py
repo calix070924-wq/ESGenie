@@ -1,16 +1,21 @@
 """Whole-question conclusions must not be inferred from partial policy evidence."""
 from copy import deepcopy
 from dataclasses import replace
+from io import BytesIO
 
+import fitz
 import pytest
+from fastapi.testclient import TestClient
+from openpyxl import load_workbook
 
 from esgenie.ssot.evidence_graph import EvidenceGraph, merge_ocr_extraction
 from esgenie.ssot.ocr_router import DocChannel, ExtractedClause, OcrExtraction
 from esgenie.supplychain.frameworks import get_framework
-from esgenie.supplychain.qualitative_review import require_qualitative_review
+from esgenie.supplychain.qualitative_review import REVIEW_REQUIRED_FLAG, require_qualitative_review
 from esgenie.supplychain.responder import build_response_sheet
 from esgenie.supplychain.schema import Answer
 from esgenie.web.presenter import present_sheet
+from esgenie.web.app import create_app
 from esgenie.web.review import reconcile, review_rows
 
 
@@ -87,6 +92,7 @@ def test_even_explicit_training_program_remains_reviewable_and_human_completion_
     project = {'framework': 'rba42', 'documents': [], 'result': {'sheet': sheet.to_dict()}}
     shown = present_sheet(sheet.to_dict(), [])
     before = next(r for r in review_rows(project, shown) if r['id'] == raw.qid)
+    assert before['review_status'] == 'pending' and before['review_label'] == '확인 필요'
     values = {**before['saved'], 'answer': '예', 'reason': '대상과 교육 내용을 원문에서 확인'}
     project['reviews'] = {raw.qid: {'values': values, 'status': 'complete',
                                   'method': '담당자 수정', 'history': []}}
@@ -120,3 +126,107 @@ def test_numeric_subquestions_and_communication_are_outside_review_limit(qid, va
     before = deepcopy(a.to_dict())
     require_qualitative_review(a, q)
     assert a.to_dict() == before
+
+
+@pytest.mark.parametrize('code,section,text', PARTIAL)
+@pytest.mark.parametrize('legacy', [False, True])
+def test_api_save_reload_and_exports_keep_guarded_answers_pending(tmp_path, code, section, text, legacy):
+    sheet = sheet_for(code, section, text)
+    sheet.answers = [a for a in sheet.answers if a.qid == 'RBA-' + code]
+    payload = sheet.to_dict()
+    if legacy:
+        payload['answers'][0]['confidence_flags'].remove(REVIEW_REQUIRED_FLAG)
+    app = create_app(data_root=tmp_path, available=lambda: False)
+    with TestClient(app, headers={'X-ESGenie-Client': 'workspace'}) as client:
+        p = client.post('/api/projects', json={'company_name': '상태 검증', 'year': 2024}).json()
+        pid = p['id']
+        stored = app.state.store.read(pid)
+        stored['result'] = {'sheet': payload, 'answers': [], 'mode': 'live', 'limitations': []}
+        stored['result_revision'] = stored['input_revision']
+        app.state.store.save(stored)
+
+        def current():
+            row = client.get(f'/api/projects/{pid}').json()['result']['answers'][0]
+            assert row['review_status'] == 'pending' and row['review_label'] == '확인 필요'
+            assert row['value_text'] == '답변 없음' and row['sources']
+            return row
+
+        row = current()
+        if legacy:
+            stored['reviews'] = {row['id']: {'values': deepcopy(row['saved']), 'status': 'missing',
+                                            'history': [], 'method': '자동 입력'}}
+            app.state.store.save(stored)
+            row = current()  # Previously misclassified saves need no new analysis.
+        values = {**row['saved'], 'memo': '기존 근거의 적용 범위를 확인 중'}
+        response = client.put(f'/api/projects/{pid}/reviews/{row["id"]}',
+                              json={'values': values, 'complete': False})
+        assert response.status_code == 200, response.text
+        row = current()
+        assert app.state.store.read(pid)['reviews'][row['id']]['status'] == 'pending'
+        assert row['saved']['memo'] == values['memo']
+
+        excel = client.get(f'/api/projects/{pid}/download/xlsx')
+        assert excel.status_code == 200
+        book = load_workbook(BytesIO(excel.content))
+        exported = next(r for r in book['응답서'].iter_rows(values_only=True) if r[0] == row['id'])
+        assert exported[3] == '답변 없음' and exported[7] == '확인 필요'
+        pdf = client.get(f'/api/projects/{pid}/download/pdf')
+        assert pdf.status_code == 200
+        with fitz.open(stream=pdf.content, filetype='pdf') as document:
+            exported_text = ''.join(''.join(page.get_text().split()) for page in document)
+        assert '확인필요' in exported_text and '자료필요' not in exported_text
+
+        values.update(answer='예', reason='담당자가 전체 요건과 원문을 확인')
+        response = client.put(f'/api/projects/{pid}/reviews/{row["id"]}',
+                              json={'values': values, 'complete': True})
+        assert response.status_code == 200
+        completed = client.get(f'/api/projects/{pid}').json()['result']['answers'][0]
+        assert completed['review_status'] == 'complete' and completed['value_text'] == '예'
+        assert completed['original_status'] == 'flagged'
+
+
+@pytest.mark.parametrize('state', ['complete', 'again'])
+@pytest.mark.parametrize('legacy', [False, True])
+def test_saved_completion_and_recheck_take_priority(state, legacy):
+    sheet = sheet_for(*PARTIAL[0]).to_dict()
+    if legacy:
+        next(a for a in sheet['answers'] if a['qid'] == 'RBA-C-2')['confidence_flags'] = []
+    project = {'framework': 'rba42', 'documents': [], 'result': {'sheet': sheet},
+               'reviews': {'RBA-C-2': {'status': state, 'values': {'answer': '', 'unit': '',
+                            'scope': '', 'sources': [], 'memo': '담당자 기록', 'reason': ''}, 'history': []}}}
+    before = deepcopy(project)
+    row = next(r for r in review_rows(project, present_sheet(sheet, [])) if r['id'] == 'RBA-C-2')
+    assert row['review_status'] == state
+    assert project == before  # Display projection must not mutate saved decisions.
+
+
+@pytest.mark.parametrize('case', ['no_evidence', 'unrelated_flag', 'negative', 'numeric'])
+def test_real_missing_answers_do_not_become_review_pending(tmp_path, case):
+    raw = sheet_for(*PARTIAL[0]).to_dict()
+    raw['answers'] = [a for a in raw['answers'] if a['qid'] == 'RBA-C-2']
+    item = raw['answers'][0]
+    if case == 'no_evidence':
+        item.update(status='insufficient', evidence_links=[], evidence_needed=['원문 자료'])
+    elif case == 'unrelated_flag':
+        item.update(confidence_flags=[], rationale='다른 사유로 확인이 필요한 빈 답변')
+    elif case == 'negative':
+        item.update(value=False)
+    else:
+        item.update(qid='RBA-C-4-E-6-2', value=29.3, unit='%', comparison='not_comparable')
+    app = create_app(data_root=tmp_path, available=lambda: False)
+    with TestClient(app, headers={'X-ESGenie-Client': 'workspace'}) as client:
+        pid = client.post('/api/projects', json={'company_name': '자료 부족 검증', 'year': 2024}).json()['id']
+        p = app.state.store.read(pid)
+        p['result'] = {'sheet': raw, 'answers': [], 'mode': 'live'}
+        p['result_revision'] = p['input_revision']
+        app.state.store.save(p)
+        row = client.get(f'/api/projects/{pid}').json()['result']['answers'][0]
+        if case in ('no_evidence', 'unrelated_flag'):
+            assert row['review_status'] == 'missing'
+        values = {**row['saved'], 'answer': '', 'memo': '답변할 자료를 확인 중'}
+        response = client.put(f'/api/projects/{pid}/reviews/{row["id"]}',
+                              json={'values': values, 'complete': False})
+        assert response.status_code == 200
+        row = response.json()['result']['answers'][0]
+        assert row['review_status'] == 'missing' and row['review_label'] == '자료 필요'
+        assert app.state.store.read(pid)['reviews'][row['id']]['status'] == 'missing'
