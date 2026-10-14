@@ -40,7 +40,7 @@ def _issb_followup_rows(answers) -> list[dict[str, str]]:
     return rows
 
 
-def export_response_sheet(sheet: ResponseSheet, out_dir: str | Path) -> str:
+def export_response_sheet(sheet: ResponseSheet, out_dir: str | Path, *, status_labels: dict[str, str] | None = None, summary_text: str | None = None) -> str:
     """응답서를 xlsx로 저장하고 경로를 반환한다."""
     from openpyxl import Workbook
     from openpyxl.styles import Alignment, Font, PatternFill
@@ -63,7 +63,7 @@ def export_response_sheet(sheet: ResponseSheet, out_dir: str | Path) -> str:
     ws["A1"].font = Font(size=13, bold=True)
     # 4분할(자동응답/AI초안/작성필요/증빙대기)을 빠짐없이 적는다 — AI초안이 빠져
     # 합이 100%에 못 미치던 헤더를 고정한다(§5-1).
-    ws["A2"] = summary_line(sheet)
+    ws["A2"] = summary_text if summary_text is not None else summary_line(sheet)
     ws["A2"].font = Font(size=10, color="555555")
     for row in (1, 2):
         ws.merge_cells(start_row=row, start_column=1, end_row=row, end_column=7)
@@ -130,7 +130,7 @@ def export_response_sheet(sheet: ResponseSheet, out_dir: str | Path) -> str:
         else:
             ws.cell(row=r, column=4, value=a.display_value).alignment = Alignment(wrap_text=True)
         ws.cell(row=r, column=5, value=scope_line(a) or "—").alignment = Alignment(wrap_text=True)
-        badge = ws.cell(row=r, column=6, value=a.badge)
+        badge = ws.cell(row=r, column=6, value=(status_labels or {}).get(a.qid, a.badge))
         badge.alignment = Alignment(horizontal="center")
         ws.cell(row=r, column=7, value=_fmt_evidence(a)).alignment = Alignment(wrap_text=True)
         f = status_fill.get(a.status)

@@ -135,6 +135,9 @@ class EvidenceGraph:
         self._text_nodes: dict[str, TextNode] = {}
         self._edges: list[EvidenceEdge] = []
         self._text_seq = 0
+        # 정성 답변의 범위도 원문 머리말에서 읽는다. 파일당 한 번만 보관하며
+        # 구버전 그래프에는 이 메타데이터가 없을 수 있다.
+        self.source_texts: dict[str, str] = {}
 
     # ---- 변경 API ----------------------------------------------------
     def add_node(self, node: EvidenceNode) -> None:
@@ -213,6 +216,7 @@ class EvidenceGraph:
             "corp_code": self.corp_code,
             "corp_name": self.corp_name,
             "report_year": self.report_year,
+            "source_texts": dict(self.source_texts),
             "representative_node_ids": self.representative_node_ids,
             "resolved_facts": {c: f.to_dict() if f else None for c, f in self.resolved_facts.items()},
             "nodes": [n.to_dict() for n in self._nodes.values()],
@@ -323,6 +327,7 @@ def merge_ocr_extraction(
     # 문서 수준 문맥 — 파일명·문서종류·본문 머리말. 표 제목/머리말에 있는 사업장·
     # 에너지원 표기를 metric마다 다시 읽지 않고 한 번만 만들어 경계 판정에 넘긴다.
     doc_context = extraction.raw_text or ""
+    graph.source_texts[extraction.source_file] = doc_context
     from dataclasses import replace
     from .boundary_conflicts import renewable_review_notes
     renewable_notes = renewable_review_notes(extraction)

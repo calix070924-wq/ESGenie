@@ -1,0 +1,839 @@
+"""RBA 문항 요건별 근거 판정. 코드 태깅은 후보이고 충족 판정은 별개다.
+
+원문 조항을 여러 문항의 후보로 읽는다. 파일명·회사명·페이지 번호는 판정에
+사용하지 않는다. 각 요건은 주제와 실행/규정 관계를 함께 요구하며, 부재·한계
+문장은 원문 참조로 보존한다. Answer의 기존 필드만 사용한다.
+"""
+from __future__ import annotations
+
+import re
+from dataclasses import dataclass, replace
+from collections import defaultdict
+
+from ..ssot.audit_trace import evidence_link
+from ..ssot.boundary import Boundary, detect_site
+from ..survey import is_survey
+from ..ssot.receipt_status import row_unresolved, receipt_rows, receipt_body, STATUS_FIELD
+
+
+@dataclass(frozen=True)
+class Requirement:
+    label: str
+    patterns: tuple[str, ...]
+    same_unit: bool = False
+    records: tuple[tuple[str, ...], ...] = ()
+
+    def matches(self, text: str) -> bool:
+        def matches_patterns(patterns, body):
+            return all(re.search(p, body, re.I | re.S) for p in patterns)
+        units = _statement_units(text)
+        if self.same_unit:
+            return any(matches_patterns(self.patterns, unit) for unit in units)
+        return (matches_patterns(self.patterns, text)
+                and all(any(matches_patterns(record, unit) for unit in _completed_record_units(text))
+                        for record in self.records))
+
+    def matches_parts(self, parts: list[str]) -> bool:
+        """대상 설명을 연결해도 대상별 실행은 원래 조항 안에서 입증한다."""
+        return (self.matches('\n'.join(parts))
+                and all(any(all(re.search(p, unit, re.I | re.S) for p in record)
+                            for part in parts for unit in _completed_record_units(part))
+                        for record in self.records))
+
+
+def R(label, *patterns, same_unit=False, records=()):
+    return Requirement(label, patterns, same_unit, records)
+
+
+# 실행 기록의 날짜·시간을 원문 표기 그대로 읽는다. 한글·하이픈·슬래시·
+# 마침표 표기를 지원하며 문서 번호나 숫자 열을 날짜로 간주하지 않는다.
+_RECORD_TIME = (r'(?<!\d)(?:20\d{2}\s*[년./-]\s*)?'
+                r'(?:1[0-2]|0?[1-9])\s*[월./-]\s*(?:3[01]|[12]\d|0?[1-9])\s*일?(?!\d)'
+                r'|(?<!\d)(?:2[0-3]|1?\d)\s*[:시]\s*[0-5]\d\s*분?(?!\d)')
+# '수령 확인 요청/대기/양식'은 확인을 마친 기록이 아니다. 완료된
+# 술어 또는 문장/표 셀 끝의 상태를 요구하며, 안내문 자체의 미래 계획은
+# 제한하지 않는다. 날짜와 시간 뒤의 '수령 확인.' 같은 대장 표기도 보존한다.
+_RECORD_END = r'(?=[ \t]*(?:[.!?。;]|$))'
+_COMPLETED_CELL_END = r'(?=[ \t]*(?:[.!?。;|]|$))'
+_PAST_COMPLETION = r'(?:했(?:다|습니다|음)|하였(?:다|습니다|음)|되었(?:다|습니다|음)|됐(?:다|습니다|음))'
+_FINISHED_PREDICATE = (
+    rf'(?:\s*{_PAST_COMPLETION}'
+    rf'|\s*(?:을|를)?\s*(?:마쳤(?:다|습니다|음)|끝냈(?:다|습니다|음))'
+    rf'|\s*(?:을|를)\s*(?:대조|검증|확인){_PAST_COMPLETION})')
+_COMPLETED_SUFFIX = (
+    rf'(?:{_RECORD_END}|{_FINISHED_PREDICATE}'
+    rf'|\s*(?:을|를)?\s*완료(?:{_COMPLETED_CELL_END}|{_FINISHED_PREDICATE}))')
+_DELIVERY_RECORD = (
+    # 첫 수령 확인의 술어를 읽는다. '수령 확인 요청을 확인했다'의
+    # 두 번째 확인이나 '전달 요청 검토 완료'의 다른 작업을 빌리지 않는다.
+    rf'수령(?:(?!확인)[^\n.!?。;]){{0,30}}확인{_COMPLETED_SUFFIX}'
+    rf'|(?:전달|배포)(?:(?!요청|검토|준비|계획|예정|작성|수립|양식|대기)[^\n.!?。;]){{0,30}}'
+    rf'완료(?:{_COMPLETED_CELL_END}|{_FINISHED_PREDICATE})')
+_NOTICE_DELIVERY = r'안내|발송|전달|배포'
+_REPORTING_PARTICLE = r'(?:이라고|이라는|라고|라는|는|고)'
+_ASSERTION_ACTOR = r'(?:(?!요청|계획|예정|대기|기다)[가-힣A-Za-z0-9_-]){1,30}(?:가|는|이)'
+_REPLY_OBJECT = re.compile(r'(?:회신|답변|응답)(?:을|이)?'
+                           r'(?=\s|받|접수|도착|했|하였|되었|됐|$)')
+_REPLY_RECEIVED = re.compile(
+    rf'(?:받았(?:다|습니다|음)|(?:접수|도착)?{_PAST_COMPLETION})')
+_REPLY_DATE = re.compile(rf'(?:오전\s*|오후\s*)?(?:{_RECORD_TIME})(?:에|자로)?'
+                         r'(?=\s|[,\)\]]|$)')
+_REPLY_DATE_PREFIX = re.compile(r'(?:20\d{2}\s*[년./-]\s*)?'
+                                r'(?:1[0-2]|0?[1-9])\s*[월./-]\s*'
+                                r'|20\d{2}\s*[년./-]\s*'
+                                r'|(?:오전|오후)\s*'
+                                r'|(?:2[0-3]|1?\d)\s*[:시]\s*')
+_REPLY_WORD = re.compile(r'[가-힣A-Za-z0-9_-]+')
+_REPLY_NOUN_CASE = re.compile(r'(으로부터|로부터|에게서|에게|한테|께서|으로|로|가|는|이)$')
+_REPLY_BRACKETS = {'(': ')', '[': ']', '（': '）', '【': '】'}
+# 직책에 든 '계획/요청'은 과거·미완료 술어가 아니다. 문맥을 바꾸는
+# 실제 행동/연결형만 제외해 요청 구간이나 다른 회신을 넘어가지 않는다.
+# 직접 인용·목적 연결형 및 요청을 받는 술어는 앞 주장을 요청 내용으로
+# 바꾸는 경계다. 자료/교육을 받은 담당자 같은 정상 수식은 유지한다.
+_REPLY_CLAUSE = re.compile(
+    r'^(?:요청|요구|부탁|계획|예정|대기|기다림)(?:은|는|이|가|으로|로|이다|이라는|이라고|이면|인)?$'
+    r'|(?:했|하였|됐|되었|받았|기다렸|기다린)(?:다(?:는|고|면|며)?|고|지만)$'
+    r'|^(?:요청|요구|부탁|대기|기다리|회신|답변|응답)(?:한|하는|할|해|하기|하길|하고|하며|하면|는|던|기|고|면)$'
+    r'|(?:한다|된다)(?:는|고|면|며)?$|(?:하는|되는|라는|다는|하기로|되기로|받기로)$'
+    r'|(?:했|하였|됐|되었|받았|기다렸|기다린|한다|된다)(?:다는|다고|다면|다며|는|고|지만)'
+    r'|(?:요청|요구|부탁|대기|계획|예정|회신|답변|응답)(?:한|하는|할|해|하기|하길|하고|하며|하면|이라는|이라고)'
+    r'|기다리(?:는|던|기|고|면)'
+    r'|(?:으?라고|도록)'
+    r'|(?:요청|요구|부탁|지시)(?:(?:을|를)$|(?:을|를)?\s*받(?:은|는|고|을))')
+_RECORDED_ASSERTION = re.compile(
+    rf'\s*(?:(?:{_ASSERTION_ACTOR}\s+)?(?:대장|일지|기록부)(?:에|에서)\s*'
+    rf'(?:기록|기재|등록){_PAST_COMPLETION}'
+    rf'|(?:사실|내용)(?:을|이)?(?:(?!요청|계획|예정|대기)[^.!?。;]){{0,30}}'
+    rf'(?:대조|검증|확인){_PAST_COMPLETION})')
+_ASSERTION_PREFIX = re.compile(
+    rf'\s*(?:{_ASSERTION_ACTOR}'
+    rf'|(?:{_ASSERTION_ACTOR}\s+)?(?:대장|일지|기록부)(?:에|에서)'
+    rf'|(?:사실|내용)(?:을|이)?(?:\s+{_ASSERTION_ACTOR})?)\s*')
+_QUOTED_TEXT = re.compile(r'“[^”]*”|‘[^’]*’|"[^"]*"|(?<![A-Za-z0-9])\'[^\']*\'')
+_REPORTING_START = re.compile(_REPORTING_PARTICLE + r'(?=\s|$|회신|답변|응답|대장|사실|내용)')
+
+
+def _reply_metadata_item(text, start, allow_open=False):
+    """날짜 또는 조사로 닫힌 명사구 한 개; 술어·요청 구간은 넘지 않는다."""
+    date = _REPLY_DATE.match(text, start)
+    if date:
+        return date.end(), 0
+    if text[start:start + 1] in _REPLY_BRACKETS:
+        closing = _REPLY_BRACKETS[text[start]]
+        end = text.find(closing, start + 1)
+        inner = text[start + 1:end] if end >= 0 else text[start + 1:]
+        if (inner.strip() or allow_open) and not re.search(r'[()\[\]（）【】]', inner):
+            position, actors = _reply_metadata(inner, allow_open=allow_open and end < 0)
+            if position == len(inner):
+                if end >= 0:
+                    return end + 1, actors
+                if allow_open:
+                    return len(text), actors
+        return None
+    position = start
+    while position < len(text):
+        if _REPLY_OBJECT.match(text, position):
+            return None
+        word = _REPLY_WORD.match(text, position)
+        # 요청과 '받은' 사이의 OCR 공백도 읽되, 뒤쪽 다른 문장을
+        # 검색하지 않는다. '지시 담당자'는 동작이 없는 정상 직무 수식이다.
+        if (not word or _REPLY_CLAUSE.search(word[0])
+                or _REPLY_CLAUSE.match(text[position:])):
+            break
+        noun_case = _REPLY_NOUN_CASE.search(word[0])
+        if noun_case:
+            return word.end(), int(noun_case[1] in ('가', '는', '이', '께서'))
+        position = word.end()
+        space = re.match(r'\s+', text[position:])
+        if not space:
+            break
+        position += space.end()
+    if allow_open and (position == len(text)
+                       or _REPLY_DATE_PREFIX.fullmatch(text[start:])):
+        return len(text), 0
+    return None
+
+
+def _reply_metadata(text, start=0, actors=0, allow_open=False):
+    """메타데이터 개수 대신 명사구·시각의 끝을 순차적으로 읽는다."""
+    position = start
+    while True:
+        position += re.match(r'\s*', text[position:]).end()
+        if position == len(text):
+            return position, actors
+        item = _reply_metadata_item(text, position, allow_open)
+        if not item or actors + item[1] > 1:
+            return position, actors
+        position, count = item
+        actors += count
+        comma = re.match(r'\s*,\s*', text[position:])
+        if comma:
+            position += comma.end()
+
+
+def _reply_assertion_end(text):
+    """같은 회신의 메타데이터·목적어·실제 수령 술어 끝을 반환한다."""
+    position, actors = _reply_metadata(text)
+    reply = _REPLY_OBJECT.match(text, position)
+    if not reply:
+        return None
+    position, _ = _reply_metadata(text, reply.end(), actors)
+    received = _REPLY_RECEIVED.match(text, position)
+    return received.end() if received else None
+
+
+def _reply_open_prefix(text):
+    position, actors = _reply_metadata(text, allow_open=True)
+    reply = _REPLY_OBJECT.match(text, position)
+    if reply:
+        position, _ = _reply_metadata(text, reply.end(), actors, allow_open=True)
+    return position == len(text)
+
+
+def _asserted_completion(unit, end):
+    """회신에 들어갈 완료 문구와 실제 완료/회신 수령의 술어를 구별한다."""
+    # 인용문 안의 문장 기호와 닫는 따옴표를 지나 실제 주장 술어까지 읽는다.
+    end += re.match(r'[\s.!?。;\"\'”’]*', unit[end:]).end()
+    tail = unit[end:]
+    if re.match(r'(?:면|다면|라면)', tail):
+        return False
+    reporting = re.match(_REPORTING_PARTICLE, tail)
+    if reporting:
+        # 인용·전언의 실제 회신 수령뿐 아니라 완료 사실의 기록·대조도
+        # 인정한다. 그 주장 자체가 다시 요청/대기/조건 안에 있는 경우는
+        # 같은 문맥 검사를 적용해 완료 사실로 확정하지 않는다.
+        # 회신·기록·대조의 보어는 바로 앞 완료 주장이어야 한다.
+        # 요청 구간 뒤의 요청 접수/별도 문의 회신까지 찾아 빌리지 않는다.
+        body = tail[reporting.end():]
+        recorded = _RECORDED_ASSERTION.match(body)
+        assertions = [position for position in (_reply_assertion_end(body), recorded.end() if recorded else None)
+                      if position is not None]
+        return bool(assertions and _asserted_completion(unit, end + reporting.end() + min(assertions)))
+    if tail.startswith('|'):
+        # '완료 | 확인자'는 완료 상태와 메타데이터다. 반면 같은 행의
+        # 명시적 대기/예정 상태와 충돌하면 완료로 확정하지 않는다.
+        if row_unresolved(tail):
+            return False
+    return True
+
+
+def _completed_record_units(text):
+    # 상태는 같은 원문 행의 충돌 여부에만 사용한다. 상태 칸의 완료
+    # 표현이 예정/요청 본문의 완료 술어가 되지 않도록 먼저 분리한다.
+    body = '\n'.join(receipt_body(row) for row in receipt_rows(text)
+                     if not row_unresolved(row))
+    # 본문 안의 OCR 동사·부정 보어 줄바꿈은 기존 문장 연결 규칙을 유지한다.
+    return [unit for unit in _statement_units(body)
+            if any(_asserted_completion(unit, match.end())
+                   for match in re.finditer(_DELIVERY_RECORD, unit))]
+
+
+def _statement_units(text):
+    """문장/표 행을 나누고 날짜 내부 기호와 OCR 문장 연속은 보존한다."""
+    numeric_dots = set()
+    # Scope 번호는 수치가 아니다. 문장 끝 번호와 다음 연도/날짜를
+    # 하나의 숫자로 묶지 않고, 인식된 날짜·소수 내부의 점만 보호한다.
+    for pattern in (_LOCAL_PERIOD, re.compile(_RECORD_TIME),
+                    re.compile(r'(?<![\d.])\d+[ \t]*\.[ \t]*\d+(?!\d)(?![ \t]*[년월])')):
+        for match in pattern.finditer(text):
+            if re.search(r'scope\s*$', text[:match.start()], re.I):
+                continue
+            numeric_dots.update(match.start() + m.start() for m in re.finditer(r'\.', match[0]))
+    # 짝이 맞는 인용문 안의 문장 기호는 전언/요청의 문장 끝이 아니다.
+    # 닫는 따옴표 뒤 술어까지 같은 단위에 두어 과거형만 독립시키지 않는다.
+    quoted_boundaries = {match.start() + marker.start()
+                         for match in _QUOTED_TEXT.finditer(text)
+                         for marker in re.finditer(r'[.!?。;\n]', match[0])}
+    parts, start = [], 0
+    for match in re.finditer(r'[.!?。;]\s*|\n', text):
+        if match.start() in numeric_dots or match.start() in quoted_boundaries:
+            continue
+        if match[0][0] == '\n' and _ocr_continuation(text[start:match.start()], text[match.end():]):
+            continue
+        end = match.start() + (match[0][0] != '\n')
+        if text[start:end].strip():
+            parts.append(text[start:end])
+        start = match.end()
+    if text[start:].strip():
+        parts.append(text[start:])
+    return parts
+
+
+def _ocr_continuation(before, after):
+    """줄바꿈된 동사·부정 보어를 이전 문장에 붙이고 새 표 행은 분리한다."""
+    next_line = after.split('\n', 1)[0].lstrip()
+    if not next_line or _SCOPE_FIELD.match(next_line):
+        return False
+    if re.match(r'(?:하지|되지|않|못|지\s*(?:않|못)|했다|하였다|한다|했습니다)', next_line):
+        return True
+    # 행의 부정 술어가 미완성 실행 표현을 이어받으면 주어·부사까지
+    # 함께 보존한다. 주어 조사만으로 같은 부정문을 독립 기록으로 나누지 않는다.
+    predicate = re.split(r'[.!?。;|]', after.lstrip(), maxsplit=1)[0]
+    unfinished_action = re.search(
+        r'(추적|산정|집계|측정|관리|실시|확인|복구|전달|배포|수령)'
+        # 주어가 별도 OCR 줄에 놓여도 숫자·영문 부서명을 지나 부정 술어까지 잇는다.
+        r'(?:하|은|는|을|를)?(?:\s+[가-힣A-Za-z0-9_-]+)*\s*$', before)
+    independent = (re.search(r'scope\s*\d|SUP-|CUS-|(?m:^\s*20\d{2}(?:\s*년|\b))', predicate, re.I)
+                   or _SCOPE_FIELD.search(predicate)
+                   or _LOCAL_PERIOD.match(next_line) or re.match(_RECORD_TIME, next_line))
+    # 다른 주어의 별도 행동은 앞 기록을 부정하지 않는다. 반면
+    # '산정은 담당자가 하지 않았다'의 '하다'는 앞의 산정을 이어받는다.
+    negative_verb = re.search(r'(?<![가-힣])([가-힣]*)(?:하|되)\s*(?:지|고)', predicate)
+    if (unfinished_action and negative_verb and negative_verb[1]
+            and negative_verb[1] != unfinished_action[1]
+            and re.search(r'\S+(?:은|는|이|가)(?=\s)', predicate)):
+        independent = True
+    if unfinished_action and not independent and _UNSUPPORTED.search(predicate):
+        return True
+    # 인용·전언의 연결 조사나 실제 회신 술어가 다음 OCR 줄에 있어도
+    # 그 앞의 과거형만 별도 완료 사실로 만들지 않는다. 새로운 대상/범위
+    # 행은 계속 분리하고, 실제 회신 수령의 정상 줄바꿈도 함께 보존한다.
+    row_boundary = (re.search(r'scope\s*\d|SUP-|CUS-', predicate, re.I)
+                    or _SCOPE_FIELD.search(predicate))
+    if not independent or not row_boundary:
+        for record in re.finditer(_DELIVERY_RECORD, before):
+            tail = re.sub(r'^[\s.!?。;\"\'”’]*', '', before[record.end():])
+            if (not independent and not tail and (_REPORTING_START.match(re.sub(r'^[\"\'”’]*\s*', '', next_line))
+                              or re.match(_PAST_COMPLETION, next_line))):
+                return True
+            if (not independent and re.fullmatch(_REPORTING_PARTICLE + r'\s*', tail)
+                    and re.match(r'회신|답변|응답|대장|일지|기록부|사실|내용', next_line)):
+                return True
+            reporting = re.match(_REPORTING_PARTICLE, tail)
+            if reporting:
+                body = tail[reporting.end():]
+                # 전언 뒤 담당자/목적어만 읽은 줄은 아직 보어가 끝나지
+                # 않았다. 실제 주장 검사와 같은 문법으로 회신/기록의
+                # 연속만 잇고, 요청 뒤 별도 회신이나 새 대상은 잇지 않는다.
+                continuation = body + '\n' + next_line
+                if (not row_boundary and _reply_open_prefix(body)
+                        and (_reply_assertion_end(continuation) is not None or _reply_open_prefix(continuation))):
+                    return True
+                if (not independent and (not body.strip() or _ASSERTION_PREFIX.fullmatch(body))
+                        and (_RECORDED_ASSERTION.match(continuation)
+                             or _ASSERTION_PREFIX.fullmatch(continuation))):
+                    return True
+    # OCR가 완료 여부의 보어를 다음 줄로 나눠도 '확인'만 독립 완료
+    # 행으로 만들지 않는다. 새로운 수신자/범위 행은 위에서 구별한다.
+    if (unfinished_action and not independent
+            and re.match(r'(?:요청|대기|양식|예정|계획|필요|[을를은는](?=\s))', next_line)):
+        return True
+    if '|' in next_line:
+        return False
+    return bool(re.search(r'(?:을|를|은|는|이|가|의)\s*$', before)
+                and re.match(r'(?:추적|산정|집계|측정|관리|실시|확인|복구|전달|배포|수령)', next_line))
+
+
+# RBA 정의의 요건을 분해한다. 이 표는 가상 세트의 정답/출처 목록이 아니다.
+REQUIREMENTS = {
+    'A-3': (
+        R('주간 근로시간 한도 준수', r'근로시간|노동시간|working hours', r'상한|한도|초과\s*금지|준수|최대'),
+        R('연장근로 자발성', r'연장|초과근무|overtime', r'자발|동의|voluntary'),
+        R('7일당 1일 휴무 보장', r'휴무|휴일|rest day', r'7일|매주|주\s*1|일주일'),
+        R('법정 한도 준수', r'법정|법적|법률|법규', r'근로|노동|working', r'한도|준수'),
+    ),
+    'B-6': (
+        R('기계 안전 위험 평가', r'기계|설비|방호|machine', r'위험|risk', r'평가|assessment', r'끼임|말림|접촉|낙하|위험등급|severity|hazard'),
+        R('방호장치 설치·기능', r'방호|인터록|interlock|guard', r'설치|고정|차단|기능|install'),
+        R('방호장치 전수 점검', r'방호|인터록|interlock|guard', r'점검|시험|확인|inspect|test', r'전수|누락.*없|모든.*(?:기계|설비)|all.*machines'),
+        R('방호장치 유지·보수 실행', r'방호|덮개|인터록|guard', r'예방정비|재체결|정비.*완료|유지보수.*기록|maintenance.*completed'),
+    ),
+    'B-8': (
+        R('근로자 언어로 안전보건 정보·교육 제공', r'근로자|근무자|직원|임직원|작업자', r'안전|보건', r'언어|한국어|모국어|번역'),
+        R('안전보건 정보 게시', r'안전|보건', r'게시'),
+        R('작업 전·정기 안전교육', r'안전|보건', r'교육', r'작업\s*전|정기'),
+        R('보복 없는 의견제기', r'보복', r'금지|없이|없는|하지\s*않', r'의견|제기|신고'),
+    ),
+    'C-7': (
+        R('수원·용수 사용·배출 모니터링', r'수원|용수|물\s*사용|취수', r'배출|폐수', r'모니터링|측정|특성|추적'),
+        R('절수 기회 발굴', r'절수|물\s*절약|용수\s*절감', r'기회|계획|발굴|개선|실시'),
+        R('오염경로 통제', r'오염', r'경로|통제|차단'),
+        R('폐수 처리·설비 점검', r'폐수', r'처리', r'설비|점검|성능'),
+    ),
+    'C-8': (
+        R('온실가스 감축목표', r'온실가스|탄소|GHG', r'감축', r'목표'),
+        R('Scope 1 추적', r'scope\s*1|직접배출', r'추적|산정|집계|측정|관리', same_unit=True),
+        R('Scope 2 추적', r'scope\s*2|간접배출', r'추적|산정|집계|측정|관리', same_unit=True),
+        R('Scope 3 추적', r'scope\s*3|가치사슬', r'추적|산정|집계|측정|관리', same_unit=True),
+        R('온실가스 공개', r'온실가스|탄소|GHG', r'공개|공시|보고서'),
+    ),
+    'E-2': (
+        R('책임·권한 지정', r'경영|대표이사|ESG|management', r'책임|담당|responsib', r'권한|자원\s*배정|승인권|authority'),
+        R('경영진 정기 검토 절차', r'경영진|대표이사|management', r'정기|월\s*1회|분기|연\s*1회', r'검토|회의|review'),
+        R('경영진 검토 실시 기록', r'검토|회의|review', r'실시|완료|확정|held|completed', _RECORD_TIME),
+    ),
+    'E-3': (
+        R('법규·규정 식별', r'법규|법률|규제|legal', r'식별|목록|등록|identify'),
+        R('고객 요구사항 식별', r'고객', r'요구사항|행동규범|요건', r'식별|목록|등록'),
+        R('요구사항 모니터링·이해', r'법규|규제|요구사항|요건', r'모니터링|개정\s*확인|변경\s*검토|이해|monitor'),
+    ),
+    'E-4': (
+        R('법규·환경·노동·윤리 리스크 식별', r'법규', r'환경', r'노동|인권', r'윤리', r'리스크|위험', r'식별|평가'),
+        R('중요도 평가', r'리스크|위험|영향', r'중요도|중대성|우선순위'),
+        R('리스크 통제', r'리스크|위험|영향', r'통제|완화|관리\s*조치'),
+    ),
+    'E-6': (
+        R('관리자·근로자 교육 프로그램', r'교육|training', r'프로그램|계획|실시|출석|이수', r'관리자|담당자|근로자|임직원|근무자'),
+        R('방침·절차 이행 교육', r'교육|training', r'방침|절차|규정|안전|윤리|법규', r'실시|출석|이수|프로그램'),
+    ),
+    'E-7': (
+        R('방침·관행·기대·성과 전달 절차', r'방침', r'관행', r'기대', r'성과', r'전달|공유|배포'),
+        R('근로자 전달·수령', r'근로자|근무자|직원|임직원|종업원', r'전달|게시|열람|수령|배포'),
+        R('공급사 전달·수령', r'공급사|공급자|협력사', r'전달|발송|수령|제공|배포'),
+        R('고객 전달·수령', r'고객', r'전달|발송|수령|제공|배포'),
+        R('개별 전달 확인 기록', r'근무자별|인원별|수신자별|전자 열람', r'수령|열람|이해', r'확인|완료|기록'),
+        R('공급사·고객 전달 운영', r'공급사|공급자|협력사', r'고객',
+          _DELIVERY_RECORD,
+          r'\d+\s*곳|(?:공급사|공급자|협력사)[^\n.!?。;]{0,60}고객[^\n.!?。;]{0,60}수령[^\n.!?。;]{0,30}확인(?:했다|하였다|했습니다)',
+          records=((r'공급사|공급자|협력사|\bSUP-\d+', _DELIVERY_RECORD, _NOTICE_DELIVERY),
+                   (r'고객|\bCUS-\d+', _DELIVERY_RECORD, _NOTICE_DELIVERY))),
+        R('문의·정정 회신', r'문의|정정', r'회신|답변|전달'),
+    ),
+    'E-8': (
+        R('양방향 참여', r'근로자|근무자|이해관계자|대표', r'양방향|간담회|의견.*(?:수렴|반영)|협의'),
+        R('고충·구제 접근', r'고충|구제|익명\s*접수', r'접근|접수|처리|신고'),
+        R('보복 없는 참여', r'보복', r'금지|없는|없이|하지\s*않'),
+    ),
+    'E-10': (
+        R('발견·접수 절차', r'점검|평가|조사', r'발견|접수|등록', r'미흡|시정|조치'),
+        R('담당·기한·조치', r'담당|배정', r'기한', r'조치|시정'),
+        R('효과 확인·종결 실행', r'효과|검증', r'확인', r'기한\s*내\s*종결|종결(?:했다|하였|하였다|\s*완료)|효과.{0,20}확인.{0,15}(?:마쳤|완료)|closed|completed', r'20\d{2}|\d{2}-\d{2}|completed'),
+    ),
+    'E-11': (
+        R('문서·기록 생성·승인', r'문서|기록|원본', r'생성|작성|등록', r'승인|확인'),
+        R('버전·원본 유지', r'원본|문서', r'버전|개정|정정', r'보관|유지|등록'),
+        R('접근·개인정보 보호', r'원본|문서|기록|개인정보', r'접근|권한|실명', r'제한|보호|분리|차단|가린'),
+        R('보존·폐기 절차', r'기록|문서|보존', r'보존기간|보존\s*기간', r'폐기|승인'),
+        R('백업·복구 절차', r'백업', r'복구', r'확인|대조'),
+        R('보호·복구 운영 점검', r'복구', r'원본.{0,80}(?:문자|페이지|내용).{0,30}일치|원본.{0,60}복구.{0,40}대조.{0,15}(?:했다|하였다)|복구.{0,40}성공', r'20\d{2}|\d{2}-\d{2}|completed'),
+    ),
+}
+
+# 부정어 자체가 아니라 '입증하지 않는 사실/요건'을 제외한다. 보복·우회 금지 등은
+# 보호/통제 요건의 긍정 근거이므로 여기서 제거하지 않는다.
+_UNSUPPORTED = re.compile(
+    r'(?:아니[다며]|아님|없(?:다|음|으며|어)|미보유|미실시|미확인|대신하지|대체할\s*수\s*없|'
+    r'지\s*(?:않|못)|입증하지\s*못|확정하지|의미하지|계획이며|향후\s*일정|예정이다)', re.I)
+_PROTECTIVE = re.compile(r'보복\s*(?:없|없는|없이)|이상.{0,12}없|누락.{0,12}없|고장.{0,12}없|'
+                         r'구서식.{0,12}없|접근권한.{0,12}없|보복(?:을)?\s*하지\s*않\S*')
+
+
+def supported_parts(text, *, receipt_status=False):
+    if receipt_status:
+        # 같은 수령 행의 상태를 문장 분리 전에 읽는다. 완료 문장 뒤의
+        # 상태 셀/다음 OCR 줄이 따로 떨어져 긍정 근거로 남지 않게 한다.
+        text = '\n'.join(row for row in receipt_rows(text or '') if not row_unresolved(row))
+    parts = [part for unit in _statement_units(text or '')
+             for part in re.split(r'(?<=이며)\s*|(?<=지만)\s*|'
+                                  r'(?<=않으며)\s*|(?<=않았으며)\s*', unit)]
+    return '\n'.join(p for p in parts if not _UNSUPPORTED.search(
+        _PROTECTIVE.sub('', STATUS_FIELD.sub('', p) if receipt_status else p)))
+
+
+def requirement_code(q):
+    if q.qtype not in ('yes_no', 'yes_no_evidence'):
+        return ''
+    return next((c for c in q.kesg_codes if c in REQUIREMENTS), '')
+
+
+def scoped_policy_failures(q, failures):
+    """우산 검사의 실패 중 해당 RBA 요건에 관련된 실패만 선택한다."""
+    code = requirement_code(q)
+    if not code:
+        return failures
+    selected = {}
+    for audit_code in q.kesg_codes:
+        row = failures.get(audit_code)
+        if not row:
+            continue
+        if audit_code == code:
+            selected[audit_code] = row
+            continue
+        findings = []
+        for finding in row.get('findings', []):
+            if finding.get('status') == 'met':
+                continue
+            text = ' '.join(str(finding.get(k) or '') for k in ('description', 'clause_id'))
+            if any(re.search(r.patterns[0], text, re.I) for r in REQUIREMENTS[code]):
+                findings.append(finding)
+        if findings:
+            selected[audit_code] = dict(row, findings=findings)
+    return selected
+
+
+def assess_requirements(answer, q, graph):
+    """원문 요건 충족과 부분 자료를 분리한다. 명시적인 아니오는 보존한다."""
+    code = requirement_code(q)
+    if graph is None:
+        return answer
+    if not code:
+        if q.qtype in ('yes_no', 'yes_no_evidence', 'text') and answer.evidence_links:
+            _scope_from_sources(answer, getattr(graph, 'source_texts', {}))
+        return answer
+    requirements = REQUIREMENTS[code]
+    related, proofs, contexts = {}, defaultdict(list), defaultdict(list)
+    node_scopes = {}
+    section_parts = defaultdict(list)
+    page_parts = defaultdict(list)
+    source_texts = getattr(graph, 'source_texts', {})
+    for proof_id, node in _candidate_nodes(graph):
+        if is_survey(node):
+            continue
+        contexts[node.source_file].append(f'{node.section}\n{node.text}')
+        supported = supported_parts(node.text, receipt_status=(code == 'E-7'))
+        # 대상 열이 절 제목으로 이동해도 같은 행의 미완료 상태는 남긴다.
+        if code == 'E-7' and row_unresolved(node.section):
+            supported = ''
+        # 교육 프로그램의 대상·주제는 같은 페이지의 원문 머리말과 함께 읽는다.
+        # 문서 등록표가 교육 실적을 열거한 것은 교육 실시 기록으로 재해석하지 않는다.
+        header = '\n'.join(line for line in source_texts.get(node.source_file, '').splitlines()[:12]
+                           if not re.search(r'가상|FICTIONAL|제작|개편|시연용', line, re.I))
+        if code in ('E-6', 'B-8'):
+            education_document = bool(re.search(r'^(?!.*(?:문서|등록|보관)).{0,16}교육.*(?:실시|프로그램|계획)',
+                                               header, re.M))
+            direct_education = bool(re.search(r'교육|훈련|training', node.section, re.I)
+                                    and not re.search(r'등록|보관|전달|수령|명부|문서', node.section)
+                                    and re.search(r'프로그램|실시|출석|이수|진행했|안내했', supported))
+            if not education_document and not direct_education and code == 'E-6':
+                supported = ''
+            elif re.search(r'해야|예정|향후|필요', supported) and not re.search(r'실시하였|진행했|안내했|출석하였다', supported):
+                supported = ''
+            elif education_document and node.page == 0 and supported.strip():
+                supported = supported_parts(header) + '\n' + supported
+        # 제목은 후보 주제일 뿐 실행/규정의 근거가 아니다. 제거된 부정문의
+        # 주어를 제목에서 다시 가져와 다른 문장의 실행 동사와 결합하지 않는다.
+        body = supported
+        hits = [r for r in requirements if body and r.matches(body)]
+        boundary = _node_scope(node, source_texts.get(node.source_file, ''))
+        if body.strip():
+            # 표의 대상/수량 설명과 실제 수령 행은 별도 OCR 조항일 수 있다.
+            # 동일 문서·절·적용 범위의 본문만 연결하며 제목은 입증에 사용하지 않는다.
+            section_parts[(node.source_file, node.section,
+                           _scope_key(boundary, node.source_file))].append(
+                               (proof_id, node, body, boundary))
+            # OCR 절 제목은 추출마다 달라질 수 있다. 실제 페이지가 확인된
+            # 같은 문서·페이지·범위 안에서는 대상 표와 수령 행을 연결한다.
+            # 일반 요건은 연결하지 않고 records를 선언한 요건만 아래에서 읽는다.
+            if node.page is not None and node.page >= 0:
+                page_parts[(node.source_file, node.page,
+                            _scope_key(boundary, node.source_file))].append(
+                                (proof_id, node, body, boundary))
+        # 태그만 일치한 부분 자료는 원문 참조로 남긴다.
+        link = evidence_link(node)
+        if hits:
+            related[proof_id] = replace(link, quote=supported)
+            node_scopes[proof_id] = boundary
+            for req in hits:
+                proofs[req.label].append(proof_id)
+        elif code in link.kesg_codes:
+            related[proof_id] = link
+    for parts in [*section_parts.values(), *page_parts.values()]:
+        for req in requirements:
+            # 대상 설명과 실제 표 행을 함께 읽도록 선언한 요건만 결합한다.
+            # 각 대상의 실행 동사는 해당 행에 있어야 하며, 일반 요건의
+            # 주제와 동사를 절 전체에서 모아 새로운 충족 근거를 만들지 않는다.
+            if not req.records or not req.matches_parts([part[2] for part in parts]):
+                continue
+            for proof_id, node, supported, boundary in parts:
+                if not any(re.search(p, supported, re.I | re.S) for p in req.patterns):
+                    continue
+                related[proof_id] = replace(evidence_link(node), quote=supported)
+                node_scopes[proof_id] = boundary
+                if proof_id not in proofs[req.label]:
+                    proofs[req.label].append(proof_id)
+    # 한 문서가 전체 요건을 입증하면 그 문서의 운영 기록을 우선한다. 부수 문서의
+    # 요약·안내 한 줄이 필수 운영 기록을 대체하거나 범위를 넓히지 않게 한다.
+    # 파일이 같아도 조항의 적용 기간·사업장이 다를 수 있다. 요건을 동일한
+    # 범위별로 모으며, 한 범위에 전체 요건이 있어야 '예'를 만들 수 있다.
+    coverage, source_coverage = defaultdict(set), defaultdict(set)
+    for label, ids in proofs.items():
+        for nid in ids:
+            source = related[nid].file_name
+            key = _scope_key(node_scopes[nid], source)
+            coverage[key].add(label)
+            source_coverage[(source, key)].add(label)
+    complete_source_scopes = {key for key, labels in source_coverage.items()
+                             if len(labels) == len(requirements)}
+    complete_scopes = {key for key, labels in coverage.items() if len(labels) == len(requirements)}
+    if complete_scopes:
+        def in_complete_scope(nid):
+            source = related[nid].file_name
+            key = _scope_key(node_scopes[nid], source)
+            return ((source, key) in complete_source_scopes if complete_source_scopes
+                    else key in complete_scopes)
+        proofs = {label: [nid for nid in ids if in_complete_scope(nid)] for label, ids in proofs.items()}
+    missing = [r.label for r in requirements if not proofs.get(r.label)]
+    if not missing and not complete_scopes:
+        missing.append('동일 기간·사업장에 대한 요건 연결')
+    proof_ids = {nid for ids in proofs.values() for nid in ids}
+    complete_sources = {source for source, key in complete_source_scopes}
+    answer.evidence_links = [related[nid] for nid in sorted(proof_ids)]
+    answer.reference_links = [link for nid, link in related.items() if nid not in proof_ids
+                              and (not complete_sources or link.file_name in complete_sources)]
+    # 명시적 부정 응답과 충돌 상태를 덮어쓰지 않는다.
+    if answer.value is not False:
+        answer.value = None if missing else True
+        answer.status = 'insufficient' if missing else 'verified'
+        answer.rationale = ('미확인 요건: ' + ' / '.join(missing) if missing else
+                            '문항 요건 확인: ' + ' / '.join(r.label for r in requirements))
+        if missing:
+            answer.evidence_needed = missing
+    if answer.value is False and not missing:
+        answer.status = 'flagged'
+        answer.flags.append('부정 응답과 해당 문항의 독립 근거가 충돌함 — 원문 검토 필요')
+    answer.scope_notes.append('관련 자료 연결과 문항 전체 요건 충족은 별도로 판정함')
+    contexts = {source: source_texts.get(source) or '\n'.join(parts)
+                for source, parts in contexts.items()}
+    link_scopes = {(link.file_name, link.node_id, link.quote): node_scopes[nid]
+                   for nid, link in related.items() if nid in node_scopes}
+    _scope_from_sources(answer, contexts, link_scopes)
+    return answer
+
+
+def _source_scope(text):
+    # 사업장·기간을 담은 문서 머리말만 읽는다. 본문의 다른 지표/다른 사업장
+    # 참조와 제작일을 적용 범위로 재해석하지 않는다.
+    lines = (text or '').splitlines()
+    header = []
+    for line in lines[:12]:
+        if re.search(r'가상|FICTIONAL|제작|개편|시연용', line, re.I):
+            continue
+        if re.search(r'20\d{2}|제\d+공장|두\s*공장|양\s*공장', line) or _sites(line)[1] != 'unknown':
+            if re.search(r'아니|확정하지|없|다른', line):
+                continue
+            header.append(line)
+    # 월간 운영대장은 첫 페이지의 시행일과 다른 축이다. 명시적인 월 표기를
+    # 별도로 보존하며 일자 두 개의 min/max를 기간 합계로 만들어내지 않는다.
+    months = re.findall(r'20\d{2}\s*년\s*\d{1,2}\s*월\s*(?:기록|대장|실적)', text or '')
+    header.extend(months)
+    context = '\n'.join(header)
+    date_parts = []
+    for line in header:
+        for part in _scope_parts(line):
+            if re.search(r'20\d{2}\s*[-./년]', part):
+                date_parts.append(part.strip())
+    sites, site_scope = _sites(context)
+    for line in lines:
+        if re.search(r'가상|FICTIONAL|제작|개편|아니|확정하지|다른', line, re.I):
+            continue
+        match = re.match(r'(?:20\d{2}\s*년\s*)?\d{1,2}월(?:\s*중|[^.]{0,30}(?:기록|접수|검토|대장))', line.strip())
+        if match:
+            date_parts.append(match[0])
+    sites = [site for site in sites if not any(site != other and site in other for other in sites)]
+    period = '; '.join(dict.fromkeys(date_parts))
+    return Boundary(period_text=period, site=', '.join(sites),
+                    site_scope=site_scope,
+                    completeness='partial' if period or sites else 'unknown',
+                    source_quote=context)
+
+
+def _sites(text):
+    # 공용 파서의 사업장/전사 판정을 사용하고, 원문의 복수 공장은 모두 보존한다.
+    if detect_site(text)[1] == 'entity':
+        return ['전사'], 'entity'
+    sites = re.findall(r'(?:[가-힣]+\s*)?제\s*\d+\s*공장|두\s*공장(?:\s*전체)?|양\s*공장', text)
+    # 정성 문장에서 '노동', '이동'을 건물의 '동'으로 읽지 않는다.
+    for match in re.finditer(r'[가-힣A-Za-z0-9]{1,12}(?:공장|사업장)', text):
+        site, scope = detect_site(match[0])
+        if scope == 'site' and not re.search(r'제\s*\d+\s*공장', site):
+            sites.append(site)
+    sites = list(dict.fromkeys(sites))
+    sites = [site for site in sites if not any(site != other and site in other for other in sites)]
+    return sites, 'site' if sites else 'unknown'
+
+
+_LOCAL_PERIOD = re.compile(r'20\d{2}\s*년\s*\d{1,2}'
+                           r'(?:\s*[~–-]\s*\d{1,2})?\s*월(?:\s*\d{1,2}\s*일)?'
+                           r'|20\d{2}\s*[./-]\s*\d{1,2}(?:\s*[./-]\s*\d{1,2})?')
+_SCOPE_FIELD = re.compile(r'(?:(?:대상|적용|보고|집계|운영)\s*(?:기간|범위)|사업장)\s*[:：|]')
+_SCOPE_SITE_TOKEN = re.compile(
+    r'전사(?:\s*모든\s*사업장)?|모든\s*사업장|'
+    r'(?:[가-힣]+\s*)?제\s*\d+\s*공장|두\s*공장(?:\s*전체)?|양\s*공장|'
+    r'[가-힣A-Za-z0-9]{1,12}(?:공장|사업장)')
+_SCOPE_VALUE_WORD = re.compile(r'기준|대상|전체|모든|및|과|와')
+
+
+def _site_body_role(tail):
+    """사업장 다음의 수신자/수행자 명사구는 적용 사업장 목록이 아니다."""
+    # 다음 사업장 값이 먼저 나오면 목록을 계속 읽는다. 뒤쪽의 담당자
+    # 명사구를 미리 읽어 정상 복수 사업장 중간에서 멈추지 않는다.
+    following = re.sub(r'^[\s/·,()\[\]~–-]*', '', tail)
+    if _SCOPE_SITE_TOKEN.match(following) or _LOCAL_PERIOD.match(following):
+        return False
+    return re.match(
+        r'(?:에서|에게|으로)|(?:의|[이가은는])(?=\s|\d|$)|'
+        # 직무 이름을 열거하지 않고 명사구의 수신/장소 조사로 본문을 읽는다.
+        r'[ \t]*(?:[가-힣A-Za-z0-9_-]+[ \t]+){0,4}[가-힣A-Za-z0-9_-]+(?:에게|에서|으로|에)(?=\s|\d|$)|'
+        # 부서·담당 인원의 주어 및 조사 없는 표 셀도 같은 본문 경계다.
+        r'[ \t]*(?:[가-힣A-Za-z0-9_-]+[ \t]+){0,4}[가-힣A-Za-z0-9_-]*'
+        r'(?:자|팀|부|실|직원|인력|조직|수신인)(?:[이가은는를와과]|(?=\s+\d))', tail)
+
+
+def _scope_field_value(field, value):
+    """명시적 필드의 선두 값만 읽고 뒤의 실행/전달 본문은 제외한다."""
+    # 파이프/콜론 뒤는 다른 셀/본문이다. 필드 라벨의 구분자는 호출자가
+    # 이미 제거했으므로 여기서 셀 경계를 넘어서 메타데이터를 찾지 않는다.
+    value = re.split(r'[|:：;]', value, maxsplit=1)[0]
+    period_field = '기간' in field
+    site_field = '사업장' in field
+    offset, end, seen_site = 0, 0, False
+    while offset < len(value):
+        separator = re.match(r'[\s/·,()\[\]~–-]*', value[offset:])
+        offset += separator.end()
+        match = None
+        if not site_field:
+            match = _LOCAL_PERIOD.match(value, offset)
+        if match is None and not period_field:
+            match = _SCOPE_SITE_TOKEN.match(value, offset)
+            if match is not None:
+                # 명시한 복수 공장은 유지하되 뒤 본문의 '전사 담당자'나
+                # '다른 공장 담당자에게/공장에서'를 추가 적용 범위로 읽지 않는다.
+                if seen_site and (detect_site(match[0])[1] == 'entity'
+                                  or _site_body_role(value[match.end():])):
+                    break
+                seen_site = True
+        if match is None:
+            # 접두/접미 메타데이터와 복수 사업장 접속 표현만 허용한다.
+            match = _SCOPE_VALUE_WORD.match(value, offset)
+            if match is None:
+                break
+            offset = match.end()
+            continue
+        offset = end = match.end()
+    return value[:end].strip()
+
+
+def _scope_parts(line):
+    """인식한 원문 날짜 내부의 슬래시는 공백 유무와 관계없이 보존한다."""
+    dates = [match.span() for match in _LOCAL_PERIOD.finditer(line)]
+    start = 0
+    for match in re.finditer(r'[/|]', line):
+        if any(left <= match.start() < right for left, right in dates):
+            continue
+        yield line[start:match.start()]
+        start = match.end()
+    yield line[start:]
+
+
+def _scope_prefix(line):
+    prefix = re.split(r'[:：]', line.strip(), maxsplit=1)[0]
+    period = _LOCAL_PERIOD.search(prefix)
+    sites, scope = _sites(prefix)
+    if not period or scope == 'unknown':
+        return False
+    remainder = prefix[:period.start()] + prefix[period.end():]
+    for site in sorted(sites, key=len, reverse=True):
+        remainder = remainder.replace(site, '')
+    # 날짜·사업장을 언급한 실행 문장을 적용 범위 선언으로 읽지 않는다.
+    remainder = re.sub(r'기준|대상|적용|기간|범위|전체|모든|사업장|전사|[\s/|·,()\[\]-]', '', remainder)
+    return not remainder
+
+
+def _scope_declaration(line):
+    return _scope_prefix(line) or bool(_SCOPE_FIELD.search(line))
+
+
+def _scope_has_body(line):
+    # 표 행의 메타데이터 값만 제거한다. 필드 뒤에 실행/규정 본문이 붙어
+    # 있으면 다음 선언에서 후보를 나눠 마지막 범위가 앞선 요건을 덮지 않게 한다.
+    remaining = _SCOPE_FIELD.sub('', line)
+    remaining = _LOCAL_PERIOD.sub('', remaining)
+    for site in sorted(_sites(remaining)[0], key=len, reverse=True):
+        remaining = remaining.replace(site, '')
+    remaining = re.sub(r'기준|대상|적용|기간|범위|전체|모든|사업장|전사|[\s/|·,:：.!?。;()\[\]-]', '', remaining)
+    return bool(remaining)
+
+
+def _candidate_nodes(graph):
+    # OCR가 여러 적용 범위를 한 조항으로 묶어도 각 범위의 요건을 따로 읽는다.
+    # 내부 후보 키만 나누며 공용 링크의 실제 node_id·페이지는 변경하지 않는다.
+    for node in graph.text_nodes.values():
+        chunks, lines, has_body = [], [], False
+        lines_to_read = [line for unit in _statement_units(node.text)
+                         for line in re.split(r'(?=(?:' + _SCOPE_FIELD.pattern + r'))', unit)]
+        for line in lines_to_read:
+            declaration = _scope_declaration(line)
+            # 연속된 기간/사업장 메타데이터는 하나의 범위다. 본문 뒤의 새
+            # 선언부터 별도 후보로 읽어 앞선 요건에 마지막 범위가 덮이지 않게 한다.
+            if has_body and declaration:
+                chunks.append('\n'.join(lines))
+                lines = []
+                has_body = False
+            lines.append(line)
+            if line.strip() and (not declaration or _scope_has_body(line)):
+                has_body = True
+        chunks.append('\n'.join(lines))
+        for index, text in enumerate(chunks):
+            yield (node.id, index), replace(node, text=text)
+
+
+def _node_scope(node, source_text):
+    """조항에 명시된 적용 범위가 문서 머리말보다 우선한다. 실행일은 별도다."""
+    default = _source_scope(source_text)
+    period, sites, scope, quotes = '', [], 'unknown', []
+    for line in f'{node.section}\n{node.text}'.splitlines():
+        if re.search(r'가상|FICTIONAL|제작|개편|아니|확정하지|다른', line, re.I):
+            continue
+        # 월/기간·사업장을 함께 선언한 접두부 또는 명시적인 메타데이터만
+        # 적용 범위로 읽는다. 회의 실시일·정비일은 문서 적용 기간을 덮지 않는다.
+        prefix = re.split(r'[:：]', line.strip(), maxsplit=1)[0]
+        if _scope_prefix(line):
+            values = [prefix]
+        else:
+            fields = list(_SCOPE_FIELD.finditer(line))
+            values = [_scope_field_value(field[0], line[field.end():
+                       fields[i + 1].start() if i + 1 < len(fields) else len(line)])
+                      for i, field in enumerate(fields)]
+        if not values:
+            continue
+        # 표 행의 명시적인 필드 값만 읽는다. 같은 행 본문이 언급하는
+        # 다른 사업장·실행일은 그 행의 적용 범위를 넓히거나 덮지 않는다.
+        for value in values:
+            match = _LOCAL_PERIOD.search(value)
+            if match:
+                period = match[0]
+            local_sites, local_scope = _sites(value)
+            if local_scope != 'unknown':
+                sites, scope = local_sites, local_scope
+        quotes.append(line)
+    return replace(default, period_text=period or default.period_text,
+                   site=', '.join(sites) if sites else default.site,
+                   site_scope=scope if sites else default.site_scope,
+                   completeness='partial' if period or sites else default.completeness,
+                   source_quote='\n'.join(quotes) if quotes else default.source_quote)
+
+
+def _scope_key(boundary, source):
+    period = re.sub(r'\s+|기록|대장|실적', '', boundary.period_text)
+    period = re.sub(r'(?:대상|적용|보고|집계|운영)기간[:：]?', '', period)
+    period = re.sub(r'(20\d{2})년(\d{1,2})월(\d{1,2})일',
+                    lambda m: f'{m[1]}-{int(m[2]):02d}-{int(m[3]):02d}', period)
+    period = re.sub(r'(20\d{2})년(\d{1,2})월',
+                    lambda m: f'{m[1]}-{int(m[2]):02d}', period)
+    period = re.sub(r'(20\d{2})[./-](\d{1,2})(?:[./-](\d{1,2}))?',
+                    lambda m: f'{m[1]}-{int(m[2]):02d}' + (f'-{int(m[3]):02d}' if m[3] else ''), period)
+    # 머리말과 반복된 범위 필드가 같은 기간을 다시 적어도 동일 범위다.
+    # 원문 표기는 보존하고 내부 비교 키에서만 중복을 제거한다.
+    period = ';'.join(dict.fromkeys(part.strip() for part in period.split(';') if part.strip()))
+    site = ','.join(sorted(re.sub(r'\s+', '', part) for part in boundary.site.split(',')))
+    # 미확인 경계를 서로 다른 문서의 동일 범위라고 간주하지 않는다.
+    return (period, boundary.site_scope, site,
+            source if not period or boundary.site_scope == 'unknown' else '')
+
+
+def _scope_from_sources(answer, contexts, link_scopes=None):
+    boundaries = []
+    links = answer.evidence_links or answer.reference_links
+    for link in links:
+        boundary = ((link_scopes or {}).get((link.file_name, link.node_id, link.quote))
+                    or _source_scope(contexts.get(link.file_name, '')))
+        if boundary.is_known and boundary.label() not in [b.label() for b in boundaries]:
+            boundaries.append(boundary)
+    labels = [b.label() for b in boundaries]
+    answer.boundary_label = ' / '.join(labels)
+    answer.completeness = 'partial' if labels else 'unknown'
+    answer.boundary = boundaries[0].to_dict() if len(boundaries) == 1 else {}
+    if len(boundaries) > 1:
+        answer.scope_notes.append('근거별 기간·사업장 범위가 다름: ' + ' / '.join(labels))
+    if not labels:
+        answer.scope_notes.append('원문에서 기간·사업장 범위 미확인')
