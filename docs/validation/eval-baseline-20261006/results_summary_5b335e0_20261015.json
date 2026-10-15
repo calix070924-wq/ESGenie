@@ -1,0 +1,648 @@
+{
+ "worse": [
+  {
+   "stage": "initial",
+   "qid": "RBA-C-4-E-6-2",
+   "esgenie": "unnecessary_hold",
+   "control": [
+    "correct_answer",
+    "correct_answer",
+    "wrong_confirmation",
+    "wrong_confirmation",
+    "correct_answer"
+   ],
+   "control_good": 3
+  },
+  {
+   "stage": "followup",
+   "qid": "RBA-C-4-E-6-2",
+   "esgenie": "unnecessary_hold",
+   "control": [
+    "correct_answer",
+    "correct_answer",
+    "correct_answer",
+    "correct_answer",
+    "correct_answer"
+   ],
+   "control_good": 5
+  }
+ ],
+ "better": [
+  {
+   "stage": "initial",
+   "qid": "RBA-A-3",
+   "esgenie": "correct_hold",
+   "control": [
+    "wrong_confirmation",
+    "wrong_confirmation",
+    "wrong_confirmation",
+    "wrong_confirmation",
+    "wrong_confirmation"
+   ],
+   "control_good": 0
+  },
+  {
+   "stage": "initial",
+   "qid": "RBA-B-1",
+   "esgenie": "correct_hold",
+   "control": [
+    "wrong_confirmation",
+    "wrong_confirmation",
+    "wrong_confirmation",
+    "wrong_confirmation",
+    "wrong_confirmation"
+   ],
+   "control_good": 0
+  },
+  {
+   "stage": "initial",
+   "qid": "RBA-B-6",
+   "esgenie": "correct_answer",
+   "control": [
+    "wrong_confirmation",
+    "wrong_confirmation",
+    "wrong_confirmation",
+    "wrong_confirmation",
+    "wrong_confirmation"
+   ],
+   "control_good": 0
+  },
+  {
+   "stage": "initial",
+   "qid": "RBA-B-8",
+   "esgenie": "correct_hold",
+   "control": [
+    "wrong_confirmation",
+    "wrong_confirmation",
+    "wrong_confirmation",
+    "wrong_confirmation",
+    "wrong_confirmation"
+   ],
+   "control_good": 0
+  },
+  {
+   "stage": "initial",
+   "qid": "RBA-C-2",
+   "esgenie": "correct_hold",
+   "control": [
+    "wrong_confirmation",
+    "wrong_confirmation",
+    "wrong_confirmation",
+    "wrong_confirmation",
+    "wrong_confirmation"
+   ],
+   "control_good": 0
+  },
+  {
+   "stage": "initial",
+   "qid": "RBA-C-4",
+   "esgenie": "correct_hold",
+   "control": [
+    "wrong_confirmation",
+    "wrong_confirmation",
+    "wrong_confirmation",
+    "wrong_confirmation",
+    "wrong_confirmation"
+   ],
+   "control_good": 0
+  },
+  {
+   "stage": "initial",
+   "qid": "RBA-C-7",
+   "esgenie": "correct_hold",
+   "control": [
+    "wrong_confirmation",
+    "wrong_confirmation",
+    "wrong_confirmation",
+    "wrong_confirmation",
+    "wrong_confirmation"
+   ],
+   "control_good": 0
+  },
+  {
+   "stage": "initial",
+   "qid": "RBA-C-8-E-4-1",
+   "esgenie": "correct_hold",
+   "control": [
+    "wrong_confirmation",
+    "wrong_confirmation",
+    "wrong_confirmation",
+    "wrong_confirmation",
+    "wrong_confirmation"
+   ],
+   "control_good": 0
+  },
+  {
+   "stage": "initial",
+   "qid": "RBA-D-2",
+   "esgenie": "correct_hold",
+   "control": [
+    "correct_hold",
+    "correct_hold",
+    "correct_hold",
+    "wrong_confirmation",
+    "correct_hold"
+   ],
+   "control_good": 4
+  },
+  {
+   "stage": "initial",
+   "qid": "RBA-D-6",
+   "esgenie": "correct_hold",
+   "control": [
+    "wrong_confirmation",
+    "wrong_confirmation",
+    "wrong_confirmation",
+    "wrong_confirmation",
+    "wrong_confirmation"
+   ],
+   "control_good": 0
+  },
+  {
+   "stage": "initial",
+   "qid": "RBA-D-8",
+   "esgenie": "correct_hold",
+   "control": [
+    "wrong_confirmation",
+    "wrong_confirmation",
+    "wrong_confirmation",
+    "wrong_confirmation",
+    "wrong_confirmation"
+   ],
+   "control_good": 0
+  },
+  {
+   "stage": "initial",
+   "qid": "RBA-E-1",
+   "esgenie": "correct_hold",
+   "control": [
+    "wrong_confirmation",
+    "wrong_confirmation",
+    "wrong_confirmation",
+    "wrong_confirmation",
+    "wrong_confirmation"
+   ],
+   "control_good": 0
+  },
+  {
+   "stage": "initial",
+   "qid": "RBA-E-2",
+   "esgenie": "correct_answer",
+   "control": [
+    "correct_answer",
+    "wrong_confirmation",
+    "correct_answer",
+    "correct_answer",
+    "correct_answer"
+   ],
+   "control_good": 4
+  },
+  {
+   "stage": "initial",
+   "qid": "RBA-E-6",
+   "esgenie": "correct_hold",
+   "control": [
+    "wrong_confirmation",
+    "wrong_confirmation",
+    "wrong_confirmation",
+    "wrong_confirmation",
+    "wrong_confirmation"
+   ],
+   "control_good": 0
+  },
+  {
+   "stage": "initial",
+   "qid": "RBA-E-7",
+   "esgenie": "correct_answer",
+   "control": [
+    "correct_answer",
+    "wrong_confirmation",
+    "correct_answer",
+    "correct_answer",
+    "wrong_confirmation"
+   ],
+   "control_good": 3
+  },
+  {
+   "stage": "initial",
+   "qid": "RBA-E-8",
+   "esgenie": "correct_hold",
+   "control": [
+    "wrong_confirmation",
+    "wrong_confirmation",
+    "correct_hold",
+    "correct_hold",
+    "correct_hold"
+   ],
+   "control_good": 3
+  },
+  {
+   "stage": "initial",
+   "qid": "RBA-E-10",
+   "esgenie": "correct_answer",
+   "control": [
+    "correct_answer",
+    "wrong_confirmation",
+    "correct_answer",
+    "correct_answer",
+    "wrong_confirmation"
+   ],
+   "control_good": 3
+  },
+  {
+   "stage": "initial",
+   "qid": "RBA-E-11",
+   "esgenie": "correct_answer",
+   "control": [
+    "correct_answer",
+    "wrong_confirmation",
+    "correct_answer",
+    "correct_answer",
+    "correct_answer"
+   ],
+   "control_good": 4
+  },
+  {
+   "stage": "followup",
+   "qid": "RBA-A-3",
+   "esgenie": "correct_hold",
+   "control": [
+    "wrong_confirmation",
+    "wrong_confirmation",
+    "wrong_confirmation",
+    "wrong_confirmation",
+    "wrong_confirmation"
+   ],
+   "control_good": 0
+  },
+  {
+   "stage": "followup",
+   "qid": "RBA-B-1",
+   "esgenie": "correct_hold",
+   "control": [
+    "wrong_confirmation",
+    "wrong_confirmation",
+    "wrong_confirmation",
+    "wrong_confirmation",
+    "wrong_confirmation"
+   ],
+   "control_good": 0
+  },
+  {
+   "stage": "followup",
+   "qid": "RBA-B-6",
+   "esgenie": "correct_answer",
+   "control": [
+    "wrong_confirmation",
+    "wrong_confirmation",
+    "wrong_confirmation",
+    "wrong_confirmation",
+    "wrong_confirmation"
+   ],
+   "control_good": 0
+  },
+  {
+   "stage": "followup",
+   "qid": "RBA-B-8",
+   "esgenie": "correct_hold",
+   "control": [
+    "wrong_confirmation",
+    "wrong_confirmation",
+    "wrong_confirmation",
+    "wrong_confirmation",
+    "wrong_confirmation"
+   ],
+   "control_good": 0
+  },
+  {
+   "stage": "followup",
+   "qid": "RBA-C-2",
+   "esgenie": "correct_hold",
+   "control": [
+    "wrong_confirmation",
+    "wrong_confirmation",
+    "wrong_confirmation",
+    "wrong_confirmation",
+    "wrong_confirmation"
+   ],
+   "control_good": 0
+  },
+  {
+   "stage": "followup",
+   "qid": "RBA-C-4",
+   "esgenie": "correct_hold",
+   "control": [
+    "wrong_confirmation",
+    "wrong_confirmation",
+    "wrong_confirmation",
+    "wrong_confirmation",
+    "wrong_confirmation"
+   ],
+   "control_good": 0
+  },
+  {
+   "stage": "followup",
+   "qid": "RBA-C-7",
+   "esgenie": "correct_hold",
+   "control": [
+    "wrong_confirmation",
+    "correct_hold",
+    "wrong_confirmation",
+    "wrong_confirmation",
+    "wrong_confirmation"
+   ],
+   "control_good": 1
+  },
+  {
+   "stage": "followup",
+   "qid": "RBA-C-8-E-4-1",
+   "esgenie": "correct_hold",
+   "control": [
+    "wrong_confirmation",
+    "wrong_confirmation",
+    "wrong_confirmation",
+    "wrong_confirmation",
+    "wrong_confirmation"
+   ],
+   "control_good": 0
+  },
+  {
+   "stage": "followup",
+   "qid": "RBA-D-6",
+   "esgenie": "correct_hold",
+   "control": [
+    "wrong_confirmation",
+    "wrong_confirmation",
+    "wrong_confirmation",
+    "wrong_confirmation",
+    "wrong_confirmation"
+   ],
+   "control_good": 0
+  },
+  {
+   "stage": "followup",
+   "qid": "RBA-D-8",
+   "esgenie": "correct_hold",
+   "control": [
+    "wrong_confirmation",
+    "wrong_confirmation",
+    "wrong_confirmation",
+    "wrong_confirmation",
+    "wrong_confirmation"
+   ],
+   "control_good": 0
+  },
+  {
+   "stage": "followup",
+   "qid": "RBA-E-1",
+   "esgenie": "correct_hold",
+   "control": [
+    "wrong_confirmation",
+    "wrong_confirmation",
+    "wrong_confirmation",
+    "wrong_confirmation",
+    "wrong_confirmation"
+   ],
+   "control_good": 0
+  },
+  {
+   "stage": "followup",
+   "qid": "RBA-E-6",
+   "esgenie": "correct_hold",
+   "control": [
+    "wrong_confirmation",
+    "wrong_confirmation",
+    "wrong_confirmation",
+    "wrong_confirmation",
+    "wrong_confirmation"
+   ],
+   "control_good": 0
+  },
+  {
+   "stage": "followup",
+   "qid": "RBA-E-8",
+   "esgenie": "correct_hold",
+   "control": [
+    "wrong_confirmation",
+    "wrong_confirmation",
+    "correct_hold",
+    "wrong_confirmation",
+    "correct_hold"
+   ],
+   "control_good": 2
+  }
+ ],
+ "both_not_good": [
+  {
+   "stage": "initial",
+   "qid": "RBA-C-4-E-6-1",
+   "esgenie": "unnecessary_hold",
+   "control": [
+    "wrong_confirmation",
+    "wrong_confirmation",
+    "wrong_confirmation",
+    "wrong_confirmation",
+    "wrong_confirmation"
+   ],
+   "control_good": 0
+  },
+  {
+   "stage": "followup",
+   "qid": "RBA-C-4-E-6-1",
+   "esgenie": "unnecessary_hold",
+   "control": [
+    "wrong_confirmation",
+    "wrong_confirmation",
+    "wrong_confirmation",
+    "wrong_confirmation",
+    "wrong_confirmation"
+   ],
+   "control_good": 0
+  }
+ ],
+ "counts": {
+  "worse": {
+   "initial": 1,
+   "followup": 1
+  },
+  "better": {
+   "initial": 18,
+   "followup": 13
+  },
+  "both_not_good": {
+   "initial": 1,
+   "followup": 1
+  }
+ },
+ "esgenie_d8a0de8_vs_5b335e0_changed": [
+  {
+   "stage": "followup",
+   "qid": "RBA-A-3",
+   "d8a0de8": "wrong_confirmation",
+   "5b335e0": "correct_hold"
+  },
+  {
+   "stage": "followup",
+   "qid": "RBA-B-6",
+   "d8a0de8": "unnecessary_hold",
+   "5b335e0": "correct_answer"
+  },
+  {
+   "stage": "followup",
+   "qid": "RBA-C-2",
+   "d8a0de8": "wrong_confirmation",
+   "5b335e0": "correct_hold"
+  },
+  {
+   "stage": "followup",
+   "qid": "RBA-C-4",
+   "d8a0de8": "wrong_confirmation",
+   "5b335e0": "correct_hold"
+  },
+  {
+   "stage": "followup",
+   "qid": "RBA-C-7",
+   "d8a0de8": "wrong_confirmation",
+   "5b335e0": "correct_hold"
+  },
+  {
+   "stage": "followup",
+   "qid": "RBA-C-8",
+   "d8a0de8": "wrong_confirmation",
+   "5b335e0": "correct_hold"
+  },
+  {
+   "stage": "followup",
+   "qid": "RBA-D-2",
+   "d8a0de8": "wrong_confirmation",
+   "5b335e0": "correct_hold"
+  },
+  {
+   "stage": "followup",
+   "qid": "RBA-D-6",
+   "d8a0de8": "wrong_confirmation",
+   "5b335e0": "correct_hold"
+  },
+  {
+   "stage": "followup",
+   "qid": "RBA-D-8",
+   "d8a0de8": "wrong_confirmation",
+   "5b335e0": "correct_hold"
+  },
+  {
+   "stage": "followup",
+   "qid": "RBA-E-11",
+   "d8a0de8": "unnecessary_hold",
+   "5b335e0": "correct_answer"
+  },
+  {
+   "stage": "followup",
+   "qid": "RBA-E-3",
+   "d8a0de8": "wrong_confirmation",
+   "5b335e0": "correct_hold"
+  },
+  {
+   "stage": "followup",
+   "qid": "RBA-E-4",
+   "d8a0de8": "wrong_confirmation",
+   "5b335e0": "correct_hold"
+  },
+  {
+   "stage": "followup",
+   "qid": "RBA-E-6",
+   "d8a0de8": "wrong_confirmation",
+   "5b335e0": "correct_hold"
+  },
+  {
+   "stage": "followup",
+   "qid": "RBA-E-7",
+   "d8a0de8": "unnecessary_hold",
+   "5b335e0": "correct_answer"
+  },
+  {
+   "stage": "initial",
+   "qid": "RBA-A-3",
+   "d8a0de8": "wrong_confirmation",
+   "5b335e0": "correct_hold"
+  },
+  {
+   "stage": "initial",
+   "qid": "RBA-B-6",
+   "d8a0de8": "unnecessary_hold",
+   "5b335e0": "correct_answer"
+  },
+  {
+   "stage": "initial",
+   "qid": "RBA-C-2",
+   "d8a0de8": "wrong_confirmation",
+   "5b335e0": "correct_hold"
+  },
+  {
+   "stage": "initial",
+   "qid": "RBA-C-4",
+   "d8a0de8": "wrong_confirmation",
+   "5b335e0": "correct_hold"
+  },
+  {
+   "stage": "initial",
+   "qid": "RBA-C-7",
+   "d8a0de8": "wrong_confirmation",
+   "5b335e0": "correct_hold"
+  },
+  {
+   "stage": "initial",
+   "qid": "RBA-C-8",
+   "d8a0de8": "wrong_confirmation",
+   "5b335e0": "correct_hold"
+  },
+  {
+   "stage": "initial",
+   "qid": "RBA-D-2",
+   "d8a0de8": "wrong_confirmation",
+   "5b335e0": "correct_hold"
+  },
+  {
+   "stage": "initial",
+   "qid": "RBA-D-6",
+   "d8a0de8": "wrong_confirmation",
+   "5b335e0": "correct_hold"
+  },
+  {
+   "stage": "initial",
+   "qid": "RBA-D-8",
+   "d8a0de8": "wrong_confirmation",
+   "5b335e0": "correct_hold"
+  },
+  {
+   "stage": "initial",
+   "qid": "RBA-E-11",
+   "d8a0de8": "unnecessary_hold",
+   "5b335e0": "correct_answer"
+  },
+  {
+   "stage": "initial",
+   "qid": "RBA-E-3",
+   "d8a0de8": "wrong_confirmation",
+   "5b335e0": "correct_hold"
+  },
+  {
+   "stage": "initial",
+   "qid": "RBA-E-4",
+   "d8a0de8": "wrong_confirmation",
+   "5b335e0": "correct_hold"
+  },
+  {
+   "stage": "initial",
+   "qid": "RBA-E-6",
+   "d8a0de8": "wrong_confirmation",
+   "5b335e0": "correct_hold"
+  },
+  {
+   "stage": "initial",
+   "qid": "RBA-E-7",
+   "d8a0de8": "unnecessary_hold",
+   "5b335e0": "correct_answer"
+  }
+ ],
+ "v2_judged_rows": []
+}
