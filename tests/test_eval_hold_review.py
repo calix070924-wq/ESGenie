@@ -133,3 +133,13 @@ def test_pending_ratio_and_explanation_error_reported(tmp_path):
 def test_pending_ratio_not_computed_without_review_rows(tmp_path):
     sc = hr.apply_v2(_score([_row("S1", "correct_answer")]), hr.load_reviews(_write(tmp_path, [])))["scopes"][0]
     assert sc["판단_대기_비율"]["value"] is None
+
+
+def test_no_aggregate_when_stages_have_different_run_ids(tmp_path):
+    rows = [_row("S1", "correct_answer"), _row("S1", "correct_answer", stage="followup")]
+    sc = {"rows": rows, "label_file": "l", "bucket_counts": {},
+          "documents": [{"stage": "initial", "system": "ctl", "run_id": "R_i"},
+                        {"stage": "followup", "system": "ctl", "run_id": "R_f"}]}
+    rep = hr.apply_v2(sc, hr.load_reviews(_write(tmp_path, [])))
+    assert [(s["run_id"], s["stage"], s["aggregated"]) for s in rep["scopes"]] == [
+        ("R_f", "followup", False), ("R_i", "initial", False)]

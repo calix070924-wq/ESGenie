@@ -178,12 +178,15 @@ def _scopes(rows: list[dict[str, Any]]) -> list[dict[str, Any]]:
     for system, run_id, stage in keys:
         sub = [r for r in rows if (r["system"], r["run_id"], r["stage"]) == (system, run_id, stage)]
         out.append({"system": system, "run_id": run_id, "stage": stage, "aggregated": False, **_scope(sub)})
-    stages = {k[2] for k in keys}
-    if len(stages) > 1:
-        for system, run_id in sorted({k[:2] for k in keys}):
-            sub = [r for r in rows if (r["system"], r["run_id"]) == (system, run_id)]
-            out.append({"system": system, "run_id": run_id, "stage": "+".join(sorted(stages)),
-                        "aggregated": True, "note": "합산은 참고", **_scope(sub)})
+    # 합산(참고)은 같은 실행(system, run_id)에 단계가 둘 이상 있을 때만 만든다.
+    # 단계마다 run_id가 다른 실행(예: 대조군)은 합산하지 않는다.
+    for system, run_id in sorted({k[:2] for k in keys}):
+        stages = sorted({k[2] for k in keys if k[:2] == (system, run_id)})
+        if len(stages) < 2:
+            continue
+        sub = [r for r in rows if (r["system"], r["run_id"]) == (system, run_id)]
+        out.append({"system": system, "run_id": run_id, "stage": "+".join(stages),
+                    "aggregated": True, "note": "합산은 참고", **_scope(sub)})
     return out
 
 
