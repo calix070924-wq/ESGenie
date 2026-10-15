@@ -164,3 +164,22 @@ def test_seen_wins_over_unconfirmed():
     rep = ind.classify(rows, exps, labeler="B")
     assert rep.excluded_rows == 1 and rep.pending_rows == 0
 
+
+
+
+def test_unverifiable_is_excluded_with_its_own_reason():
+    rows = [("initial", "SYN-1"), ("followup", "SYN-1"), ("initial", "SYN-2")]
+    exps = [_exp(exposure="unverifiable", stage=ind.ALL_STAGES, qid="SYN-1"),
+            _exp(exposure="none", stage=ind.ALL_STAGES, qid="SYN-2")]
+    rep = ind.classify(rows, exps, labeler="B")
+    assert (rep.independent_rows, rep.excluded_rows, rep.pending_rows) == (1, 2, 0)
+    r = [x for x in rep.rows if x.qid == "SYN-1"][0]
+    assert r.status == ind.EXCLUDED and "확인 불가" in r.reason and "노출 확인" not in r.reason.split("—")[0]
+
+
+def test_unverifiable_wins_over_none_and_unconfirmed():
+    rows = [("initial", "SYN-1")]
+    exps = [_exp(exposure="none", stage=ind.ALL_STAGES, qid="SYN-1"),
+            _exp(exposure="unconfirmed", stage=ind.ALL_STAGES, qid="SYN-1"),
+            _exp(exposure="unverifiable", stage=ind.ALL_STAGES, qid="SYN-1")]
+    assert ind.classify(rows, exps, labeler="B").rows[0].status == ind.EXCLUDED

@@ -45,7 +45,13 @@ EXPOSURE_KINDS = (
     "both",
     "none",
     "unconfirmed",
+    "unverifiable",      # 확인을 마쳤으나 독립성을 확인할 수 없다 — 제외(2026-10-16 정민 결정)
 )
+
+#: `unverifiable`은 노출이 확인된 것과 구분한다. 집계는 **제외**지만, 이유는
+#: "독립성 확인 불가로 제외"로 따로 남긴다. 미결정(확인 대기)과도 다르다 —
+#: 결정이 끝난 상태다.
+UNVERIFIABLE = "unverifiable"
 
 #: 노출로 세는 종류. `none`·`unconfirmed`는 노출이 아니다.
 SEEN_KINDS = ("expected_value", "system_answer", "both")
@@ -167,11 +173,15 @@ def classify(sample_rows: list[tuple[str, str]], exposures: list[Exposure],
         seen = [e for e in hits if e.exposure in SEEN_KINDS]
         cleared = [e for e in hits if e.exposure == "none"]
         unsure = [e for e in hits if e.exposure == "unconfirmed"]
+        unverifiable = [e for e in hits if e.exposure == UNVERIFIABLE]
 
         if seen:
             kinds = sorted({e.exposure for e in seen})
             status, reason = EXCLUDED, (
                 f"노출 확인됨({','.join(kinds)}) — 일치·불일치와 무관하게 분자·분모에서 제외")
+            excluded_qids.add(qid)
+        elif unverifiable:
+            status, reason = EXCLUDED, "독립성 확인 불가로 제외 — 노출 확인과 다르고 미결정도 아니다"
             excluded_qids.add(qid)
         elif unsure:
             # 회신이 있어도 확정되지 않았으면 독립으로 세지 않는다. `none`이 함께 있어도
