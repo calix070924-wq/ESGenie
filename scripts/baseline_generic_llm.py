@@ -340,12 +340,29 @@ def load_prompt(path: str | Path) -> dict[str, str]:
 
 
 # ── 증빙 텍스트와 쪽 복원 ──────────────────────────────────────────────────
-def recover_pages(extraction: dict[str, Any]) -> tuple[list[str], str, int | None]:
-    """한 증빙 문서의 `raw_text` 를 쪽별로 쪼갠다.
+def _single_page_number(candidates: Any) -> int | None:
+    """쪽 번호 후보 목록이 1-기준 정수 하나로만 이뤄졌을 때 그 번호. 아니면 None."""
+    if not isinstance(candidates, list):
+        return None
+    nums = {p for p in candidates if isinstance(p, int) and not isinstance(p, bool) and p >= 1}
+    if len(nums) != 1 or len(nums) != len({p for p in candidates if p is not None}):
+        return None
+    return next(iter(nums))
 
-    반환: (쪽 텍스트 목록, 복원 방식, 복원한 쪽 수 또는 None)
-      방식 `chunk_sources`       — router_meta.chunk_sources 의 줄 범위로 배분
-      방식 `single_page_upstage` — 정형 채널에서 쪽 수가 1쪽으로 확인됨
+
+def recover_pages(
+    extraction: dict[str, Any],
+    upstage_element_pages: list[int] | None = None,
+) -> tuple[list[str], str, int | None, list[int | None]]:
+    """한 증빙 문서의 `raw_text` 를 쪽별로 쪼갠다. 쪽 번호는 **원본 번호**를 쓴다.
+
+    반환: (쪽 텍스트 목록, 복원 방식, 복원한 쪽 수 또는 None, 쪽마다 원본 쪽 번호(모르면 None))
+      방식 `chunk_sources`       — router_meta.chunk_sources 의 줄 범위로 배분. 번호는 chunk 의
+                                   `page`(0-기준 원본 쪽)+1. 빠진 쪽이 있어도 다시 매기지 않는다.
+                                   줄 0개인 chunk 는 빈 쪽으로 번호를 남긴다
+      방식 `single_page_upstage` — 정형 채널에서 쪽 수가 1쪽으로 확인됨. 번호는 Upstage 원본의
+                                   `elements[].page`(raw_upstage → dp_response 순)·`usage.standard` 에서
+                                   하나로 정해질 때만 쓰고, 정해지지 않으면 None
       방식 `unrecovered`         — 복원 못 함. 전체를 한 덩어리로 두고 쪽은 미상
     """
     raw = extraction.get("raw_text") or ""
@@ -359,11 +376,14 @@ def recover_pages(extraction: dict[str, Any]) -> tuple[list[str], str, int | Non
         for c in chunks:
             try:
                 n = int(c["line_end"]) - int(c["line_start"]) + 1
-                page = int(c["page"]) + 1  # 0-기준 → 1-기준
+                page0 = c["page"]
+                if isinstance(page0, bool) or not isinstance(page0, int) or page0 < 0:
+                    raise ValueError("page")
+                page = page0 + 1  # 0-기준 원본 쪽 → 1-기준 원본 쪽(순서 번호가 아니다)
             except (KeyError, TypeError, ValueError):
                 ok = False
                 break
-            if n <= 0:
+            if n < 0:
                 ok = False
                 break
             spans.append((page, n))
@@ -373,27 +393,38 @@ def recover_pages(extraction: dict[str, Any]) -> tuple[list[str], str, int | Non
             for page, n in spans:
                 pages.setdefault(page, []).extend(lines[cursor:cursor + n])
                 cursor += n
-            ordered = [("\n".join(pages[p])) for p in sorted(pages)]
-            return ordered, "chunk_sources", len(ordered)
+            numbers = sorted(pages)
+            ordered = [("\n".join(pages[p])) for p in numbers]
+            return ordered, "chunk_sources", len(ordered), list(numbers)
 
     dp = meta.get("dp_response") or {}
     usage = dp.get("usage") or {}
     if usage.get("pages") == 1:
-        return [raw], "single_page_upstage", 1
+        number = _single_page_number(upstage_element_pages)
+        if number is None:
+            number = _single_page_number(
+                [e.get("page") for e in (dp.get("elements") or []) if isinstance(e, dict)] or None)
+        if number is None:
+            number = _single_page_number(usage.get("standard"))
+        return [raw], "single_page_upstage", 1, [number]
 
-    return [raw], "unrecovered", None
+    return [raw], "unrecovered", None, [None]
 
 
 def load_stage_documents(pipeline_json: str | Path) -> list[dict[str, Any]]:
     """단계 pipeline.json 의 증빙 문서를 순서대로 읽고 쪽을 복원한다."""
     data = read_json(pipeline_json)
+    upstage = crosscheck_upstage_pages(Path(pipeline_json).resolve().parent)
     out = []
     for e in data.get("ocr_extractions") or []:
-        pages, method, page_count = recover_pages(e)
+        name = e.get("source_file") or ""
+        element_pages = (upstage.get(name) or {}).get("element_pages")
+        pages, method, page_count, page_numbers = recover_pages(e, element_pages)
         out.append({
-            "file_name": e.get("source_file") or "",
+            "file_name": name,
             "channel": e.get("channel"),
             "pages": pages,
+            "page_numbers": page_numbers,
             "page_method": method,
             "page_count": page_count,
             "chars": len(e.get("raw_text") or ""),
@@ -485,8 +516,12 @@ def build_documents_block(docs: list[dict[str, Any]]) -> str:
     for d in docs:
         name = d["file_name"]
         unrecovered = d["page_method"] == "unrecovered"
-        for idx, body in enumerate(d["pages"], start=1):
-            label = _page_label(None if unrecovered else idx)
+        numbers = d.get("page_numbers")
+        if not unrecovered and (not isinstance(numbers, list) or len(numbers) != len(d["pages"])):
+            # 순서 번호로 다시 매기지 않는다 — 원본 번호가 없으면 조립을 멈춘다.
+            raise ValueError(f"{name}: 원본 쪽 번호(page_numbers)가 쪽 수와 맞지 않는다")
+        for idx, body in enumerate(d["pages"]):
+            label = _page_label(None if unrecovered else numbers[idx])
             parts.append(
                 f"{DOC_OPEN} 파일: {name} | 쪽: {label}\n{body}\n"
                 f"{DOC_CLOSE} 파일: {name} | 쪽: {label}"
@@ -528,7 +563,11 @@ def render_user_prompt(template: str, *, documents: str, company_answer: str,
 
 
 def unrecovered_files(docs: list[dict[str, Any]]) -> set[str]:
-    return {d["file_name"] for d in docs if d["page_method"] == "unrecovered"}
+    """쪽 번호를 모르는 문서 — 복원 못 한 문서와, 쪽은 나눴지만 원본 번호가 하나도 없는 문서.
+    이 문서를 인용한 응답의 `page` 는 None 으로 둔다(추측해 채우지 않는다)."""
+    return {d["file_name"] for d in docs
+            if d["page_method"] == "unrecovered"
+            or not any(isinstance(n, int) for n in (d.get("page_numbers") or []))}
 
 
 # ── 모델 출력 파싱 ─────────────────────────────────────────────────────────
@@ -645,7 +684,7 @@ def to_common_document(
         "rows": 0,
         "detail_counts": {d: 0 for d in af.DECISION_DETAILS},
         "decision_counts": {},
-        "missing_qid": [], "duplicate_qid": [], "unknown_qid": [],
+        "missing_qid": [], "duplicate_qid": [], "duplicate_rows": {}, "unknown_qid": [],
         "cited_company_answer": 0, "evidence_page_null": 0,
         "parse_error": parse_error,
     }
@@ -658,12 +697,30 @@ def to_common_document(
             stats["missing_qid"].append(qid)
             continue
         if len(rows) > 1:
+            # 중복 응답은 어느 답도 고르지 않는다. 판정 없음(unparsed)으로 두고 원문을 모두 남긴다.
+            # 변환은 검증 실패로 표시된다(conversion_issues).
             stats["duplicate_qid"].append(qid)
-        row = rows[0]                       # 중복은 첫 행만 쓰고 중복 사실을 남긴다
+            raws = [json.dumps(r, ensure_ascii=False) for r in rows]
+            stats["duplicate_rows"][qid] = raws
+            answers.append(af.new_answer(
+                qid=qid, decision_detail=af.D_UNPARSED,
+                decision_basis=f"중복 응답 {len(rows)}건 — 어느 답도 고르지 않음(변환 검증 실패)",
+                value=None, unit="", value_text=None,
+                boundary={"period": None, "site": None, "target": None, "denominator": None,
+                          "label": None, "completeness": None},
+                evidence=[],
+                source={"raw": json.dumps(rows, ensure_ascii=False)},
+                notes=None,
+            ))
+            stats["detail_counts"][af.D_UNPARSED] = stats["detail_counts"].get(af.D_UNPARSED, 0) + 1
+            decision = af.decision_for_detail(af.D_UNPARSED)
+            key = "null" if decision is None else str(decision)
+            stats["decision_counts"][key] = stats["decision_counts"].get(key, 0) + 1
+            stats["rows"] += 1
+            continue
+        row = rows[0]
         evidence = _clean_evidence(row.get("evidence"), unrecovered)
         detail, basis = _row_detail(row, evidence)
-        if len(rows) > 1:
-            basis += f" (중복 응답 {len(rows)}건 — 첫 행 사용)"
         unit = row.get("unit")
         value = row.get("value")
         if not isinstance(value, (int, float, bool, str, type(None))):
@@ -717,6 +774,17 @@ def to_common_document(
         answers=answers,
     )
     return doc, stats
+
+
+def conversion_issues(stats: dict[str, Any]) -> list[dict[str, str]]:
+    """A 검증(validate_document)이 볼 수 없는 변환 단계 실패. 형식은 A 의 issue 와 같다.
+
+    중복 응답은 출력 문서에 행이 하나만 남아 A 검증을 통과하므로 여기서 실패로 올린다.
+    """
+    return [{"code": "duplicate_response", "where": f"answers({qid})",
+             "detail": f"모델 응답에 같은 qid 가 {len(stats['duplicate_rows'].get(qid) or [])}번 나온다"
+                       " — 어느 답도 고르지 않았다(원문은 source.raw·parse.duplicate_rows)"}
+            for qid in stats.get("duplicate_qid") or []]
 
 
 def count_decision_flips(docs: list[dict[str, Any]]) -> dict[str, Any]:
@@ -837,6 +905,7 @@ def build_inputs(args) -> dict[str, Any]:
         "upstage_pages": crosscheck_upstage_pages(stage_dir),
         "unrecovered_files": sorted(unrecovered_files(docs)),
         "page_methods": {d["file_name"]: d["page_method"] for d in docs},
+        "page_numbers": {d["file_name"]: d["page_numbers"] for d in docs},
     }
 
 
@@ -905,8 +974,8 @@ def run_live(args) -> int:
         "stage": stage, "data_source": data_source,
         "pipeline_json": str(Path(args.pipeline_json).resolve()),
         "documents": [{k: d[k] for k in
-                       ("file_name", "channel", "page_method", "page_count", "chars",
-                        "source_sha256")} for d in prep["docs"]],
+                       ("file_name", "channel", "page_method", "page_count", "page_numbers",
+                        "chars", "source_sha256")} for d in prep["docs"]],
         "upstage_page_crosscheck": prep["upstage_pages"],
         "unrecovered_files": prep["unrecovered_files"],
         "company_answer": {k: v for k, v in prep["company_answer"].items()
@@ -944,6 +1013,7 @@ def run_live(args) -> int:
             "data_source": data_source,
             "blocks": prep["blocks"],
             "page_methods": prep["page_methods"],
+            "page_numbers": prep["page_numbers"],
             "unrecovered_files": prep["unrecovered_files"],
             "company_answer": {k2: v for k2, v in prep["company_answer"].items()
                                if k2 not in ("pages", "text")},
@@ -1033,8 +1103,11 @@ def _rescore_one(af, rep_dir: Path, cases, stage, framework, run_id, model_id,
         adapter_extra=adapter_extra, notice=notice, system=system,
     )
     expected = tuple(c["qid"] for c in cases)
-    issues = af.validate_document(doc, expected)
+    issues = list(af.validate_document(doc, expected)) + conversion_issues(stats)
     write_json(rep_dir / f"common_v1_{stage}.json", doc)
+    stale = rep_dir / "validate_issues.json"     # 다시 변환할 때 이전 실패 목록이 남지 않게
+    if stale.exists():
+        stale.unlink()
     if issues:
         write_json(rep_dir / "validate_issues.json", issues)
     return doc, stats, issues
@@ -1180,6 +1253,7 @@ def run_manual_export(args) -> int:
             "data_source": DATA_SOURCE[stage],
             "blocks": prep["blocks"],
             "page_methods": prep["page_methods"],
+            "page_numbers": prep["page_numbers"],
             "unrecovered_files": prep["unrecovered_files"],
             "company_answer": {k2: v for k2, v in prep["company_answer"].items()
                                if k2 not in ("pages", "text")},

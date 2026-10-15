@@ -64,24 +64,27 @@ def test_recover_pages_from_chunk_sources_is_one_based():
             {"page": 1, "line_start": 1, "line_end": 3},
         ]},
     }
-    pages, method, count = bg.recover_pages(extraction)
+    pages, method, count, numbers = bg.recover_pages(extraction)
     assert method == "chunk_sources"
     assert count == 2
     assert pages == ["p1-a\np1-b", "p2-a\np2-b\np2-c"]
+    assert numbers == [1, 2]
 
 
 def test_recover_pages_single_page_from_upstage_usage():
     extraction = {"raw_text": "표 내용", "router_meta": {"dp_response": {"usage": {"pages": 1}}}}
-    pages, method, count = bg.recover_pages(extraction)
+    pages, method, count, numbers = bg.recover_pages(extraction)
     assert (method, count, pages) == ("single_page_upstage", 1, ["표 내용"])
+    assert numbers == [None]          # 원본 쪽 번호 출처가 없으면 1 로 채우지 않는다
 
 
 def test_recover_pages_unrecovered_when_no_hint():
     extraction = {"raw_text": "본문", "router_meta": {}}
-    pages, method, count = bg.recover_pages(extraction)
+    pages, method, count, numbers = bg.recover_pages(extraction)
     assert method == "unrecovered"
     assert count is None
     assert pages == ["본문"]
+    assert numbers == [None]
 
 
 def test_recover_pages_rejects_line_count_mismatch():
@@ -90,14 +93,15 @@ def test_recover_pages_rejects_line_count_mismatch():
         "router_meta": {"chunk_sources": [{"page": 0, "line_start": 1, "line_end": 9}],
                         "dp_response": {"usage": {"pages": 1}}},
     }
-    _, method, _ = bg.recover_pages(extraction)
+    _, method, _, _ = bg.recover_pages(extraction)
     assert method == "single_page_upstage"      # 줄 수가 안 맞으면 쓰지 않는다
 
 
 def test_documents_block_labels_pages_and_unknown():
     docs = [
-        {"file_name": "01.pdf", "pages": ["가", "나"], "page_method": "chunk_sources"},
-        {"file_name": "99.pdf", "pages": ["다"], "page_method": "unrecovered"},
+        {"file_name": "01.pdf", "pages": ["가", "나"], "page_numbers": [1, 2],
+         "page_method": "chunk_sources"},
+        {"file_name": "99.pdf", "pages": ["다"], "page_numbers": [None], "page_method": "unrecovered"},
     ]
     block = bg.build_documents_block(docs)
     assert "[문서 시작] 파일: 01.pdf | 쪽: 1" in block
@@ -324,19 +328,67 @@ def test_missing_qid_makes_no_row_and_is_recorded(af):
     assert any(i["code"] == "row_count" for i in issues)
 
 
-def test_duplicate_qid_recorded_and_first_row_used(af):
+def _dup_parsed(*q1_rows):
+    return {"answers": [*q1_rows,
+                        {"qid": "Q-2", "decision": "hold", "evidence": []},
+                        {"qid": "Q-3", "decision": "hold", "evidence": []}]}
+
+
+def _assert_duplicate_unparsed(af_mod, doc, stats, q1_rows):
+    """중복 qid 는 어느 답도 고르지 않고 unparsed·decision null 로, 원문은 모두 남긴다."""
+    assert stats["duplicate_qid"] == ["Q-1"]
+    q1 = next(a for a in doc["answers"] if a["qid"] == "Q-1")
+    assert q1["decision_detail"] == "unparsed"
+    assert q1["decision"] is None
+    assert q1["value"] is None and q1["evidence"] == []
+    assert f"중복 응답 {len(q1_rows)}건" in q1["decision_basis"]
+    assert json.loads(q1["source"]["raw"]) == list(q1_rows)          # 원문 전부, 순서 그대로
+    assert [json.loads(r) for r in stats["duplicate_rows"]["Q-1"]] == list(q1_rows)
+    assert len(doc["answers"]) == 3        # 출력 문서는 qid 자리 그대로(중복을 늘리지 않는다)
+    assert stats["detail_counts"]["unparsed"] == 1
+    # A 검증은 통과하지만(행 하나) 변환 단계 검증이 실패로 올린다.
+    assert af_mod.validate_document(doc, EXPECTED) == []
+    issues = bg.conversion_issues(stats)
+    assert [(i["code"], i["where"]) for i in issues] == [("duplicate_response", "answers(Q-1)")]
+    assert f"{len(q1_rows)}번" in issues[0]["detail"]
+
+
+def test_duplicate_hold_and_answer_is_unparsed_not_first_row(af):
+    rows = ({"qid": "Q-1", "decision": "hold", "evidence": []},
+            {"qid": "Q-1", "decision": "answer", "value": 9,
+             "evidence": [{"file_name": "01.pdf", "page": 1, "quote": "가"}]})
+    doc, stats = _convert(af, _dup_parsed(*rows))
+    _assert_duplicate_unparsed(af, doc, stats, rows)
+
+
+def test_duplicate_with_same_decision_is_still_unparsed(af):
+    rows = ({"qid": "Q-1", "decision": "hold", "evidence": [], "note": "첫째"},
+            {"qid": "Q-1", "decision": "hold", "evidence": [], "note": "둘째"})
+    doc, stats = _convert(af, _dup_parsed(*rows))
+    _assert_duplicate_unparsed(af, doc, stats, rows)
+
+
+def test_triple_duplicate_keeps_all_three_raw_rows(af):
+    rows = ({"qid": "Q-1", "decision": "answer", "value": 1, "evidence": []},
+            {"qid": "Q-1", "decision": "answer", "value": 2, "evidence": []},
+            {"qid": "Q-1", "decision": "not_applicable", "evidence": []})
+    doc, stats = _convert(af, _dup_parsed(*rows))
+    _assert_duplicate_unparsed(af, doc, stats, rows)
+
+
+def test_no_duplicate_keeps_existing_behaviour(af):
     parsed = {"answers": [
-        {"qid": "Q-1", "decision": "hold", "evidence": []},
-        {"qid": "Q-1", "decision": "answer", "value": 9, "evidence": []},
+        {"qid": "Q-1", "decision": "answer", "value": 9,
+         "evidence": [{"file_name": "01.pdf", "page": 1, "quote": "가"}]},
         {"qid": "Q-2", "decision": "hold", "evidence": []},
         {"qid": "Q-3", "decision": "hold", "evidence": []},
     ]}
     doc, stats = _convert(af, parsed)
-    assert stats["duplicate_qid"] == ["Q-1"]
-    q1 = doc["answers"][0]
-    assert q1["decision"] == "hold"
-    assert "중복 응답 2건" in q1["decision_basis"]
-    assert len(doc["answers"]) == 3        # 출력 문서는 48행 자리 그대로(중복을 늘리지 않는다)
+    assert stats["duplicate_qid"] == [] and stats["duplicate_rows"] == {}
+    assert bg.conversion_issues(stats) == []
+    assert [a["decision_detail"] for a in doc["answers"]] == ["confirmed", "hold", "hold"]
+    assert doc["answers"][0]["value"] == 9
+    assert json.loads(doc["answers"][0]["source"]["raw"]) == parsed["answers"][0]
     assert af.validate_document(doc, EXPECTED) == []
 
 
@@ -952,3 +1004,212 @@ def test_model_slug():
     assert bg.model_slug("  Claude   Sonnet 4.5 ") == "claude-sonnet-4-5"
     with pytest.raises(ValueError):
         bg.model_slug("  ---  ")
+
+
+# ── 원본 쪽 번호 보존 — 순서 번호로 다시 매기지 않는다 ───────────────────────
+def _gap_extraction():
+    """원본 1·3쪽만 남은 문서(2쪽은 추출 누락)."""
+    return {
+        "raw_text": "p1-a\np1-b\np3-a",
+        "router_meta": {"chunk_sources": [
+            {"page": 0, "line_start": 1, "line_end": 2},
+            {"page": 2, "line_start": 1, "line_end": 1},
+        ]},
+    }
+
+
+def test_recover_pages_keeps_original_numbers_when_page_missing():
+    pages, method, count, numbers = bg.recover_pages(_gap_extraction())
+    assert method == "chunk_sources"
+    assert pages == ["p1-a\np1-b", "p3-a"]
+    assert numbers == [1, 3]                  # 1·2 로 다시 매기지 않는다
+    assert count == 2
+
+
+def test_documents_block_labels_original_page_numbers_and_citation_survives(af):
+    pages, method, _, numbers = bg.recover_pages(_gap_extraction())
+    docs = [{"file_name": "14.pdf", "pages": pages, "page_numbers": numbers, "page_method": method}]
+    block = bg.build_documents_block(docs)
+    assert "[문서 시작] 파일: 14.pdf | 쪽: 1" in block
+    assert "[문서 시작] 파일: 14.pdf | 쪽: 3" in block
+    assert "[문서 끝] 파일: 14.pdf | 쪽: 3" in block
+    assert "쪽: 2" not in block
+    # 모델이 블록 표지대로 3쪽을 인용하면 3 으로 남는다.
+    parsed = {"answers": [
+        {"qid": "Q-1", "decision": "answer", "value": 1,
+         "evidence": [{"file_name": "14.pdf", "page": 3, "quote": "p3-a"}]},
+        {"qid": "Q-2", "decision": "hold", "evidence": []},
+        {"qid": "Q-3", "decision": "hold", "evidence": []},
+    ]}
+    doc, stats = _convert(af, parsed, unrecovered=bg.unrecovered_files(docs))
+    assert doc["answers"][0]["evidence"][0]["page"] == 3
+    assert stats["evidence_page_null"] == 0
+
+
+def test_recover_pages_keeps_empty_page_number():
+    extraction = {
+        "raw_text": "a\nb\nc",
+        "router_meta": {"chunk_sources": [
+            {"page": 0, "line_start": 1, "line_end": 2},
+            {"page": 1, "line_start": 1, "line_end": 0},      # 빈 쪽 — 줄 0개
+            {"page": 2, "line_start": 1, "line_end": 1},
+        ]},
+    }
+    pages, method, count, numbers = bg.recover_pages(extraction)
+    assert method == "chunk_sources"
+    assert numbers == [1, 2, 3]
+    assert pages == ["a\nb", "", "c"]
+    block = bg.build_documents_block(
+        [{"file_name": "16.pdf", "pages": pages, "page_numbers": numbers, "page_method": method}])
+    assert "[문서 시작] 파일: 16.pdf | 쪽: 2\n\n[문서 끝] 파일: 16.pdf | 쪽: 2" in block
+    assert "[문서 시작] 파일: 16.pdf | 쪽: 3\nc" in block
+
+
+def test_recover_pages_rejects_negative_span_and_bad_page():
+    for chunks in ([{"page": 0, "line_start": 3, "line_end": 1}],
+                   [{"page": -1, "line_start": 1, "line_end": 1}],
+                   [{"page": True, "line_start": 1, "line_end": 1}]):
+        _, method, _, numbers = bg.recover_pages(
+            {"raw_text": "a", "router_meta": {"chunk_sources": chunks}})
+        assert (method, numbers) == ("unrecovered", [None])
+
+
+def test_single_page_number_comes_from_upstage_original_page():
+    base = {"raw_text": "표", "router_meta": {"dp_response": {"usage": {"pages": 1}}}}
+    assert bg.recover_pages(base, [2])[3] == [2]                       # raw_upstage elements[].page
+    with_elems = {"raw_text": "표", "router_meta": {"dp_response": {
+        "usage": {"pages": 1}, "elements": [{"page": 1}, {"page": 1}]}}}
+    assert bg.recover_pages(with_elems)[3] == [1]
+    with_std = {"raw_text": "표", "router_meta": {"dp_response": {
+        "usage": {"pages": 1, "standard": [1]}}}}
+    assert bg.recover_pages(with_std)[3] == [1]
+    assert bg.recover_pages(base, [1, 2])[3] == [None]                 # 하나로 정해지지 않으면 None
+
+
+def test_documents_block_refuses_to_renumber_without_page_numbers():
+    with pytest.raises(ValueError):
+        bg.build_documents_block([{"file_name": "01.pdf", "pages": ["가", "나"],
+                                   "page_method": "chunk_sources"}])
+
+
+def test_unknown_single_page_number_makes_citation_page_null(af):
+    docs = [{"file_name": "02.pdf", "pages": ["표"], "page_numbers": [None],
+             "page_method": "single_page_upstage"}]
+    assert bg.unrecovered_files(docs) == {"02.pdf"}
+    assert "[문서 시작] 파일: 02.pdf | 쪽: 미상" in bg.build_documents_block(docs)
+    parsed = {"answers": [
+        {"qid": "Q-1", "decision": "answer", "value": 1,
+         "evidence": [{"file_name": "02.pdf", "page": 1, "quote": "표"}]},
+        {"qid": "Q-2", "decision": "hold", "evidence": []},
+        {"qid": "Q-3", "decision": "hold", "evidence": []},
+    ]}
+    doc, _ = _convert(af, parsed, unrecovered=bg.unrecovered_files(docs))
+    assert doc["answers"][0]["evidence"][0]["page"] is None            # 1 로 채우지 않는다
+
+
+def test_load_stage_documents_uses_original_numbers_and_raw_upstage(tmp_path):
+    stage = tmp_path / "initial"
+    (stage / "raw_upstage").mkdir(parents=True)
+    (stage / "pipeline.json").write_text(json.dumps({"ocr_extractions": [
+        {"source_file": "14.pdf", "channel": "unstructured", **_gap_extraction()},
+        {"source_file": "02.pdf", "channel": "structured", "raw_text": "표",
+         "router_meta": {"dp_response": {"usage": {"pages": 1}}}},
+    ]}, ensure_ascii=False), encoding="utf-8")
+    (stage / "raw_upstage" / "tape.json").write_text(json.dumps(
+        {"file": "02.pdf", "body": {"usage": {"pages": 1}, "elements": [{"page": 1}]}}),
+        encoding="utf-8")
+    docs = {d["file_name"]: d for d in bg.load_stage_documents(stage / "pipeline.json")}
+    assert docs["14.pdf"]["page_numbers"] == [1, 3]
+    assert docs["02.pdf"]["page_numbers"] == [1]
+    assert bg.unrecovered_files(list(docs.values())) == set()
+
+
+# ── 중복 응답은 실행·재변환·가져오기 모두 실패 종료 ────────────────────────
+_DUP_ROWS = [
+    {"qid": "Q-1", "decision": "hold", "evidence": []},
+    {"qid": "Q-1", "decision": "answer", "value": 9, "evidence": []},
+]
+_DUP_RESPONSE = json.dumps({"answers": [
+    *_DUP_ROWS,
+    {"qid": "Q-2", "decision": "hold", "evidence": []},
+    {"qid": "Q-3", "decision": "hold", "evidence": []},
+]}, ensure_ascii=False)
+_ALL_HOLD_RESPONSE = json.dumps({"answers": [
+    {"qid": q, "decision": "hold", "evidence": []} for q in ("Q-1", "Q-2", "Q-3")]})
+
+
+def _assert_dup_files(rep_dir: Path, log_name: str, stage="initial"):
+    doc = json.loads((rep_dir / f"common_v1_{stage}.json").read_text(encoding="utf-8"))
+    q1 = next(a for a in doc["answers"] if a["qid"] == "Q-1")
+    assert q1["decision_detail"] == "unparsed" and q1["decision"] is None
+    assert json.loads(q1["source"]["raw"]) == _DUP_ROWS
+    issues = json.loads((rep_dir / "validate_issues.json").read_text(encoding="utf-8"))
+    assert [i["code"] for i in issues] == ["duplicate_response"]
+    log = json.loads((rep_dir / log_name).read_text(encoding="utf-8"))
+    assert [json.loads(r) for r in log["parse"]["duplicate_rows"]["Q-1"]] == _DUP_ROWS
+    assert [i["code"] for i in log["validate_issues"]] == ["duplicate_response"]
+
+
+def _mock_live(monkeypatch, text):
+    monkeypatch.setattr(bg, "extract_company_answer", _fake_ca)
+    monkeypatch.setattr(bg, "call_model", lambda provider, model, system, user: {
+        "text": text, "model": "mock-model-1", "prompt_tokens": 5, "completion_tokens": 3,
+        "total_tokens": 8, "response_id": "r", "raw": None,
+    })
+
+
+def _live_main(tmp_path, af, out):
+    return bg.main([
+        "--pipeline-json", str(_fake_pipeline(tmp_path)), "--stage", "initial",
+        "--model", "mock-model-1", "--out", str(out), "--run-id", "RUN",
+        "--cases", str(_cases_file(tmp_path)), "--prompt", str(REPO_ROOT / bg.DEFAULT_PROMPT),
+        "--answer-format", str(Path(af.__source_path__)), "--max-input-tokens", "100000",
+    ])
+
+
+def test_live_run_with_duplicate_exits_nonzero_and_keeps_files(tmp_path, monkeypatch, af):
+    _mock_live(monkeypatch, _DUP_RESPONSE)
+    out = tmp_path / "out"
+    assert _live_main(tmp_path, af, out) == 1
+    rep = out / "RUN" / "rep_1"
+    _assert_dup_files(rep, "run_log.json")
+    raw = json.loads((rep / "response_raw.json").read_text(encoding="utf-8"))
+    assert raw["response"]["text"] == _DUP_RESPONSE                    # 응답 원문 그대로
+
+
+def test_rescore_only_with_duplicate_exits_nonzero(tmp_path, monkeypatch, af):
+    _mock_live(monkeypatch, _ALL_HOLD_RESPONSE)
+    out = tmp_path / "out"
+    assert _live_main(tmp_path, af, out) == 0
+    rep = out / "RUN" / "rep_1"
+    saved = json.loads((rep / "response_raw.json").read_text(encoding="utf-8"))
+    saved["response"]["text"] = _DUP_RESPONSE
+    (rep / "response_raw.json").write_text(json.dumps(saved, ensure_ascii=False), encoding="utf-8")
+    monkeypatch.setattr(bg, "call_model", _no_call)
+    rc = bg.main(["--rescore-only", str(out / "RUN"), "--cases", str(_cases_file(tmp_path)),
+                  "--answer-format", str(Path(af.__source_path__))])
+    assert rc == 1
+    _assert_dup_files(rep, "rescore_log.json")
+
+
+def test_rescore_only_clears_stale_issues_when_clean(tmp_path, monkeypatch, af):
+    _mock_live(monkeypatch, _DUP_RESPONSE)
+    out = tmp_path / "out"
+    assert _live_main(tmp_path, af, out) == 1
+    rep = out / "RUN" / "rep_1"
+    assert (rep / "validate_issues.json").is_file()
+    saved = json.loads((rep / "response_raw.json").read_text(encoding="utf-8"))
+    saved["response"]["text"] = _ALL_HOLD_RESPONSE
+    (rep / "response_raw.json").write_text(json.dumps(saved, ensure_ascii=False), encoding="utf-8")
+    monkeypatch.setattr(bg, "call_model", _no_call)
+    assert bg.main(["--rescore-only", str(out / "RUN"), "--cases", str(_cases_file(tmp_path)),
+                    "--answer-format", str(Path(af.__source_path__))]) == 0
+    assert not (rep / "validate_issues.json").exists()
+
+
+def test_manual_import_with_duplicate_exits_nonzero(tmp_path, monkeypatch, af):
+    d, cases = _exported_dir(tmp_path, monkeypatch)
+    (d / "response.txt").write_text(_DUP_RESPONSE, encoding="utf-8")
+    _write_meta(d)
+    assert _import(d, cases) == 1
+    _assert_dup_files(d, "run_log.json")
