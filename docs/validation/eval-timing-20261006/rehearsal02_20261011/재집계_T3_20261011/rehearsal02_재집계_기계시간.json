@@ -1,0 +1,289 @@
+{
+  "sessions": [
+    {
+      "session_id": "세션_리허설02_2026-10-09",
+      "participant": "P1",
+      "method": "esgenie",
+      "request_round": "2",
+      "rows": 4,
+      "countable_rows": 3,
+      "qids": [
+        "4문항일괄"
+      ],
+      "run_dirs": [
+        "outputs/eval/2026-10-10_리허설02_LOCAL_2025"
+      ],
+      "issues": [
+        {
+          "issue": "missing_start",
+          "step": "값입력",
+          "qid": "4문항일괄",
+          "start": "",
+          "end": ""
+        },
+        {
+          "issue": "missing_end",
+          "step": "값입력",
+          "qid": "4문항일괄",
+          "start": "",
+          "end": ""
+        }
+      ],
+      "identity": {
+        "status": "확인",
+        "data_kind": "공개샘플",
+        "set_id": "공개샘플_리허설02_PDF3건",
+        "set_version": "2026-10-09",
+        "condition": "절차리허설",
+        "source": "docs/validation/eval-timing-20261006/rehearsal02_20261011/재집계_T3_20261011/세션메타_리허설02.csv:2"
+      },
+      "target_qids": [
+        "RBA-C-4-E-6-1",
+        "RBA-C-4-E-6-2",
+        "RBA-C-8-E-4-1",
+        "RBA-E-11"
+      ],
+      "target_qid_count": 4,
+      "target_status": "확인 — 전체 대상 목록(답안 파일)",
+      "target_sources": [
+        "답안 파일: data/eval/rehearsal_answers/세션_리허설02_2026-10-09.csv"
+      ],
+      "observation_unit": "일괄 포함",
+      "step_seconds": {
+        "값입력": 677.0,
+        "처리대기": 60.0,
+        "원문확인": 140.0
+      },
+      "steps_overlap": false,
+      "per_qid_human_seconds": {},
+      "per_qid_median": {
+        "value_seconds": null,
+        "valid_n": 0,
+        "unobserved_qids": [
+          "RBA-C-4-E-6-1",
+          "RBA-C-4-E-6-2",
+          "RBA-C-8-E-4-1",
+          "RBA-E-11"
+        ],
+        "status": "산출 불가 — 문항별로 관측한 구간이 없다"
+      },
+      "reuse": {
+        "rows": 0,
+        "unique": 0,
+        "duplicates": 0,
+        "items": [],
+        "rule": "reused_from가 적힌 행만 센다. 방식을 두 번째로 수행한 것만으로 재사용으로 보지 않는다"
+      },
+      "completeness": {
+        "missing_time_rows": 1,
+        "memory_based_rows": 0,
+        "unfinished_rows": 0,
+        "complete": false
+      },
+      "elapsed_seconds": 1353.0,
+      "human_seconds": 817.0,
+      "wait_seconds": 60.0,
+      "idle_seconds": 476.0,
+      "overlap_removed_seconds": 0.0,
+      "machine_total_seconds": null,
+      "machine_partial": {
+        "observed_seconds": null,
+        "observed_runs": 0,
+        "total_runs": 1,
+        "missing_runs": [
+          {
+            "run_dir": "outputs/eval/2026-10-10_리허설02_LOCAL_2025",
+            "status": "미측정",
+            "file_status": "없음",
+            "reason": "timings.json 없음"
+          }
+        ]
+      },
+      "machine_runs": [
+        {
+          "run_dir": "outputs/eval/2026-10-10_리허설02_LOCAL_2025",
+          "file_status": "없음",
+          "total_status": "미측정",
+          "total_seconds": null,
+          "total_scope": null,
+          "pipeline_total_seconds": null,
+          "stage_rows": 0,
+          "reason": "timings.json 없음",
+          "cache_profile": null
+        }
+      ],
+      "machine_seconds_observed": null,
+      "machine_status": "미측정 — outputs/eval/2026-10-10_리허설02_LOCAL_2025: timings.json 없음",
+      "warnings": []
+    },
+    {
+      "session_id": "세션_리허설02_2026-10-09",
+      "participant": "P1",
+      "method": "manual",
+      "request_round": "1",
+      "rows": 7,
+      "countable_rows": 7,
+      "qids": [
+        "RBA-C-4-E-6-1",
+        "RBA-C-4-E-6-2",
+        "RBA-C-8-E-4-1",
+        "RBA-E-11"
+      ],
+      "run_dirs": [],
+      "issues": [],
+      "identity": {
+        "status": "확인",
+        "data_kind": "공개샘플",
+        "set_id": "공개샘플_리허설02_PDF3건",
+        "set_version": "2026-10-09",
+        "condition": "절차리허설",
+        "source": "docs/validation/eval-timing-20261006/rehearsal02_20261011/재집계_T3_20261011/세션메타_리허설02.csv:2"
+      },
+      "target_qids": [
+        "RBA-C-4-E-6-1",
+        "RBA-C-4-E-6-2",
+        "RBA-C-8-E-4-1",
+        "RBA-E-11"
+      ],
+      "target_qid_count": 4,
+      "target_status": "확인 — 전체 대상 목록(답안 파일)",
+      "target_sources": [
+        "답안 파일: data/eval/rehearsal_answers/세션_리허설02_2026-10-09.csv",
+        "worklog 구간 qid(부분 목록)"
+      ],
+      "observation_unit": "문항별",
+      "step_seconds": {
+        "원문확인": 1333.0,
+        "값입력": 2260.0
+      },
+      "steps_overlap": false,
+      "per_qid_human_seconds": {
+        "RBA-C-8-E-4-1": 1132.0,
+        "RBA-C-4-E-6-1": 660.0,
+        "RBA-C-4-E-6-2": 841.0,
+        "RBA-E-11": 1200.0
+      },
+      "per_qid_median": {
+        "value_seconds": 986.5,
+        "valid_n": 4,
+        "unobserved_qids": [],
+        "status": "산출"
+      },
+      "reuse": {
+        "rows": 0,
+        "unique": 0,
+        "duplicates": 0,
+        "items": [],
+        "rule": "reused_from가 적힌 행만 센다. 방식을 두 번째로 수행한 것만으로 재사용으로 보지 않는다"
+      },
+      "completeness": {
+        "missing_time_rows": 0,
+        "memory_based_rows": 1,
+        "unfinished_rows": 0,
+        "complete": false
+      },
+      "elapsed_seconds": 5154.0,
+      "human_seconds": 3593.0,
+      "wait_seconds": 0,
+      "idle_seconds": 1561.0,
+      "overlap_removed_seconds": 240.0,
+      "machine_total_seconds": null,
+      "machine_partial": null,
+      "machine_runs": [],
+      "machine_seconds_observed": null,
+      "machine_status": "미측정 — run_dir 기록 없음",
+      "warnings": []
+    }
+  ],
+  "by_method_round": [
+    {
+      "identity_status": "확인",
+      "data_kind": "공개샘플",
+      "set_id": "공개샘플_리허설02_PDF3건",
+      "set_version": "2026-10-09",
+      "condition": "절차리허설",
+      "session_ids": [
+        "세션_리허설02_2026-10-09"
+      ],
+      "method": "esgenie",
+      "request_round": "2",
+      "participants": [
+        "P1"
+      ],
+      "participant_count": 1,
+      "target_qid_count": 4,
+      "target_qids": [
+        "RBA-C-4-E-6-1",
+        "RBA-C-4-E-6-2",
+        "RBA-C-8-E-4-1",
+        "RBA-E-11"
+      ],
+      "per_participant": [
+        {
+          "session_id": "세션_리허설02_2026-10-09",
+          "participant": "P1",
+          "elapsed_seconds": 1353.0,
+          "human_seconds": 817.0,
+          "wait_seconds": 60.0,
+          "idle_seconds": 476.0
+        }
+      ],
+      "note": "참가자별로 따로 적는다. 서로 다른 참가자의 경과시간을 합치지 않는다"
+    },
+    {
+      "identity_status": "확인",
+      "data_kind": "공개샘플",
+      "set_id": "공개샘플_리허설02_PDF3건",
+      "set_version": "2026-10-09",
+      "condition": "절차리허설",
+      "session_ids": [
+        "세션_리허설02_2026-10-09"
+      ],
+      "method": "manual",
+      "request_round": "1",
+      "participants": [
+        "P1"
+      ],
+      "participant_count": 1,
+      "target_qid_count": 4,
+      "target_qids": [
+        "RBA-C-4-E-6-1",
+        "RBA-C-4-E-6-2",
+        "RBA-C-8-E-4-1",
+        "RBA-E-11"
+      ],
+      "per_participant": [
+        {
+          "session_id": "세션_리허설02_2026-10-09",
+          "participant": "P1",
+          "elapsed_seconds": 5154.0,
+          "human_seconds": 3593.0,
+          "wait_seconds": 0,
+          "idle_seconds": 1561.0
+        }
+      ],
+      "note": "참가자별로 따로 적는다. 서로 다른 참가자의 경과시간을 합치지 않는다"
+    }
+  ],
+  "rows": 11,
+  "countable_rows": 10,
+  "rows_with_issues": 1,
+  "relation": "elapsed_seconds = human_seconds + wait_seconds + idle_seconds",
+  "double_counting_note": "파이프라인 기계 시간(run_timing/timings.json)은 사람이 적은 `처리대기` 구간 안에서 흐른다. machine_* 값은 비교용으로만 적고 human/wait에 더하지 않는다.",
+  "savings_note": "절감률·단일 점수는 계산하지 않는다. manual/esgenie는 나란히 보고한다.",
+  "completeness_note": "유효 구간의 합은 관측된 구간의 합이다. 시각 누락·기억 기반·미완결 행이 있으면 완전한 전체 작업시간으로 읽지 않는다.",
+  "machine_note": "machine_total_seconds는 모든 run_dir의 _run_total이 확인될 때만 낸다. 일부만 확인되면 machine_partial에 관측분·관측 실행 수·누락 실행을 적고 전체는 null이다. 0초로 메우지 않는다.",
+  "grouping_rule": "요약은 자료 구분·세트 ID·버전·조건·방식·회차가 같은 세션끼리만 묶는다. 세션 메타데이터가 없는 세션은 같은 자료로 추정하지 않고 세션별로 따로 둔다.",
+  "target_rule": "세션 전체 대상 목록은 답안 파일 또는 세션 메타데이터 target_qids에서만 인정한다. worklog 각 행의 qid는 그 구간의 목록(부분 목록)이다. 둘이 어긋나면 충돌로 표시한다.",
+  "batch_note": "일괄 구간(qid가 '전체'이거나 '…일괄')의 시간은 문항별로 나누지 않는다. 일괄 표시만으로 대상 수를 만들지 않는다.",
+  "sources": [
+    "data/eval/worklog/세션_리허설02_2026-10-09.csv"
+  ],
+  "answer_sources": [
+    "data/eval/rehearsal_answers/세션_리허설02_2026-10-09.csv"
+  ],
+  "session_meta_sources": [
+    "docs/validation/eval-timing-20261006/rehearsal02_20261011/재집계_T3_20261011/세션메타_리허설02.csv"
+  ],
+  "session_meta_version": "1"
+}

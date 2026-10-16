@@ -1,0 +1,220 @@
+{
+  "sessions": [
+    {
+      "session_id": "세션_리허설02_2026-10-09",
+      "participant": "P1",
+      "method": "esgenie",
+      "request_round": "2",
+      "rows": 4,
+      "countable_rows": 3,
+      "qids": [
+        "4문항일괄"
+      ],
+      "run_dirs": [
+        "outputs/eval/2026-10-10_리허설02_LOCAL_2025"
+      ],
+      "issues": [
+        {
+          "issue": "missing_start",
+          "step": "값입력",
+          "qid": "4문항일괄",
+          "start": "",
+          "end": ""
+        },
+        {
+          "issue": "missing_end",
+          "step": "값입력",
+          "qid": "4문항일괄",
+          "start": "",
+          "end": ""
+        }
+      ],
+      "target_qids": [
+        "RBA-C-4-E-6-1",
+        "RBA-C-4-E-6-2",
+        "RBA-C-8-E-4-1",
+        "RBA-E-11"
+      ],
+      "target_qid_count": 4,
+      "target_status": "확인",
+      "target_sources": [
+        "data/eval/rehearsal_answers/세션_리허설02_2026-10-09.csv"
+      ],
+      "observation_unit": "일괄 포함",
+      "step_seconds": {
+        "값입력": 677.0,
+        "처리대기": 60.0,
+        "원문확인": 140.0
+      },
+      "steps_overlap": false,
+      "per_qid_human_seconds": {},
+      "per_qid_median": {
+        "value_seconds": null,
+        "valid_n": 0,
+        "unobserved_qids": [
+          "RBA-C-4-E-6-1",
+          "RBA-C-4-E-6-2",
+          "RBA-C-8-E-4-1",
+          "RBA-E-11"
+        ],
+        "status": "산출 불가 — 문항별로 관측한 구간이 없다"
+      },
+      "reuse": {
+        "rows": 0,
+        "unique": 0,
+        "duplicates": 0,
+        "items": [],
+        "rule": "reused_from가 적힌 행만 센다. 방식을 두 번째로 수행한 것만으로 재사용으로 보지 않는다"
+      },
+      "completeness": {
+        "missing_time_rows": 1,
+        "memory_based_rows": 0,
+        "unfinished_rows": 0,
+        "complete": false
+      },
+      "elapsed_seconds": 1353.0,
+      "human_seconds": 817.0,
+      "wait_seconds": 60.0,
+      "idle_seconds": 476.0,
+      "overlap_removed_seconds": 0.0,
+      "machine_seconds_observed": null,
+      "machine_status": "미측정 — run_dir에 timings.json이 없다(0초로 적지 않는다)",
+      "warnings": []
+    },
+    {
+      "session_id": "세션_리허설02_2026-10-09",
+      "participant": "P1",
+      "method": "manual",
+      "request_round": "1",
+      "rows": 7,
+      "countable_rows": 7,
+      "qids": [
+        "RBA-C-4-E-6-1",
+        "RBA-C-4-E-6-2",
+        "RBA-C-8-E-4-1",
+        "RBA-E-11"
+      ],
+      "run_dirs": [],
+      "issues": [],
+      "target_qids": [
+        "RBA-C-4-E-6-1",
+        "RBA-C-4-E-6-2",
+        "RBA-C-8-E-4-1",
+        "RBA-E-11"
+      ],
+      "target_qid_count": 4,
+      "target_status": "확인",
+      "target_sources": [
+        "worklog qid",
+        "data/eval/rehearsal_answers/세션_리허설02_2026-10-09.csv"
+      ],
+      "observation_unit": "문항별",
+      "step_seconds": {
+        "원문확인": 1333.0,
+        "값입력": 2260.0
+      },
+      "steps_overlap": false,
+      "per_qid_human_seconds": {
+        "RBA-C-8-E-4-1": 1132.0,
+        "RBA-C-4-E-6-1": 660.0,
+        "RBA-C-4-E-6-2": 841.0,
+        "RBA-E-11": 1200.0
+      },
+      "per_qid_median": {
+        "value_seconds": 986.5,
+        "valid_n": 4,
+        "unobserved_qids": [],
+        "status": "산출"
+      },
+      "reuse": {
+        "rows": 0,
+        "unique": 0,
+        "duplicates": 0,
+        "items": [],
+        "rule": "reused_from가 적힌 행만 센다. 방식을 두 번째로 수행한 것만으로 재사용으로 보지 않는다"
+      },
+      "completeness": {
+        "missing_time_rows": 0,
+        "memory_based_rows": 1,
+        "unfinished_rows": 0,
+        "complete": false
+      },
+      "elapsed_seconds": 5154.0,
+      "human_seconds": 3593.0,
+      "wait_seconds": 0,
+      "idle_seconds": 1561.0,
+      "overlap_removed_seconds": 240.0,
+      "machine_seconds_observed": null,
+      "machine_status": "미측정 — run_dir 기록 없음",
+      "warnings": []
+    }
+  ],
+  "by_method_round": [
+    {
+      "method": "esgenie",
+      "request_round": "2",
+      "participants": [
+        "P1"
+      ],
+      "participant_count": 1,
+      "target_qid_count": 4,
+      "target_qids": [
+        "RBA-C-4-E-6-1",
+        "RBA-C-4-E-6-2",
+        "RBA-C-8-E-4-1",
+        "RBA-E-11"
+      ],
+      "per_participant": [
+        {
+          "session_id": "세션_리허설02_2026-10-09",
+          "participant": "P1",
+          "elapsed_seconds": 1353.0,
+          "human_seconds": 817.0,
+          "wait_seconds": 60.0,
+          "idle_seconds": 476.0
+        }
+      ],
+      "note": "참가자별로 따로 적는다. 서로 다른 참가자의 경과시간을 합치지 않는다"
+    },
+    {
+      "method": "manual",
+      "request_round": "1",
+      "participants": [
+        "P1"
+      ],
+      "participant_count": 1,
+      "target_qid_count": 4,
+      "target_qids": [
+        "RBA-C-4-E-6-1",
+        "RBA-C-4-E-6-2",
+        "RBA-C-8-E-4-1",
+        "RBA-E-11"
+      ],
+      "per_participant": [
+        {
+          "session_id": "세션_리허설02_2026-10-09",
+          "participant": "P1",
+          "elapsed_seconds": 5154.0,
+          "human_seconds": 3593.0,
+          "wait_seconds": 0,
+          "idle_seconds": 1561.0
+        }
+      ],
+      "note": "참가자별로 따로 적는다. 서로 다른 참가자의 경과시간을 합치지 않는다"
+    }
+  ],
+  "rows": 11,
+  "countable_rows": 10,
+  "rows_with_issues": 1,
+  "relation": "elapsed_seconds = human_seconds + wait_seconds + idle_seconds",
+  "double_counting_note": "파이프라인 기계 시간(run_timing/timings.json)은 사람이 적은 `처리대기` 구간 안에서 흐른다. machine_* 값은 비교용으로만 적고 human/wait에 더하지 않는다.",
+  "savings_note": "절감률·단일 점수는 계산하지 않는다. manual/esgenie는 나란히 보고한다.",
+  "completeness_note": "유효 구간의 합은 관측된 구간의 합이다. 시각 누락·기억 기반·미완결 행이 있으면 완전한 전체 작업시간으로 읽지 않는다.",
+  "batch_note": "일괄 구간(qid가 '전체'이거나 '…일괄')의 시간은 문항별로 나누지 않는다. 대상 문항 수는 답안 파일이나 ';'로 나열한 qid에서만 읽고, 없으면 미확인이다.",
+  "sources": [
+    "data/eval/worklog/세션_리허설02_2026-10-09.csv"
+  ],
+  "answer_sources": [
+    "data/eval/rehearsal_answers/세션_리허설02_2026-10-09.csv"
+  ]
+}

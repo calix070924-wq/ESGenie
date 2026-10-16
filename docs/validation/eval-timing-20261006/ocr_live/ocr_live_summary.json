@@ -1,0 +1,86 @@
+{
+  "evidence_kind": "live_api",
+  "sample": "data/test_docs/safety_policy_2025.pdf",
+  "cache_root": "/private/tmp/ocr_live_cache_20261007",
+  "cache_files": {
+    "ocr": 1,
+    "llm": 1
+  },
+  "new": {
+    "cache_profile": {
+      "ocr_cache": {
+        "hits": 0,
+        "misses": 1,
+        "state": "miss",
+        "mode": "miss"
+      },
+      "llm_cache": {
+        "mode": "on",
+        "hits": 0,
+        "misses": 1,
+        "live_calls": 1,
+        "successes": 1,
+        "failures": 0
+      }
+    },
+    "calls": {
+      "live_calls": 1,
+      "successes": 1,
+      "failures": 0,
+      "model": "gpt-4.1-mini-text",
+      "chunks": 1
+    },
+    "tokens": {
+      "completion_tokens": 910,
+      "prompt_tokens": 825,
+      "total_tokens": 1735
+    },
+    "invariant": {
+      "total_seconds": 14.153501,
+      "staged_sum": 14.153458,
+      "unstaged_seconds": 4.3e-05
+    }
+  },
+  "replay": {
+    "cache_profile": {
+      "ocr_cache": {
+        "hits": 1,
+        "misses": 0,
+        "state": "hit",
+        "mode": "hit"
+      },
+      "llm_cache": {
+        "mode": "on",
+        "hits": 0,
+        "misses": 0,
+        "live_calls": 0,
+        "successes": 0,
+        "failures": 0
+      }
+    },
+    "calls": {
+      "live_calls": 0,
+      "successes": 0,
+      "failures": 0,
+      "model": "gpt-4.1-mini-text",
+      "chunks": 1
+    },
+    "tokens": {
+      "prompt_tokens": null,
+      "completion_tokens": null,
+      "total_tokens": null
+    },
+    "invariant": {
+      "total_seconds": 0.015556,
+      "staged_sum": 0.015529,
+      "unstaged_seconds": 2.7e-05
+    }
+  },
+  "checks": {
+    "new_is_live": true,
+    "replay_live_calls_zero": true,
+    "replay_ocr_hits_positive": true,
+    "replay_ocr_misses_zero": true
+  },
+  "note": "재생이 신규보다 빠를 것으로 기대하지만 단정하지 않는다. 두 전체 경과를 그대로 적고, 절감률로 바꾸지 않는다."
+}
