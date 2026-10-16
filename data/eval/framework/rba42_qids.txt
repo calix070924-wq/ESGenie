@@ -1,0 +1,52 @@
+# rba42 문항 ID 목록 — 문항 수 48
+# 자동 생성: scripts/export_framework_qids.py
+# 문항 ID만 들어 있다. 문항 문구와 정답은 들어 있지 않다.
+# 쓰는 곳: scripts/eval_response_quality.py --expected-qids <이 파일>
+RBA-A-1
+RBA-A-2
+RBA-A-3
+RBA-A-4
+RBA-A-5
+RBA-A-6
+RBA-B-1
+RBA-B-2
+RBA-B-3
+RBA-B-4
+RBA-B-5
+RBA-B-6
+RBA-B-7
+RBA-B-8
+RBA-C-1
+RBA-C-2
+RBA-C-3
+RBA-C-4
+RBA-C-4-E-6-2
+RBA-C-4-E-6-1
+RBA-C-5
+RBA-C-5-E-7-1
+RBA-C-6
+RBA-C-7
+RBA-C-8
+RBA-C-8-E-3-1
+RBA-C-8-E-4-1
+RBA-C-8-E-4-2
+RBA-D-1
+RBA-D-2
+RBA-D-3
+RBA-D-4
+RBA-D-5
+RBA-D-6
+RBA-D-7
+RBA-D-8
+RBA-E-1
+RBA-E-2
+RBA-E-3
+RBA-E-4
+RBA-E-5
+RBA-E-6
+RBA-E-7
+RBA-E-8
+RBA-E-9
+RBA-E-10
+RBA-E-11
+RBA-E-12

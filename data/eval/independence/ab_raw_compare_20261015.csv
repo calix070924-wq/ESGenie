@@ -1,0 +1,33 @@
+set,stage,qid,A_decision,A_hold_reason,A_value,B_decision,B_hold_reason,B_value_20261009,B_value_20261010,B_status,B1_status,A_status,decision_match,reason_match,consult_result
+bm_rba42_v1,initial,RBA-A-6,hold,no_evidence,,hold,not_comparable,,,independent,excluded,pending,True,False,"A 라벨 유지(정민 결정 2026-10-10, 지민 전달)"
+bm_rba42_v1,initial,RBA-B-7,hold,no_evidence,,hold,no_evidence,,,independent,excluded,pending,True,True,
+bm_rba42_v1,initial,RBA-C-1,hold,no_evidence,,hold,not_comparable,,,independent,excluded,pending,True,False,"A 라벨 유지(정민 결정 2026-10-10, 지민 전달)"
+bm_rba42_v1,initial,RBA-C-5,hold,no_evidence,,hold,no_evidence,,,independent,excluded,pending,True,True,
+bm_rba42_v1,initial,RBA-C-8-E-3-1,hold,no_evidence,,hold,no_evidence,,,independent,excluded,excluded,True,True,
+bm_rba42_v1,initial,RBA-E-11,answer,,예,answer,,,예,independent,excluded,pending,True,,
+bm_rba42_v1,initial,RBA-E-12,hold,no_evidence,,hold,not_comparable,,,independent,excluded,pending,True,False,"A 라벨 유지(정민 결정 2026-10-10, 지민 전달)"
+bm_rba42_v1,initial,RBA-E-2,answer,,예,answer,,,예,independent,excluded,pending,True,,
+bm_rba42_v1,initial,RBA-E-3,hold,no_evidence,,hold,not_comparable,,,independent,excluded,pending,True,False,"A 라벨 유지(정민 결정 2026-10-10, 지민 전달)"
+bm_rba42_v1,initial,RBA-E-8,hold,no_evidence,,hold,not_comparable,,,independent,excluded,pending,True,False,"A 라벨 유지(정민 결정 2026-10-10, 지민 전달)"
+bm_rba42_v1,followup,RBA-A-6,hold,no_evidence,,hold,not_comparable,,,independent,excluded,pending,True,False,"A 라벨 유지(정민 결정 2026-10-10, 지민 전달)"
+bm_rba42_v1,followup,RBA-B-7,hold,no_evidence,,hold,no_evidence,,,independent,excluded,pending,True,True,
+bm_rba42_v1,followup,RBA-C-1,hold,no_evidence,,hold,not_comparable,,,independent,excluded,pending,True,False,"A 라벨 유지(정민 결정 2026-10-10, 지민 전달)"
+bm_rba42_v1,followup,RBA-C-5,hold,no_evidence,,hold,no_evidence,,,independent,excluded,pending,True,True,
+bm_rba42_v1,followup,RBA-C-8-E-3-1,hold,no_evidence,,hold,no_evidence,,,independent,excluded,excluded,True,True,
+bm_rba42_v1,followup,RBA-E-11,answer,,예,answer,,,예,independent,excluded,pending,True,,
+bm_rba42_v1,followup,RBA-E-12,hold,no_evidence,,hold,not_comparable,,,independent,excluded,pending,True,False,"A 라벨 유지(정민 결정 2026-10-10, 지민 전달)"
+bm_rba42_v1,followup,RBA-E-2,answer,,예,answer,,,예,independent,excluded,pending,True,,
+bm_rba42_v1,followup,RBA-E-3,hold,no_evidence,,hold,not_comparable,,,independent,excluded,pending,True,False,"A 라벨 유지(정민 결정 2026-10-10, 지민 전달)"
+bm_rba42_v1,followup,RBA-E-8,hold,no_evidence,,hold,not_comparable,,,independent,excluded,pending,True,False,"A 라벨 유지(정민 결정 2026-10-10, 지민 전달)"
+bm_rba42_numeric_census,initial,RBA-C-4-E-6-1,answer,,18.4,answer,,"18,400","18,400",excluded,excluded,excluded,True,,
+bm_rba42_numeric_census,initial,RBA-C-4-E-6-2,answer,,29.3,answer,,29.3,29.3,excluded,excluded,excluded,True,,
+bm_rba42_numeric_census,initial,RBA-C-5-E-7-1,hold,no_evidence,,hold,no_evidence,,,independent,excluded,pending,True,True,
+bm_rba42_numeric_census,initial,RBA-C-8-E-3-1,hold,no_evidence,,hold,no_evidence,,,independent,excluded,excluded,True,True,
+bm_rba42_numeric_census,initial,RBA-C-8-E-4-1,hold,not_comparable,,hold,not_comparable,,,excluded,excluded,excluded,True,True,
+bm_rba42_numeric_census,initial,RBA-C-8-E-4-2,hold,no_evidence,,hold,no_evidence,,,independent,excluded,pending,True,True,
+bm_rba42_numeric_census,followup,RBA-C-4-E-6-1,answer,,18.4,answer,,"18,400","18,400",excluded,excluded,excluded,True,,
+bm_rba42_numeric_census,followup,RBA-C-4-E-6-2,answer,,29.3,answer,,29.3,29.3,excluded,excluded,excluded,True,,
+bm_rba42_numeric_census,followup,RBA-C-5-E-7-1,hold,no_evidence,,hold,no_evidence,,,independent,excluded,pending,True,True,
+bm_rba42_numeric_census,followup,RBA-C-8-E-3-1,hold,no_evidence,,hold,no_evidence,,,independent,excluded,excluded,True,True,
+bm_rba42_numeric_census,followup,RBA-C-8-E-4-1,hold,not_comparable,,hold,not_comparable,,,excluded,excluded,excluded,True,True,
+bm_rba42_numeric_census,followup,RBA-C-8-E-4-2,hold,no_evidence,,hold,no_evidence,,,independent,excluded,pending,True,True,

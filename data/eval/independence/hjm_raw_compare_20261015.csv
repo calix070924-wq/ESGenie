@@ -1,0 +1,13 @@
+set,stage,qid,A_decision,A_hold_reason,A_value,A_sources,hjm_decision,hjm_hold_reason,hjm_value,hjm_sources,hjm_status,decision_match,reason_match,value_match,source_match
+bm_rba42_v1,initial,RBA-C-8-E-3-1,hold,no_evidence,,,hold,no_evidence,,,independent,True,True,,
+bm_rba42_numeric_census,initial,RBA-C-8-E-3-1,hold,no_evidence,,,hold,no_evidence,,,independent,True,True,,
+bm_rba42_numeric_census,initial,RBA-C-5-E-7-1,hold,no_evidence,,,hold,no_evidence,,,independent,True,True,,
+bm_rba42_numeric_census,initial,RBA-C-8-E-4-2,hold,no_evidence,,,hold,no_evidence,,,independent,True,True,,
+bm_rba42_v1,initial,RBA-E-11,answer,,예,18_문서기록관리절차및운영점검대장_2026-04.pdf#1;18_문서기록관리절차및운영점검대장_2026-04.pdf#2,answer,,예,06_환경안전관리규정_2026.pdf#1,independent,True,,True,False
+bm_rba42_v1,initial,RBA-E-12,hold,no_evidence,,,hold,no_evidence,,,independent,True,True,,
+bm_rba42_v1,followup,RBA-C-8-E-3-1,hold,no_evidence,,,hold,no_evidence,,,independent,True,True,,
+bm_rba42_numeric_census,followup,RBA-C-8-E-3-1,hold,no_evidence,,,hold,no_evidence,,,independent,True,True,,
+bm_rba42_numeric_census,followup,RBA-C-5-E-7-1,hold,no_evidence,,,hold,no_evidence,,,independent,True,True,,
+bm_rba42_numeric_census,followup,RBA-C-8-E-4-2,hold,no_evidence,,,hold,no_evidence,,,independent,True,True,,
+bm_rba42_v1,followup,RBA-E-11,answer,,예,18_문서기록관리절차및운영점검대장_2026-04.pdf#1;18_문서기록관리절차및운영점검대장_2026-04.pdf#2,answer,,예,06_환경안전관리규정_2026.pdf#1,independent,True,,True,False
+bm_rba42_v1,followup,RBA-E-12,hold,no_evidence,,,hold,no_evidence,,,independent,True,True,,

@@ -1,0 +1,33 @@
+set,stage,qid,A_decision,A_hold_reason,A_value,B_decision,B_hold_reason,B_value_20261009,B_value_20261010,B_status,B1_status,A_status,decision_match,reason_match,consult_result,B_status_reason
+bm_rba42_v1,initial,RBA-A-6,hold,no_evidence,,hold,not_comparable,,,independent,excluded,pending,True,False,"A 라벨 유지(정민 결정 2026-10-10, 지민 전달)",보지 않았다고 확인됨
+bm_rba42_v1,initial,RBA-B-7,hold,no_evidence,,hold,no_evidence,,,independent,excluded,pending,True,True,,보지 않았다고 확인됨
+bm_rba42_v1,initial,RBA-C-1,hold,no_evidence,,hold,not_comparable,,,independent,excluded,pending,True,False,"A 라벨 유지(정민 결정 2026-10-10, 지민 전달)",보지 않았다고 확인됨
+bm_rba42_v1,initial,RBA-C-5,hold,no_evidence,,hold,no_evidence,,,independent,excluded,pending,True,True,,보지 않았다고 확인됨
+bm_rba42_v1,initial,RBA-C-8-E-3-1,hold,no_evidence,,hold,no_evidence,,,excluded,excluded,excluded,True,True,,독립성 확인 불가로 제외 — 노출 확인과 다르고 미결정도 아니다
+bm_rba42_v1,initial,RBA-E-11,answer,,예,answer,,,예,excluded,excluded,pending,True,,,독립성 확인 불가로 제외 — 노출 확인과 다르고 미결정도 아니다
+bm_rba42_v1,initial,RBA-E-12,hold,no_evidence,,hold,not_comparable,,,excluded,excluded,pending,True,False,"A 라벨 유지(정민 결정 2026-10-10, 지민 전달)",독립성 확인 불가로 제외 — 노출 확인과 다르고 미결정도 아니다
+bm_rba42_v1,initial,RBA-E-2,answer,,예,answer,,,예,independent,excluded,pending,True,,,보지 않았다고 확인됨
+bm_rba42_v1,initial,RBA-E-3,hold,no_evidence,,hold,not_comparable,,,independent,excluded,pending,True,False,"A 라벨 유지(정민 결정 2026-10-10, 지민 전달)",보지 않았다고 확인됨
+bm_rba42_v1,initial,RBA-E-8,hold,no_evidence,,hold,not_comparable,,,independent,excluded,pending,True,False,"A 라벨 유지(정민 결정 2026-10-10, 지민 전달)",보지 않았다고 확인됨
+bm_rba42_v1,followup,RBA-A-6,hold,no_evidence,,hold,not_comparable,,,independent,excluded,pending,True,False,"A 라벨 유지(정민 결정 2026-10-10, 지민 전달)",보지 않았다고 확인됨
+bm_rba42_v1,followup,RBA-B-7,hold,no_evidence,,hold,no_evidence,,,independent,excluded,pending,True,True,,보지 않았다고 확인됨
+bm_rba42_v1,followup,RBA-C-1,hold,no_evidence,,hold,not_comparable,,,independent,excluded,pending,True,False,"A 라벨 유지(정민 결정 2026-10-10, 지민 전달)",보지 않았다고 확인됨
+bm_rba42_v1,followup,RBA-C-5,hold,no_evidence,,hold,no_evidence,,,independent,excluded,pending,True,True,,보지 않았다고 확인됨
+bm_rba42_v1,followup,RBA-C-8-E-3-1,hold,no_evidence,,hold,no_evidence,,,excluded,excluded,excluded,True,True,,독립성 확인 불가로 제외 — 노출 확인과 다르고 미결정도 아니다
+bm_rba42_v1,followup,RBA-E-11,answer,,예,answer,,,예,excluded,excluded,pending,True,,,독립성 확인 불가로 제외 — 노출 확인과 다르고 미결정도 아니다
+bm_rba42_v1,followup,RBA-E-12,hold,no_evidence,,hold,not_comparable,,,excluded,excluded,pending,True,False,"A 라벨 유지(정민 결정 2026-10-10, 지민 전달)",독립성 확인 불가로 제외 — 노출 확인과 다르고 미결정도 아니다
+bm_rba42_v1,followup,RBA-E-2,answer,,예,answer,,,예,independent,excluded,pending,True,,,보지 않았다고 확인됨
+bm_rba42_v1,followup,RBA-E-3,hold,no_evidence,,hold,not_comparable,,,independent,excluded,pending,True,False,"A 라벨 유지(정민 결정 2026-10-10, 지민 전달)",보지 않았다고 확인됨
+bm_rba42_v1,followup,RBA-E-8,hold,no_evidence,,hold,not_comparable,,,independent,excluded,pending,True,False,"A 라벨 유지(정민 결정 2026-10-10, 지민 전달)",보지 않았다고 확인됨
+bm_rba42_numeric_census,initial,RBA-C-4-E-6-1,answer,,18.4,answer,,"18,400","18,400",excluded,excluded,excluded,True,,,노출 확인됨(expected_value) — 일치·불일치와 무관하게 분자·분모에서 제외
+bm_rba42_numeric_census,initial,RBA-C-4-E-6-2,answer,,29.3,answer,,29.3,29.3,excluded,excluded,excluded,True,,,"노출 확인됨(expected_value,system_answer) — 일치·불일치와 무관하게 분자·분모에서 제외"
+bm_rba42_numeric_census,initial,RBA-C-5-E-7-1,hold,no_evidence,,hold,no_evidence,,,excluded,excluded,pending,True,True,,독립성 확인 불가로 제외 — 노출 확인과 다르고 미결정도 아니다
+bm_rba42_numeric_census,initial,RBA-C-8-E-3-1,hold,no_evidence,,hold,no_evidence,,,excluded,excluded,excluded,True,True,,독립성 확인 불가로 제외 — 노출 확인과 다르고 미결정도 아니다
+bm_rba42_numeric_census,initial,RBA-C-8-E-4-1,hold,not_comparable,,hold,not_comparable,,,excluded,excluded,excluded,True,True,,노출 확인됨(expected_value) — 일치·불일치와 무관하게 분자·분모에서 제외
+bm_rba42_numeric_census,initial,RBA-C-8-E-4-2,hold,no_evidence,,hold,no_evidence,,,excluded,excluded,pending,True,True,,독립성 확인 불가로 제외 — 노출 확인과 다르고 미결정도 아니다
+bm_rba42_numeric_census,followup,RBA-C-4-E-6-1,answer,,18.4,answer,,"18,400","18,400",excluded,excluded,excluded,True,,,노출 확인됨(expected_value) — 일치·불일치와 무관하게 분자·분모에서 제외
+bm_rba42_numeric_census,followup,RBA-C-4-E-6-2,answer,,29.3,answer,,29.3,29.3,excluded,excluded,excluded,True,,,"노출 확인됨(expected_value,system_answer) — 일치·불일치와 무관하게 분자·분모에서 제외"
+bm_rba42_numeric_census,followup,RBA-C-5-E-7-1,hold,no_evidence,,hold,no_evidence,,,excluded,excluded,pending,True,True,,독립성 확인 불가로 제외 — 노출 확인과 다르고 미결정도 아니다
+bm_rba42_numeric_census,followup,RBA-C-8-E-3-1,hold,no_evidence,,hold,no_evidence,,,excluded,excluded,excluded,True,True,,독립성 확인 불가로 제외 — 노출 확인과 다르고 미결정도 아니다
+bm_rba42_numeric_census,followup,RBA-C-8-E-4-1,hold,not_comparable,,hold,not_comparable,,,excluded,excluded,excluded,True,True,,노출 확인됨(expected_value) — 일치·불일치와 무관하게 분자·분모에서 제외
+bm_rba42_numeric_census,followup,RBA-C-8-E-4-2,hold,no_evidence,,hold,no_evidence,,,excluded,excluded,pending,True,True,,독립성 확인 불가로 제외 — 노출 확인과 다르고 미결정도 아니다

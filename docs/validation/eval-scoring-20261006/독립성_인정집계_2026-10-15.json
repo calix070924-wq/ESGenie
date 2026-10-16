@@ -1,0 +1,1115 @@
+{
+  "reports": [
+    {
+      "set_id": "bm_rba42_v1",
+      "labeler": "A",
+      "sample_rows": 20,
+      "independent_rows": 0,
+      "excluded_rows": 2,
+      "pending_rows": 18,
+      "excluded_qids": [
+        "RBA-C-8-E-3-1"
+      ],
+      "pending_reasons": {
+        "열람 확인 회신이 없다 — 확인 전에는 독립으로 세지 않는다": 18
+      },
+      "agreement_denominator": 0,
+      "agreement_blocked_reason": "독립 일치율을 산출하지 않는다: 확인 대기 18행, 독립 확인 0행. 열람 확인 회신과 라벨이 모두 있어야 한다. 산출 불가를 0%로 적지 않는다.",
+      "rows": [
+        {
+          "stage": "initial",
+          "qid": "RBA-A-6",
+          "status": "pending",
+          "reason": "열람 확인 회신이 없다 — 확인 전에는 독립으로 세지 않는다",
+          "exposures": []
+        },
+        {
+          "stage": "initial",
+          "qid": "RBA-B-7",
+          "status": "pending",
+          "reason": "열람 확인 회신이 없다 — 확인 전에는 독립으로 세지 않는다",
+          "exposures": []
+        },
+        {
+          "stage": "initial",
+          "qid": "RBA-C-1",
+          "status": "pending",
+          "reason": "열람 확인 회신이 없다 — 확인 전에는 독립으로 세지 않는다",
+          "exposures": []
+        },
+        {
+          "stage": "initial",
+          "qid": "RBA-C-5",
+          "status": "pending",
+          "reason": "열람 확인 회신이 없다 — 확인 전에는 독립으로 세지 않는다",
+          "exposures": []
+        },
+        {
+          "stage": "initial",
+          "qid": "RBA-C-8-E-3-1",
+          "status": "excluded",
+          "reason": "노출 확인됨(system_answer) — 일치·불일치와 무관하게 분자·분모에서 제외",
+          "exposures": [
+            {
+              "exposure": "system_answer",
+              "source": "docs/UI연결용_수치범위_출력계약_2026-10-05.md §3 표",
+              "confirmed_by": "본인 신고(A)"
+            }
+          ]
+        },
+        {
+          "stage": "initial",
+          "qid": "RBA-E-11",
+          "status": "pending",
+          "reason": "열람 확인 회신이 없다 — 확인 전에는 독립으로 세지 않는다",
+          "exposures": []
+        },
+        {
+          "stage": "initial",
+          "qid": "RBA-E-12",
+          "status": "pending",
+          "reason": "열람 확인 회신이 없다 — 확인 전에는 독립으로 세지 않는다",
+          "exposures": []
+        },
+        {
+          "stage": "initial",
+          "qid": "RBA-E-2",
+          "status": "pending",
+          "reason": "열람 확인 회신이 없다 — 확인 전에는 독립으로 세지 않는다",
+          "exposures": []
+        },
+        {
+          "stage": "initial",
+          "qid": "RBA-E-3",
+          "status": "pending",
+          "reason": "열람 확인 회신이 없다 — 확인 전에는 독립으로 세지 않는다",
+          "exposures": []
+        },
+        {
+          "stage": "initial",
+          "qid": "RBA-E-8",
+          "status": "pending",
+          "reason": "열람 확인 회신이 없다 — 확인 전에는 독립으로 세지 않는다",
+          "exposures": []
+        },
+        {
+          "stage": "followup",
+          "qid": "RBA-A-6",
+          "status": "pending",
+          "reason": "열람 확인 회신이 없다 — 확인 전에는 독립으로 세지 않는다",
+          "exposures": []
+        },
+        {
+          "stage": "followup",
+          "qid": "RBA-B-7",
+          "status": "pending",
+          "reason": "열람 확인 회신이 없다 — 확인 전에는 독립으로 세지 않는다",
+          "exposures": []
+        },
+        {
+          "stage": "followup",
+          "qid": "RBA-C-1",
+          "status": "pending",
+          "reason": "열람 확인 회신이 없다 — 확인 전에는 독립으로 세지 않는다",
+          "exposures": []
+        },
+        {
+          "stage": "followup",
+          "qid": "RBA-C-5",
+          "status": "pending",
+          "reason": "열람 확인 회신이 없다 — 확인 전에는 독립으로 세지 않는다",
+          "exposures": []
+        },
+        {
+          "stage": "followup",
+          "qid": "RBA-C-8-E-3-1",
+          "status": "excluded",
+          "reason": "노출 확인됨(system_answer) — 일치·불일치와 무관하게 분자·분모에서 제외",
+          "exposures": [
+            {
+              "exposure": "system_answer",
+              "source": "docs/UI연결용_수치범위_출력계약_2026-10-05.md §3 표",
+              "confirmed_by": "본인 신고(A)"
+            }
+          ]
+        },
+        {
+          "stage": "followup",
+          "qid": "RBA-E-11",
+          "status": "pending",
+          "reason": "열람 확인 회신이 없다 — 확인 전에는 독립으로 세지 않는다",
+          "exposures": []
+        },
+        {
+          "stage": "followup",
+          "qid": "RBA-E-12",
+          "status": "pending",
+          "reason": "열람 확인 회신이 없다 — 확인 전에는 독립으로 세지 않는다",
+          "exposures": []
+        },
+        {
+          "stage": "followup",
+          "qid": "RBA-E-2",
+          "status": "pending",
+          "reason": "열람 확인 회신이 없다 — 확인 전에는 독립으로 세지 않는다",
+          "exposures": []
+        },
+        {
+          "stage": "followup",
+          "qid": "RBA-E-3",
+          "status": "pending",
+          "reason": "열람 확인 회신이 없다 — 확인 전에는 독립으로 세지 않는다",
+          "exposures": []
+        },
+        {
+          "stage": "followup",
+          "qid": "RBA-E-8",
+          "status": "pending",
+          "reason": "열람 확인 회신이 없다 — 확인 전에는 독립으로 세지 않는다",
+          "exposures": []
+        }
+      ]
+    },
+    {
+      "set_id": "bm_rba42_v1",
+      "labeler": "B",
+      "sample_rows": 20,
+      "independent_rows": 20,
+      "excluded_rows": 0,
+      "pending_rows": 0,
+      "excluded_qids": [],
+      "pending_reasons": {},
+      "agreement_denominator": 20,
+      "agreement_blocked_reason": "",
+      "rows": [
+        {
+          "stage": "initial",
+          "qid": "RBA-A-6",
+          "status": "independent",
+          "reason": "보지 않았다고 확인됨",
+          "exposures": [
+            {
+              "exposure": "none",
+              "source": "B 회신 2026-10-11 열람확인 보완(작업 대화 기록을 15개 문항 ID로 검색) — 지민이 전달한 원문, 이 저장소에 원문 없음",
+              "confirmed_by": "B 신고(2026-10-11)"
+            }
+          ]
+        },
+        {
+          "stage": "initial",
+          "qid": "RBA-B-7",
+          "status": "independent",
+          "reason": "보지 않았다고 확인됨",
+          "exposures": [
+            {
+              "exposure": "none",
+              "source": "B 회신 2026-10-11 열람확인 보완(작업 대화 기록을 15개 문항 ID로 검색) — 지민이 전달한 원문, 이 저장소에 원문 없음",
+              "confirmed_by": "B 신고(2026-10-11)"
+            }
+          ]
+        },
+        {
+          "stage": "initial",
+          "qid": "RBA-C-1",
+          "status": "independent",
+          "reason": "보지 않았다고 확인됨",
+          "exposures": [
+            {
+              "exposure": "none",
+              "source": "B 회신 2026-10-11 열람확인 보완(작업 대화 기록을 15개 문항 ID로 검색) — 지민이 전달한 원문, 이 저장소에 원문 없음",
+              "confirmed_by": "B 신고(2026-10-11)"
+            }
+          ]
+        },
+        {
+          "stage": "initial",
+          "qid": "RBA-C-5",
+          "status": "independent",
+          "reason": "보지 않았다고 확인됨",
+          "exposures": [
+            {
+              "exposure": "none",
+              "source": "B 회신 2026-10-11 열람확인 보완(작업 대화 기록을 15개 문항 ID로 검색) — 지민이 전달한 원문, 이 저장소에 원문 없음",
+              "confirmed_by": "B 신고(2026-10-11)"
+            }
+          ]
+        },
+        {
+          "stage": "initial",
+          "qid": "RBA-C-8-E-3-1",
+          "status": "independent",
+          "reason": "보지 않았다고 확인됨",
+          "exposures": [
+            {
+              "exposure": "none",
+              "source": "B 회신 2026-10-11 열람확인 보완(작업 대화 기록을 15개 문항 ID로 검색) — 지민이 전달한 원문, 이 저장소에 원문 없음",
+              "confirmed_by": "정민 결정 2026-10-15 (B 전달, 지민 전달 — 원문 메시지는 이 저장소에 없음)"
+            }
+          ]
+        },
+        {
+          "stage": "initial",
+          "qid": "RBA-E-11",
+          "status": "independent",
+          "reason": "보지 않았다고 확인됨",
+          "exposures": [
+            {
+              "exposure": "none",
+              "source": "B 회신 2026-10-11 열람확인 보완(작업 대화 기록을 15개 문항 ID로 검색) — 지민이 전달한 원문, 이 저장소에 원문 없음",
+              "confirmed_by": "정민 결정 2026-10-15 (B 전달, 지민 전달 — 원문 메시지는 이 저장소에 없음)"
+            }
+          ]
+        },
+        {
+          "stage": "initial",
+          "qid": "RBA-E-12",
+          "status": "independent",
+          "reason": "보지 않았다고 확인됨",
+          "exposures": [
+            {
+              "exposure": "none",
+              "source": "B 회신 2026-10-11 열람확인 보완(작업 대화 기록을 15개 문항 ID로 검색) — 지민이 전달한 원문, 이 저장소에 원문 없음",
+              "confirmed_by": "정민 결정 2026-10-15 (B 전달, 지민 전달 — 원문 메시지는 이 저장소에 없음)"
+            }
+          ]
+        },
+        {
+          "stage": "initial",
+          "qid": "RBA-E-2",
+          "status": "independent",
+          "reason": "보지 않았다고 확인됨",
+          "exposures": [
+            {
+              "exposure": "none",
+              "source": "B 회신 2026-10-11 열람확인 보완(작업 대화 기록을 15개 문항 ID로 검색) — 지민이 전달한 원문, 이 저장소에 원문 없음",
+              "confirmed_by": "B 신고(2026-10-11)"
+            }
+          ]
+        },
+        {
+          "stage": "initial",
+          "qid": "RBA-E-3",
+          "status": "independent",
+          "reason": "보지 않았다고 확인됨",
+          "exposures": [
+            {
+              "exposure": "none",
+              "source": "B 회신 2026-10-11 열람확인 보완(작업 대화 기록을 15개 문항 ID로 검색) — 지민이 전달한 원문, 이 저장소에 원문 없음",
+              "confirmed_by": "B 신고(2026-10-11)"
+            }
+          ]
+        },
+        {
+          "stage": "initial",
+          "qid": "RBA-E-8",
+          "status": "independent",
+          "reason": "보지 않았다고 확인됨",
+          "exposures": [
+            {
+              "exposure": "none",
+              "source": "B 회신 2026-10-11 열람확인 보완(작업 대화 기록을 15개 문항 ID로 검색) — 지민이 전달한 원문, 이 저장소에 원문 없음",
+              "confirmed_by": "B 신고(2026-10-11)"
+            }
+          ]
+        },
+        {
+          "stage": "followup",
+          "qid": "RBA-A-6",
+          "status": "independent",
+          "reason": "보지 않았다고 확인됨",
+          "exposures": [
+            {
+              "exposure": "none",
+              "source": "B 회신 2026-10-11 열람확인 보완(작업 대화 기록을 15개 문항 ID로 검색) — 지민이 전달한 원문, 이 저장소에 원문 없음",
+              "confirmed_by": "B 신고(2026-10-11)"
+            }
+          ]
+        },
+        {
+          "stage": "followup",
+          "qid": "RBA-B-7",
+          "status": "independent",
+          "reason": "보지 않았다고 확인됨",
+          "exposures": [
+            {
+              "exposure": "none",
+              "source": "B 회신 2026-10-11 열람확인 보완(작업 대화 기록을 15개 문항 ID로 검색) — 지민이 전달한 원문, 이 저장소에 원문 없음",
+              "confirmed_by": "B 신고(2026-10-11)"
+            }
+          ]
+        },
+        {
+          "stage": "followup",
+          "qid": "RBA-C-1",
+          "status": "independent",
+          "reason": "보지 않았다고 확인됨",
+          "exposures": [
+            {
+              "exposure": "none",
+              "source": "B 회신 2026-10-11 열람확인 보완(작업 대화 기록을 15개 문항 ID로 검색) — 지민이 전달한 원문, 이 저장소에 원문 없음",
+              "confirmed_by": "B 신고(2026-10-11)"
+            }
+          ]
+        },
+        {
+          "stage": "followup",
+          "qid": "RBA-C-5",
+          "status": "independent",
+          "reason": "보지 않았다고 확인됨",
+          "exposures": [
+            {
+              "exposure": "none",
+              "source": "B 회신 2026-10-11 열람확인 보완(작업 대화 기록을 15개 문항 ID로 검색) — 지민이 전달한 원문, 이 저장소에 원문 없음",
+              "confirmed_by": "B 신고(2026-10-11)"
+            }
+          ]
+        },
+        {
+          "stage": "followup",
+          "qid": "RBA-C-8-E-3-1",
+          "status": "independent",
+          "reason": "보지 않았다고 확인됨",
+          "exposures": [
+            {
+              "exposure": "none",
+              "source": "B 회신 2026-10-11 열람확인 보완(작업 대화 기록을 15개 문항 ID로 검색) — 지민이 전달한 원문, 이 저장소에 원문 없음",
+              "confirmed_by": "정민 결정 2026-10-15 (B 전달, 지민 전달 — 원문 메시지는 이 저장소에 없음)"
+            }
+          ]
+        },
+        {
+          "stage": "followup",
+          "qid": "RBA-E-11",
+          "status": "independent",
+          "reason": "보지 않았다고 확인됨",
+          "exposures": [
+            {
+              "exposure": "none",
+              "source": "B 회신 2026-10-11 열람확인 보완(작업 대화 기록을 15개 문항 ID로 검색) — 지민이 전달한 원문, 이 저장소에 원문 없음",
+              "confirmed_by": "정민 결정 2026-10-15 (B 전달, 지민 전달 — 원문 메시지는 이 저장소에 없음)"
+            }
+          ]
+        },
+        {
+          "stage": "followup",
+          "qid": "RBA-E-12",
+          "status": "independent",
+          "reason": "보지 않았다고 확인됨",
+          "exposures": [
+            {
+              "exposure": "none",
+              "source": "B 회신 2026-10-11 열람확인 보완(작업 대화 기록을 15개 문항 ID로 검색) — 지민이 전달한 원문, 이 저장소에 원문 없음",
+              "confirmed_by": "정민 결정 2026-10-15 (B 전달, 지민 전달 — 원문 메시지는 이 저장소에 없음)"
+            }
+          ]
+        },
+        {
+          "stage": "followup",
+          "qid": "RBA-E-2",
+          "status": "independent",
+          "reason": "보지 않았다고 확인됨",
+          "exposures": [
+            {
+              "exposure": "none",
+              "source": "B 회신 2026-10-11 열람확인 보완(작업 대화 기록을 15개 문항 ID로 검색) — 지민이 전달한 원문, 이 저장소에 원문 없음",
+              "confirmed_by": "B 신고(2026-10-11)"
+            }
+          ]
+        },
+        {
+          "stage": "followup",
+          "qid": "RBA-E-3",
+          "status": "independent",
+          "reason": "보지 않았다고 확인됨",
+          "exposures": [
+            {
+              "exposure": "none",
+              "source": "B 회신 2026-10-11 열람확인 보완(작업 대화 기록을 15개 문항 ID로 검색) — 지민이 전달한 원문, 이 저장소에 원문 없음",
+              "confirmed_by": "B 신고(2026-10-11)"
+            }
+          ]
+        },
+        {
+          "stage": "followup",
+          "qid": "RBA-E-8",
+          "status": "independent",
+          "reason": "보지 않았다고 확인됨",
+          "exposures": [
+            {
+              "exposure": "none",
+              "source": "B 회신 2026-10-11 열람확인 보완(작업 대화 기록을 15개 문항 ID로 검색) — 지민이 전달한 원문, 이 저장소에 원문 없음",
+              "confirmed_by": "B 신고(2026-10-11)"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "set_id": "bm_rba42_v1",
+      "labeler": "hjm",
+      "sample_rows": 20,
+      "independent_rows": 6,
+      "excluded_rows": 0,
+      "pending_rows": 14,
+      "excluded_qids": [],
+      "pending_reasons": {
+        "열람 확인 회신이 없다 — 확인 전에는 독립으로 세지 않는다": 14
+      },
+      "agreement_denominator": 6,
+      "agreement_blocked_reason": "독립 일치율을 산출하지 않는다: 확인 대기 14행, 독립 확인 6행. 열람 확인 회신과 라벨이 모두 있어야 한다. 산출 불가를 0%로 적지 않는다.",
+      "rows": [
+        {
+          "stage": "initial",
+          "qid": "RBA-A-6",
+          "status": "pending",
+          "reason": "열람 확인 회신이 없다 — 확인 전에는 독립으로 세지 않는다",
+          "exposures": []
+        },
+        {
+          "stage": "initial",
+          "qid": "RBA-B-7",
+          "status": "pending",
+          "reason": "열람 확인 회신이 없다 — 확인 전에는 독립으로 세지 않는다",
+          "exposures": []
+        },
+        {
+          "stage": "initial",
+          "qid": "RBA-C-1",
+          "status": "pending",
+          "reason": "열람 확인 회신이 없다 — 확인 전에는 독립으로 세지 않는다",
+          "exposures": []
+        },
+        {
+          "stage": "initial",
+          "qid": "RBA-C-5",
+          "status": "pending",
+          "reason": "열람 확인 회신이 없다 — 확인 전에는 독립으로 세지 않는다",
+          "exposures": []
+        },
+        {
+          "stage": "initial",
+          "qid": "RBA-C-8-E-3-1",
+          "status": "independent",
+          "reason": "보지 않았다고 확인됨",
+          "exposures": [
+            {
+              "exposure": "none",
+              "source": "B 브랜치 cb636e2 independence/labels_hjm_received_20261014.csv(sha256 126e0d75…) · labels_hjm_작성경위_20261014.md(sha256 2855d9d4…)",
+              "confirmed_by": "검토자 본인 진술(2026-10-14) + 정민 결정 2026-10-15 (B 전달, 지민 전달)"
+            }
+          ]
+        },
+        {
+          "stage": "initial",
+          "qid": "RBA-E-11",
+          "status": "independent",
+          "reason": "보지 않았다고 확인됨",
+          "exposures": [
+            {
+              "exposure": "none",
+              "source": "B 브랜치 cb636e2 independence/labels_hjm_received_20261014.csv(sha256 126e0d75…) · labels_hjm_작성경위_20261014.md(sha256 2855d9d4…)",
+              "confirmed_by": "검토자 본인 진술(2026-10-14) + 정민 결정 2026-10-15 (B 전달, 지민 전달)"
+            }
+          ]
+        },
+        {
+          "stage": "initial",
+          "qid": "RBA-E-12",
+          "status": "independent",
+          "reason": "보지 않았다고 확인됨",
+          "exposures": [
+            {
+              "exposure": "none",
+              "source": "B 브랜치 cb636e2 independence/labels_hjm_received_20261014.csv(sha256 126e0d75…) · labels_hjm_작성경위_20261014.md(sha256 2855d9d4…)",
+              "confirmed_by": "검토자 본인 진술(2026-10-14) + 정민 결정 2026-10-15 (B 전달, 지민 전달)"
+            }
+          ]
+        },
+        {
+          "stage": "initial",
+          "qid": "RBA-E-2",
+          "status": "pending",
+          "reason": "열람 확인 회신이 없다 — 확인 전에는 독립으로 세지 않는다",
+          "exposures": []
+        },
+        {
+          "stage": "initial",
+          "qid": "RBA-E-3",
+          "status": "pending",
+          "reason": "열람 확인 회신이 없다 — 확인 전에는 독립으로 세지 않는다",
+          "exposures": []
+        },
+        {
+          "stage": "initial",
+          "qid": "RBA-E-8",
+          "status": "pending",
+          "reason": "열람 확인 회신이 없다 — 확인 전에는 독립으로 세지 않는다",
+          "exposures": []
+        },
+        {
+          "stage": "followup",
+          "qid": "RBA-A-6",
+          "status": "pending",
+          "reason": "열람 확인 회신이 없다 — 확인 전에는 독립으로 세지 않는다",
+          "exposures": []
+        },
+        {
+          "stage": "followup",
+          "qid": "RBA-B-7",
+          "status": "pending",
+          "reason": "열람 확인 회신이 없다 — 확인 전에는 독립으로 세지 않는다",
+          "exposures": []
+        },
+        {
+          "stage": "followup",
+          "qid": "RBA-C-1",
+          "status": "pending",
+          "reason": "열람 확인 회신이 없다 — 확인 전에는 독립으로 세지 않는다",
+          "exposures": []
+        },
+        {
+          "stage": "followup",
+          "qid": "RBA-C-5",
+          "status": "pending",
+          "reason": "열람 확인 회신이 없다 — 확인 전에는 독립으로 세지 않는다",
+          "exposures": []
+        },
+        {
+          "stage": "followup",
+          "qid": "RBA-C-8-E-3-1",
+          "status": "independent",
+          "reason": "보지 않았다고 확인됨",
+          "exposures": [
+            {
+              "exposure": "none",
+              "source": "B 브랜치 cb636e2 independence/labels_hjm_received_20261014.csv(sha256 126e0d75…) · labels_hjm_작성경위_20261014.md(sha256 2855d9d4…)",
+              "confirmed_by": "검토자 본인 진술(2026-10-14) + 정민 결정 2026-10-15 (B 전달, 지민 전달)"
+            }
+          ]
+        },
+        {
+          "stage": "followup",
+          "qid": "RBA-E-11",
+          "status": "independent",
+          "reason": "보지 않았다고 확인됨",
+          "exposures": [
+            {
+              "exposure": "none",
+              "source": "B 브랜치 cb636e2 independence/labels_hjm_received_20261014.csv(sha256 126e0d75…) · labels_hjm_작성경위_20261014.md(sha256 2855d9d4…)",
+              "confirmed_by": "검토자 본인 진술(2026-10-14) + 정민 결정 2026-10-15 (B 전달, 지민 전달)"
+            }
+          ]
+        },
+        {
+          "stage": "followup",
+          "qid": "RBA-E-12",
+          "status": "independent",
+          "reason": "보지 않았다고 확인됨",
+          "exposures": [
+            {
+              "exposure": "none",
+              "source": "B 브랜치 cb636e2 independence/labels_hjm_received_20261014.csv(sha256 126e0d75…) · labels_hjm_작성경위_20261014.md(sha256 2855d9d4…)",
+              "confirmed_by": "검토자 본인 진술(2026-10-14) + 정민 결정 2026-10-15 (B 전달, 지민 전달)"
+            }
+          ]
+        },
+        {
+          "stage": "followup",
+          "qid": "RBA-E-2",
+          "status": "pending",
+          "reason": "열람 확인 회신이 없다 — 확인 전에는 독립으로 세지 않는다",
+          "exposures": []
+        },
+        {
+          "stage": "followup",
+          "qid": "RBA-E-3",
+          "status": "pending",
+          "reason": "열람 확인 회신이 없다 — 확인 전에는 독립으로 세지 않는다",
+          "exposures": []
+        },
+        {
+          "stage": "followup",
+          "qid": "RBA-E-8",
+          "status": "pending",
+          "reason": "열람 확인 회신이 없다 — 확인 전에는 독립으로 세지 않는다",
+          "exposures": []
+        }
+      ]
+    },
+    {
+      "set_id": "bm_rba42_numeric_census",
+      "labeler": "A",
+      "sample_rows": 12,
+      "independent_rows": 0,
+      "excluded_rows": 8,
+      "pending_rows": 4,
+      "excluded_qids": [
+        "RBA-C-4-E-6-1",
+        "RBA-C-4-E-6-2",
+        "RBA-C-8-E-3-1",
+        "RBA-C-8-E-4-1"
+      ],
+      "pending_reasons": {
+        "열람 확인 회신이 없다 — 확인 전에는 독립으로 세지 않는다": 4
+      },
+      "agreement_denominator": 0,
+      "agreement_blocked_reason": "독립 일치율을 산출하지 않는다: 확인 대기 4행, 독립 확인 0행. 열람 확인 회신과 라벨이 모두 있어야 한다. 산출 불가를 0%로 적지 않는다.",
+      "rows": [
+        {
+          "stage": "initial",
+          "qid": "RBA-C-4-E-6-1",
+          "status": "excluded",
+          "reason": "노출 확인됨(system_answer) — 일치·불일치와 무관하게 분자·분모에서 제외",
+          "exposures": [
+            {
+              "exposure": "system_answer",
+              "source": "docs/UI연결용_수치범위_출력계약_2026-10-05.md §3 표",
+              "confirmed_by": "본인 신고(A)"
+            }
+          ]
+        },
+        {
+          "stage": "initial",
+          "qid": "RBA-C-4-E-6-2",
+          "status": "excluded",
+          "reason": "노출 확인됨(both) — 일치·불일치와 무관하게 분자·분모에서 제외",
+          "exposures": [
+            {
+              "exposure": "both",
+              "source": "docs/UI연결용_수치범위_출력계약_2026-10-05.md §3 + docs/validation/eval-scoring-20261006/README.md",
+              "confirmed_by": "본인 신고(A)"
+            }
+          ]
+        },
+        {
+          "stage": "initial",
+          "qid": "RBA-C-5-E-7-1",
+          "status": "pending",
+          "reason": "열람 확인 회신이 없다 — 확인 전에는 독립으로 세지 않는다",
+          "exposures": []
+        },
+        {
+          "stage": "initial",
+          "qid": "RBA-C-8-E-3-1",
+          "status": "excluded",
+          "reason": "노출 확인됨(system_answer) — 일치·불일치와 무관하게 분자·분모에서 제외",
+          "exposures": [
+            {
+              "exposure": "system_answer",
+              "source": "docs/UI연결용_수치범위_출력계약_2026-10-05.md §3 표",
+              "confirmed_by": "본인 신고(A)"
+            }
+          ]
+        },
+        {
+          "stage": "initial",
+          "qid": "RBA-C-8-E-4-1",
+          "status": "excluded",
+          "reason": "노출 확인됨(system_answer) — 일치·불일치와 무관하게 분자·분모에서 제외",
+          "exposures": [
+            {
+              "exposure": "system_answer",
+              "source": "docs/UI연결용_수치범위_출력계약_2026-10-05.md §3 표",
+              "confirmed_by": "본인 신고(A)"
+            }
+          ]
+        },
+        {
+          "stage": "initial",
+          "qid": "RBA-C-8-E-4-2",
+          "status": "pending",
+          "reason": "열람 확인 회신이 없다 — 확인 전에는 독립으로 세지 않는다",
+          "exposures": []
+        },
+        {
+          "stage": "followup",
+          "qid": "RBA-C-4-E-6-1",
+          "status": "excluded",
+          "reason": "노출 확인됨(system_answer) — 일치·불일치와 무관하게 분자·분모에서 제외",
+          "exposures": [
+            {
+              "exposure": "system_answer",
+              "source": "docs/UI연결용_수치범위_출력계약_2026-10-05.md §3 표",
+              "confirmed_by": "본인 신고(A)"
+            }
+          ]
+        },
+        {
+          "stage": "followup",
+          "qid": "RBA-C-4-E-6-2",
+          "status": "excluded",
+          "reason": "노출 확인됨(both) — 일치·불일치와 무관하게 분자·분모에서 제외",
+          "exposures": [
+            {
+              "exposure": "both",
+              "source": "docs/UI연결용_수치범위_출력계약_2026-10-05.md §3 + docs/validation/eval-scoring-20261006/README.md",
+              "confirmed_by": "본인 신고(A)"
+            }
+          ]
+        },
+        {
+          "stage": "followup",
+          "qid": "RBA-C-5-E-7-1",
+          "status": "pending",
+          "reason": "열람 확인 회신이 없다 — 확인 전에는 독립으로 세지 않는다",
+          "exposures": []
+        },
+        {
+          "stage": "followup",
+          "qid": "RBA-C-8-E-3-1",
+          "status": "excluded",
+          "reason": "노출 확인됨(system_answer) — 일치·불일치와 무관하게 분자·분모에서 제외",
+          "exposures": [
+            {
+              "exposure": "system_answer",
+              "source": "docs/UI연결용_수치범위_출력계약_2026-10-05.md §3 표",
+              "confirmed_by": "본인 신고(A)"
+            }
+          ]
+        },
+        {
+          "stage": "followup",
+          "qid": "RBA-C-8-E-4-1",
+          "status": "excluded",
+          "reason": "노출 확인됨(system_answer) — 일치·불일치와 무관하게 분자·분모에서 제외",
+          "exposures": [
+            {
+              "exposure": "system_answer",
+              "source": "docs/UI연결용_수치범위_출력계약_2026-10-05.md §3 표",
+              "confirmed_by": "본인 신고(A)"
+            }
+          ]
+        },
+        {
+          "stage": "followup",
+          "qid": "RBA-C-8-E-4-2",
+          "status": "pending",
+          "reason": "열람 확인 회신이 없다 — 확인 전에는 독립으로 세지 않는다",
+          "exposures": []
+        }
+      ]
+    },
+    {
+      "set_id": "bm_rba42_numeric_census",
+      "labeler": "B",
+      "sample_rows": 12,
+      "independent_rows": 6,
+      "excluded_rows": 6,
+      "pending_rows": 0,
+      "excluded_qids": [
+        "RBA-C-4-E-6-1",
+        "RBA-C-4-E-6-2",
+        "RBA-C-8-E-4-1"
+      ],
+      "pending_reasons": {},
+      "agreement_denominator": 6,
+      "agreement_blocked_reason": "",
+      "rows": [
+        {
+          "stage": "initial",
+          "qid": "RBA-C-4-E-6-1",
+          "status": "excluded",
+          "reason": "노출 확인됨(expected_value) — 일치·불일치와 무관하게 분자·분모에서 제외",
+          "exposures": [
+            {
+              "exposure": "expected_value",
+              "source": "B 회신 2026-10-11 열람확인 보완(작업 대화 기록을 15개 문항 ID로 검색) — 지민이 전달한 원문, 이 저장소에 원문 없음",
+              "confirmed_by": "B 신고(2026-10-11)"
+            }
+          ]
+        },
+        {
+          "stage": "initial",
+          "qid": "RBA-C-4-E-6-2",
+          "status": "excluded",
+          "reason": "노출 확인됨(expected_value,system_answer) — 일치·불일치와 무관하게 분자·분모에서 제외",
+          "exposures": [
+            {
+              "exposure": "expected_value",
+              "source": "B 회신 2026-10-09 열람확인(가이드 §5) — 지민이 전달한 원문, 이 저장소에 원문 없음",
+              "confirmed_by": "B 신고(2026-10-09)"
+            },
+            {
+              "exposure": "system_answer",
+              "source": "B 회신 2026-10-11 열람확인 보완(작업 대화 기록을 15개 문항 ID로 검색) — 지민이 전달한 원문, 이 저장소에 원문 없음",
+              "confirmed_by": "B 신고(2026-10-11)"
+            }
+          ]
+        },
+        {
+          "stage": "initial",
+          "qid": "RBA-C-5-E-7-1",
+          "status": "independent",
+          "reason": "보지 않았다고 확인됨",
+          "exposures": [
+            {
+              "exposure": "none",
+              "source": "B 회신 2026-10-11 열람확인 보완(작업 대화 기록을 15개 문항 ID로 검색) — 지민이 전달한 원문, 이 저장소에 원문 없음",
+              "confirmed_by": "정민 결정 2026-10-15 (B 전달, 지민 전달 — 원문 메시지는 이 저장소에 없음)"
+            }
+          ]
+        },
+        {
+          "stage": "initial",
+          "qid": "RBA-C-8-E-3-1",
+          "status": "independent",
+          "reason": "보지 않았다고 확인됨",
+          "exposures": [
+            {
+              "exposure": "none",
+              "source": "B 회신 2026-10-11 열람확인 보완(작업 대화 기록을 15개 문항 ID로 검색) — 지민이 전달한 원문, 이 저장소에 원문 없음",
+              "confirmed_by": "정민 결정 2026-10-15 (B 전달, 지민 전달 — 원문 메시지는 이 저장소에 없음)"
+            }
+          ]
+        },
+        {
+          "stage": "initial",
+          "qid": "RBA-C-8-E-4-1",
+          "status": "excluded",
+          "reason": "노출 확인됨(expected_value) — 일치·불일치와 무관하게 분자·분모에서 제외",
+          "exposures": [
+            {
+              "exposure": "expected_value",
+              "source": "B 회신 2026-10-11 열람확인 보완(작업 대화 기록을 15개 문항 ID로 검색) — 지민이 전달한 원문, 이 저장소에 원문 없음",
+              "confirmed_by": "B 신고(2026-10-11)"
+            }
+          ]
+        },
+        {
+          "stage": "initial",
+          "qid": "RBA-C-8-E-4-2",
+          "status": "independent",
+          "reason": "보지 않았다고 확인됨",
+          "exposures": [
+            {
+              "exposure": "none",
+              "source": "B 회신 2026-10-11 열람확인 보완(작업 대화 기록을 15개 문항 ID로 검색) — 지민이 전달한 원문, 이 저장소에 원문 없음",
+              "confirmed_by": "정민 결정 2026-10-15 (B 전달, 지민 전달 — 원문 메시지는 이 저장소에 없음)"
+            }
+          ]
+        },
+        {
+          "stage": "followup",
+          "qid": "RBA-C-4-E-6-1",
+          "status": "excluded",
+          "reason": "노출 확인됨(expected_value) — 일치·불일치와 무관하게 분자·분모에서 제외",
+          "exposures": [
+            {
+              "exposure": "expected_value",
+              "source": "B 회신 2026-10-11 열람확인 보완(작업 대화 기록을 15개 문항 ID로 검색) — 지민이 전달한 원문, 이 저장소에 원문 없음",
+              "confirmed_by": "B 신고(2026-10-11)"
+            }
+          ]
+        },
+        {
+          "stage": "followup",
+          "qid": "RBA-C-4-E-6-2",
+          "status": "excluded",
+          "reason": "노출 확인됨(expected_value,system_answer) — 일치·불일치와 무관하게 분자·분모에서 제외",
+          "exposures": [
+            {
+              "exposure": "expected_value",
+              "source": "B 회신 2026-10-09 열람확인(가이드 §5) — 지민이 전달한 원문, 이 저장소에 원문 없음",
+              "confirmed_by": "B 신고(2026-10-09)"
+            },
+            {
+              "exposure": "system_answer",
+              "source": "B 회신 2026-10-11 열람확인 보완(작업 대화 기록을 15개 문항 ID로 검색) — 지민이 전달한 원문, 이 저장소에 원문 없음",
+              "confirmed_by": "B 신고(2026-10-11)"
+            }
+          ]
+        },
+        {
+          "stage": "followup",
+          "qid": "RBA-C-5-E-7-1",
+          "status": "independent",
+          "reason": "보지 않았다고 확인됨",
+          "exposures": [
+            {
+              "exposure": "none",
+              "source": "B 회신 2026-10-11 열람확인 보완(작업 대화 기록을 15개 문항 ID로 검색) — 지민이 전달한 원문, 이 저장소에 원문 없음",
+              "confirmed_by": "정민 결정 2026-10-15 (B 전달, 지민 전달 — 원문 메시지는 이 저장소에 없음)"
+            }
+          ]
+        },
+        {
+          "stage": "followup",
+          "qid": "RBA-C-8-E-3-1",
+          "status": "independent",
+          "reason": "보지 않았다고 확인됨",
+          "exposures": [
+            {
+              "exposure": "none",
+              "source": "B 회신 2026-10-11 열람확인 보완(작업 대화 기록을 15개 문항 ID로 검색) — 지민이 전달한 원문, 이 저장소에 원문 없음",
+              "confirmed_by": "정민 결정 2026-10-15 (B 전달, 지민 전달 — 원문 메시지는 이 저장소에 없음)"
+            }
+          ]
+        },
+        {
+          "stage": "followup",
+          "qid": "RBA-C-8-E-4-1",
+          "status": "excluded",
+          "reason": "노출 확인됨(expected_value) — 일치·불일치와 무관하게 분자·분모에서 제외",
+          "exposures": [
+            {
+              "exposure": "expected_value",
+              "source": "B 회신 2026-10-11 열람확인 보완(작업 대화 기록을 15개 문항 ID로 검색) — 지민이 전달한 원문, 이 저장소에 원문 없음",
+              "confirmed_by": "B 신고(2026-10-11)"
+            }
+          ]
+        },
+        {
+          "stage": "followup",
+          "qid": "RBA-C-8-E-4-2",
+          "status": "independent",
+          "reason": "보지 않았다고 확인됨",
+          "exposures": [
+            {
+              "exposure": "none",
+              "source": "B 회신 2026-10-11 열람확인 보완(작업 대화 기록을 15개 문항 ID로 검색) — 지민이 전달한 원문, 이 저장소에 원문 없음",
+              "confirmed_by": "정민 결정 2026-10-15 (B 전달, 지민 전달 — 원문 메시지는 이 저장소에 없음)"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "set_id": "bm_rba42_numeric_census",
+      "labeler": "hjm",
+      "sample_rows": 12,
+      "independent_rows": 6,
+      "excluded_rows": 0,
+      "pending_rows": 6,
+      "excluded_qids": [],
+      "pending_reasons": {
+        "열람 확인 회신이 없다 — 확인 전에는 독립으로 세지 않는다": 6
+      },
+      "agreement_denominator": 6,
+      "agreement_blocked_reason": "독립 일치율을 산출하지 않는다: 확인 대기 6행, 독립 확인 6행. 열람 확인 회신과 라벨이 모두 있어야 한다. 산출 불가를 0%로 적지 않는다.",
+      "rows": [
+        {
+          "stage": "initial",
+          "qid": "RBA-C-4-E-6-1",
+          "status": "pending",
+          "reason": "열람 확인 회신이 없다 — 확인 전에는 독립으로 세지 않는다",
+          "exposures": []
+        },
+        {
+          "stage": "initial",
+          "qid": "RBA-C-4-E-6-2",
+          "status": "pending",
+          "reason": "열람 확인 회신이 없다 — 확인 전에는 독립으로 세지 않는다",
+          "exposures": []
+        },
+        {
+          "stage": "initial",
+          "qid": "RBA-C-5-E-7-1",
+          "status": "independent",
+          "reason": "보지 않았다고 확인됨",
+          "exposures": [
+            {
+              "exposure": "none",
+              "source": "B 브랜치 cb636e2 independence/labels_hjm_received_20261014.csv(sha256 126e0d75…) · labels_hjm_작성경위_20261014.md(sha256 2855d9d4…)",
+              "confirmed_by": "검토자 본인 진술(2026-10-14) + 정민 결정 2026-10-15 (B 전달, 지민 전달)"
+            }
+          ]
+        },
+        {
+          "stage": "initial",
+          "qid": "RBA-C-8-E-3-1",
+          "status": "independent",
+          "reason": "보지 않았다고 확인됨",
+          "exposures": [
+            {
+              "exposure": "none",
+              "source": "B 브랜치 cb636e2 independence/labels_hjm_received_20261014.csv(sha256 126e0d75…) · labels_hjm_작성경위_20261014.md(sha256 2855d9d4…)",
+              "confirmed_by": "검토자 본인 진술(2026-10-14) + 정민 결정 2026-10-15 (B 전달, 지민 전달)"
+            }
+          ]
+        },
+        {
+          "stage": "initial",
+          "qid": "RBA-C-8-E-4-1",
+          "status": "pending",
+          "reason": "열람 확인 회신이 없다 — 확인 전에는 독립으로 세지 않는다",
+          "exposures": []
+        },
+        {
+          "stage": "initial",
+          "qid": "RBA-C-8-E-4-2",
+          "status": "independent",
+          "reason": "보지 않았다고 확인됨",
+          "exposures": [
+            {
+              "exposure": "none",
+              "source": "B 브랜치 cb636e2 independence/labels_hjm_received_20261014.csv(sha256 126e0d75…) · labels_hjm_작성경위_20261014.md(sha256 2855d9d4…)",
+              "confirmed_by": "검토자 본인 진술(2026-10-14) + 정민 결정 2026-10-15 (B 전달, 지민 전달)"
+            }
+          ]
+        },
+        {
+          "stage": "followup",
+          "qid": "RBA-C-4-E-6-1",
+          "status": "pending",
+          "reason": "열람 확인 회신이 없다 — 확인 전에는 독립으로 세지 않는다",
+          "exposures": []
+        },
+        {
+          "stage": "followup",
+          "qid": "RBA-C-4-E-6-2",
+          "status": "pending",
+          "reason": "열람 확인 회신이 없다 — 확인 전에는 독립으로 세지 않는다",
+          "exposures": []
+        },
+        {
+          "stage": "followup",
+          "qid": "RBA-C-5-E-7-1",
+          "status": "independent",
+          "reason": "보지 않았다고 확인됨",
+          "exposures": [
+            {
+              "exposure": "none",
+              "source": "B 브랜치 cb636e2 independence/labels_hjm_received_20261014.csv(sha256 126e0d75…) · labels_hjm_작성경위_20261014.md(sha256 2855d9d4…)",
+              "confirmed_by": "검토자 본인 진술(2026-10-14) + 정민 결정 2026-10-15 (B 전달, 지민 전달)"
+            }
+          ]
+        },
+        {
+          "stage": "followup",
+          "qid": "RBA-C-8-E-3-1",
+          "status": "independent",
+          "reason": "보지 않았다고 확인됨",
+          "exposures": [
+            {
+              "exposure": "none",
+              "source": "B 브랜치 cb636e2 independence/labels_hjm_received_20261014.csv(sha256 126e0d75…) · labels_hjm_작성경위_20261014.md(sha256 2855d9d4…)",
+              "confirmed_by": "검토자 본인 진술(2026-10-14) + 정민 결정 2026-10-15 (B 전달, 지민 전달)"
+            }
+          ]
+        },
+        {
+          "stage": "followup",
+          "qid": "RBA-C-8-E-4-1",
+          "status": "pending",
+          "reason": "열람 확인 회신이 없다 — 확인 전에는 독립으로 세지 않는다",
+          "exposures": []
+        },
+        {
+          "stage": "followup",
+          "qid": "RBA-C-8-E-4-2",
+          "status": "independent",
+          "reason": "보지 않았다고 확인됨",
+          "exposures": [
+            {
+              "exposure": "none",
+              "source": "B 브랜치 cb636e2 independence/labels_hjm_received_20261014.csv(sha256 126e0d75…) · labels_hjm_작성경위_20261014.md(sha256 2855d9d4…)",
+              "confirmed_by": "검토자 본인 진술(2026-10-14) + 정민 결정 2026-10-15 (B 전달, 지민 전달)"
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "label_usability": "독립 일치율에서 제외한 행의 라벨은 폐기하지 않는다. 비독립 검토·협의 기록으로 보존한다. 그 라벨을 원본 근거와 사람 검토를 거쳐 **최종 정답 라벨로 쓸 수 있는지는 독립 일치율 인정 여부와 별개 판단**이다 — 노출된 라벨도 원본으로 검증되면 최종 정답 라벨이 될 수 있고, 독립으로 인정된 라벨도 원본 검증 전에는 확정이 아니다.",
+  "exposure_log": "data/eval/independence/exposure_log.csv"
+}

@@ -1,0 +1,74 @@
+{
+  "format_version": "1.0-draft",
+  "meta": {
+    "system": "synthetic_control",
+    "run_id": "SYN-RUN-1",
+    "stage": "initial",
+    "framework": "SYN",
+    "data_source": "synthetic_example",
+    "model": "synthetic-example-model",
+    "produced_at": "2026-10-06T00:00:00+00:00",
+    "notice": "합성 예시다. 어떤 시스템의 실제 출력도 아니고, 값·근거는 임의 자리값이다. 이 문서로 채점기가 도는지만 확인한다 — 평가 결과가 아니다."
+  },
+  "answers": [
+    {
+      "qid": "SYN-1",
+      "decision": "unverified_submitted",
+      "decision_basis": "값은 냈으나 근거로 보증하지 않았다 (합성)",
+      "value": 10,
+      "unit": "kg",
+      "value_text": "10 kg (합성)",
+      "evidence": [
+        {
+          "file_name": "SYN_증빙.pdf",
+          "page": 2,
+          "quote": "(합성) 자리값 문구"
+        }
+      ],
+      "source": {
+        "raw": "(합성) 원출력 자리값"
+      },
+      "notes": "라벨과 값이 맞는 경우. 미검증 전달이므로 §6.2 네 줄 규칙이 걸린다."
+    },
+    {
+      "qid": "SYN-2",
+      "decision": "unverified_submitted",
+      "decision_basis": "값은 냈으나 근거를 들지 않았다 (합성)",
+      "value": 5,
+      "unit": "kg",
+      "evidence": [],
+      "source": {
+        "raw": "(합성) 원출력 자리값"
+      },
+      "notes": "라벨이 보류(근거 없음)인 경우."
+    },
+    {
+      "qid": "SYN-3",
+      "decision": "confirmed",
+      "decision_basis": "근거로 검증했다고 제출 (합성)",
+      "value": true,
+      "unit": "",
+      "value_text": "예",
+      "evidence": [
+        {
+          "file_name": "SYN_증빙.pdf",
+          "page": 5,
+          "quote": "(합성) 자리값 문구"
+        }
+      ],
+      "notes": "확정 × 모든 라벨 조합은 집계 규칙이 아직 없다 — unresolved로 남는 것을 보여 준다."
+    },
+    {
+      "qid": "SYN-4",
+      "decision": "unverified_submitted",
+      "decision_basis": "값은 냈으나 근거로 보증하지 않았다 (합성)",
+      "value": 7,
+      "unit": "kg",
+      "evidence": [],
+      "source": {
+        "raw": "(합성) 원출력 자리값"
+      },
+      "notes": "라벨이 보류(불일치)인 경우."
+    }
+  ]
+}

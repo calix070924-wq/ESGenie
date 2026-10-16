@@ -1,0 +1,267 @@
+{
+  "dataset_id": "hanwool_bm_normal5_20261007_v1",
+  "set_name": "한울정밀_촬영세트_정상5건보강_20261007",
+  "dataset_tag": "virtual",
+  "note": "팀이 만든 가상 보강 세트 1개. 기존 BM 개편 세트(12/13건)에 정상 사례 5건(14~18)을 더했다. 17/18건은 업로드 PDF 총수다.",
+  "stages": {
+    "initial": {
+      "total": 17,
+      "evidence": 16,
+      "company_answer": 1
+    },
+    "followup": {
+      "total": 18,
+      "evidence": 17,
+      "company_answer": 1
+    }
+  },
+  "labeling_zip": {
+    "name": "한울정밀_정상5건보강_라벨링용_20261007.zip",
+    "sha256": "d8bcc23ec27b71967eeb9772a7b3fff9f9d9ad448fba817ea97a3828c0025d09",
+    "note": "A가 2026-10-07에 계산·대조(전달값과 일치)"
+  },
+  "labeling_set_manifest": {
+    "file": "구성_해시목록_라벨링용.json",
+    "sha256": "a1fa5d16e981b6b064f55a55aed204f02c38491e076fcf0399df8120bac152d0"
+  },
+  "labeling_set_SHA256SUMS": {
+    "sha256": "17dcb472b619b3653b38e46e83f37ea64b82a6b375c8605d631425c6cf8bf7dc"
+  },
+  "run_input": {
+    "run_id": "LIVE_n5_d8a0de8",
+    "packaging": "B 실행용 폴더(정답 폴더 포함 포장, 라벨링용과 포장이 다르다). 실행 ZIP sha256 78616b54c210304537fbaf330a1319dd00407b596050acafc59a305963d17fdf",
+    "input_dirs": {
+      "initial": "01_처음업로드_17건",
+      "followup": "02_교육보완때추가_1건"
+    },
+    "manifest_sha256_match_all": true,
+    "run_input_package_zip_sha256": "미상(B 실행용 입력 묶음의 ZIP 해시를 받지 않았다)"
+  },
+  "request_basis_period_site": "미기록 — 00_ 요청안내 문서가 기준이다. 이 manifest에서 새로 해석하지 않았다",
+  "files": [
+    {
+      "file": "00_고객요청서_참고용/00_한성모터스_자료요청안내_촬영배경.pdf",
+      "role": "context_only",
+      "stages": [],
+      "added": "맥락 참고(업로드 아님)",
+      "sha256_label_input": "1359e7fba4381eff38cae422e9728ddc8277c7ef4e74b3e1092e2f4b0c962044",
+      "sha256_run_input_initial": null,
+      "sha256_run_input_followup": null
+    },
+    {
+      "file": "01_처음업로드_17건/01_기업및임직원현황_2026-04.pdf",
+      "role": "evidence",
+      "stages": [
+        "initial",
+        "followup"
+      ],
+      "added": "기존 BM 개편 세트와 바이트 동일",
+      "sha256_label_input": "380b85acd568fa085fb0fb3ded6581ebccd5ac17630fdbf66a6f58346d0dcc08",
+      "sha256_run_input_initial": "380b85acd568fa085fb0fb3ded6581ebccd5ac17630fdbf66a6f58346d0dcc08",
+      "sha256_run_input_followup": "380b85acd568fa085fb0fb3ded6581ebccd5ac17630fdbf66a6f58346d0dcc08"
+    },
+    {
+      "file": "01_처음업로드_17건/02_전기요금청구서_2026-04.pdf",
+      "role": "evidence",
+      "stages": [
+        "initial",
+        "followup"
+      ],
+      "added": "기존 BM 개편 세트와 바이트 동일",
+      "sha256_label_input": "cc0a3ee26da633572e0d76b34876d78375e4067df0e59625f659fbe61059fe2f",
+      "sha256_run_input_initial": "cc0a3ee26da633572e0d76b34876d78375e4067df0e59625f659fbe61059fe2f",
+      "sha256_run_input_followup": "cc0a3ee26da633572e0d76b34876d78375e4067df0e59625f659fbe61059fe2f"
+    },
+    {
+      "file": "01_처음업로드_17건/03_도시가스요금고지서_2026-04.pdf",
+      "role": "evidence",
+      "stages": [
+        "initial",
+        "followup"
+      ],
+      "added": "기존 BM 개편 세트와 바이트 동일",
+      "sha256_label_input": "42f22294502cbc48a95b93de2a20f79f89aec4786206535d57b85066f84e0906",
+      "sha256_run_input_initial": "42f22294502cbc48a95b93de2a20f79f89aec4786206535d57b85066f84e0906",
+      "sha256_run_input_followup": "42f22294502cbc48a95b93de2a20f79f89aec4786206535d57b85066f84e0906"
+    },
+    {
+      "file": "01_처음업로드_17건/04_사업장폐기물위탁처리명세_2026-04.pdf",
+      "role": "evidence",
+      "stages": [
+        "initial",
+        "followup"
+      ],
+      "added": "기존 BM 개편 세트와 바이트 동일",
+      "sha256_label_input": "6fed320f47c59297eee75508fcbbf9caccf387603ca35a640c8de21f98a1ab07",
+      "sha256_run_input_initial": "6fed320f47c59297eee75508fcbbf9caccf387603ca35a640c8de21f98a1ab07",
+      "sha256_run_input_followup": "6fed320f47c59297eee75508fcbbf9caccf387603ca35a640c8de21f98a1ab07"
+    },
+    {
+      "file": "01_처음업로드_17건/05_한성모터스_자가진단응답초안_2026-09.pdf",
+      "role": "company_answer",
+      "stages": [
+        "initial",
+        "followup"
+      ],
+      "added": "기존 BM 개편 세트와 바이트 동일",
+      "sha256_label_input": "564435e19860989885b0cbe063b56c058e5a1c6ed23d0a8c3d99f5f5d9e4c822",
+      "sha256_run_input_initial": "564435e19860989885b0cbe063b56c058e5a1c6ed23d0a8c3d99f5f5d9e4c822",
+      "sha256_run_input_followup": "564435e19860989885b0cbe063b56c058e5a1c6ed23d0a8c3d99f5f5d9e4c822"
+    },
+    {
+      "file": "01_처음업로드_17건/06_환경안전관리규정_2026.pdf",
+      "role": "evidence",
+      "stages": [
+        "initial",
+        "followup"
+      ],
+      "added": "기존 BM 개편 세트와 바이트 동일",
+      "sha256_label_input": "ad45751200c110de869abe5dac6f04cbe4e78152674189bef49045b690be4b20",
+      "sha256_run_input_initial": "ad45751200c110de869abe5dac6f04cbe4e78152674189bef49045b690be4b20",
+      "sha256_run_input_followup": "ad45751200c110de869abe5dac6f04cbe4e78152674189bef49045b690be4b20"
+    },
+    {
+      "file": "01_처음업로드_17건/07_상수도청구서_2026-04.pdf",
+      "role": "evidence",
+      "stages": [
+        "initial",
+        "followup"
+      ],
+      "added": "기존 BM 개편 세트와 바이트 동일",
+      "sha256_label_input": "09a5f17e97675eefbc5df1b1a4b18e6f0edb1b40aa0ebd030b7f421118999ac9",
+      "sha256_run_input_initial": "09a5f17e97675eefbc5df1b1a4b18e6f0edb1b40aa0ebd030b7f421118999ac9",
+      "sha256_run_input_followup": "09a5f17e97675eefbc5df1b1a4b18e6f0edb1b40aa0ebd030b7f421118999ac9"
+    },
+    {
+      "file": "01_처음업로드_17건/08_공정스크랩관리대장_2026-04.pdf",
+      "role": "evidence",
+      "stages": [
+        "initial",
+        "followup"
+      ],
+      "added": "기존 BM 개편 세트와 바이트 동일",
+      "sha256_label_input": "97a2de17616cbdafe5c7f600397bb5d9be45becd5215972d739788c07a2f197e",
+      "sha256_run_input_initial": "97a2de17616cbdafe5c7f600397bb5d9be45becd5215972d739788c07a2f197e",
+      "sha256_run_input_followup": "97a2de17616cbdafe5c7f600397bb5d9be45becd5215972d739788c07a2f197e"
+    },
+    {
+      "file": "01_처음업로드_17건/09_안전보건교육실시기록_2026-04-22.pdf",
+      "role": "evidence",
+      "stages": [
+        "initial",
+        "followup"
+      ],
+      "added": "기존 BM 개편 세트와 바이트 동일",
+      "sha256_label_input": "f27baad4ce8e31c4feecbeee359d55cef6d9a9472dd1d30f379917e86a53b109",
+      "sha256_run_input_initial": "f27baad4ce8e31c4feecbeee359d55cef6d9a9472dd1d30f379917e86a53b109",
+      "sha256_run_input_followup": "f27baad4ce8e31c4feecbeee359d55cef6d9a9472dd1d30f379917e86a53b109"
+    },
+    {
+      "file": "01_처음업로드_17건/10_윤리경영및고충처리규정_2026.pdf",
+      "role": "evidence",
+      "stages": [
+        "initial",
+        "followup"
+      ],
+      "added": "기존 BM 개편 세트와 바이트 동일",
+      "sha256_label_input": "98da23a43336d69302e75491603474a31e57811534474d7a768959c4b399034a",
+      "sha256_run_input_initial": "98da23a43336d69302e75491603474a31e57811534474d7a768959c4b399034a",
+      "sha256_run_input_followup": "98da23a43336d69302e75491603474a31e57811534474d7a768959c4b399034a"
+    },
+    {
+      "file": "01_처음업로드_17건/11_정보보호관리규정_2026.pdf",
+      "role": "evidence",
+      "stages": [
+        "initial",
+        "followup"
+      ],
+      "added": "기존 BM 개편 세트와 바이트 동일",
+      "sha256_label_input": "af32e08354ac1f41eb8012e25ff196ad53ab4f28d2643ef0ea4493e28f2880ac",
+      "sha256_run_input_initial": "af32e08354ac1f41eb8012e25ff196ad53ab4f28d2643ef0ea4493e28f2880ac",
+      "sha256_run_input_followup": "af32e08354ac1f41eb8012e25ff196ad53ab4f28d2643ef0ea4493e28f2880ac"
+    },
+    {
+      "file": "01_처음업로드_17건/12_개인별주간근로시간기록_2026-04-13_19.pdf",
+      "role": "evidence",
+      "stages": [
+        "initial",
+        "followup"
+      ],
+      "added": "기존 BM 개편 세트와 바이트 동일",
+      "sha256_label_input": "dea5414ee1eda7e8f2bb103b6af09a97f5115dbe4b00339f0e2abe7c73b8fa40",
+      "sha256_run_input_initial": "dea5414ee1eda7e8f2bb103b6af09a97f5115dbe4b00339f0e2abe7c73b8fa40",
+      "sha256_run_input_followup": "dea5414ee1eda7e8f2bb103b6af09a97f5115dbe4b00339f0e2abe7c73b8fa40"
+    },
+    {
+      "file": "01_처음업로드_17건/14_기계안전위험평가및방호장치점검기록_2026-04.pdf",
+      "role": "evidence",
+      "stages": [
+        "initial",
+        "followup"
+      ],
+      "added": "보강 5건(신규)",
+      "sha256_label_input": "61e7f46a5eb6ca363c1d13e690691265c2c0884ad1b17fb6697cbe3263c1bddd",
+      "sha256_run_input_initial": "61e7f46a5eb6ca363c1d13e690691265c2c0884ad1b17fb6697cbe3263c1bddd",
+      "sha256_run_input_followup": "61e7f46a5eb6ca363c1d13e690691265c2c0884ad1b17fb6697cbe3263c1bddd"
+    },
+    {
+      "file": "01_처음업로드_17건/15_경영책임권한지정및정기검토기록_2026-04.pdf",
+      "role": "evidence",
+      "stages": [
+        "initial",
+        "followup"
+      ],
+      "added": "보강 5건(신규)",
+      "sha256_label_input": "abc125e13dad8f7483af2c1f315e35ed331820c4b8a1c4f5f892bdafdade7408",
+      "sha256_run_input_initial": "abc125e13dad8f7483af2c1f315e35ed331820c4b8a1c4f5f892bdafdade7408",
+      "sha256_run_input_followup": "abc125e13dad8f7483af2c1f315e35ed331820c4b8a1c4f5f892bdafdade7408"
+    },
+    {
+      "file": "01_처음업로드_17건/16_ESG의사소통절차및전달확인기록_2026-04.pdf",
+      "role": "evidence",
+      "stages": [
+        "initial",
+        "followup"
+      ],
+      "added": "보강 5건(신규)",
+      "sha256_label_input": "506cb6c1ec212683ab9b7e0a926882f2aa5da7d92cd3d3ed284d53de6863c2ff",
+      "sha256_run_input_initial": "506cb6c1ec212683ab9b7e0a926882f2aa5da7d92cd3d3ed284d53de6863c2ff",
+      "sha256_run_input_followup": "506cb6c1ec212683ab9b7e0a926882f2aa5da7d92cd3d3ed284d53de6863c2ff"
+    },
+    {
+      "file": "01_처음업로드_17건/17_시정조치절차및종결확인대장_2026-04.pdf",
+      "role": "evidence",
+      "stages": [
+        "initial",
+        "followup"
+      ],
+      "added": "보강 5건(신규)",
+      "sha256_label_input": "6a8ac3be5ba3301e500d279cc93806211609dc7b8d651babc24b9d259d07fa8d",
+      "sha256_run_input_initial": "6a8ac3be5ba3301e500d279cc93806211609dc7b8d651babc24b9d259d07fa8d",
+      "sha256_run_input_followup": "6a8ac3be5ba3301e500d279cc93806211609dc7b8d651babc24b9d259d07fa8d"
+    },
+    {
+      "file": "01_처음업로드_17건/18_문서기록관리절차및운영점검대장_2026-04.pdf",
+      "role": "evidence",
+      "stages": [
+        "initial",
+        "followup"
+      ],
+      "added": "보강 5건(신규)",
+      "sha256_label_input": "a7f713e47211fe87098f524578b43c7d4d303a5a8ad40dd2252214c1ea199ae7",
+      "sha256_run_input_initial": "a7f713e47211fe87098f524578b43c7d4d303a5a8ad40dd2252214c1ea199ae7",
+      "sha256_run_input_followup": "a7f713e47211fe87098f524578b43c7d4d303a5a8ad40dd2252214c1ea199ae7"
+    },
+    {
+      "file": "02_교육보완때추가_1건/13_안전보건추가교육실시기록_2026-04-27.pdf",
+      "role": "evidence",
+      "stages": [
+        "followup"
+      ],
+      "added": "followup 추가 1건",
+      "sha256_label_input": "4bf4dfbfb0ac37204c383b835002f876786e10cfec4d2cd488e64b6b2c4d1ca2",
+      "sha256_run_input_initial": null,
+      "sha256_run_input_followup": "4bf4dfbfb0ac37204c383b835002f876786e10cfec4d2cd488e64b6b2c4d1ca2"
+    }
+  ]
+}

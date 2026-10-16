@@ -1,0 +1,153 @@
+{
+  "format_version": "1.1",
+  "meta": {
+    "system": "synthetic_example_esgenie",
+    "run_id": "EXAMPLE-RUN-1",
+    "stage": "initial",
+    "framework": "rba42",
+    "dataset_tag": "virtual",
+    "material_kind": "mixed",
+    "data_source": "synthetic_example",
+    "model": "example-model",
+    "produced_at": "2026-10-06T00:00:00+00:00",
+    "adapter": {
+      "name": "esgenie_result_json",
+      "version": "1"
+    },
+    "source_ref": {
+      "path": "<원본 result.json 경로>",
+      "sha256": "<원본 파일 sha256>"
+    },
+    "product_metrics": {
+      "auto_pct": "<제품이 계산한 값을 그대로 복사한다 — 이 예시에서는 자리값을 넣지 않는다>",
+      "auto_pct_definition": {
+        "분자": "status ∈ {verified, self_reported, flagged} 이고 값이 채워진 문항(ResponseSheet.answered)",
+        "분모": "status != not_applicable 인 문항 전체",
+        "단위": "백분율(소수 1자리)",
+        "주의": "미검증(self_reported)·검토필요(flagged) 행이 분자에 들어간다. 확정 응답 집계나 정답 판정의 정의로 쓰지 않는다. 대조군에는 이 지표가 없으므로 없는 쪽에 만들어 넣지 않는다.",
+        "출처": "esgenie/supplychain/schema.py ResponseSheet.auto_pct (제품 코드 — 변경하지 않았다)"
+      }
+    },
+    "notice": "합성 예시 발췌다. 값·근거·페이지는 임의 자리값이며 ESGenie 실제 출력도 정답 라벨도 아니다. 정상 실행 한 건은 48행이다. 아래 5행은 다섯 가지 상세 상태(확정·보류·미검증 전달·해당 없음·파싱 실패)가 외부 3값과 어떻게 대응되는지 보이기 위한 발췌다."
+  },
+  "answers": [
+    {
+      "qid": "RBA-A-1",
+      "decision": "answer",
+      "decision_detail": "confirmed",
+      "decision_basis": "status=verified · 값 있음 · 차단 비교 없음",
+      "value": true,
+      "unit": "",
+      "value_text": "예",
+      "boundary": {
+        "period": "2026",
+        "site": null,
+        "target": null,
+        "denominator": null,
+        "label": null,
+        "completeness": null
+      },
+      "evidence": [
+        {
+          "file_name": "예시_인권규정.pdf",
+          "page": 3,
+          "quote": "(예시) 강제노동을 금지한다"
+        }
+      ],
+      "source": {
+        "status": "verified",
+        "comparison": "compared"
+      },
+      "notes": null
+    },
+    {
+      "qid": "RBA-A-2",
+      "decision": "hold",
+      "decision_detail": "hold",
+      "decision_basis": "status=insufficient",
+      "value": null,
+      "unit": "",
+      "boundary": {
+        "period": null,
+        "site": null,
+        "target": null,
+        "denominator": null,
+        "label": null,
+        "completeness": null
+      },
+      "evidence": [],
+      "source": {
+        "status": "insufficient",
+        "comparison": ""
+      },
+      "notes": null
+    },
+    {
+      "qid": "RBA-C-5-E-7-1",
+      "decision": "answer",
+      "decision_detail": "unverified_submitted",
+      "decision_basis": "status=self_reported · 차단 비교 없음",
+      "value": 123.4,
+      "unit": "kg",
+      "value_text": "123.4 kg (2026년)",
+      "boundary": {
+        "period": "2026",
+        "site": "예시사업장",
+        "target": "대기오염물질 합계",
+        "denominator": null,
+        "label": "2026 · 연간 · 예시사업장 · 부분",
+        "completeness": "partial"
+      },
+      "evidence": [],
+      "references": [
+        {
+          "file_name": "예시_측정대행보고서.pdf",
+          "page": 1,
+          "quote": null
+        }
+      ],
+      "source": {
+        "status": "self_reported",
+        "comparison": "",
+        "comparison_reason": "(예시) 증빙이 연결되지 않아 비교하지 않았다"
+      },
+      "notes": "decision=answer이지만 decision_detail=unverified_submitted다. decision=answer라는 이유만으로 확정 응답으로 세지 않는다."
+    },
+    {
+      "qid": "RBA-B-1",
+      "decision": "na",
+      "decision_detail": "not_applicable",
+      "decision_basis": "status=not_applicable",
+      "value": null,
+      "unit": "",
+      "boundary": {
+        "period": null,
+        "site": null,
+        "target": null,
+        "denominator": null,
+        "label": null,
+        "completeness": null
+      },
+      "evidence": [],
+      "source": {
+        "status": "not_applicable",
+        "comparison": ""
+      },
+      "notes": null
+    },
+    {
+      "qid": "RBA-C-8-E-3-1",
+      "decision": null,
+      "decision_detail": "unparsed",
+      "decision_basis": "(예시) 원출력의 해당 행을 읽을 수 없었다",
+      "value": null,
+      "unit": "",
+      "evidence": [],
+      "source": {
+        "status": "",
+        "comparison": ""
+      },
+      "notes": "정상 3값을 부여할 수 없으므로 decision=null(명시적 오류 표현)이다. 보류(hold)로 바꾸지 않는다 — 집계에서 unresolved로 드러난다."
+    }
+  ]
+}

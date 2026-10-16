@@ -1,0 +1,5 @@
+stage,qid,expected_decision,hold_reason,expected_value,expected_unit,tolerance,expected_sources,boundary_note,labeler,note
+initial,SYN-1,answer,,10,kg,0,SYN_증빙.pdf#2,합성 자리값,SYNTHETIC,합성 라벨이다. 실제 정답이 아니다
+initial,SYN-2,hold,no_evidence,,,,,합성 자리값,SYNTHETIC,합성 라벨이다. 실제 정답이 아니다
+initial,SYN-3,answer,,예,,,SYN_증빙.pdf#5,합성 자리값,SYNTHETIC,합성 라벨이다. 실제 정답이 아니다
+initial,SYN-4,hold,mismatch,,,,,합성 자리값,SYNTHETIC,합성 라벨이다. 실제 정답이 아니다

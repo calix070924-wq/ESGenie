@@ -1,0 +1,7 @@
+# 합성 실행 예시의 문항 ID 목록 — 문항 수 4
+# 실제 양식이 아니다. 합성 ID(SYN-*)만 들어 있다.
+# 실제 평가는 data/eval/framework/rba42_qids.txt (48문항)를 쓴다.
+SYN-1
+SYN-2
+SYN-3
+SYN-4

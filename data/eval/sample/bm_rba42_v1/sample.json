@@ -1,0 +1,120 @@
+{
+  "set_id": "bm_rba42_v1",
+  "selection": "random_sample",
+  "framework": "rba42",
+  "stages": [
+    "initial",
+    "followup"
+  ],
+  "per_stage": 10,
+  "total_rows": 20,
+  "seed": 20261006,
+  "method": "유형별 층화 후 유형 안에서 무작위 추출. 각 유형의 문항 ID를 정렬한 뒤 random.Random(seed).sample으로 뽑는다. 단계마다 같은 문항을 쓴다 — 같은 문항의 보완 전후를 비교할 수 있게 한다. 시스템의 정오답·보류 여부는 추출에 쓰지 않는다.",
+  "framework_question_count": 48,
+  "qid_list_sha256": "57b2e4ce394d6babbc45ac838f47e1aa66bba6e266785ea7fa1b62afb277ee78",
+  "strata": {
+    "numeric": {
+      "population": 6,
+      "sampled": 1
+    },
+    "yes_no_evidence": {
+      "population": 42,
+      "sampled": 9
+    }
+  },
+  "qids": [
+    "RBA-A-6",
+    "RBA-B-7",
+    "RBA-C-1",
+    "RBA-C-5",
+    "RBA-C-8-E-3-1",
+    "RBA-E-11",
+    "RBA-E-12",
+    "RBA-E-2",
+    "RBA-E-3",
+    "RBA-E-8"
+  ],
+  "rows": [
+    {
+      "stage": "initial",
+      "qid": "RBA-A-6"
+    },
+    {
+      "stage": "initial",
+      "qid": "RBA-B-7"
+    },
+    {
+      "stage": "initial",
+      "qid": "RBA-C-1"
+    },
+    {
+      "stage": "initial",
+      "qid": "RBA-C-5"
+    },
+    {
+      "stage": "initial",
+      "qid": "RBA-C-8-E-3-1"
+    },
+    {
+      "stage": "initial",
+      "qid": "RBA-E-11"
+    },
+    {
+      "stage": "initial",
+      "qid": "RBA-E-12"
+    },
+    {
+      "stage": "initial",
+      "qid": "RBA-E-2"
+    },
+    {
+      "stage": "initial",
+      "qid": "RBA-E-3"
+    },
+    {
+      "stage": "initial",
+      "qid": "RBA-E-8"
+    },
+    {
+      "stage": "followup",
+      "qid": "RBA-A-6"
+    },
+    {
+      "stage": "followup",
+      "qid": "RBA-B-7"
+    },
+    {
+      "stage": "followup",
+      "qid": "RBA-C-1"
+    },
+    {
+      "stage": "followup",
+      "qid": "RBA-C-5"
+    },
+    {
+      "stage": "followup",
+      "qid": "RBA-C-8-E-3-1"
+    },
+    {
+      "stage": "followup",
+      "qid": "RBA-E-11"
+    },
+    {
+      "stage": "followup",
+      "qid": "RBA-E-12"
+    },
+    {
+      "stage": "followup",
+      "qid": "RBA-E-2"
+    },
+    {
+      "stage": "followup",
+      "qid": "RBA-E-3"
+    },
+    {
+      "stage": "followup",
+      "qid": "RBA-E-8"
+    }
+  ],
+  "notice": "정답이 들어 있지 않다. 라벨 서식은 비어 있으며, 사람이 원본 증빙을 보고 채운다. A의 정답 라벨과 ESGenie 응답은 이 패키지에 포함되지 않는다."
+}

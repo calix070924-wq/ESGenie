@@ -1,0 +1,7 @@
+qid,section,qtype,unit_hint,evidence_required,text
+RBA-C-4-E-6-1,환경,numeric,톤,Y,[C-4·수치] 폐기물 배출량
+RBA-C-4-E-6-2,환경,numeric,%,Y,[C-4·수치] 폐기물 재활용(순환이용)률
+RBA-C-5-E-7-1,환경,numeric,kg,Y,[C-5·수치] 대기오염물질 연간 배출량 (측정 대상 물질 합계)
+RBA-C-8-E-3-1,환경,numeric,tCO2eq,Y,[C-8·수치] 온실가스 배출량 (Scope 1+2)
+RBA-C-8-E-4-1,환경,numeric,TJ,Y,[C-8·수치] 에너지 사용량
+RBA-C-8-E-4-2,환경,numeric,%,Y,[C-8·수치] 재생에너지 비율
