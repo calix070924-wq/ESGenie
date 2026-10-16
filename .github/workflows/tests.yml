@@ -25,6 +25,13 @@ jobs:
       ESGENIE_LLM_CACHE_DIR: ${{ github.workspace }}/outputs/ci-llm-cache
     steps:
       - uses: actions/checkout@v4
+      - name: Fetch pinned evaluation format dependency
+        if: ${{ hashFiles('scripts/baseline_generic_llm.py') != '' && hashFiles('esgenie/eval/answer_format.py') == '' }}
+        run: |
+          # The baseline uses A's fixed format until that module is merged.
+          # A shallow PR checkout does not contain commits from A's branch.
+          git fetch --no-tags --depth=1 origin c1bfa6730bb3f77bfeefd74405f293a1db8acbb0
+          git cat-file -e c1bfa6730bb3f77bfeefd74405f293a1db8acbb0:esgenie/eval/answer_format.py
       - uses: actions/setup-python@v5
         with:
           python-version: "3.13"

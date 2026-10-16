@@ -1,0 +1,11 @@
+﻿stage,qid,expected_decision,hold_reason,expected_value,expected_unit,tolerance,expected_sources,boundary_note,labeler,note
+initial,RBA-C-8-E-3-1,hold,no_evidence,,,,,2025년 전사 범위,hjm,2025년 전사 온실가스 산정자료 미제출 (2026년 4월 고지서로 대체 불가 명시됨)
+initial,RBA-C-5-E-7-1,hold,no_evidence,,,,,,hjm,대기오염물질 연간 배출량 측정 기록 증빙 미제출
+initial,RBA-C-8-E-4-2,hold,no_evidence,,,,,,hjm,재생에너지 사용량 및 비율 입증 증빙 미제출
+initial,RBA-E-11,answer,,예,,,06_환경안전관리규정_2026.pdf#1,두 공장 전사 규정,hjm,환경안전관리규정 제5조에 문서 관리 및 개인정보 보호 관련 규정이 명시됨
+initial,RBA-E-12,hold,no_evidence,,,,,,hjm,차상위 공급사 대상 행동규범 전달 및 준수 모니터링 프로세스 규정 미비
+followup,RBA-C-8-E-3-1,hold,no_evidence,,,,,2025년 전사 범위,hjm,2025년 전사 온실가스 산정자료 미제출 (2026년 4월 고지서로 대체 불가 명시됨)
+followup,RBA-C-5-E-7-1,hold,no_evidence,,,,,,hjm,대기오염물질 연간 배출량 측정 기록 증빙 미제출
+followup,RBA-C-8-E-4-2,hold,no_evidence,,,,,,hjm,재생에너지 사용량 및 비율 입증 증빙 미제출
+followup,RBA-E-11,answer,,예,,,06_환경안전관리규정_2026.pdf#1,두 공장 전사 규정,hjm,환경안전관리규정 제5조에 문서 관리 및 개인정보 보호 관련 규정이 명시됨
+followup,RBA-E-12,hold,no_evidence,,,,,,hjm,차상위 공급사 대상 행동규범 전달 및 준수 모니터링 프로세스 규정 미비
