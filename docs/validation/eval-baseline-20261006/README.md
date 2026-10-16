@@ -263,6 +263,13 @@ API 가 보고한 토큰과 확인된 청구 단가로 다시 계산한다.
 
 쓰는 모듈: A 소유 `esgenie/eval/answer_format.py`. 저장소에 복사하지 않고 아래 순서로 찾는다.
 
+새로 받은 저장소에 A 커밋이 없으면 먼저 아래 명령으로 고정 의존성을 받는다. CI도 같은 커밋을 받아 검사하며,
+테스트를 생략하거나 A 모듈을 복제하지 않는다. A 모듈이 병합된 뒤에는 저장소 모듈을 우선 사용한다.
+
+```bash
+git fetch --no-tags --depth=1 origin c1bfa6730bb3f77bfeefd74405f293a1db8acbb0
+```
+
 1. `--answer-format <경로>` 2. 환경변수 `ESGENIE_EVAL_ANSWER_FORMAT`
 3. 저장소 `esgenie.eval.answer_format`(A 브랜치 병합 후) 4. **고정 git ref**
    `c1bfa6730bb3f77bfeefd74405f293a1db8acbb0` (`origin/codex/eval-scoring-20261006`,
